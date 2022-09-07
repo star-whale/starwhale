@@ -226,6 +226,14 @@ public class DataStoreTest {
                         Map.of(),
                         Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
                         Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
+        // query non exist table
+        final String tableNonExist = "tableNonExist";
+        assertThrows(SWValidationException.class, () -> this.dataStore.query(DataStoreQueryRequest.builder()
+                .tableName(tableNonExist).build()));
+        recordList = this.dataStore.query(DataStoreQueryRequest.builder()
+                .tableName(tableNonExist).ignoreNonExistingTable(true).build());
+        assertThat("result of non exist table", recordList.getColumnTypeMap().isEmpty());
+        assertThat("result of non exist table", recordList.getRecords().isEmpty());
     }
 
     @Test
@@ -529,6 +537,22 @@ public class DataStoreTest {
                                 .columns(Map.of("k", "a"))
                                 .build()))
                 .build()));
+
+        // scan non exist table
+        final String tableNonExist = "tableNonExist";
+        var builder = DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
+                    DataStoreScanRequest.TableInfo.builder().tableName(tableNonExist).build()))
+                .limit(1);
+        assertThrows(SWValidationException.class, () -> this.dataStore.scan(builder.build()));
+
+        recordList = this.dataStore.scan(builder.ignoreNonExistingTable(true).build());
+        assertThat("result of non exist table",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+        assertThat("result of non exist table",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "0", "a", "5"))));
     }
 
     @Test

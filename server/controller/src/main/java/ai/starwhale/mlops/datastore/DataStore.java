@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -64,7 +65,10 @@ public class DataStore {
     }
 
     public RecordList query(DataStoreQueryRequest req) {
-        var table = this.getTable(req.getTableName());
+        var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable());
+        if (table == null) {
+            return new RecordList(Collections.emptyMap(), Collections.emptyList(), null);
+        }
         table.lock();
         try {
             var schema = table.getSchema();
@@ -108,7 +112,8 @@ public class DataStore {
                         .stream()
                         .map(DataStoreScanRequest.TableInfo::getTableName)
                         .sorted() // prevent deadlock
-                        .map(this::getTable)
+                        .map(i->getTable(i, req.isIgnoreNonExistingTable()))
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
         for (var table : tablesToLock) {
@@ -127,13 +132,16 @@ public class DataStore {
             var tables = req.getTables().stream().map(info -> {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
-                ret.table = this.getTable(info.getTableName());
+                ret.table = this.getTable(info.getTableName(), req.isIgnoreNonExistingTable());
+                if (ret.table == null) {
+                    return null;
+                }
                 ret.schema = ret.table.getSchema();
                 ret.columns = this.getColumnAliases(ret.schema, info.getColumns());
                 ret.columnTypeMap = ret.schema.getColumnTypeMapping(ret.columns);
                 ret.keepNone = info.isKeepNone();
                 return ret;
-            }).collect(Collectors.toList());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
 
             var columnTypeMap = new HashMap<String, ColumnType>();
             for (var table : tables) {
@@ -231,9 +239,9 @@ public class DataStore {
         }
     }
 
-    private MemoryTable getTable(String tableName) {
+    private MemoryTable getTable(String tableName, boolean allowNull) {
         var table = tables.get(tableName);
-        if (table == null) {
+        if (table == null && !allowNull) {
             throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
                     "invalid table name " + tableName);
         }

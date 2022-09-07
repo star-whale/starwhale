@@ -102,6 +102,7 @@ public class DataStoreController implements DataStoreApi {
                     .limit(request.getLimit())
                     .keepNone(request.isKeepNone())
                     .rawResult(request.isRawResult())
+                    .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVO.builder()
                     .columnTypes(recordList.getColumnTypeMap())
