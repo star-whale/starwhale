@@ -16,6 +16,29 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 public class TestK8sResourcePoolConverter {
+
+    @Test
+    public void testNormalCase() {
+        K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
+        Map<String, String> k8sLabel = resourcePoolConverter.toK8sLabel(
+                new ResourcePool("3"));
+        Assertions.assertEquals(1, k8sLabel.size());
+        Assertions.assertEquals("true", k8sLabel.get("pool.starwhale.ai/3"));
+
+    }
+
+    @Test
+    public void testEmptyLabelCase() {
+        K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
+        Map<String, String> k8sLabel = resourcePoolConverter.toK8sLabel(
+                new ResourcePool());
+        Assertions.assertEquals(0, k8sLabel.size());
+    }
 
 }
