@@ -17,9 +17,11 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVO;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
+import ai.starwhale.mlops.api.protocol.datastore.TableNameListVO;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -30,6 +32,9 @@ import javax.validation.Valid;
 
 @Validated
 public interface DataStoreApi {
+    @PostMapping(value = "/datastore/listTables")
+    ResponseEntity<ResponseMessage<TableNameListVO>> listTables(
+            @Valid @RequestBody ListTablesRequest request);
 
     @PostMapping(value = "/datastore/updateTable")
     ResponseEntity<ResponseMessage<String>> updateTable(

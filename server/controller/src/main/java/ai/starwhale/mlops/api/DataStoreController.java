@@ -19,9 +19,11 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
+import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVO;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
+import ai.starwhale.mlops.api.protocol.datastore.TableNameListVO;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
@@ -52,6 +54,10 @@ public class DataStoreController implements DataStoreApi {
     @Resource
     @Setter
     private DataStore dataStore;
+
+    public ResponseEntity<ResponseMessage<TableNameListVO>> listTables(ListTablesRequest request) {
+        return ResponseEntity.ok(Code.success.asResponse(new TableNameListVO(this.dataStore.list(request.getPrefix()))));
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateTable(UpdateTableRequest request) {
