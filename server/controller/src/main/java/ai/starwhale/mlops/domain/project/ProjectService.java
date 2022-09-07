@@ -37,15 +37,12 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.Page.Function;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -56,28 +53,34 @@ import org.springframework.util.Assert;
 @Service
 public class ProjectService {
 
-    @Resource
-    private ProjectMapper projectMapper;
+    private final ProjectMapper projectMapper;
 
-    @Resource
-    private ProjectManager projectManager;
+    private final ProjectManager projectManager;
 
-    @Resource
-    private ProjectConvertor projectConvertor;
+    private final ProjectConvertor projectConvertor;
 
-    @Resource
-    private ProjectRoleMapper projectRoleMapper;
+    private final ProjectRoleMapper projectRoleMapper;
 
-    @Resource
-    private ProjectRoleConvertor projectRoleConvertor;
+    private final ProjectRoleConvertor projectRoleConvertor;
 
-    @Resource
-    private IDConvertor idConvertor;
+    private final IDConvertor idConvertor;
 
-    @Resource
-    private UserService userService;
+    private final UserService userService;
 
     private static final String DELETE_SUFFIX = ".deleted";
+
+    public ProjectService(ProjectMapper projectMapper, ProjectManager projectManager,
+        ProjectConvertor projectConvertor, ProjectRoleMapper projectRoleMapper,
+        ProjectRoleConvertor projectRoleConvertor, IDConvertor idConvertor,
+        UserService userService) {
+        this.projectMapper = projectMapper;
+        this.projectManager = projectManager;
+        this.projectConvertor = projectConvertor;
+        this.projectRoleMapper = projectRoleMapper;
+        this.projectRoleConvertor = projectRoleConvertor;
+        this.idConvertor = idConvertor;
+        this.userService = userService;
+    }
 
     /**
      * Find a project by parameters.

@@ -28,7 +28,6 @@ import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,19 +37,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectManager implements ProjectAccessor{
 
-
-
-    @Resource
-    private ProjectMapper projectMapper;
-
-    @Resource
-    private IDConvertor idConvertor;
+    private final ProjectMapper projectMapper;
+    private final IDConvertor idConvertor;
 
     private static final Map<String, String> SORT_MAP = Map.of(
         "id", "project_id",
         "name", "project_name",
         "time", "project_created_time",
         "createdTime", "project_created_time");
+
+    public ProjectManager(ProjectMapper projectMapper, IDConvertor idConvertor) {
+        this.projectMapper = projectMapper;
+        this.idConvertor = idConvertor;
+    }
 
     public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
         return projectMapper.listProjects(projectName, orderParams.getOrderSQL(SORT_MAP), 0, userId);
