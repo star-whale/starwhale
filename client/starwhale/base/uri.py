@@ -91,7 +91,9 @@ class URI:
         else:
             _sp = raw.split("/", 1)
             _inst_alias = _sp[0]
-            _inst = self._sw_config._config["instances"].get(_inst_alias, {}).get("uri", "")
+            _inst = (
+                self._sw_config._config["instances"].get(_inst_alias, {}).get("uri", "")
+            )
             _inst_type = InstanceType.CLOUD
             if _inst:
                 _remain = "" if len(_sp) == 1 else _sp[1]
