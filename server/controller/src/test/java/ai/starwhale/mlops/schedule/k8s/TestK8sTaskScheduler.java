@@ -124,7 +124,7 @@ public class TestK8sTaskScheduler {
                 , "SW_TOKEN", "tt"
                 , "SW_INSTANCE_URI", "http://instanceUri"
                 ,"SW_TASK_STEP","cmp"
-                ,"envS4","envS4V"
+                ,"ENVS4","envS4V"
                 ,FileStorageEnv.ENV_KEY_PREFIX,"swds_path"
                 ,FileStorageEnv.ENV_TYPE,"S3"
             );

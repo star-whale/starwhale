@@ -44,9 +44,9 @@ public class TestStorageAuths {
         FileStorageEnv myEnv = storageAuths.getEnv("myname");
         Assertions.assertEquals(FileSystemEnvType.S3, myEnv.getEnvType());
         Assertions.assertNull(myEnv.getEnvs().get("USER.S3.myname.REGION"));
-        Assertions.assertEquals("endpoint1", myEnv.getEnvs().get("USER.S3.myname.ENDPOINT"));
-        Assertions.assertEquals("secret1", myEnv.getEnvs().get("USER.S3.myname.SECRET"));
-        Assertions.assertEquals("access_key1", myEnv.getEnvs().get("USER.S3.myname.ACCESS_KEY"));
+        Assertions.assertEquals("endpoint1", myEnv.getEnvs().get("USER.S3.MYNAME.ENDPOINT"));
+        Assertions.assertEquals("secret1", myEnv.getEnvs().get("USER.S3.MYNAME.SECRET"));
+        Assertions.assertEquals("access_key1", myEnv.getEnvs().get("USER.S3.MYNAME.ACCESS_KEY"));
 
         FileStorageEnv mnist = storageAuths.getEnv("MNIST");
         Assertions.assertEquals(FileSystemEnvType.S3, mnist.getEnvType());

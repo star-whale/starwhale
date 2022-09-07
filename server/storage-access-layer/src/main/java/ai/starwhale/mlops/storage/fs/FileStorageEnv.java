@@ -40,7 +40,7 @@ public class FileStorageEnv {
     }
 
     public FileStorageEnv add(String name,String value){
-        envs.put(name,value);
+        envs.put(name.toUpperCase(),value);
         return this;
     }
 

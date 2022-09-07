@@ -66,7 +66,7 @@ public class TaskLogK8SCollector implements TaskLogCollector{
                     .collect(Collectors.toList()));
             log.debug("logs for task {} is {}...", task.getId(), StringUtils.hasText(taskLog)?taskLog.substring(0,Math.min(taskLog.length()-1,100)):"");
         } catch (ApiException e) {
-            log.error("k8s api error ",e);
+            log.error("k8s api error {}",e.getResponseBody(),e);
             throw new SWProcessException(ErrorType.INFRA).tip("k8s api exception"+e.getMessage());
         } catch (IOException e) {
             log.error("connection error ",e);
