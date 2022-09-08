@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory;
-
-import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
+import java.io.IOException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 public class SwBufferOutputStreamTest {
+
     private final SwByteBufferManager bufferManager = new SwByteBufferManager();
     private SwBufferInputStream inputStream;
     private SwBufferOutputStream outputStream;

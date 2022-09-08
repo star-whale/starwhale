@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import java.net.MalformedURLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -29,7 +26,6 @@ import lombok.Getter;
  * s3://starwhale/project/2/dataset/11/s
  * /starwhale/project/2/dataset/11/d
  * starwhale/project/2/dataset/11/ab
- *
  */
 @Getter
 public class StorageUri {
@@ -45,22 +41,27 @@ public class StorageUri {
     String path;
     String bucket;
 
-    static final Pattern URI_PATTERN=Pattern.compile("^((s3|file|ftp|nfs|oss|http|https|sftp):\\/\\/)?(([a-zA-Z0-9]+:[a-zA-Z0-9]+)@)?(([a-z0-9.]+)(:(\\d{2,5}))?@)?(\\/?([^\\/]+)\\/(.*?([^\\/]+)\\/?))$");
-    public StorageUri(String uri){
+    static final Pattern URI_PATTERN = Pattern.compile(
+            "^((s3|file|ftp|nfs|oss|http|https|sftp)://)?"
+                    + "(([a-zA-Z0-9]+:[a-zA-Z0-9]+)@)?"
+                    + "(([a-z0-9.]+)(:(\\d{2,5}))?@)?"
+                    + "(/?([^/]+)/(.*?([^/]+)/?))$");
+
+    public StorageUri(String uri) {
         Matcher matcher = URI_PATTERN.matcher(uri);
-        if(!matcher.matches()){
-            this.path=uri;
+        if (!matcher.matches()) {
+            this.path = uri;
             return;
         }
         schema = matcher.group(2);
         String up = matcher.group(4);
-        if(null != up){
+        if (null != up) {
             String[] split = up.split(":");
             username = split[0];
             password = split[1];
         }
         host = matcher.group(6);
-        if(null != matcher.group(8)){
+        if (null != matcher.group(8)) {
             port = Integer.valueOf(matcher.group(8));
         }
         bucket = matcher.group(10);

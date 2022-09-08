@@ -46,7 +46,7 @@ public class GraphEdge {
      */
     String content;
 
-    public GraphEdge(GraphEdgeEntity entity){
+    public GraphEdge(GraphEdgeEntity entity) {
         this.from = entity.getFrom();
         this.to = entity.getTo();
         this.content = entity.getContent();

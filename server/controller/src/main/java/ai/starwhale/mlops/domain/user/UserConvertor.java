@@ -16,46 +16,50 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.api.protocol.user.UserVO;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class UserConvertor implements Convertor<UserEntity, UserVO> {
+public class UserConvertor implements Convertor<UserEntity, UserVo> {
 
-    @Resource private IDConvertor idConvertor;
+    private final IdConvertor idConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public UserConvertor(IdConvertor idConvertor, LocalDateTimeConvertor localDateTimeConvertor) {
+        this.idConvertor = idConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
+
 
     @Override
-    public UserVO convert(UserEntity entity) throws ConvertException {
-      if(entity == null) {
-          return UserVO.empty();
-      }
-      return UserVO.builder()
-          .id(idConvertor.convert(entity.getId()))
-          .name(entity.getUserName())
-          .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-          .isEnabled(entity.getUserEnabled() == 1)
-          .build();
+    public UserVo convert(UserEntity entity) throws ConvertException {
+        if (entity == null) {
+            return UserVo.empty();
+        }
+        return UserVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getUserName())
+                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled() == 1)
+                .build();
     }
 
     @Override
-    public UserEntity revert(UserVO vo) throws ConvertException {
-        Objects.requireNonNull(vo, "UserVO");
+    public UserEntity revert(UserVo vo) throws ConvertException {
+        Objects.requireNonNull(vo, "UserVo");
         return UserEntity.builder()
-            .id(idConvertor.revert(vo.getId()))
-            .userName(vo.getName())
-            .userEnabled(vo.getIsEnabled() ? 1 : 0)
-            .build();
+                .id(idConvertor.revert(vo.getId()))
+                .userName(vo.getName())
+                .userEnabled(vo.getIsEnabled() ? 1 : 0)
+                .build();
     }
 }

@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.api.protocol.runtime;
 
-import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;

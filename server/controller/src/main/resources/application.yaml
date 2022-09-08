@@ -20,7 +20,7 @@ sw:
       trusted-host: ${SW_PYPI_TRUSTED_HOST:10.131.0.1}
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
-    issuer: ${SW_JWT_ISSUER:starWhale}
+    issuer: ${SW_JWT_ISSUER:starwhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
     job-user-id: ${SW_JWT_JOB_USER_ID:1}
   task:
@@ -33,7 +33,7 @@ sw:
       host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:/mnt/data}
       job-template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
   storage:
-    path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    path-prefix: ${SW_STORAGE_PREFIX:starwhale}
     fs-root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
@@ -50,6 +50,7 @@ sw:
     walMaxFileSize: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
     walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
     walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
+    ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
 ---
 #Development
 spring:

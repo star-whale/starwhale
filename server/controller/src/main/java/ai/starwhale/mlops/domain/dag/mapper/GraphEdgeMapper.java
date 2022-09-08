@@ -24,7 +24,7 @@ public interface GraphEdgeMapper {
 
     List<GraphEdgeEntity> findByGraphId(@Param("graphId") Long graphId);
 
-    void add(@Param("graphEdge")GraphEdgeEntity graphEdgeEntity);
+    void add(@Param("graphEdge") GraphEdgeEntity graphEdgeEntity);
 
-    List<GraphEdgeEntity> scopeOf(@Param("nodeIds")List<Long> nodeIds);
+    List<GraphEdgeEntity> scopeOf(@Param("nodeIds") List<Long> nodeIds);
 }

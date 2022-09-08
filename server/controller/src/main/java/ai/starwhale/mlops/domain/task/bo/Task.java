@@ -62,7 +62,7 @@ public class Task extends TimeConcern {
      */
     Step step;
 
-    public void updateStatus(TaskStatus status){
+    public void updateStatus(TaskStatus status) {
         this.status = status;
     }
 
@@ -80,11 +80,11 @@ public class Task extends TimeConcern {
     }
 
     @Override
-    public boolean equals(Object obj){
-        if(!(obj instanceof Task)){
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Task)) {
             return false;
         }
-        Task tsk = (Task)obj;
+        Task tsk = (Task) obj;
         return this.uuid.equals(tsk.uuid);
     }
 

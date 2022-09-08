@@ -21,8 +21,8 @@ import org.apache.ibatis.annotations.Param;
 
 public interface ViewConfigMapper {
 
-    ViewConfigEntity findViewConfig(@Param("userId")Long userId, @Param("projectId")Long projectId,
-        @Param("name")String name);
+    ViewConfigEntity findViewConfig(@Param("userId") Long userId, @Param("projectId") Long projectId,
+            @Param("name") String name);
 
     int createViewConfig(ViewConfigEntity entity);
 }

@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
-import lombok.Getter;
-import lombok.SneakyThrows;
-
+import ai.starwhale.mlops.exception.SwValidationException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.Map;
+import lombok.Getter;
+import lombok.SneakyThrows;
 
 @Getter
 public enum ColumnType {
@@ -151,7 +151,7 @@ public enum ColumnType {
                     throw new IllegalArgumentException("invalid type " + this);
             }
         } catch (Exception e) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     MessageFormat.format("can not decode value {0} for type {1}: {2}", value, this, e.getMessage()));
         }
     }

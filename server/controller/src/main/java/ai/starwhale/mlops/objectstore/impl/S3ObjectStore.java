@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.objectstore.impl;
 
 import ai.starwhale.mlops.memory.SwBuffer;
@@ -20,19 +21,19 @@ import ai.starwhale.mlops.memory.SwBufferInputStream;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.objectstore.ObjectStore;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import java.io.IOException;
+import java.util.Iterator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-import java.io.IOException;
-import java.util.Iterator;
-
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3", matchIfMissing = true)
 public class S3ObjectStore implements ObjectStore {
+
     private final SwBufferManager bufferManager;
 
     private final StorageAccessService storageAccessService;
@@ -58,7 +59,7 @@ public class S3ObjectStore implements ObjectStore {
             @SuppressWarnings("unchecked")
             var result = (ResponseInputStream<GetObjectResponse>) is;
             var ret = this.bufferManager.allocate(result.response().contentLength().intValue());
-            int read = result.readNBytes(ret.asByteBuffer().array(),0,ret.capacity());
+            int read = result.readNBytes(ret.asByteBuffer().array(), 0, ret.capacity());
             assert read == ret.capacity();
             return ret;
         }

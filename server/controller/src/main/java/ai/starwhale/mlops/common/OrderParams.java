@@ -36,9 +36,9 @@ public class OrderParams extends BaseParams {
 
     private int order;
 
-    public String getOrderSQL(Map<String, String> fieldMap) throws ValidationException {
-        if(StringUtils.hasText(sort)) {
-            if(fieldMap == null || !fieldMap.containsKey(sort)) {
+    public String getOrderSql(Map<String, String> fieldMap) throws ValidationException {
+        if (StringUtils.hasText(sort)) {
+            if (fieldMap == null || !fieldMap.containsKey(sort)) {
                 throw new ValidationException();
             }
             return new Order(fieldMap.get(sort), order < 0 ? Direction.DESC : Direction.ASC).toString();

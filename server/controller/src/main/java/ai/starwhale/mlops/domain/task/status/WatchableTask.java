@@ -33,17 +33,19 @@ public class WatchableTask extends Task implements TaskWrapper {
     /**
      * original task
      */
-    Task oTask;
+    Task originalTask;
 
     List<TaskStatusChangeWatcher> watchers;
 
     TaskStatusMachine taskStatusMachine;
 
-    public WatchableTask(Task oTask,List<TaskStatusChangeWatcher> watchers,TaskStatusMachine taskStatusMachine){
-        if(oTask instanceof TaskWrapper){
-            this.oTask = ((TaskWrapper)oTask).unwrap();
-        }else {
-            this.oTask = oTask;
+    public WatchableTask(Task originalTask,
+            List<TaskStatusChangeWatcher> watchers,
+            TaskStatusMachine taskStatusMachine) {
+        if (originalTask instanceof TaskWrapper) {
+            this.originalTask = ((TaskWrapper) originalTask).unwrap();
+        } else {
+            this.originalTask = originalTask;
         }
 
         this.watchers = watchers;
@@ -52,89 +54,90 @@ public class WatchableTask extends Task implements TaskWrapper {
 
     @Override
     public Long getId() {
-        return oTask.getId();
+        return originalTask.getId();
     }
 
     @Override
     public String getUuid() {
-        return oTask.getUuid();
+        return originalTask.getUuid();
     }
 
     @Override
     public TaskStatus getStatus() {
-        return oTask.getStatus();
+        return originalTask.getStatus();
     }
 
     @Override
     public ResultPath getResultRootPath() {
-        return oTask.getResultRootPath();
+        return originalTask.getResultRootPath();
     }
 
     @Override
     public TaskRequest getTaskRequest() {
-        return oTask.getTaskRequest();
+        return originalTask.getTaskRequest();
     }
 
     @Override
     public Step getStep() {
-        return oTask.getStep();
+        return originalTask.getStep();
     }
 
     @Override
-    public Long getStartTime(){
-        return oTask.getStartTime();
+    public Long getStartTime() {
+        return originalTask.getStartTime();
     }
 
     @Override
-    public Long getFinishTime(){
-        return oTask.getFinishTime();
+    public Long getFinishTime() {
+        return originalTask.getFinishTime();
     }
 
     @Override
-    public void updateStatus(TaskStatus status){
-        TaskStatus oldStatus = oTask.getStatus();
-        if(oldStatus == status){
+    public void updateStatus(TaskStatus status) {
+        TaskStatus oldStatus = originalTask.getStatus();
+        if (oldStatus == status) {
             return;
         }
-        if(!taskStatusMachine.couldTransfer(oldStatus, status)){
-            log.warn("task status changed unexpectedly from {} to {}  of id {} ",oldStatus,status,oTask.getId());
+        if (!taskStatusMachine.couldTransfer(oldStatus, status)) {
+            log.warn("task status changed unexpectedly from {} to {}  of id {} ",
+                    oldStatus, status, originalTask.getId());
         }
-        oTask.updateStatus(status);
-        log.debug("task status changed from {} to {}  of id {}",oldStatus,status,oTask.getId());
+        originalTask.updateStatus(status);
+        log.debug("task status changed from {} to {}  of id {}", oldStatus, status, originalTask.getId());
         watchers.stream().filter(w -> {
-                if (TaskStatusChangeWatcher.SKIPPED_WATCHERS.get() == null) {
-                    log.debug("not watchers selected default to all");
-                    return true;
+                    if (TaskStatusChangeWatcher.SKIPPED_WATCHERS.get() == null) {
+                        log.debug("not watchers selected default to all");
+                        return true;
+                    }
+                    return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
                 }
-                return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
-            }
         ).forEach(watcher -> watcher.onTaskStatusChange(this, oldStatus));
     }
 
     public void setResultRootPath(ResultPath resultRootPath) {
-        oTask.setResultRootPath(resultRootPath);
+        originalTask.setResultRootPath(resultRootPath);
     }
 
     public void setTaskRequest(TaskRequest taskRequest) {
-        oTask.setTaskRequest(taskRequest);
+        originalTask.setTaskRequest(taskRequest);
     }
 
     @Override
     public int hashCode() {
-        return oTask.hashCode();
+        return originalTask.hashCode();
     }
 
     @Override
-    public boolean equals(Object obj){
-        return oTask.equals(obj);
+    public boolean equals(Object obj) {
+        return originalTask.equals(obj);
     }
 
     @Override
-    public Task unwrap(){
-        if(oTask instanceof TaskWrapper){
-            TaskWrapper wrappedTask = (TaskWrapper) oTask;
+    public Task unwrap() {
+        if (originalTask instanceof TaskWrapper) {
+            TaskWrapper wrappedTask = (TaskWrapper) originalTask;
             return wrappedTask.unwrap();
         }
-        return oTask;
+        return originalTask;
     }
 }

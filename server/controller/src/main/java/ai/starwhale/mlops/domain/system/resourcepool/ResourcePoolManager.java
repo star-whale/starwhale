@@ -18,31 +18,31 @@ package ai.starwhale.mlops.domain.system.resourcepool;
 
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
-import javax.validation.constraints.NotNull;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
 public class ResourcePoolManager {
+
     @Resource
     private ResourcePoolMapper resourcePoolMapper;
 
     public Long getResourcePoolId(@NotNull String label) {
-        if(!StringUtils.hasText(label)){
+        if (!StringUtils.hasText(label)) {
             label = ResourcePool.DEFAULT;
         }
         var entity = resourcePoolMapper.findByLabel(label);
         if (entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RESOURCE_POOL)
-                .tip(String.format("Unable to find resource pool %s", label)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RESOURCE_POOL)
+                    .tip(String.format("Unable to find resource pool %s", label)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

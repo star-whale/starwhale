@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
-import ai.starwhale.mlops.exception.SWValidationException;
-import org.springframework.stereotype.Component;
-
+import ai.starwhale.mlops.exception.SwValidationException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,9 +29,11 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DataStore {
+
     private final WalManager walManager;
 
     private final Map<String, MemoryTable> tables = new ConcurrentHashMap<>();
@@ -52,9 +53,13 @@ public class DataStore {
         this.walManager.terminate();
     }
 
+    public List<String> list(String prefix) {
+        return tables.keySet().stream().filter(name -> name.startsWith(prefix)).collect(Collectors.toList());
+    }
+
     public void update(String tableName,
-                       TableSchemaDesc schema,
-                       List<Map<String, String>> records) {
+            TableSchemaDesc schema,
+            List<Map<String, String>> records) {
         var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
         table.lock();
         try {
@@ -100,7 +105,7 @@ public class DataStore {
     public RecordList scan(DataStoreScanRequest req) {
         var limit = req.getLimit();
         if (limit > 1000) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "limit must be less or equal to 1000. request=" + req);
         }
         if (limit < 0) {
@@ -112,7 +117,7 @@ public class DataStore {
                         .stream()
                         .map(DataStoreScanRequest.TableInfo::getTableName)
                         .sorted() // prevent deadlock
-                        .map(i->getTable(i, req.isIgnoreNonExistingTable()))
+                        .map(i -> getTable(i, req.isIgnoreNonExistingTable()))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
@@ -121,6 +126,7 @@ public class DataStore {
         }
         try {
             class TableMeta {
+
                 String tableName;
                 MemoryTable table;
                 TableSchema schema;
@@ -146,7 +152,7 @@ public class DataStore {
             var columnTypeMap = new HashMap<String, ColumnType>();
             for (var table : tables) {
                 if (table.schema.getKeyColumnType() != tables.get(0).schema.getKeyColumnType()) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
                                     "conflicting key column type. {0}: key={1}, type={2}, {3}: key={4}, type={5}",
                                     tables.get(0).tableName,
@@ -163,7 +169,7 @@ public class DataStore {
                     if (old != null && old != columnType) {
                         for (var t : tables) {
                             if (t.columnTypeMap.get(columnName) != null) {
-                                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                                         MessageFormat.format(
                                                 "conflicting column type. {0}: column={1}, alias={2}, type={3}, "
                                                         + "{4}: column={5}, alias={6}, type={7}",
@@ -180,7 +186,9 @@ public class DataStore {
                     }
                 }
             }
+
             class TableRecords {
+
                 TableMeta meta;
                 List<MemoryTable.RecordResult> records;
                 int index;
@@ -193,6 +201,7 @@ public class DataStore {
                     return this.getRecord().getKey();
                 }
             }
+
             var records = new ArrayList<TableRecords>();
             for (var table : tables) {
                 var r = new TableRecords();
@@ -242,7 +251,7 @@ public class DataStore {
     private MemoryTable getTable(String tableName, boolean allowNull) {
         var table = tables.get(tableName);
         if (table == null && !allowNull) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "invalid table name " + tableName);
         }
         return table;
@@ -275,7 +284,7 @@ public class DataStore {
                 }
             }
             if (!invalidColumns.isEmpty()) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "invalid columns: " + invalidColumns);
             }
             return ret;
@@ -283,8 +292,8 @@ public class DataStore {
     }
 
     private Map<String, String> encodeRecord(Map<String, ColumnType> columnTypeMap,
-                                             Map<String, Object> values,
-                                             boolean rawResult) {
+            Map<String, Object> values,
+            boolean rawResult) {
         var ret = new HashMap<String, String>();
         for (var entry : values.entrySet()) {
             var columnName = entry.getKey();

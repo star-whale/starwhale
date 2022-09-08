@@ -22,9 +22,13 @@ import org.springframework.security.core.GrantedAuthority;
 
 public class JwtLoginToken extends AbstractAuthenticationToken {
 
-    /** Login user info */
+    /**
+     * Login user info
+     */
     private final Object principal;
-    /** Password */
+    /**
+     * Password
+     */
     private final Object credentials;
 
     /**
@@ -38,14 +42,13 @@ public class JwtLoginToken extends AbstractAuthenticationToken {
     }
 
     /**
-     * Create an authenticated authorization token. This method should be called by AuthenticationProvider.
-     * The parameter principal should be a UserDetails object returned from userService
-     * @param principal the UserDetails found from userService
-     * @param credentials
-     * @param authorities
+     * Create an authenticated authorization token. This method should be called by AuthenticationProvider. The
+     * parameter principal should be a UserDetails object returned from userService
+     *
+     * @param principal   the UserDetails found from userService
      */
     public JwtLoginToken(Object principal, Object credentials,
-        Collection<? extends GrantedAuthority> authorities) {
+            Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.principal = principal;
         this.credentials = credentials;

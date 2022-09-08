@@ -16,11 +16,10 @@
 
 package ai.starwhale.mlops.domain.task.converter;
 
-import ai.starwhale.mlops.api.protocol.task.TaskVO;
+import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.system.AgentConvertor;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
@@ -28,33 +27,33 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TaskConvertor implements Convertor<TaskEntity, TaskVO> {
+public class TaskConvertor implements Convertor<TaskEntity, TaskVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
-    public TaskVO convert(TaskEntity entity) throws ConvertException {
-        if(entity == null) {
-            return TaskVO.empty();
+    public TaskVo convert(TaskEntity entity) throws ConvertException {
+        if (entity == null) {
+            return TaskVo.empty();
         }
-        return TaskVO.builder()
-            .id(idConvertor.convert(entity.getId()))
-            .uuid(entity.getTaskUuid())
-            .taskStatus(entity.getTaskStatus())
-            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .build();
+        return TaskVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .uuid(entity.getTaskUuid())
+                .taskStatus(entity.getTaskStatus())
+                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .build();
     }
 
     @Override
-    public TaskEntity revert(TaskVO vo) throws ConvertException {
-        Objects.requireNonNull(vo, "TaskVO");
+    public TaskEntity revert(TaskVo vo) throws ConvertException {
+        Objects.requireNonNull(vo, "TaskVo");
         return TaskEntity.builder()
-            .taskStatus(vo.getTaskStatus())
-            .taskUuid(vo.getUuid())
-            .build();
+                .taskStatus(vo.getTaskStatus())
+                .taskUuid(vo.getUuid())
+                .build();
     }
 }

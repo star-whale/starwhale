@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
 import java.util.HashMap;
@@ -33,39 +31,41 @@ public class StorageAuths {
 
     Map<String, FileStorageEnv> envMap = new HashMap<>();
 
-    static final String NAME_DEFAULT="";
+    static final String NAME_DEFAULT = "";
 
-    static final Pattern LINE_PATTERN=Pattern.compile("^(USER\\.(S3|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w*)$");
-    public StorageAuths(String authsText){
+    static final Pattern LINE_PATTERN = Pattern.compile(
+            "^(USER\\.(S3|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w*)$");
+
+    public StorageAuths(String authsText) {
         String[] lines = authsText.split("\n");
-        Stream.of(lines).forEach(line->{
+        Stream.of(lines).forEach(line -> {
             Matcher matcher = LINE_PATTERN.matcher(line);
-            if(!matcher.matches()){
-                log.warn("unsupported auth line {} ",line);
+            if (!matcher.matches()) {
+                log.warn("unsupported auth line {} ", line);
                 return;
             }
             String type = matcher.group(2);
             String name = matcher.group(4);
             String envName = matcher.group(1);
             String envValue = matcher.group(6);
-            if(!StringUtils.hasText(name)){
+            if (!StringUtils.hasText(name)) {
                 name = NAME_DEFAULT;
             }
             FileStorageEnv fileStorageEnv = envMap.computeIfAbsent(name,
-                k -> new FileStorageEnv(FileSystemEnvType.valueOf(type)));
-            fileStorageEnv.add(envName,envValue);
+                    k -> new FileStorageEnv(FileSystemEnvType.valueOf(type)));
+            fileStorageEnv.add(envName, envValue);
         });
 
     }
 
-    public FileStorageEnv getEnv(String authName){
-        if(!StringUtils.hasText(authName)){
+    public FileStorageEnv getEnv(String authName) {
+        if (!StringUtils.hasText(authName)) {
             return envMap.get(NAME_DEFAULT);
         }
         return envMap.get(authName);
     }
 
-    public Map<String, FileStorageEnv> allEnvs(){
+    public Map<String, FileStorageEnv> allEnvs() {
         return envMap;
     }
 

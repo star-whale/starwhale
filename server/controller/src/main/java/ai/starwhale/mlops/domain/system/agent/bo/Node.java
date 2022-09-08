@@ -18,11 +18,10 @@ package ai.starwhale.mlops.domain.system.agent.bo;
 
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
 import lombok.NoArgsConstructor;
 
 /**
@@ -52,7 +51,7 @@ public class Node {
     /**
      * memory size in GB unit
      */
-    Float memorySizeGB;
+    Float memorySizeGb;
 
     /**
      * the device holding information
@@ -61,11 +60,11 @@ public class Node {
 
     AgentStatus status;
 
-    public boolean equals(Object obj){
-        if(!(obj instanceof Node)){
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Node)) {
             return false;
         }
-        Node node = (Node)obj;
+        Node node = (Node) obj;
         return this.serialNumber.equals(node.getSerialNumber());
     }
 

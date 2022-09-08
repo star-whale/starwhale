@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -27,10 +27,10 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RuntimeVersionConvertor implements Convertor<RuntimeVersionEntity, RuntimeVersionVO> {
+public class RuntimeVersionConvertor implements Convertor<RuntimeVersionEntity, RuntimeVersionVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private UserConvertor userConvertor;
@@ -39,21 +39,21 @@ public class RuntimeVersionConvertor implements Convertor<RuntimeVersionEntity, 
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
-    public RuntimeVersionVO convert(RuntimeVersionEntity entity)
-        throws ConvertException {
-        return RuntimeVersionVO.builder()
-            .id(idConvertor.convert(entity.getId()))
-            .name(entity.getVersionName())
-            .owner(userConvertor.convert(entity.getOwner()))
-            .tag(entity.getVersionTag())
-            .meta(entity.getVersionMeta())
-            .image(entity.getImage())
-            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .build();
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity)
+            throws ConvertException {
+        return RuntimeVersionVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getVersionName())
+                .owner(userConvertor.convert(entity.getOwner()))
+                .tag(entity.getVersionTag())
+                .meta(entity.getVersionMeta())
+                .image(entity.getImage())
+                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .build();
     }
 
     @Override
-    public RuntimeVersionEntity revert(RuntimeVersionVO runtimeVersionVO) throws ConvertException {
+    public RuntimeVersionEntity revert(RuntimeVersionVo runtimeVersionVo) throws ConvertException {
         throw new UnsupportedOperationException();
     }
 }

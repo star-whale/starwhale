@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 public class SimpleStepTriggerTest {
 
     @Test
-    public void testEvalPPLStepTrigger() throws IOException {
+    public void testEvalPplStepTrigger() throws IOException {
 
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         List<String> pplResultPathA = List.of("a");
@@ -45,20 +45,19 @@ public class SimpleStepTriggerTest {
         when(storageAccessService.list("task_path_a/result")).thenReturn(pplResultPathA.stream());
         when(storageAccessService.list("task_path_b/result")).thenReturn(pplResultPathB.stream());
         TaskMapper taskMapper = mock(TaskMapper.class);
-        SimpleStepTrigger evalPPLStepTrigger = new SimpleStepTrigger(storageAccessService);
+        SimpleStepTrigger evalPplStepTrigger = new SimpleStepTrigger(storageAccessService);
 
         Task task = mock(Task.class);
         long taskId = 123L;
         when(task.getId()).thenReturn(taskId);
         Step cmpStep = Step.builder().tasks(List.of(task)).build();
         Step pplStep = Step.builder()
-            .tasks(List.of(
-                Task.builder().resultRootPath(new ResultPath("task_path_a")).build()
-                ,Task.builder().resultRootPath(new ResultPath("task_path_b")).build()
-            ))
-            .nextStep(cmpStep)
-            .build();
-        evalPPLStepTrigger.triggerNextStep(pplStep);
+                .tasks(List.of(
+                        Task.builder().resultRootPath(new ResultPath("task_path_a")).build(),
+                        Task.builder().resultRootPath(new ResultPath("task_path_b")).build()))
+                .nextStep(cmpStep)
+                .build();
+        evalPplStepTrigger.triggerNextStep(pplStep);
         verify(task).updateStatus(TaskStatus.READY);
 
     }

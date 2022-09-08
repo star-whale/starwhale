@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,15 +35,15 @@ public interface EnvApi {
 
     @Operation(summary = "Get the list of device types")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = List.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = List.class)))
+            })
     @GetMapping(value = "/runtime/device")
-    ResponseEntity<ResponseMessage<List<DeviceVO>>> listDevice();
+    ResponseEntity<ResponseMessage<List<DeviceVo>>> listDevice();
 }

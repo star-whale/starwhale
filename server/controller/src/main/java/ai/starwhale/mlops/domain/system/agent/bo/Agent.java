@@ -66,8 +66,7 @@ public class Agent {
             return false;
         }
         Agent agent = (Agent) o;
-        return Objects.equals(id, agent.getId()) ||
-            serialNumber.equals(agent.getSerialNumber());
+        return Objects.equals(id, agent.getId()) || serialNumber.equals(agent.getSerialNumber());
     }
 
     @Override
@@ -75,9 +74,10 @@ public class Agent {
         return Objects.hash(serialNumber);
     }
 
-    public static class AgentUnModifiable extends Agent{
+    public static class AgentUnModifiable extends Agent {
 
         final Agent agent;
+
         public AgentUnModifiable(Agent agent) {
             this.agent = agent;
         }
@@ -113,7 +113,7 @@ public class Agent {
         }
 
         @Override
-        public AgentStatus getStatus(){
+        public AgentStatus getStatus() {
             return agent.getStatus();
         }
 
@@ -128,7 +128,7 @@ public class Agent {
         }
 
         @Override
-        public void setSerialNumber(String  serialNumber) {
+        public void setSerialNumber(String serialNumber) {
             throw new UnsupportedOperationException();
         }
 

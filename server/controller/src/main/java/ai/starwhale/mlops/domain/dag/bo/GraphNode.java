@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.domain.dag.bo;
 
-import ai.starwhale.mlops.domain.dag.po.GraphEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity.NodeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,13 +49,13 @@ public class GraphNode {
 
     Long entityId;
 
-    public static final Long ID_FAKE=-1l;
+    public static final Long ID_FAKE = -1L;
 
-    public boolean empty(){
+    public boolean empty() {
         return null == this.id || ID_FAKE.equals(this.id);
     }
 
-    public static GraphNode emptyInstance(){
+    public static GraphNode emptyInstance() {
         return GraphNode.builder().id(ID_FAKE).build();
     }
 }

@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.api.protocol.datastore;
 
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class UpdateTableRequest {
+
     private String tableName;
     private TableSchemaDesc tableSchemaDesc;
     private List<RecordDesc> records;

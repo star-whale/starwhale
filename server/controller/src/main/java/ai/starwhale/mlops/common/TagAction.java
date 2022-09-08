@@ -22,20 +22,20 @@ import lombok.Data;
 @Data
 public class TagAction {
 
-    private ACTION action;
+    private Action action;
 
     private String tags;
 
-    public enum ACTION {
+    public enum Action {
         ADD, REMOVE, SET
     }
 
     public static TagAction of(String action, String tags) throws IllegalArgumentException {
-        if(StrUtil.isEmpty(action)) {
+        if (StrUtil.isEmpty(action)) {
             throw new IllegalArgumentException("action is empty");
         }
         TagAction obj = new TagAction();
-        obj.setAction(ACTION.valueOf(action.toUpperCase()));
+        obj.setAction(Action.valueOf(action.toUpperCase()));
         obj.setTags(tags);
         return obj;
     }

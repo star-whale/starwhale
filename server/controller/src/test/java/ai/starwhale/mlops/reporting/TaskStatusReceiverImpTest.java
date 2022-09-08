@@ -19,4 +19,6 @@ package ai.starwhale.mlops.reporting;
 /**
  * test for {@link SimpleTaskStatusReceiver}
  */
-public class TaskStatusReceiverImpTest {}
+public class TaskStatusReceiverImpTest {
+
+}

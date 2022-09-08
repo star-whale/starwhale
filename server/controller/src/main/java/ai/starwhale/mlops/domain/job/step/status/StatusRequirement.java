@@ -54,8 +54,8 @@ public class StatusRequirement<T> {
         MUST
     }
 
-    public boolean fit(Collection<T> statuses){
-        switch (requireType){
+    public boolean fit(Collection<T> statuses) {
+        switch (requireType) {
             case ANY:
             case MUST:
                 return statuses.stream().anyMatch(ts -> getRequiredStatuses().contains(ts));
@@ -69,9 +69,9 @@ public class StatusRequirement<T> {
         }
     }
 
-    public  static <T> boolean match(Collection<T> tasks, Set<StatusRequirement<T>> requirements) {
+    public static <T> boolean match(Collection<T> tasks, Set<StatusRequirement<T>> requirements) {
         Map<Boolean, List<StatusRequirement<T>>> requireTypeListMap = requirements.stream()
-            .collect(Collectors.groupingBy(tr -> tr.getRequireType() == RequireType.ANY));
+                .collect(Collectors.groupingBy(tr -> tr.getRequireType() == RequireType.ANY));
 
         List<StatusRequirement<T>> anyR = requireTypeListMap.get(true);
         if (null != anyR) {
@@ -105,7 +105,7 @@ public class StatusRequirement<T> {
         }
         StatusRequirement that = (StatusRequirement) o;
         return requiredStatuses == that.requiredStatuses
-            && requireType == that.requireType;
+                && requireType == that.requireType;
     }
 
     @Override

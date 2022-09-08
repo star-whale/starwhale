@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -62,30 +61,32 @@ public class WatchableTaskTest {
             }
         };
         ResultPath resultRootPath = new ResultPath("");
-        Task oTask = Task.builder()
-            .id(10994L)
-            .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.CREATED)
-            .resultRootPath(resultRootPath)
-            .taskRequest(taskRequest)
-            .step(Step.builder().build())
-            .build();
+        Task originalTask = Task.builder()
+                .id(10994L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.CREATED)
+                .resultRootPath(resultRootPath)
+                .taskRequest(taskRequest)
+                .step(Step.builder().build())
+                .build();
         TaskWatcherForSchedule taskWatcherForSchedule = mock(TaskWatcherForSchedule.class);
         TaskWatcherForPersist taskWatcherForPersist = mock(TaskWatcherForPersist.class);
         TaskWatcherForJobStatus taskWatcherForJobStatus = mock(TaskWatcherForJobStatus.class);
 
-        List<TaskStatusChangeWatcher> watchers = List.of(taskWatcherForSchedule,taskWatcherForJobStatus,taskWatcherForPersist);
-        WatchableTask watchableTask = new WatchableTask(oTask,watchers,new TaskStatusMachine());
+        List<TaskStatusChangeWatcher> watchers = List.of(taskWatcherForSchedule, taskWatcherForJobStatus,
+                taskWatcherForPersist);
+        WatchableTask watchableTask = new WatchableTask(originalTask, watchers, new TaskStatusMachine());
 
-        Method[] methods = oTask.getClass().getMethods();
+        Method[] methods = originalTask.getClass().getMethods();
         Method[] methodsWatchable = watchableTask.getClass().getMethods();
         Map<String, List<Method>> methodMap = Arrays.stream(methodsWatchable)
-            .collect(Collectors.groupingBy(Method::getName));
-        for(Method method:methods){
+                .collect(Collectors.groupingBy(Method::getName));
+        for (Method method : methods) {
             String methodName = method.getName();
-            if(methodName.startsWith("get") && !methodName.equals("getClass")){
+            if (methodName.startsWith("get") && !methodName.equals("getClass")) {
                 log.debug("now checking {}", methodName);
-                Assertions.assertTrue(method.invoke(oTask) == methodMap.get(methodName).get(0).invoke(watchableTask));
+                Assertions.assertEquals(method.invoke(originalTask),
+                        methodMap.get(methodName).get(0).invoke(watchableTask));
             }
         }
 
@@ -99,41 +100,40 @@ public class WatchableTaskTest {
         watchableTask.setTaskRequest(newTaskRequest);
         ResultPath newResultRootPath = new ResultPath();
         watchableTask.setResultRootPath(newResultRootPath);
-        Assertions.assertEquals(TaskStatus.READY,oTask.getStatus());
-        verify(taskWatcherForSchedule).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
-        verify(taskWatcherForPersist).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
-        verify(taskWatcherForJobStatus).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
-        Assertions.assertTrue(oTask.getResultRootPath() == newResultRootPath);
-        Assertions.assertTrue(oTask.getResultRootPath() != resultRootPath);
+        Assertions.assertEquals(TaskStatus.READY, originalTask.getStatus());
+        verify(taskWatcherForSchedule).onTaskStatusChange(watchableTask, TaskStatus.CREATED);
+        verify(taskWatcherForPersist).onTaskStatusChange(watchableTask, TaskStatus.CREATED);
+        verify(taskWatcherForJobStatus).onTaskStatusChange(watchableTask, TaskStatus.CREATED);
+        Assertions.assertTrue(originalTask.getResultRootPath() == newResultRootPath);
+        Assertions.assertTrue(originalTask.getResultRootPath() != resultRootPath);
 
-        Assertions.assertTrue(oTask.getTaskRequest() == newTaskRequest);
-        Assertions.assertTrue(oTask.getTaskRequest() != taskRequest);
+        Assertions.assertTrue(originalTask.getTaskRequest() == newTaskRequest);
+        Assertions.assertTrue(originalTask.getTaskRequest() != taskRequest);
 
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(taskWatcherForPersist.getClass()));
         watchableTask.updateStatus(TaskStatus.RUNNING);
-        verify(taskWatcherForSchedule,times(1)).onTaskStatusChange(watchableTask,TaskStatus.READY);
-        verify(taskWatcherForPersist,times(0)).onTaskStatusChange(watchableTask,TaskStatus.READY);
-        verify(taskWatcherForJobStatus,times(1)).onTaskStatusChange(watchableTask,TaskStatus.READY);
+        verify(taskWatcherForSchedule, times(1)).onTaskStatusChange(watchableTask, TaskStatus.READY);
+        verify(taskWatcherForPersist, times(0)).onTaskStatusChange(watchableTask, TaskStatus.READY);
+        verify(taskWatcherForJobStatus, times(1)).onTaskStatusChange(watchableTask, TaskStatus.READY);
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
 
-
     @Test
     public void testUnwrap() throws NoSuchFieldException, IllegalAccessException {
-        Task oTask = Task.builder().build();
-        WatchableTask unModifiableTask = new WatchableTask(oTask, Collections.emptyList(),null);
-        WatchableTask watchableTask1 = new WatchableTask(unModifiableTask,null,null);
-        WatchableTask watchableTask2 = new WatchableTask(oTask,null,null);
-        WatchableTask watchableTask3 = new WatchableTask(watchableTask2,null,null);
-        Assertions.assertTrue(watchableTask1.unwrap() == oTask);
-        Assertions.assertTrue(watchableTask2.unwrap() == oTask);
-        Assertions.assertTrue(watchableTask3.unwrap() == oTask);
-        Field declaredField = watchableTask1.getClass().getDeclaredField("oTask");
+        Task originalTask = Task.builder().build();
+        WatchableTask unModifiableTask = new WatchableTask(originalTask, Collections.emptyList(), null);
+        WatchableTask watchableTask1 = new WatchableTask(unModifiableTask, null, null);
+        WatchableTask watchableTask2 = new WatchableTask(originalTask, null, null);
+        WatchableTask watchableTask3 = new WatchableTask(watchableTask2, null, null);
+        Assertions.assertTrue(watchableTask1.unwrap() == originalTask);
+        Assertions.assertTrue(watchableTask2.unwrap() == originalTask);
+        Assertions.assertTrue(watchableTask3.unwrap() == originalTask);
+        Field declaredField = watchableTask1.getClass().getDeclaredField("originalTask");
         declaredField.setAccessible(true);
-        Assertions.assertTrue(declaredField.get(watchableTask1) == oTask);
-        Assertions.assertTrue(declaredField.get(watchableTask2) == oTask);
-        Assertions.assertTrue(declaredField.get(watchableTask3) == oTask);
+        Assertions.assertTrue(declaredField.get(watchableTask1) == originalTask);
+        Assertions.assertTrue(declaredField.get(watchableTask2) == originalTask);
+        Assertions.assertTrue(declaredField.get(watchableTask3) == originalTask);
     }
 
 }

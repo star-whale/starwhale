@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -32,15 +36,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class DataStoreTest {
+
     @TempDir
     private File rootDir;
 
@@ -56,13 +58,24 @@ public class DataStoreTest {
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
         this.objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
     }
 
     @AfterEach
     public void tearDown() {
         this.dataStore.terminate();
+    }
+
+    @Test
+    public void testList() throws IOException {
+        assertThat("empty", this.dataStore.list(""), empty());
+        this.dataStore.update("t1", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        this.dataStore.update("t2", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        this.dataStore.update("test", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        assertThat("all", this.dataStore.list("t"), containsInAnyOrder("t1", "t2", "test"));
+        assertThat("partial", this.dataStore.list("te"), containsInAnyOrder("test"));
+        assertThat("none", this.dataStore.list("t3"), empty());
     }
 
     @Test
@@ -115,7 +128,7 @@ public class DataStoreTest {
                 is(List.of(Map.of("k", "3", "x", "2"))));
 
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
@@ -228,7 +241,7 @@ public class DataStoreTest {
                         Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
         // query non exist table
         final String tableNonExist = "tableNonExist";
-        assertThrows(SWValidationException.class, () -> this.dataStore.query(DataStoreQueryRequest.builder()
+        assertThrows(SwValidationException.class, () -> this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName(tableNonExist).build()));
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName(tableNonExist).ignoreNonExistingTable(true).build());
@@ -271,7 +284,6 @@ public class DataStoreTest {
                         }},
                         Map.of("a", "2"))));
         assertThat("test", recordList.getLastKey(), is("3"));
-
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -373,7 +385,7 @@ public class DataStoreTest {
                         Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
                         Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
 
-        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+        assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build()))
                 .limit(1001)
                 .build()));
@@ -526,11 +538,11 @@ public class DataStoreTest {
                         Map.of("k", "4", "a", "11"))));
         assertThat("alias", recordList.getLastKey(), is("4"));
 
-        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+        assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
                         DataStoreScanRequest.TableInfo.builder().tableName("t4").build()))
                 .build()));
-        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+        assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
                         DataStoreScanRequest.TableInfo.builder()
                                 .tableName("t2")
@@ -542,9 +554,9 @@ public class DataStoreTest {
         final String tableNonExist = "tableNonExist";
         var builder = DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
-                    DataStoreScanRequest.TableInfo.builder().tableName(tableNonExist).build()))
+                        DataStoreScanRequest.TableInfo.builder().tableName(tableNonExist).build()))
                 .limit(1);
-        assertThrows(SWValidationException.class, () -> this.dataStore.scan(builder.build()));
+        assertThrows(SwValidationException.class, () -> this.dataStore.scan(builder.build()));
 
         recordList = this.dataStore.scan(builder.ignoreNonExistingTable(true).build());
         assertThat("result of non exist table",
@@ -558,9 +570,11 @@ public class DataStoreTest {
     @Test
     public void testMultiThreads() throws Throwable {
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000, 3);
         this.dataStore = new DataStore(this.walManager);
+
         abstract class TestThread extends Thread {
+
             protected final Random random = new Random();
             protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
             private Throwable throwable;
@@ -582,6 +596,7 @@ public class DataStoreTest {
                 }
             }
         }
+
         var threads = new ArrayList<TestThread>();
         for (int i = 0; i < 20; ++i) {
             // update

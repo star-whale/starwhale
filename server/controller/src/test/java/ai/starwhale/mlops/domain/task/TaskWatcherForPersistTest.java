@@ -21,8 +21,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -41,57 +41,64 @@ import org.junit.jupiter.api.Test;
 public class TaskWatcherForPersistTest {
 
     @Test
-    public void testReady2Running(){
+    public void testReady2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
+                localDateTimeConvertor);
         Task task = Task.builder()
-            .id(1L)
-            .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.RUNNING)
-            .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                Clazz.CPU).build()).build()).build())
-            .build();
-        taskWatcherForPersist.onTaskStatusChange(task,TaskStatus.READY);
-        verify(taskMapper).updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper).updateTaskStatus(List.of(task.getId()),task.getStatus());
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.RUNNING)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
+                        Clazz.CPU).build()).build()).build())
+                .build();
+        taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.READY);
+        verify(taskMapper).updateTaskStartedTime(task.getId(),
+                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
     @Test
-    public void testRunning2Success(){
+    public void testRunning2Success() {
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
+                localDateTimeConvertor);
         Task task = Task.builder()
-            .id(1L)
-            .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.SUCCESS)
-            .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                Clazz.CPU).build()).build()).build())
-            .build();
-        taskWatcherForPersist.onTaskStatusChange(task,TaskStatus.RUNNING);
-        verify(taskMapper).updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper).updateTaskStatus(List.of(task.getId()),task.getStatus());
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.SUCCESS)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
+                        Clazz.CPU).build()).build()).build())
+                .build();
+        taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.RUNNING);
+        verify(taskMapper).updateTaskFinishedTime(task.getId(),
+                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
 
     }
 
     @Test
-    public void testRunning2Running(){
+    public void testRunning2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
+                localDateTimeConvertor);
         Task task = Task.builder()
-            .id(1L)
-            .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.RUNNING)
-            .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                Clazz.CPU).build()).build()).build())
-            .build();
-        task = new WatchableTask(task,List.of(taskWatcherForPersist),new TaskStatusMachine());
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.RUNNING)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
+                        Clazz.CPU).build()).build()).build())
+                .build();
+        task = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
         task.updateStatus(TaskStatus.RUNNING);
-        verify(taskMapper,times(0)).updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper,times(0)).updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper,times(0)).updateTaskStatus(List.of(task.getId()),task.getStatus());
+        verify(taskMapper, times(0)).updateTaskStartedTime(task.getId(),
+                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper, times(0)).updateTaskFinishedTime(task.getId(),
+                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper, times(0)).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
 }

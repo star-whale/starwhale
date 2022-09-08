@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter.EMPTY_YAML;
+import static ai.starwhale.mlops.domain.swds.upload.SwdsVersionWithMetaConverter.EMPTY_YAML;
 
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -25,23 +25,23 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.swds.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.swds.index.datastore.IndexWriter;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetEntity;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.bo.Manifest;
-import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
+import ai.starwhale.mlops.domain.swds.upload.bo.SwdsVersionWithMeta;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SWAuthException;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwAuthException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,9 +71,9 @@ public class SwdsUploader {
 
     final HotSwdsHolder hotSwdsHolder;
 
-    final SWDatasetMapper swdsMapper;
+    final SwDatasetMapper swdsMapper;
 
-    final SWDatasetVersionMapper swdsVersionMapper;
+    final SwDatasetVersionMapper swdsVersionMapper;
 
     final StoragePathCoordinator storagePathCoordinator;
 
@@ -84,7 +84,7 @@ public class SwdsUploader {
     /**
      * prefix + / + fileName
      */
-    static final String FORMATTER_STORAGE_PATH="%s/%s";
+    static final String FORMATTER_STORAGE_PATH = "%s/%s";
 
     final ObjectMapper yamlMapper;
 
@@ -95,16 +95,16 @@ public class SwdsUploader {
 
     final IndexWriter indexWriter;
 
-    static final String INDEX_FILE_NAME="_meta.jsonl";
-    static final String AUTH_FILE_NAME=".auth_env";
+    static final String INDEX_FILE_NAME = "_meta.jsonl";
+    static final String AUTH_FILE_NAME = ".auth_env";
 
-    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
-        SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
-        StorageAccessService storageAccessService, UserService userService,
-        @Qualifier("yamlMapper") ObjectMapper yamlMapper,
-        HotJobHolder jobHolder,
-        ProjectManager projectManager, DataStoreTableNameHelper dataStoreTableNameHelper,
-        IndexWriter indexWriter) {
+    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SwDatasetMapper swdsMapper,
+            SwDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
+            StorageAccessService storageAccessService, UserService userService,
+            @Qualifier("yamlMapper") ObjectMapper yamlMapper,
+            HotJobHolder jobHolder,
+            ProjectManager projectManager, DataStoreTableNameHelper dataStoreTableNameHelper,
+            IndexWriter indexWriter) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
         this.swdsVersionMapper = swdsVersionMapper;
@@ -118,160 +118,169 @@ public class SwdsUploader {
         this.indexWriter = indexWriter;
     }
 
-    public void cancel(String uploadId){
-        final SWDSVersionWithMeta swDatasetVersionEntityWithMeta = getSwdsVersion(uploadId);
+    public void cancel(String uploadId) {
+        final SwdsVersionWithMeta swDatasetVersionEntityWithMeta = getSwdsVersion(uploadId);
         swdsVersionMapper.deleteById(swDatasetVersionEntityWithMeta.getSwDatasetVersionEntity().getId());
         hotSwdsHolder.cancel(uploadId);
         clearSwdsStorageData(swDatasetVersionEntityWithMeta.getSwDatasetVersionEntity());
 
     }
 
-    private void clearSwdsStorageData(SWDatasetVersionEntity swDatasetVersionEntity) {
+    private void clearSwdsStorageData(SwDatasetVersionEntity swDatasetVersionEntity) {
         final String storagePath = swDatasetVersionEntity.getStoragePath();
         try {
             Stream<String> files = storageAccessService.list(storagePath);
-            files.parallel().forEach(file-> {
+            files.parallel().forEach(file -> {
                 try {
                     storageAccessService.delete(file);
                 } catch (IOException e) {
-                    log.error("clear file failed {}",file,e);
+                    log.error("clear file failed {}", file, e);
                 }
             });
         } catch (IOException e) {
-            log.error("delete storage objects failed for {}", swDatasetVersionEntity.getVersionName(),e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("delete storage objects failed for {}", swDatasetVersionEntity.getVersionName(), e);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public void uploadBody(String uploadId, MultipartFile file,String uri){
-        final SWDSVersionWithMeta swDatasetVersionWithMeta = getSwdsVersion(uploadId);
+    public void uploadBody(String uploadId, MultipartFile file, String uri) {
+        final SwdsVersionWithMeta swDatasetVersionWithMeta = getSwdsVersion(uploadId);
         String filename = file.getOriginalFilename();
-        try (InputStream inputStream = file.getInputStream()){
-            if(INDEX_FILE_NAME.equals(filename)){
-                try(InputStream anotherInputStream = file.getInputStream()){
-                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),anotherInputStream);
+        try (InputStream inputStream = file.getInputStream()) {
+            if (INDEX_FILE_NAME.equals(filename)) {
+                try (InputStream anotherInputStream = file.getInputStream()) {
+                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),
+                            anotherInputStream);
                 }
             }
-            if(AUTH_FILE_NAME.equals(filename)){
-                try(InputStream anotherInputStream = file.getInputStream()){
+            if (AUTH_FILE_NAME.equals(filename)) {
+                try (InputStream anotherInputStream = file.getInputStream()) {
                     swdsVersionMapper.updateStorageAuths(swDatasetVersionWithMeta.getSwDatasetVersionEntity()
-                        .getId(), new String(anotherInputStream.readAllBytes()));
+                            .getId(), new String(anotherInputStream.readAllBytes()));
                 }
             }
-            final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
-                StringUtils.hasText(uri)?uri:filename);
-            storageAccessService.put(storagePath,inputStream, file.getSize());
+            final String storagePath = String.format(FORMATTER_STORAGE_PATH,
+                    swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
+                    StringUtils.hasText(uri) ? uri : filename);
+            storageAccessService.put(storagePath, inputStream, file.getSize());
         } catch (IOException e) {
-            log.error("read swds failed {}", filename,e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("read swds failed {}", filename, e);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.NETWORK),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
 
     private void uploadSwdsFileToStorage(String filename, byte[] fileBytes,
-        SWDatasetVersionEntity swDatasetVersionEntity) {
+            SwDatasetVersionEntity swDatasetVersionEntity) {
         final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionEntity.getStoragePath(),
-            filename);
-        try{
-            storageAccessService.put(storagePath,fileBytes);
+                filename);
+        try {
+            storageAccessService.put(storagePath, fileBytes);
         } catch (IOException e) {
-            log.error("upload swds to failed {}", filename,e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("upload swds to failed {}", filename, e);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    static final Pattern PATTERN_SIGNATURE=Pattern.compile("\\d+:blake2b:(.*)");
-    private boolean fileUploaded(SWDSVersionWithMeta swdsVersionWithMeta, String filename,
-        String digest) {
+    static final Pattern PATTERN_SIGNATURE = Pattern.compile("\\d+:blake2b:(.*)");
+
+    private boolean fileUploaded(SwdsVersionWithMeta swdsVersionWithMeta, String filename,
+            String digest) {
         Map<String, String> uploadedFileBlake2bs = swdsVersionWithMeta.getVersionMeta()
-            .getUploadedFileBlake2bs();
+                .getUploadedFileBlake2bs();
         return digest.equals(uploadedFileBlake2bs.get(filename));
     }
 
-    SWDSVersionWithMeta getSwdsVersion(String uploadId) {
-        final Optional<SWDSVersionWithMeta> swDatasetVersionEntityOpt = hotSwdsHolder.of(uploadId);
+    SwdsVersionWithMeta getSwdsVersion(String uploadId) {
+        final Optional<SwdsVersionWithMeta> swDatasetVersionEntityOpt = hotSwdsHolder.of(uploadId);
         return swDatasetVersionEntityOpt
-            .orElseThrow(
-                () -> new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("uploadId invalid"),
-                    HttpStatus.BAD_REQUEST));
+                .orElseThrow(
+                        () -> new StarwhaleApiException(
+                                new SwValidationException(ValidSubject.SWDS).tip("uploadId invalid"),
+                                HttpStatus.BAD_REQUEST));
     }
 
-    void uploadManifest(SWDatasetVersionEntity swDatasetVersionEntity,String fileName, byte[] bytes){
+    void uploadManifest(SwDatasetVersionEntity swDatasetVersionEntity, String fileName, byte[] bytes) {
         uploadSwdsFileToStorage(fileName, bytes, swDatasetVersionEntity);
     }
 
-    void reUploadManifest(SWDatasetVersionEntity swDatasetVersionEntity,String fileName, byte[] bytes){
-        final String storagePath = String.format(FORMATTER_STORAGE_PATH,swDatasetVersionEntity.getStoragePath(),fileName);
-        try{
+    void reUploadManifest(SwDatasetVersionEntity swDatasetVersionEntity, String fileName, byte[] bytes) {
+        final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionEntity.getStoragePath(),
+                fileName);
+        try {
             storageAccessService.delete(storagePath);
         } catch (IOException e) {
-            log.warn("swds delete to failed {}",fileName,e);
+            log.warn("swds delete to failed {}", fileName, e);
         }
-        uploadManifest(swDatasetVersionEntity,fileName,bytes);
+        uploadManifest(swDatasetVersionEntity, fileName, bytes);
     }
 
 
-
     @Transactional
-    public String create(String yamlContent,String fileName, UploadRequest uploadRequest) {
+    public String create(String yamlContent, String fileName, UploadRequest uploadRequest) {
         Manifest manifest;
         try {
             manifest = yamlMapper.readValue(yamlContent, Manifest.class);
             manifest.setRawYaml(yamlContent);
         } catch (JsonProcessingException e) {
-            log.error("read swds yaml failed {}",fileName,e);
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("manifest parsing error"+e.getMessage()),
-                HttpStatus.BAD_REQUEST);
+            log.error("read swds yaml failed {}", fileName, e);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.SWDS).tip("manifest parsing error" + e.getMessage()),
+                    HttpStatus.BAD_REQUEST);
         }
-        if(null == manifest.getName() || null == manifest.getVersion()){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("name or version is required in manifest "),
-                HttpStatus.BAD_REQUEST);
+        if (null == manifest.getName() || null == manifest.getVersion()) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.SWDS).tip("name or version is required in manifest "),
+                    HttpStatus.BAD_REQUEST);
         }
         ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
         Long projectId = projectEntity.getId();
-        SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName(), projectId);
-        if(null == swDatasetEntity){
+        SwDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName(), projectId);
+        if (null == swDatasetEntity) {
             //create
-            swDatasetEntity = from(manifest,uploadRequest.getProject());
+            swDatasetEntity = from(manifest, uploadRequest.getProject());
             swdsMapper.addDataset(swDatasetEntity);
         }
-        SWDatasetVersionEntity swDatasetVersionEntity = swdsVersionMapper
-            .findByDSIdAndVersionNameForUpdate(swDatasetEntity.getId(), manifest.getVersion());
-        if(null == swDatasetVersionEntity){
+        SwDatasetVersionEntity swDatasetVersionEntity = swdsVersionMapper
+                .findByDsIdAndVersionNameForUpdate(swDatasetEntity.getId(), manifest.getVersion());
+        if (null == swDatasetVersionEntity) {
             //create
-            swDatasetVersionEntity = from(projectEntity.getProjectName(),swDatasetEntity,manifest);
+            swDatasetVersionEntity = from(projectEntity.getProjectName(), swDatasetEntity, manifest);
             swdsVersionMapper.addNewVersion(swDatasetVersionEntity);
             swdsVersionMapper.revertTo(swDatasetVersionEntity.getDatasetId(), swDatasetVersionEntity.getId());
-            uploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
-        }else{
+            uploadManifest(swDatasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
+        } else {
             //swds version create dup
-            if(swDatasetVersionEntity.getStatus().equals(SWDatasetVersionEntity.STATUS_AVAILABLE)){
-                if(uploadRequest.force()){
+            if (swDatasetVersionEntity.getStatus().equals(SwDatasetVersionEntity.STATUS_AVAILABLE)) {
+                if (uploadRequest.force()) {
                     Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
-                        .parallelStream().map(Job::getSwDataSets)
-                        .flatMap(Collection::stream)
-                        .map(SWDataSet::getId)
-                        .collect(Collectors.toSet());
-                    if(runningDataSets.contains(swDatasetVersionEntity.getId())){
-                        throw new SWValidationException(ValidSubject.SWDS).tip(" swds version is being hired by running job, force push is not allowed now");
-                    }else {
-                        swdsVersionMapper.updateStatus(swDatasetVersionEntity.getId(),SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
+                            .parallelStream().map(Job::getSwDataSets)
+                            .flatMap(Collection::stream)
+                            .map(SwDataSet::getId)
+                            .collect(Collectors.toSet());
+                    if (runningDataSets.contains(swDatasetVersionEntity.getId())) {
+                        throw new SwValidationException(ValidSubject.SWDS).tip(
+                                " swds version is being hired by running job, force push is not allowed now");
+                    } else {
+                        swdsVersionMapper.updateStatus(swDatasetVersionEntity.getId(),
+                                SwDatasetVersionEntity.STATUS_UN_AVAILABLE);
                     }
-                }else {
-                    throw new SWValidationException(ValidSubject.SWDS).tip(" same swds version can't be uploaded twice");
+                } else {
+                    throw new SwValidationException(ValidSubject.SWDS).tip(
+                            " same swds version can't be uploaded twice");
                 }
 
             }
-            if(!yamlContent.equals(swDatasetVersionEntity.getVersionMeta())){
+            if (!yamlContent.equals(swDatasetVersionEntity.getVersionMeta())) {
                 swDatasetVersionEntity.setVersionMeta(yamlContent);
                 //if manifest(signature) change, all files should be re-uploaded
                 swDatasetVersionEntity.setFilesUploaded("");
                 clearSwdsStorageData(swDatasetVersionEntity);
                 swdsVersionMapper.updateFilesUploaded(swDatasetVersionEntity);
-                reUploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
+                reUploadManifest(swDatasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
             }
         }
         hotSwdsHolder.manifest(swDatasetVersionEntity);
@@ -279,73 +288,79 @@ public class SwdsUploader {
     }
 
 
-    private SWDatasetVersionEntity from(String projectName,SWDatasetEntity swDatasetEntity, Manifest manifest) {
-        return SWDatasetVersionEntity.builder().datasetId(swDatasetEntity.getId())
-            .ownerId(getOwner())
-            .storagePath(storagePathCoordinator.generateSwdsPath(projectName,swDatasetEntity.getDatasetName(),manifest.getVersion()))
-            .versionMeta(manifest.getRawYaml())
-            .versionName(manifest.getVersion())
-            .size(manifest.getDatasetSummary().getRows())
-            .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName,manifest.getName(),manifest.getVersion()))
-            .filesUploaded(EMPTY_YAML)
-            .build();
+    private SwDatasetVersionEntity from(String projectName, SwDatasetEntity swDatasetEntity, Manifest manifest) {
+        return SwDatasetVersionEntity.builder().datasetId(swDatasetEntity.getId())
+                .ownerId(getOwner())
+                .storagePath(storagePathCoordinator.generateSwdsPath(projectName, swDatasetEntity.getDatasetName(),
+                        manifest.getVersion()))
+                .versionMeta(manifest.getRawYaml())
+                .versionName(manifest.getVersion())
+                .size(manifest.getDatasetSummary().getRows())
+                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName, manifest.getName(),
+                        manifest.getVersion()))
+                .filesUploaded(EMPTY_YAML)
+                .build();
     }
 
-    private SWDatasetEntity from(Manifest manifest,String project) {
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project, userService.currentUserDetail().getIdTableKey());
-        return SWDatasetEntity.builder()
-            .datasetName(manifest.getName())
-            .isDeleted(0)
-            .ownerId(getOwner())
-            .projectId(projectEntity == null? null:projectEntity.getId())
-            .build();
+    private SwDatasetEntity from(Manifest manifest, String project) {
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project,
+                userService.currentUserDetail().getIdTableKey());
+        return SwDatasetEntity.builder()
+                .datasetName(manifest.getName())
+                .isDeleted(0)
+                .ownerId(getOwner())
+                .projectId(projectEntity == null ? null : projectEntity.getId())
+                .build();
     }
 
     private Long getOwner() {
         User currentUserDetail = userService.currentUserDetail();
-        if(null == currentUserDetail){
-            throw new StarWhaleApiException(new SWAuthException(SWAuthException.AuthType.SWDS_UPLOAD),HttpStatus.FORBIDDEN);
+        if (null == currentUserDetail) {
+            throw new StarwhaleApiException(new SwAuthException(SwAuthException.AuthType.SWDS_UPLOAD),
+                    HttpStatus.FORBIDDEN);
         }
         return currentUserDetail.getIdTableKey();
     }
 
 
     public void end(String uploadId) {
-        final SWDSVersionWithMeta swdsVersionWithMeta = getSwdsVersion(uploadId);
-        swdsVersionMapper.updateStatus(swdsVersionWithMeta.getSwDatasetVersionEntity().getId(),SWDatasetVersionEntity.STATUS_AVAILABLE);
+        final SwdsVersionWithMeta swdsVersionWithMeta = getSwdsVersion(uploadId);
+        swdsVersionMapper.updateStatus(swdsVersionWithMeta.getSwDatasetVersionEntity().getId(),
+                SwDatasetVersionEntity.STATUS_AVAILABLE);
         hotSwdsHolder.end(uploadId);
     }
 
-    final static String SWDS_MANIFEST="_manifest.yaml";
+    static final String SWDS_MANIFEST = "_manifest.yaml";
 
     public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
         Long projectId = projectManager.getProject(project).getId();
-        SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
-        if(null == datasetEntity){
-            throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
+        SwDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
+        if (null == datasetEntity) {
+            throw new SwValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
         }
-        SWDatasetVersionEntity datasetVersionEntity = swdsVersionMapper.findByDSIdAndVersionName(
-            datasetEntity.getId(), version);
-        if(null == datasetVersionEntity){
-            throw new SWValidationException(ValidSubject.SWDS).tip("dataset version doesn't exists");
+        SwDatasetVersionEntity datasetVersionEntity = swdsVersionMapper.findByDsIdAndVersionName(
+                datasetEntity.getId(), version);
+        if (null == datasetVersionEntity) {
+            throw new SwValidationException(ValidSubject.SWDS).tip("dataset version doesn't exists");
         }
-        if(!StringUtils.hasText(partName)){
+        if (!StringUtils.hasText(partName)) {
             partName = SWDS_MANIFEST;
         }
-        try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim());
-            ServletOutputStream outputStream = httpResponse.getOutputStream()){
+        try (InputStream inputStream = storageAccessService.get(
+                datasetVersionEntity.getStoragePath() + "/" + partName.trim());
+                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             long length = inputStream.transferTo(outputStream);
-            httpResponse.addHeader("Content-Disposition","attachment; filename=\""+fileNameFromUri(partName)+"\"");
+            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + fileNameFromUri(partName) + "\"");
             httpResponse.addHeader("Content-Length", String.valueOf(length));
             outputStream.flush();
         } catch (IOException e) {
-            log.error("pull file from storage failed",e);
-            throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
+            log.error("pull file from storage failed", e);
+            throw new SwProcessException(ErrorType.STORAGE).tip("pull file from storage failed: " + e.getMessage());
         }
     }
 
-    String fileNameFromUri(String uri){
+    String fileNameFromUri(String uri) {
         String[] split = uri.split("/");
-        return split[split.length-1];
+        return split[split.length - 1];
     }
 }

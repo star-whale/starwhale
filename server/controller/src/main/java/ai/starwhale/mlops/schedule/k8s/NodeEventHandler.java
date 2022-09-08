@@ -26,7 +26,6 @@ import io.kubernetes.client.openapi.models.V1NodeSpec;
 import io.kubernetes.client.openapi.models.V1NodeStatus;
 import java.math.BigDecimal;
 import java.util.Map;
-
 import org.springframework.stereotype.Service;
 
 @Service
@@ -38,7 +37,8 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     final K8sResourcePoolConverter resourcePoolConverter;
 
-    public NodeEventHandler(AgentCache agentCache, ResourcePoolCache resourcePoolCache, K8sResourcePoolConverter resourcePoolConverter) {
+    public NodeEventHandler(AgentCache agentCache, ResourcePoolCache resourcePoolCache,
+            K8sResourcePoolConverter resourcePoolConverter) {
         this.agentCache = agentCache;
         this.resourcePoolCache = resourcePoolCache;
         this.resourcePoolConverter = resourcePoolConverter;
@@ -46,7 +46,7 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     @Override
     public void onAdd(V1Node obj) {
-        agentCache.nodeReport(k8sNodeToSWNode(obj));
+        agentCache.nodeReport(k8sNodeToSwNode(obj));
         if (obj.getMetadata() != null) {
             labelReport(obj.getMetadata().getLabels());
         }
@@ -54,7 +54,7 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     @Override
     public void onUpdate(V1Node oldObj, V1Node newObj) {
-        agentCache.nodeReport(k8sNodeToSWNode(newObj));
+        agentCache.nodeReport(k8sNodeToSwNode(newObj));
         if (newObj.getMetadata() != null) {
             labelReport(newObj.getMetadata().getLabels());
         }
@@ -62,29 +62,30 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     @Override
     public void onDelete(V1Node obj, boolean deletedFinalStateUnknown) {
-        Node node = k8sNodeToSWNode(obj);
+        Node node = k8sNodeToSwNode(obj);
         agentCache.removeOfflineAgent(node.getSerialNumber());
     }
 
-    Node k8sNodeToSWNode(V1Node k8sNode){
-        Node n=new Node();
+    Node k8sNodeToSwNode(V1Node k8sNode) {
+        Node n = new Node();
         V1NodeStatus status = k8sNode.getStatus();
         V1NodeSpec spec = k8sNode.getSpec();
         Boolean unschedulable = spec.getUnschedulable();
-        unschedulable = unschedulable == null?false:true;
-//        n.setAgentVersion();
-//        status.getCapacity();
-//        n.setDevices(); status.capacity.get(cpu)
-        n.setMemorySizeGB(status.getCapacity().get("memory").getNumber().divide(BigDecimal.valueOf(1024*1024l)).floatValue());
+        unschedulable = unschedulable == null ? false : true;
+        //        n.setAgentVersion();
+        //        status.getCapacity();
+        //        n.setDevices(); status.capacity.get(cpu)
+        n.setMemorySizeGb(
+                status.getCapacity().get("memory").getNumber().divide(BigDecimal.valueOf(1024 * 1024L)).floatValue());
         n.setIpAddr(status.getAddresses().get(0).getAddress());
         n.setSerialNumber(status.getNodeInfo().getSystemUUID());
-        n.setStatus(unschedulable? AgentStatus.OFFLINE:AgentStatus.ONLINE);
-        n.setAgentVersion("KUBELET:"+status.getNodeInfo().getKubeletVersion());
+        n.setStatus(unschedulable ? AgentStatus.OFFLINE : AgentStatus.ONLINE);
+        n.setAgentVersion("KUBELET:" + status.getNodeInfo().getKubeletVersion());
         return n;
     }
 
     private void labelReport(Map<String, String> labels) {
-        var pools  = resourcePoolConverter.toResourcePools(labels);
+        var pools = resourcePoolConverter.toResourcePools(labels);
         resourcePoolCache.labelReport(pools);
     }
 }

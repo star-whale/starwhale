@@ -46,15 +46,18 @@ public class TestJobStatusCalculator {
     @Test
     public void testCancelling() {
         JobStatus cancelling = JobStatus.CANCELLING;
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,CANCELLING)));
+        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
 
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,TO_CANCEL,CANCELLING)));
+        Assertions.assertEquals(cancelling,
+                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING)));
 
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,TO_CANCEL)));
+        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL)));
 
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,TO_CANCEL,CANCELLING,CANCELED)));
+        Assertions.assertEquals(cancelling,
+                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING, CANCELED)));
 
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,CANCELLING,CANCELED)));
+        Assertions.assertEquals(cancelling,
+                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
 
 
     }
@@ -62,51 +65,51 @@ public class TestJobStatusCalculator {
     @Test
     public void testCancelled() {
         JobStatus canceled = JobStatus.CANCELED;
-        Assertions.assertEquals(canceled, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,CANCELED)));
+        Assertions.assertEquals(canceled, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELED)));
 
-        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of(UNKNOWN,CANCELED)));
+        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of(UNKNOWN, CANCELED)));
     }
 
     @Test
     public void testRunning() {
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(CREATED,RUNNING)));
+                Set.of(CREATED, RUNNING)));
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(READY,RUNNING)));
+                Set.of(READY, RUNNING)));
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(READY,SUCCESS)));
+                Set.of(READY, SUCCESS)));
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(CREATED,SUCCESS)));
+                Set.of(CREATED, SUCCESS)));
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(READY,RUNNING)));
+                Set.of(READY, RUNNING)));
 
         Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
-            Set.of(SUCCESS,RUNNING)));
+                Set.of(SUCCESS, RUNNING)));
 
     }
 
     @Test
     public void testFail() {
         Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
-            Set.of(FAIL,SUCCESS)));
+                Set.of(FAIL, SUCCESS)));
         Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
-            Set.of(FAIL,RUNNING)));
+                Set.of(FAIL, RUNNING)));
         Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
-            Set.of(FAIL,CANCELLING)));
+                Set.of(FAIL, CANCELLING)));
         Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
-            Set.of(FAIL,CREATED,SUCCESS)));
+                Set.of(FAIL, CREATED, SUCCESS)));
 
     }
 
     @Test
-    public void  testEmpty(){
+    public void testEmpty() {
         Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(
-            Set.of()));
+                Set.of()));
     }
 
 

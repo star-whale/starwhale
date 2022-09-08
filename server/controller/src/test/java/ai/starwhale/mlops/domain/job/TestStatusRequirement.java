@@ -38,116 +38,116 @@ import org.junit.jupiter.api.Test;
 public class TestStatusRequirement {
 
     @Test
-    public void testAny(){
+    public void testAny() {
         StatusRequirement trAny = new StatusRequirement(
-            Set.of(FAIL), RequireType.ANY);
-        Assertions.assertTrue(trAny.fit(List.of(SUCCESS,SUCCESS,SUCCESS,FAIL)));
-        Assertions.assertTrue(!trAny.fit(List.of(SUCCESS,SUCCESS,RUNNING)));
-        Assertions.assertTrue(trAny.fit(List.of(SUCCESS,SUCCESS,SUCCESS,SUCCESS,FAIL)));
+                Set.of(FAIL), RequireType.ANY);
+        Assertions.assertTrue(trAny.fit(List.of(SUCCESS, SUCCESS, SUCCESS, FAIL)));
+        Assertions.assertTrue(!trAny.fit(List.of(SUCCESS, SUCCESS, RUNNING)));
+        Assertions.assertTrue(trAny.fit(List.of(SUCCESS, SUCCESS, SUCCESS, SUCCESS, FAIL)));
     }
 
     @Test
-    public void testAll(){
+    public void testAll() {
         StatusRequirement tr = new StatusRequirement(Set.of(SUCCESS), RequireType.ALL);
+        Assertions.assertTrue(tr.fit(List.of(SUCCESS, SUCCESS, SUCCESS)));
+        Assertions.assertTrue(!tr.fit(List.of(SUCCESS, SUCCESS, RUNNING)));
+        Assertions.assertTrue(!tr.fit(List.of(SUCCESS, SUCCESS, SUCCESS, SUCCESS, RUNNING)));
+
+        tr = new StatusRequirement(Set.of(SUCCESS), RequireType.ALL);
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, SUCCESS)));
+
         StatusRequirement tr2 = new StatusRequirement(Set.of(CREATED), RequireType.ALL);
-        Assertions.assertTrue(tr.fit(List.of(SUCCESS,SUCCESS,SUCCESS)));
-        Assertions.assertTrue(!tr.fit(List.of(SUCCESS,SUCCESS,RUNNING)));
-        Assertions.assertTrue(!tr.fit(List.of(SUCCESS,SUCCESS,SUCCESS,SUCCESS,RUNNING)));
-
-        tr = new StatusRequirement(Set.of(SUCCESS),  RequireType.ALL);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,SUCCESS)));
-
-        Assertions.assertTrue(tr2.fit(List.of(CREATED,CREATED,CREATED)));
-        Assertions.assertTrue(!tr2.fit(List.of(CREATED,CREATED,CREATED,CREATED,RUNNING)));
-        Assertions.assertTrue(!tr2.fit(List.of(CREATED,CREATED,CREATED,CREATED,RUNNING)));
+        Assertions.assertTrue(tr2.fit(List.of(CREATED, CREATED, CREATED)));
+        Assertions.assertTrue(!tr2.fit(List.of(CREATED, CREATED, CREATED, CREATED, RUNNING)));
+        Assertions.assertTrue(!tr2.fit(List.of(CREATED, CREATED, CREATED, CREATED, RUNNING)));
     }
 
     @Test
-    public void testMust(){
+    public void testMust() {
         StatusRequirement tr = new StatusRequirement(
-            Set.of(PAUSED), RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,CANCELLING,SUCCESS,FAIL)));
+                Set.of(PAUSED), RequireType.MUST);
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, CANCELLING, SUCCESS, FAIL)));
 
         tr = new StatusRequirement(Set.of(CANCELED), RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,CANCELED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,CANCELED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,CANCELLING,SUCCESS,FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, CANCELED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, CANCELED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, CANCELLING, SUCCESS, FAIL)));
 
         tr = new StatusRequirement(Set.of(CANCELLING), RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,SUCCESS,FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, SUCCESS, FAIL)));
 
         tr = new StatusRequirement(Set.of(SUCCESS), RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,SUCCESS)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,SUCCESS)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, SUCCESS)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, SUCCESS)));
 
-        tr = new StatusRequirement(Set.of(CREATED, ASSIGNING, PREPARING, RUNNING),RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(CREATED,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(ASSIGNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(PREPARING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
+        tr = new StatusRequirement(Set.of(CREATED, ASSIGNING, PREPARING, RUNNING), RequireType.MUST);
+        Assertions.assertTrue(tr.fit(List.of(CREATED, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(ASSIGNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(PREPARING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
 
         tr = new StatusRequirement(Set.of(ASSIGNING, PREPARING, RUNNING), RequireType.MUST);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,PREPARING)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,ASSIGNING)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, PREPARING)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, ASSIGNING)));
     }
 
     @Test
-    public void testHaveNo(){
+    public void testHaveNo() {
         StatusRequirement tr = new StatusRequirement(Set.of(FAIL), RequireType.HAVE_NO);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(
-            Set.of(TaskStatus.PAUSED, TO_CANCEL, TaskStatus.CANCELLING,
-                TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
+                Set.of(TaskStatus.PAUSED, TO_CANCEL, TaskStatus.CANCELLING,
+                        TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO);
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.values()), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.SUCCESS), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,RUNNING)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(
-            Set.of(TaskStatus.FAIL, TO_CANCEL, TaskStatus.CANCELLING,
-                TaskStatus.CANCELED),  RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,TO_CANCEL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,CANCELED)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,CANCELED)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,CANCELED)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,PREPARING,SUCCESS,CREATED)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,PREPARING,SUCCESS,CREATED)));
+                Set.of(TaskStatus.FAIL, TO_CANCEL, TaskStatus.CANCELLING,
+                        TaskStatus.CANCELED), RequireType.HAVE_NO);
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, TO_CANCEL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, PREPARING, SUCCESS, CREATED)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, PREPARING, SUCCESS, CREATED)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.FAIL), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,FAIL)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,PAUSED,CANCELLING,SUCCESS,SUCCESS)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, SUCCESS)));
 
         tr = new StatusRequirement(
-            Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING, TO_CANCEL,
-                TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
-                TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO);
-        Assertions.assertTrue(tr.fit(List.of(CANCELED,SUCCESS,SUCCESS)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,SUCCESS,PREPARING)));
+                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING, TO_CANCEL,
+                        TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
+                        TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO);
+        Assertions.assertTrue(tr.fit(List.of(CANCELED, SUCCESS, SUCCESS)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, SUCCESS, PREPARING)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.CREATED), RequireType.HAVE_NO);
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,SUCCESS,PREPARING)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,SUCCESS,CREATED)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, SUCCESS, PREPARING)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, SUCCESS, CREATED)));
 
         tr = new StatusRequirement(
-            Set.of(TO_CANCEL, TaskStatus.CANCELLING, TaskStatus.CANCELED,
-                TaskStatus.FAIL), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,TO_CANCEL,CREATED)));
-        Assertions.assertTrue(tr.fit(List.of(RUNNING,SUCCESS,CREATED)));
+                Set.of(TO_CANCEL, TaskStatus.CANCELLING, TaskStatus.CANCELED,
+                        TaskStatus.FAIL), RequireType.HAVE_NO);
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, TO_CANCEL, CREATED)));
+        Assertions.assertTrue(tr.fit(List.of(RUNNING, SUCCESS, CREATED)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.values()), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING,SUCCESS,CREATED)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, SUCCESS, CREATED)));
     }
 
 }

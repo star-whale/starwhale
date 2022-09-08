@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore.impl;
 
 import ai.starwhale.mlops.datastore.ColumnSchema;
@@ -25,10 +26,8 @@ import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.WalManager;
-import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.google.protobuf.ByteString;
-import lombok.NonNull;
-
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -41,8 +40,10 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 
 public class MemoryTableImpl implements MemoryTable {
+
     private final String tableName;
 
     private final WalManager walManager;
@@ -159,7 +160,7 @@ public class MemoryTableImpl implements MemoryTable {
         TableSchema newSchema = this.schema;
         if (schema == null) {
             if (this.schema == null) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "schema should not be null for the first update");
             }
         } else {
@@ -187,7 +188,7 @@ public class MemoryTableImpl implements MemoryTable {
             for (var record : records) {
                 var key = record.get(newSchema.getKeyColumn());
                 if (key == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format("key column {0} is null", newSchema.getKeyColumn()));
                 }
                 if (record.get("-") != null) {
@@ -291,11 +292,11 @@ public class MemoryTableImpl implements MemoryTable {
         if (orderBy != null) {
             for (var col : orderBy) {
                 if (col == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "order by column should not be null");
                 }
                 if (this.schema.getColumnSchemaByName(col.getColumnName()) == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "unknown orderBy column " + col);
                 }
             }
@@ -500,13 +501,14 @@ public class MemoryTableImpl implements MemoryTable {
                 var col = (TableQueryFilter.Column) op;
                 var colSchema = this.schema.getColumnSchemaByName(col.getName());
                 if (colSchema == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "invalid filter, unknown column " + col.getName());
                 }
                 if (!type.getName().equals(colSchema.getType().getName())) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
-                                    "invalid filter, can not compare column {0} of type {1} with column {2} of type {3}",
+                                    "invalid filter, can not compare column {0} of type {1} "
+                                            + "with column {2} of type {3}",
                                     col.getName(),
                                     colSchema.getType(),
                                     firstCol.orElseThrow().getName(),
@@ -527,7 +529,7 @@ public class MemoryTableImpl implements MemoryTable {
                     throw new IllegalArgumentException("unexpected operand class " + op.getClass());
                 }
                 if (checkFailed) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
                                     "invalid filter, can not compare column {0} of type {1} with value {2} of type {3}",
                                     firstCol.orElseThrow().getName(),
@@ -593,13 +595,13 @@ public class MemoryTableImpl implements MemoryTable {
             var value = entry.getValue();
             var columnSchema = schema.getColumnSchemaByName(name);
             if (columnSchema == null) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "no schema found for column " + name);
             }
             try {
                 ret.put(columnSchema.getName(), columnSchema.getType().decode(value));
             } catch (Exception e) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         MessageFormat.format("fail to decode value {0} for column {1}: {2}",
                                 value,
                                 name,

@@ -38,6 +38,8 @@ declare_env() {
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
+  export SWNAME="${SWNAME:=starwhale-e2e}"
+  export SWNS="${SWNS:=starwhale-e2e}"
 }
 
 start_minikube() {
@@ -67,8 +69,9 @@ build_swcli() {
 }
 
 build_console() {
-  pushd ../../docker
-  make build-console
+  pushd ../../console
+  mkdir build
+  echo 'hi' > build/index.html
   popd
 }
 
@@ -145,8 +148,9 @@ upload_pypi_to_nexus() {
 
 buid_runtime_image() {
   pushd ../../docker
-  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_DOCKER_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
+  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
   popd
 }
 
@@ -154,24 +158,39 @@ push_images_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
 }
 
 start_starwhale() {
   pushd ../../docker/charts
-  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "resources.controller.requests.memory=4G,resources.controller.requests.cpu=1000m,resources.controller.limits.cpu=1000m,minio.resources.requests.cpu=1000m,minio.resources.limits.cpu=2000m,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
+  helm upgrade --install $SWNAME --namespace $SWNS --create-namespace \
+  --set resources.controller.requests.cpu=700m \
+  --set mysql.resources.primary.requests.cpu=300m \
+  --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
+  --set minio.resources.requests.cpu=200m \
+  --set minio.persistence.storageClass=$SWNAME-minio \
+  --set controller.taskSplitSize=1 \
+  --set minikube.enabled=true \
+  --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
+  --set image.tag=$PYPI_RELEASE_VERSION \
+  --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
+  --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
+  --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
+   .
   popd
 }
 
 check_controller_service() {
     while true
     do
-      started=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.containerStatuses[0].started'`
+      started=`kubectl get pod -l starwhale.ai/role=controller -n $SWNS -o json| jq -r '.items[0].status.containerStatuses[0].started'`
             if [[ "$started" == "true" ]]; then
                     echo "controller started"
                     break
             else
               echo "controller is starting"
-              kubectl get pods --namespace starwhale
+              kubectl get pods --namespace $SWNS
+              kubectl get svc --namespace $SWNS
   #            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
   #            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
   #            if [[ "$ready" == "Running" ]]; then
@@ -181,7 +200,7 @@ check_controller_service() {
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082 &
+    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
 }
 
 standalone_test() {

@@ -38,10 +38,9 @@ public class JwtLoginFailureHandler extends SimpleUrlAuthenticationFailureHandle
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-        AuthenticationException exception) throws IOException {
+            AuthenticationException exception) throws IOException {
         String msg;
-        if (exception instanceof BadCredentialsException ||
-            exception instanceof UsernameNotFoundException) {
+        if (exception instanceof BadCredentialsException || exception instanceof UsernameNotFoundException) {
             msg = "Wrong username or password";
         } else if (exception instanceof LockedException) {
             msg = "The account is locked, please contact the administrator";

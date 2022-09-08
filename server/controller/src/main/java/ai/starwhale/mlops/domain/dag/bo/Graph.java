@@ -16,20 +16,12 @@
 
 package ai.starwhale.mlops.domain.dag.bo;
 
-import ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity.NodeType;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BinaryOperator;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -55,14 +47,14 @@ public class Graph {
 
     private List<GraphNode> safeGetNodesOfGroup(String group) {
         return groupingNodes.computeIfAbsent(group,
-            k -> Collections.synchronizedList(new LinkedList<>()));
+                k -> Collections.synchronizedList(new LinkedList<>()));
     }
 
-    public static Graph emptyInstance(){
+    public static Graph emptyInstance() {
         return new Graph();
     }
 
-    public boolean empty(){
+    public boolean empty() {
         return false;
     }
 

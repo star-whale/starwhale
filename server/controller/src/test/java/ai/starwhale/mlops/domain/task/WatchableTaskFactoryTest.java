@@ -34,44 +34,45 @@ public class WatchableTaskFactoryTest {
     static List<Integer> list = new LinkedList<>();
 
     @Test
-    public void testWatchableTaskFactory(){
+    public void testWatchableTaskFactory() {
 
-        WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(new Watcher2(),new Watcher3(),new Watcher1()),mock(TaskStatusMachine.class) );
+        WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(
+                List.of(new Watcher2(), new Watcher3(), new Watcher1()), mock(TaskStatusMachine.class));
         Task task = new Task();
         Task wrappedTask = watchableTaskFactory.wrapTask(task);
         wrappedTask.updateStatus(TaskStatus.RUNNING);
-        Assertions.assertEquals(3,list.size());
-        Assertions.assertEquals(1,list.get(0));
-        Assertions.assertEquals(2,list.get(1));
-        Assertions.assertEquals(3,list.get(2));
+        Assertions.assertEquals(3, list.size());
+        Assertions.assertEquals(1, list.get(0));
+        Assertions.assertEquals(2, list.get(1));
+        Assertions.assertEquals(3, list.get(2));
     }
 
     @Order(1)
-    static class Watcher1 implements TaskStatusChangeWatcher{
+    static class Watcher1 implements TaskStatusChangeWatcher {
 
         @Override
         public void onTaskStatusChange(Task task,
-            TaskStatus oldStatus) {
+                TaskStatus oldStatus) {
             list.add(1);
         }
     }
 
     @Order(2)
-    static class Watcher2 implements TaskStatusChangeWatcher{
+    static class Watcher2 implements TaskStatusChangeWatcher {
 
         @Override
         public void onTaskStatusChange(Task task,
-            TaskStatus oldStatus) {
+                TaskStatus oldStatus) {
             list.add(2);
         }
     }
 
     @Order(3)
-    static class Watcher3 implements TaskStatusChangeWatcher{
+    static class Watcher3 implements TaskStatusChangeWatcher {
 
         @Override
         public void onTaskStatusChange(Task task,
-            TaskStatus oldStatus) {
+                TaskStatus oldStatus) {
             list.add(3);
         }
     }

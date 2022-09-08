@@ -19,9 +19,7 @@ package ai.starwhale.mlops.configuration.security;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.domain.user.UserService;
-
 import javax.annotation.Resource;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -105,7 +103,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .and();
-
 
         // Add JWT token filter
         JwtLoginFilter jwtLoginFilter = new JwtLoginFilter();

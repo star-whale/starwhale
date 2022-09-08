@@ -20,13 +20,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JobParser {
+
     private static final String DEFAULT_JOB_NAME = "default";
     private static final YAMLMapper yamlMapper = new YAMLMapper();
 
@@ -52,31 +52,32 @@ public class JobParser {
 
     public static void main(String[] args) throws JsonProcessingException {
 
-        String content = "default:\n" +
-            "- !!python/object:starwhale.core.job.model.Step\n" +
-            "  concurrency: 1\n" +
-            "  dependency:\n" +
-            "  - ''\n" +
-            "  job_name: default\n" +
-            "  resources:\n" +
-            "  - cpu=1\n" +
-            "  status: ''\n" +
-            "  step_name: DefaultPipeline.ppl\n" +
-            "  task_num: 1\n" +
-            "  tasks: []\n" +
-            "- !!python/object:starwhale.core.job.model.Step\n" +
-            "  concurrency: 1\n" +
-            "  dependency:\n" +
-            "  - DefaultPipeline.ppl\n" +
-            "  job_name: default\n" +
-            "  resources:\n" +
-            "  - cpu=1\n" +
-            "  status: ''\n" +
-            "  step_name: DefaultPipeline.cmp\n" +
-            "  task_num: 1\n" +
-            "  tasks: []";
-        Map<String, List<StepMetaData>> map = JobParser.yamlMapper.readValue(content, new TypeReference<Map<String, List<StepMetaData>>>() {
-        });
+        String content = "default:\n"
+                + "- !!python/object:starwhale.core.job.model.Step\n"
+                + "  concurrency: 1\n"
+                + "  dependency:\n"
+                + "  - ''\n"
+                + "  job_name: default\n"
+                + "  resources:\n"
+                + "  - cpu=1\n"
+                + "  status: ''\n"
+                + "  step_name: DefaultPipeline.ppl\n"
+                + "  task_num: 1\n"
+                + "  tasks: []\n"
+                + "- !!python/object:starwhale.core.job.model.Step\n"
+                + "  concurrency: 1\n"
+                + "  dependency:\n"
+                + "  - DefaultPipeline.ppl\n"
+                + "  job_name: default\n"
+                + "  resources:\n"
+                + "  - cpu=1\n"
+                + "  status: ''\n"
+                + "  step_name: DefaultPipeline.cmp\n"
+                + "  task_num: 1\n"
+                + "  tasks: []";
+        Map<String, List<StepMetaData>> map = JobParser.yamlMapper.readValue(content,
+                new TypeReference<>() {
+                });
 
         System.out.println(map.size());
     }

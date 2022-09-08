@@ -29,6 +29,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -47,27 +48,28 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     public StorageAccessServiceS3(S3Config s3Config) {
         this.s3Config = s3Config;
-        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
-            s3Config.getAccessKey(),
-            s3Config.getSecretKey());
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(s3Config.getAccessKey(), s3Config.getSecretKey());
+        final S3Configuration config = S3Configuration.builder()
+                .chunkedEncodingEnabled(false)
+                .build();
         S3ClientBuilder s3ClientBuilder = S3Client.builder()
-            .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-            .region(Region.of(s3Config.getRegion()));
+                .serviceConfiguration(config)
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                .region(Region.of(s3Config.getRegion()));
         if (s3Config.overWriteEndPoint()) {
             s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
         }
-        this.s3client = s3ClientBuilder
-            .build();
+        this.s3client = s3ClientBuilder.build();
     }
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
         HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path)
-            .build();
+                .build();
         try {
             HeadObjectResponse headObjectResponse = s3client.headObject(build);
             return new StorageObjectInfo(true, headObjectResponse.contentLength(),
-                mapToString(headObjectResponse.metadata()));
+                    mapToString(headObjectResponse.metadata()));
         } catch (NoSuchKeyException e) {
             return new StorageObjectInfo(false, 0L, null);
         }
@@ -91,21 +93,21 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
         s3client.putObject(
-            PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
-            RequestBody.fromInputStream(inputStream, size));
+                PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+                RequestBody.fromInputStream(inputStream, size));
     }
 
     @Override
     public void put(String path, byte[] body) {
         s3client.putObject(
-            PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
-            RequestBody.fromBytes(body));
+                PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+                RequestBody.fromBytes(body));
     }
 
     @Override
     public InputStream get(String path) {
         return s3client
-            .getObject(GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build());
+                .getObject(GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build());
     }
 
 
@@ -119,23 +121,27 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         }
 
         return s3client
-            .getObject(
-                GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
-                    .bucket(s3Config.getBucket()).key(path).build());
+                .getObject(
+                        GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
+                                .bucket(s3Config.getBucket()).key(path).build());
     }
 
     @Override
     public Stream<String> list(String path) {
-        final ListObjectsResponse listObjectsResponse = s3client.listObjects(
-            ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
-        return listObjectsResponse.contents().stream().map(S3Object::key);
+        try {
+            final ListObjectsResponse listObjectsResponse = s3client.listObjects(
+                    ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
+            return listObjectsResponse.contents().stream().map(S3Object::key);
+        } catch (NoSuchKeyException e) {
+            return Stream.empty();
+        }
     }
 
     @Override
     public void delete(String path) throws IOException {
         s3client.deleteObject(DeleteObjectRequest.builder()
-            .bucket(s3Config.getBucket())
-            .key(path)
-            .build());
+                .bucket(s3Config.getBucket())
+                .key(path)
+                .build());
     }
 }

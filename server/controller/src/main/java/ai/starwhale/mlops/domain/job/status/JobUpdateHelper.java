@@ -27,8 +27,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -45,16 +44,16 @@ public class JobUpdateHelper {
     final JobStatusCalculator jobStatusCalculator;
     final JobMapper jobMapper;
     final JobStatusMachine jobStatusMachine;
-    final SWTaskScheduler swTaskScheduler;
+    final SwTaskScheduler swTaskScheduler;
     final LocalDateTimeConvertor localDateTimeConvertor;
     final TaskStatusMachine taskStatusMachine;
 
     public JobUpdateHelper(HotJobHolder jobHolder,
-        JobStatusCalculator jobStatusCalculator,
-        JobMapper jobMapper, JobStatusMachine jobStatusMachine,
-        SWTaskScheduler swTaskScheduler,
-        LocalDateTimeConvertor localDateTimeConvertor,
-        TaskStatusMachine taskStatusMachine) {
+            JobStatusCalculator jobStatusCalculator,
+            JobMapper jobMapper, JobStatusMachine jobStatusMachine,
+            SwTaskScheduler swTaskScheduler,
+            LocalDateTimeConvertor localDateTimeConvertor,
+            TaskStatusMachine taskStatusMachine) {
         this.jobHolder = jobHolder;
         this.jobStatusCalculator = jobStatusCalculator;
         this.jobMapper = jobMapper;
@@ -67,7 +66,7 @@ public class JobUpdateHelper {
     public void updateJob(Job job) {
         JobStatus currentStatus = job.getStatus();
         Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus)
-            .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
         JobStatus desiredJobStatus = jobStatusCalculator.desiredJobStatus(stepStatuses);
         if (currentStatus == desiredJobStatus) {
             log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
@@ -75,21 +74,22 @@ public class JobUpdateHelper {
         }
         if (!jobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
             log.warn("job status change unexpectedly from {} to {} of id {} ",
-                currentStatus, desiredJobStatus, job.getId());
+                    currentStatus, desiredJobStatus, job.getId());
         }
         log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus,
-            job.getId());
+                job.getId());
         job.setStatus(desiredJobStatus);
         jobMapper.updateJobStatus(List.of(job.getId()), desiredJobStatus);
 
         if (jobStatusMachine.isFinal(desiredJobStatus)) {
-            jobMapper.updateJobFinishedTime(List.of(job.getId()),localDateTimeConvertor.revert(System.currentTimeMillis()));
-            if(desiredJobStatus == JobStatus.FAIL){
-                CompletableFuture.runAsync(()->{
+            jobMapper.updateJobFinishedTime(List.of(job.getId()),
+                    localDateTimeConvertor.revert(System.currentTimeMillis()));
+            if (desiredJobStatus == JobStatus.FAIL) {
+                CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
                     job.getSteps().stream().map(Step::getTasks).flatMap(Collection::stream)
-                        .filter(task -> task.getStatus() == TaskStatus.RUNNING)
-                        .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
+                            .filter(task -> task.getStatus() == TaskStatus.RUNNING)
+                            .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
                 });
             }
@@ -99,15 +99,16 @@ public class JobUpdateHelper {
 
 
     private void tryRemoveJobFromCache(Job job) {
-        for(Step step:job.getSteps()){
-            for(Task task:step.getTasks()){
-                if(!taskStatusMachine.isFinal(task.getStatus()) && task.getStatus() != TaskStatus.CREATED){
+        for (Step step : job.getSteps()) {
+            for (Task task : step.getTasks()) {
+                if (!taskStatusMachine.isFinal(task.getStatus()) && task.getStatus() != TaskStatus.CREATED) {
                     return;
                 }
             }
         }
         jobHolder.remove(job.getId());
-        log.info("job removed from JobHolder because all task is finished and job status is: {} job id is: {}",job.getStatus(),job.getId());
+        log.info("job removed from JobHolder because all task is finished and job status is: {} job id is: {}",
+                job.getStatus(), job.getId());
 
     }
 }

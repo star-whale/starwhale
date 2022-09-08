@@ -28,7 +28,7 @@ job_id=`curl -X 'POST' \
   "datasetVersionUrls": "1",
   "runtimeVersionUrl": "1",
   "device": "1",
-  "deviceAmount": 1,
+  "deviceAmount": 0.4,
   "comment": "string"
 }' | jq -r '.data'`
 
@@ -42,7 +42,7 @@ do
   if curl -X 'GET' \
     "http://$1/api/v1/project/1/job/$job_id" \
     -H 'accept: application/json' \
-    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus ; then echo "8082 well"; else  kubectl logs --tail=10 -l starwhale.ai/role=controller -n starwhale; continue; fi
+    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus ; then echo "8082 well"; else  kubectl logs --tail=10 -l starwhale.ai/role=controller -n $SWNS; continue; fi
   job_status=`cat jobStatus`
   if [ "$job_status" == "null" ] ; then
     echo "Error! job_status id is null"  1>&2
@@ -54,6 +54,10 @@ do
   elif [[ "$job_status" = "FAIL" ]] ; then
         echo "job FAIL"
         break
+  elif [[ -z "$job_status" ]] ; then
+    if kill -9 `ps -ef|grep port-forward | grep -v grep | awk '{print $2}'` ; then echo "kill success"; fi
+    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
+    sleep 20
   else
     echo "job status for " "$job_id" "is" "$job_status"
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c data-provider

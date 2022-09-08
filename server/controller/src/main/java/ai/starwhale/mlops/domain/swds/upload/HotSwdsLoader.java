@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -27,13 +27,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class HotSwdsLoader implements CommandLineRunner {
 
-    final SWDatasetVersionMapper swDatasetVersionMapper;
+    final SwDatasetVersionMapper swDatasetVersionMapper;
 
     final HotSwdsHolder hotSwdsHolder;
 
     public HotSwdsLoader(
-        SWDatasetVersionMapper swDatasetVersionMapper,
-        HotSwdsHolder hotSwdsHolder) {
+            SwDatasetVersionMapper swDatasetVersionMapper,
+            HotSwdsHolder hotSwdsHolder) {
         this.swDatasetVersionMapper = swDatasetVersionMapper;
         this.hotSwdsHolder = hotSwdsHolder;
     }
@@ -44,8 +44,8 @@ public class HotSwdsLoader implements CommandLineRunner {
     }
 
     void loadUploadingDs() {
-        List<SWDatasetVersionEntity> datasetVersionEntities = swDatasetVersionMapper.findVersionsByStatus(
-            SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
+        List<SwDatasetVersionEntity> datasetVersionEntities = swDatasetVersionMapper.findVersionsByStatus(
+                SwDatasetVersionEntity.STATUS_UN_AVAILABLE);
         datasetVersionEntities.parallelStream().forEach(entity -> hotSwdsHolder.manifest(entity));
     }
 }

@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ai.starwhale.mlops.datastore;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+package ai.starwhale.mlops.datastore;
 
 import java.util.List;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
 public class RecordList {
+
     private Map<String, ColumnType> columnTypeMap;
     private List<Map<String, String>> records;
     private String lastKey;

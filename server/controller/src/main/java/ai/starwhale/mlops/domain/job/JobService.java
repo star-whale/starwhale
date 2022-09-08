@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -26,7 +26,7 @@ import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -45,11 +45,11 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
@@ -79,7 +79,7 @@ public class JobService {
     private JobMapper jobMapper;
 
     @Resource
-    private JobSWDSVersionMapper jobSWDSVersionMapper;
+    private JobSwdsVersionMapper jobSwdsVersionMapper;
 
     @Resource
     private JobConvertor jobConvertor;
@@ -94,7 +94,7 @@ public class JobService {
     private JobSpliterator jobSpliterator;
 
     @Resource
-    private SWTaskScheduler swTaskScheduler;
+    private SwTaskScheduler swTaskScheduler;
 
     @Resource
     private HotJobHolder hotJobHolder;
@@ -128,19 +128,19 @@ public class JobService {
     @Resource
     private ResourcePoolManager resourcePoolManager;
 
-    public PageInfo<JobVO> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
+    public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
         List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
-    public JobVO findJob(String projectUrl, String jobUrl) {
+    public JobVo findJob(String projectUrl, String jobUrl) {
         Job job = jobManager.fromUrl(jobUrl);
         JobEntity entity = jobManager.findJob(job);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
+        if (entity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
+                    .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
         }
 
         return jobConvertor.convert(entity);
@@ -154,10 +154,10 @@ public class JobService {
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
         Job job = jobManager.fromUrl(jobUrl);
         int res;
-        if(job.getId() != null){
+        if (job.getId() != null) {
             res = jobMapper.updateJobComment(job.getId(), comment);
         } else {
-            res = jobMapper.updateJobCommentByUUID(job.getUuid(), comment);
+            res = jobMapper.updateJobCommentByUuid(job.getUuid(), comment);
         }
         return res > 0;
     }
@@ -165,10 +165,10 @@ public class JobService {
     public Boolean removeJob(String projectUrl, String jobUrl) {
         Job job = jobManager.fromUrl(jobUrl);
         int res = 0;
-        if(job.getId() != null) {
+        if (job.getId() != null) {
             res = jobMapper.removeJob(job.getId());
         } else if (!StrUtil.isEmpty(job.getUuid())) {
-            res = jobMapper.removeJobByUUID(job.getUuid());
+            res = jobMapper.removeJobByUuid(job.getUuid());
         }
 
         return res > 0;
@@ -177,10 +177,10 @@ public class JobService {
     public Boolean recoverJob(String projectUrl, String jobUrl) {
         Job job = jobManager.fromUrl(jobUrl);
         int res = 0;
-        if(job.getId() != null) {
+        if (job.getId() != null) {
             res = jobMapper.recoverJob(job.getId());
         } else if (!StrUtil.isEmpty(job.getUuid())) {
-            res = jobMapper.recoverJobByUUID(job.getUuid());
+            res = jobMapper.recoverJobByUuid(job.getUuid());
         }
 
         return res > 0;
@@ -188,61 +188,62 @@ public class JobService {
 
     private static Device.Clazz getDeviceClazz(String device) {
         try {
-            if(StrUtil.isNumeric(device)) {
+            if (StrUtil.isNumeric(device)) {
                 return Device.Clazz.from(Integer.parseInt(device));
 
             } else {
                 return Enum.valueOf(Device.Clazz.class, device);
             }
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(String.format("Unable to find device %s", device)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
+                    .tip(String.format("Unable to find device %s", device)), HttpStatus.BAD_REQUEST);
         }
     }
+
     public Long createJob(String projectUrl,
-        String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
-        String deviceType, Float deviceCount, String comment, String resourcePool) {
+            String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
+            String deviceType, Float deviceCount, String comment, String resourcePool) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = swmpManager.getSWMPVersionId(modelVersionUrl, null);
+        Long modelVersionId = swmpManager.getSwmpVersionId(modelVersionUrl, null);
         Integer deviceValue = getDeviceClazz(deviceType).getValue();
         Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
         JobEntity jobEntity = JobEntity.builder()
-            .ownerId(user.getId())
-            .jobUuid(jobUuid)
-            .createdTime(LocalDateTime.now())
-            //.finishedTime(LocalDateTime.now())
-            .durationMs(0L)
-            .runtimeVersionId(runtimeVersionId)
-            .projectId(projectId)
-            .swmpVersionId(modelVersionId)
-            .deviceType(deviceValue)
-            .deviceAmount(Float.valueOf(deviceCount*1000).intValue())
-            .comment(comment)
-            .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
-            .jobStatus(JobStatus.CREATED)
-            .type(JobType.EVALUATION)
-            .resourcePoolId(resourcePoolId)
-            .build();
+                .ownerId(user.getId())
+                .jobUuid(jobUuid)
+                .createdTime(LocalDateTime.now())
+                //.finishedTime(LocalDateTime.now())
+                .durationMs(0L)
+                .runtimeVersionId(runtimeVersionId)
+                .projectId(projectId)
+                .swmpVersionId(modelVersionId)
+                .deviceType(deviceValue)
+                .deviceAmount(Float.valueOf(deviceCount * 1000).intValue())
+                .comment(comment)
+                .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
+                .jobStatus(JobStatus.CREATED)
+                .type(JobType.EVALUATION)
+                .resourcePoolId(resourcePoolId)
+                .build();
 
         jobMapper.addJob(jobEntity);
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
 
-//        String datasetVersionIds = jobRequest.getDatasetVersionIds();
-//        if(datasetVersionIds == null) {
-//            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-//                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
-//        }
-//        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
-//            .map(idConvertor::revert)
-//            .collect(Collectors.toList());
+        //        String datasetVersionIds = jobRequest.getDatasetVersionIds();
+        //        if(datasetVersionIds == null) {
+        //            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
+        //                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
+        //        }
+        //        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
+        //            .map(idConvertor::revert)
+        //            .collect(Collectors.toList());
 
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
-            .map(url -> swdsManager.getSWDSVersionId(url, null))
-            .collect(Collectors.toList());
-        jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), datasetVersionIds);
+                .map(url -> swdsManager.getSwdsVersionId(url, null))
+                .collect(Collectors.toList());
+        jobSwdsVersionMapper.addJobSwdsVersions(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
 
@@ -250,12 +251,12 @@ public class JobService {
      * load created jobs from user at fixed delay
      */
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
-    public void splitNewCreatedJobs(){
+    public void splitNewCreatedJobs() {
         final Stream<Job> allNewJobs = findAllNewJobs();
-        allNewJobs.parallel().forEach(job->{
+        allNewJobs.parallel().forEach(job -> {
             //one transaction
             jobSpliterator.split(job);
-            jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())),false,true);
+            jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())), false, true);
             /*hotJobHolder.adopt(job);
             List<Task> readyToScheduleTasks = job.getSteps().parallelStream().map(Step::getTasks)
                 .flatMap(Collection::stream)
@@ -266,71 +267,70 @@ public class JobService {
 
     }
 
-    Stream<Job> findAllNewJobs(){
+    Stream<Job> findAllNewJobs() {
         final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED));
-        return newJobs.stream().map(entity-> jobBoConverter.fromEntity(entity));
+        return newJobs.stream().map(entity -> jobBoConverter.fromEntity(entity));
     }
 
     /**
-     * transactional
-     * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
+     * transactional jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
     @Transactional
-    public void cancelJob(String jobUrl){
+    public void cancelJob(String jobUrl) {
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
-        if(null == jobs || jobs.isEmpty()){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freeze job can't be canceled "),
-                HttpStatus.BAD_REQUEST);
+        if (null == jobs || jobs.isEmpty()) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB).tip("freeze job can't be canceled "),
+                    HttpStatus.BAD_REQUEST);
         }
         Job job = jobs.stream().findAny().get();
-        if(job.getStatus() != JobStatus.RUNNING
-            && job.getStatus() != JobStatus.PAUSED){
-            throw new SWValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED job can't be canceled ");
+        if (job.getStatus() != JobStatus.RUNNING
+                && job.getStatus() != JobStatus.PAUSED) {
+            throw new SwValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED job can't be canceled ");
         }
 
         List<Task> directlyCanceledTasks = tasksOfJob(job)
-            .filter(task -> task.getStatus() != TaskStatus.SUCCESS
-                && task.getStatus() != TaskStatus.FAIL
-                && task.getStatus() != TaskStatus.CREATED)
-            .collect(Collectors.toList());
-        batchPersistTaskStatus(directlyCanceledTasks,TaskStatus.CANCELED);
+                .filter(task -> task.getStatus() != TaskStatus.SUCCESS
+                        && task.getStatus() != TaskStatus.FAIL
+                        && task.getStatus() != TaskStatus.CREATED)
+                .collect(Collectors.toList());
+        batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
         updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELED);
     }
 
     private Stream<Task> tasksOfJob(Job job) {
         return job.getSteps().stream()
-            .map(Step::getTasks)
-            .flatMap(Collection::stream);
+                .map(Step::getTasks)
+                .flatMap(Collection::stream);
     }
 
     /**
-     * transactional
-     * jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
+     * transactional jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
      */
     @Transactional
-    public void pauseJob(String jobUrl){
+    public void pauseJob(String jobUrl) {
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
-        if(null == jobs || jobs.isEmpty()){
-            throw new SWValidationException(ValidSubject.JOB).tip("frozen job can't be paused ");
+        if (null == jobs || jobs.isEmpty()) {
+            throw new SwValidationException(ValidSubject.JOB).tip("frozen job can't be paused ");
         }
         Job job = jobs.stream().findAny().get();
         List<Task> notRunningTasks = tasksOfJob(job)
-            .filter(task -> task.getStatus() != TaskStatus.SUCCESS
-                && task.getStatus() != TaskStatus.FAIL
-                && task.getStatus() != TaskStatus.CREATED)
-            .collect(Collectors.toList());
-        if(null == notRunningTasks || notRunningTasks.isEmpty()){
+                .filter(task -> task.getStatus() != TaskStatus.SUCCESS
+                        && task.getStatus() != TaskStatus.FAIL
+                        && task.getStatus() != TaskStatus.CREATED)
+                .collect(Collectors.toList());
+        if (null == notRunningTasks || notRunningTasks.isEmpty()) {
             return;
         }
-        batchPersistTaskStatus(notRunningTasks,TaskStatus.PAUSED);
+        batchPersistTaskStatus(notRunningTasks, TaskStatus.PAUSED);
         updateWithoutPersistWatcher(notRunningTasks, TaskStatus.PAUSED);
 
     }
 
     private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
-        CompletableFuture.runAsync(()->{
+        CompletableFuture.runAsync(() -> {
             TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
             tasks.forEach(task -> {
                 task.updateStatus(taskStatus);
@@ -343,38 +343,36 @@ public class JobService {
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
      */
     static final Integer MAX_BATCH_SIZE = 1000;
-    private void batchPersistTaskStatus(Collection<Task> tasks,TaskStatus taskStatus) {
-        if(CollectionUtils.isEmpty(tasks)){
+
+    private void batchPersistTaskStatus(Collection<Task> tasks, TaskStatus taskStatus) {
+        if (CollectionUtils.isEmpty(tasks)) {
             return;
         }
         //save to db
         List<Long> taskIds = tasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList());
-        BatchOperateHelper.doBatch(taskIds
-            , taskStatus
-            , (tsks, status) -> taskMapper.updateTaskStatus(
-                new ArrayList<>(tsks),
-                status)
-            , MAX_BATCH_SIZE);
+                Collectors.toList());
+        BatchOperateHelper.doBatch(
+                taskIds,
+                taskStatus,
+                (tsks, status) -> taskMapper.updateTaskStatus(new ArrayList<>(tsks), status),
+                MAX_BATCH_SIZE);
     }
 
     /**
-     *
-     * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED
-     * jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
+     * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
-    public void resumeJob(String jobUrl){
+    public void resumeJob(String jobUrl) {
         Long jobId = jobManager.getJobId(jobUrl);
-        JobEntity  jobEntity= jobMapper.findJobById(jobId);
-        if(null == jobEntity ){
-            throw new SWValidationException(ValidSubject.JOB).tip("job not exists");
+        JobEntity jobEntity = jobMapper.findJobById(jobId);
+        if (null == jobEntity) {
+            throw new SwValidationException(ValidSubject.JOB).tip("job not exists");
         }
-        if(jobEntity.getJobStatus() != JobStatus.PAUSED
-            && jobEntity.getJobStatus() != JobStatus.FAIL
-            && jobEntity.getJobStatus() != JobStatus.CANCELED){
-            throw new SWValidationException(ValidSubject.JOB).tip("only failed/paused/canceled job can be resumed ");
+        if (jobEntity.getJobStatus() != JobStatus.PAUSED
+                && jobEntity.getJobStatus() != JobStatus.FAIL
+                && jobEntity.getJobStatus() != JobStatus.CANCELED) {
+            throw new SwValidationException(ValidSubject.JOB).tip("only failed/paused/canceled job can be resumed ");
         }
-        jobLoader.loadEntities(List.of(jobEntity),true,true);
+        jobLoader.loadEntities(List.of(jobEntity), true, true);
     }
 
 }

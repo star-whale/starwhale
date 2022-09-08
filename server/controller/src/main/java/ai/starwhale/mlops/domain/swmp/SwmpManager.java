@@ -16,23 +16,23 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
-import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
+import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
+import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper;
+import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -42,45 +42,45 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
-    RevertAccessor, RecoverAccessor, RemoveAccessor {
+        RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     @Resource
-    private SWModelPackageMapper swmpMapper;
+    private SwModelPackageMapper swmpMapper;
     @Resource
-    private SWModelPackageVersionMapper versionMapper;
+    private SwModelPackageVersionMapper versionMapper;
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
-    public Long getSWMPVersionId(String versionUrl, Long swmpId) {
-        if(idConvertor.isID(versionUrl)) {
+    public Long getSwmpVersionId(String versionUrl, Long swmpId) {
+        if (idConvertor.isId(versionUrl)) {
             return idConvertor.revert(versionUrl);
         }
-        SWModelPackageVersionEntity entity = versionMapper.findByNameAndSwmpId(versionUrl, swmpId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip(String.format("Unable to find swmp %s", versionUrl)), HttpStatus.BAD_REQUEST);
+        SwModelPackageVersionEntity entity = versionMapper.findByNameAndSwmpId(versionUrl, swmpId);
+        if (entity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWMP)
+                    .tip(String.format("Unable to find swmp %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }
 
     @Override
     public BundleEntity findById(Long id) {
-        return swmpMapper.findSWModelPackageById(id);
+        return swmpMapper.findSwModelPackageById(id);
     }
 
     @Override
     public HasTag findObjectWithTagById(Long id) {
-        SWModelPackageVersionEntity entity = versionMapper.findVersionById(id);
+        SwModelPackageVersionEntity entity = versionMapper.findVersionById(id);
         return HasTagWrapper.builder()
-            .id(entity.getId())
-            .tag(entity.getVersionTag())
-            .build();
+                .id(entity.getId())
+                .tag(entity.getVersionTag())
+                .build();
     }
 
     @Override
     public Boolean updateTag(HasTag entity) {
         int r = versionMapper.updateTag(entity.getId(), entity.getTag());
-        if(r > 0) {
+        if (r > 0) {
             log.info("Model Version Tag has been modified. ID={}", entity.getId());
         }
         return r > 0;
@@ -108,23 +108,23 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
 
     @Override
     public BundleEntity findDeletedBundleById(Long id) {
-        return swmpMapper.findDeletedSWModelPackageById(id);
+        return swmpMapper.findDeletedSwModelPackageById(id);
     }
 
     @Override
     public List<? extends BundleEntity> listDeletedBundlesByName(String name, Long projectId) {
-        return swmpMapper.listDeletedSWModelPackages(name, projectId);
+        return swmpMapper.listDeletedSwModelPackages(name, projectId);
     }
 
     @Override
     public Boolean recover(Long id) {
-        return swmpMapper.recoverSWModelPackage(id) > 0;
+        return swmpMapper.recoverSwModelPackage(id) > 0;
     }
 
     @Override
     public Boolean remove(Long id) {
-        int r = swmpMapper.deleteSWModelPackage(id);
-        if(r > 0) {
+        int r = swmpMapper.deleteSwModelPackage(id);
+        if (r > 0) {
             log.info("SWMP has been removed. ID={}", id);
         }
         return r > 0;

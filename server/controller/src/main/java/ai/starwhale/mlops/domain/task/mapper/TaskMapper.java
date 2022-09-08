@@ -24,26 +24,26 @@ import org.apache.ibatis.annotations.Param;
 
 public interface TaskMapper {
 
-    List<TaskEntity> listTasks(@Param("jobId")Long jobId);
+    List<TaskEntity> listTasks(@Param("jobId") Long jobId);
 
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 
-    int addTask(@Param("task")TaskEntity task);
+    int addTask(@Param("task") TaskEntity task);
 
-    int addAll(@Param("taskList")List<TaskEntity> taskList);
+    int addAll(@Param("taskList") List<TaskEntity> taskList);
 
-    void updateTaskStatus(@Param("ids") List<Long> taskIds,@Param("taskStatus") TaskStatus taskStatus);
+    void updateTaskStatus(@Param("ids") List<Long> taskIds, @Param("taskStatus") TaskStatus taskStatus);
 
     List<TaskEntity> findTaskByStatus(@Param("taskStatus") TaskStatus taskStatus);
 
     List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<TaskStatus> taskStatusList);
 
-    void updateTaskFinishedTime(@Param("taskId") Long taskId,@Param("finishedTime") LocalDateTime finishedTime);
+    void updateTaskFinishedTime(@Param("taskId") Long taskId, @Param("finishedTime") LocalDateTime finishedTime);
 
-    void updateTaskStartedTime(@Param("taskId") Long taskId,@Param("startedTime")LocalDateTime startedTime);
+    void updateTaskStartedTime(@Param("taskId") Long taskId, @Param("startedTime") LocalDateTime startedTime);
 
     List<TaskEntity> findByStepId(@Param("stepId") Long stepId);
 
-    void updateTaskRequest(@Param("taskId") Long taskId,@Param("request") String request);
+    void updateTaskRequest(@Param("taskId") Long taskId, @Param("request") String request);
 }
 

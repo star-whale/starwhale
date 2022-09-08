@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.objectstore.impl;
 
 import ai.starwhale.mlops.memory.SwBuffer;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.objectstore.ObjectStore;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,11 +29,16 @@ import java.nio.file.StandardCopyOption;
 import java.security.InvalidParameterException;
 import java.text.MessageFormat;
 import java.util.Iterator;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
 public class FileSystemObjectStore implements ObjectStore {
+
     private final SwBufferManager bufferManager;
 
     private final String rootDir;

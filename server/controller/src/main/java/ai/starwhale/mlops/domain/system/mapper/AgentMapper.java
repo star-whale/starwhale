@@ -24,10 +24,10 @@ public interface AgentMapper {
 
     List<AgentEntity> listAgents();
 
-    Long addAgent(@Param("agent")AgentEntity agent);
+    Long addAgent(@Param("agent") AgentEntity agent);
 
-    void deleteById(@Param("agentId")Long agentId);
+    void deleteById(@Param("agentId") Long agentId);
 
-    void updateAgents(@Param("agents")List<AgentEntity> agents);
+    void updateAgents(@Param("agents") List<AgentEntity> agents);
 
 }

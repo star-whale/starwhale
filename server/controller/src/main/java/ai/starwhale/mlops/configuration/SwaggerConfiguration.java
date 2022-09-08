@@ -58,8 +58,8 @@ public class SwaggerConfiguration {
                 )
                 .info(
                         new Info()
-                                .title("StarWhale Rest Api")
-                                .description("Rest Api for starWhale controller")
+                                .title("Starwhale Rest Api")
+                                .description("Rest Api for Starwhale controller")
                                 .version(version)
                 );
     }

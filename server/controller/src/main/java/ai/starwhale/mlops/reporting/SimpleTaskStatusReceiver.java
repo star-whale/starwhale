@@ -45,9 +45,9 @@ public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
 
         reportedTasks.forEach(reportedTask -> {
             Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
-            if(null == optionalTasks || optionalTasks.isEmpty()){
-                log.warn("un-cached tasks reported {}, status directly update to DB",reportedTask.getId());
-                taskMapper.updateTaskStatus(List.of(reportedTask.getId()),reportedTask.getStatus());
+            if (null == optionalTasks || optionalTasks.isEmpty()) {
+                log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
+                taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
                 return;
             }
             optionalTasks.forEach(task -> task.updateStatus(reportedTask.getStatus()));

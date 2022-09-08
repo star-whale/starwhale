@@ -31,24 +31,24 @@ public class LocalDateTimeConvertorTest {
     static final LocalDateTime shanghaiTime = LocalDateTime.of(2022, 6, 17, 14, 14);
 
     @Test
-    public void testLocalDateTimeConvertorGMT(){
+    public void testLocalDateTimeConvertorGmt() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
         Long convertedTimestamp = localDateTimeConvertor.convert(utcTime);
-        Assertions.assertEquals(timeStamp,convertedTimestamp);
+        Assertions.assertEquals(timeStamp, convertedTimestamp);
         LocalDateTime revert = localDateTimeConvertor.revert(convertedTimestamp);
         Long convert = localDateTimeConvertor.convert(revert);
-        Assertions.assertEquals(timeStamp,convert);
+        Assertions.assertEquals(timeStamp, convert);
     }
 
     @Test
-    public void testLocalDateTimeConvertorCN(){
+    public void testLocalDateTimeConvertorCn() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
         LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
         Long convertedTimestamp = localDateTimeConvertor.convert(shanghaiTime);
-        Assertions.assertEquals(timeStamp,convertedTimestamp);
+        Assertions.assertEquals(timeStamp, convertedTimestamp);
         LocalDateTime revert = localDateTimeConvertor.revert(convertedTimestamp);
         Long convert = localDateTimeConvertor.convert(revert);
-        Assertions.assertEquals(timeStamp,convert);
+        Assertions.assertEquals(timeStamp, convert);
     }
 }

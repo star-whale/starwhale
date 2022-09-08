@@ -39,7 +39,7 @@ public class ContainerOverwriteSpec {
 
     List<V1EnvVar> envs;
 
-    public ContainerOverwriteSpec(String name){
+    public ContainerOverwriteSpec(String name) {
         this.name = name;
     }
 

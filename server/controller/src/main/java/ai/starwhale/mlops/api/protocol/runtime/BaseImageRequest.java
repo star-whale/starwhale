@@ -24,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class BaseImageRequest {
+
     @NotNull
     @JsonProperty("imageName")
     private String imageName;
