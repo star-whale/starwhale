@@ -48,14 +48,12 @@ public class TestK8sResourcePoolConverter {
     public void testToResourcePools() {
         K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
         List<ResourcePool> resourcePools = resourcePoolConverter.toResourcePools(
-            Map.of("pool.starwhale.ai/a", "false"
-                , "pool.starwhale.ai/b", "true"
-                , "pool.starwhale.ai/?", "true"));
+                Map.of("pool.starwhale.ai/a", "false", "pool.starwhale.ai/b", "true", "pool.starwhale.ai/?", "true"));
         Assertions.assertEquals(2, resourcePools.size());
         Assertions.assertIterableEquals(List.of(new ResourcePool("?"), new ResourcePool("b")),
-            resourcePools.stream().sorted(
-                Comparator.comparing(ResourcePool::getLabel)).collect(
-                Collectors.toList()));
+                resourcePools.stream().sorted(
+                        Comparator.comparing(ResourcePool::getLabel)).collect(
+                        Collectors.toList()));
 
     }
 
