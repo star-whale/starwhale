@@ -593,23 +593,19 @@ public class MemoryTableImpl implements MemoryTable {
         for (var entry : record.entrySet()) {
             var name = entry.getKey();
             var value = entry.getValue();
-            if (value == null) {
-                ret.put(name, null);
-            } else {
-                var columnSchema = schema.getColumnSchemaByName(name);
-                if (columnSchema == null) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            "no schema found for column " + name);
-                }
-                try {
-                    ret.put(name, columnSchema.getType().decode(value));
-                } catch (Exception e) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format("fail to decode value {0} for column {1}: {2}",
-                                    value,
-                                    name,
-                                    e.getMessage()));
-                }
+            var columnSchema = schema.getColumnSchemaByName(name);
+            if (columnSchema == null) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "no schema found for column " + name);
+            }
+            try {
+                ret.put(columnSchema.getName(), columnSchema.getType().decode(value));
+            } catch (Exception e) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        MessageFormat.format("fail to decode value {0} for column {1}: {2}",
+                                value,
+                                name,
+                                e.getMessage()));
             }
         }
         return ret;
