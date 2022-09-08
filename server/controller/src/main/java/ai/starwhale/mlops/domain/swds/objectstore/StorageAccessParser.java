@@ -97,15 +97,16 @@ public class StorageAccessParser {
         }
         Map<String, String> envs = env.getEnvs();
         String bucket = StringUtils.hasText(storageUri.getBucket()) ? storageUri.getBucket()
-                : envs.get(String.format(KEY_BUCKET, authName));
+                : envs.get(String.format(KEY_BUCKET, authName.toUpperCase()));
         String accessKey = StringUtils.hasText(storageUri.getUsername()) ? storageUri.getUsername()
-                : envs.get(String.format(KEY_ACCESS_KEY, authName));
+                : envs.get(String.format(KEY_ACCESS_KEY, authName.toUpperCase()));
         String accessSecret =
                 StringUtils.hasText(storageUri.getPassword()) ? storageUri.getPassword()
-                        : envs.get(String.format(KEY_SECRET, authName));
+                        : envs.get(String.format(KEY_SECRET, authName.toUpperCase()));
         String endpoint = StringUtils.hasText(storageUri.getHost()) ? buildEndPoint(storageUri)
                 : envs.get(String.format(KEY_ENDPOINT, authName));
-        return new S3Config(bucket, accessKey, accessSecret, envs.get(String.format(KEY_REGION, authName)), endpoint);
+        return new S3Config(bucket, accessKey, accessSecret,
+                envs.get(String.format(KEY_REGION, authName.toUpperCase())), endpoint);
     }
 
     private String buildEndPoint(StorageUri storageUri) {
