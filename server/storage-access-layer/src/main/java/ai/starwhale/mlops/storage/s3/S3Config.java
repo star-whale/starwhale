@@ -18,19 +18,23 @@ package ai.starwhale.mlops.storage.s3;
 
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class S3Config {
 
-    String bucket;
-    String accessKey;
-    String secretKey;
-    String region;
-    String endpoint;
+    private String bucket;
+    private String accessKey;
+    private String secretKey;
+    private String region;
+    private String endpoint;
+    private long hugeFileThreshold;
+    private long hugeFilePartSize;
 
     public boolean overWriteEndPoint() {
         return null != endpoint && !endpoint.isBlank();

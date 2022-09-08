@@ -18,6 +18,8 @@ package ai.starwhale.mlops.storage.s3;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
@@ -25,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,8 @@ import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Testcontainers
@@ -46,21 +51,59 @@ public class StorageAccessServiceS3Test {
                     .withInitialBuckets("test");
 
     private StorageAccessServiceS3 s3;
+    private S3Client client;
 
     @BeforeEach
     public void setUp() throws IOException {
-        var client = S3Client.builder()
+        this.client = S3Client.builder()
                 .credentialsProvider(AnonymousCredentialsProvider.create())
                 .endpointOverride(URI.create(s3Mock.getHttpEndpoint()))
                 .region(Region.of("us-west-1"))
                 .build();
-        client.putObject(PutObjectRequest.builder().bucket("test").key("t1").build(), RequestBody.fromString("a"));
-        client.putObject(PutObjectRequest.builder().bucket("test").key("t2").build(), RequestBody.fromString("b"));
-        client.putObject(PutObjectRequest.builder().bucket("test").key("t/1").build(), RequestBody.fromString("c"));
-        client.putObject(PutObjectRequest.builder().bucket("test").key("t/2").build(), RequestBody.fromString("d"));
-        client.putObject(PutObjectRequest.builder().bucket("test").key("x").build(), RequestBody.fromString("abcde"));
+        this.client.putObject(PutObjectRequest.builder().bucket("test").key("t1").build(), RequestBody.fromString("a"));
+        this.client.putObject(PutObjectRequest.builder().bucket("test").key("t2").build(), RequestBody.fromString("b"));
+        this.client.putObject(PutObjectRequest.builder().bucket("test").key("t/1").build(),
+                RequestBody.fromString("c"));
+        this.client.putObject(PutObjectRequest.builder().bucket("test").key("t/2").build(),
+                RequestBody.fromString("d"));
+        this.client.putObject(PutObjectRequest.builder().bucket("test").key("x").build(),
+                RequestBody.fromString("abcde"));
         this.s3 = new StorageAccessServiceS3(
-                new S3Config("test", "ak", "sk", "us-west-1", s3Mock.getHttpEndpoint()));
+                S3Config.builder()
+                        .bucket("test")
+                        .accessKey("ak")
+                        .secretKey("sk")
+                        .region("us-west-1")
+                        .endpoint(s3Mock.getHttpEndpoint())
+                        .hugeFileThreshold(10 * 1024 * 1024)
+                        .hugeFilePartSize(5 * 1024 * 1024)
+                        .build());
+    }
+
+    @Test
+    public void testClearPendingMultipartUploads() {
+        for (int i = 0; i < 2999; ++i) {
+            this.client.createMultipartUpload(CreateMultipartUploadRequest.builder()
+                    .bucket("test")
+                    .key("m" + i)
+                    .build());
+        }
+        assertThat(this.client.listMultipartUploads(ListMultipartUploadsRequest.builder()
+                        .bucket("test")
+                        .build()).uploads(),
+                hasSize(2999));
+        new StorageAccessServiceS3(
+                S3Config.builder()
+                        .bucket("test")
+                        .accessKey("ak")
+                        .secretKey("sk")
+                        .region("us-west-1")
+                        .endpoint(s3Mock.getHttpEndpoint())
+                        .build());
+        assertThat(this.client.listMultipartUploads(ListMultipartUploadsRequest.builder()
+                        .bucket("test")
+                        .build()).uploads(),
+                empty());
     }
 
     @Test
@@ -97,6 +140,17 @@ public class StorageAccessServiceS3Test {
     public void testPutInputStream() throws IOException {
         this.s3.put("t1", new ByteArrayInputStream("abc".getBytes(StandardCharsets.UTF_8)), 3);
         assertThat(new String(this.s3.get("t1").readAllBytes()), is("abc"));
+    }
+
+    @Test
+    public void testPutHugeFile() throws IOException {
+        var data = new byte[20 * 1024 * 1024];
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = (byte) i;
+        }
+        this.s3.put("t1", new ByteArrayInputStream(data), data.length);
+        assertThat(this.s3.get("t1", (long) (data.length - 100), 100L).readAllBytes(),
+                is(Arrays.copyOfRange(data, data.length - 100, data.length)));
     }
 
     @Test

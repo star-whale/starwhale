@@ -106,7 +106,13 @@ public class StorageAccessParser {
                         : envs.get(String.format(KEY_SECRET, authName));
         String endpoint = StringUtils.hasText(storageUri.getHost()) ? buildEndPoint(storageUri)
                 : envs.get(String.format(KEY_ENDPOINT, authName));
-        return new S3Config(bucket, accessKey, accessSecret, envs.get(String.format(KEY_REGION, authName)), endpoint);
+        return S3Config.builder()
+                .bucket(bucket)
+                .accessKey(accessKey)
+                .secretKey(accessSecret)
+                .region(envs.get(String.format(KEY_REGION, authName)))
+                .endpoint(endpoint)
+                .build();
     }
 
     private String buildEndPoint(StorageUri storageUri) {
