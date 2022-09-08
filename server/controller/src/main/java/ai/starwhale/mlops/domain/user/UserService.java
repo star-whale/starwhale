@@ -48,7 +48,6 @@ import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -62,35 +61,32 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService implements UserDetailsService {
 
-    @Resource
-    private UserMapper userMapper;
+    private final UserMapper userMapper;
+    private final RoleMapper roleMapper;
+    private final ProjectMapper projectMapper;
+    private final ProjectRoleMapper projectRoleMapper;
+    private final ProjectManager projectManager;
+    private final UserConvertor userConvertor;
+    private final RoleConvertor roleConvertor;
+    private final UserRoleConvertor userRoleConvertor;
+    private final SystemRoleConvertor systemRoleConvertor;
+    private final SaltGenerator saltGenerator;
 
-    @Resource
-    private RoleMapper roleMapper;
-
-    @Resource
-    private UserConvertor userConvertor;
-
-    @Resource
-    private SaltGenerator saltGenerator;
-
-    @Resource
-    private ProjectRoleMapper projectRoleMapper;
-
-    @Resource
-    private ProjectMapper projectMapper;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    @Resource
-    private RoleConvertor roleConvertor;
-
-    @Resource
-    private SystemRoleConvertor systemRoleConvertor;
-
-    @Resource
-    private UserRoleConvertor userRoleConvertor;
+    public UserService(UserMapper userMapper, RoleMapper roleMapper, ProjectMapper projectMapper,
+            ProjectRoleMapper projectRoleMapper, ProjectManager projectManager, UserConvertor userConvertor,
+            RoleConvertor roleConvertor, UserRoleConvertor userRoleConvertor, SystemRoleConvertor systemRoleConvertor,
+            SaltGenerator saltGenerator) {
+        this.userMapper = userMapper;
+        this.roleMapper = roleMapper;
+        this.projectMapper = projectMapper;
+        this.projectRoleMapper = projectRoleMapper;
+        this.projectManager = projectManager;
+        this.userConvertor = userConvertor;
+        this.roleConvertor = roleConvertor;
+        this.userRoleConvertor = userRoleConvertor;
+        this.systemRoleConvertor = systemRoleConvertor;
+        this.saltGenerator = saltGenerator;
+    }
 
 
     @Override
@@ -170,7 +166,9 @@ public class UserService implements UserDetailsService {
     public Long createUser(User user, String password, String salt) {
         UserEntity userByName = userMapper.findUserByName(user.getName()); // todo lock this row
         if (null != userByName) {
-            throw new SwValidationException(ValidSubject.USER).tip("user already exists");
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.USER)
+                            .tip("user already exists"), HttpStatus.BAD_REQUEST);
         }
         String encodedPwd;
         if (StrUtil.isEmpty(salt)) {
@@ -267,7 +265,7 @@ public class UserService implements UserDetailsService {
                 projectId);
 
         return entities.stream()
-                .map(entity -> userRoleConvertor.convert(entity))
+                .map(userRoleConvertor::convert)
                 .collect(Collectors.toList());
     }
 
