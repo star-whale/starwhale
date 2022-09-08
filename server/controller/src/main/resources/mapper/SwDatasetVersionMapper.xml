@@ -46,14 +46,14 @@
     order by dsv.version_order desc
   </select>
 
-  <select id="findByDSIdAndVersionNameForUpdate" resultMap="dsVersionResultMap">
+  <select id="findByDsIdAndVersionNameForUpdate" resultMap="dsVersionResultMap">
     <include refid="select_swds_version"/>
     and dataset_id = #{datasetId}
     and version_name = #{versionName}
     for update
   </select>
 
-  <select id="findByDSIdAndVersionName" resultMap="dsVersionResultMap">
+  <select id="findByDsIdAndVersionName" resultMap="dsVersionResultMap">
     <include refid="select_swds_version"/>
     <if test="datasetId != null">
       and dataset_id = #{datasetId}
