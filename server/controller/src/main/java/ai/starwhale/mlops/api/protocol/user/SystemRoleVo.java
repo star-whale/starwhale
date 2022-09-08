@@ -32,4 +32,8 @@ public class SystemRoleVo {
     private UserVo user;
 
     private RoleVo role;
+
+    public static SystemRoleVo empty() {
+        return new SystemRoleVo("", UserVo.empty(), RoleVo.empty());
+    }
 }

@@ -34,4 +34,7 @@ public class UserRoleVo {
 
     private RoleVo role;
 
+    public static UserRoleVo empty() {
+        return new UserRoleVo("", ProjectVo.empty(), RoleVo.empty());
+    }
 }
