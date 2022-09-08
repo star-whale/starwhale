@@ -18,7 +18,7 @@ export default function ResetPassword() {
         async (password: string) => {
             await resetPassword(password, verification)
             toaster.positive(t('Reset Password Success'), { autoHideDuration: 3000 })
-            history.push('/')
+            history.push('/login')
         },
         [verification, t, history]
     )
