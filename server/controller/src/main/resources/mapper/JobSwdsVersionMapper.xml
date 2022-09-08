@@ -30,7 +30,7 @@
     and ds.id = dsv.dataset_id
   </select>
 
-  <insert id="addJobSwDSVersions">
+  <insert id="addJobSwdsVersions">
     insert into job_dataset_version_rel (job_id, dataset_version_id)
     values
     <foreach collection="dsvIds" item="vid" index="index" separator=",">
