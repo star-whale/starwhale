@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * convert between K8s labels and ResourcePools
@@ -42,12 +43,12 @@ public class K8sResourcePoolConverter {
     public Map<String, String> toK8sLabel(ResourcePool pool) {
         var ret = new HashMap<String, String>();
 
-        // No label need when using default pool.
-        if (pool.getLabel().equals(defaultPool)) {
+        if (!StringUtils.hasText(pool.getLabel())) {
             return ret;
         }
 
-        if (pool.getLabel().isEmpty()) {
+        // No label need when using default pool.
+        if (pool.getLabel().equals(defaultPool)) {
             return ret;
         }
 
