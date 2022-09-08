@@ -95,6 +95,7 @@ public class StorageAccessParser {
         } else {
             authName = "";
         }
+        authName = authName.toUpperCase();
         Map<String, String> envs = env.getEnvs();
         String bucket = StringUtils.hasText(storageUri.getBucket()) ? storageUri.getBucket()
                 : envs.get(String.format(KEY_BUCKET, authName));
