@@ -144,5 +144,5 @@ build-jar:
 		-e MAVEN_CONFIG=/var/maven/.m2 \
 		-v ${MVN_VOLUME}:/var/maven/.m2 \
 		-v ${ROOT_DIR}:/app \
-		-w /app ${MVN_IMG} \
-		mvn -Duser.home=/var/maven clean package -f server/pom.xml -DskipTests
+		-w /app/server ${MVN_IMG} \
+		mvn -Duser.home=/var/maven clean package -f pom.xml -DskipTests
