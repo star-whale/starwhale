@@ -89,12 +89,12 @@ class URI:
             _remain = "" if len(_sp) == 1 else _sp[1]
             _inst_type = InstanceType.STANDALONE
         else:
-            _sp = [raw]
-            if self.expected_type == URIType.PROJECT:
-                _sp = raw.split("/", 1)
-            _inst = self._sw_config._config["instances"].get(_sp[0], {}).get("uri", "")
-            _inst_type = InstanceType.CLOUD
+            _sp = raw.split("/", 1)
             _inst_alias = _sp[0]
+            _inst = (
+                self._sw_config._config["instances"].get(_inst_alias, {}).get("uri", "")
+            )
+            _inst_type = InstanceType.CLOUD
             if _inst:
                 _remain = "" if len(_sp) == 1 else _sp[1]
 
