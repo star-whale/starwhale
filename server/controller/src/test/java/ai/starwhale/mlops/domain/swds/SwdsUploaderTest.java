@@ -50,6 +50,7 @@ import ai.starwhale.mlops.domain.swds.upload.SwdsVersionWithMetaConverter;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
@@ -131,7 +132,12 @@ public class SwdsUploaderTest {
                 .build();
         when(swdsVersionMapper.findByDsIdAndVersionNameForUpdate(1L, dsVersionId)).thenReturn(mockedEntity);
         when(swdsVersionMapper.findByDsIdAndVersionName(1L, dsVersionId)).thenReturn(mockedEntity);
-        when(storageAccessService.get(anyString())).thenReturn(new ByteArrayInputStream(index_file_content.getBytes()));
+        when(storageAccessService.get(anyString())).thenReturn(
+                new LengthAbleInputStream(
+                        new ByteArrayInputStream(index_file_content.getBytes()),
+                        index_file_content.getBytes().length
+                )
+        );
         HttpServletResponse httpResponse = mock(HttpServletResponse.class);
         ServletOutputStream mockOutPutStream = new ServletOutputStream() {
 

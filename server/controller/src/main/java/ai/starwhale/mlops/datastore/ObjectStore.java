@@ -24,8 +24,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 @Component
 public class ObjectStore {
@@ -49,14 +47,7 @@ public class ObjectStore {
 
     public SwBuffer get(String name) throws IOException {
         try (var is = this.storageAccessService.get(name)) {
-            int length;
-            if (is instanceof FileInputStream) {
-                length = (int) ((FileInputStream) is).getChannel().size();
-            } else {
-                //noinspection unchecked
-                length = ((ResponseInputStream<GetObjectResponse>) is).response().contentLength().intValue();
-            }
-            var ret = this.bufferManager.allocate(length);
+            var ret = this.bufferManager.allocate(Math.toIntExact(is.getSize()));
             int read = is.readNBytes(ret.asByteBuffer().array(), 0, ret.capacity());
             assert read == ret.capacity();
             return ret;

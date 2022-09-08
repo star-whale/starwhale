@@ -16,13 +16,14 @@
 
 package ai.starwhale.mlops.storage.s3;
 
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
+import ai.starwhale.mlops.storage.util.MetaHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -101,26 +102,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         try {
             HeadObjectResponse headObjectResponse = s3client.headObject(build);
             return new StorageObjectInfo(true, headObjectResponse.contentLength(),
-                    mapToString(headObjectResponse.metadata()));
+                    MetaHelper.mapToString(headObjectResponse.metadata()));
         } catch (NoSuchKeyException e) {
             return new StorageObjectInfo(false, 0L, null);
         }
 
     }
 
-    private String mapToString(Map<String, String> metadata) {
-        if (metadata == null || metadata.isEmpty()) {
-            return null;
-        }
-        StringBuilder stringBuilder = new StringBuilder();
-        metadata.forEach((k, v) -> {
-            stringBuilder.append(k);
-            stringBuilder.append(":");
-            stringBuilder.append(v);
-            stringBuilder.append("\n");
-        });
-        return stringBuilder.toString();
-    }
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
@@ -182,9 +170,10 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     @Override
-    public InputStream get(String path) {
-        return s3client
-                .getObject(GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build());
+    public LengthAbleInputStream get(String path) {
+        var req = GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
+        var resp = s3client.getObject(req);
+        return new LengthAbleInputStream(resp, resp.response().contentLength());
     }
 
 
@@ -192,15 +181,15 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     static final String RANGE_FORMAT = "bytes=%d-%d";
 
     @Override
-    public InputStream get(String path, Long offset, Long size) throws IOException {
+    public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
         if (null == offset || null == size || offset < 0 || size <= 0) {
             return get(path);
         }
 
-        return s3client
-                .getObject(
-                        GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
-                                .bucket(s3Config.getBucket()).key(path).build());
+        var req = GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
+                .bucket(s3Config.getBucket()).key(path).build();
+        var resp = s3client.getObject(req);
+        return new LengthAbleInputStream(resp, resp.response().contentLength());
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.storage.fs;
 
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.google.common.io.ByteStreams;
@@ -86,16 +87,16 @@ public class StorageAccessServiceFile implements StorageAccessService {
     }
 
     @Override
-    public InputStream get(String path) throws IOException {
+    public LengthAbleInputStream get(String path) throws IOException {
         var f = new File(this.rootDir, path);
         if (!f.exists()) {
             throw new FileNotFoundException(f.getAbsolutePath());
         }
-        return new FileInputStream(f);
+        return new LengthAbleInputStream(new FileInputStream(f), f.length());
     }
 
     @Override
-    public InputStream get(String path, Long offset, Long size) throws IOException {
+    public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
         if (offset == null || offset < 0) {
             offset = 0L;
         }
@@ -105,7 +106,8 @@ public class StorageAccessServiceFile implements StorageAccessService {
         var f = new RandomAccessFile(this.rootDir, "r");
         f.seek(offset);
         //noinspection UnstableApiUsage
-        return ByteStreams.limit(Channels.newInputStream(f.getChannel()), size);
+        var is = ByteStreams.limit(Channels.newInputStream(f.getChannel()), size);
+        return new LengthAbleInputStream(is, size);
     }
 
     @Override

@@ -21,8 +21,8 @@ import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import java.util.Map;
@@ -40,13 +40,13 @@ public class StorageAccessParser {
     ConcurrentHashMap<String, StorageAccessService> storageAccessServicePool = new ConcurrentHashMap<>();
 
     public StorageAccessParser(StorageAccessService defaultStorageAccessService,
-            SwDatasetVersionMapper swDatasetVersionMapper) {
+                               SwDatasetVersionMapper swDatasetVersionMapper) {
         this.defaultStorageAccessService = defaultStorageAccessService;
         this.swDatasetVersionMapper = swDatasetVersionMapper;
     }
 
     public StorageAccessService getStorageAccessServiceFromAuth(Long datasetId, String uri,
-            String authName) {
+                                                                String authName) {
         if (StringUtils.hasText(authName)) {
             authName = authName.toUpperCase(); // env vars are uppercase always
         }
@@ -67,15 +67,20 @@ public class StorageAccessParser {
         if (null == env) {
             return defaultStorageAccessService;
         }
-        if (env.getEnvType() != FileSystemEnvType.S3) {
-            throw new SwValidationException(ValidSubject.SWDS).tip(
-                    "file system not supported yet: " + env.getEnvType());
+
+        switch (env.getEnvType()) {
+            case S3:
+                var s3 = new StorageAccessServiceS3(env2S3Config(new StorageUri(uri), env, authName));
+                storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), s3);
+                return s3;
+            case ALIYUN:
+                var aliyun = new StorageAccessServiceAliyun(env2S3Config(new StorageUri(uri), env, authName));
+                storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), aliyun);
+                return aliyun;
+            default:
+                throw new SwValidationException(ValidSubject.SWDS).tip(
+                        "file system not supported yet: " + env.getEnvType());
         }
-        StorageAccessServiceS3 storageAccessServiceS3 = new StorageAccessServiceS3(
-                env2S3Config(new StorageUri(uri), env, authName));
-        storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName),
-                storageAccessServiceS3);
-        return storageAccessServiceS3;
     }
 
     String formatKey(Long datasetId, String authName) {
