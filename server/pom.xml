@@ -32,6 +32,7 @@
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.2.0</maven-checkstyle-plugin.version>
+    <testcontainers.version>1.17.3</testcontainers.version>
     <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -140,6 +141,16 @@
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest</artifactId>
         <version>${hamcrest.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers</artifactId>
+        <version>${testcontainers.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
