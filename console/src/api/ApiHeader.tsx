@@ -48,8 +48,9 @@ export default function ApiHeader() {
 
                 if (error.response?.status === 401 && error.config.method === 'get') {
                     const withUnAuthRoute =
-                        ['/login', '/signup', '/create-account'].filter((path) => winLocation.pathname.includes(path))
-                            .length > 0
+                        ['/login', '/signup', '/create-account', '/reset'].filter((path) =>
+                            winLocation.pathname.includes(path)
+                        ).length > 0
                     const search = qs.parse(winLocation.search, { ignoreQueryPrefix: true })
                     let { redirect } = search
                     if (redirect && typeof redirect === 'string') {
