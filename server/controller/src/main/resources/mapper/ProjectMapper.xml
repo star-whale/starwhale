@@ -136,7 +136,7 @@
     left join
     (select count(*) as count_jobs, project_id from job_info group by project_id) as c4
     on p.id = c4.project_id
-    <if test="projectIds != null">
+    <if test="projectIds != null and projectIds.size() != 0">
       where p.id in
       <foreach item="item" index="index" collection="projectIds"
         open="(" separator="," close=")">
