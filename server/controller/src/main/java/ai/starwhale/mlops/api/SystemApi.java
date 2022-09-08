@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.agent.AgentVO;
-import ai.starwhale.mlops.api.protocol.system.ResourcePoolVO;
-import ai.starwhale.mlops.api.protocol.system.SystemVersionVO;
-import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
+import ai.starwhale.mlops.api.protocol.agent.AgentVo;
+import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
+import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
+import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,106 +39,104 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
-
 @Tag(name = "System")
 @Validated
 public interface SystemApi {
 
     @Operation(summary = "Get the list of agents")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = PageInfo.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = PageInfo.class)))
+            })
     @GetMapping(value = "/system/agent")
-    ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(
-        @Parameter(in = ParameterIn.QUERY, description = "Agent ip to search for", schema = @Schema())
-        @Valid
-        @RequestParam(value = "ip", required = false)
-            String ip,
-        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
-        @Valid
-        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-            Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
-        @Valid
-        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-            Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<AgentVo>>> listAgent(
+            @Parameter(in = ParameterIn.QUERY, description = "Agent ip to search for", schema = @Schema())
+            @Valid
+            @RequestParam(value = "ip", required = false)
+                    String ip,
+            @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+            @Valid
+            @RequestParam(value = "pageNum", required = false, defaultValue = "1")
+                    Integer pageNum,
+            @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+            @Valid
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10")
+                    Integer pageSize);
 
     @Operation(summary = "Get the list of resource pool")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = List.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = List.class)))
+            })
     @GetMapping(value = "/system/resourcePool")
-    ResponseEntity<ResponseMessage<List<ResourcePoolVO>>> listResourcePools();
+    ResponseEntity<ResponseMessage<List<ResourcePoolVo>>> listResourcePools();
 
     @Operation(summary = "Upgrade system version or cancel upgrade")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/system/version/{action}")
     ResponseEntity<ResponseMessage<String>> systemVersionAction(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Action: upgrade or cancel",
-            required = true,
-            schema = @Schema(allowableValues = {"upgrade", "cancel"}))
-        @PathVariable("action")
-            String action);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Action: upgrade or cancel",
+                    required = true,
+                    schema = @Schema(allowableValues = {"upgrade", "cancel"}))
+            @PathVariable("action")
+                    String action);
 
     @Operation(summary = "Get current version of the system")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = SystemVersionVO.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = SystemVersionVo.class)))
+            })
     @GetMapping(value = "/system/version")
-    ResponseEntity<ResponseMessage<SystemVersionVO>> getCurrentVersion();
+    ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion();
 
     @Operation(summary = "Get latest version of the system")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = SystemVersionVO.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = SystemVersionVo.class)))
+            })
     @GetMapping(value = "/system/version/latest")
-    ResponseEntity<ResponseMessage<SystemVersionVO>> getLatestVersion();
+    ResponseEntity<ResponseMessage<SystemVersionVo>> getLatestVersion();
 
     @Operation(
-        summary = "Get the current upgrade progress",
-        description =
-            "Get the current server upgrade process. If downloading, return the download progress")
+            summary = "Get the current upgrade progress",
+            description =
+                    "Get the current server upgrade process. If downloading, return the download progress")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = UpgradeProgressVO.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = UpgradeProgressVo.class)))
+            })
     @GetMapping(value = "/system/version/progress")
-    ResponseEntity<ResponseMessage<UpgradeProgressVO>> getUpgradeProgress();
+    ResponseEntity<ResponseMessage<UpgradeProgressVo>> getUpgradeProgress();
 }

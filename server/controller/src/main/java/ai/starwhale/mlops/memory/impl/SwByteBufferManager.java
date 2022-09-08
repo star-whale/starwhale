@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory.impl;
 
-import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.SwBuffer;
+import ai.starwhale.mlops.memory.SwBufferManager;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SwByteBufferManager implements SwBufferManager {
+
     @Override
     public SwBuffer allocate(int capacity) {
         return new SwByteBuffer(capacity);

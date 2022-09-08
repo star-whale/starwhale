@@ -23,9 +23,9 @@ import java.util.List;
  */
 public interface TaskStatusReceiver {
 
-     /**
-      * process the report from Agent
-      */
-     void receive(List<ReportedTask> tasks);
+    /**
+     * process the report from Agent
+     */
+    void receive(List<ReportedTask> tasks);
 
 }

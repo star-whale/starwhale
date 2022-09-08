@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -25,24 +26,25 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 public class ColumnSchema {
+
     private final String name;
     private final ColumnType type;
     private final int index;
 
     public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
         if (schema.getName() == null) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "column name should not be null");
         }
         if (schema.getType() == null) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "column type should not be null");
         }
         this.name = schema.getName();
         try {
             this.type = ColumnType.valueOf(schema.getType());
         } catch (IllegalArgumentException e) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "invalid column type " + schema.getType());
         }
         this.index = index;

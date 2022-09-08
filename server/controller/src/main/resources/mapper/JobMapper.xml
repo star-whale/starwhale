@@ -1,211 +1,216 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2022.1-2022
-  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
-  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
-  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  ~ starwhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with starwhale.ai.
   -->
 
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobMapper">
 
-    <sql id="select_jobs">
-        select * from (select j.id as job_id,
-                              j.job_uuid,
-                              j.project_id,
-                              j.swmp_version_id,
-                              j.owner_id,
-                              j.created_time as job_created_time,
-                              j.finished_time as job_finished_time,
-                              j.duration_ms as job_duration_ms,
-                              j.job_status,
-                              j.job_type,
-                              j.swrt_version_id as swrt_version_id,
-                              j.device_type,
-                              j.device_amount,
-                              j.result_output_path as job_result_output_path,
-                              j.job_comment,
-                              j.resource_pool_id,
-                              j.is_deleted as job_is_deleted,
-                              p.project_name,
-                              u.id as user_id,
-                              u.user_name,
-                              u.user_enabled,
-                              u.created_time as user_created_time,
-                              u.modified_time as user_modified_time,
-                              mv.id as mv_id,
-                              mv.swmp_id,
-                              mv.version_name as mv_version_name,
-                              mv.eval_jobs as mv_eval_jobs,
-                              mv.version_tag as mv_version_tag,
-                              mv.version_meta as mv_version_meta,
-                              mv.created_time as mv_created_time,
-                              mv.modified_time as mv_modified_time,
-                              mv.storage_path as mv_storage_path,
-                              m.swmp_name as swmp_name
-                       from job_info as j,
-                            user_info as u,
-                            project_info as p,
-                            swmp_version as mv,
-                            swmp_info as m
-                       where u.id = j.owner_id
-                         and p.id = j.project_id
-                         and mv.id = j.swmp_version_id
-                         and m.id = mv.swmp_id) as j2
-    </sql>
+  <sql id="select_jobs">
+    select * from (select j.id as job_id,
+    j.job_uuid,
+    j.project_id,
+    j.swmp_version_id,
+    j.owner_id,
+    j.created_time as job_created_time,
+    j.finished_time as job_finished_time,
+    j.duration_ms as job_duration_ms,
+    j.job_status,
+    j.job_type,
+    j.swrt_version_id as swrt_version_id,
+    j.device_type,
+    j.device_amount,
+    j.result_output_path as job_result_output_path,
+    j.job_comment,
+    j.resource_pool_id,
+    j.is_deleted as job_is_deleted,
+    p.project_name,
+    u.id as user_id,
+    u.user_name,
+    u.user_enabled,
+    u.created_time as user_created_time,
+    u.modified_time as user_modified_time,
+    mv.id as mv_id,
+    mv.swmp_id,
+    mv.version_name as mv_version_name,
+    mv.eval_jobs as mv_eval_jobs,
+    mv.version_tag as mv_version_tag,
+    mv.version_meta as mv_version_meta,
+    mv.created_time as mv_created_time,
+    mv.modified_time as mv_modified_time,
+    mv.storage_path as mv_storage_path,
+    m.swmp_name as swmp_name
+    from job_info as j,
+    user_info as u,
+    project_info as p,
+    swmp_version as mv,
+    swmp_info as m
+    where u.id = j.owner_id
+    and p.id = j.project_id
+    and mv.id = j.swmp_version_id
+    and m.id = mv.swmp_id) as j2
+  </sql>
 
-    <select id="listJobs" resultMap="jobResultMap" >
-        <include refid="select_jobs"/>
-        <where>
-            and job_is_deleted = 0
-            and project_id = #{projectId}
-        </where>
-        <if test="swmpId != null and swmpId != ''">
-            and swmp_id = #{swmpId}
-        </if>
-        order by job_id desc
-    </select>
+  <select id="listJobs" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and project_id = #{projectId}
+    </where>
+    <if test="swmpId != null and swmpId != ''">
+      and swmp_id = #{swmpId}
+    </if>
+    order by job_id desc
+  </select>
 
-    <select id="listJobsByStatus" resultMap="jobResultMap" >
-        <include refid="select_jobs"/>
-        <where>
-            and job_is_deleted = 0
-            and project_id = #{projectId}
-        </where>
-        <if test="swmpId != null and swmpId != ''">
-            and swmp_id = #{swmpId}
-        </if>
-        order by job_id desc
-    </select>
+  <select id="listJobsByStatus" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and project_id = #{projectId}
+    </where>
+    <if test="swmpId != null and swmpId != ''">
+      and swmp_id = #{swmpId}
+    </if>
+    order by job_id desc
+  </select>
 
-    <select id="findJobById" resultMap="jobResultMap" >
-        <include refid="select_jobs"/>
-        <where>
-            and job_id = #{jobId}
-        </where>
-    </select>
+  <select id="findJobById" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_id = #{jobId}
+    </where>
+  </select>
 
-    <select id="findJobByUUID" resultMap="jobResultMap" >
-        <include refid="select_jobs"/>
-        <where>
-            and job_uuid = #{uuid}
-        </where>
-    </select>
+  <select id="findJobByUuid" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_uuid = #{uuid}
+    </where>
+  </select>
 
-    <select id="findJobByStatusIn" resultMap="jobResultMap" >
-        <include refid="select_jobs"/>
-        <where>
-            and job_is_deleted = 0
-            and job_status in
-        </where>
-        <foreach item="item" index="index" collection="jobStatuses"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
-    </select>
+  <select id="findJobByStatusIn" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and job_status in
+    </where>
+    <foreach item="item" index="index" collection="jobStatuses"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
 
-    <update id="updateJobStatus">
-        update job_info set job_status = #{jobStatus} WHERE id in
-        <foreach item="item" index="index" collection="jobIds"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
-    </update>
+  <update id="updateJobStatus">
+    update job_info set job_status = #{jobStatus} WHERE id in
+    <foreach item="item" index="index" collection="jobIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </update>
 
-    <update id="updateJobFinishedTime">
-        update job_info set finished_time = #{finishedTime} WHERE id in
-        <foreach item="item" index="index" collection="jobIds"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
-    </update>
-    <update id="updateJobResultPath">
-        update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
-    </update>
+  <update id="updateJobFinishedTime">
+    update job_info set finished_time = #{finishedTime} WHERE id in
+    <foreach item="item" index="index" collection="jobIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </update>
+  <update id="updateJobResultPath">
+    update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
+  </update>
 
-    <update id="updateJobComment">
-        update job_info set job_comment = #{comment}
-        where id = #{id}
-    </update>
+  <update id="updateJobComment">
+    update job_info set job_comment = #{comment}
+    where id = #{id}
+  </update>
 
-    <update id="updateJobCommentByUUID">
-        update job_info set job_comment = #{comment}
-        where job_uuid = #{uuid}
-    </update>
+  <update id="updateJobCommentByUuid">
+    update job_info set job_comment = #{comment}
+    where job_uuid = #{uuid}
+  </update>
 
-    <update id="removeJob" >
-        update job_info set is_deleted = 1
-        where id = #{id}
-    </update>
+  <update id="removeJob">
+    update job_info set is_deleted = 1
+    where id = #{id}
+  </update>
 
-    <update id="removeJobByUUID" >
-        update job_info set is_deleted = 1
-        where job_uuid = #{uuid}
-    </update>
+  <update id="removeJobByUuid">
+    update job_info set is_deleted = 1
+    where job_uuid = #{uuid}
+  </update>
 
-    <update id="recoverJob" >
-        update job_info set is_deleted = 0
-        where id = #{id}
-    </update>
+  <update id="recoverJob">
+    update job_info set is_deleted = 0
+    where id = #{id}
+  </update>
 
-    <update id="recoverJobByUUID" >
-        update job_info set is_deleted = 0
-        where job_uuid = #{uuid}
-    </update>
+  <update id="recoverJobByUuid">
+    update job_info set is_deleted = 0
+    where job_uuid = #{uuid}
+  </update>
 
-    <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into job_info(job_uuid,
-                             project_id,
-                             swmp_version_id,
-                             owner_id,
-                             created_time,
-                             finished_time,
-                             duration_ms,
-                             job_status,
-                             job_type,
-                             swrt_version_id,
-                             device_type,
-                             device_amount,
-                             result_output_path,
-                             resource_pool_id)
-        values (#{job.jobUuid},
-                #{job.projectId},
-                #{job.swmpVersionId},
-                #{job.ownerId},
-                #{job.createdTime},
-                #{job.finishedTime},
-                #{job.durationMs},
-                #{job.jobStatus},
-                #{job.type},
-                #{job.runtimeVersionId},
-                #{job.deviceType},
-                #{job.deviceAmount},
-                #{job.resultOutputPath},
-                #{job.resourcePoolId}
-                )
-    </insert>
+  <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity"
+    useGeneratedKeys="true" keyProperty="id">
+    insert into job_info(job_uuid,
+    project_id,
+    swmp_version_id,
+    owner_id,
+    created_time,
+    finished_time,
+    duration_ms,
+    job_status,
+    job_type,
+    swrt_version_id,
+    device_type,
+    device_amount,
+    result_output_path,
+    resource_pool_id)
+    values (#{job.jobUuid},
+    #{job.projectId},
+    #{job.swmpVersionId},
+    #{job.ownerId},
+    #{job.createdTime},
+    #{job.finishedTime},
+    #{job.durationMs},
+    #{job.jobStatus},
+    #{job.type},
+    #{job.runtimeVersionId},
+    #{job.deviceType},
+    #{job.deviceAmount},
+    #{job.resultOutputPath},
+    #{job.resourcePoolId}
+    )
+  </insert>
 
-    <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.po.JobEntity" >
-        <id property="id" column="job_id" />
-        <result property="jobUuid" column="job_uuid"/>
-        <result property="projectId" column="project_id"/>
-        <result property="modelName" column="swmp_name"/>
-        <result property="swmpVersionId" column="swmp_version_id"/>
-        <result property="ownerId" column="owner_id"/>
-        <result property="createdTime" column="job_created_time" />
-        <result property="finishedTime" column="job_finished_time" />
-        <result property="durationMs" column="job_duration_ms" />
-        <result property="jobStatus" column="job_status" />
-        <result property="type" column="job_type" />
-        <result property="deviceType" column="device_type" />
-        <result property="deviceAmount" column="device_amount" />
-        <result property="resultOutputPath" column="job_result_output_path" />
-        <result property="comment" column="job_comment"/>
-        <result property="isDeleted" column="job_is_deleted"/>
-        <result property="runtimeVersionId" column="swrt_version_id"/>
-        <result property="resourcePoolId" column="resource_pool_id"/>
-        <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
-        <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
-    </resultMap>
+  <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.po.JobEntity">
+    <id property="id" column="job_id"/>
+    <result property="jobUuid" column="job_uuid"/>
+    <result property="projectId" column="project_id"/>
+    <result property="modelName" column="swmp_name"/>
+    <result property="swmpVersionId" column="swmp_version_id"/>
+    <result property="ownerId" column="owner_id"/>
+    <result property="createdTime" column="job_created_time"/>
+    <result property="finishedTime" column="job_finished_time"/>
+    <result property="durationMs" column="job_duration_ms"/>
+    <result property="jobStatus" column="job_status"/>
+    <result property="type" column="job_type"/>
+    <result property="deviceType" column="device_type"/>
+    <result property="deviceAmount" column="device_amount"/>
+    <result property="resultOutputPath" column="job_result_output_path"/>
+    <result property="comment" column="job_comment"/>
+    <result property="isDeleted" column="job_is_deleted"/>
+    <result property="runtimeVersionId" column="swrt_version_id"/>
+    <result property="resourcePoolId" column="resource_pool_id"/>
+    <association property="project"
+      resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
+    <association property="swmpVersion"
+      resultMap="ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper.swmpVersionResultMap"/>
+    <association property="owner"
+      resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap"/>
+  </resultMap>
 </mapper>

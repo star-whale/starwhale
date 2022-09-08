@@ -49,9 +49,6 @@ public class Step extends TimeConcern {
 
     @Override
     public String toString() {
-        return "Step{" +
-            "name='" + name + '\'' +
-            ", id=" + id +
-            '}';
+        return "Step{" + "name='" + name + '\'' + ", id=" + id + '}';
     }
 }

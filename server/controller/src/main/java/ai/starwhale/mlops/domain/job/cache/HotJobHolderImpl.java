@@ -31,61 +31,48 @@ import org.springframework.stereotype.Service;
  * holds all the running jobs
  */
 @Service
-public class HotJobHolderImpl implements HotJobHolder{
+public class HotJobHolderImpl implements HotJobHolder {
 
-    ConcurrentHashMap<Long,Job> jobMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Long, Job> jobMap = new ConcurrentHashMap<>();
 
-    ConcurrentHashMap<Long,Task> taskMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Long, Task> taskMap = new ConcurrentHashMap<>();
 
-    public void adopt(Job job){
-        jobMap.put(job.getId(),job);
+    public void adopt(Job job) {
+        jobMap.put(job.getId(), job);
         job.getSteps().stream().map(Step::getTasks)
-            .flatMap(Collection::stream)
-            .forEach(task -> {
-                taskMap.put(task.getId(),task);
-            });
+                .flatMap(Collection::stream)
+                .forEach(task -> taskMap.put(task.getId(), task));
     }
 
-    public Collection<Job> ofIds(Collection<Long> ids){
-        return ids.parallelStream().map(id->jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
+    public Collection<Job> ofIds(Collection<Long> ids) {
+        return ids.parallelStream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    /**
-     *
-     * @param jobStatuses
-     * @return
-     */
-    public Collection<Job> ofStatus(Set<JobStatus> jobStatuses){
+    public Collection<Job> ofStatus(Set<JobStatus> jobStatuses) {
         return jobMap.values().stream()
-            .filter(job -> jobStatuses.contains(job.getStatus()))
-            .collect(Collectors.toList());
+                .filter(job -> jobStatuses.contains(job.getStatus()))
+                .collect(Collectors.toList());
     }
 
-    /**
-     *
-     * @param taskIds
-     * @return
-     */
-    public Collection<Task> tasksOfIds(Collection<Long> taskIds){
+    public Collection<Task> tasksOfIds(Collection<Long> taskIds) {
         return taskIds.stream()
-            .map(id->taskMap.get(id))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                .map(id -> taskMap.get(id))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     /**
      * remove job in cache
-     * @param jobId
      */
-    public void remove(Long jobId){
+    public void remove(Long jobId) {
         Job job = jobMap.get(jobId);
-        if(null == job){
+        if (null == job) {
             return;
         }
         job.getSteps().stream().map(Step::getTasks)
-            .flatMap(Collection::stream)
-            .map(Task::getId)
-            .forEach(tid->taskMap.remove(tid));
+                .flatMap(Collection::stream)
+                .map(Task::getId)
+                .forEach(tid -> taskMap.remove(tid));
         jobMap.remove(jobId);
     }
 }

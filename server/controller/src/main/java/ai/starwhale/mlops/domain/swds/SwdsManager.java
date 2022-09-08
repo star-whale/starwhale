@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds;
 
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -27,12 +27,12 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -42,25 +42,25 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
-    RevertAccessor, RecoverAccessor, RemoveAccessor {
+        RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     @Resource
-    private SWDatasetMapper datasetMapper;
+    private SwDatasetMapper datasetMapper;
 
     @Resource
-    private SWDatasetVersionMapper datasetVersionMapper;
+    private SwDatasetVersionMapper datasetVersionMapper;
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
-    public Long getSWDSVersionId(String versionUrl, Long swdsId) {
-        if(idConvertor.isID(versionUrl)) {
+    public Long getSwdsVersionId(String versionUrl, Long swdsId) {
+        if (idConvertor.isId(versionUrl)) {
             return idConvertor.revert(versionUrl);
         }
-        SWDatasetVersionEntity entity = datasetVersionMapper.findByDSIdAndVersionName(swdsId, versionUrl);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
+        SwDatasetVersionEntity entity = datasetVersionMapper.findByDsIdAndVersionName(swdsId, versionUrl);
+        if (entity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWMP)
+                    .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }
@@ -82,22 +82,22 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
 
     @Override
     public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
-        return datasetVersionMapper.findByDSIdAndVersionName(bundleId, name);
+        return datasetVersionMapper.findByDsIdAndVersionName(bundleId, name);
     }
 
     @Override
     public HasTag findObjectWithTagById(Long id) {
-        SWDatasetVersionEntity entity = datasetVersionMapper.getVersionById(id);
+        SwDatasetVersionEntity entity = datasetVersionMapper.getVersionById(id);
         return HasTagWrapper.builder()
-            .id(entity.getId())
-            .tag(entity.getVersionTag())
-            .build();
+                .id(entity.getId())
+                .tag(entity.getVersionTag())
+                .build();
     }
 
     @Override
     public Boolean updateTag(HasTag entity) {
         int r = datasetVersionMapper.updateTag(entity.getId(), entity.getTag());
-        if(r > 0) {
+        if (r > 0) {
             log.info("Dataset Version Tag has been modified. ID={}", entity.getId());
         }
         return r > 0;
@@ -126,7 +126,7 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Override
     public Boolean remove(Long id) {
         int r = datasetMapper.deleteDataset(id);
-        if( r > 0){
+        if (r > 0) {
             log.info("SWDS has been removed. ID={}", id);
         }
         return r > 0;

@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import java.util.Arrays;
@@ -44,30 +44,32 @@ public class HotJobsLoader implements CommandLineRunner {
     final JobStatusMachine jobStatusMachine;
 
     public HotJobsLoader(
-        JobMapper jobMapper,
-        JobLoader jobLoader,
-        JobStatusMachine jobStatusMachine) {
+            JobMapper jobMapper,
+            JobLoader jobLoader,
+            JobStatusMachine jobStatusMachine) {
         this.jobMapper = jobMapper;
         this.jobLoader = jobLoader;
         this.jobStatusMachine = jobStatusMachine;
     }
 
 
-    /**load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem
-     * CREATED job has no steps yet, so it will not be loaded here
+    /**
+     * load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem CREATED job has no steps yet, so it will
+     * not be loaded here
+     *
      * @return tasks of jobs that are notFINISHED/ERROR/CANCELED/CREATED/PAUSED
      */
-    private List<JobEntity> hotJobsFromDB() {
+    private List<JobEntity> hotJobsFromDb() {
         List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
-            .parallelStream()
-            .filter(jobStatus -> jobStatusMachine.isHot(jobStatus))
-            .collect(Collectors.toList());
+                .parallelStream()
+                .filter(jobStatusMachine::isHot)
+                .collect(Collectors.toList());
         return jobMapper.findJobByStatusIn(hotJobStatuses);
     }
 
     @Override
     public void run(String... args) throws Exception {
-        jobLoader.loadEntities(hotJobsFromDB(),false,true);
+        jobLoader.loadEntities(hotJobsFromDb(), false, true);
         log.info("hot jobs loaded");
     }
 }

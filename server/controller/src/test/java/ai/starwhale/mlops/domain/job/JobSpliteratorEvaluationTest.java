@@ -41,10 +41,7 @@ public class JobSpliteratorEvaluationTest {
         JobMapper jobMapper = mock(JobMapper.class);
         StepMapper stepMapper = mock(StepMapper.class);
         JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
-            new StoragePathCoordinator("/test")
-            ,taskMapper
-            ,jobMapper
-            ,stepMapper);
+                new StoragePathCoordinator("/test"), taskMapper, jobMapper, stepMapper);
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();

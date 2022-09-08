@@ -32,15 +32,15 @@ public class WatchableTaskFactory {
 
 
     public WatchableTaskFactory(
-        List<TaskStatusChangeWatcher> taskStatusChangeWatchers,
-        TaskStatusMachine taskStatusMachine) {
-        this.taskStatusChangeWatchers = taskStatusChangeWatchers.stream().sorted((w1,w2)->{
+            List<TaskStatusChangeWatcher> taskStatusChangeWatchers,
+            TaskStatusMachine taskStatusMachine) {
+        this.taskStatusChangeWatchers = taskStatusChangeWatchers.stream().sorted((w1, w2) -> {
             Order o1 = w1.getClass().getAnnotation(Order.class);
-            if(null == o1){
+            if (null == o1) {
                 return -1;
             }
             Order o2 = w2.getClass().getAnnotation(Order.class);
-            if(null == o2){
+            if (null == o2) {
                 return 1;
             }
             return o1.value() - o2.value();
@@ -48,13 +48,13 @@ public class WatchableTaskFactory {
         this.taskStatusMachine = taskStatusMachine;
     }
 
-    public Task wrapTask(Task task){
-        return new WatchableTask(task,taskStatusChangeWatchers,taskStatusMachine);
+    public Task wrapTask(Task task) {
+        return new WatchableTask(task, taskStatusChangeWatchers, taskStatusMachine);
     }
 
-    public List<Task> wrapTasks(Collection<Task> tasks){
+    public List<Task> wrapTasks(Collection<Task> tasks) {
         return tasks.parallelStream()
-            .map(task->new WatchableTask(task,taskStatusChangeWatchers,taskStatusMachine))
-            .collect(Collectors.toList());
+                .map(task -> new WatchableTask(task, taskStatusChangeWatchers, taskStatusMachine))
+                .collect(Collectors.toList());
     }
 }

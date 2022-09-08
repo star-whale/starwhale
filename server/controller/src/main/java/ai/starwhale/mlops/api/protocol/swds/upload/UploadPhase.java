@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.api.protocol.swds.upload;
 
 public enum UploadPhase {
-    MANIFEST,BLOB,END,CANCEL
+    MANIFEST, BLOB, END, CANCEL
 }

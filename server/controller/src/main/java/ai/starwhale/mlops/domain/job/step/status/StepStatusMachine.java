@@ -27,7 +27,6 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
@@ -35,23 +34,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class StepStatusMachine {
 
-    final static Map<StepStatus, Set<StepStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(READY,PAUSED,RUNNING,SUCCESS,TO_CANCEL,CANCELED,FAIL))
-        , new SimpleEntry<>(READY, Set.of(PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
-        , new SimpleEntry<>(PAUSED, Set.of(READY,RUNNING,CANCELLING,CANCELED,FAIL))
-        , new SimpleEntry<>(RUNNING, Set.of(CANCELLING,CANCELED,PAUSED,SUCCESS,FAIL))
-        , new SimpleEntry<>(SUCCESS, Set.of())
-        , new SimpleEntry<>(FAIL, Set.of())
-        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELED, Set.of())
-        , new SimpleEntry<>(UNKNOWN, Set.of(StepStatus.values())));
+    static final Map<StepStatus, Set<StepStatus>> transferMap = Map.of(
+            CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, TO_CANCEL, CANCELED, FAIL),
+            READY, Set.of(PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
+            PAUSED, Set.of(READY, RUNNING, CANCELLING, CANCELED, FAIL),
+            RUNNING, Set.of(CANCELLING, CANCELED, PAUSED, SUCCESS, FAIL),
+            SUCCESS, Set.of(), FAIL, Set.of(),
+            TO_CANCEL, Set.of(CANCELLING, CANCELED, FAIL),
+            CANCELLING, Set.of(CANCELED, FAIL), CANCELED, Set.of(),
+            UNKNOWN, Set.of(StepStatus.values()));
 
-    public boolean couldTransfer(StepStatus statusNow,StepStatus statusNew) {
+    public boolean couldTransfer(StepStatus statusNow, StepStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
     }
 
-    public boolean isFinal(StepStatus status){
+    public boolean isFinal(StepStatus status) {
         return transferMap.get(status).isEmpty();
     }
 

@@ -18,23 +18,26 @@ package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.schedule.k8s.K8sResourcePoolConverter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.*;
 
 /**
  * test for {@link K8sResourcePoolConverter}
  */
 public class ResourcePoolConverterTest {
+
     private final Map<String, Map<String, String>> tests;
 
     public ResourcePoolConverterTest() {
         tests = Map.of(
-            "foo", Map.of("pool.starwhale.ai/foo", "true"),
-            "aLongLongLongLongLongLabel", Map.of("pool.starwhale.ai/aLongLongLongLongLongLabel", "true"),
-            "default", new HashMap<>(),
-            "", new HashMap<>()
+                "foo", Map.of("pool.starwhale.ai/foo", "true"),
+                "aLongLongLongLongLongLabel", Map.of("pool.starwhale.ai/aLongLongLongLongLongLabel", "true"),
+                "default", new HashMap<>(),
+                "", new HashMap<>()
         );
     }
 
@@ -64,13 +67,13 @@ public class ResourcePoolConverterTest {
 
         var emptyEntityLabels = new ArrayList<String>();
         var extra = Map.of(
-            Map.of("foo", "bar"), emptyEntityLabels,
-            Map.of("foo", "true"), emptyEntityLabels,
-            Map.of("pool.starwhale.ai/foo", "bar"), emptyEntityLabels,
-            Map.of("pool.starwhale.ai/foo", "true"), List.of("foo"),
-            Map.of("wrong.starwhale.ai/foo", "true"), emptyEntityLabels,
-            Map.of("pool.starwhale.ai/foo", "true", "pool.starwhale.ai/bar", "xyz"), List.of("foo"),
-            Map.of("pool.starwhale.ai/foo", "true", "pool.starwhale.ai/bar", "true"), List.of("foo", "bar")
+                Map.of("foo", "bar"), emptyEntityLabels,
+                Map.of("foo", "true"), emptyEntityLabels,
+                Map.of("pool.starwhale.ai/foo", "bar"), emptyEntityLabels,
+                Map.of("pool.starwhale.ai/foo", "true"), List.of("foo"),
+                Map.of("wrong.starwhale.ai/foo", "true"), emptyEntityLabels,
+                Map.of("pool.starwhale.ai/foo", "true", "pool.starwhale.ai/bar", "xyz"), List.of("foo"),
+                Map.of("pool.starwhale.ai/foo", "true", "pool.starwhale.ai/bar", "true"), List.of("foo", "bar")
         );
         extra.forEach((k8sLabel, entityLabels) -> {
             var pools = converter.toResourcePools(k8sLabel);

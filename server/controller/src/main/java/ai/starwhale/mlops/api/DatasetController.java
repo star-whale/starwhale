@@ -18,28 +18,28 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
-import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
-import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDSTagRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
+import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
+import ai.starwhale.mlops.api.protocol.swds.RevertSwdsRequest;
+import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
+import ai.starwhale.mlops.api.protocol.swds.SwdsTagRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
-import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
-import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
-import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
-import ai.starwhale.mlops.domain.swds.SWDatasetService;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.SwDatasetService;
+import ai.starwhale.mlops.domain.swds.bo.SwdsQuery;
+import ai.starwhale.mlops.domain.swds.bo.SwdsVersion;
+import ai.starwhale.mlops.domain.swds.bo.SwdsVersionQuery;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
 import ai.starwhale.mlops.exception.ApiOperationException;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.lang.Assert;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
@@ -65,106 +65,108 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("${sw.controller.apiPrefix}")
 @Slf4j
-public class DatasetController implements DatasetApi{
+public class DatasetController implements DatasetApi {
 
     @Resource
-    private SWDatasetService swDatasetService;
+    private SwDatasetService swDatasetService;
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private SwdsUploader swdsUploader;
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectUrl,
-        String swmpUrl, RevertSWDSRequest revertRequest) {
+            String swmpUrl, RevertSwdsRequest revertRequest) {
         Boolean res = swDatasetService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersionUrl());
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swds version failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Revert swds version failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteDataset(String projectUrl,
-        String datasetUrl) {
-        Boolean res = swDatasetService.deleteSWDS(
-            SWDSQuery.builder()
-                .projectUrl(projectUrl)
-                .swdsUrl(datasetUrl)
-                .build());
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swds failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            String datasetUrl) {
+        Boolean res = swDatasetService.deleteSwds(
+                SwdsQuery.builder()
+                        .projectUrl(projectUrl)
+                        .swdsUrl(datasetUrl)
+                        .build());
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete swds failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverDataset(String projectUrl,
-        String datasetUrl) {
-        Boolean res = swDatasetService.recoverSWDS(projectUrl, datasetUrl);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover dataset failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            String datasetUrl) {
+        Boolean res = swDatasetService.recoverSwds(projectUrl, datasetUrl);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover dataset failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SWDatasetInfoVO>> getDatasetInfo(String projectUrl,
-        String datasetUrl, String versionUrl) {
-        SWDatasetInfoVO swdsInfo = swDatasetService.getSWDSInfo(
-            SWDSQuery.builder()
-                .projectUrl(projectUrl)
-                .swdsUrl(datasetUrl)
-                .swdsVersionUrl(versionUrl)
-                .build());
+    public ResponseEntity<ResponseMessage<SwDatasetInfoVo>> getDatasetInfo(String projectUrl,
+            String datasetUrl, String versionUrl) {
+        SwDatasetInfoVo swdsInfo = swDatasetService.getSwdsInfo(
+                SwdsQuery.builder()
+                        .projectUrl(projectUrl)
+                        .swdsUrl(datasetUrl)
+                        .swdsVersionUrl(versionUrl)
+                        .build());
 
         return ResponseEntity.ok(Code.success.asResponse(swdsInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
-        String projectUrl, String datasetUrl, String vName, String tag, Integer pageNum, Integer pageSize) {
-        PageInfo<DatasetVersionVO> pageInfo = swDatasetService.listDatasetVersionHistory(
-            SWDSVersionQuery.builder()
-                .projectUrl(projectUrl)
-                .swdsUrl(datasetUrl)
-                .versionName(vName)
-                .versionTag(tag)
-                .build(),
-            PageParams.builder()
-                .pageNum(pageNum)
-                .pageSize(pageSize)
-                .build());
+    public ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVo>>> listDatasetVersion(
+            String projectUrl, String datasetUrl, String versionName, String tag, Integer pageNum, Integer pageSize) {
+        PageInfo<DatasetVersionVo> pageInfo = swDatasetService.listDatasetVersionHistory(
+                SwdsVersionQuery.builder()
+                        .projectUrl(projectUrl)
+                        .swdsUrl(datasetUrl)
+                        .versionName(versionName)
+                        .versionTag(tag)
+                        .build(),
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<UploadResult>> uploadDS(String uploadId,String uri,
-        String projectUrl, String datasetUrl, String versionUrl,
-        MultipartFile dsFile, UploadRequest uploadRequest) {
+    public ResponseEntity<ResponseMessage<UploadResult>> uploadDs(String uploadId, String uri,
+            String projectUrl, String datasetUrl, String versionUrl,
+            MultipartFile dsFile, UploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
-        switch (uploadRequest.getPhase()){
+        switch (uploadRequest.getPhase()) {
             case MANIFEST:
                 String text;
-                try (final InputStream inputStream = dsFile.getInputStream()){
+                try (final InputStream inputStream = dsFile.getInputStream()) {
                     text = new BufferedReader(
-                        new InputStreamReader(inputStream, StandardCharsets.UTF_8))
-                        .lines()
-                        .collect(Collectors.joining("\n"));
+                            new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+                            .lines()
+                            .collect(Collectors.joining("\n"));
                 } catch (IOException e) {
-                    log.error("read manifest file failed",e);
-                    throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),HttpStatus.INTERNAL_SERVER_ERROR);
+                    log.error("read manifest file failed", e);
+                    throw new StarwhaleApiException(new SwProcessException(ErrorType.NETWORK),
+                            HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename(),uploadRequest))));
+                return ResponseEntity.ok(Code.success.asResponse(
+                        new UploadResult(swdsUploader.create(text, dsFile.getOriginalFilename(), uploadRequest))));
             case BLOB:
                 //get ds path and upload to the dest path
-                swdsUploader.uploadBody(uploadId,dsFile,uri);
+                swdsUploader.uploadBody(uploadId, dsFile, uri);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             case CANCEL:
                 swdsUploader.cancel(uploadId);
@@ -173,84 +175,87 @@ public class DatasetController implements DatasetApi{
                 swdsUploader.end(uploadId);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             default:
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("unknown phase " + uploadRequest.getPhase()),HttpStatus.BAD_REQUEST);
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.SWDS).tip("unknown phase " + uploadRequest.getPhase()),
+                        HttpStatus.BAD_REQUEST);
         }
     }
 
     @Override
-    public void pullDS(String projectUrl, String datasetUrl, String versionUrl,
-        String partName, HttpServletResponse httpResponse) {
-        if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+    public void pullDs(String projectUrl, String datasetUrl, String versionUrl,
+            String partName, HttpServletResponse httpResponse) {
+        if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWDS)
+                    .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
         }
-        swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName,httpResponse);
+        swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName, httpResponse);
     }
 
     @Override
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-        String uri,String authName,String offset,String size, HttpServletResponse httpResponse) {
-        if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+            String uri, String authName, String offset, String size, HttpServletResponse httpResponse) {
+        if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWDS)
+                    .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
         }
-        SWDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+        SwDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(),uri,authName,offset,size));
+            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(), uri, authName, offset, size));
             outputStream.flush();
         } catch (IOException e) {
-            log.error("error write data to response",e);
-            throw new SWProcessException(ErrorType.NETWORK).tip("error write data to response");
+            log.error("error write data to response", e);
+            throw new SwProcessException(ErrorType.NETWORK).tip("error write data to response");
         }
 
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
-        String projectUrl, String datasetUrl, String versionUrl, SWDSTagRequest swdsTagRequest) {
-        Boolean res = swDatasetService.modifySWDSVersion(projectUrl, datasetUrl, versionUrl,
-            SWDSVersion.builder().tag(swdsTagRequest.getTag()).build());
+            String projectUrl, String datasetUrl, String versionUrl, SwdsTagRequest swdsTagRequest) {
+        Boolean res = swDatasetService.modifySwdsVersion(projectUrl, datasetUrl, versionUrl,
+                SwdsVersion.builder().tag(swdsTagRequest.getTag()).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> manageDatasetTag(String projectUrl,
-        String datasetUrl, String versionUrl, SWDSTagRequest swdsTagRequest) {
+            String datasetUrl, String versionUrl, SwdsTagRequest swdsTagRequest) {
         TagAction ta;
         try {
             ta = TagAction.of(swdsTagRequest.getAction(), swdsTagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(String.format("Unknown tag action %s ", swdsTagRequest.getAction())),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWDS).tip(
+                    String.format("Unknown tag action %s ", swdsTagRequest.getAction())),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = swDatasetService.manageVersionTag(projectUrl, datasetUrl, versionUrl, ta);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update dataset tag failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update dataset tag failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(String projectUrl, String versionId,
-        Integer pageNum, Integer pageSize) {
-        PageInfo<DatasetVO> pageInfo;
-        if(StringUtils.hasText(versionId)) {
-            List<DatasetVO> voList = swDatasetService.findDatasetsByVersionIds(
-                Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(
-                Collectors.toList()));
+    public ResponseEntity<ResponseMessage<PageInfo<DatasetVo>>> listDataset(String projectUrl, String versionId,
+            Integer pageNum, Integer pageSize) {
+        PageInfo<DatasetVo> pageInfo;
+        if (StringUtils.hasText(versionId)) {
+            List<DatasetVo> voList = swDatasetService.findDatasetsByVersionIds(
+                    Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(
+                            Collectors.toList()));
             pageInfo = PageInfo.of(voList);
         } else {
-            pageInfo = swDatasetService.listSWDataset(
-                SWDSQuery.builder()
-                    .projectUrl(projectUrl)
-                    .build(),
-                PageParams.builder()
-                    .pageNum(pageNum)
-                    .pageSize(pageSize)
-                    .build());
+            pageInfo = swDatasetService.listSwDataset(
+                    SwdsQuery.builder()
+                            .projectUrl(projectUrl)
+                            .build(),
+                    PageParams.builder()
+                            .pageNum(pageNum)
+                            .pageSize(pageSize)
+                            .build());
         }
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }

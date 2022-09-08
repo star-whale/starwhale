@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
@@ -44,60 +46,59 @@ public class ObjectMockHolder {
 
     public static StepMapper stepMapper = mock(StepMapper.class);
 
-    public static TaskStatusMachine taskStatusMachine(){
+    public static TaskStatusMachine taskStatusMachine() {
         return new TaskStatusMachine();
     }
 
-    public static JobStatusMachine jobStatusMachine(){
+    public static JobStatusMachine jobStatusMachine() {
         return new JobStatusMachine();
     }
 
-    public static StepStatusMachine stepStatusMachine(){
+    public static StepStatusMachine stepStatusMachine() {
         return new StepStatusMachine();
     }
 
-    public static StoragePathCoordinator storagePathCoordinator(){
+    public static StoragePathCoordinator storagePathCoordinator() {
         return new StoragePathCoordinator("/test/sys/starwhale");
     }
 
-    public static ObjectMapper jsonMapper(){
+    public static ObjectMapper jsonMapper() {
         return new ObjectMapper();
     }
 
-    public static AgentConverter agentConverter(){
+    public static AgentConverter agentConverter() {
         return new AgentConverter(jsonMapper(), localDateTimeConvertor());
     }
 
-    public static LocalDateTimeConvertor localDateTimeConvertor(){
+    public static LocalDateTimeConvertor localDateTimeConvertor() {
         return new LocalDateTimeConvertor();
     }
 
-    public static TaskBoConverter taskBoConverter(){
-        return new TaskBoConverter(agentConverter(),localDateTimeConvertor());
+    public static TaskBoConverter taskBoConverter() {
+        return new TaskBoConverter(agentConverter(), localDateTimeConvertor());
     }
 
-    public static StorageAccessService storageAccessService(){
+    public static StorageAccessService storageAccessService() {
         return mock(StorageAccessService.class);
     }
 
-    public static SimpleStepTrigger evalPPLStepTrigger()  {
+    public static SimpleStepTrigger evalPplStepTrigger() {
         StorageAccessService storageAccessService = storageAccessService();
         try {
-            when(storageAccessService.list(anyString())).thenReturn(List.of("a","b","c").stream());
+            when(storageAccessService.list(anyString())).thenReturn(List.of("a", "b", "c").stream());
         } catch (IOException e) {
             e.printStackTrace();
         }
         return new SimpleStepTrigger(storageAccessService);
     }
 
-    public static HotJobHolderImpl hotJobHolder(){
+    public static HotJobHolderImpl hotJobHolder() {
         return new HotJobHolderImpl();
     }
 
-    public static JobStatusCalculator jobStatusCalculator(){
+    public static JobStatusCalculator jobStatusCalculator() {
         return new JobStatusCalculator();
     }
-
 
 
 }

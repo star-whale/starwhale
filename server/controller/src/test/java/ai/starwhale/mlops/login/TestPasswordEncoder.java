@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.login;
 
-import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
+import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
 import ai.starwhale.mlops.domain.user.SaltGenerator;
 import cn.hutool.core.lang.Dict;
 import org.junit.jupiter.api.Assertions;
@@ -29,10 +29,9 @@ public class TestPasswordEncoder {
     public void testEncoder() {
         SaltGenerator saltGenerator = new SaltGenerator();
         String salt = saltGenerator.salt();
-        PasswordEncoder encoder = SWPasswordEncoder.getEncoder(salt);
+        PasswordEncoder encoder = SwPasswordEncoder.getEncoder(salt);
 
         Dict dict = Dict.create();
-
 
         //String raw = "abcd1234";
         String raw = "asdf7890";
@@ -44,7 +43,7 @@ public class TestPasswordEncoder {
         System.out.println(salt);
         System.out.println("==== encoded ====");
         System.out.println(encoded);
-        Assertions.assertTrue(SWPasswordEncoder.getEncoder(salt).matches(raw, encoded));
+        Assertions.assertTrue(SwPasswordEncoder.getEncoder(salt).matches(raw, encoded));
     }
 
 }

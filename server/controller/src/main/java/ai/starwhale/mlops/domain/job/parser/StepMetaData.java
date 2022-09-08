@@ -19,18 +19,14 @@ package ai.starwhale.mlops.domain.job.parser;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.fasterxml.jackson.databind.util.Converter;
-import lombok.Builder;
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 @Data
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class StepMetaData {
+
     /**
      * the name of job which would be executed at job yaml during running time
      */
@@ -47,21 +43,3 @@ public class StepMetaData {
 }
 
 
-class ResourceConverter implements Converter<String, RuntimeResource> {
-
-    @Override
-    public RuntimeResource convert(String value) {
-        String[] res = value.split("=");
-        return RuntimeResource.builder().type(res[0]).num(Integer.valueOf(res[1])).build();
-    }
-
-    @Override
-    public JavaType getInputType(TypeFactory typeFactory) {
-        return typeFactory.constructType(String.class);
-    }
-
-    @Override
-    public JavaType getOutputType(TypeFactory typeFactory) {
-        return typeFactory.constructType(RuntimeResource.class);
-    }
-}

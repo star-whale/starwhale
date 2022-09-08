@@ -20,10 +20,10 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wnameless.json.flattener.JsonFlattener;
@@ -51,68 +51,69 @@ public class ResultQuerier {
     final ObjectMapper objectMapper;
 
     public ResultQuerier(
-        JobMapper jobMapper,
-        StorageAccessService storageAccessService,
-        ObjectMapper objectMapper) {
+            JobMapper jobMapper,
+            StorageAccessService storageAccessService,
+            ObjectMapper objectMapper) {
         this.jobMapper = jobMapper;
         this.storageAccessService = storageAccessService;
         this.objectMapper = objectMapper;
     }
 
-    public Object resultOfJob(Long jobId){
-        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))){
-            return objectMapper.readValue(inputStream,Object.class);
+    public Object resultOfJob(Long jobId) {
+        try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))) {
+            return objectMapper.readValue(inputStream, Object.class);
         } catch (IOException e) {
-            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }
     }
 
     public Map<String, Object> flattenResultOfJob(Long jobId) {
-        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
-            Reader reader = new InputStreamReader(inputStream)){
+        try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
+                Reader reader = new InputStreamReader(inputStream)) {
             JsonFlattener jf = new JsonFlattener(reader);
             return jf.withSeparator('/')
-                .ignoreReservedCharacters()
-                .flattenAsMap();
+                    .ignoreReservedCharacters()
+                    .flattenAsMap();
         } catch (IOException e) {
-            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }
     }
 
-//    public Map<String, Object> flattenSummaryOfJob(Long jobId) {
-//        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))){
-//            Map result = objectMapper.readValue(inputStream, Map.class);
-//            Map<String, Object> summary = Map.of(
-//                "kind", result.get("kind"),
-//                "summary", result.get("summary"));
-//            //objectMapper.writeValueAsString(summary)
-//            JsonFlattener jf = new JsonFlattener(objectMapper.writeValueAsString(summary));
-//            return jf.withSeparator('/')
-//                .ignoreReservedCharacters()
-//                .flattenAsMap();
-//        } catch (IOException e) {
-//            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
-//        }
-//    }
+    //    public Map<String, Object> flattenSummaryOfJob(Long jobId) {
+    //        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))){
+    //            Map result = objectMapper.readValue(inputStream, Map.class);
+    //            Map<String, Object> summary = Map.of(
+    //                "kind", result.get("kind"),
+    //                "summary", result.get("summary"));
+    //            //objectMapper.writeValueAsString(summary)
+    //            JsonFlattener jf = new JsonFlattener(objectMapper.writeValueAsString(summary));
+    //            return jf.withSeparator('/')
+    //                .ignoreReservedCharacters()
+    //                .flattenAsMap();
+    //        } catch (IOException e) {
+    //            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+    //        }
+    //    }
 
     public String resultPathOfJob(Long jobId) {
         JobEntity jobEntity = jobMapper.findJobById(jobId);
-        if(null == jobEntity){
-            throw new SWValidationException(ValidSubject.JOB).tip("unknown jobid");
+        if (null == jobEntity) {
+            throw new SwValidationException(ValidSubject.JOB).tip("unknown jobid");
         }
-        if(jobEntity.getJobStatus() != JobStatus.SUCCESS){
-            throw new SWValidationException(ValidSubject.JOB).tip("job is not finished yet");
+        if (jobEntity.getJobStatus() != JobStatus.SUCCESS) {
+            throw new SwValidationException(ValidSubject.JOB).tip("job is not finished yet");
         }
         try {
-            List<String> results = storageAccessService.list(new ResultPath(jobEntity.getResultOutputPath()).resultDir()).collect(
-                Collectors.toList());
-            if(null == results || results.isEmpty()){
-                throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
+            List<String> results = storageAccessService.list(
+                    new ResultPath(jobEntity.getResultOutputPath()).resultDir()).collect(
+                    Collectors.toList());
+            if (null == results || results.isEmpty()) {
+                throw new SwValidationException(ValidSubject.JOB).tip("no result found of job");
             }
             return results.get(0);
 
         } catch (IOException e) {
-            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }
     }
 

@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import ai.starwhale.mlops.api.protocol.project.ProjectVO;
-import ai.starwhale.mlops.api.protocol.project.StatisticsVO;
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
+import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -31,16 +31,17 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
+public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVo> {
 
-    private final IDConvertor idConvertor;
+    private final IdConvertor idConvertor;
 
     private final UserConvertor userConvertor;
 
     private final LocalDateTimeConvertor localDateTimeConvertor;
 
-    public ProjectConvertor(IDConvertor idConvertor, UserConvertor userConvertor,
-        LocalDateTimeConvertor localDateTimeConvertor) {
+    public ProjectConvertor(IdConvertor idConvertor,
+            UserConvertor userConvertor,
+            LocalDateTimeConvertor localDateTimeConvertor) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
         this.localDateTimeConvertor = localDateTimeConvertor;
@@ -48,31 +49,31 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
 
 
     @Override
-    public ProjectVO convert(ProjectEntity entity) throws ConvertException {
-        if(entity == null) {
-            return ProjectVO.empty();
+    public ProjectVo convert(ProjectEntity entity) throws ConvertException {
+        if (entity == null) {
+            return ProjectVo.empty();
         }
-        if(entity.getId() == 0) {
-            return ProjectVO.system();
+        if (entity.getId() == 0) {
+            return ProjectVo.system();
         }
-        return ProjectVO.builder()
-            .id(idConvertor.convert(entity.getId()))
-            .name(entity.getProjectName())
-            .owner(userConvertor.convert(entity.getOwner()))
-            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .privacy(Privacy.fromValue(entity.getPrivacy()).name())
-            .description(entity.getDescription())
-            .statistics(StatisticsVO.empty())
-            .build();
+        return ProjectVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getProjectName())
+                .owner(userConvertor.convert(entity.getOwner()))
+                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .privacy(Privacy.fromValue(entity.getPrivacy()).name())
+                .description(entity.getDescription())
+                .statistics(StatisticsVo.empty())
+                .build();
     }
 
     @Override
-    public ProjectEntity revert(ProjectVO vo) throws ConvertException {
+    public ProjectEntity revert(ProjectVo vo) throws ConvertException {
         Objects.requireNonNull(vo, "vo");
         return ProjectEntity.builder()
-            .id(idConvertor.revert(vo.getId()))
-            .projectName(vo.getName())
-            .description(vo.getDescription())
-            .build();
+                .id(idConvertor.revert(vo.getId()))
+                .projectName(vo.getName())
+                .description(vo.getDescription())
+                .build();
     }
 }

@@ -20,15 +20,14 @@ import ai.starwhale.mlops.exception.ConvertException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import org.springframework.stereotype.Component;
 
 @Component
-public class LocalDateTimeConvertor implements Convertor<LocalDateTime, Long>{
+public class LocalDateTimeConvertor implements Convertor<LocalDateTime, Long> {
 
     @Override
     public Long convert(LocalDateTime localDateTime) throws ConvertException {
-        if(localDateTime == null) {
+        if (localDateTime == null) {
             return -1L;
         }
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();

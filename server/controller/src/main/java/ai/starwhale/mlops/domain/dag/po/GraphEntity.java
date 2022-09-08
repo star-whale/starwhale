@@ -16,10 +16,6 @@
 
 package ai.starwhale.mlops.domain.dag.po;
 
-import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
-import ai.starwhale.mlops.domain.dag.bo.GraphNode;
-import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

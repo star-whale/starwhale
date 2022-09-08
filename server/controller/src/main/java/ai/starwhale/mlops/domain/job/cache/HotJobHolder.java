@@ -31,23 +31,13 @@ public interface HotJobHolder {
 
     Collection<Job> ofIds(Collection<Long> ids);
 
-    /**
-     *
-     * @param jobStatuses
-     * @return
-     */
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 
-    /**
-     *
-     * @param taskIds
-     * @return
-     */
     Collection<Task> tasksOfIds(Collection<Long> taskIds);
 
     /**
      * remove job in cache
-     * @param jobId
+     *
      */
     void remove(Long jobId);
 }

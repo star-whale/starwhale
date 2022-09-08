@@ -17,7 +17,11 @@
 package ai.starwhale.mlops.domain.system.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 
 @EqualsAndHashCode(callSuper = true)

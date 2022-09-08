@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
+import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
-import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
-import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
+import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
+import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,43 +43,43 @@ public interface EvaluationApi {
 
     @Operation(summary = "List Evaluation Summary Attributes")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation/view/attribute")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<AttributeVO>>> listAttributes(
-        @Valid @PathVariable("projectUrl") String projectUrl
+    ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(
+            @Valid @PathVariable("projectUrl") String projectUrl
     );
 
 
     @Operation(summary = "Get View Config")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation/view/config")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<ConfigVO>> getViewConfig(
-        @Valid @PathVariable(value = "projectUrl") String projectUrl,
-        @Valid @RequestParam(value = "name") String name
+    ResponseEntity<ResponseMessage<ConfigVo>> getViewConfig(
+            @Valid @PathVariable(value = "projectUrl") String projectUrl,
+            @Valid @RequestParam(value = "name") String name
     );
 
     @Operation(summary = "Create or Update View Config")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/evaluation/view/config")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
-        @Valid @PathVariable("projectUrl") String projectUrl,
-        @Valid @RequestBody ConfigRequest configRequest
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @RequestBody ConfigRequest configRequest
     );
 
     @Operation(summary = "List Evaluation Summary")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<PageInfo<SummaryVO>>> listEvaluationSummary(
-        @Valid @PathVariable("projectUrl") String projectUrl,
-        @Valid @RequestParam(value = "filter") String filter,
-        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
-        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize
+    ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @RequestParam(value = "filter") String filter,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize
     );
 }

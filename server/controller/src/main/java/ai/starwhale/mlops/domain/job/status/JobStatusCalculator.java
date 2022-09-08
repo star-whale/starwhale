@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement;
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement.RequireType;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
@@ -36,40 +35,47 @@ public class JobStatusCalculator {
     public JobStatusCalculator() {
         Map<JobStatus, Set<StatusRequirement<StepStatus>>> map = new LinkedHashMap<>();
         map.put(JobStatus.FAIL, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.ANY)
+                new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.ANY)
         ));
         map.put(JobStatus.UNKNOWN, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.UNKNOWN), RequireType.ANY)
+                new StatusRequirement<>(Set.of(StepStatus.UNKNOWN), RequireType.ANY)
         ));
         map.put(JobStatus.RUNNING, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.RUNNING,StepStatus.READY,StepStatus.CREATED), RequireType.MUST)
-            ,new StatusRequirement<>(Set.of(StepStatus.FAIL,StepStatus.CANCELED,StepStatus.CANCELLING,StepStatus.TO_CANCEL,StepStatus.PAUSED), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.RUNNING, StepStatus.READY, StepStatus.CREATED),
+                        RequireType.MUST),
+                new StatusRequirement<>(
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING, StepStatus.TO_CANCEL,
+                                StepStatus.PAUSED), RequireType.HAVE_NO)
         ));
 
         map.put(JobStatus.SUCCESS, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.ALL),
-            new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.MUST)
+                new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.ALL),
+                new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.MUST)
         ));
 
         map.put(JobStatus.PAUSED, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.PAUSED), RequireType.MUST)
-            ,new StatusRequirement<>(Set.of(StepStatus.FAIL,StepStatus.CANCELED,StepStatus.CANCELLING,StepStatus.TO_CANCEL,StepStatus.RUNNING,StepStatus.READY), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.PAUSED), RequireType.MUST),
+                new StatusRequirement<>(
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING, StepStatus.TO_CANCEL,
+                                StepStatus.RUNNING, StepStatus.READY), RequireType.HAVE_NO)
         ));
         map.put(JobStatus.CANCELLING, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.TO_CANCEL,StepStatus.CANCELLING), RequireType.MUST)
-            ,new StatusRequirement<>(Set.of(StepStatus.FAIL,StepStatus.PAUSED), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.TO_CANCEL, StepStatus.CANCELLING), RequireType.MUST),
+                new StatusRequirement<>(Set.of(StepStatus.FAIL, StepStatus.PAUSED), RequireType.HAVE_NO)
         ));
 
         map.put(JobStatus.CANCELED, Set.of(
-            new StatusRequirement<>(Set.of(StepStatus.CANCELED), RequireType.MUST)
-            ,new StatusRequirement<>(Set.of(StepStatus.FAIL,StepStatus.CANCELLING,StepStatus.RUNNING,StepStatus.PAUSED), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.CANCELED), RequireType.MUST),
+                new StatusRequirement<>(
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELLING, StepStatus.RUNNING, StepStatus.PAUSED),
+                        RequireType.HAVE_NO)
         ));
 
-
-        this.stepStatusRequirementSetMap =  Collections.unmodifiableMap(map);;
+        this.stepStatusRequirementSetMap = Collections.unmodifiableMap(map);
+        ;
     }
 
-    public JobStatus desiredJobStatus(Collection<StepStatus> stepStatuses){
+    public JobStatus desiredJobStatus(Collection<StepStatus> stepStatuses) {
 
         for (Entry<JobStatus, Set<StatusRequirement<StepStatus>>> entry : stepStatusRequirementSetMap.entrySet()) {
             if (StatusRequirement.match(stepStatuses, entry.getValue())) {

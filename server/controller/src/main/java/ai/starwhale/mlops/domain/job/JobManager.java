@@ -16,13 +16,13 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -37,35 +37,35 @@ public class JobManager {
     private JobMapper jobMapper;
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
 
     public Long getJobId(String jobUrl) {
         Job job = fromUrl(jobUrl);
-        if(job.getId() != null) {
+        if (job.getId() != null) {
             return job.getId();
         }
-        JobEntity jobEntity = jobMapper.findJobByUUID(job.getUuid());
-        if(jobEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
+        JobEntity jobEntity = jobMapper.findJobByUuid(job.getUuid());
+        if (jobEntity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
+                    .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
         }
         return jobEntity.getId();
     }
 
     public JobEntity findJob(Job job) {
         JobEntity jobEntity = null;
-        if(job.getId() != null) {
+        if (job.getId() != null) {
             jobEntity = jobMapper.findJobById(job.getId());
         } else if (!StrUtil.isEmpty(job.getUuid())) {
-            jobEntity = jobMapper.findJobByUUID(job.getUuid());
+            jobEntity = jobMapper.findJobByUuid(job.getUuid());
         }
 
         return jobEntity;
     }
 
     public Job fromUrl(String jobUrl) {
-        if(idConvertor.isID(jobUrl)) {
+        if (idConvertor.isId(jobUrl)) {
             return Job.builder().id(idConvertor.revert(jobUrl)).build();
         } else {
             return Job.builder().uuid(jobUrl).build();

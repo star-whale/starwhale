@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public interface TaskStatusChangeWatcher {
+
     ThreadLocal<Set<Class>> SKIPPED_WATCHERS = ThreadLocal.withInitial(() -> new HashSet<>());
+
     void onTaskStatusChange(Task task, TaskStatus oldStatus);
 }

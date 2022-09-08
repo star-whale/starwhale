@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.common;
 
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 
 public interface Invoker<T> {
 
-    void invoke(T param) throws StarWhaleApiException;
+    void invoke(T param) throws StarwhaleApiException;
 
 }

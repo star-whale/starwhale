@@ -16,13 +16,12 @@
 
 package ai.starwhale.mlops.domain.evaluation;
 
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeValueVO;
+import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
-import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
-import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
-import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
+import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
@@ -46,7 +45,6 @@ import com.google.common.collect.Lists;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -75,7 +73,7 @@ public class EvaluationService {
     private JobConvertor jobConvertor;
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private ResultQuerier resultQuerier;
@@ -83,25 +81,25 @@ public class EvaluationService {
     @Resource
     private JobStatusMachine jobStatusMachine;
 
-    private static final Map<Long, SummaryVO> summaryCache = new ConcurrentHashMap<>();
+    private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
-    public List<AttributeVO> listAttributeVO() {
+    public List<AttributeVo> listAttributeVo() {
         List<String> attributes = FileUtil.readLines(
-            Objects.requireNonNull(this.getClass().getResource("/config/evaluation_attributes")),
-            Charset.defaultCharset());
+                Objects.requireNonNull(this.getClass().getResource("/config/evaluation_attributes")),
+                Charset.defaultCharset());
 
         return attributes.stream().map(line -> {
             String[] arr = line.split(",");
-            return AttributeVO.builder().name(arr[0]).type(arr[1]).build();
+            return AttributeVo.builder().name(arr[0]).type(arr[1]).build();
         }).collect(Collectors.toList());
     }
 
-    public ConfigVO getViewConfig(ConfigQuery configQuery) {
+    public ConfigVo getViewConfig(ConfigQuery configQuery) {
         Long userId = userService.currentUserDetail().getId();
         Long projectId = projectManager.getProjectId(configQuery.getProjectUrl());
 
         ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId,
-            configQuery.getName());
+                configQuery.getName());
         if (viewConfig == null) {
             return null;
         }
@@ -112,52 +110,52 @@ public class EvaluationService {
         Long userId = userService.currentUserDetail().getId();
         Long projectId = projectManager.getProjectId(projectUrl);
         ViewConfigEntity entity = ViewConfigEntity.builder()
-            .ownerId(userId)
-            .projectId(projectId)
-            .configName(configRequest.getName())
-            .content(configRequest.getContent())
-            .build();
+                .ownerId(userId)
+                .projectId(projectId)
+                .configName(configRequest.getName())
+                .content(configRequest.getContent())
+                .build();
         int res = viewConfigMapper.createViewConfig(entity);
         return res > 0;
     }
 
-    public PageInfo<SummaryVO> listEvaluationSummary(String projectUrl,
-        SummaryFilter summaryFilter, PageParams pageParams) {
+    public PageInfo<SummaryVo> listEvaluationSummary(String projectUrl,
+            SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
         List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null,
-            JobStatus.SUCCESS);
+                JobStatus.SUCCESS);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
 
-    private SummaryVO toSummary(JobEntity entity) {
-        if(summaryCache.containsKey(entity.getId())) {
+    private SummaryVo toSummary(JobEntity entity) {
+        if (summaryCache.containsKey(entity.getId())) {
             return summaryCache.get(entity.getId());
         }
 
-        JobVO jobVO = jobConvertor.convert(entity);
-        SummaryVO summaryVO = SummaryVO.builder()
-            .id(jobVO.getId())
-            .uuid(jobVO.getUuid())
-            .projectId(idConvertor.convert(entity.getProject().getId()))
-            .projectName(entity.getProject().getProjectName())
-            .modelName(jobVO.getModelName())
-            .modelVersion(jobVO.getModelVersion())
-            .datasets(StrUtil.join(",", jobVO.getDatasets()))
-            .runtime(jobVO.getRuntime().getName())
-            .device(jobVO.getDevice())
-            .deviceAmount(jobVO.getDeviceAmount())
-            .createdTime(jobVO.getCreatedTime())
-            .stopTime(jobVO.getStopTime())
-            .owner(jobVO.getOwner().getName())
-            .duration(jobVO.getDuration())
-            .attributes(Lists.newArrayList())
-            .build();
+        JobVo jobVo = jobConvertor.convert(entity);
+        SummaryVo summaryVo = SummaryVo.builder()
+                .id(jobVo.getId())
+                .uuid(jobVo.getUuid())
+                .projectId(idConvertor.convert(entity.getProject().getId()))
+                .projectName(entity.getProject().getProjectName())
+                .modelName(jobVo.getModelName())
+                .modelVersion(jobVo.getModelVersion())
+                .datasets(StrUtil.join(",", jobVo.getDatasets()))
+                .runtime(jobVo.getRuntime().getName())
+                .device(jobVo.getDevice())
+                .deviceAmount(jobVo.getDeviceAmount())
+                .createdTime(jobVo.getCreatedTime())
+                .stopTime(jobVo.getStopTime())
+                .owner(jobVo.getOwner().getName())
+                .duration(jobVo.getDuration())
+                .attributes(Lists.newArrayList())
+                .build();
         // TODO:remove all of these implements
         /*Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
         for (Entry<String, Object> entry : result.entrySet()) {
             String value = String.valueOf(entry.getValue());
-            summaryVO.getAttributes().add(AttributeValueVO.builder()
+            summaryVo.getAttributes().add(AttributeValueVo.builder()
                 .name(entry.getKey())
                 .type(getAttributeType(value))
                 .value(value)
@@ -166,9 +164,9 @@ public class EvaluationService {
 
         // only cache the jobs which have the final status
         if (jobStatusMachine.isFinal(entity.getJobStatus())) {
-            summaryCache.put(entity.getId(), summaryVO);
+            summaryCache.put(entity.getId(), summaryVo);
         }
-        return summaryVO;
+        return summaryVo;
     }
 
     private String getAttributeType(String value) {

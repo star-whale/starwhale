@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class StorageObjectInfo {
+
     boolean exists;
     Long contentLength;
     String metaInfo;

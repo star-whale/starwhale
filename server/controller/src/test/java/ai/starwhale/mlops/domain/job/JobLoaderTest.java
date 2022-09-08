@@ -42,7 +42,6 @@ import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -51,9 +50,8 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
-import java.time.LocalDateTime;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -74,40 +72,44 @@ public class JobLoaderTest {
         JobMapper jobMapper = mock(JobMapper.class);
         JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
         when(jobMapper.findJobById(1L)).thenReturn(
-            jobEntity);
+                jobEntity);
         StepMapper stepMapper = mock(StepMapper.class);
         when(stepMapper.findByJobId(1L)).thenReturn(List.of(
-                StepEntity.builder().id(1L).status(StepStatus.RUNNING).name("PPL").build()
-                , StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
-                    .build()
-            )
+                        StepEntity.builder().id(1L).status(StepStatus.RUNNING).name("PPL").build(),
+                        StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
+                                .build()
+                )
         );
         TaskMapper taskMapper = mock(TaskMapper.class);
 
         when(taskMapper.findByStepId(1L)).thenReturn(List.of(
-            TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.RUNNING)
-                .build()
-            , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.RUNNING)
-                .build()
+                TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.RUNNING)
+                        .build(),
+                TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.RUNNING)
+                        .build()
         ));
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
-            TaskEntity.builder()
-                .id(3L)
-                .taskUuid(UUID.randomUUID().toString())
-                .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
-                .taskStatus(TaskStatus.CREATED)
-                .build()
+                TaskEntity.builder()
+                        .id(3L)
+                        .taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(
+                                "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                        + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                        + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\","
+                                        + "\"total\":1,\"stepName\":\"cmp\"}")
+                        .taskStatus(TaskStatus.CREATED)
+                        .build()
         ));
 
         Job mockJob = new JobMockHolder().mockJob();
         mockJob.setSteps(null);
         mockJob.setCurrentStep(null);
-        SWTaskScheduler swTaskScheduler = mock(SWTaskScheduler.class);
+        SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
@@ -118,8 +120,8 @@ public class JobLoaderTest {
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
 
         JobLoader jobLoader = new JobLoader(swTaskScheduler, taskMapper,
-            taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
-            watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
+                taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
+                watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
 
         List<Job> jobs = jobLoader.loadEntities(List.of(jobEntity), false, true);
         Assertions.assertEquals(1, jobs.size());
@@ -132,9 +134,9 @@ public class JobLoaderTest {
         verify(swTaskScheduler, times(0)).schedule(anyCollection(), any(Clazz.class));
         verify(watchableTaskFactory, times(2)).wrapTasks(anyCollection());
         loadedJob.getSteps().parallelStream().map(Step::getTasks).flatMap(Collection::stream)
-            .forEach(t -> {
-                Assertions.assertTrue(t instanceof WatchableTask);
-            });
+                .forEach(t -> {
+                    Assertions.assertTrue(t instanceof WatchableTask);
+                });
 
     }
 
@@ -144,52 +146,56 @@ public class JobLoaderTest {
         JobMapper jobMapper = mock(JobMapper.class);
         JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
         when(jobMapper.findJobById(1L)).thenReturn(
-            jobEntity);
+                jobEntity);
         StepMapper stepMapper = mock(StepMapper.class);
         when(stepMapper.findByJobId(1L)).thenReturn(List.of(
-                StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build()
-                , StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
-                    .build()
-            )
+                        StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build(),
+                        StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
+                                .build()
+                )
         );
         TaskMapper taskMapper = mock(TaskMapper.class);
 
         when(taskMapper.findByStepId(1L)).thenReturn(List.of(
-            TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.ASSIGNING)
-                .build()
-            , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.FAIL)
-                .build()
+                TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.ASSIGNING)
+                        .build(),
+                TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.FAIL)
+                        .build()
         ));
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
-            TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
-                .taskStatus(TaskStatus.CREATED)
-                .build()
+                TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(
+                                "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                        + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                        + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\","
+                                        + "\"total\":1,\"stepName\":\"cmp\"}")
+                        .taskStatus(TaskStatus.CREATED)
+                        .build()
         ));
 
         Job mockJob = new JobMockHolder().mockJob();
         mockJob.setSteps(null);
         mockJob.setCurrentStep(null);
         mockJob.setStatus(JobStatus.FAIL);
-        SWTaskScheduler swTaskScheduler = mock(SWTaskScheduler.class);
+        SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
         StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
-            new TaskStatusMachine());
+                new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
 
         JobLoader jobLoader = new JobLoader(swTaskScheduler, taskMapper,
-            taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
-            watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
+                taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
+                watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
 
         List<Job> jobs = jobLoader.loadEntities(List.of(jobEntity), true, true);
         Assertions.assertEquals(1, jobs.size());
@@ -203,8 +209,8 @@ public class JobLoaderTest {
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(swTaskScheduler, times(1)).schedule(anyCollection(), any(Clazz.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
-            .flatMap(Collection::stream).collect(
-                Collectors.toSet());
+                .flatMap(Collection::stream).collect(
+                        Collectors.toSet());
         Assertions.assertEquals(3, tasks.size());
         tasks.forEach(t -> {
             Assertions.assertTrue(t instanceof WatchableTask);
@@ -220,52 +226,56 @@ public class JobLoaderTest {
         JobMapper jobMapper = mock(JobMapper.class);
         JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
         when(jobMapper.findJobById(1L)).thenReturn(
-            jobEntity);
+                jobEntity);
         StepMapper stepMapper = mock(StepMapper.class);
         when(stepMapper.findByJobId(1L)).thenReturn(List.of(
-                StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build()
-                , StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
-                    .build()
-            )
+                        StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build(),
+                        StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
+                                .build()
+                )
         );
         TaskMapper taskMapper = mock(TaskMapper.class);
 
         when(taskMapper.findByStepId(1L)).thenReturn(List.of(
-            TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.ASSIGNING)
-                .build()
-            , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.FAIL)
-                .build()
+                TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.ASSIGNING)
+                        .build(),
+                TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.FAIL)
+                        .build()
         ));
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
-            TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
-                .taskStatus(TaskStatus.CREATED)
-                .build()
+                TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(
+                                "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                        + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                        + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\","
+                                        + "\"total\":1,\"stepName\":\"cmp\"}")
+                        .taskStatus(TaskStatus.CREATED)
+                        .build()
         ));
 
         Job mockJob = new JobMockHolder().mockJob();
         mockJob.setSteps(null);
         mockJob.setCurrentStep(null);
         mockJob.setStatus(JobStatus.FAIL);
-        SWTaskScheduler swTaskScheduler = mock(SWTaskScheduler.class);
+        SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
         StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
-            new TaskStatusMachine());
+                new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
 
         JobLoader jobLoader = new JobLoader(swTaskScheduler, taskMapper,
-            taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
-            watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
+                taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
+                watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
 
         List<Job> jobs = jobLoader.loadEntities(List.of(jobEntity), false, false);
         Assertions.assertEquals(1, jobs.size());
@@ -277,18 +287,12 @@ public class JobLoaderTest {
         verify(jobHolder, times(0)).adopt(mockJob);
         verify(swTaskScheduler, times(0)).schedule(anyCollection(), any(Clazz.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
-            .flatMap(Collection::stream).collect(
-                Collectors.toSet());
+                .flatMap(Collection::stream).collect(
+                        Collectors.toSet());
         Assertions.assertEquals(3, tasks.size());
         tasks.forEach(t -> {
             Assertions.assertTrue(!(t instanceof WatchableTask));
         });
-
-//        jobs = jobLoader.loadEntities(List.of(jobEntity), false, true);
-//
-//        jobs = jobLoader.loadEntities(List.of(jobEntity), true, true);
-//
-
     }
 
     @Test
@@ -296,58 +300,64 @@ public class JobLoaderTest {
         JobMapper jobMapper = mock(JobMapper.class);
         JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
         when(jobMapper.findJobById(1L)).thenReturn(
-            jobEntity);
+                jobEntity);
         StepMapper stepMapper = mock(StepMapper.class);
         when(stepMapper.findByJobId(1L)).thenReturn(List.of(
-                StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build()
-                , StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
-                    .build()
-            )
+                        StepEntity.builder().id(1L).status(StepStatus.FAIL).name("PPL").build(),
+                        StepEntity.builder().id(2L).lastStepId(1L).status(StepStatus.CREATED).name("CMP")
+                                .build()
+                )
         );
         TaskMapper taskMapper = mock(TaskMapper.class);
 
         when(taskMapper.findByStepId(1L)).thenReturn(List.of(
-            TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.ASSIGNING)
-                .build()
-            , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest(TASK_REQUEST)
-                .taskStatus(TaskStatus.FAIL)
-                .build()
+                TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.ASSIGNING)
+                        .build(),
+                TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(TASK_REQUEST)
+                        .taskStatus(TaskStatus.FAIL)
+                        .build()
         ));
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
-            TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
-                .taskStatus(TaskStatus.CREATED)
-                .build()
+                TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
+                        .taskRequest(
+                                "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                        + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                        + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\","
+                                        + "\"total\":1,\"stepName\":\"cmp\"}")
+                        .taskStatus(TaskStatus.CREATED)
+                        .build()
         ));
 
         Job mockJob = new JobMockHolder().mockJob();
         mockJob.setSteps(null);
         mockJob.setCurrentStep(null);
         mockJob.setStatus(JobStatus.FAIL);
-        SWTaskScheduler swTaskScheduler = mock(SWTaskScheduler.class);
+        SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
         StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
-            new TaskStatusMachine());
+                new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
 
         JobLoader jobLoader = new JobLoader(swTaskScheduler, taskMapper,
-            taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
-            watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
+                taskBoConverter, jobBoConverter, jobHolder, stepMapper, stepConverter,
+                watchableTaskFactory, stepTriggerContext, new StepHelper(), jobUpdateHelper);
 
-        Assertions.assertThrowsExactly(SWProcessException.class, () -> {
+        Assertions.assertThrowsExactly(SwProcessException.class, () -> {
             jobLoader.loadEntities(List.of(jobEntity), true, false);
         });
 
     }
 
-    final static String TASK_REQUEST = "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}";
+    static final String TASK_REQUEST = "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+            + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\","
+            + "\"total\":1,\"stepName\":\"ppl\"}";
 }

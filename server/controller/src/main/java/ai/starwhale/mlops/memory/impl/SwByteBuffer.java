@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory.impl;
 
 import ai.starwhale.mlops.memory.SwBuffer;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 
 public class SwByteBuffer implements SwBuffer {
+
     private final ByteBuffer buf;
 
     protected SwByteBuffer(int capacity) {

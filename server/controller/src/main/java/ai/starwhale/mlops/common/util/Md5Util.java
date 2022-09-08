@@ -22,7 +22,7 @@ import org.springframework.util.StringUtils;
 public class Md5Util {
 
     public static String md5(String str, String salt) {
-        if(StringUtils.hasText(salt)) {
+        if (StringUtils.hasText(salt)) {
             str = str + salt;
         }
         return DigestUtil.md5Hex(str);

@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swds.upload.bo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 
 /**
@@ -27,7 +26,8 @@ import lombok.Data;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-public class Manifest{
+public class Manifest {
+
     Build build;
     @JsonProperty("created_at")
     String createdAt;
@@ -49,7 +49,7 @@ public class Manifest{
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class DatasetSummary{
+    public static class DatasetSummary {
 
         @JsonProperty("data_byte_size")
         Long dataByteSize;
@@ -75,14 +75,16 @@ public class Manifest{
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Extra{
+    public static class Extra {
+
         String desc;
         List<String> tag;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Build{
+    public static class Build {
+
         String os;
         @JsonProperty("sw_version")
         String swVersion;
@@ -90,7 +92,7 @@ public class Manifest{
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class DatasetAttr{
+    public static class DatasetAttr {
 
         @JsonProperty("alignment_size")
         int alignmentSize;
@@ -102,13 +104,15 @@ public class Manifest{
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Conda{
+    public static class Conda {
+
         boolean use;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Dep2{
+    public static class Dep2 {
+
         @JsonProperty("local_gen_env")
         boolean localGenEnv;
         Conda conda;
@@ -121,13 +125,15 @@ public class Manifest{
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Venv{
+    public static class Venv {
+
         boolean use;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public static class Dep{
+    public static class Dep {
+
         @JsonProperty("local_gen_env")
         boolean localGenEnv;
     }

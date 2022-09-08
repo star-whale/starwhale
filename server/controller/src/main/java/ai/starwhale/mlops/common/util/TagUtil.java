@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.common.util;
 
 import ai.starwhale.mlops.common.TagAction;
-import ai.starwhale.mlops.common.TagAction.ACTION;
+import ai.starwhale.mlops.common.TagAction.Action;
 import cn.hutool.core.util.StrUtil;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -27,9 +27,9 @@ public class TagUtil {
     public static final String SEPARATOR = ",";
 
     public static String getTags(TagAction tagAction, String originTags) {
-        if(tagAction.getAction() == ACTION.ADD) {
+        if (tagAction.getAction() == Action.ADD) {
             return TagUtil.addTags(tagAction.getTags(), originTags);
-        } else if (tagAction.getAction() == ACTION.REMOVE) {
+        } else if (tagAction.getAction() == Action.REMOVE) {
             return TagUtil.removeTags(tagAction.getTags(), originTags);
         } else {
             return tagAction.getTags();
@@ -37,7 +37,7 @@ public class TagUtil {
     }
 
     public static String addTags(String newTags, String tags) {
-        if(StrUtil.isEmpty(tags)) {
+        if (StrUtil.isEmpty(tags)) {
             return newTags;
         }
         Set<String> set = toSet(tags);
@@ -46,7 +46,7 @@ public class TagUtil {
     }
 
     public static String removeTags(String tagsToRemove, String tags) {
-        if(StrUtil.isEmpty(tags)) {
+        if (StrUtil.isEmpty(tags)) {
             return tags;
         }
         Set<String> set = toSet(tags);

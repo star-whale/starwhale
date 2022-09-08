@@ -22,21 +22,24 @@ import org.apache.ibatis.annotations.Param;
 
 public interface RuntimeMapper {
 
-    List<RuntimeEntity> listRuntimes(@Param("projectId") Long projectId, @Param("namePrefix")String namePrefix);
+    List<RuntimeEntity> listRuntimes(@Param("projectId") Long projectId, @Param("namePrefix") String namePrefix);
 
-    int addRuntime(@Param("runtime")RuntimeEntity runtime);
+    int addRuntime(@Param("runtime") RuntimeEntity runtime);
 
-    int deleteRuntime(@Param("id")Long id);
+    int deleteRuntime(@Param("id") Long id);
 
-    int recoverRuntime(@Param("id")Long id);
+    int recoverRuntime(@Param("id") Long id);
 
-    RuntimeEntity findRuntimeById(@Param("id")Long id);
+    RuntimeEntity findRuntimeById(@Param("id") Long id);
 
-    List<RuntimeEntity> findRuntimesByIds(@Param("ids")List<Long> ids);
+    List<RuntimeEntity> findRuntimesByIds(@Param("ids") List<Long> ids);
 
-    RuntimeEntity findByNameForUpdate(@Param("name")String name, @Param("projectId") Long projectId);
-    RuntimeEntity findByName(@Param("name")String name, @Param("projectId") Long projectId);
+    RuntimeEntity findByNameForUpdate(@Param("name") String name, @Param("projectId") Long projectId);
 
-    RuntimeEntity findDeletedRuntimeById(@Param("id")Long id);
-    List<RuntimeEntity> listDeletedRuntimes(@Param("runtimeName")String runtimeName, @Param("projectId") Long projectId);
+    RuntimeEntity findByName(@Param("name") String name, @Param("projectId") Long projectId);
+
+    RuntimeEntity findDeletedRuntimeById(@Param("id") Long id);
+
+    List<RuntimeEntity> listDeletedRuntimes(@Param("runtimeName") String runtimeName,
+            @Param("projectId") Long projectId);
 }

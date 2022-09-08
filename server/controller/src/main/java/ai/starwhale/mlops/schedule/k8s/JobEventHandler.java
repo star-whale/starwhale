@@ -22,10 +22,9 @@ import ai.starwhale.mlops.reporting.TaskStatusReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Slf4j
 @Component
@@ -40,8 +39,8 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     @Override
     public void onAdd(V1Job obj) {
         log.info("job added for {} with status {}", jobName(obj),
-            obj.getStatus());
-        updateToSW(obj);
+                obj.getStatus());
+        updateToSw(obj);
     }
 
     private String jobName(V1Job obj) {
@@ -50,12 +49,12 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     @Override
     public void onUpdate(V1Job oldObj, V1Job newObj) {
-        updateToSW(newObj);
+        updateToSw(newObj);
     }
 
-    private void updateToSW(V1Job newObj) {
+    private void updateToSw(V1Job newObj) {
         TaskStatus taskStatus = statusOf(newObj);
-        if(taskStatus == TaskStatus.UNKNOWN){
+        if (taskStatus == TaskStatus.UNKNOWN) {
             return;
         }
         taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));
@@ -68,24 +67,16 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         //one task one k8s job
         if (null != status.getFailed()) {
             taskStatus = TaskStatus.FAIL;
-            log.debug("job status changed for {} is failed {}", jobName(newObj),
-                status);
+            log.debug("job status changed for {} is failed {}", jobName(newObj), status);
         } else if (null != status.getActive()) {
             taskStatus = TaskStatus.RUNNING;
-            log.debug("job status changed for {} is running {}", jobName(newObj),
-                status);
-        } /**else if (null == status.getConditions() ) {
-            taskStatus = TaskStatus.RUNNING;
-            log.debug("job status changed for {} is running  {}", jobName(newObj),
-                status);
-        }**/ else if(null != status.getSucceeded() ){
+            log.debug("job status changed for {} is running {}", jobName(newObj), status);
+        } else if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
-            log.debug("job status changed for {} is success  {}", jobName(newObj),
-                status);
-        }else {
+            log.debug("job status changed for {} is success  {}", jobName(newObj), status);
+        } else {
             taskStatus = TaskStatus.UNKNOWN;
-            log.warn("job status changed for {} is unknown {}", jobName(newObj),
-                status);
+            log.warn("job status changed for {} is unknown {}", jobName(newObj), status);
         }
         return taskStatus;
     }
@@ -97,7 +88,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     @Override
     public void onDelete(V1Job obj, boolean deletedFinalStateUnknown) {
         log.info("job deleted for {} {}", jobName(obj),
-            obj.getStatus());
-//        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(obj)),TaskStatus.CANCELED)));
+                obj.getStatus());
+        // taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(obj)),TaskStatus.CANCELED)));
     }
 }

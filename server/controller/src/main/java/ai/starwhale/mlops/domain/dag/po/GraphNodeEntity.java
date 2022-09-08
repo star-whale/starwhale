@@ -60,7 +60,7 @@ public class GraphNodeEntity {
      */
     String content;
 
-    public enum NodeType{
-        TASK_PPL,TASK_CMP,JOB
+    public enum NodeType {
+        TASK_PPL, TASK_CMP, JOB
     }
 }

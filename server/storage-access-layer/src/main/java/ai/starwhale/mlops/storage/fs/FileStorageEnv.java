@@ -31,22 +31,22 @@ public class FileStorageEnv {
     @Getter
     FileSystemEnvType envType;
 
-    public static final String ENV_TYPE="SW_STORAGE_ENV_TYPE";
+    public static final String ENV_TYPE = "SW_STORAGE_ENV_TYPE";
 
-    public static final String ENV_KEY_PREFIX="SW_OBJECT_STORE_KEY_PREFIX";
+    public static final String ENV_KEY_PREFIX = "SW_OBJECT_STORE_KEY_PREFIX";
 
     public enum FileSystemEnvType {
         S3, HDFS, NFS, LOCAL_FS, REST_RESOURCE, FTP
     }
 
-    public FileStorageEnv add(String name,String value){
-        envs.put(name,value);
+    public FileStorageEnv add(String name, String value) {
+        envs.put(name, value);
         return this;
     }
 
-    public FileStorageEnv(FileSystemEnvType envType){
+    public FileStorageEnv(FileSystemEnvType envType) {
         this.envType = envType;
-        envs.put(ENV_TYPE,envType.name());
+        envs.put(ENV_TYPE, envType.name());
     }
 
 }

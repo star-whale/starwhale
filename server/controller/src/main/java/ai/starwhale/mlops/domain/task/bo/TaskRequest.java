@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskRequest {
+
     Integer index;
     Integer total;
     List<RuntimeResource> runtimeResources;

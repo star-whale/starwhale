@@ -15,54 +15,56 @@
   ~ limitations under the License.
   -->
 
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.dag.mapper.GraphEdgeMapper">
 
-    <sql id="select_graph_edges">
-        select dag_e.id as graph_edge_id,
-               dag_e.graph_id,
-               dag_e.from_node,
-               dag_e.to_node,
-               dag_e.content as graph_edge_content
-        from dag_graph_edge as dag_e
-        where 1 = 1
-    </sql>
+  <sql id="select_graph_edges">
+    select dag_e.id as graph_edge_id,
+    dag_e.graph_id,
+    dag_e.from_node,
+    dag_e.to_node,
+    dag_e.content as graph_edge_content
+    from dag_graph_edge as dag_e
+    where 1 = 1
+  </sql>
 
-    <select id="findByGraphId" resultMap="graphEdgeResultMap">
-        <include refid="select_graph_edges"/>
-        and dag_e.graph_id = #{graphId}
-    </select>
-    <select id="scopeOf" resultMap="graphEdgeResultMap">
-        <include refid="select_graph_edges"/>
-        and dag_e.from_node in
-        <foreach item="item" index="index" collection="nodeIds"
-        open="(" separator="," close=")">
-        #{item}
-        </foreach>
-        and dag_e.to_node in
-        <foreach item="item" index="index" collection="nodeIds"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
-    </select>
+  <select id="findByGraphId" resultMap="graphEdgeResultMap">
+    <include refid="select_graph_edges"/>
+    and dag_e.graph_id = #{graphId}
+  </select>
+  <select id="scopeOf" resultMap="graphEdgeResultMap">
+    <include refid="select_graph_edges"/>
+    and dag_e.from_node in
+    <foreach item="item" index="index" collection="nodeIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    and dag_e.to_node in
+    <foreach item="item" index="index" collection="nodeIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
 
-    <insert id="add" parameterType="ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into dag_graph_edge(graph_id,
-                                   from_node,
-                                   to_node,
-                                   content)
-        values (#{graphEdge.graphId},
-                #{graphEdge.from},
-                #{graphEdge.to},
-                #{graphEdge.content}
-               )
-    </insert>
+  <insert id="add" parameterType="ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity"
+    useGeneratedKeys="true" keyProperty="id">
+    insert into dag_graph_edge(graph_id,
+    from_node,
+    to_node,
+    content)
+    values (#{graphEdge.graphId},
+    #{graphEdge.from},
+    #{graphEdge.to},
+    #{graphEdge.content}
+    )
+  </insert>
 
-    <resultMap id="graphEdgeResultMap" type="ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity" >
-        <id property="id" column="graph_edge_id" />
-        <result property="graphId" column="graph_id"/>
-        <result property="from" column="from_node"/>
-        <result property="to" column="to_node"/>
-        <result property="content" column="graph_edge_content"/>
-    </resultMap>
+  <resultMap id="graphEdgeResultMap" type="ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity">
+    <id property="id" column="graph_edge_id"/>
+    <result property="graphId" column="graph_id"/>
+    <result property="from" column="from_node"/>
+    <result property="to" column="to_node"/>
+    <result property="content" column="graph_edge_content"/>
+  </resultMap>
 </mapper>

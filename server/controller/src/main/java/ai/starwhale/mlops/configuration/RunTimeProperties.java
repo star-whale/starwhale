@@ -33,7 +33,8 @@ public class RunTimeProperties {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class Pypi{
+    public static class Pypi {
+
         String indexUrl;
         String extraIndexUrl;
         String trustedHost;

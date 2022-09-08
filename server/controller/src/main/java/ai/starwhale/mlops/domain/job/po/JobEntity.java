@@ -20,7 +20,7 @@ import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
+import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -48,7 +48,7 @@ public class JobEntity extends BaseEntity {
 
     private Long swmpVersionId;
 
-    private SWModelPackageVersionEntity swmpVersion;
+    private SwModelPackageVersionEntity swmpVersion;
 
     private Long ownerId;
 

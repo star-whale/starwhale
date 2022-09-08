@@ -21,8 +21,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.system.po.AgentEntity;
+import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -37,34 +36,51 @@ import org.junit.jupiter.api.Test;
  */
 public class TaskBoConvertorTest {
 
-    SWModelPackage swModelPackage = SWModelPackage.builder().build();
+    SwModelPackage swModelPackage = SwModelPackage.builder().build();
 
     @Test
     public void testTaskBoConverter() {
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
 
-        Step step = Step.builder().job(Job.builder().swmp(swModelPackage).jobRuntime(JobRuntime.builder().deviceAmount(1).deviceClass(
-            Clazz.CPU).name("name_swrt").storagePath("path_storage").version("version_swrt").build()).build()).build();
+        Step step = Step.builder()
+                .job(Job.builder()
+                        .swmp(swModelPackage)
+                        .jobRuntime(JobRuntime.builder()
+                                .deviceAmount(1)
+                                .deviceClass(Clazz.CPU)
+                                .name("name_swrt")
+                                .storagePath("path_storage")
+                                .version("version_swrt")
+                                .build())
+                        .build())
+                .build();
         TaskEntity pplTask = TaskEntity.builder()
-            .id(1L)
-            .taskStatus(TaskStatus.RUNNING)
-            .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
-            .startedTime(LocalDateTime.now())
-            .taskUuid(UUID.randomUUID().toString())
-            .build();
+                .id(1L)
+                .taskStatus(TaskStatus.RUNNING)
+                .taskRequest(
+                        "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
+                .startedTime(LocalDateTime.now())
+                .taskUuid(UUID.randomUUID().toString())
+                .build();
         TaskEntity cmpTask = TaskEntity.builder()
-            .id(2L)
-            .taskStatus(TaskStatus.CREATED)
-            .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
-            .taskUuid(UUID.randomUUID().toString())
-            .build();
+                .id(2L)
+                .taskStatus(TaskStatus.CREATED)
+                .taskRequest(
+                        "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
+                                + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
+                                + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
+                .taskUuid(UUID.randomUUID().toString())
+                .build();
         Task task1 = taskBoConverter.transformTask(step, pplTask);
         Task task2 = taskBoConverter.transformTask(step, cmpTask);
 
-        compareEntityAndTask(step,pplTask, task1);
-        compareEntityAndTask(step,cmpTask, task2);
+        compareEntityAndTask(step, pplTask, task1);
+        compareEntityAndTask(step, cmpTask, task2);
     }
-    private void compareEntityAndTask(Step step,TaskEntity entity, Task task) {
+
+    private void compareEntityAndTask(Step step, TaskEntity entity, Task task) {
         Assertions.assertEquals(entity.getId(), task.getId());
         Assertions.assertTrue(step == task.getStep());
         Assertions.assertEquals(entity.getTaskStatus(), task.getStatus());

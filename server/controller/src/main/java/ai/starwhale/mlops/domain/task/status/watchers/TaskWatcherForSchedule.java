@@ -20,14 +20,12 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
-
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
-
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +38,7 @@ import org.springframework.stereotype.Component;
 @Order(6)
 public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
-    final SWTaskScheduler taskScheduler;
+    final SwTaskScheduler taskScheduler;
 
     final TaskStatusMachine taskStatusMachine;
 
@@ -49,9 +47,9 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     final DelayQueue<TaskToDelete> taskToDeletes;
 
     public TaskWatcherForSchedule(
-        SWTaskScheduler taskScheduler,
-        TaskStatusMachine taskStatusMachine,
-        @Value("${sw.task.deletionDelayMinutes}") Long deletionDelayMinutes
+            SwTaskScheduler taskScheduler,
+            TaskStatusMachine taskStatusMachine,
+            @Value("${sw.task.deletionDelayMinutes}") Long deletionDelayMinutes
     ) {
         this.taskScheduler = taskScheduler;
         this.taskStatusMachine = taskStatusMachine;
@@ -65,7 +63,8 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
             taskScheduler.schedule(List.of(task), task.getStep().getJob().getJobRuntime().getDeviceClass());
         } else if (task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())) {
-            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(), task.getId(), task.getStatus());
+            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(),
+                    task.getId(), task.getStatus());
             if (deletionDelayMilliseconds <= 0) {
                 taskScheduler.stopSchedule(List.of(task.getId()));
             } else {
@@ -94,6 +93,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     }
 
     static class TaskToDelete implements Delayed {
+
         private final Long taskId;
 
         private final Long deleteTime;

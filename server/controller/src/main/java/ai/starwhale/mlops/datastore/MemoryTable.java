@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ai.starwhale.mlops.datastore;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+package ai.starwhale.mlops.datastore;
 
 import java.util.List;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 public interface MemoryTable {
+
     TableSchema getSchema();
 
     void updateFromWal(Wal.WalEntry entry);
@@ -31,17 +32,18 @@ public interface MemoryTable {
     @Data
     @AllArgsConstructor
     class RecordResult {
+
         Object key;
         Map<String, Object> values;
     }
 
     List<RecordResult> query(Map<String, String> columns,
-                     List<OrderByDesc> orderBy,
-                     TableQueryFilter filter,
-                     int start,
-                     int limit,
-                     boolean keepNone,
-                     boolean rawResult);
+            List<OrderByDesc> orderBy,
+            TableQueryFilter filter,
+            int start,
+            int limit,
+            boolean keepNone,
+            boolean rawResult);
 
     List<RecordResult> scan(
             Map<String, String> columns,

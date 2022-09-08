@@ -19,22 +19,22 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -54,125 +54,126 @@ public class RuntimeController implements RuntimeApi {
     private RuntimeService runtimeService;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVO>>> listRuntime(String projectUrl,
-        String runtimeName, Integer pageNum, Integer pageSize) {
-        PageInfo<RuntimeVO> pageInfo = runtimeService.listRuntime(
-            RuntimeQuery.builder()
-                .projectUrl(projectUrl)
-                .namePrefix(runtimeName)
-                .build(),
-            PageParams.builder()
-                .pageNum(pageNum)
-                .pageSize(pageSize)
-                .build());
+    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(String projectUrl,
+            String runtimeName, Integer pageNum, Integer pageSize) {
+        PageInfo<RuntimeVo> pageInfo = runtimeService.listRuntime(
+                RuntimeQuery.builder()
+                        .projectUrl(projectUrl)
+                        .namePrefix(runtimeName)
+                        .build(),
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(String projectUrl,
-        String runtimeUrl, RuntimeRevertRequest revertRequest) {
+            String runtimeUrl, RuntimeRevertRequest revertRequest) {
         Boolean res = runtimeService.revertVersionTo(projectUrl, runtimeUrl, revertRequest.getVersionUrl());
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert runtime version failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Revert runtime version failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteRuntime(String projectUrl,
-        String runtimeUrl) {
+            String runtimeUrl) {
         Boolean res = runtimeService.deleteRuntime(
-            RuntimeQuery.builder()
-                .projectUrl(projectUrl)
-                .runtimeUrl(runtimeUrl)
-                .build());
+                RuntimeQuery.builder()
+                        .projectUrl(projectUrl)
+                        .runtimeUrl(runtimeUrl)
+                        .build());
 
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete runtime failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverRuntime(String projectUrl,
-        String runtimeUrl) {
+            String runtimeUrl) {
         Boolean res = runtimeService.recoverRuntime(projectUrl, runtimeUrl);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover runtime failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
 
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<RuntimeInfoVO>> getRuntimeInfo(String projectUrl,
-        String runtimeUrl, String runtimeVersionUrl) {
-        RuntimeInfoVO runtimeInfo = runtimeService.getRuntimeInfo(
-            RuntimeQuery.builder()
-                .projectUrl(projectUrl)
-                .runtimeUrl(runtimeUrl)
-                .runtimeVersionUrl(runtimeVersionUrl)
-                .build());
+    public ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(String projectUrl,
+            String runtimeUrl, String runtimeVersionUrl) {
+        RuntimeInfoVo runtimeInfo = runtimeService.getRuntimeInfo(
+                RuntimeQuery.builder()
+                        .projectUrl(projectUrl)
+                        .runtimeUrl(runtimeUrl)
+                        .runtimeVersionUrl(runtimeVersionUrl)
+                        .build());
 
         return ResponseEntity.ok(Code.success.asResponse(runtimeInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyRuntime(String projectUrl,
-        String runtimeUrl, String runtimeVersionUrl, RuntimeTagRequest tagRequest) {
+            String runtimeUrl, String runtimeVersionUrl, RuntimeTagRequest tagRequest) {
         Boolean res = runtimeService.modifyRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl,
-            RuntimeVersion.builder()
-                .versionTag(tagRequest.getTag()).build());
+                RuntimeVersion.builder()
+                        .versionTag(tagRequest.getTag()).build());
 
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Modify runtime failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Modify runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> manageRuntimeTag(String projectUrl,
-        String runtimeUrl, String versionUrl, RuntimeTagRequest tagRequest) {
+            String runtimeUrl, String versionUrl, RuntimeTagRequest tagRequest) {
         TagAction ta;
         try {
             ta = TagAction.of(tagRequest.getAction(), tagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(String.format("Unknown tag action %s ", tagRequest.getAction())),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME).tip(
+                    String.format("Unknown tag action %s ", tagRequest.getAction())),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = runtimeService.manageVersionTag(projectUrl, runtimeUrl, versionUrl, ta);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update runtime tag failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update runtime tag failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVO>>> listRuntimeVersion(
-        String projectUrl, String runtimeUrl, String vName, String vTag,
-        Integer pageNum, Integer pageSize) {
-        PageInfo<RuntimeVersionVO> pageInfo = runtimeService.listRuntimeVersionHistory(
-            RuntimeVersionQuery.builder()
-                .projectUrl(projectUrl)
-                .runtimeUrl(runtimeUrl)
-                .versionName(vName)
-                .versionTag(vTag)
-                .build(),
-            PageParams.builder()
-                .pageNum(pageNum)
-                .pageSize(pageSize)
-                .build());
+    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVo>>> listRuntimeVersion(
+            String projectUrl, String runtimeUrl, String versionName, String versionTag,
+            Integer pageNum, Integer pageSize) {
+        PageInfo<RuntimeVersionVo> pageInfo = runtimeService.listRuntimeVersionHistory(
+                RuntimeVersionQuery.builder()
+                        .projectUrl(projectUrl)
+                        .runtimeUrl(runtimeUrl)
+                        .versionName(versionName)
+                        .versionTag(versionTag)
+                        .build(),
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> upload(String projectUrl, String runtimeUrl, String versionUrl,
-        MultipartFile file, ClientRuntimeRequest uploadRequest) {
+            MultipartFile file, ClientRuntimeRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setRuntime(runtimeUrl + ":" + versionUrl);
         runtimeService.upload(file, uploadRequest);
@@ -181,7 +182,7 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public void pull(String projectUrl, String runtimeUrl, String versionUrl,
-        HttpServletResponse httpResponse) {
+            HttpServletResponse httpResponse) {
         runtimeService.pull(projectUrl, runtimeUrl, versionUrl, httpResponse);
     }
 

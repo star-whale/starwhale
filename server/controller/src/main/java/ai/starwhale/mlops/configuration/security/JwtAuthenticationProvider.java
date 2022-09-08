@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.configuration.security;
 
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -37,7 +37,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication)
-        throws AuthenticationException {
+            throws AuthenticationException {
         User user = userService.loadUserByUsername(authentication.getName());
         user.defaultChecks();
 
@@ -45,7 +45,8 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         // Username and password verification
         user.additionalAuthenticationChecks(jwtLoginToken);
         // Create authenticated authentication
-        JwtLoginToken authenticatedToken = new JwtLoginToken(user, jwtLoginToken.getCredentials(), user.getAuthorities());
+        JwtLoginToken authenticatedToken = new JwtLoginToken(user, jwtLoginToken.getCredentials(),
+                user.getAuthorities());
         authenticatedToken.setDetails(jwtLoginToken.getDetails());
         return authenticatedToken;
     }
@@ -53,7 +54,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return (JwtLoginToken.class
-            .isAssignableFrom(authentication));
+                .isAssignableFrom(authentication));
     }
 
 }

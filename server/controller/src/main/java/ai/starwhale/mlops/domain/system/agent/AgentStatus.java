@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 public enum AgentStatus {
-    ONLINE,OFFLINE
+    ONLINE, OFFLINE
 }

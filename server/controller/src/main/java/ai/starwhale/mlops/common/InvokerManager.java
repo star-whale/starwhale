@@ -43,7 +43,7 @@ public class InvokerManager<K, T> {
     }
 
     public void invoke(K key, T param) throws UnsupportedOperationException {
-        if(!map.containsKey(key)) {
+        if (!map.containsKey(key)) {
             throw new UnsupportedOperationException(String.format("Unknown invoker key: %s", key));
         }
         map.get(key).invoke(param);

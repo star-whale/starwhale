@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.user.bo;
 
 import ai.starwhale.mlops.configuration.security.JwtLoginToken;
-import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
+import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.io.Serializable;
 import java.util.Collection;
@@ -81,7 +81,7 @@ public class User implements UserDetails, Serializable {
     }
 
     public User fromEntity(UserEntity entity) {
-        if(entity == null) {
+        if (entity == null) {
             return this;
         }
         setId(entity.getId());
@@ -113,15 +113,13 @@ public class User implements UserDetails, Serializable {
     /**
      * Check if the password is correct
      *
-     * @param authentication
-     * @throws AuthenticationException
      */
     public void additionalAuthenticationChecks(JwtLoginToken authentication) throws AuthenticationException {
         if (authentication.getCredentials() == null) {
             throw new BadCredentialsException("Bad credentials");
         }
         String presentedPassword = authentication.getCredentials().toString();
-        PasswordEncoder passwordEncoder = SWPasswordEncoder.getEncoder(getSalt());
+        PasswordEncoder passwordEncoder = SwPasswordEncoder.getEncoder(getSalt());
         if (!passwordEncoder.matches(presentedPassword, getPassword())) {
             throw new BadCredentialsException("Bad credentials");
         }

@@ -28,7 +28,6 @@ import static ai.starwhale.mlops.domain.job.status.JobStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
@@ -36,21 +35,22 @@ import org.springframework.stereotype.Component;
 @Component
 public class JobStatusMachine {
 
-    final static Map<JobStatus, Set<JobStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(READY,PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
-        , new SimpleEntry<>(READY, Set.of(PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
-        , new SimpleEntry<>(PAUSED, Set.of(READY,RUNNING,CANCELED,FAIL))
-        , new SimpleEntry<>(RUNNING, Set.of(PAUSED,SUCCESS,FAIL))
-        , new SimpleEntry<>(SUCCESS, Set.of())
-        , new SimpleEntry<>(FAIL, Set.of(READY,RUNNING,SUCCESS))
-        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELED, Set.of())
-        , new SimpleEntry<>(UNKNOWN, Set.of(JobStatus.values())));
+    static final Map<JobStatus, Set<JobStatus>> transferMap = Map.of(
+            CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
+            READY, Set.of(PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
+            PAUSED, Set.of(READY, RUNNING, CANCELED, FAIL),
+            RUNNING, Set.of(PAUSED, SUCCESS, FAIL),
+            SUCCESS, Set.of(),
+            FAIL, Set.of(READY, RUNNING, SUCCESS),
+            TO_CANCEL, Set.of(CANCELLING, CANCELED, FAIL),
+            CANCELLING, Set.of(CANCELED, FAIL),
+            CANCELED, Set.of(),
+            UNKNOWN, Set.of(JobStatus.values()));
 
-    final static Set<JobStatus> HOT_JOB_STATUS=Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
-    final static Set<JobStatus> FINAL_STATUS=Set.of(FAIL, SUCCESS, CANCELED);
-    public boolean couldTransfer(JobStatus statusNow,JobStatus statusNew) {
+    static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
+    static final Set<JobStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
+
+    public boolean couldTransfer(JobStatus statusNow, JobStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
     }
 

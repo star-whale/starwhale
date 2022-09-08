@@ -41,28 +41,28 @@ public class JwtTokenUtil {
     private final JwtProperties jwtProperties;
 
     public String generateAccessToken(User user) {
-        return generateAccessToken(user,jwtProperties.getExpireMinutes() * 60 * 1000);//1 weak
+        return generateAccessToken(user, jwtProperties.getExpireMinutes() * 60 * 1000); // 1 week
     }
 
     public String generateAccessToken(User user, Long expireMilliSeconds) {
         JwtBuilder jwtBuilder = Jwts.builder()
-            .setSubject(format("%s,%s", user.getId(), user.getUsername()))
-            .setIssuer(jwtProperties.getIssuer())
-            .setIssuedAt(new Date())
-            .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret());
-        if(null != expireMilliSeconds){
+                .setSubject(format("%s,%s", user.getId(), user.getUsername()))
+                .setIssuer(jwtProperties.getIssuer())
+                .setIssuedAt(new Date())
+                .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret());
+        if (null != expireMilliSeconds) {
             jwtBuilder.setExpiration(new Date(System.currentTimeMillis()
-                + expireMilliSeconds));
+                    + expireMilliSeconds));
         }
         return jwtBuilder.compact();
     }
 
     // Sample method to validate and read the JWT
-    public Claims parseJWT(String token) {
+    public Claims parseJwt(String token) {
         // This line will throw an exception if it is not a signed JWS (as expected)
         return Jwts.parser()
-            .setSigningKey(jwtProperties.getSecret())
-            .parseClaimsJws(token).getBody();
+                .setSigningKey(jwtProperties.getSecret())
+                .parseClaimsJws(token).getBody();
     }
 
     public String getUserId(Claims claims) {

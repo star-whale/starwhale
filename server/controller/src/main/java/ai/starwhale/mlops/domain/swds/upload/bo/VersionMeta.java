@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.swds.upload.bo;
 
-import ai.starwhale.mlops.domain.swds.upload.bo.Manifest;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,9 +35,8 @@ public class VersionMeta {
     Manifest manifest;
 
     /**
-     * key: file name
-     * value: blake2b
+     * key: file name value: blake2b
      */
-    Map<String,String> uploadedFileBlake2bs;
+    Map<String, String> uploadedFileBlake2bs;
 
 }

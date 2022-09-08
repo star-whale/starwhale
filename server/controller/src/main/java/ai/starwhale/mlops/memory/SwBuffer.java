@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory;
 
 import java.nio.ByteBuffer;
 
 public interface SwBuffer {
+
     byte getByte(int index);
 
     void setByte(int index, byte value);

@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.NodeInfo;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,63 +34,65 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class AgentConverter {
+
     final ObjectMapper objectMapper;
     final LocalDateTimeConvertor localDateTimeConvertor;
 
     public AgentConverter(ObjectMapper objectMapper,
-        LocalDateTimeConvertor localDateTimeConvertor) {
+            LocalDateTimeConvertor localDateTimeConvertor) {
         this.objectMapper = objectMapper;
         this.localDateTimeConvertor = localDateTimeConvertor;
     }
-    public Agent fromNode(Node node){
+
+    public Agent fromNode(Node node) {
         return Agent.builder()
-            .ip(node.getIpAddr())
-            .serialNumber(node.getSerialNumber())
-            .nodeInfo(new NodeInfo(node.getMemorySizeGB(),node.getDevices()))
-            .agentVersion(node.getAgentVersion())
-            .status(node.getStatus())
-            .connectTime(Instant.now().toEpochMilli())
-            .build();
+                .ip(node.getIpAddr())
+                .serialNumber(node.getSerialNumber())
+                .nodeInfo(new NodeInfo(node.getMemorySizeGb(), node.getDevices()))
+                .agentVersion(node.getAgentVersion())
+                .status(node.getStatus())
+                .connectTime(Instant.now().toEpochMilli())
+                .build();
     }
 
-    public Agent fromEntity(AgentEntity entity){
-        if(null == entity){
+    public Agent fromEntity(AgentEntity entity) {
+        if (null == entity) {
             return null;
         }
         NodeInfo nodeInfo = null;
         try {
             String deviceInfo = entity.getDeviceInfo();
             nodeInfo = objectMapper.readValue(deviceInfo == null ? "{}" : deviceInfo,
-                NodeInfo.class);
+                    NodeInfo.class);
         } catch (JsonProcessingException e) {
-            log.error("read devices from db failed {}",entity.getId(),e);
+            log.error("read devices from db failed {}", entity.getId(), e);
         }
         return Agent.builder()
-            .id(entity.getId())
-            .ip(entity.getAgentIp())
-            .serialNumber(entity.getSerialNumber())
-            .agentVersion(entity.getAgentVersion())
-            .status(entity.getStatus())
-            .nodeInfo(nodeInfo)
-            .connectTime(entity.getConnectTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
-            .build();
+                .id(entity.getId())
+                .ip(entity.getAgentIp())
+                .serialNumber(entity.getSerialNumber())
+                .agentVersion(entity.getAgentVersion())
+                .status(entity.getStatus())
+                .nodeInfo(nodeInfo)
+                .connectTime(entity.getConnectTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+                .build();
     }
 
-    public AgentEntity toEntity(Agent agent){
+    public AgentEntity toEntity(Agent agent) {
         String deviceInfo = null;
         try {
             deviceInfo = objectMapper.writeValueAsString(agent.getNodeInfo());
         } catch (JsonProcessingException e) {
-            log.error("write devices to db failed {}",agent.getSerialNumber(),e);
+            log.error("write devices to db failed {}", agent.getSerialNumber(), e);
         }
         return AgentEntity.builder()
-            .id(agent.getId())
-            .serialNumber(agent.getSerialNumber())
-            .agentIp(agent.getIp())
-            .agentVersion(agent.getAgentVersion())
-            .status(agent.getStatus())
-            .connectTime(localDateTimeConvertor.revert(agent.getConnectTime()))
-            .deviceInfo(deviceInfo)
-            .build();
+                .id(agent.getId())
+                .serialNumber(agent.getSerialNumber())
+                .agentIp(agent.getIp())
+                .agentVersion(agent.getAgentVersion())
+                .status(agent.getStatus())
+                .connectTime(localDateTimeConvertor.revert(agent.getConnectTime()))
+                .deviceInfo(deviceInfo)
+                .build();
     }
 }

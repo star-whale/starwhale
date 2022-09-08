@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
@@ -35,34 +35,28 @@ public class StorageAccessParser {
 
     final StorageAccessService defaultStorageAccessService;
 
-    final SWDatasetVersionMapper swDatasetVersionMapper;
+    final SwDatasetVersionMapper swDatasetVersionMapper;
 
     ConcurrentHashMap<String, StorageAccessService> storageAccessServicePool = new ConcurrentHashMap<>();
 
     public StorageAccessParser(StorageAccessService defaultStorageAccessService,
-        SWDatasetVersionMapper swDatasetVersionMapper) {
+            SwDatasetVersionMapper swDatasetVersionMapper) {
         this.defaultStorageAccessService = defaultStorageAccessService;
         this.swDatasetVersionMapper = swDatasetVersionMapper;
     }
 
-    /**
-     * @param datasetId
-     * @param uri
-     * @param authName  allow empty
-     * @return
-     */
     public StorageAccessService getStorageAccessServiceFromAuth(Long datasetId, String uri,
-        String authName) {
-        if(StringUtils.hasText(authName)){
-            authName=authName.toUpperCase();//env vars are uppercase always
+            String authName) {
+        if (StringUtils.hasText(authName)) {
+            authName = authName.toUpperCase(); // env vars are uppercase always
         }
         StorageAccessService cachedStorageAccessService = storageAccessServicePool.get(
-            formatKey(datasetId, authName));
+                formatKey(datasetId, authName));
         if (null != cachedStorageAccessService) {
             return cachedStorageAccessService;
         }
-        SWDatasetVersionEntity swDatasetVersionEntity = swDatasetVersionMapper.getVersionById(
-            datasetId);
+        SwDatasetVersionEntity swDatasetVersionEntity = swDatasetVersionMapper.getVersionById(
+                datasetId);
         String storageAuthsText = swDatasetVersionEntity.getStorageAuths();
         if (!StringUtils.hasText(storageAuthsText)) {
             return defaultStorageAccessService;
@@ -74,13 +68,13 @@ public class StorageAccessParser {
             return defaultStorageAccessService;
         }
         if (env.getEnvType() != FileSystemEnvType.S3) {
-            throw new SWValidationException(ValidSubject.SWDS).tip(
-                "file system not supported yet: " + env.getEnvType());
+            throw new SwValidationException(ValidSubject.SWDS).tip(
+                    "file system not supported yet: " + env.getEnvType());
         }
         StorageAccessServiceS3 storageAccessServiceS3 = new StorageAccessServiceS3(
-            env2S3Config(new StorageUri(uri), env, authName));
+                env2S3Config(new StorageUri(uri), env, authName));
         storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName),
-            storageAccessServiceS3);
+                storageAccessServiceS3);
         return storageAccessServiceS3;
     }
 
@@ -103,19 +97,15 @@ public class StorageAccessParser {
         }
         Map<String, String> envs = env.getEnvs();
         String bucket = StringUtils.hasText(storageUri.getBucket()) ? storageUri.getBucket()
-            : envs.get(String.format(KEY_BUCKET, authName));
+                : envs.get(String.format(KEY_BUCKET, authName));
         String accessKey = StringUtils.hasText(storageUri.getUsername()) ? storageUri.getUsername()
-            : envs.get(String.format(KEY_ACCESS_KEY, authName));
+                : envs.get(String.format(KEY_ACCESS_KEY, authName));
         String accessSecret =
-            StringUtils.hasText(storageUri.getPassword()) ? storageUri.getPassword()
-                : envs.get(String.format(KEY_SECRET, authName));
+                StringUtils.hasText(storageUri.getPassword()) ? storageUri.getPassword()
+                        : envs.get(String.format(KEY_SECRET, authName));
         String endpoint = StringUtils.hasText(storageUri.getHost()) ? buildEndPoint(storageUri)
-            : envs.get(String.format(KEY_ENDPOINT, authName));
-        return new S3Config(bucket
-            , accessKey
-            , accessSecret
-            , envs.get(String.format(KEY_REGION, authName))
-            , endpoint);
+                : envs.get(String.format(KEY_ENDPOINT, authName));
+        return new S3Config(bucket, accessKey, accessSecret, envs.get(String.format(KEY_REGION, authName)), endpoint);
     }
 
     private String buildEndPoint(StorageUri storageUri) {

@@ -29,7 +29,7 @@ public class StorageAccessConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3", matchIfMissing = true)
-    public StorageAccessService storageAccessService(StorageProperties storageProperties){
+    public StorageAccessService storageAccessService(StorageProperties storageProperties) {
         return new StorageAccessServiceS3(storageProperties.getS3Config());
     }
 

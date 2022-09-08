@@ -27,33 +27,36 @@ import org.springframework.http.HttpHeaders;
 public class HttpUtil {
 
     public static void error(HttpServletResponse response, int httpStatus, Code code, String message)
-        throws IOException {
+            throws IOException {
         response.resetBuffer();
         response.setStatus(httpStatus);
         response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         response.getOutputStream()
-            .print(JSONUtil.createObj()
-                .append("code", code.getType())
-                .append("message", message)
-                .toStringPretty());
+                .print(JSONUtil.createObj()
+                        .append("code", code.getType())
+                        .append("message", message)
+                        .toStringPretty());
         response.flushBuffer();
     }
 
     public enum Resources {
         PROJECT, MODEL, DATASET, RUNTIME;
+
         public String getUrlTypeName() {
             return this.name().toLowerCase();
         }
     }
+
     public static String getResourceUrlFromPath(String path, Resources resourceType) {
         return getResourceUrlFromPath(path, resourceType.getUrlTypeName());
     }
+
     public static String getResourceUrlFromPath(String path, String resourceName) {
         String prefix = "/" + resourceName + "/";
         String regex = "(" + prefix + ")([^/?]+)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(path);
-        if(matcher.find()) {
+        if (matcher.find()) {
             return matcher.group().substring(prefix.length());
         } else {
             return null;

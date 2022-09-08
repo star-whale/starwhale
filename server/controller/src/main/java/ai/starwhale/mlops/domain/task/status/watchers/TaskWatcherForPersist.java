@@ -42,9 +42,9 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
     final LocalDateTimeConvertor localDateTimeConvertor;
 
     public TaskWatcherForPersist(
-        TaskStatusMachine taskStatusMachine,
-        TaskMapper taskMapper,
-        LocalDateTimeConvertor localDateTimeConvertor) {
+            TaskStatusMachine taskStatusMachine,
+            TaskMapper taskMapper,
+            LocalDateTimeConvertor localDateTimeConvertor) {
         this.taskStatusMachine = taskStatusMachine;
         this.taskMapper = taskMapper;
         this.localDateTimeConvertor = localDateTimeConvertor;
@@ -52,19 +52,19 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-        log.debug("persisting task for {} ",task.getId());
+        log.debug("persisting task for {} ", task.getId());
         TaskStatus status = task.getStatus();
         long now = System.currentTimeMillis();
-        if(taskStatusMachine.isFinal(status)){
+        if (taskStatusMachine.isFinal(status)) {
             task.setFinishTime(now);
-            taskMapper.updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(now));
+            taskMapper.updateTaskFinishedTime(task.getId(), localDateTimeConvertor.revert(now));
         }
-        if(status == TaskStatus.RUNNING){
+        if (status == TaskStatus.RUNNING) {
             task.setStartTime(now);
-            taskMapper.updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(now));
+            taskMapper.updateTaskStartedTime(task.getId(), localDateTimeConvertor.revert(now));
         }
         taskMapper.updateTaskStatus(List.of(task.getId()), status);
-        log.debug("task {} status persisted to {} ",task.getId(),status);
+        log.debug("task {} status persisted to {} ", task.getId(), status);
     }
 
 }

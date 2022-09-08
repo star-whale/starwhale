@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.job.po.BaseImageEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
@@ -26,28 +26,28 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BaseImageConvertor implements Convertor<BaseImageEntity, BaseImageVO> {
+public class BaseImageConvertor implements Convertor<BaseImageEntity, BaseImageVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Override
-    public BaseImageVO convert(BaseImageEntity baseImageEntity) throws ConvertException {
-        if(baseImageEntity == null) {
-            return BaseImageVO.empty();
+    public BaseImageVo convert(BaseImageEntity baseImageEntity) throws ConvertException {
+        if (baseImageEntity == null) {
+            return BaseImageVo.empty();
         }
-        return BaseImageVO.builder()
-            .id(idConvertor.convert(baseImageEntity.getId()))
-            .name(baseImageEntity.getImageName())
-            .build();
+        return BaseImageVo.builder()
+                .id(idConvertor.convert(baseImageEntity.getId()))
+                .name(baseImageEntity.getImageName())
+                .build();
     }
 
     @Override
-    public BaseImageEntity revert(BaseImageVO baseImageVO) throws ConvertException {
-        Objects.requireNonNull(baseImageVO, "baseImageVO");
+    public BaseImageEntity revert(BaseImageVo baseImageVo) throws ConvertException {
+        Objects.requireNonNull(baseImageVo, "baseImageVo");
         return BaseImageEntity.builder()
-            .id(idConvertor.revert(baseImageVO.getId()))
-            .imageName(baseImageVO.getName())
-            .build();
+                .id(idConvertor.revert(baseImageVo.getId()))
+                .imageName(baseImageVo.getName())
+                .build();
     }
 }

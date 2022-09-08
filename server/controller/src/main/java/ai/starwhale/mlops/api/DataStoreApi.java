@@ -19,21 +19,21 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
-import ai.starwhale.mlops.api.protocol.datastore.RecordListVO;
+import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
-import ai.starwhale.mlops.api.protocol.datastore.TableNameListVO;
+import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
+import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.validation.Valid;
-
 @Validated
 public interface DataStoreApi {
+
     @PostMapping(value = "/datastore/listTables")
-    ResponseEntity<ResponseMessage<TableNameListVO>> listTables(
+    ResponseEntity<ResponseMessage<TableNameListVo>> listTables(
             @Valid @RequestBody ListTablesRequest request);
 
     @PostMapping(value = "/datastore/updateTable")
@@ -41,10 +41,10 @@ public interface DataStoreApi {
             @Valid @RequestBody UpdateTableRequest request);
 
     @PostMapping(value = "/datastore/queryTable")
-    ResponseEntity<ResponseMessage<RecordListVO>> queryTable(
+    ResponseEntity<ResponseMessage<RecordListVo>> queryTable(
             @Valid @RequestBody QueryTableRequest request);
 
     @PostMapping(value = "/datastore/scanTable")
-    ResponseEntity<ResponseMessage<RecordListVO>> scanTable(
+    ResponseEntity<ResponseMessage<RecordListVo>> scanTable(
             @Valid @RequestBody ScanTableRequest request);
 }

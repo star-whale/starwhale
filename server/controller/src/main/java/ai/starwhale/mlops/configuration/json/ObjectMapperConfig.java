@@ -26,13 +26,13 @@ import org.springframework.context.annotation.Primary;
 public class ObjectMapperConfig {
 
     @Bean
-    public ObjectMapper yamlMapper(){
+    public ObjectMapper yamlMapper() {
         return new ObjectMapper(new YAMLFactory());
     }
 
     @Primary
     @Bean
-    public ObjectMapper objectMapper(){
+    public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
 }

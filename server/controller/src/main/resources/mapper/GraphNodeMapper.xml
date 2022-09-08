@@ -15,51 +15,53 @@
   ~ limitations under the License.
   -->
 
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.dag.mapper.GraphNodeMapper">
 
-    <sql id="select_graph_nodes">
-        select dag_n.id as graph_node_id,
-               dag_n.graph_id,
-               dag_n.node_type as dag_node_type,
-               dag_n.node_group as dag_node_group,
-               dag_n.owner_id as dag_n_owner_id,
-               dag_n.content as dag_node_content
-        from dag_graph_node as dag_n
-        where 1 = 1
-    </sql>
+  <sql id="select_graph_nodes">
+    select dag_n.id as graph_node_id,
+    dag_n.graph_id,
+    dag_n.node_type as dag_node_type,
+    dag_n.node_group as dag_node_group,
+    dag_n.owner_id as dag_n_owner_id,
+    dag_n.content as dag_node_content
+    from dag_graph_node as dag_n
+    where 1 = 1
+  </sql>
 
-    <select id="findByGraphId" resultMap="graphNodeResultMap">
-        <include refid="select_graph_nodes"/>
-        and dag_n.graph_id = #{graphId}
-    </select>
-    <select id="findByOwnerId" resultMap="graphNodeResultMap">
-        <include refid="select_graph_nodes"/>
-        and dag_n.owner_id = #{ownerId}
-    </select>
+  <select id="findByGraphId" resultMap="graphNodeResultMap">
+    <include refid="select_graph_nodes"/>
+    and dag_n.graph_id = #{graphId}
+  </select>
+  <select id="findByOwnerId" resultMap="graphNodeResultMap">
+    <include refid="select_graph_nodes"/>
+    and dag_n.owner_id = #{ownerId}
+  </select>
 
-    <insert id="add" parameterType="ai.starwhale.mlops.domain.dag.po.GraphNodeEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into dag_graph_node(graph_id,
-                                   node_type,
-                                   node_group,
-                                   owner_id,
-                                   content)
-        values (#{nodeEntity.graphId},
-                #{nodeEntity.type},
-                #{nodeEntity.group},
-                #{nodeEntity.nodeOwnerId},
-                #{nodeEntity.content}
-               )
-    </insert>
+  <insert id="add" parameterType="ai.starwhale.mlops.domain.dag.po.GraphNodeEntity"
+    useGeneratedKeys="true" keyProperty="id">
+    insert into dag_graph_node(graph_id,
+    node_type,
+    node_group,
+    owner_id,
+    content)
+    values (#{nodeEntity.graphId},
+    #{nodeEntity.type},
+    #{nodeEntity.group},
+    #{nodeEntity.nodeOwnerId},
+    #{nodeEntity.content}
+    )
+  </insert>
 
-    <resultMap id="graphNodeResultMap" type="ai.starwhale.mlops.domain.dag.po.GraphNodeEntity" >
-        <id property="id" column="graph_node_id" />
-        <result property="graphId" column="graph_id"/>
-        <result property="type" column="dag_node_type"/>
-        <result property="group" column="dag_node_group"/>
-        <result property="nodeOwnerId" column="dag_n_owner_id"/>
-        <result property="content" column="dag_node_content"/>
-    </resultMap>
+  <resultMap id="graphNodeResultMap" type="ai.starwhale.mlops.domain.dag.po.GraphNodeEntity">
+    <id property="id" column="graph_node_id"/>
+    <result property="graphId" column="graph_id"/>
+    <result property="type" column="dag_node_type"/>
+    <result property="group" column="dag_node_group"/>
+    <result property="nodeOwnerId" column="dag_n_owner_id"/>
+    <result property="content" column="dag_node_content"/>
+  </resultMap>
 </mapper>
 
 
