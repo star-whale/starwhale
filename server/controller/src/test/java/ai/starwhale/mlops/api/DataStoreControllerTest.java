@@ -631,6 +631,27 @@ public class DataStoreControllerTest {
         }
 
         @Test
+        public void testTableNotExists() {
+            this.req.setTableName("table not exists");
+            assertThrows(SwValidationException.class,
+                    () -> DataStoreControllerTest.this.controller.queryTable(this.req),
+                    "");
+        }
+
+        @Test
+        public void testTableNotExistsIgnore() {
+            this.req.setTableName("table not exists");
+            this.req.setIgnoreNonExistingTable(true);
+
+            var resp = DataStoreControllerTest.this.controller.queryTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes().isEmpty());
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords().isEmpty());
+        }
+
+        @Test
         public void testNullColumnName() {
             this.req.getColumns().get(0).setColumnName(null);
             assertThrows(SwValidationException.class,
@@ -1156,6 +1177,15 @@ public class DataStoreControllerTest {
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.scanTable(this.req),
                     "");
+        }
+
+        @Test
+        public void testTableNotExistsIgnore() {
+            this.req.getTables().get(0).setTableName("invalid");
+            this.req.setIgnoreNonExistingTable(true);
+
+            var resp = DataStoreControllerTest.this.controller.scanTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
         }
 
         @Test
