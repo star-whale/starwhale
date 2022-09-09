@@ -84,7 +84,7 @@ public class TestTaskWatcherForJobStatus {
 
         StepMapper stepMapper = mock(StepMapper.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
-        doAnswer(invocation->{
+        doAnswer(invocation -> {
             Job j = invocation.getArgument(0);
             j.setStatus(JobStatus.SUCCESS);
             return null;
@@ -101,7 +101,7 @@ public class TestTaskWatcherForJobStatus {
         Step step = task.getStep();
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
         verify(stepMapper).updateFinishedTime(step.getId(), localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(stepTriggerContext,times(0)).triggerNextStep(step);
+        verify(stepTriggerContext, times(0)).triggerNextStep(step);
         verify(jobUpdateHelper).updateJob(step.getJob());
 
     }
