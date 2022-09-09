@@ -16,16 +16,19 @@
 
 package ai.starwhale.mlops.api.protocol.task;
 
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
+@EqualsAndHashCode
 @Schema(description = "Task object", title = "Task")
 @Validated
 public class TaskVo implements Serializable {
@@ -42,7 +45,10 @@ public class TaskVo implements Serializable {
     @JsonProperty("taskStatus")
     private TaskStatus taskStatus;
 
+    @JsonProperty("resourcePool")
+    private String resourcePool;
+
     public static TaskVo empty() {
-        return new TaskVo("", "", -1L, TaskStatus.CREATED);
+        return new TaskVo("", "", -1L, TaskStatus.CREATED, ResourcePool.DEFAULT);
     }
 }

@@ -39,13 +39,12 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
             {header}
             <Table
                 isLoading={tasksInfo.isLoading}
-                columns={[t('Task ID'), t('IP'), t('Version'), t('Started'), t('Status'), t('Action')]}
+                columns={[t('Task ID'), t('Resource Pool'), t('Started'), t('Status'), t('Action')]}
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
                             task.uuid,
-                            task.agent?.ip,
-                            task.agent?.version,
+                            task?.resourcePool,
                             task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.taskStatus,
                             <StyledLink
