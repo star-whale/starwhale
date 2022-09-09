@@ -31,7 +31,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,8 +42,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class EvaluationController implements EvaluationApi {
 
-    @Resource
-    private EvaluationService evaluationService;
+    private final EvaluationService evaluationService;
+
+    public EvaluationController(EvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(String projectUrl) {

@@ -61,6 +61,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService implements UserDetailsService {
 
+    public static final String USER_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{3,32}$";
+
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final ProjectMapper projectMapper;

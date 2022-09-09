@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
+
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSwmpRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSwmpVersionRequest;
@@ -23,7 +25,6 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageInfoVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwmpTagRequest;
-import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -283,7 +284,7 @@ public interface SwModelPackageApi {
             @PathVariable("projectUrl")
                     String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Model name is invalid.")
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.")
             @PathVariable("modelName") String modelName,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionName") String versionName,
@@ -300,7 +301,7 @@ public interface SwModelPackageApi {
     void pull(
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Model name is not invalid.")
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is not invalid.")
             @PathVariable("modelUrl") String modelUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl") String versionUrl,

@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.evaluation.mapper;
 
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface ViewConfigMapper {
 
     ViewConfigEntity findViewConfig(@Param("userId") Long userId, @Param("projectId") Long projectId,

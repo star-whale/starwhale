@@ -16,24 +16,21 @@
 
 package ai.starwhale.mlops.common.util;
 
-import java.security.SecureRandom;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class RandomUtil {
+import org.junit.jupiter.api.Test;
 
-    public static String randomHexString(int length) {
-        byte[] bytes = new byte[length];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(bytes);
+public class RandomUtilTest {
 
-        StringBuilder builder = new StringBuilder();
-
-        for (byte oneByte : bytes) {
-            int val = ((int) oneByte) & 0xf;
-            builder.append(Integer.toHexString(val));
-
-        }
-
-        return builder.toString();
+    @Test
+    public void testRandom() {
+        String s1 = RandomUtil.randomHexString(24);
+        String s2 = RandomUtil.randomHexString(24);
+        assertEquals(s1.length(), 24);
+        assertEquals(s2.length(), 24);
+        assertNotEquals(s1, s2);
+        String s3 = RandomUtil.randomHexString(20);
+        assertEquals(s3.length(), 20);
     }
-
 }

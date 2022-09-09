@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
@@ -48,40 +47,35 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EvaluationService {
 
-    @Resource
-    private UserService userService;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    @Resource
-    private ViewConfigMapper viewConfigMapper;
-
-    @Resource
-    private ViewConfigConvertor viewConfigConvertor;
-
-    @Resource
-    private JobMapper jobMapper;
-
-    @Resource
-    private JobConvertor jobConvertor;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private ResultQuerier resultQuerier;
-
-    @Resource
-    private JobStatusMachine jobStatusMachine;
+    private final UserService userService;
+    private final ProjectManager projectManager;
+    private final JobMapper jobMapper;
+    private final ViewConfigMapper viewConfigMapper;
+    private final IdConvertor idConvertor;
+    private final ViewConfigConvertor viewConfigConvertor;
+    private final JobConvertor jobConvertor;
+    private final JobStatusMachine jobStatusMachine;
 
     private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
+
+    public EvaluationService(UserService userService, ProjectManager projectManager, JobMapper jobMapper,
+            ViewConfigMapper viewConfigMapper, IdConvertor idConvertor, ViewConfigConvertor viewConfigConvertor,
+            JobConvertor jobConvertor, JobStatusMachine jobStatusMachine) {
+        this.userService = userService;
+        this.projectManager = projectManager;
+        this.jobMapper = jobMapper;
+        this.viewConfigMapper = viewConfigMapper;
+        this.idConvertor = idConvertor;
+        this.viewConfigConvertor = viewConfigConvertor;
+        this.jobConvertor = jobConvertor;
+        this.jobStatusMachine = jobStatusMachine;
+    }
+
 
     public List<AttributeVo> listAttributeVo() {
         List<String> attributes = FileUtil.readLines(

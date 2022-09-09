@@ -16,7 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.project;
 
-import ai.starwhale.mlops.common.RegExps;
+import static ai.starwhale.mlops.domain.project.ProjectService.PROJECT_NAME_REGEX;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
@@ -31,7 +32,7 @@ public class CreateProjectRequest implements Serializable {
 
     @JsonProperty("projectName")
     @NotNull
-    @Pattern(regexp = RegExps.PROJECT_NAME_REGEX, message = "Project name is invalid.")
+    @Pattern(regexp = PROJECT_NAME_REGEX, message = "Project name is invalid.")
     private String projectName;
 
     @NotNull

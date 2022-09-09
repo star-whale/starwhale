@@ -16,7 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
-import ai.starwhale.mlops.common.RegExps;
+import static ai.starwhale.mlops.domain.user.UserService.USER_NAME_REGEX;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
@@ -30,7 +31,7 @@ public class UserRequest implements Serializable {
 
     @NotNull
     @JsonProperty("userName")
-    @Pattern(regexp = RegExps.USER_NAME_REGEX, message = "User name is invalid.")
+    @Pattern(regexp = USER_NAME_REGEX, message = "User name is invalid.")
     private String userName;
 
     @NotNull
