@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
+
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -23,7 +25,6 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -252,7 +253,7 @@ public interface RuntimeApi {
                     schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Runtime name is invalid.")
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Runtime name is invalid.")
             @PathVariable("runtimeName") String runtimeName,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionName") String versionName,

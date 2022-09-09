@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 @Slf4j
 public class BundleManager {
 
+    public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
     private final ProjectAccessor projectAccessor;
     private final IdConvertor idConvertor;
     private final BundleAccessor bundleAccessor;

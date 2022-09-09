@@ -19,6 +19,9 @@ package ai.starwhale.mlops.common;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.domain.bundle.BundleManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.user.UserService;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +29,7 @@ public class RegExpsTest {
 
     @Test
     public void testUserNameRegex() {
-        Pattern pattern = Pattern.compile(RegExps.USER_NAME_REGEX);
+        Pattern pattern = Pattern.compile(UserService.USER_NAME_REGEX);
         assertThat(pattern.matcher("star_whale").matches(), is(true));
         assertThat(pattern.matcher("star").matches(), is(true));
         assertThat(pattern.matcher("sta").matches(), is(false));
@@ -40,7 +43,7 @@ public class RegExpsTest {
 
     @Test
     public void testProjectNameRegex() {
-        Pattern pattern = Pattern.compile(RegExps.PROJECT_NAME_REGEX);
+        Pattern pattern = Pattern.compile(ProjectService.PROJECT_NAME_REGEX);
         assertThat(pattern.matcher("star_whale").matches(), is(true));
         assertThat(pattern.matcher("star").matches(), is(true));
         assertThat(pattern.matcher("sta").matches(), is(true));
@@ -57,7 +60,7 @@ public class RegExpsTest {
 
     @Test
     public void testBundleNameRegex() {
-        Pattern pattern = Pattern.compile(RegExps.BUNDLE_NAME_REGEX);
+        Pattern pattern = Pattern.compile(BundleManager.BUNDLE_NAME_REGEX);
         assertThat(pattern.matcher("star_whale").matches(), is(true));
         assertThat(pattern.matcher("star").matches(), is(true));
         assertThat(pattern.matcher("sta").matches(), is(true));

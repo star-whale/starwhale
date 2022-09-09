@@ -53,6 +53,8 @@ import org.springframework.util.Assert;
 @Service
 public class ProjectService {
 
+    public static final String PROJECT_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
+
     private final ProjectMapper projectMapper;
 
     private final ProjectManager projectManager;

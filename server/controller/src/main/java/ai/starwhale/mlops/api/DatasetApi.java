@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
+
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
@@ -24,7 +26,6 @@ import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.swds.SwdsTagRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
-import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -203,7 +204,7 @@ public interface DatasetApi {
             @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadId,
             @RequestHeader(name = "X-SW-UPLOAD-DATA-URI", required = false) String uri,
             @PathVariable(name = "projectUrl") String projectUrl,
-            @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
             @PathVariable(name = "datasetName") String datasetName,
             @PathVariable(name = "versionName") String versionName,
             @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile dsFile,
