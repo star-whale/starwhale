@@ -200,6 +200,8 @@ class EvalExecutor:
             f"{self._version}-{step}-{task_index}",
             "-e",
             "DEBUG=1",
+            "-l",
+            f"version={self._version}",
         ]
 
         cmd += [

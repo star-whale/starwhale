@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 import typing as t
+import subprocess
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from collections import defaultdict
@@ -14,7 +15,7 @@ from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir
 from starwhale.api._impl import wrapper
-from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType
+from starwhale.base.type import InstanceType, JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.consts.env import SWEnv
 from starwhale.utils.http import ignore_error
@@ -283,8 +284,13 @@ class StandaloneEvaluationJob(EvaluationJob):
         elif action == JobOperationType.RESUME:
             cmd += ["unpause"]
 
-        # TODO: search container first
-        cmd += [f"{self.name}-{EvalTaskType.ALL}", f"{self.name}-{EvalTaskType.SINGLE}"]
+        # search container first
+        out = subprocess.check_output(
+            ["docker", "ps", "-f", f"label=version={self.store.id}", "-q"]
+        )
+        _container = out.decode().strip()
+
+        cmd += [_container]
         try:
             check_call(cmd)
         except Exception as e:
