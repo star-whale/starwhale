@@ -24,6 +24,11 @@ public class SaltGeneratorTest {
 
     @Test
     public void testSalt() {
-        MatcherAssert.assertThat(new SaltGenerator().salt(), Matchers.hasLength(24));
+        SaltGenerator generator = new SaltGenerator();
+        String salt1 = generator.salt();
+        String salt2 = generator.salt();
+        MatcherAssert.assertThat(salt1, Matchers.hasLength(24));
+        MatcherAssert.assertThat(salt1, Matchers.not(salt2));
+
     }
 }
