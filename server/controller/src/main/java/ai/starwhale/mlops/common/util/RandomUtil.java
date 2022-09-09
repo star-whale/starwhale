@@ -28,13 +28,9 @@ public class RandomUtil {
         StringBuilder builder = new StringBuilder();
 
         for (byte oneByte : bytes) {
-            int val = ((int) oneByte) & 0xff;
-            if (val < 16) {
+            int val = ((int) oneByte) & 0xf;
+            builder.append(Integer.toHexString(val));
 
-                builder.append(Integer.toHexString(val + 16));
-            } else {
-                builder.append(Integer.toHexString(val));
-            }
         }
 
         return builder.toString();

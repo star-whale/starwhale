@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 public class SaltGenerator {
 
     public String salt() {
-        return RandomUtil.randomHexString(12);
+        return RandomUtil.randomHexString(24);
     }
 
 
