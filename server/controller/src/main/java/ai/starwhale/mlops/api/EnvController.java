@@ -19,10 +19,8 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
-import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.job.EnvService;
 import java.util.List;
-import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,11 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class EnvController implements EnvApi {
 
-    @Resource
-    private EnvService envService;
+    private final EnvService envService;
 
-    @Resource
-    private IdConvertor idConvertor;
+    public EnvController(EnvService envService) {
+        this.envService = envService;
+    }
+
 
     @Override
     public ResponseEntity<ResponseMessage<List<DeviceVo>>> listDevice() {

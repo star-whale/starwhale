@@ -21,14 +21,16 @@ import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.exception.ConvertException;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ViewConfigConvertor implements Convertor<ViewConfigEntity, ConfigVo> {
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public ViewConfigConvertor(LocalDateTimeConvertor localDateTimeConvertor) {
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
 
     @Override
     public ConfigVo convert(ViewConfigEntity entity) throws ConvertException {
