@@ -27,10 +27,10 @@ public class RandomUtilTest {
     public void testRandom() {
         String s1 = RandomUtil.randomHexString(24);
         String s2 = RandomUtil.randomHexString(24);
-        String s3 = RandomUtil.randomHexString(20);
         assertEquals(s1.length(), 24);
         assertEquals(s2.length(), 24);
         assertNotEquals(s1, s2);
+        String s3 = RandomUtil.randomHexString(20);
         assertEquals(s3.length(), 20);
     }
 }
