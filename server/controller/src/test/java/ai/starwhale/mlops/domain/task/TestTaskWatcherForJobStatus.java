@@ -16,12 +16,15 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -41,7 +44,7 @@ import org.junit.jupiter.api.Test;
 public class TestTaskWatcherForJobStatus {
 
     @Test
-    public void testSuccess() {
+    public void testJobRunning() {
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job job = jobMockHolder.mockJob();
@@ -65,6 +68,40 @@ public class TestTaskWatcherForJobStatus {
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
         verify(stepMapper).updateFinishedTime(step.getId(), localDateTimeConvertor.revert(System.currentTimeMillis()));
         verify(stepTriggerContext).triggerNextStep(step);
+        verify(jobUpdateHelper).updateJob(step.getJob());
+
+    }
+
+    @Test
+    public void testJobSuccess() {
+
+        JobMockHolder jobMockHolder = new JobMockHolder();
+        Job job = jobMockHolder.mockJob();
+        List<Task> tasks = job.getCurrentStep().getTasks();
+        tasks.get(0).updateStatus(TaskStatus.SUCCESS);
+        Task task = tasks.get(1);
+        StepTrigger stepTriggerContext = mock(StepTrigger.class);
+
+        StepMapper stepMapper = mock(StepMapper.class);
+        JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
+        doAnswer(invocation -> {
+            Job j = invocation.getArgument(0);
+            j.setStatus(JobStatus.SUCCESS);
+            return null;
+        }).when(jobUpdateHelper).updateJob(job);
+        LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
+
+        TaskWatcherForJobStatus taskWatcherForJobStatus = new TaskWatcherForJobStatus(new StepHelper(),
+                new StepStatusMachine(),
+                stepMapper, stepTriggerContext, jobUpdateHelper, localDateTimeConvertor);
+
+        task.updateStatus(TaskStatus.SUCCESS);
+        taskWatcherForJobStatus.onTaskStatusChange(task, TaskStatus.RUNNING);
+
+        Step step = task.getStep();
+        verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
+        verify(stepMapper).updateFinishedTime(step.getId(), localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(stepTriggerContext, times(0)).triggerNextStep(step);
         verify(jobUpdateHelper).updateJob(step.getJob());
 
     }
