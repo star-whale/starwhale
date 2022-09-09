@@ -41,6 +41,9 @@ public class UserRoleConvertor implements Convertor<ProjectRoleEntity, UserRoleV
 
     @Override
     public UserRoleVo convert(ProjectRoleEntity projectRoleEntity) throws ConvertException {
+        if (projectRoleEntity == null) {
+            return UserRoleVo.empty();
+        }
         return UserRoleVo.builder()
                 .id(idConvertor.convert(projectRoleEntity.getId()))
                 .project(projectConvertor.convert(projectRoleEntity.getProject()))

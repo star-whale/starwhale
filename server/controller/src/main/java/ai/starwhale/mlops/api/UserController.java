@@ -42,7 +42,6 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
-import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,17 +51,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class UserController implements UserApi {
 
-    @Resource
-    private UserService userService;
+    private final UserService userService;
 
-    @Resource
-    private ProjectService projectService;
+    private final ProjectService projectService;
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
 
-    @Resource
-    JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtil jwtTokenUtil;
+
+    public UserController(UserService userService, ProjectService projectService,
+            IdConvertor idConvertor, JwtTokenUtil jwtTokenUtil) {
+        this.userService = userService;
+        this.projectService = projectService;
+        this.idConvertor = idConvertor;
+        this.jwtTokenUtil = jwtTokenUtil;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVo>>> listUser(String userName,
@@ -81,12 +84,6 @@ public class UserController implements UserApi {
         Long userId = userService.createUser(User.builder().name(request.getUserName()).build(),
                 request.getUserPwd(), request.getSalt());
 
-        // create default project
-        // projectService.createProject(Project.builder()
-        //        .name(request.getUserName())
-        //        .owner(User.builder().id(userId).build())
-        //        .isDefault(true)
-        //        .build());
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(userId)));
     }
 

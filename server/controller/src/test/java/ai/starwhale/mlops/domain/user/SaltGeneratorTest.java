@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.user;
+package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Data;
-import org.springframework.validation.annotation.Validated;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
-@Data
-@Builder
-@Schema(description = "User Role object", title = "Role")
-@Validated
-public class UserRoleVo {
+public class SaltGeneratorTest {
 
-    private String id;
+    @Test
+    public void testSalt() {
+        SaltGenerator generator = new SaltGenerator();
+        String salt1 = generator.salt();
+        String salt2 = generator.salt();
+        MatcherAssert.assertThat(salt1, Matchers.hasLength(24));
+        MatcherAssert.assertThat(salt1, Matchers.not(salt2));
 
-    private ProjectVo project;
-
-    private RoleVo role;
-
-    public static UserRoleVo empty() {
-        return new UserRoleVo("", ProjectVo.empty(), RoleVo.empty());
     }
 }

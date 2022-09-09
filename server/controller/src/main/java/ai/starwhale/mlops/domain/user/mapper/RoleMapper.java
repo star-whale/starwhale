@@ -19,8 +19,10 @@ package ai.starwhale.mlops.domain.user.mapper;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface RoleMapper {
 
     List<RoleEntity> listRoles();
