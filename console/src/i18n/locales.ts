@@ -628,6 +628,9 @@ const locales0 = {
     'dataset version reverted': {
         en: 'dataset version reverted',
     },
+    'Exit Fullscreen': {
+        en: 'Exit Fullscreen',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

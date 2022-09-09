@@ -11,17 +11,128 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
-import ImageViewer from '@/components/Viewer/ImageViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { getReadableStorageQuantityStr } from '@/utils'
 import Typer from '@/domain/datastore/sdk'
+import IconFont from '@/components/IconFont/index'
+import { createUseStyles } from 'react-jss'
+import qs from 'qs'
+import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+
+const useCardStyles = createUseStyles({
+    card: {
+        'flexBasis': '161px',
+        'width': '161px',
+        'height': '137px',
+        'border': '1px solid #E2E7F0',
+        'display': 'flex',
+        'flexDirection': 'column',
+        'justifyContent': 'space-between',
+        'borderRadius': '4px',
+        'position': 'relative',
+        '&:hover': {
+            boxShadow: '0 2px 8px 0 rgba(0,0,0,0.20);',
+        },
+        '&:hover $cardFullscreen': {
+            display: 'grid',
+        },
+    },
+    cardImg: {
+        position: 'relative',
+        height: '90px',
+    },
+    cardLabel: {
+        padding: '9px 9px 0px',
+    },
+    cardSize: {
+        padding: '0 9px 9px',
+        color: 'rgba(2, 16, 43, 0.4)',
+    },
+    cardFullscreen: {
+        'position': 'absolute',
+        'right': '5px',
+        'top': '5px',
+        'backgroundColor': 'rgba(2,16,43,0.40)',
+        'height': '20px',
+        'width': '20px',
+        'borderRadius': '2px',
+        'display': 'none',
+        'color': '#FFF',
+        'cursor': 'pointer',
+        'placeItems': 'center',
+        '&:hover': {
+            backgroundColor: '#5181E0',
+        },
+    },
+})
+
+const PAGE_TABLE_SIZE = 10
+const PAGE_CARD_SIZE = 50
+
+function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
+    return (
+        <div
+            style={{
+                padding: '0px',
+            }}
+        >
+            <Tabs
+                overrides={{
+                    TabBar: {
+                        style: {
+                            display: 'flex',
+                            gap: '0',
+                            paddingLeft: 0,
+                            paddingRight: 0,
+                            borderRadius: '4px',
+                        },
+                    },
+                    TabContent: {
+                        style: {
+                            paddingLeft: 0,
+                            paddingRight: 0,
+                            borderRadius: '4px',
+                        },
+                    },
+                    Tab: {
+                        style: ({ $active }) => ({
+                            flex: 1,
+                            textAlign: 'center',
+                            border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
+                            color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
+                            marginLeft: '0',
+                            marginRight: '0',
+                            paddingTop: '6px',
+                            paddingBottom: '9px',
+                            height: '32px',
+                            width: '40px',
+                        }),
+                    },
+                }}
+                onChange={({ activeKey: activeKeyNew }) => {
+                    onChange(activeKeyNew as string)
+                }}
+                activeKey={value}
+            >
+                <Tab title={<IconFont type='grid' />} />
+                <Tab title={<IconFont type='view' />} />
+            </Tabs>
+        </div>
+    )
+}
 
 export default function DatasetVersionFiles() {
-    const { projectId, fileId } = useParams<{ projectId: string; datasetId: string; fileId: string }>()
+    const { projectId, fileId, datasetId, datasetVersionId } = useParams<{
+        projectId: string
+        datasetId: string
+        datasetVersionId: string
+        fileId: string
+    }>()
     const [page, setPage] = usePage()
     const { dataset: datasetVersion } = useDataset()
     const { token } = useAuth()
     const history = useHistory()
+    const styles = useCardStyles()
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
 
@@ -43,118 +154,186 @@ export default function DatasetVersionFiles() {
         return tables.data?.columnTypes ?? {}
     }, [tables.data])
 
-    const preview: any = React.useMemo(() => {
-        const row = tables.data?.records?.find((v) => v.id === fileId)
-        if (!row) return
-        const src = tableDataLink(projectId, datasetVersion?.name as string, datasetVersion?.versionName as string, {
-            uri: row.data_uri,
-            authName: row.auth_name,
-            offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
-            size: Typer[columnTypes.data_size]?.encode(row.data_size),
-            Authorization: token as string,
-        })
-        // eslint-disable-next-line consistent-return
-        return {
-            ...row,
-            src,
-        }
-    }, [tables, datasetVersion, projectId, token, fileId, columnTypes])
+    const [layoutKey, setLayoutKey] = React.useState('1')
+    const [isFullscreen, setIsFullscreen] = React.useState(false)
 
-    const [activeKey, setActiveKey] = React.useState('1')
+    const Records = React.useMemo(() => {
+        if (fileId || !tables.data) return <></>
+        const { records = [] } = tables.data
+
+        const rowAction = {
+            data: (row: any) => {
+                const src = tableDataLink(
+                    projectId,
+                    datasetVersion?.name as string,
+                    datasetVersion?.versionName as string,
+                    {
+                        uri: row.data_uri,
+                        authName: row.auth_name,
+                        offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
+                        size: Typer[columnTypes.data_size]?.encode(row.data_size),
+                        Authorization: token as string,
+                    }
+                )
+
+                return (
+                    <Button
+                        as='link'
+                        onClick={() => {
+                            setIsFullscreen(false)
+                            history.push(
+                                `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                            )
+                        }}
+                    >
+                        <DatasetViewer
+                            data={{
+                                type: row?.data_mime_type,
+                                label: row?.label,
+                                name: row?.auth_name,
+                                src,
+                            }}
+                        />
+                    </Button>
+                )
+            },
+            label: (row: any) => row.label,
+            size: (row: any) => getReadableStorageQuantityStr(row.data_size),
+            name: (row: any) => row.auth_name,
+        }
+
+        if (layoutKey === '0') {
+            return (
+                <div
+                    style={{
+                        display: 'grid',
+                        gap: '9px',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
+                        placeItems: 'center',
+                    }}
+                >
+                    {records.map((row, index) => {
+                        return (
+                            <div className={styles.card} key={index}>
+                                <div className={styles.cardImg}>{rowAction.data(row)}</div>
+                                <div className={styles.cardLabel}>label: {rowAction.label(row)}</div>
+                                <div className={styles.cardSize}>{rowAction.size(row)}</div>
+                                <div
+                                    className={styles.cardFullscreen}
+                                    role='button'
+                                    tabIndex={0}
+                                    onClick={() => {
+                                        setIsFullscreen(true)
+                                        history.push(
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                        )
+                                    }}
+                                >
+                                    <IconFont type='fullscreen' />
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )
+        }
+
+        return (
+            <TableBuilder
+                data={records}
+                overrides={{
+                    Root: { style: { maxHeight: '50vh' } },
+                    TableBodyRow: {
+                        style: {
+                            cursor: 'pointer',
+                        },
+                    },
+                    TableHeadCell: {
+                        style: {
+                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            fontWeight: 'bold',
+                            borderBottomWidth: 0,
+                            fontSize: '14px',
+                            lineHeight: '16px',
+                            paddingTop: '15px',
+                            paddingBottom: '15px',
+                            paddingLeft: '20px',
+                            paddingRight: '20px',
+                        },
+                    },
+                    TableHeadRow: {
+                        style: {
+                            borderRadius: '4px',
+                        },
+                    },
+                    TableBodyCell: {
+                        style: {
+                            paddingTop: 0,
+                            paddingBottom: 0,
+                            paddingLeft: '20px',
+                            paddingRight: '20px',
+                            lineHeight: '44px',
+                            verticalAlign: 'middle',
+                        },
+                    },
+                    // ...overrides,
+                }}
+            >
+                <TableBuilderColumn
+                    header='Data'
+                    overrides={{
+                        TableBodyCell: {
+                            style: {
+                                verticalAlign: 'middle',
+                                paddingTop: '4px',
+                                paddingBottom: '4px',
+                                position: 'relative',
+                                height: '60px',
+                            },
+                        },
+                    }}
+                >
+                    {rowAction.data}
+                </TableBuilderColumn>
+                <TableBuilderColumn header='Label'>{rowAction.label}</TableBuilderColumn>
+                <TableBuilderColumn header='Size'>{rowAction.size}</TableBuilderColumn>
+                <TableBuilderColumn header='Name'>{rowAction.name}</TableBuilderColumn>
+            </TableBuilder>
+        )
+    }, [
+        layoutKey,
+        fileId,
+        tables.data,
+        styles,
+        columnTypes,
+        datasetVersion,
+        datasetVersionId,
+        history,
+        projectId,
+        datasetId,
+        token,
+    ])
 
     return (
         <div style={{ flex: 1, position: 'relative' }}>
-            {!preview && (
-                <TableBuilder
-                    data={tables.data?.records ?? []}
-                    overrides={{
-                        Root: { style: { maxHeight: '50vh' } },
-                        TableBodyRow: {
-                            style: {
-                                cursor: 'pointer',
-                            },
-                        },
-                        TableHeadCell: {
-                            style: {
-                                backgroundColor: 'var(--color-brandTableHeaderBackground)',
-                                fontWeight: 'bold',
-                                borderBottomWidth: 0,
-                                fontSize: '14px',
-                                lineHeight: '16px',
-                                paddingTop: '15px',
-                                paddingBottom: '15px',
-                                paddingLeft: '20px',
-                                paddingRight: '20px',
-                            },
-                        },
-                        TableHeadRow: {
-                            style: {
-                                borderRadius: '4px',
-                            },
-                        },
-                        TableBodyCell: {
-                            style: {
-                                paddingTop: 0,
-                                paddingBottom: 0,
-                                paddingLeft: '20px',
-                                paddingRight: '20px',
-                                lineHeight: '44px',
-                                verticalAlign: 'middle',
-                            },
-                        },
-                        // ...overrides,
-                    }}
-                >
-                    <TableBuilderColumn
-                        header='Data'
-                        overrides={{
-                            TableBodyCell: {
-                                style: {
-                                    verticalAlign: 'middle',
-                                    paddingTop: '4px',
-                                    paddingBottom: '4px',
-                                },
-                            },
-                        }}
-                    >
-                        {(row) => {
-                            const src = tableDataLink(
-                                projectId,
-                                datasetVersion?.name as string,
-                                datasetVersion?.versionName as string,
+            <div style={{ position: 'absolute', top: '-60px', right: 0 }}>
+                <LayoutControl
+                    value={layoutKey}
+                    onChange={(key) => {
+                        setLayoutKey(key)
+                        history.push(
+                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
-                                    uri: row.data_uri,
-                                    authName: row.auth_name,
-                                    offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
-                                    size: Typer[columnTypes.data_size]?.encode(row.data_size),
-                                    Authorization: token as string,
+                                    ...page,
+                                    pageSize: key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE,
                                 }
-                            )
-
-                            return (
-                                <div style={{ display: 'flex' }}>
-                                    <Button as='link' onClick={() => history.push(`files/${row.id}`)}>
-                                        <DatasetViewer
-                                            data={{
-                                                type: row?.data_mime_type,
-                                                label: row?.label,
-                                                name: row?.auth_name,
-                                                src,
-                                            }}
-                                        />
-                                    </Button>
-                                </div>
-                            )
-                        }}
-                    </TableBuilderColumn>
-                    <TableBuilderColumn header='Label'>{(row) => row.label}</TableBuilderColumn>
-                    <TableBuilderColumn header='Size'>
-                        {(row) => getReadableStorageQuantityStr(row.data_size)}
-                    </TableBuilderColumn>
-                    <TableBuilderColumn header='Name'>{(row) => row.auth_name}</TableBuilderColumn>
-                </TableBuilder>
-            )}
-            {!preview && paginationProps && (
+                            )}`
+                        )
+                    }}
+                />
+            </div>
+            {Records}
+            {!fileId && paginationProps && (
                 <div
                     style={{
                         display: 'flex',
@@ -191,84 +370,7 @@ export default function DatasetVersionFiles() {
                     />
                 </div>
             )}
-            {preview && (
-                <div style={{ minHeight: '500px', borderRadius: '4px', border: '1px solid #E2E7F0', display: 'flex' }}>
-                    <div
-                        style={{
-                            flexBasis: '320px',
-                            padding: '20px',
-                            borderRight: '1px solid #EEF1F6',
-                        }}
-                    >
-                        <Tabs
-                            overrides={{
-                                TabBar: {
-                                    style: {
-                                        display: 'flex',
-                                        gap: '0',
-                                        paddingLeft: 0,
-                                        paddingRight: 0,
-                                        borderRadius: '4px',
-                                    },
-                                },
-                                TabContent: {
-                                    style: {
-                                        paddingLeft: 0,
-                                        paddingRight: 0,
-                                        borderRadius: '4px',
-                                    },
-                                },
-                                Tab: {
-                                    style: ({ $active }) => ({
-                                        flex: 1,
-                                        textAlign: 'center',
-                                        border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
-                                        color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
-                                        marginLeft: '0',
-                                        marginRight: '0',
-                                        paddingTop: '9px',
-                                        paddingBottom: '9px',
-                                    }),
-                                },
-                            }}
-                            onChange={({ activeKey: activeKeyNew }) => {
-                                setActiveKey(activeKeyNew as string)
-                            }}
-                            activeKey={activeKey}
-                        >
-                            <Tab title='Annotation'>
-                                <div>
-                                    <div
-                                        style={{
-                                            borderBottom: '1px solid #EEF1F6',
-                                        }}
-                                    >
-                                        label: {preview?.label ?? '-'}
-                                    </div>
-                                </div>
-                            </Tab>
-                            <Tab title='Categories'>
-                                <div>
-                                    <div
-                                        style={{
-                                            borderBottom: '1px solid #EEF1F6',
-                                        }}
-                                    >
-                                        label: {preview?.label ?? '-'}
-                                    </div>
-                                </div>
-                            </Tab>
-                        </Tabs>
-                    </div>
-                    <div
-                        style={{
-                            flex: 1,
-                        }}
-                    >
-                        <ImageViewer data={preview} isZoom />
-                    </div>
-                </div>
-            )}
+            {fileId && <DatasetVersionFilePreview api={tables} fileId={fileId} fullscreen={isFullscreen} />}
         </div>
     )
 }

@@ -14,13 +14,14 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
     const scale = React.useMemo(() => {
         return isZoom ? 500 / 28 : 2
     }, [isZoom])
+    const [image] = React.useState('')
 
     useEffect(() => {
         if (canvasRef.current) {
             const canvas = canvasRef.current
             drawGrayscale(canvas, data.src, 28, 28, scale)
             // let blob: Blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg'))
-            // url = URL.createObjectURL(blob)
+            // let url = URL.createObjectURL(blob)
             // setImage(url)
         }
         return () => {
@@ -30,7 +31,7 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
     }, [canvasRef, scale, data])
 
     return (
-        <div className='flowContainer'>
+        <div className='fullsize' style={{ height: '100%' }}>
             <Wrapper
                 // @ts-ignore
                 isTools={isZoom ? false : undefined}
@@ -40,9 +41,10 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
                     style={{
                         zIndex: 1,
                         objectFit: 'contain',
+                        display: 'none',
                     }}
                 />
-                {/* <img src={image} width='auto' height='500px' /> */}
+                <img src={image} width='auto' height='100%' alt='dataset view' />
             </Wrapper>
         </div>
     )

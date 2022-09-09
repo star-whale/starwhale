@@ -21,12 +21,14 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
 
     if (!isZoom) {
         return (
-            <div className='flowContainer'>
+            <div className='fullsize'>
                 <canvas
                     ref={canvasRef}
                     style={{
                         zIndex: 1,
                         objectFit: 'contain',
+                        width: '100%',
+                        height: '100%',
                     }}
                 />
             </div>
@@ -34,7 +36,7 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
     }
 
     return (
-        <div className='flowContainer'>
+        <div className='fullsize'>
             <ZoomWrapper>
                 <canvas
                     ref={canvasRef}
