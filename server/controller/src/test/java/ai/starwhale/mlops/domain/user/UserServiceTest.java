@@ -132,9 +132,9 @@ public class UserServiceTest {
     public void testCurrentUserDetail() {
         var res = service.currentUserDetail();
         assertThat(res, allOf(
-               notNullValue(),
-               hasProperty("id", is(1L)),
-               hasProperty("name", is("current"))
+                notNullValue(),
+                hasProperty("id", is(1L)),
+                hasProperty("name", is("current"))
         ));
         SecurityContextHolder.clearContext();
         assertThrows(StarwhaleApiException.class,
@@ -204,7 +204,6 @@ public class UserServiceTest {
         given(projectMapper.findProject(same(3L)))
                 .willReturn(ProjectEntity.builder().id(3L).privacy(1).build());
 
-
         var res = service.getProjectRolesOfUser(User.builder().id(1L).build(), "1");
         assertThat(res, allOf(
                 notNullValue(),
@@ -267,9 +266,9 @@ public class UserServiceTest {
     public void testCreateUser() {
         given(userMapper.createUser(any(UserEntity.class)))
                 .willAnswer(invocation -> {
-                   var entity = (UserEntity)invocation.getArgument(0);
-                   entity.setId(1L);
-                   return null;
+                    var entity = (UserEntity) invocation.getArgument(0);
+                    entity.setId(1L);
+                    return null;
                 });
 
         var res = service.createUser(User.builder().name("test").build(), "password", "salt");

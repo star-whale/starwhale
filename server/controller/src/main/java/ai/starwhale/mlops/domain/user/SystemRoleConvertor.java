@@ -43,7 +43,7 @@ public class SystemRoleConvertor implements Convertor<ProjectRoleEntity, SystemR
 
     @Override
     public SystemRoleVo convert(ProjectRoleEntity entity) throws ConvertException {
-        if(entity == null) {
+        if (entity == null) {
             return SystemRoleVo.empty();
         }
         return SystemRoleVo.builder()
