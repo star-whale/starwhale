@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.MemoryTable;
+import ai.starwhale.mlops.datastore.ObjectStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
@@ -34,7 +35,7 @@ import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -78,8 +79,8 @@ public class MemoryTableImplTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        SwBufferManager bufferManager = new SwByteBufferManager();
-        FileSystemObjectStore objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
+        var bufferManager = new SwByteBufferManager();
+        var objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
         this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
     }
 
@@ -458,8 +459,8 @@ public class MemoryTableImplTest {
             this.memoryTable.update(null, records);
             MemoryTableImplTest.this.walManager.terminate();
             SwBufferManager bufferManager = new SwByteBufferManager();
-            FileSystemObjectStore objectStore = new FileSystemObjectStore(bufferManager,
-                    MemoryTableImplTest.this.rootDir.getAbsolutePath());
+            var objectStore = new ObjectStore(bufferManager,
+                    new StorageAccessServiceFile(MemoryTableImplTest.this.rootDir.getAbsolutePath()));
             MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             var it = MemoryTableImplTest.this.walManager.readAll();

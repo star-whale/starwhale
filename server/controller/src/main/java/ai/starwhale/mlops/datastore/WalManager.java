@@ -22,7 +22,6 @@ import ai.starwhale.mlops.memory.SwBuffer;
 import ai.starwhale.mlops.memory.SwBufferInputStream;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.SwBufferOutputStream;
-import ai.starwhale.mlops.objectstore.ObjectStore;
 import com.google.protobuf.CodedOutputStream;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;

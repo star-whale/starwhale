@@ -28,12 +28,10 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.objectstore.ObjectStore;
-import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
@@ -60,14 +58,15 @@ public class WalManagerTest {
 
     private SwBufferManager bufferManager;
 
-    private FileSystemObjectStore objectStore;
+    private ObjectStore objectStore;
 
     private WalManager walManager;
 
     @BeforeEach
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new FileSystemObjectStore(this.bufferManager, this.rootDir.getAbsolutePath());
+        this.objectStore = new ObjectStore(this.bufferManager,
+                new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
     }
 
@@ -189,7 +188,7 @@ public class WalManagerTest {
     }
 
     @Test
-    public void testMany() throws IOException, InterruptedException {
+    public void testMany() throws IOException {
         List<Wal.WalEntry> entries = new ArrayList<>();
         entries.add(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)

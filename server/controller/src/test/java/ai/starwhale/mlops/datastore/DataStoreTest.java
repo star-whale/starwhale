@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -50,14 +50,14 @@ public class DataStoreTest {
 
     private SwByteBufferManager bufferManager;
 
-    private FileSystemObjectStore objectStore;
+    private ObjectStore objectStore;
 
     private WalManager walManager;
 
     @BeforeEach
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
+        this.objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
     }
@@ -68,7 +68,7 @@ public class DataStoreTest {
     }
 
     @Test
-    public void testList() throws IOException {
+    public void testList() {
         assertThat("empty", this.dataStore.list(""), empty());
         this.dataStore.update("t1", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
         this.dataStore.update("t2", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);

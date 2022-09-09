@@ -14,58 +14,55 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.objectstore.impl;
+package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.memory.SwBuffer;
 import ai.starwhale.mlops.memory.SwBufferInputStream;
 import ai.starwhale.mlops.memory.SwBufferManager;
-import ai.starwhale.mlops.objectstore.ObjectStore;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-@Slf4j
 @Component
-@ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3", matchIfMissing = true)
-public class S3ObjectStore implements ObjectStore {
+public class ObjectStore {
 
     private final SwBufferManager bufferManager;
 
     private final StorageAccessService storageAccessService;
 
-    public S3ObjectStore(SwBufferManager bufferManager, StorageAccessService storageAccessService) {
+    public ObjectStore(SwBufferManager bufferManager, StorageAccessService storageAccessService) {
         this.bufferManager = bufferManager;
         this.storageAccessService = storageAccessService;
     }
 
-    @Override
     public Iterator<String> list(String prefix) throws IOException {
         return this.storageAccessService.list(prefix).iterator();
     }
 
-    @Override
     public void put(String name, SwBuffer buf) throws IOException {
         this.storageAccessService.put(name, new SwBufferInputStream(buf), buf.capacity());
     }
 
-    @Override
     public SwBuffer get(String name) throws IOException {
         try (var is = this.storageAccessService.get(name)) {
-            @SuppressWarnings("unchecked")
-            var result = (ResponseInputStream<GetObjectResponse>) is;
-            var ret = this.bufferManager.allocate(result.response().contentLength().intValue());
-            int read = result.readNBytes(ret.asByteBuffer().array(), 0, ret.capacity());
+            int length;
+            if (is instanceof FileInputStream) {
+                length = (int) ((FileInputStream) is).getChannel().size();
+            } else {
+                //noinspection unchecked
+                length = ((ResponseInputStream<GetObjectResponse>) is).response().contentLength().intValue();
+            }
+            var ret = this.bufferManager.allocate(length);
+            int read = is.readNBytes(ret.asByteBuffer().array(), 0, ret.capacity());
             assert read == ret.capacity();
             return ret;
         }
     }
 
-    @Override
     public void delete(String name) throws IOException {
         this.storageAccessService.delete(name);
     }
