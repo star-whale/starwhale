@@ -41,6 +41,8 @@ sw:
       secretKey: ${SW_STORAGE_SECRETKEY:starwhale}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
+      hugeFileThreshold: 10485760 # 10MB
+      hugeFilePartSize: 5242880 # 5MB
   controller:
     apiPrefix: /api/v1
     whiteList: /api/v1/report

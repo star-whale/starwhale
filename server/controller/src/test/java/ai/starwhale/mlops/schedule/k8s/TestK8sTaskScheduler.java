@@ -59,7 +59,14 @@ public class TestK8sTaskScheduler {
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
         StorageProperties storageProperties = new StorageProperties();
-        storageProperties.setS3Config(new S3Config("bucket", "accessKey", "secretKey", "region", "endpoint"));
+        storageProperties.setS3Config(
+                S3Config.builder()
+                        .bucket("bucket")
+                        .accessKey("accessKey")
+                        .secretKey("secretKey")
+                        .region("region")
+                        .endpoint("endpoint")
+                        .build());
         JobTokenConfig jobTokenConfig = mock(JobTokenConfig.class);
         when(jobTokenConfig.getToken()).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));

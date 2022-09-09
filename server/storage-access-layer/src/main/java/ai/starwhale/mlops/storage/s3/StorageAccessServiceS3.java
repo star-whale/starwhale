@@ -21,7 +21,10 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -30,15 +33,22 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 
 public class StorageAccessServiceS3 implements StorageAccessService {
 
@@ -60,6 +70,28 @@ public class StorageAccessServiceS3 implements StorageAccessService {
             s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
         }
         this.s3client = s3ClientBuilder.build();
+
+        // abort all previous pending multipart uploads
+        var resp = this.s3client.listMultipartUploads(ListMultipartUploadsRequest.builder()
+                .bucket(s3Config.getBucket())
+                .build());
+        for (; ; ) {
+            for (var upload : resp.uploads()) {
+                this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
+                        .bucket(s3Config.getBucket())
+                        .key(upload.key())
+                        .uploadId(upload.uploadId())
+                        .build());
+            }
+            if (!resp.isTruncated()) {
+                break;
+            }
+            resp = this.s3client.listMultipartUploads(ListMultipartUploadsRequest.builder()
+                    .bucket(s3Config.getBucket())
+                    .keyMarker(resp.nextKeyMarker())
+                    .uploadIdMarker(resp.nextUploadIdMarker())
+                    .build());
+        }
     }
 
     @Override
@@ -92,9 +124,54 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
-        s3client.putObject(
-                PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
-                RequestBody.fromInputStream(inputStream, size));
+        if (this.s3Config.getHugeFileThreshold() <= 0
+                || size < this.s3Config.getHugeFileThreshold()
+                || this.s3Config.getHugeFilePartSize() <= 0) {
+            s3client.putObject(
+                    PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+                    RequestBody.fromInputStream(inputStream, size));
+            return;
+        }
+        var uploadId = this.s3client.createMultipartUpload(CreateMultipartUploadRequest.builder()
+                        .bucket(this.s3Config.getBucket())
+                        .key(path)
+                        .build())
+                .uploadId();
+        try {
+            var etagList = new ArrayList<String>();
+            for (int i = 1; size > 0; ++i) {
+                var partSize = Math.min(size, this.s3Config.getHugeFilePartSize());
+                var resp = this.s3client.uploadPart(UploadPartRequest.builder()
+                                .bucket(this.s3Config.getBucket())
+                                .key(path)
+                                .uploadId(uploadId)
+                                .partNumber(i)
+                                .contentLength(partSize)
+                                .build(),
+                        RequestBody.fromInputStream(inputStream, partSize));
+                size -= partSize;
+                etagList.add(resp.eTag());
+            }
+            this.s3client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                    .bucket(this.s3Config.getBucket())
+                    .key(path)
+                    .uploadId(uploadId)
+                    .multipartUpload(CompletedMultipartUpload.builder()
+                            .parts(IntStream.range(0, etagList.size())
+                                    .mapToObj(i -> CompletedPart.builder()
+                                            .partNumber(i + 1)
+                                            .eTag(etagList.get(i))
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .build())
+                    .build());
+        } catch (Throwable t) {
+            this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
+                    .bucket(this.s3Config.getBucket())
+                    .key(path)
+                    .uploadId(uploadId)
+                    .build());
+        }
     }
 
     @Override
