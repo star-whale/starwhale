@@ -1,13 +1,7 @@
 version: 1.0
 name: mask_rcnn
-
 model:
-  - models/maskrcnn.pth
-
+  - models/mcrnn.pth
 run:
-  ppl: code.ppl:MARSKRCNN
-
+  ppl: pfp.ppl:MaskRCnn
 desc: mask rcnn resnet50 by pytorch
-
-tag:
-  - instance segmentation & object dectection

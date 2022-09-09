@@ -1,11 +1,7 @@
-name: penn_fudan_ped
-
-process: code.data_slicer:PennFudanPedSlicer
+name: pfp
+process: pfp.dataset:PFPDatasetBuildExecutor
 
 desc: PennFudanPed data and label test dataset
-tag:
-  - bin
-
 attr:
   alignment_size: 4k
-  volume_size: 2M
+  volume_size: 10M

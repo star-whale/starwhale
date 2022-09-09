@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import os
 import sys
 import math
 import base64
@@ -22,7 +21,6 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.consts.env import SWEnv
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
 from starwhale.core.job.model import STATUS
@@ -93,7 +91,9 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
-        self.evaluation = self._init_datastore()
+        self.evaluation = Evaluation(
+            eval_id=self.context.version, project=self.context.project
+        )
         self._monkey_patch()
 
     def _init_dir(self) -> None:
@@ -107,11 +107,6 @@ class PipelineHandler(metaclass=ABCMeta):
         self.log_dir = _run_dir / RunSubDirType.LOG
         ensure_dir(self.status_dir)
         ensure_dir(self.log_dir)
-
-    def _init_datastore(self) -> Evaluation:
-        os.environ[SWEnv.project] = self.context.project
-        os.environ[SWEnv.eval_version] = self.context.version
-        return Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -181,11 +176,11 @@ class PipelineHandler(metaclass=ABCMeta):
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         raise NotImplementedError
 
-    def _builtin_serialize(self, *data: t.Any) -> bytes:
+    def _builtin_serialize(self, data: t.Any) -> bytes:
         return dill.dumps(data)  # type: ignore
 
-    def ppl_result_serialize(self, *data: t.Any) -> bytes:
-        return self._builtin_serialize(*data)
+    def ppl_result_serialize(self, data: t.Any) -> bytes:
+        return self._builtin_serialize(data)
 
     def ppl_result_deserialize(self, data: bytes) -> t.Any:
         return dill.loads(base64.b64decode(data))
@@ -194,7 +189,7 @@ class PipelineHandler(metaclass=ABCMeta):
         return self._builtin_serialize(data)
 
     def annotations_deserialize(self, data: bytes) -> bytes:
-        return dill.loads(base64.b64decode(data))[0]  # type: ignore
+        return dill.loads(base64.b64decode(data))  # type: ignore
 
     def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
         data["result"] = self.ppl_result_deserialize(data["result"])
@@ -275,14 +270,14 @@ class PipelineHandler(metaclass=ABCMeta):
             else:
                 exception = None
 
-            self._do_record(_idx, _annotations, exception, *pred)
+            self._do_record(_idx, _annotations, exception, pred)
 
     def _do_record(
         self,
         idx: int,
         annotations: t.Dict,
         exception: t.Optional[Exception],
-        *args: t.Any,
+        pred: t.Any,
     ) -> None:
         _timeline = {
             "time": now_str(),
@@ -296,7 +291,7 @@ class PipelineHandler(metaclass=ABCMeta):
         _b64: t.Callable[[bytes], str] = lambda x: base64.b64encode(x).decode("ascii")
         self.evaluation.log_result(
             data_id=idx,
-            result=_b64(self.ppl_result_serialize(*args)),
+            result=_b64(self.ppl_result_serialize(pred)),
             annotations=_b64(self.annotations_serialize(annotations)),
         )
         self._update_status(STATUS.RUNNING)
