@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -68,9 +69,15 @@ public class TaskService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long jobId = jobManager.getJobId(jobUrl);
         JobEntity job = jobManager.findJob(Job.builder().id(jobId).build());
-        ResourcePoolEntity resourcePool = resourcePoolMapper.findById(job.getResourcePoolId());
+        Long resourcePoolId = job.getResourcePoolId();
+        String label = ResourcePool.DEFAULT;
+        if (null != resourcePoolId) {
+            ResourcePoolEntity resourcePool = resourcePoolMapper.findById(resourcePoolId);
+            label = resourcePool.getLabel();
+        }
+        final String resourcePool = label;
         List<TaskVo> tasks = taskMapper.listTasks(jobId).stream().map(taskConvertor::convert)
-                .peek(taskVo -> taskVo.setResourcePool(resourcePool.getLabel())).collect(
+                .peek(taskVo -> taskVo.setResourcePool(resourcePool)).collect(
                         Collectors.toList());
         return PageInfo.of(tasks);
 

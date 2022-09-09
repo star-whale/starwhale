@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -72,7 +73,7 @@ public class TestTaskService {
     }
 
     @Test
-    public void testListTask() {
+    public void testListTaskWithResourcePool() {
         when(jobManager.getJobId(anyString())).thenReturn(1L);
         when(jobManager.findJob(any())).thenReturn(JobEntity.builder().resourcePoolId(1L).build());
         when(resourcePoolMapper.findById(1L)).thenReturn(ResourcePoolEntity.builder().id(1L).label("LABEL").build());
@@ -94,6 +95,32 @@ public class TestTaskService {
                         .taskStatus(TaskStatus.RUNNING).resourcePool("LABEL").build(),
                 TaskVo.builder().id("2").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid2")
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("LABEL").build()));
+
+
+    }
+
+    @Test
+    public void testListTaskWithoutResourcePool() {
+        when(jobManager.getJobId(anyString())).thenReturn(1L);
+        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().build());
+        LocalDateTime startedTime = LocalDateTime.of(2022, 9, 9, 9, 9);
+        when(taskMapper.listTasks(1L)).thenReturn(
+                List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
+                                .taskStatus(
+                                        TaskStatus.RUNNING).build(),
+                        TaskEntity.builder().id(2L).startedTime(startedTime).taskUuid("uuid2")
+                                .taskStatus(
+                                        TaskStatus.SUCCESS).build()));
+        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("",
+                PageParams.builder().pageNum(0).pageSize(3).build());
+        Assertions.assertEquals(1, taskVoPageInfo.getPages());
+        Assertions.assertEquals(2, taskVoPageInfo.getSize());
+        Assertions.assertEquals(2, taskVoPageInfo.getList().size());
+        assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
+                TaskVo.builder().id("1").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid1")
+                        .taskStatus(TaskStatus.RUNNING).resourcePool(ResourcePool.DEFAULT).build(),
+                TaskVo.builder().id("2").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid2")
+                        .taskStatus(TaskStatus.SUCCESS).resourcePool(ResourcePool.DEFAULT).build()));
 
 
     }
