@@ -29,10 +29,10 @@ public class HttpUtilTest {
         Assertions.assertEquals("project_test_1",
                 HttpUtil.getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.PROJECT));
         Assertions.assertEquals("project_test_1",
-                HttpUtil.getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.PROJECT));
+                HttpUtil.getResourceUrlFromPath("/project/project_test_1?pageSize=1", "project"));
         Assertions.assertNull(
                 HttpUtil.getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.RUNTIME));
         Assertions.assertEquals("1",
-                HttpUtil.getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.MODEL));
+                HttpUtil.getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", "model"));
     }
 }
