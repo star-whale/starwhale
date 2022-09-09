@@ -30,7 +30,13 @@ interface IPasswordResultProps {
 export default function UserManagement() {
     const [page] = usePage()
     const [t] = useTranslation()
-    const users = useFetchUsers(page)
+    const $page = React.useMemo(() => {
+        return {
+            ...page,
+            pageSize: 1000,
+        }
+    }, [page])
+    const users = useFetchUsers($page)
     const [css] = useStyletron()
     const [data, updateData] = useState<IUserSchema[]>([])
     const [filter, updateFilter] = useState('')
@@ -94,7 +100,7 @@ export default function UserManagement() {
                 </Button>
             }
         >
-            <div className={css({ marginBottom: '20px' })}>
+            <div className={css({ marginBottom: '20px', width: '280px' })}>
                 <QueryInput
                     onChange={(val: string) => {
                         updateFilter(val.trim())
