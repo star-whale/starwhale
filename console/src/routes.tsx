@@ -215,7 +215,7 @@ const Routes = () => {
 
                                         <Route
                                             exact
-                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files/:fileId?'
+                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files/:fileId?/:path?'
                                             component={DatasetVersionOverviewFiles}
                                         />
                                         <Redirect to='/projects/:projectId/datasets/:datasetId' />

@@ -118,7 +118,7 @@
     "cy:run": "cypress run",
     "cy:open": "cypress open",
     "start": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=5120' vite build",
     "serve": "vite preview"
   },
   "eslintConfig": {

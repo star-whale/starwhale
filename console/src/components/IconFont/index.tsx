@@ -60,6 +60,9 @@ const iconTypes = [
     'excel',
     'text',
     'audio',
+    'view',
+    'grid',
+    'fullscreen',
 ]
 
 interface IIconFontProps {

@@ -8,6 +8,7 @@ export enum MIME {
 
 export type IDatasetViewerProps = {
     data: IDatasetMeta
+    isZoom?: boolean
 }
 
 export type IDatasetMeta = {
@@ -17,13 +18,13 @@ export type IDatasetMeta = {
     src: string
 }
 
-export default function DatasetViewer({ data }: IDatasetViewerProps) {
+export default function DatasetViewer({ data, isZoom = false }: IDatasetViewerProps) {
     const { type } = data
 
     // eslint-disable-next-line default-case
     switch (type) {
         case MIME.GRAYSCALE:
-            return <ImageGrayscaleViewer data={data} />
+            return <ImageGrayscaleViewer data={data} isZoom={isZoom} />
     }
     return (
         <p
