@@ -21,6 +21,11 @@ import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -33,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -41,24 +45,41 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskService {
 
-    @Resource
-    private TaskConvertor taskConvertor;
+    private final TaskConvertor taskConvertor;
 
-    @Resource
-    private TaskMapper taskMapper;
+    private final TaskMapper taskMapper;
 
-    @Resource
-    private StorageAccessService storageAccessService;
+    private final StorageAccessService storageAccessService;
 
-    @Resource
-    private JobManager jobManager;
+    private final JobManager jobManager;
+
+    private final ResourcePoolMapper resourcePoolMapper;
+
+    public TaskService(TaskConvertor taskConvertor, TaskMapper taskMapper,
+            StorageAccessService storageAccessService, JobManager jobManager,
+            ResourcePoolMapper resourcePoolMapper) {
+        this.taskConvertor = taskConvertor;
+        this.taskMapper = taskMapper;
+        this.storageAccessService = storageAccessService;
+        this.jobManager = jobManager;
+        this.resourcePoolMapper = resourcePoolMapper;
+    }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long jobId = jobManager.getJobId(jobUrl);
-        List<TaskEntity> tasks = taskMapper.listTasks(jobId);
-
-        return PageUtil.toPageInfo(tasks, taskConvertor::convert);
+        JobEntity job = jobManager.findJob(Job.builder().id(jobId).build());
+        Long resourcePoolId = job.getResourcePoolId();
+        String label = ResourcePool.DEFAULT;
+        if (null != resourcePoolId) {
+            ResourcePoolEntity resourcePool = resourcePoolMapper.findById(resourcePoolId);
+            label = resourcePool.getLabel();
+        }
+        final String resourcePool = label;
+        List<TaskVo> tasks = taskMapper.listTasks(jobId).stream().map(taskConvertor::convert)
+                .peek(taskVo -> taskVo.setResourcePool(resourcePool)).collect(
+                        Collectors.toList());
+        return PageInfo.of(tasks);
 
     }
 

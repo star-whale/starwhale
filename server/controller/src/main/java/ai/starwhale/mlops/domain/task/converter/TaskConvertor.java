@@ -23,17 +23,20 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TaskConvertor implements Convertor<TaskEntity, TaskVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public TaskConvertor(IdConvertor idConvertor,
+            LocalDateTimeConvertor localDateTimeConvertor) {
+        this.idConvertor = idConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
 
     @Override
     public TaskVo convert(TaskEntity entity) throws ConvertException {
@@ -44,7 +47,7 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVo> {
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
                 .taskStatus(entity.getTaskStatus())
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(localDateTimeConvertor.convert(entity.getStartedTime()))
                 .build();
     }
 

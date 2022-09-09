@@ -20,8 +20,10 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface TaskMapper {
 
     List<TaskEntity> listTasks(@Param("jobId") Long jobId);

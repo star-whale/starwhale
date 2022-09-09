@@ -19,8 +19,10 @@ package ai.starwhale.mlops.domain.system.mapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface ResourcePoolMapper {
 
     List<ResourcePoolEntity> listResourcePools();
