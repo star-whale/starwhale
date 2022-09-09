@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -91,7 +92,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
             }
             updateStepStatus(step, stepNewStatus);
             jobUpdateHelper.updateJob(job);
-            if (step.getStatus() == StepStatus.SUCCESS) {
+            if (step.getStatus() == StepStatus.SUCCESS && job.getStatus() != JobStatus.SUCCESS) {
                 stepTrigger.triggerNextStep(step);
             }
 
