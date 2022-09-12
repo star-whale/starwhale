@@ -117,7 +117,7 @@ class StandaloneEvalExecutor(TestCase):
 
         assert ppl_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1",
+                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1 -l version={build_version}",
                 f"-v {job_dir}:/opt/starwhale",
                 f"-v {sw.rootdir}:/root/.starwhale",
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",

@@ -116,8 +116,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
             / self.job_name
         ).exists()
 
+    @patch("starwhale.core.eval.model.subprocess.check_output")
     @patch("starwhale.core.eval.model.check_call")
-    def test_stanalone_actions(self, m_call: MagicMock):
+    def test_stanalone_actions(self, m_call: MagicMock, m_call_output: MagicMock):
         uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name}")
         job = StandaloneEvaluationJob(uri)
 
