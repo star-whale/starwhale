@@ -1,13 +1,8 @@
 version: 1.0
-name: m5
-
+name: speech_commands_m5
 model:
   - models/m5.pth
-
 run:
-  ppl: code.ppl:M5Inference
+  ppl: sc.ppl:M5Inference
 
 desc: m5 by pytorch
-
-tag:
-  - speech command clasification
