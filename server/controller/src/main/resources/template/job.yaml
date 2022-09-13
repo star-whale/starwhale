@@ -21,8 +21,12 @@ spec:
           args:
             - -c
             - >-
-              if [ ! -z "${SW_S3_EXTRA_CONFIGS}" ]; then
-                 mkdir -p $HOME/.aws;
+              mkdir -p $HOME/.aws;
+              CRED="$HOME/.aws/credentials";
+              echo [default] > $CRED;
+              echo "aws_access_key_id=$SW_S3_ACCESS_KEY" >> $CRED;
+              echo "aws_secret_access_key=$SW_S3_SECRET" >> $CRED;
+              if echo $SW_S3_EXTRA_CONFIGS | grep virtual; then
                  echo [default] >> $HOME/.aws/config;
                  echo s3= >> $HOME/.aws/config;
                  echo '    addressing_style=virtual' >> $HOME/.aws/config;
@@ -32,7 +36,7 @@ spec:
                  DST=$(echo $item|cut -d';' -f2);
                  echo $SRC,$DST;
                  mkdir -p $DST;
-                 aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST;
+                 aws --endpoint-url=$SW_S3_ENDPOINT --region=$SW_S3_REGION s3 cp --recursive $SRC $DST;
                done
         - name: untar
           imagePullPolicy: IfNotPresent

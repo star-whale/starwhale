@@ -204,24 +204,17 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
         Map<String, String> initContainerEnvs = new HashMap<>();
+        Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
+        // Ignore keys, we use only one key by now
+        fileStorageEnvs.values().forEach((FileStorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
+
         List<String> downloads = new ArrayList<>();
         String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
         downloads.add(prefix + swJob.getSwmp().getPath() + ";/opt/starwhale/swmp/");
         downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
                 jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
-        initContainerEnvs.put("ENDPOINT_URL", storageProperties.getS3Config().getEndpoint());
-        initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
-        initContainerEnvs.put("AWS_SECRET_ACCESS_KEY", storageProperties.getS3Config().getSecretKey());
-        initContainerEnvs.put("AWS_S3_REGION", storageProperties.getS3Config().getRegion());
-        initContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
-        initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
-        initContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
 
-        if (FileStorageEnv.FileSystemEnvType.ALIYUN.name().equalsIgnoreCase(storageProperties.getType())) {
-            initContainerEnvs.put(AliyunEnv.ENV_EXTRA_S3_CONFIGS,
-                    new BotoS3Config(BotoS3Config.AddressingStyleType.VIRTUAL).toEnvStr());
-        }
         return initContainerEnvs;
     }
 
