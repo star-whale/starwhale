@@ -49,4 +49,7 @@ public class FileStorageEnv {
         envs.put(ENV_TYPE, envType.name());
     }
 
+    public void setKeyPrefix(String keyPrefix) {
+        this.add(ENV_KEY_PREFIX, keyPrefix);
+    }
 }
