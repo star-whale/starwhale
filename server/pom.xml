@@ -261,23 +261,9 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <configuration>
             <excludes>
-              <exclude>**/ai/starwhale/mlops/common/BaseEntity*</exclude>
-              <exclude>**/ai/starwhale/mlops/common/BaseParams*</exclude>
-              <exclude>**/ai/starwhale/mlops/common/PageParams*</exclude>
-              <exclude>**/ai/starwhale/mlops/common/TagAction*</exclude>
-              <exclude>**/ai/starwhale/mlops/common/TimeConcern*</exclude>
-              <exclude>**/ai/starwhale/mlops/api/**</exclude>
-              <exclude>**/ai/starwhale/mlops/domain/**/*Service*</exclude>
-              <exclude>**/ai/starwhale/mlops/domain/**/bo/**</exclude>
-              <exclude>**/ai/starwhale/mlops/domain/**/po/**</exclude>
-              <exclude>**/ai/starwhale/mlops/domain/**/mapper/**</exclude>
-              <exclude>**/ai/starwhale/mlops/configuration/**</exclude>
-              <exclude>**/ai/starwhale/mlops/exception/**</exclude>
-              <exclude>**/ai/starwhale/mlops/domain/dag/DAGQuerier*Content*</exclude>
               <exclude>**/ai/starwhale/mlops/datastore/*Wal.*</exclude>
               <exclude>**/ai/starwhale/mlops/datastore/*Wal$*.*</exclude>
               <exclude>**/ai/starwhale/mlops/datastore/Wal.*</exclude>
-              <exclude>**/ai/starwhale/mlops/storage/aliyun</exclude>
             </excludes>
           </configuration>
           <version>0.8.6</version>
