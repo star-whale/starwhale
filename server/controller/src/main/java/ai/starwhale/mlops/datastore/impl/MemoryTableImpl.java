@@ -125,30 +125,28 @@ public class MemoryTableImpl implements MemoryTable {
         if (col.getNullValue()) {
             return null;
         }
-        switch (columnSchema.getType()) {
-            case UNKNOWN:
-                return null;
-            case BOOL:
-                return col.getBoolValue();
-            case INT8:
-                return (byte) col.getIntValue();
-            case INT16:
-                return (short) col.getIntValue();
-            case INT32:
-                return (int) col.getIntValue();
-            case INT64:
-                return col.getIntValue();
-            case FLOAT32:
-                return col.getFloatValue();
-            case FLOAT64:
-                return col.getDoubleValue();
-            case STRING:
-                return col.getStringValue();
-            case BYTES:
-                return ByteBuffer.wrap(col.getBytesValue().toByteArray());
-            default:
-                throw new IllegalArgumentException("invalid type " + this);
+        if (columnSchema.getType() == ColumnType.UNKNOWN) {
+            return null;
+        } else if (columnSchema.getType() == ColumnType.BOOL) {
+            return col.getBoolValue();
+        } else if (columnSchema.getType() == ColumnType.INT8) {
+            return (byte) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT16) {
+            return (short) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT32) {
+            return (int) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT64) {
+            return col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.FLOAT32) {
+            return col.getFloatValue();
+        } else if (columnSchema.getType() == ColumnType.FLOAT64) {
+            return col.getDoubleValue();
+        } else if (columnSchema.getType() == ColumnType.STRING) {
+            return col.getStringValue();
+        } else if (columnSchema.getType() == ColumnType.BYTES) {
+            return ByteBuffer.wrap(col.getBytesValue().toByteArray());
         }
+        throw new IllegalArgumentException("invalid type " + this);
     }
 
 
@@ -243,33 +241,23 @@ public class MemoryTableImpl implements MemoryTable {
             if (value == null) {
                 ret.setNullValue(true);
             } else {
-                switch (colSchema.getType()) {
-                    case UNKNOWN:
-                        ret.setNullValue(true);
-                        break;
-                    case BOOL:
-                        ret.setBoolValue((Boolean) value);
-                        break;
-                    case INT8:
-                    case INT16:
-                    case INT32:
-                    case INT64:
-                        ret.setIntValue(((Number) value).longValue());
-                        break;
-                    case FLOAT32:
-                        ret.setFloatValue((Float) value);
-                        break;
-                    case FLOAT64:
-                        ret.setDoubleValue((Double) value);
-                        break;
-                    case STRING:
-                        ret.setStringValue((String) value);
-                        break;
-                    case BYTES:
-                        ret.setBytesValue(ByteString.copyFrom(((ByteBuffer) value).array()));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("invalid type " + colSchema.getType());
+                if (colSchema.getType() == ColumnType.UNKNOWN) {
+                    ret.setNullValue(true);
+                } else if (colSchema.getType() == ColumnType.BOOL) {
+                    ret.setBoolValue((Boolean) value);
+                } else if (colSchema.getType() == ColumnType.INT8 || colSchema.getType() == ColumnType.INT16
+                        || colSchema.getType() == ColumnType.INT32 || colSchema.getType() == ColumnType.INT64) {
+                    ret.setIntValue(((Number) value).longValue());
+                } else if (colSchema.getType() == ColumnType.FLOAT32) {
+                    ret.setFloatValue((Float) value);
+                } else if (colSchema.getType() == ColumnType.FLOAT64) {
+                    ret.setDoubleValue((Double) value);
+                } else if (colSchema.getType() == ColumnType.STRING) {
+                    ret.setStringValue((String) value);
+                } else if (colSchema.getType() == ColumnType.BYTES) {
+                    ret.setBytesValue(ByteString.copyFrom(((ByteBuffer) value).array()));
+                } else {
+                    throw new IllegalArgumentException("invalid type " + colSchema.getType());
                 }
             }
         }
@@ -426,9 +414,9 @@ public class MemoryTableImpl implements MemoryTable {
             return ((ByteBuffer) a).compareTo((ByteBuffer) b);
         } else if (type1 == ColumnType.BOOL) {
             return ((Boolean) a).compareTo((Boolean) b);
-        } else if (type1.getName().equals(ColumnType.INT32.getName())) {
+        } else if (type1.getCategory().equals(ColumnType.INT32.getCategory())) {
             return Long.compare(((Number) a).longValue(), ((Number) b).longValue());
-        } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
+        } else if (type1.getCategory().equals(ColumnType.FLOAT32.getCategory())) {
             return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
         } else {
             throw new IllegalArgumentException("invalid type " + type1);
@@ -504,7 +492,7 @@ public class MemoryTableImpl implements MemoryTable {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "invalid filter, unknown column " + col.getName());
                 }
-                if (!type.getName().equals(colSchema.getType().getName())) {
+                if (!type.getCategory().equals(colSchema.getType().getCategory())) {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
                                     "invalid filter, can not compare column {0} of type {1} "
@@ -523,8 +511,8 @@ public class MemoryTableImpl implements MemoryTable {
                 } else if (op instanceof Boolean) {
                     checkFailed = type != ColumnType.BOOL;
                 } else if (op instanceof Number) {
-                    checkFailed = !type.getName().equals(ColumnType.INT32.getName())
-                            && !type.getName().equals(ColumnType.FLOAT32.getName());
+                    checkFailed = !type.getCategory().equals(ColumnType.INT32.getCategory())
+                            && !type.getCategory().equals(ColumnType.FLOAT32.getCategory());
                 } else {
                     throw new IllegalArgumentException("unexpected operand class " + op.getClass());
                 }
@@ -550,16 +538,16 @@ public class MemoryTableImpl implements MemoryTable {
         int result;
         var type1 = ColumnType.getColumnType(a);
         var type2 = ColumnType.getColumnType(b);
-        if (type1.getName().equals(type2.getName())) {
+        if (type1.getCategory().equals(type2.getCategory())) {
             if (type1 == ColumnType.BOOL) {
                 result = ((Boolean) a).compareTo((Boolean) b);
             } else if (type1 == ColumnType.STRING) {
                 result = ((String) a).compareTo((String) b);
             } else if (type1 == ColumnType.BYTES) {
                 result = ((ByteBuffer) a).compareTo((ByteBuffer) b);
-            } else if (type1.getName().equals(ColumnType.INT32.getName())) {
+            } else if (type1.getCategory().equals(ColumnType.INT32.getCategory())) {
                 result = Long.compare(((Number) a).longValue(), ((Number) b).longValue());
-            } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
+            } else if (type1.getCategory().equals(ColumnType.FLOAT32.getCategory())) {
                 result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
             } else {
                 throw new IllegalArgumentException("invalid type " + type1);
