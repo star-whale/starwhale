@@ -6,15 +6,22 @@ configs:
   docker:
     image: ghcr.io/star-whale/runtime/pytorch
   pip:
-    extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
-    index_url: https://pypi.doubanio.com/simple/
+    extra_index_url: https://pypi.doubanio.com/simple
+    index_url: https://pypi.tuna.tsinghua.edu.cn/simple
     trusted_host:
-      - mirrors.bfsu.edu.cn
+      - pypi.tuna.tsinghua.edu.cn
       - pypi.doubanio.com
 dependencies:
   - pip:
-      - numpy >= 1.23.2
+      - Pillow
+      - numpy
       - scikit-learn
+      - torchvision
+      - torch
+      - torchdata
+      - torchtext
+      - torchaudio
+      - pycocotools
   - wheels:
       - dummy-0.0.0-py3-none-any.whl
   - files:

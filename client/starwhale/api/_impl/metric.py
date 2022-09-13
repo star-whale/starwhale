@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from enum import Enum, unique
 from functools import wraps
 
 from sklearn.metrics import (  # type: ignore
@@ -17,7 +18,8 @@ from starwhale.utils.flatten import do_flatten_dict
 from .model import PipelineHandler
 
 
-class MetricKind:
+@unique
+class MetricKind(Enum):
     MultiClassification = "multi_classification"
 
 
@@ -40,7 +42,7 @@ def multi_classification(
             else:
                 y_true, y_pred = _rt
 
-            _r: t.Dict[str, t.Any] = {"kind": MetricKind.MultiClassification}
+            _r: t.Dict[str, t.Any] = {"kind": MetricKind.MultiClassification.value}
             cr = classification_report(
                 y_true, y_pred, output_dict=True, labels=all_labels
             )

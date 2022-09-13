@@ -1,4 +1,0 @@
-pycocotools
-numpy
-torch
-torchvision

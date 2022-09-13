@@ -3,9 +3,10 @@ import typing as t
 
 from rich import box
 from loguru import logger
-from rich.tree import Tree
+from rich.panel import Panel
 from rich.table import Table
 from rich.pretty import Pretty
+from rich.columns import Columns
 
 from starwhale.utils import Order, console, sort_obj_list
 from starwhale.consts import (
@@ -18,6 +19,7 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
 from starwhale.core.eval.model import EvaluationJob
+from starwhale.api._impl.metric import MetricKind
 
 
 class JobTermView(BaseTermView):
@@ -130,7 +132,21 @@ class JobTermView(BaseTermView):
             self._print_tasks(_rt["tasks"][0])
 
         if "report" in _rt:
-            self._render_job_report(_rt["report"])
+            _report = _rt["report"]
+            _kind = _rt["report"].get("kind", "")
+
+            if "summary" in _report:
+                self._render_summary_report(_report["summary"], _kind)
+
+            if _kind == MetricKind.MultiClassification.value:
+                self._render_multi_classification_job_report(_rt["report"])
+
+    def _render_summary_report(self, summary: t.Dict[str, t.Any], kind: str) -> None:
+        console.rule(f"[bold green]{kind.upper()} Summary")
+        contents = [
+            Panel(f"[b]{k}[/b]\n[yellow]{v}", expand=True) for k, v in summary.items()
+        ]
+        console.print(Columns(contents))
 
     def _print_tasks(self, tasks: t.List[t.Dict[str, t.Any]]) -> None:
         table = Table(box=box.SIMPLE)
@@ -159,8 +175,9 @@ class JobTermView(BaseTermView):
         )
         console.print(table)
 
-    # TODO: use new result format
-    def _render_job_report(self, report: t.Dict[str, t.Any]) -> None:
+    def _render_multi_classification_job_report(
+        self, report: t.Dict[str, t.Any]
+    ) -> None:
         if not report:
             console.print(":turtle: no report")
             return
@@ -168,30 +185,7 @@ class JobTermView(BaseTermView):
         labels: t.Dict[str, t.Any] = report.get("labels", {})
         sort_label_names = sorted(list(labels.keys()))
 
-        def _print_report() -> None:
-            # TODO: add other kind report
-            def _r(_tree: t.Any, _obj: t.Any) -> None:
-                if not isinstance(_obj, dict):
-                    _tree.add(str(_obj))
-
-                for _k, _v in _obj.items():
-                    if _k == "id":
-                        continue
-                    if isinstance(_v, (list, tuple)):
-                        _k = f"{_k}: [green]{'|'.join(_v)}"
-                    elif isinstance(_v, dict):
-                        _k = _k
-                    elif isinstance(_v, str):
-                        _k = f"{_k}:{_v}"
-                    else:
-                        _k = f"{_k}: [green]{_v:.4f}"
-
-                    _ntree = _tree.add(_k)
-                    if isinstance(_v, dict):
-                        _r(_ntree, _v)
-
-            tree = Tree("Summary")
-            _r(tree, report["summary"])
+        def _print_labels() -> None:
             if len(labels) == 0:
                 return
 
@@ -209,7 +203,7 @@ class JobTermView(BaseTermView):
                 )
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
-            console.print(self.comparison(tree, table))
+            console.print(table)
 
         def _print_confusion_matrix() -> None:
             cm = report.get("confusion_matrix", {})
@@ -236,7 +230,7 @@ class JobTermView(BaseTermView):
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
             console.print(self.comparison(mtable, btable))
 
-        _print_report()
+        _print_labels()
         _print_confusion_matrix()
 
     @classmethod

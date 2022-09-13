@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import base64
 import typing as t
 from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
@@ -166,6 +167,9 @@ class ArtifactType(Enum):
     Text = "text"
 
 
+_TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
+
+
 class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def __init__(
         self,
@@ -223,6 +227,10 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             return self.fp.read()  # type: ignore
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
+
+    def carry_raw_data(self: _TBAType) -> _TBAType:
+        self._raw_base64_data = base64.b64encode(self.to_bytes()).decode()
+        return self
 
     def astype(self) -> t.Dict[str, t.Any]:
         return {
@@ -379,7 +387,7 @@ class COCOObjectAnnotation(ASDictMixin):
         image_id: int,
         category_id: int,
         segmentation: t.Union[t.List, t.Dict],
-        area: float,
+        area: t.Union[float, int],
         bbox: t.Union[BoundingBox, t.List[float]],
         iscrowd: int,
     ) -> None:

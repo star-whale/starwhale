@@ -1,12 +1,19 @@
-import torchvision
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+from torchvision.models import ResNet50_Weights
 from torchvision.ops.misc import FrozenBatchNorm2d
+from torchvision.models.detection import maskrcnn_resnet50_fpn
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 
-def get_model_instance_segmentation(num_classes, remote_pretrained=True, local_dict=None):
+def pretrained_model(
+    num_classes,
+    weights=None,
+    model_local_dict=None,
+    weights_backbone=None,
+):
     # load an instance segmentation model pre-trained pre-trained on COCO
-    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=remote_pretrained)
+    # model = maskrcnn_resnet50_fpn(weights=weights)
+    model = maskrcnn_resnet50_fpn(weights=weights, weights_backbone=weights_backbone)
 
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -17,11 +24,12 @@ def get_model_instance_segmentation(num_classes, remote_pretrained=True, local_d
     in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
     hidden_layer = 256
     # and replace the mask predictor with a new one
-    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                       hidden_layer,
-                                                       num_classes)
-    if not remote_pretrained:
-        model.load_state_dict(local_dict)
+    model.roi_heads.mask_predictor = MaskRCNNPredictor(
+        in_features_mask, hidden_layer, num_classes
+    )
+
+    if model_local_dict:
+        model.load_state_dict(model_local_dict)
         overwrite_eps(model, 0.0)
     return model
 
@@ -41,4 +49,3 @@ def overwrite_eps(model, eps: float) -> None:
     for module in model.modules():
         if isinstance(module, FrozenBatchNorm2d):
             module.eps = eps
-
