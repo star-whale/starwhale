@@ -18,7 +18,22 @@ spec:
             - mountPath: /opt/starwhale
               name: data
           command: [ "/bin/sh" ]
-          args: [ "-c", "for item in $DOWNLOADS; do SRC=$(echo $item|cut -d';' -f1) && DST=$(echo $item|cut -d';' -f2) && echo $SRC,$DST && mkdir -p $DST && aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST; done" ]
+          args:
+            - -c
+            - >-
+              if [ ! -z "${SW_S3_EXTRA_CONFIGS}" ]; then
+                 mkdir -p $HOME/.aws;
+                 echo [default] >> $HOME/.aws/config;
+                 echo s3= >> $HOME/.aws/config;
+                 echo '    addressing_style=virtual' >> $HOME/.aws/config;
+               fi;
+               for item in $DOWNLOADS; do
+                 SRC=$(echo $item|cut -d';' -f1);
+                 DST=$(echo $item|cut -d';' -f2);
+                 echo $SRC,$DST;
+                 mkdir -p $DST;
+                 aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST;
+               done
         - name: untar
           imagePullPolicy: IfNotPresent
           image: ghcr.io/star-whale/starwhale:latest

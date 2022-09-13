@@ -32,6 +32,8 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import ai.starwhale.mlops.storage.fs.AliyunEnv;
+import ai.starwhale.mlops.storage.fs.BotoS3Config;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
@@ -215,6 +217,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         initContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
         initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
         initContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
+
+        if (FileStorageEnv.FileSystemEnvType.ALIYUN.name().equalsIgnoreCase(storageProperties.getType())) {
+            initContainerEnvs.put(AliyunEnv.ENV_EXTRA_S3_CONFIGS,
+                    new BotoS3Config(BotoS3Config.AddressingStyleType.VIRTUAL).toEnvStr());
+        }
         return initContainerEnvs;
     }
 

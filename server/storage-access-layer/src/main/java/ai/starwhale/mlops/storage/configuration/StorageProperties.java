@@ -41,9 +41,11 @@ public class StorageProperties {
         }
 
         String t = type;
-        if (t.isEmpty()) {
+        if (t == null || t.isEmpty()) {
+            // make s3 as default type
             t = FileStorageEnv.FileSystemEnvType.S3.name();
         }
+
         if (t.equalsIgnoreCase(FileStorageEnv.FileSystemEnvType.S3.name())) {
             var s3Env = new S3Env();
             updateS3Config(s3Env);
