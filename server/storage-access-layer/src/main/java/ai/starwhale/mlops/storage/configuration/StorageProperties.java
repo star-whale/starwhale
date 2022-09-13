@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.storage.configuration;
 
+import ai.starwhale.mlops.storage.fs.AliyunEnv;
+import ai.starwhale.mlops.storage.fs.BotoS3Config;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import ai.starwhale.mlops.storage.fs.S3Env;
 import ai.starwhale.mlops.storage.s3.S3Config;
@@ -34,16 +36,35 @@ public class StorageProperties {
 
     public Map<String, FileStorageEnv> toFileStorageEnvs() {
         Map<String, FileStorageEnv> ret = new HashMap<>();
-        if (null != s3Config) {
-            S3Env s3Env = new S3Env();
-            s3Env.add(S3Env.ENV_BUCKET, s3Config.getBucket());
-            s3Env.add(S3Env.ENV_ENDPOINT, s3Config.getEndpoint());
-            s3Env.add(S3Env.ENV_SECRET_ID, s3Config.getAccessKey());
-            s3Env.add(S3Env.ENV_SECRET_KEY, s3Config.getSecretKey());
-            s3Env.add(S3Env.ENV_REGION, s3Config.getRegion());
-            s3Env.add(S3Env.ENV_KEY_PREFIX, pathPrefix);
-            ret.put(s3Env.getEnvType().name(), s3Env);
+        if (s3Config == null) {
+            return ret;
         }
+
+        String t = type;
+        if (t.isEmpty()) {
+            t = FileStorageEnv.FileSystemEnvType.S3.name();
+        }
+        if (t.equalsIgnoreCase(FileStorageEnv.FileSystemEnvType.S3.name())) {
+            var s3Env = new S3Env();
+            updateS3Config(s3Env);
+            ret.put(s3Env.getEnvType().name(), s3Env);
+        } else if (t.equalsIgnoreCase(FileStorageEnv.FileSystemEnvType.ALIYUN.name())) {
+            var aliyunEnv = new AliyunEnv();
+            updateS3Config(aliyunEnv);
+            // force using virtual host path
+            aliyunEnv.setExtraS3Configs(new BotoS3Config(BotoS3Config.AddressingStyleType.VIRTUAL).toEnvStr());
+            ret.put(aliyunEnv.getEnvType().name(), aliyunEnv);
+        }
+
         return ret;
+    }
+
+    private void updateS3Config(S3Env s3Env) {
+        s3Env.setEndPoint(s3Config.getEndpoint())
+                .setBucket(s3Config.getBucket())
+                .setAccessKey(s3Config.getAccessKey())
+                .setSecret(s3Config.getSecretKey())
+                .setRegion(s3Config.getRegion())
+                .setKeyPrefix(pathPrefix);
     }
 }

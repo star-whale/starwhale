@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import json
 import shutil
 import typing as t
 from abc import ABCMeta, abstractmethod
@@ -189,6 +190,10 @@ class S3Connection:
         self.total_max_attempts = int(
             os.environ.get("SW_S3_TOTAL_MAX_ATTEMPTS", total_max_attempts)
         )
+        # configs like {"addressing_style": "auto"}
+        # more info in: botocore.Config._validate_s3_configuration
+        # https://botocore.amazonaws.com/v1/documentation/api/latest/reference/config.html
+        self.extra_s3_configs = json.loads(os.environ.get("SW_S3_EXTRA_CONFIGS", "{}"))
 
     def __str__(self) -> str:
         return f"endpoint[{self.endpoint}]-region[{self.region}]"
@@ -360,6 +365,7 @@ class S3StorageBackend(StorageBackend):
             aws_access_key_id=conn.access_key,
             aws_secret_access_key=conn.secret_key,
             config=S3Config(
+                s3=conn.extra_s3_configs,
                 connect_timeout=conn.connect_timeout,
                 read_timeout=conn.read_timeout,
                 signature_version="s3v4",

@@ -34,4 +34,33 @@ public class S3Env extends FileStorageEnv {
     public S3Env() {
         super(FileSystemEnvType.S3);
     }
+
+    public S3Env(FileSystemEnvType t) {
+        super(t);
+    }
+
+    public S3Env setEndPoint(String endPoint) {
+        this.add(ENV_ENDPOINT, endPoint);
+        return this;
+    }
+
+    public S3Env setBucket(String bucket) {
+        this.add(ENV_BUCKET, bucket);
+        return this;
+    }
+
+    public S3Env setAccessKey(String accessKey) {
+        this.add(ENV_SECRET_ID, accessKey);
+        return this;
+    }
+
+    public S3Env setSecret(String secret) {
+        this.add(ENV_SECRET_KEY, secret);
+        return this;
+    }
+
+    public S3Env setRegion(String region) {
+        this.add(ENV_REGION, region);
+        return this;
+    }
 }
