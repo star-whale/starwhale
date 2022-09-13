@@ -63,22 +63,22 @@ public class TestIndexWriter {
         List<ColumnSchemaDesc> columnSchemaList = tableSchemaDesc.getColumnSchemaList();
         columnSchemaList.forEach(columnSchemaDesc -> {
             if ("id".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.INT64.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.getCategory(), columnSchemaDesc.getType());
             }
             if ("data_offset".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.INT64.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.getCategory(), columnSchemaDesc.getType());
             }
             if ("data_size".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.INT64.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.getCategory(), columnSchemaDesc.getType());
             }
             if ("data_format".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.STRING.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.STRING.getCategory(), columnSchemaDesc.getType());
             }
             if ("object_store_type".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.STRING.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.STRING.getCategory(), columnSchemaDesc.getType());
             }
             if ("score".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnType.FLOAT64.name(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.FLOAT64.getCategory(), columnSchemaDesc.getType());
             }
         });
         Assertions.assertEquals("table-x", request.getTableName());
