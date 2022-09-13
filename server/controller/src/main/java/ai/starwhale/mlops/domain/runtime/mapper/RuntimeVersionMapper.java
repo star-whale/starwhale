@@ -41,4 +41,7 @@ public interface RuntimeVersionMapper {
 
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("rtVersion") String rtVersion,
             @Param("runtimeId") Long runtimeId);
+
+    RuntimeVersionEntity findByVersionOrderAndRuntimeId(@Param("versionOrder") Long versionOrder,
+            @Param("runtimeId") Long runtimeId);
 }

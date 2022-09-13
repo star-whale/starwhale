@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -51,6 +52,9 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     @Resource
     private IdConvertor idConvertor;
 
+    @Resource
+    private VersionAliasConvertor versionAliasConvertor;
+
     public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
         if (idConvertor.isId(versionUrl)) {
             return idConvertor.revert(versionUrl);
@@ -76,6 +80,12 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     @Override
     public BundleVersionEntity findVersionById(Long bundleVersionId) {
         return runtimeVersionMapper.findVersionById(bundleVersionId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+        Long versionOrder = versionAliasConvertor.revert(alias);
+        return runtimeVersionMapper.findByVersionOrderAndRuntimeId(versionOrder, bundleId);
     }
 
     @Override

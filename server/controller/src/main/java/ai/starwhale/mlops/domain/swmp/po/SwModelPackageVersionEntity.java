@@ -36,6 +36,8 @@ public class SwModelPackageVersionEntity extends BaseEntity implements BundleVer
 
     private Long swmpId;
 
+    private Long versionOrder;
+
     private String swmpName;
 
     private Long ownerId;

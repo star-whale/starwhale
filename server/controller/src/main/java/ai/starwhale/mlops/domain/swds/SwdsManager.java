@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.swds;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -53,6 +54,9 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Resource
     private IdConvertor idConvertor;
 
+    @Resource
+    private VersionAliasConvertor versionAliasConvertor;
+
     public Long getSwdsVersionId(String versionUrl, Long swdsId) {
         if (idConvertor.isId(versionUrl)) {
             return idConvertor.revert(versionUrl);
@@ -78,6 +82,12 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Override
     public BundleVersionEntity findVersionById(Long bundleVersionId) {
         return datasetVersionMapper.getVersionById(bundleVersionId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+        Long versionOrder = versionAliasConvertor.revert(alias);
+        return datasetVersionMapper.findByDsIdAndVersionOrder(bundleId, versionOrder);
     }
 
     @Override

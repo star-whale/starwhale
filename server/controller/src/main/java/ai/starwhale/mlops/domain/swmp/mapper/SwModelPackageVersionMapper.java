@@ -40,4 +40,7 @@ public interface SwModelPackageVersionMapper {
     int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
 
     SwModelPackageVersionEntity findByNameAndSwmpId(@Param("swmpVersion") String version, @Param("swmpId") Long id);
+
+    SwModelPackageVersionEntity findByVersionOrderAndSwmpId(@Param("versionOrder") Long versionOrder,
+            @Param("swmpId") Long id);
 }

@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.StorageFileVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Builder;
@@ -42,6 +41,9 @@ public class RuntimeInfoVo implements Serializable {
     @JsonProperty("versionName")
     private String versionName;
 
+    @JsonProperty("versionAlias")
+    private String versionAlias;
+
     @JsonProperty("versionTag")
     private String versionTag;
 
@@ -59,6 +61,6 @@ public class RuntimeInfoVo implements Serializable {
     private List<StorageFileVo> files;
 
     public static RuntimeInfoVo empty() {
-        return new RuntimeInfoVo("", "", "", "", "", "", 0L, new ArrayList<>());
+        return new RuntimeInfoVo("", "", "", "", "", "", "", 0L, List.of());
     }
 }

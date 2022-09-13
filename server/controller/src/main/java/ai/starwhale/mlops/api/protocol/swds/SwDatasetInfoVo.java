@@ -43,6 +43,9 @@ public class SwDatasetInfoVo implements Serializable {
     @JsonProperty("versionName")
     private String versionName;
 
+    @JsonProperty("versionAlias")
+    private String versionAlias;
+
     /**
      * the table name for index in DataStore
      */

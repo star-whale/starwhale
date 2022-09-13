@@ -20,24 +20,28 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEntity, SwModelPackageVersionVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
+    private final UserConvertor userConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private UserConvertor userConvertor;
-
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    public SwmpVersionConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
+            LocalDateTimeConvertor localDateTimeConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     @Override
     public SwModelPackageVersionVo convert(SwModelPackageVersionEntity entity)
@@ -45,6 +49,7 @@ public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEnti
         return SwModelPackageVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getVersionName())
+                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                 .owner(userConvertor.convert(entity.getOwner()))
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())

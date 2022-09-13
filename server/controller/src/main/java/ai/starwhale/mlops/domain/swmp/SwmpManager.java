@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -50,6 +51,9 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     private SwModelPackageVersionMapper versionMapper;
     @Resource
     private IdConvertor idConvertor;
+
+    @Resource
+    private VersionAliasConvertor versionAliasConvertor;
 
     public Long getSwmpVersionId(String versionUrl, Long swmpId) {
         if (idConvertor.isId(versionUrl)) {
@@ -94,6 +98,12 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Override
     public BundleVersionEntity findVersionById(Long bundleVersionId) {
         return versionMapper.findVersionById(bundleVersionId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+        Long versionOrder = versionAliasConvertor.revert(alias);
+        return versionMapper.findByVersionOrderAndSwmpId(versionOrder, bundleId);
     }
 
     @Override

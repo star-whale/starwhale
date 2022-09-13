@@ -36,6 +36,8 @@ public class SwDatasetVersionEntity extends BaseEntity implements BundleVersionE
 
     private Long datasetId;
 
+    private Long versionOrder;
+
     private String datasetName;
 
     private Long ownerId;
