@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import typing as t
 from abc import ABCMeta, abstractmethod
@@ -8,20 +9,13 @@ from pathlib import Path
 from functools import partial
 
 from starwhale.utils import load_yaml, convert_to_bytes
-from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
+from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_STARWHALE_API_VERSION
 from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
-
-
-class DataField(t.NamedTuple):
-    idx: int
-    data_size: int
-    data: t.Union[bytes, str]
-    ext_attr: t.Dict[str, t.Any]
 
 
 @unique
@@ -157,24 +151,271 @@ LocalFSLinkAuth = partial(LinkAuth, ltype=LinkType.LocalFS)
 DefaultS3LinkAuth = S3LinkAuth()
 
 
-class Link:
+_T = t.TypeVar("_T")
+_TupleOrList = t.Union[t.Tuple[_T, ...], t.List[_T]]
+_TShape = _TupleOrList[t.Optional[int]]
+_TArtifactFP = t.Union[str, bytes, Path, io.IOBase]
+
+
+@unique
+class ArtifactType(Enum):
+    Binary = "binary"
+    Image = "image"
+    Video = "video"
+    Audio = "audio"
+    Text = "text"
+
+
+class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def __init__(
         self,
-        uri: str = "",
+        fp: _TArtifactFP,
+        type: ArtifactType,
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+        mime_type: t.Optional[MIMEType] = None,
+        encoding: str = "",
+    ) -> None:
+        self.fp = fp
+        self.type = ArtifactType(type)
+
+        _fpath = str(fp) if isinstance(fp, (Path, str)) and fp else ""
+        self.display_name = display_name or os.path.basename(_fpath)
+        self.mime_type = mime_type or MIMEType.create_by_file_suffix(_fpath)
+        self.shape = shape
+        self.encoding = encoding
+        self._do_validate()
+
+    def _do_validate(self) -> None:
+        ...
+
+    @classmethod
+    def reflect(cls, raw_data: bytes, data_type: t.Dict[str, t.Any]) -> BaseArtifact:
+        if not isinstance(raw_data, bytes):
+            raise NoSupportError(f"raw data type({type(raw_data)}) is not bytes")
+
+        # TODO: support data_type reflect
+        dtype = data_type.get("type")
+        mime_type = MIMEType(data_type.get("mime_type", MIMEType.UNDEFINED))
+        shape = data_type.get("shape", [])
+        encoding = data_type.get("encoding", "")
+
+        if dtype == ArtifactType.Text.value:
+            _encoding = encoding or Text.DEFAULT_ENCODING
+            return Text(content=raw_data.decode(_encoding), encoding=_encoding)
+        elif dtype == ArtifactType.Image.value:
+            return Image(raw_data, mime_type=mime_type, shape=shape)
+        elif dtype == ArtifactType.Audio.value:
+            return Audio(raw_data, mime_type=mime_type, shape=shape)
+        elif not dtype or dtype == ArtifactType.Binary.value:
+            return Binary(raw_data)
+        else:
+            raise NoSupportError(f"Artifact reflect error: {data_type}")
+
+    # TODO: add to_tensor, to_numpy method
+    def to_bytes(self) -> bytes:
+        if isinstance(self.fp, bytes):
+            return self.fp
+        elif isinstance(self.fp, (str, Path)):
+            return Path(self.fp).read_bytes()
+        elif isinstance(self.fp, io.IOBase):
+            # TODO: strict to binary io?
+            return self.fp.read()  # type: ignore
+        else:
+            raise NoSupportError(f"read raw for type:{type(self.fp)}")
+
+    def astype(self) -> t.Dict[str, t.Any]:
+        return {
+            "type": self.type,
+            "mime_type": self.mime_type,
+            "shape": self.shape,
+            "encoding": self.encoding,
+        }
+
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict[str, t.Any]:
+        return super().asdict(ignore_keys or ["fp"])
+
+    def __str__(self) -> str:
+        return f"{self.type}, display:{self.display_name}, mime_type:{self.mime_type}, shape:{self.shape}, encoding: {self.encoding}"
+
+    __repr__ = __str__
+
+
+class Binary(BaseArtifact):
+    def __init__(
+        self,
+        fp: _TArtifactFP,
+        mime_type: MIMEType = MIMEType.UNDEFINED,
+    ) -> None:
+        super().__init__(fp, ArtifactType.Binary, "", (1,), mime_type)
+
+
+class Image(BaseArtifact):
+    def __init__(
+        self,
+        fp: _TArtifactFP = "",
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+        mime_type: t.Optional[MIMEType] = None,
+    ) -> None:
+        super().__init__(
+            fp,
+            ArtifactType.Image,
+            display_name=display_name,
+            shape=shape or (None, None, 3),
+            mime_type=mime_type,
+        )
+
+    def _do_validate(self) -> None:
+        if self.mime_type not in (
+            MIMEType.PNG,
+            MIMEType.JPEG,
+            MIMEType.WEBP,
+            MIMEType.SVG,
+            MIMEType.GIF,
+            MIMEType.APNG,
+            MIMEType.GRAYSCALE,
+            MIMEType.UNDEFINED,
+        ):
+            raise NoSupportError(f"Image type: {self.mime_type}")
+
+
+class GrayscaleImage(Image):
+    def __init__(
+        self,
+        fp: _TArtifactFP = "",
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+    ) -> None:
+        shape = shape or (None, None)
+        super().__init__(
+            fp, display_name, (shape[0], shape[1], 1), mime_type=MIMEType.GRAYSCALE
+        )
+
+
+# TODO: support Video type
+
+
+class Audio(BaseArtifact):
+    def __init__(
+        self,
+        fp: _TArtifactFP = "",
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+        mime_type: t.Optional[MIMEType] = None,
+    ) -> None:
+        shape = shape or (None,)
+        super().__init__(fp, ArtifactType.Audio, display_name, shape, mime_type)
+
+    def _do_validate(self) -> None:
+        if self.mime_type not in (
+            MIMEType.MP3,
+            MIMEType.WAV,
+            MIMEType.UNDEFINED,
+        ):
+            raise NoSupportError(f"Audio type: {self.mime_type}")
+
+
+class ClassLabel(ASDictMixin):
+    def __init__(self, names: t.List[t.Union[int, float, str]]) -> None:
+        self.type = "class_label"
+        self.names = names
+
+    @classmethod
+    def from_num_classes(cls, num: int) -> ClassLabel:
+        if num < 1:
+            raise FieldTypeOrValueError(f"num:{num} less than 1")
+        return cls(list(range(0, num)))
+
+    def __str__(self) -> str:
+        return f"ClassLabel: {len(self.names)} classes"
+
+    def __repr__(self) -> str:
+        return f"ClassLabel: {self.names}"
+
+
+# TODO: support other bounding box format
+class BoundingBox(ASDictMixin):
+    def __init__(self, x: float, y: float, width: float, height: float) -> None:
+        self.type = "bounding_box"
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def to_list(self) -> t.List[float]:
+        return [self.x, self.y, self.width, self.height]
+
+    def __str__(self) -> str:
+        return f"BoundingBox: point:({self.x}, {self.y}), width: {self.width}, height: {self.height})"
+
+    __repr__ = __str__
+
+
+class Text(BaseArtifact):
+    DEFAULT_ENCODING = "utf-8"
+
+    def __init__(self, content: str, encoding: str = DEFAULT_ENCODING) -> None:
+        # TODO: add encoding validate
+        self.content = content
+        super().__init__(
+            fp=b"",
+            type=ArtifactType.Text,
+            display_name=f"{content[:SHORT_VERSION_CNT]}...",
+            shape=(1,),
+            mime_type=MIMEType.PLAIN,
+            encoding=encoding,
+        )
+
+    def to_bytes(self) -> bytes:
+        return self.content.encode(self.encoding)
+
+
+# https://cocodataset.org/#format-data
+class COCOObjectAnnotation(ASDictMixin):
+    def __init__(
+        self,
+        id: int,
+        image_id: int,
+        category_id: int,
+        segmentation: t.Union[t.List, t.Dict],
+        area: float,
+        bbox: t.Union[BoundingBox, t.List[float]],
+        iscrowd: int,
+    ) -> None:
+        self.type = "coco_object_annotation"
+        self.id = id
+        self.image_id = image_id
+        self.category_id = category_id
+        self.bbox = bbox.to_list() if isinstance(bbox, BoundingBox) else bbox
+        self.segmentation = segmentation
+        self.area = area
+        self.iscrowd = iscrowd
+
+    def do_validate(self) -> None:
+        if self.iscrowd not in (0, 1):
+            raise FieldTypeOrValueError(f"iscrowd({self.iscrowd}) only accepts 0 or 1")
+
+        # TODO: iscrowd=0 -> polygons, iscrowd=1 -> RLE validate
+
+
+class Link(ASDictMixin):
+    def __init__(
+        self,
+        uri: str,
         auth: t.Optional[LinkAuth] = DefaultS3LinkAuth,
         offset: int = FilePosition.START,
         size: int = -1,
-        mime_type: MIMEType = MIMEType.UNDEFINED,
+        data_type: t.Optional[BaseArtifact] = None,
+        with_local_fs_data: bool = False,
     ) -> None:
+        self.type = "link"
         self.uri = uri.strip()
         self.offset = offset
         self.size = size
         self.auth = auth
-
-        if mime_type == MIMEType.UNDEFINED or mime_type not in MIMEType:
-            self.mime_type = MIMEType.create_by_file_suffix(self.uri)
-        else:
-            self.mime_type = mime_type
+        self.data_type = data_type
+        self.with_local_fs_data = with_local_fs_data
 
         self.do_validate()
 
@@ -185,11 +426,17 @@ class Link:
         if self.size < -1:
             raise FieldTypeOrValueError(f"size({self.size}) must be non-negative or -1")
 
+    def astype(self) -> t.Dict[str, t.Any]:
+        return {
+            "type": self.type,
+            "data_type": self.data_type.astype() if self.data_type else {},
+        }
+
     def __str__(self) -> str:
         return f"Link {self.uri}"
 
     def __repr__(self) -> str:
-        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, mime type:{self.mime_type}"
+        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
 
 
 class DatasetSummary(ASDictMixin):
@@ -197,19 +444,19 @@ class DatasetSummary(ASDictMixin):
         self,
         rows: int = 0,
         increased_rows: int = 0,
-        label_byte_size: int = 0,
         data_byte_size: int = 0,
         include_link: bool = False,
         include_user_raw: bool = False,
+        annotations: t.Optional[t.List[str]] = None,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
         self.increased_rows = increased_rows
         self.unchanged_rows = rows - increased_rows
-        self.label_byte_size = label_byte_size
         self.data_byte_size = data_byte_size
         self.include_link = include_link
         self.include_user_raw = include_user_raw
+        self.annotations = annotations or []
 
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows}), include user-raw({self.include_user_raw}), include link({self.include_link})"
@@ -218,7 +465,7 @@ class DatasetSummary(ASDictMixin):
         return (
             f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
             f"include user-raw({self.include_user_raw}), include link({self.include_link}),"
-            f"size(data:{self.data_byte_size}, label: {self.label_byte_size})"
+            f"size(data:{self.data_byte_size}, annotations: {self.annotations})"
         )
 
 
@@ -246,10 +493,7 @@ class DatasetConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
-        data_dir: str,
         process: str,
-        data_filter: str = "",
-        label_filter: str = "",
         runtime: str = "",
         pkg_data: t.List[str] = [],
         exclude_pkg_data: t.List[str] = [],
@@ -260,9 +504,6 @@ class DatasetConfig(ASDictMixin):
         **kw: t.Any,
     ) -> None:
         self.name = name
-        self.data_dir = str(data_dir)
-        self.data_filter = data_filter
-        self.label_filter = label_filter
         self.process = process
         self.tag = tag
         self.desc = desc
@@ -286,8 +527,7 @@ class DatasetConfig(ASDictMixin):
     def __str__(self) -> str:
         return f"DataSet Config {self.name}"
 
-    def __repr__(self) -> str:
-        return f"DataSet Config {self.name}, data:{self.data_dir}"
+    __repr__ = __str__
 
     @classmethod
     def create_by_yaml(cls, fpath: t.Union[str, Path]) -> DatasetConfig:

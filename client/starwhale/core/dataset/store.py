@@ -93,8 +93,10 @@ class DatasetStorage(BaseStorage):
 
     @classmethod
     def save_data_file(
-        cls, src: Path, force: bool = False, remove_src: bool = False
+        cls, src: t.Union[Path, str], force: bool = False, remove_src: bool = False
     ) -> t.Tuple[str, Path]:
+        src = Path(src)
+
         if not src.exists():
             raise NotFoundError(f"data origin file: {src}")
 

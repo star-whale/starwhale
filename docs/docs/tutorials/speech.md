@@ -92,7 +92,7 @@ SpeechCommands  speech_commands_v0.02.tar.gz
 Before version `0.2.x`, Starwhale sliced the dataset into chunks where the batched audios and labels reside. You must tell Starwhale how to yield batches of byte arrays from each dataset file.
 
 To read all test files in this dataset, we overwrite `load_list` method of the parent class `BuildExecutor` in Starwhale SDK.
-To package audios and labels in batches and convert them into byte arrays, we overwrite `iter_all_dataset_slice` and `iter_all_label_slice` methods of the parent class `BuildExecutor` in Starwhale SDK. We package paths of audios into `FileBytes` so that it is easier to debug.
+To package audios and labels in batches and convert them into byte arrays, we overwrite `iter_all_data_slice` and `iter_all_label_slice` methods of the parent class `BuildExecutor` in Starwhale SDK. We package paths of audios into `FileBytes` so that it is easier to debug.
 
 ```python
 class FileBytes:
@@ -138,7 +138,7 @@ class SpeechCommandsSlicer(BuildExecutor):
     def iter_label_slice(self, path: str):
         pass
 
-    def iter_all_dataset_slice(self) -> t.Generator[t.Any, None, None]:
+    def iter_all_data_slicelf) -> t.Generator[t.Any, None, None]:
         datafiles = [p for p in self.iter_data_files()]
         idx = 0
         data_size = len(datafiles)

@@ -366,10 +366,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             dataset_name=self.uri.object.name,
             dataset_version=self._version,
             project_name=self.uri.project,
-            data_dir=workdir / swds_config.data_dir,
             workdir=self.store.snapshot_workdir,
-            data_filter=swds_config.data_filter,
-            label_filter=swds_config.label_filter,
             alignment_bytes_size=swds_config.attr.alignment_size,
             volume_bytes_size=swds_config.attr.volume_size,
             append=append,
@@ -452,12 +449,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def _load_dataset_config(self, yaml_path: Path) -> DatasetConfig:
         self._do_validate_yaml(yaml_path)
-        _config = DatasetConfig.create_by_yaml(yaml_path)
-
-        if not (yaml_path.parent / _config.data_dir).exists():
-            raise FileNotFoundError(f"dataset datadir:{_config.data_dir}")
-
-        return _config
+        return DatasetConfig.create_by_yaml(yaml_path)
 
 
 class CloudDataset(CloudBundleModelMixin, Dataset):

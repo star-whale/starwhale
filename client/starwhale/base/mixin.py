@@ -1,3 +1,4 @@
+import json
 import typing as t
 from copy import deepcopy
 from enum import Enum
@@ -17,6 +18,10 @@ class ASDictMixin:
             return r
         else:
             raise FormatError(f"{self} cannot be formatted as a dict")
+
+    def jsonify(self, ignore_keys: t.Optional[t.List[str]] = None) -> str:
+        r = self.asdict(ignore_keys)
+        return json.dumps(r, separators=(",", ":"))
 
 
 def _do_asdict_convert(obj: t.Any) -> t.Any:

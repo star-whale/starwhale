@@ -1,27 +1,26 @@
 import os
 
 import torch
-from regex import W
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 
 try:
     from .eval import evaluate_batch
     from .model import EncoderRNN, AttnDecoderRNN
-    from .vocab import Lang, Vocab
     from .calculatebleu import BLEU
 except ImportError:
     from eval import evaluate_batch
     from model import EncoderRNN, AttnDecoderRNN
-    from vocab import Lang, Vocab
     from calculatebleu import BLEU
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class NMTPipeline(PipelineHandler):
-    def __init__(self) -> None:
-        super().__init__(merge_label=True, ignore_error=True)
+    def __init__(self, context: Context) -> None:
+        super().__init__(context=context)
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.vocab = self._load_vocab()
         self.encoder = self._load_encoder_model(self.device)
@@ -41,20 +40,14 @@ class NMTPipeline(PipelineHandler):
             self.decoder,
         )
 
-    def handle_label(self, label, **kw):
-        labels = label.decode().split("\n")
-        print("src labels: %s" % len(labels))
-        return labels
-
     def cmp(self, _data_loader):
         _result, _label = [], []
         for _data in _data_loader:
-            _label.extend(_data[self._label_field])
-            (result) = _data[self._ppl_data_field]
+            _label.extend(_data["annotations"]["label"])
+            (result) = _data["result"]
             _result.extend(result)
 
         bleu = BLEU(_result, [_label])
-
         return {"summary": {"bleu_score": bleu}}
 
     def _load_vocab(self):

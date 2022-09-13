@@ -1,15 +1,11 @@
 name: cifar10
 
-data_dir: data
-data_filter: "test_batch"
-label_filter: "test_batch"
-
 process: code.data_slicer:CIFAR10Slicer
 pip_req: requirements.txt
 
 desc: CIFAR10 data and label test dataset
 tag:
- - bin
+  - bin
 
 attr:
   alignment_size: 4k

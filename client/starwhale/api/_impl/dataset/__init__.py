@@ -1,14 +1,20 @@
 from starwhale.core.dataset.type import (
     Link,
+    Text,
+    Audio,
+    Image,
+    Binary,
     LinkType,
     MIMEType,
-    DataField,
+    ClassLabel,
     S3LinkAuth,
+    BoundingBox,
+    GrayscaleImage,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
+    COCOObjectAnnotation,
 )
 
-from .mnist import MNISTBuildExecutor
 from .loader import get_data_loader, SWDSBinDataLoader, UserRawDataLoader
 from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 
@@ -20,11 +26,17 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
-    "DataField",
     "BuildExecutor",  # SWDSBinBuildExecutor alias
     "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
-    "MNISTBuildExecutor",
     "SWDSBinDataLoader",
     "UserRawDataLoader",
+    "Binary",
+    "Text",
+    "Audio",
+    "Image",
+    "ClassLabel",
+    "BoundingBox",
+    "GrayscaleImage",
+    "COCOObjectAnnotation",
 ]

@@ -13,7 +13,7 @@ from starwhale.utils import load_dotenv
 from starwhale.consts import AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import InstanceType, DataFormatType, ObjectStoreType
-from starwhale.core.dataset.type import DataField
+from starwhale.core.dataset.type import BaseArtifact
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 
@@ -80,31 +80,18 @@ class DataLoader(metaclass=ABCMeta):
         _key_compose = f"{data_uri}:{offset}:{offset + size - 1}"
         return _key_compose
 
-    def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
-        _attr = {
-            "ds_name": self.tabular_dataset.name,
-            "ds_version": self.tabular_dataset.version,
-        }
+    def __iter__(self) -> t.Generator[t.Tuple[int, t.Any, t.Dict], None, None]:
         for row in self.tabular_dataset.scan():
             # TODO: tune performance by fetch in batch
-            # TODO: remove ext_attr field
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
 
-            self.logger.info(f"@{_store.bucket}/{_key_compose}")
+            self.logger.info(f"[{row.id}] @{_store.bucket}/{_key_compose}")
             _file = _store.backend._make_file(_store.bucket, _key_compose)
-            for data_content, data_size in self._do_iter(_file, row):
-                label = DataField(
-                    idx=row.id,
-                    data_size=sys.getsizeof(row.label),
-                    data=row.label,
-                    ext_attr=_attr,
-                )
-                data = DataField(
-                    idx=row.id, data_size=data_size, data=data_content, ext_attr=_attr
-                )
-
-                yield data, label
+            for data_content, _ in self._do_iter(_file, row):
+                data = BaseArtifact.reflect(data_content, row.data_type)
+                # TODO: refactor annotation origin type
+                yield row.id, data, row.annotations
 
     @abstractmethod
     def _do_iter(

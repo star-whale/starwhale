@@ -1,18 +1,20 @@
-import time
-import math
-import unicodedata
-import torch
 import re
+import math
+import time
+import unicodedata
+
+import torch
+
 try:
-    from .config import MAX_LENGTH, EOS_token
+    from .config import EOS_token, MAX_LENGTH
 except ImportError:
-    from config import MAX_LENGTH, EOS_token
+    from config import EOS_token, MAX_LENGTH
 
 
 def asMinutes(s):
     m = math.floor(s / 60)
     s -= m * 60
-    return '%dm %ds' % (m, s)
+    return "%dm %ds" % (m, s)
 
 
 def timeSince(since, percent):
@@ -20,24 +22,31 @@ def timeSince(since, percent):
     s = now - since
     es = s / (percent)
     rs = es - s
-    return '%s (- %s)' % (asMinutes(s), asMinutes(rs))
-
+    return "%s (- %s)" % (asMinutes(s), asMinutes(rs))
 
 
 eng_prefixes = (
-    "i am ", "i m ",
-    "he is", "he s ",
-    "she is", "she s ",
-    "you are", "you re ",
-    "we are", "we re ",
-    "they are", "they re "
+    "i am ",
+    "i m ",
+    "he is",
+    "he s ",
+    "she is",
+    "she s ",
+    "you are",
+    "you re ",
+    "we are",
+    "we re ",
+    "they are",
+    "they re ",
 )
 
 
 def filterPair(p):
-    return len(p[0].split(' ')) < MAX_LENGTH and \
-        len(p[1].split(' ')) < MAX_LENGTH and \
-        p[1].startswith(eng_prefixes)
+    return (
+        len(p[0].split(" ")) < MAX_LENGTH
+        and len(p[1].split(" ")) < MAX_LENGTH
+        and p[1].startswith(eng_prefixes)
+    )
 
 
 def filterPairs(pairs):
@@ -45,7 +54,7 @@ def filterPairs(pairs):
 
 
 def indexesFromSentence(lang, sentence):
-    return [lang.word2index[word] for word in sentence.split(' ')]
+    return [lang.word2index[word] for word in sentence.split(" ")]
 
 
 def tensorFromSentence(lang, sentence, device):
@@ -63,10 +72,10 @@ def tensorsFromPair(input_lang, output_lang, pair, device):
 # Turn a Unicode string to plain ASCII, thanks to
 # https://stackoverflow.com/a/518232/2809427
 def unicodeToAscii(s):
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', s)
-        if unicodedata.category(c) != 'Mn'
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
+
 
 # Lowercase, trim, and remove non-letter characters
 
@@ -76,6 +85,7 @@ def normalizeString(s):
     s = re.sub(r"([.!?])", r" \1", s)
     s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
     return s
+
 
 def filterComment(s):
     return s.startswith("CC-BY")

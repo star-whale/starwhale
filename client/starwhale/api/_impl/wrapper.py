@@ -68,7 +68,7 @@ class Evaluation(Logger):
     def _get_datastore_table_name(self, table_name: str) -> str:
         return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
 
-    def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
+    def log_result(self, data_id: Union[int, str], result: Any, **kwargs: Any) -> None:
         record = {"id": data_id, "result": result}
         for k, v in kwargs.items():
             record[k.lower()] = v

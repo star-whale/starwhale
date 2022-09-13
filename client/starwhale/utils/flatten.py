@@ -1,4 +1,5 @@
 import typing as t
+from copy import deepcopy
 
 
 def do_flatten_dict(origin: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
@@ -27,5 +28,5 @@ def do_flatten_dict(origin: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
                 rt[f"{_prefix}{index}"] = _d
             index += 1
 
-    _f_dict(origin)
+    _f_dict(deepcopy(origin))
     return rt

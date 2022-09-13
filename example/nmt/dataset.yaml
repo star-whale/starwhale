@@ -1,14 +1,10 @@
 name: nmt
 
-data_dir: data
-data_filter: "test_eng-fra.txt"
-label_filter: "test_eng-fra.txt"
-
 process: code.dataset:DataSetProcessExecutor
 
 desc: nmt data and label test dataset
 tag:
- - bin
+  - bin
 
 attr:
   alignment_size: 4K

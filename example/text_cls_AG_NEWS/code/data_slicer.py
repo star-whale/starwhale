@@ -1,25 +1,18 @@
-from starwhale.api.dataset import BuildExecutor
+import re
+import csv
+import typing as t
+from pathlib import Path
 
-from . import ag_news
-
-
-def yield_data(path, label=False):
-    data = ag_news.load_ag_data(path)
-    idx = 0
-    data_size = len(data)
-    while True:
-        last_idx = idx
-        idx += 1
-        if idx > data_size:
-            break
-        data_batch = [lbl if label else txt for lbl, txt in data[last_idx:idx]]
-        join = "#@#@#@#".join(data_batch)
-        yield join.encode()
+from starwhale.api.dataset import Text, BuildExecutor
 
 
-class AGNEWSSlicer(BuildExecutor):
-    def iter_data_slice(self, path: str):
-        yield from yield_data(path)
+class AGNewsSlicer(BuildExecutor):
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        root_dir = Path(__file__).parent.parent / "data"
 
-    def iter_label_slice(self, path: str):
-        yield from yield_data(path, True)
+        with (root_dir / "test.csv").open("r", encoding="utf-8") as f:
+            for row in csv.reader(f, delimiter=",", quotechar='"'):
+                annotations = {"label": row[0]}
+                data = " ".join(row[1:])
+                data = re.sub("^\s*(.-)\s*$", "%1", data).replace("\\n", "\n")
+                yield Text(content=data), annotations

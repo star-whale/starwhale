@@ -1,15 +1,10 @@
 name: AG_NEWS
 
-data_dir: data
-data_filter: "test.csv"
-label_filter: "test.csv"
-
-process: code.data_slicer:AGNEWSSlicer
-pip_req: requirements.txt
+process: code.data_slicer:AGNewsSlicer
 
 desc: AG_NEWS data and label test dataset
 tag:
- - bin
+  - bin
 
 attr:
   alignment_size: 4k

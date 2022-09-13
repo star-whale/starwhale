@@ -15,7 +15,7 @@ from starwhale.api.dataset import (
     SWDSBinDataLoader,
     UserRawDataLoader,
 )
-from starwhale.core.dataset.type import DatasetSummary
+from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,
     S3StorageBackend,
@@ -53,10 +53,13 @@ class TestDataLoader(TestCase):
                 data_uri=fname,
                 data_offset=16,
                 data_size=784,
-                label=0,
+                annotations={"label": 0},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.UNDEFINED,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             )
         ]
@@ -72,13 +75,12 @@ class TestDataLoader(TestCase):
         rows = list(loader)
         assert len(rows) == 1
 
-        _data, _label = rows[0]
+        _idx, _data, _annotations = rows[0]
+        assert _idx == 0
+        assert _annotations["label"] == 0
 
-        assert _label.idx == 0
-        assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
-        assert _data.data_size == len(_data.data)
-        assert len(_data.data) == 28 * 28
-        assert isinstance(_data.data, bytes)
+        assert len(_data.to_bytes()) == 28 * 28
+        assert isinstance(_data, Image)
 
         assert loader.kind == DataFormatType.USER_RAW
         assert list(loader._stores.keys()) == ["local."]
@@ -136,10 +138,13 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://127.0.0.1:9000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=0,
+                annotations={"label": 0},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
-                data_mime_type=MIMEType.GRAYSCALE,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="server1",
             ),
             TabularDatasetRow(
@@ -148,10 +153,13 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://127.0.0.1:19000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=1,
+                annotations={"label": 1},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
-                data_mime_type=MIMEType.GRAYSCALE,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="server2",
             ),
             TabularDatasetRow(
@@ -160,10 +168,13 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=1,
+                annotations={"label": 1},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
-                data_mime_type=MIMEType.GRAYSCALE,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="server2",
             ),
             TabularDatasetRow(
@@ -172,10 +183,13 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://username:password@127.0.0.1:29000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=1,
+                annotations={"label": 1},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
-                data_mime_type=MIMEType.GRAYSCALE,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="server3",
             ),
         ]
@@ -204,12 +218,13 @@ class TestDataLoader(TestCase):
         rows = list(loader)
         assert len(rows) == 4
 
-        _data, _label = rows[0]
-        assert _label.idx == 0
-        assert _label.data == "0"
-        assert len(_data.data) == 28 * 28
-        assert len(_data.data) == _data.data_size
-        assert isinstance(_data.data, bytes)
+        _idx, _data, _annotations = rows[0]
+        assert _idx == 0
+        assert _annotations["label"] == 0
+        assert isinstance(_data, Image)
+
+        assert len(_data.to_bytes()) == 28 * 28
+        assert isinstance(_data.to_bytes(), bytes)
         assert len(loader._stores) == 3
         assert loader._stores["remote.server1"].backend.kind == SWDSBackendType.S3
         assert loader._stores["remote.server1"].bucket == "starwhale"
@@ -244,10 +259,13 @@ class TestDataLoader(TestCase):
                 data_size=784,
                 _swds_bin_offset=0,
                 _swds_bin_size=8160,
-                label=b"0",
+                annotations={"label": 0},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             )
         ]
@@ -280,14 +298,12 @@ class TestDataLoader(TestCase):
 
         rows = list(loader)
         assert len(rows) == 1
-        _data, _label = rows[0]
-        assert _label.idx == 0
-        assert _label.data == "0"
+        _idx, _data, _annotations = rows[0]
+        assert _idx == 0
+        assert _annotations["label"] == 0
 
-        assert len(_data.data) == _data.data_size
-        assert _data.data_size == 10 * 28 * 28
-        assert _data.ext_attr == {"ds_name": "mnist", "ds_version": version}
-        assert isinstance(_data.data, bytes)
+        assert len(_data.to_bytes()) == 10 * 28 * 28
+        assert isinstance(_data, Image)
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend
@@ -328,10 +344,13 @@ class TestDataLoader(TestCase):
                 data_size=784,
                 _swds_bin_offset=0,
                 _swds_bin_size=8160,
-                label=b"0",
+                annotations={"label": 0},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             ),
             TabularDatasetRow(
@@ -342,10 +361,13 @@ class TestDataLoader(TestCase):
                 data_size=784,
                 _swds_bin_offset=0,
                 _swds_bin_size=8160,
-                label=b"1",
+                annotations={"label": 1},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             ),
         ]
@@ -358,14 +380,14 @@ class TestDataLoader(TestCase):
         rows = list(loader)
         assert len(rows) == 2
 
-        _data, _label = rows[0]
-        assert _label.idx == 0
-        assert _label.data == "0"
+        _idx, _data, _annotations = rows[0]
 
-        assert len(_data.data) == _data.data_size
-        assert _data.data_size == 10 * 28 * 28
-        assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
-        assert isinstance(_data.data, bytes)
+        assert _idx == 0
+        assert _annotations["label"] == 0
+
+        assert isinstance(_data, Image)
+        assert len(_data.to_bytes()) == 7840
+        assert isinstance(_data.to_bytes(), bytes)
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend

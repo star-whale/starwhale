@@ -1,40 +1,24 @@
 import io
 import os
 import pickle
-from pathlib import Path
 
 import torch
 from PIL import Image
 from torchvision.transforms import functional as F
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 
-from . import ds as penn_fudan_ped_ds
 from . import model as mask_rcnn_model
 from . import coco_eval, coco_utils
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-_DTYPE_DICT_OUTPUT = {
-    "boxes": torch.float32,
-    "labels": torch.int64,
-    "scores": torch.float32,
-    "masks": torch.uint8,
-}
-_DTYPE_DICT_LABEL = {
-    "iscrowd": torch.int64,
-    "image_id": torch.int64,
-    "area": torch.float32,
-    "boxes": torch.float32,
-    "labels": torch.int64,
-    "scores": torch.float32,
-    "masks": torch.uint8,
-}
 
 
 class MARSKRCNN(PipelineHandler):
-    def __init__(self, device="cuda") -> None:
-        super().__init__(merge_label=True, ignore_error=True)
-        self.device = torch.device(device)
+    def __init__(self, context: Context) -> None:
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        super().__init__(context=context)
 
     @torch.no_grad()
     def ppl(self, data, **kw):
@@ -54,26 +38,16 @@ class MARSKRCNN(PipelineHandler):
             _result.append(output)
         return _result
 
-    def handle_label(self, label, **kw):
-        files_bytes = pickle.loads(label)
-        _result = []
-        for idx, file_bytes in enumerate(files_bytes):
-            image = Image.open(io.BytesIO(file_bytes.content_bytes))
-            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw["index"] + idx)
-            _result.append(target)
-        return _result
-
-    def cmp(self, _data_loader):
-        _result, _label = [], []
-        for _data in _data_loader:
-            # _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data[self._label_field]])
-            _label.extend([l for l in _data[self._label_field]])
-            (result) = _data[self._ppl_data_field]
-            _result.extend(result)
-        ds = zip(_result, _label)
+    def cmp(self, ppl_result):
+        result, label = [], []
+        for _data in ppl_result:
+            label.append(_data["annotations"])
+            (result) = _data["result"]
+            result.extend(result)
+        ds = zip(result, label)
         coco_ds = coco_utils.convert_to_coco_api(ds)
         coco_evaluator = coco_eval.CocoEvaluator(coco_ds, ["bbox", "segm"])
-        for outputs, targets in zip(_result, _label):
+        for outputs, targets in zip(result, label):
             res = {targets["image_id"].item(): outputs}
             coco_evaluator.update(res)
 
@@ -84,12 +58,10 @@ class MARSKRCNN(PipelineHandler):
         coco_evaluator.accumulate()
         coco_evaluator.summarize()
 
-        return [
-            {
-                iou_type: coco_eval.stats.tolist()
-                for iou_type, coco_eval in coco_evaluator.coco_eval.items()
-            }
-        ]
+        return {
+            iou_type: coco_eval.stats.tolist()
+            for iou_type, coco_eval in coco_evaluator.coco_eval.items()
+        }
 
     def _pre(self, input: bytes):
         image = Image.open(io.BytesIO(input))

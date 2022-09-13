@@ -1,77 +1,76 @@
-import io
-import pickle
 import typing as t
+from pathlib import Path
 
-from PIL import Image
+import numpy as np
+import torch
+from PIL import Image as PILImage
+from pycocotools import mask as coco_mask
 
-from starwhale.api.dataset import BuildExecutor
-
-
-class FileBytes:
-    def __init__(self, p, byte_array):
-        self.file_path = p
-        self.content_bytes = byte_array
-
-
-def _pickle_data(image_file_paths):
-    all_bytes = [
-        FileBytes(image_f, _image_to_bytes(image_f)) for image_f in image_file_paths
-    ]
-    return pickle.dumps(all_bytes)
-
-
-def _pickle_label(label_file_paths):
-    all_bytes = [
-        FileBytes(label_f, _label_to_bytes(label_f)) for label_f in label_file_paths
-    ]
-    return pickle.dumps(all_bytes)
-
-
-def _label_to_bytes(label_file_path):
-    img = Image.open(label_file_path)
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format="PNG")
-    return img_byte_arr.getvalue()
-
-
-def _image_to_bytes(image_file_path):
-    img = Image.open(image_file_path).convert("RGB")
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format="PNG")
-    return img_byte_arr.getvalue()
+from starwhale.api.dataset import (
+    Image,
+    MIMEType,
+    BoundingBox,
+    BuildExecutor,
+    COCOObjectAnnotation,
+)
 
 
 class PennFudanPedSlicer(BuildExecutor):
-    def iter_data_slice(self, path: str):
-        pass
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
+        names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
+        for idx, name in enumerate(names):
+            data_fpath = root_dir / "PNGImages" / f"{name}.png"
+            mask_fpath = root_dir / "PedMasks" / f"{name}_mask.png"
+            height, width = self._get_image_shape(data_fpath)
+            coco_annotations = self._make_coco_annotations(mask_fpath, idx)
+            annotations = {
+                "mask": Image(mask_fpath, display_name=name, mime_type=MIMEType.PNG),
+                "image": {"id": idx, "height": height, "width": width},
+                "object_nums": len(coco_annotations),
+                "annotations": coco_annotations,
+            }
+            data = Image(data_fpath, display_name=name, mime_type=MIMEType.PNG)
+            yield data, annotations
 
-    def iter_label_slice(self, path: str):
-        pass
+    def _get_image_shape(self, fpath: Path) -> t.Tuple[int, int]:
+        with PILImage.open(str(fpath)) as f:
+            return f.height, f.width
 
-    def iter_all_dataset_slice(self) -> t.Generator[t.Any, None, None]:
-        datafiles = [p for p in self.iter_data_files()]
-        idx = 0
-        data_size = len(datafiles)
-        while True:
-            last_idx = idx
-            idx += 1
-            if idx > data_size:
-                break
-            yield _pickle_data(datafiles[last_idx:idx])
+    def _make_coco_annotations(
+        self, mask_fpath: Path, image_id: int
+    ) -> t.List[COCOObjectAnnotation]:
+        mask_img = PILImage.open(str(mask_fpath))
 
-    def iter_all_label_slice(self) -> t.Generator[t.Any, None, None]:
-        labelfiles = [p for p in self.iter_label_files()]
-        idx = 0
-        data_size = len(labelfiles)
-        while True:
-            last_idx = idx
-            idx += 1
-            if idx > data_size:
-                break
-            yield _pickle_label(labelfiles[last_idx:idx])
+        mask = np.array(mask_img)
+        object_ids = np.unique(mask)[1:]
+        binary_mask = mask == object_ids[:, None, None]
+        objects_num = len(object_ids)
+        # TODO: tune permute without pytorch
+        binary_mask_tensor = torch.as_tensor(binary_mask, dtype=torch.uint8)
+        binary_mask_tensor = (
+            binary_mask_tensor.permute(0, 2, 1).contiguous().permute(0, 2, 1)
+        )
 
-    def iter_data_slice(self, path: str):
-        pass
+        coco_annotations = []
+        for i in range(0, len(object_ids)):
+            _pos = np.where(binary_mask[i])
+            _xmin, _ymin = np.min(_pos[1]), np.min(_pos[0])
+            _xmax, _ymax = np.max(_pos[1]), np.max(_pos[0])
+            _bbox = BoundingBox(
+                x=_xmin, y=_ymin, width=_xmax - _xmin, height=_ymax - _ymin
+            )
 
-    def iter_label_slice(self, path: str):
-        pass
+            coco_annotations.append(
+                COCOObjectAnnotation(
+                    id=i,
+                    image_id=image_id,
+                    category_id=objects_num,
+                    segmentation=coco_mask.encode(binary_mask_tensor[i].numpy()),  # type: ignore
+                    area=_bbox.width * _bbox.height,
+                    bbox=_bbox,
+                    iscrowd=0 if objects_num == 1 else 1,
+                )
+            )
+
+        return coco_annotations

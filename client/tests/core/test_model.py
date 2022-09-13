@@ -20,7 +20,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.model import ResultLoader, PipelineHandler
+from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel
 from starwhale.core.instance.view import InstanceTermView
@@ -196,7 +196,7 @@ class StandaloneModelTestCase(TestCase):
             def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
                 pass
 
-            def cmp(self, _data_loader: ResultLoader) -> t.Any:
+            def cmp(self, _iter: PPLResultIterator) -> t.Any:
                 pass
 
             def some(self):
