@@ -31,9 +31,9 @@ public interface StorageAccessService {
 
     void put(String path, byte[] body) throws IOException;
 
-    InputStream get(String path) throws IOException;
+    LengthAbleInputStream get(String path) throws IOException;
 
-    InputStream get(String path, Long offset, Long size) throws IOException;
+    LengthAbleInputStream get(String path, Long offset, Long size) throws IOException;
 
     Stream<String> list(String path) throws IOException;
 

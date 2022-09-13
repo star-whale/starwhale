@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
@@ -122,12 +123,13 @@ public class ResultQuerierTest {
         return storageAccessService;
     }
 
-    private InputStream mockInputStream() {
-        return new ByteArrayInputStream(OBJECT.getBytes());
+    private LengthAbleInputStream mockInputStream() {
+        return new LengthAbleInputStream(new ByteArrayInputStream(OBJECT.getBytes()), OBJECT.getBytes().length);
     }
 
-    private InputStream mockResultInputStream() {
-        return new ByteArrayInputStream(MOCK_RESULT.getBytes());
+    private LengthAbleInputStream mockResultInputStream() {
+        return new LengthAbleInputStream(
+                new ByteArrayInputStream(MOCK_RESULT.getBytes()), MOCK_RESULT.getBytes().length);
     }
 
     JobMapper mockJobMapper() {

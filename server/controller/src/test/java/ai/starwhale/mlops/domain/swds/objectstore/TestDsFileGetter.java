@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.ByteArrayInputStream;
@@ -40,7 +41,7 @@ public class TestDsFileGetter {
         StorageAccessService storageAccessService = mock(
                 StorageAccessService.class);
         when(storageAccessService.get(eq("bdc/bdcsd"), anyLong(), anyLong())).thenReturn(
-                new ByteArrayInputStream("abc".getBytes()));
+                new LengthAbleInputStream(new ByteArrayInputStream("abc".getBytes()), 3));
         when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
         when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
         when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(

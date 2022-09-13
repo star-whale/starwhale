@@ -36,7 +36,7 @@ public class FileStorageEnv {
     public static final String ENV_KEY_PREFIX = "SW_OBJECT_STORE_KEY_PREFIX";
 
     public enum FileSystemEnvType {
-        S3, HDFS, NFS, LOCAL_FS, REST_RESOURCE, FTP
+        S3, ALIYUN, HDFS, NFS, LOCAL_FS, REST_RESOURCE, FTP
     }
 
     public FileStorageEnv add(String name, String value) {
