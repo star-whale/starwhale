@@ -41,16 +41,6 @@ public class ColumnType {
     public static final ColumnType STRING = new ColumnType("string", 8);
     public static final ColumnType BYTES = new ColumnType("bytes", 8);
 
-    private static final Map<Class<?>, ColumnType> typeMap = Map.of(
-            Boolean.class, BOOL,
-            Byte.class, INT8,
-            Short.class, INT16,
-            Integer.class, INT32,
-            Long.class, INT64,
-            Float.class, FLOAT32,
-            Double.class, FLOAT64,
-            String.class, STRING);
-
     private static final Map<String, ColumnType> typeMapByName = Map.of(
             UNKNOWN.toString(), UNKNOWN,
             BOOL.toString(), BOOL,
@@ -69,20 +59,6 @@ public class ColumnType {
     ColumnType(String category, int nbits) {
         this.category = category;
         this.nbits = nbits;
-    }
-
-    public static ColumnType getColumnType(Object value) {
-        if (value == null) {
-            return UNKNOWN;
-        }
-        var ret = typeMap.get(value.getClass());
-        if (ret == null) {
-            if (value instanceof ByteBuffer) {
-                return BYTES;
-            }
-            throw new IllegalArgumentException("unsupported column type " + value.getClass());
-        }
-        return ret;
     }
 
     public static ColumnType getColumnTypeByName(String typeName) {

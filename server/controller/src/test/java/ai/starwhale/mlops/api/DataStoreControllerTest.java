@@ -500,6 +500,11 @@ public class DataStoreControllerTest {
                                     setKey("a");
                                     setValue("3");
                                 }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("x");
+                                    setValue("9");
+                                }
                             }));
                         }
                     }, new RecordDesc() {
@@ -550,7 +555,7 @@ public class DataStoreControllerTest {
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "0", "a", "5"),
                             Map.of("k", "1", "a", "4"),
-                            Map.of("k", "2", "a", "3"),
+                            Map.of("k", "2", "a", "3", "x", "9"),
                             Map.of("k", "3", "a", "2"),
                             Map.of("k", "4", "a", "1"))));
         }
@@ -725,6 +730,37 @@ public class DataStoreControllerTest {
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.queryTable(this.req),
                     "");
+        }
+
+        @Test
+        public void testEqualNull() {
+            this.req.setFilter(new TableQueryFilterDesc() {
+                {
+                    setOperator(TableQueryFilter.Operator.EQUAL.toString());
+                    setOperands(List.of(new TableQueryOperandDesc() {
+                        {
+                            setColumnName("x");
+                        }
+                    }, new TableQueryOperandDesc()));
+                }
+            });
+            var resp = DataStoreControllerTest.this.controller.queryTable(this.req);
+            assertThat(resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat(Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    is(Map.of("k", ColumnType.INT32, "b", ColumnType.INT32)));
+            assertThat(Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(new HashMap<>() {
+                        {
+                            put("k", "3");
+                            put("b", "2");
+                        }
+                    }, new HashMap<>() {
+                        {
+                            put("k", "1");
+                            put("b", "4");
+                        }
+                    })));
+
         }
 
         @Test
