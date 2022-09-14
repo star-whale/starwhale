@@ -24,7 +24,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -38,8 +38,6 @@ public class UserEntity extends BaseEntity implements Serializable {
     private String userPwd;
 
     private String userPwdSalt;
-
-    private RoleEntity role;
 
     private Integer userEnabled;
 

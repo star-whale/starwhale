@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.swmp.mapper;
 
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface SwModelPackageMapper {
 
     List<SwModelPackageEntity> listSwModelPackages(@Param("projectId") Long projectId,

@@ -20,8 +20,11 @@ import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.beans.factory.annotation.Autowired;
 
+@Mapper
 public interface StepMapper {
 
     void save(@Param("step") StepEntity stepEntity);

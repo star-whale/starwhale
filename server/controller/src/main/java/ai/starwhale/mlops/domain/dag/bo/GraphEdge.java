@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.dag.bo;
 
-import ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,9 +45,4 @@ public class GraphEdge {
      */
     String content;
 
-    public GraphEdge(GraphEdgeEntity entity) {
-        this.from = entity.getFrom();
-        this.to = entity.getTo();
-        this.content = entity.getContent();
-    }
 }

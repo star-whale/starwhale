@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS job_info
     project_id      bigint           NOT NULL,
     swmp_version_id bigint           NOT NULL,
     owner_id        bigint           NOT NULL,
-    created_time    datetime         NOT NULL,
+    created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     finished_time   datetime,
     duration_ms     bigint           NOT NULL,
     job_status      varchar(50)      NOT NULL,

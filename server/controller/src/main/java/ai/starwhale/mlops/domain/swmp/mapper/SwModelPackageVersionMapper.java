@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.swmp.mapper;
 
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface SwModelPackageVersionMapper {
 
     List<SwModelPackageVersionEntity> listVersions(@Param("swmpId") Long swmpId, @Param("namePrefix") String namePrefix,
