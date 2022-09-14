@@ -379,6 +379,9 @@ class Text(BaseArtifact):
     def to_bytes(self) -> bytes:
         return self.content.encode(self.encoding)
 
+    def to_str(self) -> str:
+        return self.content
+
 
 # https://cocodataset.org/#format-data
 class COCOObjectAnnotation(ASDictMixin):
