@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.common;
 
 import ai.starwhale.mlops.exception.ConvertException;
-import cn.hutool.core.util.StrUtil;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,20 +26,17 @@ public class VersionAliasConvertor implements Convertor<Long, String> {
     @Override
     public String convert(Long order) throws ConvertException {
         if (order == null) {
-            return null;
+            throw new ConvertException("Version alias covert error: order is null");
         }
         return "v" + order;
     }
 
     @Override
     public Long revert(String alias) throws ConvertException {
-        if (StrUtil.isEmpty(alias)) {
-            return null;
+        if (!isVersionAlias(alias)) {
+            throw new ConvertException("Version alias revert error: " + alias);
         }
         try {
-            if (!alias.startsWith("v")) {
-                throw new Exception("Alias is not start with v");
-            }
             return Long.parseLong(alias.substring(1));
         } catch (Exception e) {
             throw new ConvertException("Version alias revert error: " + alias, e);
@@ -48,7 +45,6 @@ public class VersionAliasConvertor implements Convertor<Long, String> {
 
     public boolean isVersionAlias(String alias) {
         return alias != null
-                && alias.startsWith("v")
-                && StrUtil.isNumeric(alias.substring(1));
+                && Pattern.compile("v\\d+").matcher(alias).matches();
     }
 }

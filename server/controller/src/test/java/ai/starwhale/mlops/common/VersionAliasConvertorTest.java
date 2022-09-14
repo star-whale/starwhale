@@ -18,7 +18,6 @@ package ai.starwhale.mlops.common;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.exception.ConvertException;
@@ -36,10 +35,10 @@ public class VersionAliasConvertorTest {
 
     @Test
     public void testConvert() {
-        var res = versionAliasConvertor.convert(null);
-        assertThat(res, nullValue());
+        assertThrows(ConvertException.class,
+                () -> versionAliasConvertor.convert(null));
 
-        res = versionAliasConvertor.convert(1L);
+        var res = versionAliasConvertor.convert(1L);
         assertThat(res, is("v1"));
 
         res = versionAliasConvertor.convert(100L);
@@ -48,22 +47,40 @@ public class VersionAliasConvertorTest {
 
     @Test
     public void testRevert() {
-        var res = versionAliasConvertor.revert(null);
-        assertThat(res, nullValue());
-
-        res = versionAliasConvertor.revert("");
-        assertThat(res, nullValue());
-
-        res = versionAliasConvertor.revert("v1");
+        var res = versionAliasConvertor.revert("v1");
         assertThat(res, is(1L));
 
         res = versionAliasConvertor.revert("v100");
         assertThat(res, is(100L));
 
         assertThrows(ConvertException.class,
+                () -> versionAliasConvertor.revert(null));
+
+        assertThrows(ConvertException.class,
+                () -> versionAliasConvertor.revert(""));
+
+        assertThrows(ConvertException.class,
                 () -> versionAliasConvertor.revert("v"));
 
         assertThrows(ConvertException.class,
                 () -> versionAliasConvertor.revert("vv100"));
+    }
+
+    @Test
+    public void testIsVersionAlias() {
+        var res = versionAliasConvertor.isVersionAlias(null);
+        assertThat(res, is(false));
+
+        res = versionAliasConvertor.isVersionAlias("");
+        assertThat(res, is(false));
+
+        res = versionAliasConvertor.isVersionAlias("v");
+        assertThat(res, is(false));
+
+        res = versionAliasConvertor.isVersionAlias("va");
+        assertThat(res, is(false));
+
+        res = versionAliasConvertor.isVersionAlias("v2");
+        assertThat(res, is(true));
     }
 }
