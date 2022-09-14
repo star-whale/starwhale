@@ -24,7 +24,6 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
-import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -61,12 +60,6 @@ public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEnti
     @Override
     public SwModelPackageVersionEntity revert(SwModelPackageVersionVo vo)
             throws ConvertException {
-        Objects.requireNonNull(vo, "SWModelPackageVersionVo");
-        return SwModelPackageVersionEntity.builder()
-                .id(idConvertor.revert(vo.getId()))
-                .versionName(vo.getName())
-                .ownerId(idConvertor.revert(vo.getOwner().getId()))
-                .versionTag(vo.getTag())
-                .build();
+        throw new UnsupportedOperationException();
     }
 }

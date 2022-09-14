@@ -35,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,15 +44,18 @@ import org.springframework.stereotype.Service;
 public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
-    @Resource
-    private RuntimeMapper runtimeMapper;
-    @Resource
-    private RuntimeVersionMapper runtimeVersionMapper;
-    @Resource
-    private IdConvertor idConvertor;
+    private final RuntimeMapper runtimeMapper;
+    private final RuntimeVersionMapper runtimeVersionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
+    public RuntimeManager(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.runtimeMapper = runtimeMapper;
+        this.runtimeVersionMapper = runtimeVersionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
         if (idConvertor.isId(versionUrl)) {

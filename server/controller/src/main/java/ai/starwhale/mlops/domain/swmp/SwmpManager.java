@@ -35,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,15 +44,18 @@ import org.springframework.stereotype.Service;
 public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
-    @Resource
-    private SwModelPackageMapper swmpMapper;
-    @Resource
-    private SwModelPackageVersionMapper versionMapper;
-    @Resource
-    private IdConvertor idConvertor;
+    private final SwModelPackageMapper swmpMapper;
+    private final SwModelPackageVersionMapper versionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
+    public SwmpManager(SwModelPackageMapper swmpMapper, SwModelPackageVersionMapper versionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.swmpMapper = swmpMapper;
+        this.versionMapper = versionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     public Long getSwmpVersionId(String versionUrl, Long swmpId) {
         if (idConvertor.isId(versionUrl)) {

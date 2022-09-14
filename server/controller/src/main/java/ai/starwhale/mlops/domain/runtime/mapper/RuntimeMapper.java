@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.runtime.mapper;
 
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface RuntimeMapper {
 
     List<RuntimeEntity> listRuntimes(@Param("projectId") Long projectId, @Param("namePrefix") String namePrefix);

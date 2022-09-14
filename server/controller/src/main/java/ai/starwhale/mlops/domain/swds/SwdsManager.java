@@ -35,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,17 +44,18 @@ import org.springframework.stereotype.Service;
 public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
-    @Resource
-    private SwDatasetMapper datasetMapper;
+    private final SwDatasetMapper datasetMapper;
+    private final SwDatasetVersionMapper datasetVersionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private SwDatasetVersionMapper datasetVersionMapper;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
+    public SwdsManager(SwDatasetMapper datasetMapper, SwDatasetVersionMapper datasetVersionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.datasetMapper = datasetMapper;
+        this.datasetVersionMapper = datasetVersionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     public Long getSwdsVersionId(String versionUrl, Long swdsId) {
         if (idConvertor.isId(versionUrl)) {
