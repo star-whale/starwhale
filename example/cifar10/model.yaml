@@ -1,16 +1,9 @@
 version: 1.0
 name: cifar_net
-
 model:
   - models/cifar_net.pth
 
-config:
-  - config/hyperparam.json
-
 run:
-  ppl: code.ppl:CIFAR10Inference
+  ppl: cifar.ppl:CIFAR10Inference
 
 desc: cifar10 by pytorch
-
-tag:
-  - multi_classification

@@ -238,6 +238,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             "mime_type": self.mime_type,
             "shape": self.shape,
             "encoding": self.encoding,
+            "display_name": self.display_name,
         }
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict[str, t.Any]:

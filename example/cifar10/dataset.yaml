@@ -1,12 +1,10 @@
-name: cifar10
+#name: cifar10-train
+#process: cifar.dataset:CIFAR10TrainBuildExecutor
 
-process: code.data_slicer:CIFAR10Slicer
-pip_req: requirements.txt
-
+name: cifar10-test
+process: cifar.dataset:CIFAR10TestBuildExecutor
 desc: CIFAR10 data and label test dataset
-tag:
-  - bin
 
 attr:
   alignment_size: 4k
-  volume_size: 2M
+  volume_size: 10M
