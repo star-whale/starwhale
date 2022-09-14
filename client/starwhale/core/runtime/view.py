@@ -257,6 +257,13 @@ class RuntimeTermViewJson(RuntimeTermView):
         _data = self.get_info_data(self.runtime.info(), fullname=fullname)
         self.pretty_json(_data)
 
+    def history(self, fullname: bool = False) -> None:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        _data = BaseTermView.get_history_data(
+            history=self.runtime.history(), fullname=fullname
+        )
+        self.pretty_json(_data)
+
 
 def get_term_view(ctx_obj: t.Dict) -> t.Type[RuntimeTermView]:
     return (
