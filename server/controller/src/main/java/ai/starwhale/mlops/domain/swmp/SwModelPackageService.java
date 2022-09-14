@@ -26,6 +26,7 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -94,6 +95,9 @@ public class SwModelPackageService {
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
+
+    @Resource
+    private VersionAliasConvertor versionAliasConvertor;
 
     @Resource
     private SwmpConvertor swmpConvertor;
@@ -220,6 +224,7 @@ public class SwModelPackageService {
             return SwModelPackageInfoVo.builder()
                     .id(idConvertor.convert(model.getId()))
                     .name(model.getSwmpName())
+                    .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
                     .versionName(version.getVersionName())
                     .versionTag(version.getVersionTag())
                     .versionMeta(version.getVersionMeta())
@@ -449,6 +454,7 @@ public class SwModelPackageService {
     }
 
     private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, projectManager, swmpManager, swmpManager, ValidSubject.SWMP);
+        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, swmpManager, swmpManager,
+                ValidSubject.SWMP);
     }
 }

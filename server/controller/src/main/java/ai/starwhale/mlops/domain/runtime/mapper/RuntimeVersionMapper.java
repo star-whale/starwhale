@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.runtime.mapper;
 
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface RuntimeVersionMapper {
 
     List<RuntimeVersionEntity> listVersions(@Param("runtimeId") Long runtimeId,
@@ -40,5 +42,8 @@ public interface RuntimeVersionMapper {
     int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
 
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("rtVersion") String rtVersion,
+            @Param("runtimeId") Long runtimeId);
+
+    RuntimeVersionEntity findByVersionOrderAndRuntimeId(@Param("versionOrder") Long versionOrder,
             @Param("runtimeId") Long runtimeId);
 }

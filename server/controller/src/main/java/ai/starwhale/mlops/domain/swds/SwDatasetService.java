@@ -24,6 +24,7 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -41,6 +42,7 @@ import ai.starwhale.mlops.domain.swds.bo.SwdsQuery;
 import ai.starwhale.mlops.domain.swds.bo.SwdsVersion;
 import ai.starwhale.mlops.domain.swds.bo.SwdsVersionQuery;
 import ai.starwhale.mlops.domain.swds.converter.SwdsVersionConvertor;
+import ai.starwhale.mlops.domain.swds.converter.SwdsVoConvertor;
 import ai.starwhale.mlops.domain.swds.mapper.SwDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.objectstore.DsFileGetter;
@@ -79,7 +81,7 @@ public class SwDatasetService {
     private SwDatasetVersionMapper swdsVersionMapper;
 
     @Resource
-    private ai.starwhale.mlops.domain.swds.converter.SwdsVoConvertor swdsVoConvertor;
+    private SwdsVoConvertor swdsVoConvertor;
 
     @Resource
     private SwdsVersionConvertor versionConvertor;
@@ -100,6 +102,9 @@ public class SwDatasetService {
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Resource
+    private VersionAliasConvertor versionAliasConvertor;
+
+    @Resource
     private UserService userService;
 
     @Resource
@@ -109,7 +114,8 @@ public class SwDatasetService {
     private DsFileGetter dsFileGetter;
 
     private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, projectManager, swdsManager, swdsManager, ValidSubject.SWDS);
+        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, swdsManager, swdsManager,
+                ValidSubject.SWDS);
     }
 
     public PageInfo<DatasetVo> listSwDataset(SwdsQuery query, PageParams pageParams) {
@@ -181,6 +187,7 @@ public class SwDatasetService {
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
                     .versionName(versionEntity.getVersionName())
+                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))

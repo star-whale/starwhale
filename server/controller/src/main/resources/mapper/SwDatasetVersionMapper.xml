@@ -9,30 +9,37 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper">
   <sql id="select_swds_version">
-    select dsv.id as dsv_id,
-    dataset_id,
-    dsv.owner_id,
-    dsv.size as dsv_size,
-    dsv.index_table as dsv_index_table,
-    dsv.storage_auths as dsv_storage_auths,
-    version_name as dsv_version_name,
-    version_tag as dsv_version_tag,
-    version_meta as dsv_version_meta,
-    storage_path as dsv_storage_path,
-    status as status,
-    dsv.created_time as dsv_created_time,
-    dsv.modified_time as dsv_modified_time,
-    ds.dataset_name as ds_dataset_name,
-    u.id as user_id,
-    u.user_name,
-    u.created_time as user_created_time,
-    u.user_enabled
+    select dsv.id            as dsv_id,
+           dataset_id,
+           dsv.version_order as dsv_version_order,
+           dsv.owner_id,
+           dsv.size          as dsv_size,
+           dsv.index_table   as dsv_index_table,
+           dsv.storage_auths as dsv_storage_auths,
+           version_name      as dsv_version_name,
+           version_tag       as dsv_version_tag,
+           version_meta      as dsv_version_meta,
+           storage_path      as dsv_storage_path,
+           status            as status,
+           dsv.created_time  as dsv_created_time,
+           dsv.modified_time as dsv_modified_time,
+           ds.dataset_name   as ds_dataset_name,
+           u.id              as user_id,
+           u.user_name,
+           u.created_time    as user_created_time,
+           u.user_enabled
     from dataset_version as dsv,
-    dataset_info as ds,
-    user_info as u
+         dataset_info as ds,
+         user_info as u
     where dsv.owner_id = u.id
-    and ds.id = dsv.dataset_id
+      and ds.id = dsv.dataset_id
   </sql>
+
+  <delete id="deleteById">
+    delete
+    from dataset_version
+    WHERE id = #{id};
+  </delete>
 
   <select id="listVersions" resultMap="dsVersionResultMap">
     <include refid="select_swds_version"/>
@@ -60,6 +67,17 @@
     </if>
     and version_name = #{versionName}
   </select>
+
+  <insert id="addNewVersion"
+    keyProperty="id" parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity"
+    useGeneratedKeys="true">
+    insert into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag,
+                                 version_meta, storage_path, files_uploaded)
+    values (#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.size},
+            #{version.indexTable}, #{version.versionTag}, #{version.versionMeta},
+            #{version.storagePath},
+            #{version.filesUploaded})
+  </insert>
 
   <select id="getVersionById" resultMap="dsVersionResultMap">
     <include refid="select_swds_version"/>
@@ -94,66 +112,95 @@
     limit 1
   </select>
 
-  <insert id="revertTo">
-    update dataset_version
-    set version_order = (select max from ((select max(version_order) as max from dataset_version))
-    as v) + 1
-    where id = #{dsVersionId}
-  </insert>
+  <select id="findByDsIdAndVersionOrder" resultMap="dsVersionResultMap">
+    <if test="datasetId != null">
+      and dataset_id = #{datasetId}
+    </if>
+    <include refid="select_swds_version"/>
+    and version_order = #{versionOrder}
+  </select>
 
-  <insert id="addNewVersion"
-    parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity" useGeneratedKeys="true"
-    keyProperty="id">
-    insert into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag,
-    version_meta, storage_path, files_uploaded)
-    values(#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.size},
-    #{version.indexTable}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath},
-    #{version.filesUploaded})
-  </insert>
+  <update id="revertTo">
+    update dataset_version
+    set version_order = if((select version_order
+                            from ((select version_order
+                                   from dataset_version
+                                   where id = #{dsVersionId})) as v1)
+                             = (select max
+                                from (select max(version_order) as max
+                                      from dataset_version
+                                      where dataset_id = (select dataset_id
+                                                          from dataset_version
+                                                          where id = #{dsVersionId})) as v2)
+                             and
+                           (select version_order
+                            from ((select version_order
+                                   from dataset_version
+                                   where id = #{dsVersionId})) as v3)
+                             != 0,
+                           (select version_order
+                            from (select version_order
+                                  from dataset_version
+                                  where id = #{dsVersionId}) as v4),
+                           (select max
+                            from ((select max(version_order) as max
+                                   from dataset_version
+                                   where dataset_id = (select dataset_id
+                                                       from dataset_version
+                                                       where id = #{dsVersionId}))) as v5) + 1)
+    where id = #{dsVersionId}
+  </update>
 
   <update id="update" parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity">
-    update dataset_version set version_tag = #{version.versionTag} where id = #{version.id}
+    update dataset_version
+    set version_tag = #{version.versionTag}
+    where id = #{version.id}
   </update>
 
   <update id="updateTag" parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity">
-    update dataset_version set version_tag = #{tag} where id = #{versionId}
+    update dataset_version
+    set version_tag = #{tag}
+    where id = #{versionId}
   </update>
 
   <update id="updateFilesUploaded"
     parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity">
-    update dataset_version set files_uploaded = #{version.filesUploaded} where id = #{version.id}
+    update dataset_version
+    set files_uploaded = #{version.filesUploaded}
+    where id = #{version.id}
   </update>
 
   <update id="updateStatus">
-    update dataset_version set status = #{status} where id = #{id}
+    update dataset_version
+    set status = #{status}
+    where id = #{id}
   </update>
+
 
   <update id="updateStorageAuths">
-    update dataset_version set storage_auths = #{storageAuths} where id = #{id}
+    update dataset_version
+    set storage_auths = #{storageAuths}
+    where id = #{id}
   </update>
-
-  <delete id="deleteById">
-    delete from dataset_version WHERE id = #{id};
-  </delete>
-
 
   <resultMap id="dsVersionResultMap"
     type="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity">
-    <id property="id" column="dsv_id"/>
-    <result property="datasetId" column="dataset_id"/>
-    <result property="versionName" column="dsv_version_name"/>
-    <result property="datasetName" column="ds_dataset_name"/>
-    <result property="size" column="dsv_size"/>
-    <result property="indexTable" column="dsv_index_table"/>
-    <result property="storageAuths" column="dsv_storage_auths"/>
-    <result property="versionTag" column="dsv_version_tag"/>
-    <result property="versionMeta" column="dsv_version_meta"/>
-    <result property="storagePath" column="dsv_storage_path"/>
-    <result property="createdTime" column="dsv_created_time"/>
-    <result property="modifiedTime" column="dsv_modified_time"/>
-    <result property="ownerId" column="owner_id"/>
-    <result property="status" column="status"/>
-    <result property="filesUploaded" column="files_uploaded"/>
+    <id column="dsv_id" property="id"/>
+    <result column="dataset_id" property="datasetId"/>
+    <result column="dsv_version_order" property="versionOrder"/>
+    <result column="dsv_version_name" property="versionName"/>
+    <result column="ds_dataset_name" property="datasetName"/>
+    <result column="dsv_size" property="size"/>
+    <result column="dsv_index_table" property="indexTable"/>
+    <result column="dsv_storage_auths" property="storageAuths"/>
+    <result column="dsv_version_tag" property="versionTag"/>
+    <result column="dsv_version_meta" property="versionMeta"/>
+    <result column="dsv_storage_path" property="storagePath"/>
+    <result column="dsv_created_time" property="createdTime"/>
+    <result column="dsv_modified_time" property="modifiedTime"/>
+    <result column="owner_id" property="ownerId"/>
+    <result column="status" property="status"/>
+    <result column="files_uploaded" property="filesUploaded"/>
     <association property="owner"
       resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap"/>
   </resultMap>
