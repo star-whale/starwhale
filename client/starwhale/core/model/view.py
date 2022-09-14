@@ -183,6 +183,10 @@ class ModelTermViewJson(ModelTermView):
     def info(self, fullname: bool = False) -> None:
         self.pretty_json(self.get_info_data(self.model.info(), fullname))
 
+    def history(self, fullname: bool = False) -> None:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        self.pretty_json(BaseTermView.get_history_data(self.model.history(), fullname))
+
 
 def get_term_view(ctx_obj: t.Dict) -> t.Type[ModelTermView]:
     return ModelTermViewJson if ctx_obj.get("output") == "json" else ModelTermViewRich

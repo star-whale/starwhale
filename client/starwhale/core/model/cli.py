@@ -82,8 +82,9 @@ def _list(
 @model_cmd.command("history", help="Show model history")
 @click.argument("model")
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _history(model: str, fullname: bool) -> None:
-    ModelTermView(model).history(fullname)
+@click.pass_obj
+def _history(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
+    view(model).history(fullname)
 
 
 @model_cmd.command("remove", help="Remove model")
