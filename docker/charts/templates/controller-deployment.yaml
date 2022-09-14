@@ -116,6 +116,8 @@ spec:
               value: "{{ .Values.externalS3OSS.secretKey }}"
             - name: SW_STORAGE_REGION
               value: "{{ .Values.externalS3OSS.region }}"
+            - name: SW_STORAGE_TYPE
+              value: "{{ .Values.externalS3OSS.type }}"
             {{- end }}
             {{- if .Values.mysql.enabled }}
             - name: SW_METADATA_STORAGE_IP
