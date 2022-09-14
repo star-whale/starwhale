@@ -54,6 +54,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestK8sTaskScheduler {
+    public static final String bucket = "bucket";
+    public static final String accessKey = "accessKey";
+    public static final String secretKey = "secretKey";
+    public static final String region = "region";
+    public static final String endpoint = "endpoint";
 
     @Test
     public void testScheduler() throws IOException, ApiException {
@@ -61,11 +66,11 @@ public class TestK8sTaskScheduler {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setS3Config(
                 S3Config.builder()
-                        .bucket("bucket")
-                        .accessKey("accessKey")
-                        .secretKey("secretKey")
-                        .region("region")
-                        .endpoint("endpoint")
+                        .bucket(bucket)
+                        .accessKey(accessKey)
+                        .secretKey(secretKey)
+                        .region(region)
+                        .endpoint(endpoint)
                         .build());
         JobTokenConfig jobTokenConfig = mock(JobTokenConfig.class);
         when(jobTokenConfig.getToken()).thenReturn("tt");
@@ -151,18 +156,17 @@ public class TestK8sTaskScheduler {
 
             Map<String, String> initEnv = Map.of("DOWNLOADS",
                     "s3://bucket/path_swmp;/opt/starwhale/swmp/ s3://bucket/path_rt;/opt/starwhale/swrt/",
-                    "ENDPOINT_URL", "endpoint",
-                    "AWS_ACCESS_KEY_ID", "accessKey",
-                    "AWS_SECRET_ACCESS_KEY", "secretKey",
-                    "AWS_S3_REGION", "region",
-                    "SW_PYPI_TRUSTED_HOST", "trustedH",
-                    "SW_PYPI_EXTRA_INDEX_URL", "extraU",
-                    "SW_PYPI_INDEX_URL", "indexU");
-            Map<String, String> initActual = dp.getEnvs().stream()
+                    "SW_S3_BUCKET", TestK8sTaskScheduler.bucket,
+                    "SW_S3_ENDPOINT", TestK8sTaskScheduler.endpoint,
+                    "SW_S3_SECRET", TestK8sTaskScheduler.secretKey,
+                    "SW_S3_ACCESS_KEY", TestK8sTaskScheduler.accessKey,
+                    "SW_S3_REGION", TestK8sTaskScheduler.region,
+                    FileStorageEnv.ENV_TYPE, "S3");
+            Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);
             ContainerOverwriteSpec ut = containerSpecMap.get("untar");
-            initActual = ut.getEnvs().stream()
+            initActual = ut.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);
             return null;
