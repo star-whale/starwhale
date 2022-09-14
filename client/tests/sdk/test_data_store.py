@@ -555,6 +555,143 @@ class TestBasicFunctions(BaseTestCase):
             "keep none",
         )
 
+    def test_get_type(self) -> None:
+        self.assertEqual(data_store.UNKNOWN, data_store._get_type(None), "unknown")
+        self.assertEqual(data_store.BOOL, data_store._get_type(False), "bool")
+        self.assertEqual(data_store.INT8, data_store._get_type(np.int8(0)), "int8")
+        self.assertEqual(data_store.INT16, data_store._get_type(np.int16(0)), "int16")
+        self.assertEqual(data_store.INT32, data_store._get_type(np.int32(0)), "int32")
+        self.assertEqual(data_store.INT64, data_store._get_type(0), "int64")
+        self.assertEqual(
+            data_store.FLOAT16, data_store._get_type(np.float16(0)), "float16"
+        )
+        self.assertEqual(
+            data_store.FLOAT32, data_store._get_type(np.float32(0)), "float32"
+        )
+        self.assertEqual(data_store.FLOAT64, data_store._get_type(0.0), "float64")
+        self.assertEqual(data_store.STRING, data_store._get_type(""), "string")
+        self.assertEqual(data_store.BYTES, data_store._get_type(b""), "bytes")
+        self.assertEqual(
+            data_store.SwListType(data_store.UNKNOWN),
+            data_store._get_type([]),
+            "[unknown] 1",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.UNKNOWN),
+            data_store._get_type([None]),
+            "[unknown] 2",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.INT64),
+            data_store._get_type([0]),
+            "[int64] 1",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.INT64),
+            data_store._get_type([0, None]),
+            "[int64] 2",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.INT64),
+            data_store._get_type([None, 0]),
+            "[int64] 3",
+        )
+        self.assertEqual(
+            data_store.SwObjectType(
+                data_store.Link,
+                {
+                    "uri": data_store.UNKNOWN,
+                    "display_text": data_store.UNKNOWN,
+                    "mime_type": data_store.UNKNOWN,
+                },
+            ),
+            data_store._get_type(data_store.Link()),
+            "{} 1",
+        )
+        self.assertEqual(
+            data_store.SwObjectType(
+                data_store.Link,
+                {
+                    "uri": data_store.STRING,
+                    "display_text": data_store.STRING,
+                    "mime_type": data_store.STRING,
+                },
+            ),
+            data_store._get_type(data_store.Link("1", "2", "3")),
+            "{} 2",
+        )
+        self.assertEqual(
+            data_store.SwListType(
+                data_store.SwObjectType(
+                    data_store.Link,
+                    {
+                        "uri": data_store.STRING,
+                        "display_text": data_store.STRING,
+                        "mime_type": data_store.STRING,
+                    },
+                )
+            ),
+            data_store._get_type([data_store.Link("1", "2", "3")]),
+            "[{}]",
+        )
+
+    def test_type_merge(self) -> None:
+        self.assertEqual(
+            data_store.INT32,
+            data_store.UNKNOWN.merge(data_store.INT32),
+            "unknown and int",
+        )
+        self.assertEqual(
+            data_store.INT32,
+            data_store.INT32.merge(data_store.UNKNOWN),
+            "int and unknown",
+        )
+        self.assertEqual(
+            data_store.INT64,
+            data_store.INT64.merge(data_store.INT64),
+            "int and unknown",
+        )
+        with self.assertRaises(RuntimeError, msg="scalar conflict"):
+            data_store.INT32.merge(data_store.INT64)
+        self.assertEqual(
+            data_store.SwListType(data_store.UNKNOWN),
+            data_store.SwListType(data_store.UNKNOWN).merge(
+                data_store.SwListType(data_store.UNKNOWN)
+            ),
+            "[unknown] and [unknown]",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.INT64),
+            data_store.SwListType(data_store.UNKNOWN).merge(
+                data_store.SwListType(data_store.INT64)
+            ),
+            "[unknown] and [int64]",
+        )
+        self.assertEqual(
+            data_store.SwListType(data_store.INT64),
+            data_store.SwListType(data_store.INT64).merge(
+                data_store.SwListType(data_store.UNKNOWN)
+            ),
+            "[int64] and [unknown]",
+        )
+        with self.assertRaises(RuntimeError, msg="list conflict"):
+            data_store.SwListType(data_store.INT32).merge(
+                data_store.SwListType(data_store.INT64)
+            )
+        with self.assertRaises(RuntimeError, msg="list and scalar"):
+            data_store.SwListType(data_store.INT64).merge(data_store.INT64)
+        with self.assertRaises(RuntimeError, msg="scalar and list"):
+            data_store.INT64.merge(data_store.SwListType(data_store.INT64))
+        self.assertEqual(
+            data_store.SwObjectType(
+                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
+            ),
+            data_store.SwObjectType(data_store.Link, {"a": data_store.STRING}).merge(
+                data_store.SwObjectType(data_store.Link, {"b": data_store.INT64})
+            ),
+            "{}",
+        )
+
     def test_update_schema(self) -> None:
         self.assertEqual(
             data_store.TableSchema(
@@ -590,38 +727,6 @@ class TestBasicFunctions(BaseTestCase):
                 ),
                 {"b": 0},
             )
-        self.assertEqual(
-            data_store.TableSchema(
-                "a",
-                [
-                    data_store.ColumnSchema("a", data_store.INT64),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "a",
-                    [
-                        data_store.ColumnSchema("a", data_store.INT64),
-                        data_store.ColumnSchema("b", data_store.STRING),
-                    ],
-                ),
-                {"a": np.int32(0)},
-            ),
-            "less bits",
-        )
-        self.assertEqual(
-            data_store.TableSchema(
-                "c", [data_store.ColumnSchema("c", data_store.INT64)]
-            ),
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "c", [data_store.ColumnSchema("c", data_store.INT32)]
-                ),
-                {"c": 0},
-            ),
-            "more bits",
-        )
         self.assertEqual(
             data_store.TableSchema(
                 "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
@@ -836,6 +941,58 @@ class TestLocalDataStore(BaseTestCase):
             list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "overwrite",
         )
+        ds.update_table(
+            "test",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema(
+                        "x", data_store.SwListType(data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
+                        "y", data_store._get_type(data_store.Link("a", "b", "c"))
+                    ),
+                    data_store.ColumnSchema(
+                        "z",
+                        data_store.SwListType(
+                            data_store._get_type(data_store.Link("a", "b", "c"))
+                        ),
+                    ),
+                ],
+            ),
+            [
+                {
+                    "k": 0,
+                    "x": [1, 2, 3],
+                    "y": data_store.Link("a", "b", "c"),
+                    "z": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                },
+            ],
+        )
+        self.assertEqual(
+            [
+                {
+                    "k": 0,
+                    "x": [1, 2, 3],
+                    "y": data_store.Link("a", "b", "c"),
+                    "z": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                },
+                {"k": 1, "a": "1", "b": "1"},
+                {"k": 2, "b": "2"},
+                {"k": 3, "a": "33", "b": "3", "c": 3},
+            ],
+            list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
+            "composite",
+        )
 
     def test_data_store_scan(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
@@ -911,6 +1068,39 @@ class TestLocalDataStore(BaseTestCase):
         )
         with open(os.path.join(self.datastore_root, "6"), "w"):
             pass
+        ds.update_table(
+            "7",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema(
+                        "x", data_store.SwListType(data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
+                        "y", data_store._get_type(data_store.Link("a", "b", "c"))
+                    ),
+                    data_store.ColumnSchema(
+                        "z",
+                        data_store.SwListType(
+                            data_store._get_type(data_store.Link("a", "b", "c"))
+                        ),
+                    ),
+                ],
+            ),
+            [
+                {
+                    "k": 0,
+                    "x": [1, 2, 3],
+                    "y": data_store.Link("a", "b", "c"),
+                    "z": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                }
+            ],
+        )
         with self.assertRaises(RuntimeError, msg="duplicate alias"):
             list(
                 ds.scan_tables([data_store.TableDesc("1", {"k": "v", "a": "v"}, False)])
@@ -996,6 +1186,33 @@ class TestLocalDataStore(BaseTestCase):
             ),
             "with start and end",
         )
+        self.assertEqual(
+            [
+                {
+                    "k": 0,
+                    "x": [1, 2, 3],
+                    "y": data_store.Link("a", "b", "c"),
+                    "z": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                }
+            ],
+            list(
+                ds.scan_tables(
+                    [
+                        data_store.TableDesc("1", {"k": "k"}, False),
+                        data_store.TableDesc(
+                            "7", {"x": "x", "y": "y", "z": "z"}, False
+                        ),
+                    ],
+                    0,
+                    1,
+                )
+            ),
+            "composite type",
+        )
 
         ds.update_table(
             "1",
@@ -1014,7 +1231,18 @@ class TestLocalDataStore(BaseTestCase):
         ds = data_store.LocalDataStore(self.datastore_root)
         self.assertEqual(
             [
-                {"k": 0, "a": None, "b": "0"},
+                {
+                    "k": 0,
+                    "a": None,
+                    "b": "0",
+                    "x": [1, 2, 3],
+                    "y": data_store.Link("a", "b", "c"),
+                    "z": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                },
                 {"k": 1, "a": "1", "b": "1"},
                 {"k": 2, "b": "2"},
                 {"k": 3, "a": "3", "b": "3"},
@@ -1023,6 +1251,7 @@ class TestLocalDataStore(BaseTestCase):
                 ds.scan_tables(
                     [
                         data_store.TableDesc("1", None, True),
+                        data_store.TableDesc("7", None, False),
                     ],
                     keep_none=True,
                 )
@@ -1036,7 +1265,7 @@ class TestLocalDataStore(BaseTestCase):
                 "k",
                 [
                     data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("c", data_store.INT32),
+                    data_store.ColumnSchema("c", data_store.INT64),
                 ],
             ),
             [
@@ -1105,47 +1334,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 {"k": 4, "a": None},
             ],
         )
-        self.ds.update_table(
-            "t1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                ],
-            ),
-            [],
-        )
-        self.ds.update_table(
-            "t1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("b", data_store.BOOL),
-                    data_store.ColumnSchema("c", data_store.INT8),
-                    data_store.ColumnSchema("d", data_store.INT16),
-                    data_store.ColumnSchema("e", data_store.INT32),
-                    data_store.ColumnSchema("f", data_store.FLOAT16),
-                    data_store.ColumnSchema("g", data_store.FLOAT32),
-                    data_store.ColumnSchema("h", data_store.FLOAT64),
-                    data_store.ColumnSchema("i", data_store.BYTES),
-                ],
-            ),
-            [
-                {
-                    "k": 1,
-                    "b": True,
-                    "c": 1,
-                    "d": 1,
-                    "e": 1,
-                    "f": 1.0,
-                    "g": 1.0,
-                    "h": 1.0,
-                    "i": b"1",
-                }
-            ],
-        )
-        mock_post.assert_any_call(
+        mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
             data=json.dumps(
                 {
@@ -1153,8 +1342,8 @@ class TestRemoteDataStore(unittest.TestCase):
                     "tableSchemaDesc": {
                         "keyColumn": "k",
                         "columnSchemaList": [
-                            {"name": "k", "type": "INT64"},
-                            {"name": "a", "type": "STRING"},
+                            {"type": "INT64", "name": "k"},
+                            {"type": "STRING", "name": "a"},
                         ],
                     },
                     "records": [
@@ -1192,7 +1381,17 @@ class TestRemoteDataStore(unittest.TestCase):
             },
             timeout=60,
         )
-        mock_post.assert_any_call(
+        self.ds.update_table(
+            "t1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                ],
+            ),
+            [],
+        )
+        mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
             data=json.dumps(
                 {
@@ -1200,7 +1399,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     "tableSchemaDesc": {
                         "keyColumn": "k",
                         "columnSchemaList": [
-                            {"name": "k", "type": "INT64"},
+                            {"type": "INT64", "name": "k"},
                         ],
                     },
                     "records": [],
@@ -1213,29 +1412,121 @@ class TestRemoteDataStore(unittest.TestCase):
             },
             timeout=60,
         )
-        mock_post.assert_any_call(
+        self.ds.update_table(
+            "t1",
+            data_store.TableSchema(
+                "key",
+                [
+                    data_store.ColumnSchema("key", data_store.INT64),
+                    data_store.ColumnSchema("b", data_store.BOOL),
+                    data_store.ColumnSchema("c", data_store.INT8),
+                    data_store.ColumnSchema("d", data_store.INT16),
+                    data_store.ColumnSchema("e", data_store.INT32),
+                    data_store.ColumnSchema("f", data_store.FLOAT16),
+                    data_store.ColumnSchema("g", data_store.FLOAT32),
+                    data_store.ColumnSchema("h", data_store.FLOAT64),
+                    data_store.ColumnSchema("i", data_store.BYTES),
+                    data_store.ColumnSchema(
+                        "j", data_store.SwListType(data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
+                        "k",
+                        data_store.SwObjectType(
+                            data_store.Link,
+                            {
+                                "uri": data_store.STRING,
+                                "display_text": data_store.STRING,
+                                "mime_type": data_store.STRING,
+                            },
+                        ),
+                    ),
+                    data_store.ColumnSchema(
+                        "l",
+                        data_store.SwListType(
+                            data_store.SwObjectType(
+                                data_store.Link,
+                                {
+                                    "uri": data_store.STRING,
+                                    "display_text": data_store.STRING,
+                                    "mime_type": data_store.STRING,
+                                },
+                            )
+                        ),
+                    ),
+                ],
+            ),
+            [
+                {
+                    "key": 1,
+                    "b": True,
+                    "c": 1,
+                    "d": 1,
+                    "e": 1,
+                    "f": 1.0,
+                    "g": 1.0,
+                    "h": 1.0,
+                    "i": b"1",
+                    "j": [1, 2, 3],
+                    "k": data_store.Link("a", "b", "c"),
+                    "l": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
+                }
+            ],
+        )
+        mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
             data=json.dumps(
                 {
                     "tableName": "t1",
                     "tableSchemaDesc": {
-                        "keyColumn": "k",
+                        "keyColumn": "key",
                         "columnSchemaList": [
-                            {"name": "k", "type": "INT64"},
-                            {"name": "b", "type": "BOOL"},
-                            {"name": "c", "type": "INT8"},
-                            {"name": "d", "type": "INT16"},
-                            {"name": "e", "type": "INT32"},
-                            {"name": "f", "type": "FLOAT16"},
-                            {"name": "g", "type": "FLOAT32"},
-                            {"name": "h", "type": "FLOAT64"},
-                            {"name": "i", "type": "BYTES"},
+                            {"type": "INT64", "name": "key"},
+                            {"type": "BOOL", "name": "b"},
+                            {"type": "INT8", "name": "c"},
+                            {"type": "INT16", "name": "d"},
+                            {"type": "INT32", "name": "e"},
+                            {"type": "FLOAT16", "name": "f"},
+                            {"type": "FLOAT32", "name": "g"},
+                            {"type": "FLOAT64", "name": "h"},
+                            {"type": "BYTES", "name": "i"},
+                            {
+                                "type": "LIST",
+                                "elementType": {"type": "INT64"},
+                                "name": "j",
+                            },
+                            {
+                                "type": "OBJECT",
+                                "attributes": {
+                                    "uri": {"type": "STRING"},
+                                    "display_text": {"type": "STRING"},
+                                    "mime_type": {"type": "STRING"},
+                                },
+                                "pythonType": "LINK",
+                                "name": "k",
+                            },
+                            {
+                                "type": "LIST",
+                                "elementType": {
+                                    "type": "OBJECT",
+                                    "attributes": {
+                                        "uri": {"type": "STRING"},
+                                        "display_text": {"type": "STRING"},
+                                        "mime_type": {"type": "STRING"},
+                                    },
+                                    "pythonType": "LINK",
+                                },
+                                "name": "l",
+                            },
                         ],
                     },
                     "records": [
                         {
                             "values": [
-                                {"key": "k", "value": "1"},
+                                {"key": "key", "value": "1"},
                                 {"key": "b", "value": "1"},
                                 {"key": "c", "value": "1"},
                                 {"key": "d", "value": "1"},
@@ -1244,6 +1535,35 @@ class TestRemoteDataStore(unittest.TestCase):
                                 {"key": "g", "value": "3f800000"},
                                 {"key": "h", "value": "3ff0000000000000"},
                                 {"key": "i", "value": "MQ=="},
+                                {"key": "j", "value": ["1", "2", "3"]},
+                                {
+                                    "key": "k",
+                                    "value": {
+                                        "uri": "a",
+                                        "display_text": "b",
+                                        "mime_type": "c",
+                                    },
+                                },
+                                {
+                                    "key": "l",
+                                    "value": [
+                                        {
+                                            "uri": "1",
+                                            "display_text": "1",
+                                            "mime_type": "1",
+                                        },
+                                        {
+                                            "uri": "2",
+                                            "display_text": "2",
+                                            "mime_type": "2",
+                                        },
+                                        {
+                                            "uri": "3",
+                                            "display_text": "3",
+                                            "mime_type": "3",
+                                        },
+                                    ],
+                                },
                             ]
                         }
                     ],
@@ -1262,18 +1582,42 @@ class TestRemoteDataStore(unittest.TestCase):
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "data": {
-                "columnTypes": {
-                    "a": "BOOL",
-                    "b": "INT8",
-                    "c": "INT16",
-                    "d": "INT32",
-                    "e": "INT64",
-                    "f": "FLOAT16",
-                    "g": "FLOAT32",
-                    "h": "FLOAT64",
-                    "i": "STRING",
-                    "j": "BYTES",
-                },
+                "columnTypes": [
+                    {"name": "a", "type": "BOOL"},
+                    {"name": "b", "type": "INT8"},
+                    {"name": "c", "type": "INT16"},
+                    {"name": "d", "type": "INT32"},
+                    {"name": "e", "type": "INT64"},
+                    {"name": "f", "type": "FLOAT16"},
+                    {"name": "g", "type": "FLOAT32"},
+                    {"name": "h", "type": "FLOAT64"},
+                    {"name": "i", "type": "STRING"},
+                    {"name": "j", "type": "BYTES"},
+                    {"name": "k", "type": "LIST", "elementType": {"type": "INT64"}},
+                    {
+                        "name": "l",
+                        "type": "OBJECT",
+                        "pythonType": "LINK",
+                        "attributes": {
+                            "uri": {"type": "STRING"},
+                            "display_text": {"type": "STRING"},
+                            "mime_type": {"type": "STRING"},
+                        },
+                    },
+                    {
+                        "name": "m",
+                        "type": "LIST",
+                        "elementType": {
+                            "type": "OBJECT",
+                            "pythonType": "LINK",
+                            "attributes": {
+                                "uri": {"type": "STRING"},
+                                "display_text": {"type": "STRING"},
+                                "mime_type": {"type": "STRING"},
+                            },
+                        },
+                    },
+                ],
                 "records": [
                     {
                         "a": "1",
@@ -1286,6 +1630,13 @@ class TestRemoteDataStore(unittest.TestCase):
                         "h": "3ff0000000000000",
                         "i": "1",
                         "j": "MQ==",
+                        "k": ["1", "2", "3"],
+                        "l": {"uri": "a", "display_text": "b", "mime_type": "c"},
+                        "m": [
+                            {"uri": "1", "display_text": "1", "mime_type": "1"},
+                            {"uri": "2", "display_text": "2", "mime_type": "2"},
+                            {"uri": "3", "display_text": "3", "mime_type": "3"},
+                        ],
                     }
                 ],
             }
@@ -1303,6 +1654,13 @@ class TestRemoteDataStore(unittest.TestCase):
                     "h": 1.0,
                     "i": "1",
                     "j": b"1",
+                    "k": [1, 2, 3],
+                    "l": data_store.Link("a", "b", "c"),
+                    "m": [
+                        data_store.Link("1", "1", "1"),
+                        data_store.Link("2", "2", "2"),
+                        data_store.Link("3", "3", "3"),
+                    ],
                 }
             ],
             list(
@@ -1322,21 +1680,21 @@ class TestRemoteDataStore(unittest.TestCase):
         mock_post.return_value.json.side_effect = [
             {
                 "data": {
-                    "columnTypes": {"a": "INT32"},
+                    "columnTypes": [{"name": "a", "type": "INT32"}],
                     "records": [{"a": f"{i:x}"} for i in range(1000)],
                     "lastKey": f"{999:x}",
                 }
             },
             {
                 "data": {
-                    "columnTypes": {"a": "INT32"},
+                    "columnTypes": [{"name": "a", "type": "INT32"}],
                     "records": [{"a": f"{i+1000:x}"} for i in range(1000)],
                     "lastKey": f"{1999:x}",
                 }
             },
             {
                 "data": {
-                    "columnTypes": {"a": "INT32"},
+                    "columnTypes": [{"name": "a", "type": "INT32"}],
                     "records": [{"a": f"{2000:x}"}],
                 }
             },

@@ -21,7 +21,6 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -32,8 +31,6 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class TableSchema {
 
-    private static final Pattern COLUMN_NAME_PATTERN =
-            Pattern.compile("^[\\p{Alpha}\\p{Alnum}-_/: ]*$");
     @Getter
     private final String keyColumn;
     @Getter
@@ -44,31 +41,33 @@ public class TableSchema {
     public TableSchema(@NonNull TableSchemaDesc schema) {
         this.keyColumn = schema.getKeyColumn();
         if (this.keyColumn == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "key column should not be null");
         }
         this.columnSchemaMap = new HashMap<>();
-        if (schema.getColumnSchemaList() != null) {
-            for (var col : schema.getColumnSchemaList()) {
-                var colSchema = new ColumnSchema(col, this.maxColumnIndex++);
-                if (!TableSchema.COLUMN_NAME_PATTERN.matcher(col.getName()).matches()) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                            "invalid column name " + col.getName());
-                }
-                if (this.columnSchemaMap.putIfAbsent(col.getName(), colSchema) != null) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                            "duplicate column name " + col.getName());
-                }
+        if (schema.getColumnSchemaList() == null || schema.getColumnSchemaList().isEmpty()) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "columnSchemaList should not be empty");
+        }
+        for (var col : schema.getColumnSchemaList()) {
+            var colSchema = new ColumnSchema(col, this.maxColumnIndex++);
+            if (this.columnSchemaMap.putIfAbsent(col.getName(), colSchema) != null) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "duplicate column name " + col.getName());
             }
         }
         var keyColumnSchema = this.columnSchemaMap.get(keyColumn);
         if (keyColumnSchema == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "key column " + keyColumn + " not found in column schemas");
         }
         this.keyColumnType = keyColumnSchema.getType();
-        if (this.keyColumnType == ColumnType.UNKNOWN) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+        if (!(this.keyColumnType instanceof ColumnTypeScalar)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "key column " + keyColumn + " should be of scalar type");
+        }
+        if (this.keyColumnType == ColumnTypeScalar.UNKNOWN) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "key column " + keyColumn + " should not be of type UNKNOWN");
         }
     }
@@ -92,7 +91,7 @@ public class TableSchema {
         if (schema.getKeyColumn() != null && !this.keyColumn.equals(schema.getKeyColumn())) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     MessageFormat.format(
-                            "can not merge two schemas with different key columns, expected {1}, actual {2}",
+                            "can not merge two schemas with different key columns, expected {0}, actual {1}",
                             this.keyColumn,
                             schema.getKeyColumn()));
         }
@@ -101,17 +100,16 @@ public class TableSchema {
         for (var col : schema.getColumnSchemaList()) {
             var current = this.columnSchemaMap.get(col.getName());
             var colSchema = new ColumnSchema(col, current == null ? columnIndex++ : current.getIndex());
-            if (current != null
-                    && current.getType() != ColumnType.UNKNOWN
-                    && colSchema.getType() != ColumnType.UNKNOWN
-                    && current.getType() != colSchema.getType()) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                        MessageFormat.format("conflicting type for column {0}, expected {1}, actual {2}",
-                                col.getName(), current.getType(), col.getType()));
-            }
-            if (current == null
-                    || current.getType() != colSchema.getType() && colSchema.getType() != ColumnType.UNKNOWN) {
+            if (current == null) {
                 columnSchemaMap.put(col.getName(), colSchema);
+            } else if (!current.getType().equals(colSchema.getType())) {
+                if (current.getType() == ColumnTypeScalar.UNKNOWN) {
+                    columnSchemaMap.put(col.getName(), colSchema);
+                } else if (colSchema.getType() != ColumnTypeScalar.UNKNOWN) {
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                            MessageFormat.format("conflicting type for column {0}, expected {1}, actual {2}",
+                                    col.getName(), current.getType(), col.getType()));
+                }
             }
         }
         this.columnSchemaMap.putAll(columnSchemaMap);

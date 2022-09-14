@@ -27,7 +27,7 @@ import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
-import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
@@ -63,10 +63,10 @@ public class DataStoreController implements DataStoreApi {
     public ResponseEntity<ResponseMessage<String>> updateTable(UpdateTableRequest request) {
         try {
             if (request.getTableName() == null) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                        .tip("table name should not be null");
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "table name should not be null");
             }
-            List<Map<String, String>> records;
+            List<Map<String, Object>> records;
             if (request.getRecords() == null) {
                 records = null;
             } else {
@@ -74,10 +74,10 @@ public class DataStoreController implements DataStoreApi {
                         .stream()
                         .map(x -> {
                             if (x.getValues() == null) {
-                                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                                        .tip("values should not be null. " + x);
+                                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                        "values should not be null. " + x);
                             }
-                            var ret = new HashMap<String, String>();
+                            var ret = new HashMap<String, Object>();
                             for (var r : x.getValues()) {
                                 ret.put(r.getKey(), r.getValue());
                             }
@@ -96,8 +96,8 @@ public class DataStoreController implements DataStoreApi {
     public ResponseEntity<ResponseMessage<RecordListVo>> queryTable(QueryTableRequest request) {
         try {
             if (request.getTableName() == null) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                        .tip("table name should not be null");
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "table name should not be null");
             }
             var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                     .tableName(request.getTableName())
@@ -111,7 +111,9 @@ public class DataStoreController implements DataStoreApi {
                     .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeStringMap())
+                    .columnTypes(recordList.getColumnTypeMap().entrySet().stream()
+                            .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
+                            .collect(Collectors.toList()))
                     .records(recordList.getRecords())
                     .build()));
         } catch (SwValidationException e) {
@@ -123,19 +125,19 @@ public class DataStoreController implements DataStoreApi {
     public ResponseEntity<ResponseMessage<RecordListVo>> scanTable(ScanTableRequest request) {
         try {
             if (request.getTables() == null || request.getTables().isEmpty()) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                        .tip("tables should not be null or empty.");
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "tables should not be null or empty.");
             }
             var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                     .tables(request.getTables().stream()
                             .map(x -> {
                                 if (x == null) {
-                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                                            .tip("table description should not be null");
+                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                            "table description should not be null");
                                 }
                                 if (x.getTableName() == null || x.getTableName().isEmpty()) {
-                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                                            .tip("table name should not be null or empty: " + x);
+                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                            "table name should not be null or empty: " + x);
                                 }
                                 return DataStoreScanRequest.TableInfo.builder()
                                         .tableName(x.getTableName())
@@ -154,7 +156,9 @@ public class DataStoreController implements DataStoreApi {
                     .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeStringMap())
+                    .columnTypes(recordList.getColumnTypeMap().entrySet().stream()
+                            .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
+                            .collect(Collectors.toList()))
                     .records(recordList.getRecords())
                     .lastKey(recordList.getLastKey())
                     .build()));
@@ -168,11 +172,11 @@ public class DataStoreController implements DataStoreApi {
             return null;
         }
         if (input.getOperator() == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "operator should not be empty. " + input);
         }
         if (input.getOperands() == null || input.getOperands().isEmpty()) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "operands should not be empty. " + input);
         }
 
@@ -180,13 +184,13 @@ public class DataStoreController implements DataStoreApi {
         try {
             operator = TableQueryFilter.Operator.valueOf(input.getOperator());
         } catch (IllegalArgumentException e) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "invalid operator " + input.getOperator() + ". " + input);
         }
         switch (operator) {
             case NOT:
                 if (input.getOperands().size() != 1) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "'NOT' should have only one operand. " + input);
                 }
                 break;
@@ -198,12 +202,12 @@ public class DataStoreController implements DataStoreApi {
             case GREATER:
             case GREATER_EQUAL:
                 if (input.getOperands().size() != 2) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "operator '" + operator + "' should have 2 operands. " + input);
                 }
                 break;
             default:
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "unexpected operator " + operator);
         }
         var ret = TableQueryFilter.builder()
@@ -219,7 +223,7 @@ public class DataStoreController implements DataStoreApi {
             case OR:
                 for (var operand : ret.getOperands()) {
                     if (!(operand instanceof TableQueryFilter)) {
-                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                                 MessageFormat.format("unsupported operand {0} for operator {1}", operand, operator));
                     }
                 }
@@ -233,7 +237,7 @@ public class DataStoreController implements DataStoreApi {
                 for (var operand : ret.getOperands()) {
                     if (operand instanceof TableQueryFilter
                             || (operand == null && operator != TableQueryFilter.Operator.EQUAL)) {
-                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                                 MessageFormat.format("unsupported operand {0} for operator {1}", operand, operator));
                     }
                     if (operand instanceof TableQueryFilter.Column) {
@@ -241,12 +245,12 @@ public class DataStoreController implements DataStoreApi {
                     }
                 }
                 if (!hasColumn) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "operator " + operator + " should have at least one column operand");
                 }
                 break;
             default:
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "unexpected operator " + operator);
         }
         return ret;
@@ -263,21 +267,22 @@ public class DataStoreController implements DataStoreApi {
             return new TableQueryFilter.Column(operand.getColumnName());
         }
         if (operand.getBoolValue() != null) {
-            return new TableQueryFilter.Constant(ColumnType.BOOL, operand.getBoolValue());
+            return new TableQueryFilter.Constant(ColumnTypeScalar.BOOL, operand.getBoolValue());
         }
         if (operand.getIntValue() != null) {
-            return new TableQueryFilter.Constant(ColumnType.INT64, operand.getIntValue());
+            return new TableQueryFilter.Constant(ColumnTypeScalar.INT64, operand.getIntValue());
         }
         if (operand.getFloatValue() != null) {
-            return new TableQueryFilter.Constant(ColumnType.FLOAT64, operand.getFloatValue());
+            return new TableQueryFilter.Constant(ColumnTypeScalar.FLOAT64, operand.getFloatValue());
         }
         if (operand.getStringValue() != null) {
-            return new TableQueryFilter.Constant(ColumnType.STRING, operand.getStringValue());
+            return new TableQueryFilter.Constant(ColumnTypeScalar.STRING, operand.getStringValue());
         }
         if (operand.getBytesValue() != null) {
-            return new TableQueryFilter.Constant(ColumnType.BYTES, ColumnType.BYTES.decode(operand.getBytesValue()));
+            return new TableQueryFilter.Constant(ColumnTypeScalar.BYTES,
+                    ColumnTypeScalar.BYTES.decode(operand.getBytesValue()));
         }
-        return new TableQueryFilter.Constant(ColumnType.UNKNOWN, null);
+        return new TableQueryFilter.Constant(ColumnTypeScalar.UNKNOWN, null);
     }
 
     private static Map<String, String> convertColumns(List<ColumnDesc> columns) {

@@ -180,11 +180,11 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs = [...$rows]
 
-        Object.entries(attrs ?? {}).forEach(([name]) => {
+        attrs?.forEach((attr) => {
             rowWithAttrs.push({
-                key: name,
-                title: name,
-                values: rows.map((data: any) => data.attributes?.[name] ?? '-'),
+                key: attr.name,
+                title: attr.name,
+                values: rows.map((data: any) => data.attributes?.[attr.name] ?? '-'),
                 renderCompare: NumberCompareCell,
             })
         })

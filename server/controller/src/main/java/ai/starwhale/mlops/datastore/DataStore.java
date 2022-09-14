@@ -62,7 +62,7 @@ public class DataStore {
 
     public void update(String tableName,
             TableSchemaDesc schema,
-            List<Map<String, String>> records) {
+            List<Map<String, Object>> records) {
         var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
         table.lock();
         try {
@@ -94,10 +94,12 @@ public class DataStore {
             if (results.isEmpty()) {
                 lastKey = null;
             } else {
-                lastKey = schema.getKeyColumnType().encode(results.get(results.size() - 1).getKey(), req.isRawResult());
+                lastKey = (String) schema.getKeyColumnType().encode(
+                        results.get(results.size() - 1).getKey(),
+                        req.isRawResult());
             }
             var records = results.stream()
-                    .map(r -> this.encodeRecord(columnTypeMap, r.getValues(), req.isRawResult()))
+                    .map(r -> DataStore.encodeRecord(columnTypeMap, r.getValues(), req.isRawResult()))
                     .collect(Collectors.toList());
             return new RecordList(columnTypeMap, records, lastKey);
         } finally {
@@ -224,7 +226,7 @@ public class DataStore {
             }
             var keyColumnType = tables.get(0).schema.getKeyColumnType();
             Object lastKey = null;
-            List<Map<String, String>> ret = new ArrayList<>();
+            List<Map<String, Object>> ret = new ArrayList<>();
             while (!records.isEmpty() && ret.size() < limit) {
                 lastKey = Collections.min(records, (a, b) -> {
                     @SuppressWarnings("rawtypes") var x = (Comparable) a.getKey();
@@ -232,10 +234,11 @@ public class DataStore {
                     //noinspection unchecked
                     return x.compareTo(y);
                 }).getKey();
-                var record = new HashMap<String, String>();
+                var record = new HashMap<String, Object>();
                 for (var r : records) {
                     if (r.getKey().equals(lastKey)) {
-                        record.putAll(this.encodeRecord(r.meta.columnTypeMap, r.getRecord().values, req.isRawResult()));
+                        record.putAll(
+                                DataStore.encodeRecord(r.meta.columnTypeMap, r.getRecord().values, req.isRawResult()));
                         ++r.index;
                     }
                 }
@@ -245,7 +248,7 @@ public class DataStore {
                 ret.add(record);
                 records.removeIf(r -> r.index == r.records.size());
             }
-            return new RecordList(columnTypeMap, ret, keyColumnType.encode(lastKey, false));
+            return new RecordList(columnTypeMap, ret, (String) keyColumnType.encode(lastKey, false));
         } finally {
             for (var table : tablesToLock) {
                 table.unlock();
@@ -273,7 +276,7 @@ public class DataStore {
                     .collect(Collectors.toMap(Function.identity(), Function.identity()));
         } else {
             var ret = new HashMap<String, String>();
-            var invalidColumns = new HashSet(columns.keySet());
+            var invalidColumns = new HashSet<>(columns.keySet());
             for (var columnSchema : schema.getColumnSchemas()) {
                 var columnName = columnSchema.getName();
                 var alias = columns.get(columnName);
@@ -300,10 +303,10 @@ public class DataStore {
         }
     }
 
-    private Map<String, String> encodeRecord(Map<String, ColumnType> columnTypeMap,
+    private static Map<String, Object> encodeRecord(Map<String, ColumnType> columnTypeMap,
             Map<String, Object> values,
             boolean rawResult) {
-        var ret = new HashMap<String, String>();
+        var ret = new HashMap<String, Object>();
         for (var entry : values.entrySet()) {
             var columnName = entry.getKey();
             var columnValue = entry.getValue();

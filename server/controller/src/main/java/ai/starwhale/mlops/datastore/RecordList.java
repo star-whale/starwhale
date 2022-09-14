@@ -18,7 +18,6 @@ package ai.starwhale.mlops.datastore;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -27,11 +26,6 @@ import lombok.Getter;
 public class RecordList {
 
     private Map<String, ColumnType> columnTypeMap;
-    private List<Map<String, String>> records;
+    private List<Map<String, Object>> records;
     private String lastKey;
-
-    public Map<String, String> getColumnTypeStringMap() {
-        return columnTypeMap.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, i -> i.getValue().toString()));
-    }
 }

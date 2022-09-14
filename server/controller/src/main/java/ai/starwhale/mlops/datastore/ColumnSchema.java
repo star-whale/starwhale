@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -27,26 +28,35 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class ColumnSchema {
 
+    private static final Pattern COLUMN_NAME_PATTERN =
+            Pattern.compile("^[\\p{Alnum}-_/: ]*$");
+
     private final String name;
     private final ColumnType type;
     private final int index;
 
     public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
-        if (schema.getName() == null) {
+        this.name = schema.getName();
+        if (this.name == null) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "column name should not be null");
+        }
+        if (!ColumnSchema.COLUMN_NAME_PATTERN.matcher(this.name).matches()) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "invalid column name " + this.name + ". only alphabets, digits, hyphen(-), underscore(_), "
+                            + "slash(/), colon(:), and space are allowed.");
         }
         if (schema.getType() == null) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "column type should not be null");
         }
-        this.name = schema.getName();
         try {
-            this.type = ColumnType.getColumnTypeByName(schema.getType());
+            this.type = ColumnType.fromColumnSchemaDesc(schema);
         } catch (IllegalArgumentException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "invalid column type " + schema.getType());
+                    "invalid column schema: " + e.getMessage() + "\n schema=" + schema);
         }
         this.index = index;
     }
+
 }

@@ -8,10 +8,13 @@ import struct
 import urllib
 import pathlib
 import binascii
+import importlib
 import threading
+from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
 
+import dill
 import numpy as np
 import pyarrow as pa  # type: ignore
 import requests
@@ -54,14 +57,14 @@ def _check_move(src: str, dest: str) -> bool:
             return False
 
 
-class SwType:
-    def __init__(
-        self, name: str, pa_type: pa.DataType, nbits: int, default_value: Any
-    ) -> None:
+class SwType(ABC):
+    def __init__(self, name: str, pa_type: pa.DataType) -> None:
         self.name = name
         self.pa_type = pa_type
-        self.nbits = nbits
-        self.default_value = default_value
+
+    @abstractmethod
+    def merge(self, type: "SwType") -> "SwType":
+        ...
 
     def serialize(self, value: Any) -> Any:
         return value
@@ -69,7 +72,101 @@ class SwType:
     def deserialize(self, value: Any) -> Any:
         return value
 
-    def encode(self, value: Any) -> Optional[str]:
+    @staticmethod
+    def encode_schema(type: "SwType") -> Dict[str, Any]:
+        if isinstance(type, SwScalarType):
+            return {"type": str(type)}
+        if isinstance(type, SwListType):
+            return {
+                "type": "LIST",
+                "elementType": SwType.encode_schema(type.element_type),
+            }
+        if isinstance(type, SwObjectType):
+            ret = {
+                "type": "OBJECT",
+                "attributes": {
+                    k: SwType.encode_schema(v) for k, v in type.attrs.items()
+                },
+            }
+            if type.raw_type is Link:
+                ret["pythonType"] = "LINK"
+            else:
+                ret["pythonType"] = (
+                    type.raw_type.__module__ + "." + type.raw_type.__name__
+                )
+            return ret
+        raise RuntimeError(f"invalid type {type}")
+
+    @staticmethod
+    def decode_schema(schema: Dict[str, Any]) -> "SwType":
+        type_name = schema.get("type", None)
+        if type_name is None:
+            raise RuntimeError("no type in schema")
+        if type_name == "LIST":
+            element_type = schema.get("elementType", None)
+            if element_type is None:
+                raise RuntimeError("no element type found for type LIST")
+            return SwListType(SwType.decode_schema(element_type))
+        if type_name == "OBJECT":
+            raw_type_name = schema.get("pythonType", None)
+            if raw_type_name is None:
+                raise RuntimeError("no python type found for type OBJECT")
+            if raw_type_name == "LINK":
+                raw_type = Link
+            else:
+                parts = raw_type_name.split(".")
+                raw_type = getattr(
+                    importlib.import_module(".".join(parts[:-1])), parts[-1]
+                )
+            attrs = {}
+            attr_schemas = schema.get("attributes", None)
+            if attr_schemas is not None:
+                if not isinstance(attr_schemas, dict):
+                    raise RuntimeError("attributes should be a dict")
+                for k, v in attr_schemas.items():
+                    if not isinstance(k, str):
+                        raise RuntimeError(
+                            f"invalid schema, attributes should use strings as keys, actual {type(k)}"
+                        )
+                    attrs[k] = SwType.decode_schema(v)
+            return SwObjectType(raw_type, attrs)
+        ret = _TYPE_NAME_DICT.get(type_name, None)
+        if ret is None:
+            raise RuntimeError(f"can not determine schema: {type_name}")
+        return ret
+
+    @abstractmethod
+    def encode(self, value: Any) -> Optional[Any]:
+        ...
+
+    @abstractmethod
+    def decode(self, value: Any) -> Any:
+        ...
+
+    @abstractmethod
+    def __str__(self) -> str:
+        ...
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class SwScalarType(SwType):
+    def __init__(
+        self, name: str, pa_type: pa.DataType, nbits: int, default_value: Any
+    ) -> None:
+        super().__init__(name, pa_type)
+        self.nbits = nbits
+        self.default_value = default_value
+
+    def merge(self, type: SwType) -> SwType:
+        if type is UNKNOWN or self is type:
+            return self
+        if self is UNKNOWN:
+            return type
+        raise RuntimeError(f"conflicting type {self} and {type}")
+
+    def encode(self, value: Any) -> Optional[Any]:
         if value is None:
             return None
         if self is UNKNOWN:
@@ -94,7 +191,7 @@ class SwType:
                 return binascii.hexlify(struct.pack(">d", value)).decode()
         raise RuntimeError("invalid type " + str(self))
 
-    def decode(self, value: str) -> Any:
+    def decode(self, value: Any) -> Any:
         if value is None:
             return None
         if self is UNKNOWN:
@@ -123,22 +220,136 @@ class SwType:
         else:
             return self.name.upper()
 
-    __repr__ = __str__
+
+class SwCompositeType(SwType):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, pa.binary())
+
+    def serialize(self, value: Any) -> Any:
+        return dill.dumps(value)
+
+    def deserialize(self, value: Any) -> Any:
+        return dill.loads(value)
 
 
-UNKNOWN = SwType("unknown", None, 1, None)
-INT8 = SwType("int", pa.int8(), 8, 0)
-INT16 = SwType("int", pa.int16(), 16, 0)
-INT32 = SwType("int", pa.int32(), 32, 0)
-INT64 = SwType("int", pa.int64(), 64, 0)
-FLOAT16 = SwType("float", pa.float16(), 16, 0.0)
-FLOAT32 = SwType("float", pa.float32(), 32, 0.0)
-FLOAT64 = SwType("float", pa.float64(), 64, 0.0)
-BOOL = SwType("bool", pa.bool_(), 1, 0)
-STRING = SwType("string", pa.string(), 32, "")
-BYTES = SwType("bytes", pa.binary(), 32, b"")
+class SwListType(SwCompositeType):
+    def __init__(self, element_type: SwType) -> None:
+        super().__init__("list")
+        self.element_type = element_type
 
-_TYPE_DICT: Dict[Any, SwType] = {
+    def merge(self, type: SwType) -> SwType:
+        if isinstance(type, SwListType):
+            t = self.element_type.merge(type.element_type)
+            if t is self.element_type:
+                return self
+            if t is type.element_type:
+                return type
+            return SwListType(t)
+        raise RuntimeError(f"conflicting type {self} and {type}")
+
+    def encode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [self.element_type.encode(element) for element in value]
+        raise RuntimeError(f"value should be a list: {value}")
+
+    def decode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [self.element_type.decode(element) for element in value]
+        raise RuntimeError(f"value should be a list: {value}")
+
+    def __str__(self) -> str:
+        return f"[{self.element_type}]"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, SwListType):
+            return self.element_type == other.element_type
+        return False
+
+
+class SwObjectType(SwCompositeType):
+    def __init__(self, raw_type: Type, attrs: Dict[str, SwType]) -> None:
+        super().__init__("object")
+        self.raw_type = raw_type
+        self.attrs = attrs
+
+    def merge(self, type: SwType) -> SwType:
+        if isinstance(type, SwObjectType) and self.raw_type is type.raw_type:
+            new_attrs: Dict[str, SwType] = {}
+            for attr_name, attr_type in self.attrs.items():
+                t = type.attrs.get(attr_name, None)
+                if t is not None:
+                    new_type = attr_type.merge(t)
+                    if new_type is not attr_type:
+                        new_attrs[attr_name] = new_type
+            for attr_name, attr_type in type.attrs.items():
+                if attr_name not in self.attrs:
+                    new_attrs[attr_name] = attr_type
+            if len(new_attrs) == 0:
+                return self
+            attrs = dict(self.attrs)
+            attrs.update(new_attrs)
+            return SwObjectType(self.raw_type, attrs)
+        raise RuntimeError(f"conflicting type {str(self)} and {str(type)}")
+
+    def encode(self, value: Any) -> Optional[Any]:
+        if value is None:
+            return None
+        if isinstance(value, self.raw_type):
+            ret: Dict[str, Any] = {}
+            for k, v in value.__dict__.items():
+                type = self.attrs.get(k, None)
+                if type is None:
+                    raise RuntimeError(f"invalid attribute {k}")
+                ret[k] = type.encode(v)
+            return ret
+        raise RuntimeError(
+            f"value should be of type {self.raw_type.__name__}, but is {value}"
+        )
+
+    def decode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            ret = self.raw_type()
+            for k, v in value.items():
+                type = self.attrs.get(k, None)
+                if type is None:
+                    raise RuntimeError(f"invalid attribute {k}")
+                ret.__dict__[k] = type.decode(v)
+            return ret
+        raise RuntimeError(f"value should be a dict: {value}")
+
+    def __str__(self) -> str:
+        return (
+            self.raw_type.__name__
+            + "{"
+            + ",".join([f"{k}:{v}" for k, v in self.attrs.items()])
+            + "}"
+        )
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, SwObjectType):
+            return self.attrs == other.attrs
+        return False
+
+
+UNKNOWN = SwScalarType("unknown", None, 1, None)
+INT8 = SwScalarType("int", pa.int8(), 8, 0)
+INT16 = SwScalarType("int", pa.int16(), 16, 0)
+INT32 = SwScalarType("int", pa.int32(), 32, 0)
+INT64 = SwScalarType("int", pa.int64(), 64, 0)
+FLOAT16 = SwScalarType("float", pa.float16(), 16, 0.0)
+FLOAT32 = SwScalarType("float", pa.float32(), 32, 0.0)
+FLOAT64 = SwScalarType("float", pa.float64(), 64, 0.0)
+BOOL = SwScalarType("bool", pa.bool_(), 1, 0)
+STRING = SwScalarType("string", pa.string(), 32, "")
+BYTES = SwScalarType("bytes", pa.binary(), 32, b"")
+
+_TYPE_DICT: Dict[Any, SwScalarType] = {
     type(None): UNKNOWN,
     np.byte: INT8,
     np.int8: INT8,
@@ -158,21 +369,44 @@ _TYPE_DICT: Dict[Any, SwType] = {
 
 _TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
 
-_ID_CUSTOM_TYPE_DICT: Dict[str, Type[Any]] = {}
 
-_CUSTOM_TYPE_ID_DICT: Dict[Type[Any], str] = {}
+def _get_type(obj: Any) -> SwType:
+    if isinstance(obj, list):
+        element_type: SwType = UNKNOWN
+        for element in obj:
+            element_type = element_type.merge(_get_type(element))
+        return SwListType(element_type)
+    if isinstance(obj, SwObject):
+        attrs = {}
+        for k, v in obj.__dict__.items():
+            attrs[k] = _get_type(v)
+        return SwObjectType(type(obj), attrs)
+    ret = _TYPE_DICT.get(type(obj), None)
+    if ret is None:
+        raise RuntimeError(f"unsupported type {type(obj)}")
+    return ret
 
 
-def _get_type(obj: Any) -> Optional[SwType]:
-    return _TYPE_DICT.get(type(obj), None)
+class SwObject:
+    def __str__(self) -> str:
+        return json.dumps(self._to_dict())
+
+    def __eq__(self, other: Any) -> bool:
+        return type(other) is type(self) and self.__dict__ == other.__dict__
+
+    def _to_dict(self) -> Dict[str, Any]:
+        ret: Dict[str, Any] = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, SwObject):
+                ret[k] = v._to_dict()
+            elif isinstance(v, bytes):
+                ret[k] = BYTES.encode(v)
+            else:
+                ret[k] = v
+        return ret
 
 
-def register_custom_type(id: str, type: Type[Any]) -> None:
-    _ID_CUSTOM_TYPE_DICT[id] = type
-    _CUSTOM_TYPE_ID_DICT[type] = id
-
-
-class Link:
+class Link(SwObject):
     def __init__(
         self,
         uri: Optional[str] = None,
@@ -182,26 +416,6 @@ class Link:
         self.uri = uri
         self.display_text = display_text
         self.mime_type = mime_type
-
-    def __str__(self) -> str:
-        return json.dumps(
-            {
-                "uri": self.uri,
-                "display_text": self.display_text,
-                "mime_type": self.mime_type,
-            }
-        )
-
-    def __eq__(self, other: Any) -> bool:
-        return (
-            isinstance(other, Link)
-            and self.uri == other.uri
-            and self.display_text == other.display_text
-            and self.mime_type == other.mime_type
-        )
-
-
-register_custom_type("link", Link)
 
 
 class ColumnSchema:
@@ -213,7 +427,7 @@ class ColumnSchema:
         return (
             isinstance(other, ColumnSchema)
             and self.name == other.name
-            and self.type is other.type
+            and self.type == other.type
         )
 
 
@@ -241,25 +455,13 @@ class TableSchema:
         new_schema = {}
         for col in other.columns.values():
             column_schema = self.columns.get(col.name, None)
-            if (
-                column_schema is not None
-                and column_schema.type is not UNKNOWN
-                and col.type is not UNKNOWN
-                and col.type is not column_schema.type
-                and col.type.name != column_schema.type.name
-            ):
-                raise RuntimeError(
-                    f"conflicting column type, name {col.name}, expected {column_schema.type}, actual {col.type}"
-                )
-            if (
-                column_schema is None
-                or column_schema.type is UNKNOWN
-                or (
-                    col.type is not UNKNOWN
-                    and col.type.nbits > column_schema.type.nbits
-                )
-            ):
+            if column_schema is None:
                 new_schema[col.name] = col
+            else:
+                try:
+                    column_schema.type = column_schema.type.merge(col.type)
+                except RuntimeError as e:
+                    raise RuntimeError(f"can not update column {col.name}") from e
         self.columns.update(new_schema)
 
     @staticmethod
@@ -268,19 +470,21 @@ class TableSchema:
         return TableSchema(
             d["key"],
             [
-                ColumnSchema(col["name"], _TYPE_NAME_DICT[col["type"]])
+                ColumnSchema(col["name"], SwType.decode_schema(col))
                 for col in d["columns"]
             ],
         )
 
     def __str__(self) -> str:
+        columns = []
+        for col in self.columns.values():
+            d = SwType.encode_schema(col.type)
+            d["name"] = col.name
+            columns.append(d)
         return json.dumps(
             {
                 "key": self.key_column,
-                "columns": [
-                    {"name": col.name, "type": str(col.type)}
-                    for col in self.columns.values()
-                ],
+                "columns": columns,
             }
         )
 
@@ -544,49 +748,18 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
     new_schema = schema.copy()
     for col, value in record.items():
         value_type = _get_type(value)
-        if value_type is None:
-            raise RuntimeError(f"unsupported type {type(value)} for field {col}")
         column_schema = schema.columns.get(col, None)
-        if (
-            column_schema is not None
-            and column_schema.type is not UNKNOWN
-            and value_type is not UNKNOWN
-            and value_type is not column_schema.type
-            and value_type.name != column_schema.type.name
-        ):
-            raise RuntimeError(
-                f"can not insert a record with field {col} of type {value_type}, {column_schema.type} expected"
-            )
         if column_schema is None:
             new_schema.columns[col] = ColumnSchema(col, value_type)
-        elif column_schema.type is UNKNOWN:
-            new_schema.columns[col].type = value_type
-        elif value_type is not UNKNOWN and value_type.nbits > column_schema.type.nbits:
-            new_schema.columns[col].type = value_type
+        else:
+            try:
+                new_schema.columns[col].type = new_schema.columns[col].type.merge(
+                    value_type
+                )
+            except RuntimeError as e:
+                raise RuntimeError(f"can not insert a record with field {col}") from e
+
     return new_schema
-
-
-def _set_value(key: str, parent: Dict[str, Any], value: Any) -> None:
-    colon_index = key.find(":")
-    if colon_index < 0:
-        parent[key] = value
-    else:
-        slash_index = key.find("/", colon_index)
-        if slash_index < 0:
-            slash_index = len(key)
-        col = key[:colon_index]
-        type_id = key[colon_index + 1 : slash_index]
-        obj = parent.get(col, None)
-        if obj is None:
-            type = _ID_CUSTOM_TYPE_DICT.get(type_id, dict)
-            obj = type()
-            parent[col] = obj
-        if slash_index < len(key):
-            if not isinstance(obj, dict):
-                obj_dict = obj.__dict__
-            else:
-                obj_dict = obj
-            _set_value(key[slash_index + 1 :], obj_dict, value)
 
 
 class MemoryTable:
@@ -595,7 +768,6 @@ class MemoryTable:
         self.schema = schema.copy()
         self.records: Dict[Any, Dict[str, Any]] = {}
         self.deletes: Set[Any] = set()
-        self.nbytes = 0
         self.lock = threading.Lock()
 
     def get_schema(self) -> TableSchema:
@@ -637,21 +809,14 @@ class MemoryTable:
             self.schema = _update_schema(self.schema, record)
             key = record.get(self.schema.key_column)
             r = self.records.setdefault(key, record)
-            if r is record:
-                self.nbytes += _get_size(record)
-            else:
-                self.nbytes -= _get_size(r)
+            if r is not record:
                 r.update(record)
-                self.nbytes += _get_size(r)
 
     def delete(self, keys: List[Any]) -> None:
         with self.lock:
             for key in keys:
                 self.deletes.add(key)
-                self.nbytes += _get_size(key)
-                r = self.records.pop(key, None)
-                if r is not None:
-                    self.nbytes -= _get_size(r)
+                self.records.pop(key, None)
 
     def dump(self, root_path: str) -> None:
         with self.lock:
@@ -891,7 +1056,7 @@ class LocalDataStore:
             r: Dict[str, Any] = {}
             for k, v in record.items():
                 if k != "*":
-                    _set_value(k, r, v)
+                    r[k] = v
             yield r
 
     def dump(self) -> None:
@@ -918,14 +1083,15 @@ class RemoteDataStore:
         records: List[Dict[str, Any]],
     ) -> None:
         data: Dict[str, Any] = {"tableName": table_name}
-        schema_data: Dict[str, Any] = {
+        column_schemas = []
+        for col in schema.columns.values():
+            d = SwType.encode_schema(col.type)
+            d["name"] = col.name
+            column_schemas.append(d)
+        data["tableSchemaDesc"] = {
             "keyColumn": schema.key_column,
-            "columnSchemaList": [
-                {"name": col.name, "type": str(col.type)}
-                for col in schema.columns.values()
-            ],
+            "columnSchemaList": column_schemas,
         }
-        data["tableSchemaDesc"] = schema_data
         if records is not None:
             encoded: List[Dict[str, List[Dict[str, Optional[str]]]]] = []
             for record in records:
@@ -980,7 +1146,6 @@ class RemoteDataStore:
     ) -> Iterator[Dict[str, Any]]:
         post_data: Dict[str, Any] = {"tables": [table.to_dict() for table in tables]}
         key_type = _get_type(start)
-        assert key_type is not None
         if end is not None:
             post_data["end"] = key_type.encode(end)
         if start is not None:
@@ -994,11 +1159,11 @@ class RemoteDataStore:
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break
-            if "columnTypes" not in resp_json:
+            column_types_list = resp_json.get("columnTypes", None)
+            if column_types_list is None:
                 raise RuntimeError("no column types in response")
             column_types = {
-                col: _TYPE_NAME_DICT[type]
-                for col, type in resp_json["columnTypes"].items()
+                col["name"]: SwType.decode_schema(col) for col in column_types_list
             }
             for record in records:
                 r: Dict[str, Any] = {}
@@ -1008,8 +1173,7 @@ class RemoteDataStore:
                         raise RuntimeError(
                             f"unknown type for column {k}, record={record}"
                         )
-                    value = col_type.decode(v)
-                    _set_value(k, r, value)
+                    r[k] = col_type.decode(v)
                 yield r
             if len(records) == 1000:
                 post_data["start"] = resp_json["lastKey"]
@@ -1060,11 +1224,7 @@ def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
             if isinstance(v, dict):
                 _new(k + "/", v, dest)
             else:
-                type_id = _CUSTOM_TYPE_ID_DICT.get(type(v), None)
-                if type_id is not None:
-                    _new(f"{k}:{type_id}/", v.__dict__, dest)
-                else:
-                    dest[k] = v
+                dest[k] = v
 
     ret: Dict[str, Any] = {}
     _new("", record, ret)

@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.datastore.RecordValueDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -90,8 +91,8 @@ public class IndexWriter {
 
     private TableSchemaDesc toSchema(Map<String, ColumnType> tableSchemaMap) {
         List<ColumnSchemaDesc> columnSchemaDescs = tableSchemaMap.entrySet().stream()
-                .map(entry -> new ColumnSchemaDesc(entry.getKey(), entry.getValue().toString())).collect(
-                        Collectors.toList());
+                .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
+                .collect(Collectors.toList());
         return new TableSchemaDesc("id", columnSchemaDescs);
     }
 
@@ -112,13 +113,13 @@ public class IndexWriter {
             String key = entry.getKey();
             Object value = entry.getValue();
             if (value instanceof Long || value instanceof Integer || value instanceof Byte) {
-                ret.put(key, ColumnType.INT64);
+                ret.put(key, ColumnTypeScalar.INT64);
             } else if (value instanceof String) {
-                ret.put(key, ColumnType.STRING);
+                ret.put(key, ColumnTypeScalar.STRING);
             } else if (value instanceof Float || value instanceof Double) {
-                ret.put(key, ColumnType.FLOAT64);
+                ret.put(key, ColumnTypeScalar.FLOAT64);
             } else {
-                ret.put(key, ColumnType.UNKNOWN);
+                ret.put(key, ColumnTypeScalar.UNKNOWN);
             }
         });
         return ret;

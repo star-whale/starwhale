@@ -144,27 +144,27 @@ export default function EvaluationListCard() {
 
         if (!summaryTable?.data) return columnsWithAttrs
 
-        Object.entries(summaryTable?.data?.columnTypes ?? {}).forEach(([name, type]) => {
-            if (name === 'id') return
-            switch (type) {
+        summaryTable?.data?.columnTypes?.forEach((column) => {
+            if (column.name === 'id') return
+            switch (column.type) {
                 case 'UNKNOWN':
                 case 'BYTES':
                     break
                 case 'STRING':
                     columnsWithAttrs.push(
                         StringColumn({
-                            key: name,
-                            title: name,
+                            key: column.name,
+                            title: column.name,
                             filterType: 'string',
-                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? '-',
+                            mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? '-',
                         })
                     )
                     break
                 default:
                     columnsWithAttrs.push(
                         CustomColumn({
-                            key: name,
-                            title: name,
+                            key: column.name,
+                            title: column.name,
                             sortable: true,
                             filterType: 'number',
                             sortFn: (a: any, b: any) => {
@@ -181,7 +181,7 @@ export default function EvaluationListCard() {
                                 if (props?.value === undefined) return '-'
                                 return <p title={props?.value}>{parseDecimal(props?.value, 4)}</p>
                             },
-                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? undefined,
+                            mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? undefined,
                         })
                     )
                     break
