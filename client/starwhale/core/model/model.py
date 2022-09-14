@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import typing as t
 from abc import ABCMeta
 from pathlib import Path
@@ -268,17 +267,21 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             else:
                 _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
 
-            _status = (
-                STATUS.SUCCESS
-                if all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
-                else STATUS.FAILED
-            )
-
             logger.debug(f"job execute info:{_step_results}")
+            _status = STATUS.SUCCESS
+
+            exceptions: t.List[Exception] = []
+            for _sr in _step_results:
+                for _tr in _sr.task_results:
+                    if _tr.exception:
+                        exceptions.append(_tr.exception)
+            if exceptions:
+                raise Exception(*exceptions)
         except Exception as e:
             logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
+            raise
         finally:
             _manifest.update(
                 {
@@ -300,8 +303,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print(
                 f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
-            if _status != STATUS.SUCCESS:
-                sys.exit(-1)
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
