@@ -31,7 +31,6 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +62,7 @@ public class RuntimeManagerTest {
         var res = manager.findVersionByAliasAndBundleId("v1", 1L);
         assertThat(res, allOf(
                 notNullValue(),
-                isA(SwModelPackageVersionEntity.class),
+                isA(RuntimeVersionEntity.class),
                 hasProperty("id", is(1L)),
                 hasProperty("versionName", is("runtime1"))
         ));
