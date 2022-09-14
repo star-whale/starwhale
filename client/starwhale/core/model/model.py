@@ -268,13 +268,16 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             else:
                 _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
 
-            _status = (
-                STATUS.SUCCESS
-                if all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
-                else STATUS.FAILED
-            )
-
             logger.debug(f"job execute info:{_step_results}")
+            _status = STATUS.SUCCESS
+
+            exceptions: t.List[Exception] = []
+            for _sr in _step_results:
+                for _tr in _sr.task_results:
+                    if _tr.exception:
+                        exceptions.append(_tr.exception)
+            if exceptions:
+                raise Exception(*exceptions)
         except Exception as e:
             logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
