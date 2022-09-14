@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react'
 import Color from 'color'
+import WaveformData from 'waveform-data'
+import { IBBox } from '@/domain/dataset/sdk'
 
-export const COLORS = [
+export const RAW_COLORS = [
     '#df672a',
     '#c1433c',
     '#3d9e3e',
@@ -11,7 +13,8 @@ export const COLORS = [
     '#ad825c',
     '#c66b9e',
     '#a7b756',
-].map((c) => Color(c).rgb().array() as [number, number, number])
+]
+export const COLORS = RAW_COLORS.map((c) => Color(c).rgb().array() as [number, number, number])
 
 export const loadImage = (label: any, url: string) => {
     const src = url.startsWith('http') || url.startsWith('data:image') ? url : `data:image/png;base64,${url}`
@@ -82,6 +85,31 @@ export const drawSegment = (canvas: HTMLCanvasElement, imgDatas: IImageData[], r
     return newImageData
 }
 
+export const drawSegmentWithCOCOMask = (canvas: HTMLCanvasElement, imgDatas: IImageData[]) => {
+    const ctx = canvas.getContext('2d')
+    const newImageData = new ImageData(canvas.width, canvas.height)
+
+    for (let i = 0; i < newImageData.data.length; i += 4) {
+        const rawIndex = imgDatas.findIndex((v) => v.img.data[i + 0] > 0)
+        // eslint-disable-next-line no-continue
+        if (rawIndex < 0) {
+            newImageData.data[i] = 0
+            newImageData.data[i + 1] = 0
+            newImageData.data[i + 2] = 0
+            newImageData.data[i + 3] = 200
+            continue
+        }
+        const label = imgDatas[rawIndex].img.data[i + 0]
+        const [r, g, b, a = 255] = COLORS[label % COLORS.length]
+        newImageData.data[i] = r
+        newImageData.data[i + 1] = g
+        newImageData.data[i + 2] = b
+        newImageData.data[i + 3] = 240
+    }
+    ctx?.putImageData(newImageData, 0, 0)
+    return newImageData
+}
+
 export const drawGrayscale = async (
     canvas: HTMLCanvasElement,
     src: string,
@@ -139,4 +167,54 @@ export async function resizeImageData(imageData: ImageData, width: number, heigh
         return ctx.getImageData(0, 0, resizeWidth, resizeHeight)
     }
     return new ImageData(0, 0)
+}
+
+export function drawAudioWaveform(canvas: HTMLCanvasElement, waveform: any) {
+    const scaleY = (amplitude: number, height: number) => {
+        const range = 256
+        const offset = 128
+
+        return height - ((amplitude + offset) * height) / range
+    }
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.beginPath()
+
+    const channel = waveform.channel(0)
+
+    // Loop forwards, drawing the upper half of the waveform
+    for (let x = 0; x < waveform.length; x++) {
+        const val = channel.max_sample(x)
+
+        ctx.lineTo(x + 0.5, scaleY(val, canvas.height) + 0.5)
+    }
+
+    // Loop backwards, drawing the lower half of the waveform
+    for (let x = waveform.length - 1; x >= 0; x--) {
+        const val = channel.min_sample(x)
+
+        ctx.lineTo(x + 0.5, scaleY(val, canvas.height) + 0.5)
+    }
+
+    ctx.closePath()
+    ctx.stroke()
+    ctx.fill()
+}
+
+export function drawBox(canvas: HTMLCanvasElement, bbox: IBBox, id: number) {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const [x, y, w, h] = bbox
+    const color = COLORS[id % COLORS.length]
+    const lineWidth = 3
+    ctx.lineWidth = lineWidth
+    ctx.strokeStyle = `rgba(${[...color, 1].join(',')})`
+    ctx.strokeRect(x, y, w, h)
+    ctx.fillStyle = `rgba(${[...color, 0.5].join(',')})`
+    ctx.fillRect(x, y, w, h)
+
+    // ctx.fillStyle = 'white'
+    // ctx.fillText(text, x + labelPad + labelShift, y - labelPad)
 }

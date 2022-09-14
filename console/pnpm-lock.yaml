@@ -168,6 +168,7 @@ specifiers:
   vite-plugin-mpa: ^1.1.4
   vite-plugin-multi-pages: ^0.0.8
   vite-plugin-svgr: ^2.2.1
+  waveform-data: ^4.3.0
   web-vitals: ^1.0.1
   webpack: '>=4.43.0 <6.0.0'
   xterm: ^4.14.1
@@ -276,6 +277,7 @@ dependencies:
   vite: 3.0.4_sass@1.54.3
   vite-plugin-multi-pages: 0.0.8
   vite-plugin-svgr: 2.2.1_vite@3.0.4
+  waveform-data: 4.3.0
   web-vitals: 1.1.2
   xterm: 4.19.0
   xterm-addon-fit: 0.5.0_xterm@4.19.0
@@ -23079,6 +23081,10 @@ packages:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.10
     dev: true
+
+  /waveform-data/4.3.0:
+    resolution: {integrity: sha512-gddZgTV1dM8Mfaqn+mCJjwTAc7O/GbX2LgOrijRCHEGC60ZVdd/qTzrgEcCE5MfBoBPgwQ85huy1icSf5IZY5Q==}
+    dev: false
 
   /wbuf/1.7.3:
     resolution: {integrity: sha512-O84QOnr0icsbFGLS0O3bI5FswxzRr8/gHwWkDlQFskhSPryQXvrTMxjxGP4+iWYoauLoBvfDpkrOauZ+0iZpDA==}

@@ -18,8 +18,20 @@ import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { DatasetObject } from '@/domain/dataset/sdk'
 
 const useCardStyles = createUseStyles({
+    wrapper: {
+        flex: 1,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    icon: {
+        position: 'absolute',
+        top: '-60px',
+        right: 0,
+    },
     card: {
         'flexBasis': '161px',
         'width': '161px',
@@ -157,50 +169,66 @@ export default function DatasetVersionFiles() {
     const [layoutKey, setLayoutKey] = React.useState('1')
     const [isFullscreen, setIsFullscreen] = React.useState(false)
 
-    const Records = React.useMemo(() => {
-        if (fileId || !tables.data) return <></>
-        const { records = [] } = tables.data
-
-        const rowAction = {
-            data: (row: any) => {
-                const src = tableDataLink(
+    const datasets = React.useMemo(
+        () =>
+            tables?.data?.records?.map((record, index) => {
+                const dObj = new DatasetObject(record, columnTypes)
+                dObj.setDataSrc(
                     projectId,
                     datasetVersion?.name as string,
                     datasetVersion?.versionName as string,
-                    {
-                        uri: row.data_uri,
-                        authName: row.auth_name,
-                        offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
-                        size: Typer[columnTypes.data_size]?.encode(row.data_size),
-                        Authorization: token as string,
-                    }
+                    token as string
                 )
+                return dObj ?? []
+            }) ?? [],
+        [tables?.data, columnTypes]
+    )
 
-                return (
-                    <Button
-                        as='link'
-                        onClick={() => {
-                            setIsFullscreen(false)
-                            history.push(
-                                `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
-                            )
-                        }}
-                    >
-                        <DatasetViewer
-                            data={{
-                                type: row?.data_mime_type,
-                                label: row?.label,
-                                name: row?.auth_name,
-                                src,
+    const Records = React.useMemo(() => {
+        if (fileId || !tables.data) return <></>
+        const { summary = {} } = datasets?.[0] ?? {}
+        const { records = [] } = tables.data
+
+        const rowAction = [
+            {
+                label: 'data',
+                overrides: {
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                            paddingTop: '4px',
+                            paddingBottom: '4px',
+                            position: 'relative',
+                            height: '60px',
+                        },
+                    },
+                },
+                renderItem: (row: any) => {
+                    return (
+                        <Button
+                            as='link'
+                            onClick={() => {
+                                setIsFullscreen(false)
+                                history.push(
+                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                )
                             }}
-                        />
-                    </Button>
-                )
+                        >
+                            <DatasetViewer data={row} />
+                        </Button>
+                    )
+                },
             },
-            label: (row: any) => row.label,
-            size: (row: any) => getReadableStorageQuantityStr(row.data_size),
-            name: (row: any) => row.auth_name,
-        }
+            {
+                label: 'size',
+                renderItem: (row: any) =>
+                    isNaN(Number(row.size)) ? '-' : getReadableStorageQuantityStr(Number(row.size)),
+            },
+            ...Object.entries(summary).map(([key, value]) => ({
+                label: key,
+                renderItem: (row: any) => row?.summary?.[key],
+            })),
+        ]
 
         if (layoutKey === '0') {
             return (
@@ -212,12 +240,12 @@ export default function DatasetVersionFiles() {
                         placeItems: 'center',
                     }}
                 >
-                    {records.map((row, index) => {
+                    {datasets.map((row, index) => {
                         return (
                             <div className={styles.card} key={index}>
-                                <div className={styles.cardImg}>{rowAction.data(row)}</div>
-                                <div className={styles.cardLabel}>label: {rowAction.label(row)}</div>
-                                <div className={styles.cardSize}>{rowAction.size(row)}</div>
+                                <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
+                                {/* <div className={styles.cardLabel}>label: {rowAction.label(row)}</div> */}
+                                <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
                                 <div
                                     className={styles.cardFullscreen}
                                     role='button'
@@ -240,7 +268,7 @@ export default function DatasetVersionFiles() {
 
         return (
             <TableBuilder
-                data={records}
+                data={datasets}
                 overrides={{
                     Root: { style: { maxHeight: '50vh' } },
                     TableBodyRow: {
@@ -279,31 +307,20 @@ export default function DatasetVersionFiles() {
                     // ...overrides,
                 }}
             >
-                <TableBuilderColumn
-                    header='Data'
-                    overrides={{
-                        TableBodyCell: {
-                            style: {
-                                verticalAlign: 'middle',
-                                paddingTop: '4px',
-                                paddingBottom: '4px',
-                                position: 'relative',
-                                height: '60px',
-                            },
-                        },
-                    }}
-                >
-                    {rowAction.data}
-                </TableBuilderColumn>
-                <TableBuilderColumn header='Label'>{rowAction.label}</TableBuilderColumn>
-                <TableBuilderColumn header='Size'>{rowAction.size}</TableBuilderColumn>
-                <TableBuilderColumn header='Name'>{rowAction.name}</TableBuilderColumn>
+                {rowAction.map((row) => {
+                    return (
+                        <TableBuilderColumn header={row.label} overrides={row?.overrides ?? {}}>
+                            {row.renderItem}
+                        </TableBuilderColumn>
+                    )
+                })}
             </TableBuilder>
         )
     }, [
         layoutKey,
         fileId,
         tables.data,
+        datasets,
         styles,
         columnTypes,
         datasetVersion,
@@ -315,8 +332,8 @@ export default function DatasetVersionFiles() {
     ])
 
     return (
-        <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '-60px', right: 0 }}>
+        <div className={styles.wrapper}>
+            <div className={styles.icon}>
                 <LayoutControl
                     value={layoutKey}
                     onChange={(key) => {
@@ -370,7 +387,7 @@ export default function DatasetVersionFiles() {
                     />
                 </div>
             )}
-            {fileId && <DatasetVersionFilePreview api={tables} fileId={fileId} fullscreen={isFullscreen} />}
+            {fileId && <DatasetVersionFilePreview datasets={datasets} fileId={fileId} fullscreen={isFullscreen} />}
         </div>
     )
 }

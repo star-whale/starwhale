@@ -12,11 +12,16 @@ import { createUseStyles } from 'react-jss'
 import { headerHeight } from '@/consts'
 import useTranslation from '../../hooks/useTranslation'
 import IconFont from '../../components/IconFont/index'
+import { DatasetObject } from '../../domain/dataset/sdk'
+import { COLORS } from '@/components/Viewer/utils'
+import { RAW_COLORS } from '../../components/Viewer/utils'
 
-const useCardStyles = createUseStyles({
+const useStyles = createUseStyles({
     cardImg: {
         'position': 'relative',
         'flex': 1,
+        'display': 'grid',
+        'placeContent': 'center',
         '&:hover $cardFullscreen': {
             display: 'grid',
         },
@@ -41,6 +46,8 @@ const useCardStyles = createUseStyles({
     layoutNormal: {
         flex: 1,
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
     },
     layoutFullscreen: {
         position: 'fixed',
@@ -55,15 +62,61 @@ const useCardStyles = createUseStyles({
         paddingLeft: '24px',
         display: 'flex',
         alignItems: 'center',
+        borderBottom: '1px solid #E2E7F0',
+    },
+    wrapper: {
+        minHeight: '500px',
+        height: '100%',
+        borderRadius: '4px',
+        // border: '1px solid #E2E7F0',
+        display: 'flex',
+    },
+    card: {
+        'position': 'relative',
+        'flex': 1,
+        'display': 'grid',
+        'placeContent': 'center',
+        '&:hover $cardFullscreen': {
+            display: 'grid',
+        },
+    },
+    panel: {
+        flexBasis: '320px',
+        padding: '20px',
+        borderRight: '1px solid #EEF1F6',
+    },
+    summary: { display: 'flex', gap: '12px' },
+    summaryLabel: {
+        lineHeight: '24px',
+        borderRadius: '4px',
+        color: 'rgba(2,16,43,0.60)',
+    },
+    summaryValue: {},
+    cocoAnnotation: {
+        height: '32px',
+        lineHeight: '32px',
+        color: 'rgba(2,16,43,0.40)',
+        display: 'flex',
+        borderBottom: '1px solid #EEF1F6',
+        paddingLeft: '8px',
+        gap: '8px',
+        alignItems: 'center',
+    },
+    cocoAnnotationShow: {
+        marginLeft: 'auto',
+    },
+    cocoAnnotationColor: {
+        width: '10px',
+        height: '10px',
     },
 })
 
 export default function DatasetVersionFilePreview({
-    api,
+    datasets,
     fileId,
     fullscreen = false,
 }: {
-    api: ReturnType<typeof useQueryDatasetList>
+    datasets: DatasetObject[]
     fileId: string
     fullscreen?: boolean
 }) {
@@ -76,30 +129,37 @@ export default function DatasetVersionFilePreview({
     const { token } = useAuth()
 
     const columnTypes = React.useMemo(() => {
-        return api.data?.columnTypes ?? {}
-    }, [api.data])
+        return datasets?.[0]?.columnTypes ?? {}
+    }, [datasets])
 
-    const preview: any = React.useMemo(() => {
-        const row = api.data?.records?.find((v) => v.id === fileId)
+    const data: any = React.useMemo(() => {
+        const row = datasets?.find((v) => v.id === fileId)
         if (!row) return
-        const src = tableDataLink(projectId, datasetVersion?.name as string, datasetVersion?.versionName as string, {
-            uri: row.data_uri,
-            authName: row.auth_name,
-            offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
-            size: Typer[columnTypes.data_size]?.encode(row.data_size),
-            Authorization: token as string,
-        })
-        // eslint-disable-next-line consistent-return
-        return {
-            ...row,
-            src,
-        }
-    }, [api, datasetVersion, projectId, token, fileId, columnTypes])
+        return row
+    }, [datasets, datasetVersion, projectId, token, fileId, columnTypes])
 
-    const [activeKey, setActiveKey] = React.useState('1')
-    const styles = useCardStyles()
+    const styles = useStyles()
     const [t] = useTranslation()
     const [isFullscreen, setIsFullscreen] = React.useState(fullscreen)
+    const [activeKey, setActiveKey] = React.useState('1')
+    const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
+
+    const Panel = React.useMemo(() => {
+        if (data?.cocos.length > 0) {
+            return (
+                <TabControl
+                    value={activeKey}
+                    onChange={setActiveKey}
+                    data={data}
+                    hiddenLabels={hiddenLabels}
+                    setHiddenLabels={setHiddenLabels}
+                />
+            )
+        }
+        return <Summary data={data?.summary ?? {}} />
+    }, [data, activeKey, setHiddenLabels, hiddenLabels])
+
+    console.log(hiddenLabels)
 
     return (
         <div className={isFullscreen ? styles.layoutFullscreen : styles.layoutNormal}>
@@ -114,18 +174,9 @@ export default function DatasetVersionFilePreview({
                     </Button>
                 </div>
             )}
-            <div
-                style={{
-                    minHeight: '500px',
-                    height: '100%',
-                    borderRadius: '4px',
-                    border: '1px solid #E2E7F0',
-                    display: 'flex',
-                }}
-            >
-                {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
-                <TabControl value={activeKey} onChange={setActiveKey} preview={preview} />
-                <div className={styles.cardImg}>
+            <div className={styles.wrapper}>
+                <div className={styles.panel}>{Panel}</div>
+                <div className={styles.card}>
                     <div
                         role='button'
                         tabIndex={0}
@@ -134,15 +185,7 @@ export default function DatasetVersionFilePreview({
                     >
                         <IconFont type='fullscreen' />
                     </div>
-                    <DatasetViewer
-                        data={{
-                            type: preview?.data_mime_type,
-                            label: preview?.label,
-                            name: preview?.auth_name,
-                            src: preview?.src,
-                        }}
-                        isZoom
-                    />
+                    <DatasetViewer data={data} isZoom hiddenLabels={hiddenLabels} />
                 </div>
             </div>
         </div>
@@ -152,79 +195,138 @@ export default function DatasetVersionFilePreview({
 function TabControl({
     value,
     onChange = () => {},
-    preview,
+    hiddenLabels,
+    setHiddenLabels,
+    data,
 }: {
     value: string
     onChange: (str: string) => void
-    preview: any
+    hiddenLabels: Set<number>
+    setHiddenLabels: (ids: Set<number>) => void
+    data: DatasetObject
 }) {
+    const styles = useStyles()
+    const allIds = React.useMemo(() => {
+        return new Set(data?.cocos?.map((coco) => coco.id) ?? [])
+    }, [data])
+
     return (
-        <div
-            style={{
-                flexBasis: '320px',
-                padding: '20px',
-                borderRight: '1px solid #EEF1F6',
+        <Tabs
+            overrides={{
+                TabBar: {
+                    style: {
+                        display: 'flex',
+                        gap: '0',
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        borderRadius: '4px',
+                    },
+                },
+                TabContent: {
+                    style: {
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        borderRadius: '4px',
+                    },
+                },
+                Tab: {
+                    style: ({ $active }) => ({
+                        flex: 1,
+                        textAlign: 'center',
+                        border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
+                        color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
+                        marginLeft: '0',
+                        marginRight: '0',
+                        paddingTop: '9px',
+                        paddingBottom: '9px',
+                        fontSize: '14px',
+                        lineHeight: '14px',
+                    }),
+                },
             }}
+            onChange={({ activeKey }) => {
+                console.log(activeKey)
+                onChange?.(activeKey as string)
+            }}
+            activeKey={value}
         >
-            <Tabs
-                overrides={{
-                    TabBar: {
-                        style: {
-                            display: 'flex',
-                            gap: '0',
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
-                        },
-                    },
-                    TabContent: {
-                        style: {
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
-                        },
-                    },
-                    Tab: {
-                        style: ({ $active }) => ({
-                            flex: 1,
-                            textAlign: 'center',
-                            border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
-                            color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
-                            marginLeft: '0',
-                            marginRight: '0',
-                            paddingTop: '9px',
-                            paddingBottom: '9px',
-                        }),
-                    },
-                }}
-                onChange={({ activeKey: activeKeyNew }) => {
-                    onChange?.(activeKeyNew as string)
-                }}
-                activeKey={value}
-            >
-                <Tab title='Annotation'>
-                    <div>
-                        <div
-                            style={{
-                                borderBottom: '1px solid #EEF1F6',
-                            }}
-                        >
-                            label: {preview?.label ?? '-'}
+            <Tab title={`Annotation(${data?.cocos.length})`}>
+                <div>
+                    <div className={styles.cocoAnnotation} style={{ color: ' rgba(2,16,43,0.60)', marginTop: '20px' }}>
+                        MAPPEDBOX({data?.cocos?.length})
+                        <div className={styles.cocoAnnotationShow}>
+                            <Button
+                                as='transparent'
+                                onClick={() =>
+                                    setHiddenLabels(hiddenLabels.size !== allIds.size ? new Set(allIds) : new Set())
+                                }
+                            >
+                                {hiddenLabels.size === allIds.size ? (
+                                    <IconFont type='eye_off' />
+                                ) : (
+                                    <IconFont type='eye' />
+                                )}
+                            </Button>
                         </div>
                     </div>
-                </Tab>
-                <Tab title='Categories'>
-                    <div>
-                        <div
-                            style={{
-                                borderBottom: '1px solid #EEF1F6',
-                            }}
-                        >
-                            label: {preview?.label ?? '-'}
-                        </div>
+                    {data?.cocos?.map((coco) => {
+                        return (
+                            <div className={styles.cocoAnnotation}>
+                                <div
+                                    className={styles.cocoAnnotationColor}
+                                    style={{
+                                        backgroundColor: RAW_COLORS[coco.id % RAW_COLORS.length],
+                                    }}
+                                ></div>
+                                {coco.id}
+                                <div className={styles.cocoAnnotationShow}>
+                                    <Button
+                                        as='transparent'
+                                        onClick={() => {
+                                            if (hiddenLabels.has(coco.id)) {
+                                                hiddenLabels.delete(coco.id)
+                                            } else {
+                                                hiddenLabels.add(coco.id)
+                                            }
+                                            setHiddenLabels(new Set(hiddenLabels))
+                                        }}
+                                    >
+                                        {hiddenLabels.has(coco.id) ? (
+                                            <IconFont type='eye_off' />
+                                        ) : (
+                                            <IconFont type='eye' />
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </Tab>
+            <Tab title={`Categories(${data?.getCOCOCategories().length})`}>
+                <div>
+                    {data?.getCOCOCategories().map((v) => {
+                        return <div className={styles.cocoAnnotation}>{v}</div>
+                    })}
+                </div>
+            </Tab>
+        </Tabs>
+    )
+}
+
+function Summary({ data }: { data: Record<string, any> }) {
+    const styles = useStyles()
+
+    return (
+        <div>
+            {Object.entries(data).map(([key, value]) => {
+                return (
+                    <div className={styles.summary} key={key}>
+                        <span className={styles.summaryLabel}>{key}</span>
+                        <span className={styles.summaryValue}>{value}</span>
                     </div>
-                </Tab>
-            </Tabs>
+                )
+            })}
         </div>
     )
 }

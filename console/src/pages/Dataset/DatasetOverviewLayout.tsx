@@ -173,7 +173,32 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 }}
                 accordion={false}
             >
-                <Panel title={t('Version and Files')} expanded>
+                <Panel
+                    title={t('Version and Files')}
+                    overrides={{
+                        PanelContainer: {
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                            },
+                        },
+                        ContentAnimationContainer: {
+                            style: {
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                            },
+                        },
+                        Content: {
+                            style: {
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                            },
+                        },
+                    }}
+                    expanded
+                >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                         <div style={{ width: '280px' }}>
                             <DatasetVersionSelector
@@ -197,7 +222,9 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                         </Button>
                     </div>
                     {datasetVersionId && <BaseNavTabs navItems={navItems} />}
-                    <div style={{ paddingTop: '12px', flex: '1' }}>{children}</div>
+                    <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
+                        {children}
+                    </div>
                 </Panel>
             </Accordion>
         </BaseSubLayout>
