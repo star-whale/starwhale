@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import typing as t
 from abc import ABCMeta
 from pathlib import Path
@@ -278,7 +279,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
-            raise
         finally:
             _manifest.update(
                 {
@@ -300,6 +300,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print(
                 f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
+            if _status != STATUS.SUCCESS:
+                sys.exit(-1)
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
