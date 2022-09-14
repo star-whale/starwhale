@@ -1,11 +1,9 @@
-name: nmt
+name: nmt-test
 
-process: code.dataset:DataSetProcessExecutor
+process: nmt.dataset:NMTDatasetBuildExecutor
 
 desc: nmt data and label test dataset
-tag:
-  - bin
 
 attr:
-  alignment_size: 4K
-  volume_size: 2M
+  alignment_size: 128
+  volume_size: 10M

@@ -1,5 +1,0 @@
-mode: venv
-name: nmt
-pip_req: requirements.txt
-python_version: '3.8'
-starwhale_version: 0.2.0
