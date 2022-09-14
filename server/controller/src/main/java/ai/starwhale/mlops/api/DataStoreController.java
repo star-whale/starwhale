@@ -254,8 +254,7 @@ public class DataStoreController implements DataStoreApi {
 
     private static Object convertOperand(TableQueryOperandDesc operand) {
         if (operand == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                    "operand should not be null");
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "operand should not be null");
         }
         if (operand.getFilter() != null) {
             return DataStoreController.convertFilter(operand.getFilter());
@@ -264,21 +263,21 @@ public class DataStoreController implements DataStoreApi {
             return new TableQueryFilter.Column(operand.getColumnName());
         }
         if (operand.getBoolValue() != null) {
-            return operand.getBoolValue();
+            return new TableQueryFilter.Constant(ColumnType.BOOL, operand.getBoolValue());
         }
         if (operand.getIntValue() != null) {
-            return operand.getIntValue();
+            return new TableQueryFilter.Constant(ColumnType.INT64, operand.getIntValue());
         }
         if (operand.getFloatValue() != null) {
-            return operand.getFloatValue();
+            return new TableQueryFilter.Constant(ColumnType.FLOAT64, operand.getFloatValue());
         }
         if (operand.getStringValue() != null) {
-            return operand.getStringValue();
+            return new TableQueryFilter.Constant(ColumnType.STRING, operand.getStringValue());
         }
         if (operand.getBytesValue() != null) {
-            return ColumnType.BYTES.decode(operand.getBytesValue());
+            return new TableQueryFilter.Constant(ColumnType.BYTES, ColumnType.BYTES.decode(operand.getBytesValue()));
         }
-        return null;
+        return new TableQueryFilter.Constant(ColumnType.UNKNOWN, null);
     }
 
     private static Map<String, String> convertColumns(List<ColumnDesc> columns) {

@@ -510,7 +510,7 @@ public class MemoryTableImplTest {
             var records = IntStream.rangeClosed(0, 9).mapToObj(
                             i -> {
                                 Map<String, Object> values = new HashMap<>();
-                                values.put("key", Integer.toHexString(i));
+                                values.put("key", i);
                                 if (data[0][i] != null) {
                                     values.put("a", data[0][i]);
                                 }
@@ -558,9 +558,42 @@ public class MemoryTableImplTest {
             this.memoryTable.update(schema,
                     records.stream()
                             .map(r -> r.getValues().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                                    entry -> ColumnType.getColumnType(entry.getValue())
+                                    entry -> ColumnType.getColumnTypeByName(
+                                                    schema.getColumnSchemaList().stream()
+                                                            .filter(col -> col.getName().equals(entry.getKey()))
+                                                            .findFirst()
+                                                            .orElseThrow()
+                                                            .getType())
                                             .encode(entry.getValue(), false))))
                             .collect(Collectors.toList()));
+        }
+
+        private final Map<Class<?>, ColumnType> typeMap = Map.of(
+                Boolean.class, ColumnType.BOOL,
+                Byte.class, ColumnType.INT8,
+                Short.class, ColumnType.INT16,
+                Integer.class, ColumnType.INT32,
+                Long.class, ColumnType.INT64,
+                Float.class, ColumnType.FLOAT32,
+                Double.class, ColumnType.FLOAT64,
+                String.class, ColumnType.STRING);
+
+        private ColumnType getColumnType(Object value) {
+            if (value == null) {
+                return ColumnType.UNKNOWN;
+            }
+            var ret = typeMap.get(value.getClass());
+            if (ret == null) {
+                if (value instanceof ByteBuffer) {
+                    return ColumnType.BYTES;
+                }
+                throw new IllegalArgumentException("unsupported column type " + value.getClass());
+            }
+            return ret;
+        }
+
+        private TableQueryFilter.Constant createConstant(Object value) {
+            return new TableQueryFilter.Constant(this.getColumnType(value), value);
         }
 
         @Test
@@ -888,7 +921,7 @@ public class MemoryTableImplTest {
                             .operands(new ArrayList<>() {
                                 {
                                     add(new TableQueryFilter.Column("a"));
-                                    add(null);
+                                    add(createConstant(null));
                                 }
                             })
                             .build(),
@@ -908,7 +941,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("a"), true))
+                            .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                             .build(),
                     -1,
                     -1,
@@ -929,7 +962,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -946,7 +979,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("c"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -963,7 +996,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("d"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -980,7 +1013,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("e"), 5L))
+                            .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                             .build(),
                     -1,
                     -1,
@@ -997,7 +1030,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
+                            .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                             .build(),
                     -1,
                     -1,
@@ -1014,7 +1047,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("g"), 5.))
+                            .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                             .build(),
                     -1,
                     -1,
@@ -1031,7 +1064,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("h"), "5"))
+                            .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                             .build(),
                     -1,
                     -1,
@@ -1050,7 +1083,7 @@ public class MemoryTableImplTest {
                             .operator(TableQueryFilter.Operator.EQUAL)
                             .operands(List.of(
                                     new TableQueryFilter.Column("i"),
-                                    ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
+                                    createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                             .build(),
                     -1,
                     -1,
@@ -1069,7 +1102,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("a"), true))
+                            .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                             .build(),
                     -1,
                     -1,
@@ -1092,7 +1125,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("b")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1114,7 +1147,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("c")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("c"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1136,7 +1169,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("d"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1158,7 +1191,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("e")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("e"), 5L))
+                            .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                             .build(),
                     -1,
                     -1,
@@ -1180,7 +1213,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("f")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
+                            .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                             .build(),
                     -1,
                     -1,
@@ -1202,7 +1235,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("g"), 5.))
+                            .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                             .build(),
                     -1,
                     -1,
@@ -1224,7 +1257,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
-                            .operands(List.of(new TableQueryFilter.Column("h"), "5"))
+                            .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                             .build(),
                     -1,
                     -1,
@@ -1248,7 +1281,7 @@ public class MemoryTableImplTest {
                             .operator(TableQueryFilter.Operator.LESS)
                             .operands(List.of(
                                     new TableQueryFilter.Column("i"),
-                                    ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
+                                    createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                             .build(),
                     -1,
                     -1,
@@ -1275,7 +1308,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("a"), true))
+                            .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                             .build(),
                     -1,
                     -1,
@@ -1302,7 +1335,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("b")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1325,7 +1358,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("c")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("c"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1348,7 +1381,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("d"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1371,7 +1404,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("e")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("e"), 5L))
+                            .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                             .build(),
                     -1,
                     -1,
@@ -1394,7 +1427,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("f")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
+                            .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                             .build(),
                     -1,
                     -1,
@@ -1417,7 +1450,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("g"), 5.))
+                            .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                             .build(),
                     -1,
                     -1,
@@ -1440,7 +1473,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("h"), "5"))
+                            .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                             .build(),
                     -1,
                     -1,
@@ -1465,7 +1498,7 @@ public class MemoryTableImplTest {
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
                             .operands(List.of(
                                     new TableQueryFilter.Column("i"),
-                                    ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
+                                    createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                             .build(),
                     -1,
                     -1,
@@ -1494,7 +1527,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("a"), false))
+                            .operands(List.of(new TableQueryFilter.Column("a"), createConstant(false)))
                             .build(),
                     -1,
                     -1,
@@ -1516,7 +1549,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("b")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1536,7 +1569,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("c")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("c"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1556,7 +1589,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("d"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1576,7 +1609,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("e")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("e"), 5L))
+                            .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                             .build(),
                     -1,
                     -1,
@@ -1596,7 +1629,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("f")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
+                            .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                             .build(),
                     -1,
                     -1,
@@ -1616,7 +1649,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("g"), 5.))
+                            .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                             .build(),
                     -1,
                     -1,
@@ -1636,7 +1669,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER)
-                            .operands(List.of(new TableQueryFilter.Column("h"), "5"))
+                            .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                             .build(),
                     -1,
                     -1,
@@ -1658,7 +1691,7 @@ public class MemoryTableImplTest {
                             .operator(TableQueryFilter.Operator.GREATER)
                             .operands(List.of(
                                     new TableQueryFilter.Column("i"),
-                                    ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
+                                    createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                             .build(),
                     -1,
                     -1,
@@ -1681,7 +1714,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("a"), false))
+                            .operands(List.of(new TableQueryFilter.Column("a"), createConstant(false)))
                             .build(),
                     -1,
                     -1,
@@ -1708,7 +1741,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("b")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1729,7 +1762,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("c")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("c"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1750,7 +1783,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("d"), 5))
+                            .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                             .build(),
                     -1,
                     -1,
@@ -1771,7 +1804,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("e")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("e"), 5L))
+                            .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                             .build(),
                     -1,
                     -1,
@@ -1792,7 +1825,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("f")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
+                            .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                             .build(),
                     -1,
                     -1,
@@ -1813,7 +1846,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("g"), 5.))
+                            .operands(List.of(new TableQueryFilter.Column("g"), this.createConstant(5.)))
                             .build(),
                     -1,
                     -1,
@@ -1834,7 +1867,7 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("g")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("h"), "5"))
+                            .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                             .build(),
                     -1,
                     -1,
@@ -1857,7 +1890,7 @@ public class MemoryTableImplTest {
                             .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                             .operands(List.of(
                                     new TableQueryFilter.Column("i"),
-                                    ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
+                                    createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                             .build(),
                     -1,
                     -1,
@@ -1887,7 +1920,7 @@ public class MemoryTableImplTest {
                                             .operator(TableQueryFilter.Operator.EQUAL)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("d"),
-                                                    5))
+                                                            createConstant(5)))
                                             .build()))
                             .build(),
                     -1,
@@ -1919,13 +1952,13 @@ public class MemoryTableImplTest {
                                             .operator(TableQueryFilter.Operator.LESS)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("d"),
-                                                    5))
+                                                    createConstant(5)))
                                             .build(),
                                     TableQueryFilter.builder()
                                             .operator(TableQueryFilter.Operator.EQUAL)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("a"),
-                                                    true))
+                                                    createConstant(true)))
                                             .build()))
                             .build(),
                     -1,
@@ -1950,13 +1983,13 @@ public class MemoryTableImplTest {
                                             .operator(TableQueryFilter.Operator.LESS)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("d"),
-                                                    5))
+                                                    createConstant(5)))
                                             .build(),
                                     TableQueryFilter.builder()
                                             .operator(TableQueryFilter.Operator.EQUAL)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("a"),
-                                                    true))
+                                                    createConstant(true)))
                                             .build()))
                             .build(),
                     -1,
@@ -2013,7 +2046,7 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("b"), 0))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(0)))
                             .build(),
                     -1,
                     -1,
