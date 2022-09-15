@@ -9,6 +9,7 @@ import { RadioGroup, Radio } from 'baseui/radio'
 import { FormControl } from 'baseui/form-control'
 import { Textarea } from 'baseui/textarea'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { IUserSchema } from '@user/schemas/user'
 import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
@@ -69,16 +70,16 @@ const Visibility = ({ value, onChange }: IVisibilityProps) => {
     )
 }
 
-type IOwnerProps = IControlledProps
+type IOwnerProps = IControlledProps & {
+    data?: IUserSchema
+}
 
-const Owner = ({ value, onChange }: IOwnerProps) => {
-    // only one option for now
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const { currentUser } = useCurrentUser()
+const Owner = ({ value, onChange, data }: IOwnerProps) => {
     return (
         <Select
-            options={[{ label: currentUser?.name, id: currentUser?.id }]}
+            options={[{ label: data?.name, id: data?.id }]}
             value={[{ id: value }]}
+            clearable={false}
             onChange={(o) => onChange?.(o.option?.id as string)}
         />
     )
@@ -88,8 +89,13 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     const [t] = useTranslation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
+
+    const user = React.useMemo(() => {
+        return project?.owner ?? currentUser
+    }, [project, currentUser])
+
     const [values, setValues] = useState<ICreateProjectSchema | undefined>({
-        ownerId: currentUser?.id,
+        ownerId: user?.id,
         projectName: project?.name ?? '',
         privacy: project?.privacy ?? 'PUBLIC',
         description: project?.description ?? '',
@@ -141,7 +147,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                         marginBottom: 0,
                     }}
                 >
-                    <Owner />
+                    <Owner data={user} />
                 </FormItem>
                 <div
                     style={{
