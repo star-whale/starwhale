@@ -4,12 +4,15 @@ import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
-import { fetchJob } from '@job/services/job'
+import { doJobAction, fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import IconFont from '@/components/IconFont/index'
 import Accordion from '@/components/Accordion'
 import { Panel } from 'baseui/accordion'
+import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
+import { toaster } from 'baseui/toast'
+import Button from '@/components/Button'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -24,16 +27,13 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
         if (jobInfo.isSuccess) {
-            if (jobInfo.data?.id !== job?.id) {
-                setJob(jobInfo.data)
-            }
+            setJob(jobInfo.data)
         } else if (jobInfo.isLoading) {
             setJob(undefined)
         }
     }, [job?.id, jobInfo.data, jobInfo.isLoading, jobInfo.isSuccess, setJob, setJobLoading])
 
     const [t] = useTranslation()
-    const uuid = job?.uuid ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -42,12 +42,12 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 path: `/projects/${projectId}/evaluations`,
             },
             {
-                title: uuid,
+                title: job?.uuid ?? '-',
                 path: `/projects/${projectId}/evaluations/${jobId}`,
             },
         ]
         return items
-    }, [projectId, jobId, t, uuid])
+    }, [projectId, jobId, t, job])
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
@@ -157,9 +157,51 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         ),
         [job, info, t]
     )
+    const handleAction = React.useCallback(
+        async (jobIdArg, type: JobActionType) => {
+            await doJobAction(projectId, jobIdArg, type)
+            toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+            await jobInfo.refetch()
+        },
+        [jobInfo, projectId, t]
+    )
+
+    const extra = React.useMemo(() => {
+        if (!job) return <></>
+
+        const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
+            [JobStatusType.CREATED]: (
+                <>
+                    <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
+                    &nbsp;&nbsp;
+                    <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                </>
+            ),
+            [JobStatusType.RUNNING]: (
+                <>
+                    <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
+                    &nbsp;&nbsp;
+                    <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                </>
+            ),
+            [JobStatusType.PAUSED]: (
+                <>
+                    <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
+                    &nbsp;&nbsp;
+                    <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                </>
+            ),
+            [JobStatusType.FAIL]: (
+                <>
+                    <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                </>
+            ),
+        }
+        return actions[job.jobStatus]
+    }, [job, info, t])
 
     return (
-        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems}>
+        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
             <div style={{ paddingTop: '12px', flex: '1' }}>{children}</div>
         </BaseSubLayout>
     )
