@@ -56,7 +56,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
                 }
 
                 return new Promise((resolve, reject) => {
-                    WaveformData.createFromAudio(options, (err, waveform) => {
+                    WaveformData.createFromAudio(options, (err: any, waveform: any) => {
                         if (err) {
                             reject(err)
                         } else {
