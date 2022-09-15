@@ -99,7 +99,7 @@ export default function EvaluationListCompare({
         if (!store.isInit) {
             store.onCompareUpdate({
                 compareShowCellChanges: true,
-                compareShowDiffOnly: true,
+                compareShowDiffOnly: false,
             })
         }
         if (pinKey !== store.compare?.comparePinnedKey) {

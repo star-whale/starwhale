@@ -304,3 +304,9 @@ export function longestCommonSubstring(string1: string, string2: string) {
     }
     return longestSubstring
 }
+
+export function parseDecimal(v: number, decimal: number): string {
+    if (v === 0) return String(v)
+    if (v.toString().indexOf('.') === -1) return String(v)
+    return Number(v).toFixed(decimal)
+}
