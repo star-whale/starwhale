@@ -28,7 +28,7 @@ export default function RuntimeListCard() {
                             <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
                                 {runtime.name}
                             </TextLink>,
-                            runtime.version?.meta ?? '-',
+                            runtime.version?.name ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}/versions`}>

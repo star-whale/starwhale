@@ -22,9 +22,9 @@ import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
-import { unhexlify } from '@/domain/datastore/sdk'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
+import { parseDecimal } from '@/utils'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -64,7 +64,7 @@ export default function EvaluationListCard() {
         if (!project?.name) return ''
         return tableNameOfSummary(project?.name as string)
     }, [project])
-    const summaryTable = useQueryDatasetList(summaryTableName, page)
+    const summaryTable = useQueryDatasetList(summaryTableName, page, true)
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -174,9 +174,9 @@ export default function EvaluationListCard() {
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
-                                return <p title={props?.value}>{props?.value}</p>
+                                return <p title={props?.value}>{parseDecimal(props?.value, 4)}</p>
                             },
-                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? '-',
+                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? 0,
                         })
                     )
                     break
@@ -188,28 +188,8 @@ export default function EvaluationListCard() {
 
     const $summaryAttrs = useMemo(() => {
         if (!summaryTable?.data) return {}
-
-        const { columnTypes = {}, records = [] } = summaryTable?.data || {}
-
-        const $records = records?.map((attrs) => {
-            const $newAttributes: Record<string, any> = {}
-            Object.keys(attrs).forEach((key) => {
-                switch (columnTypes[key]) {
-                    case 'UNKNOWN':
-                    case 'BYTES':
-                        $newAttributes[key] = ''
-                        break
-                    case 'STRING':
-                        $newAttributes[key] = attrs[key]
-                        break
-                    default:
-                        $newAttributes[key] = unhexlify(attrs[key])
-                }
-            })
-            return $newAttributes
-        })
-
-        const $recordsMap = _.keyBy($records, 'id')
+        const { records = [] } = summaryTable?.data || {}
+        const $recordsMap = _.keyBy(records, 'id')
         return $recordsMap
     }, [summaryTable.data])
 
@@ -240,8 +220,6 @@ export default function EvaluationListCard() {
             }) ?? [],
         [evaluationsInfo.data, $summaryAttrs]
     )
-
-    // console.log($summaryAttrs, $data)
 
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<HTMLDivElement>(null)

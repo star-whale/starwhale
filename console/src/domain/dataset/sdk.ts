@@ -12,7 +12,6 @@ export enum MIMES {
 }
 export enum TYPES {
     COCO = 'coco_object_annotation',
-    MASK = 'mask',
     IMAGE = 'image',
     AUDIO = 'audio',
     TEXT = 'text',
@@ -33,6 +32,7 @@ export type IObjectImage = {
     shape: IShape
     encoding: string
     type: TYPES[keyof TYPES]
+    as_mask: boolean
 }
 
 export type IAnnotation = {
@@ -133,7 +133,7 @@ export class DatasetObject {
     setProps(anno: any) {
         if (anno?.type === TYPES.COCO) {
             this.cocos?.push(anno)
-        } else if (anno?.type === TYPES.IMAGE) {
+        } else if (anno?.type === TYPES.IMAGE && anno?.as_mask) {
             this.masks?.push(anno)
         } else if (!anno?.type) {
             this.objects?.push(anno)
