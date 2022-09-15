@@ -159,12 +159,10 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
-    const [expanded, setExpanded] = React.useState(true)
-
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems}>
-            <Accordion accordion>
-                <Panel title={t('Version and Files')} expanded={expanded} onClick={() => setExpanded(!expanded)}>
+            <Accordion accordion overrides={{ ToggleIcon: () => <></> }}>
+                <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                             <div style={{ width: '280px' }}>
