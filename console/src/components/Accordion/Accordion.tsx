@@ -17,6 +17,15 @@ export default function Accordion({ children, ...props }: IAccordionProps) {
                     borderRight: '1px solid #CFD7E6',
                     borderRadius: '3px',
                     borderBottomColor: '#CFD7E6',
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+            },
+            ContentAnimationContainer: {
+                style: {
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                 },
             },
             Header: {
@@ -29,10 +38,20 @@ export default function Accordion({ children, ...props }: IAccordionProps) {
             },
             Content: {
                 style: {
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                     paddingTop: '20px',
                     paddingBottom: '20px',
                     paddingLeft: '20px',
                     paddingRight: '20px',
+                },
+            },
+            Root: {
+                style: {
+                    flex: 1,
+                    display: 'flex',
+                    fontSize: '14px',
                 },
             },
         },

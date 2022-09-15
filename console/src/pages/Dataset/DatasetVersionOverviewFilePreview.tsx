@@ -122,7 +122,7 @@ export default function DatasetVersionFilePreview({
     const styles = useStyles()
     const [t] = useTranslation()
     const [isFullscreen, setIsFullscreen] = React.useState(fullscreen)
-    const [activeKey, setActiveKey] = React.useState('1')
+    const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
     const Panel = React.useMemo(() => {
