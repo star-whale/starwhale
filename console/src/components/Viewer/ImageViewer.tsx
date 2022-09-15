@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
-import ZoomWrapper from './ZoomWrapper'
-import { clearCanvas, drawBox, drawGrayscale, drawSegmentWithCOCOMask, IImageData, loadImage } from './utils'
 import { IAnnotationCOCOObject, IObjectImage } from '@/domain/dataset/sdk'
 import { createUseStyles } from 'react-jss'
+import { clearCanvas, drawBox, drawSegmentWithCOCOMask, IImageData, loadImage } from './utils'
+import ZoomWrapper from './ZoomWrapper'
 
 const useStyles = createUseStyles({
     canvas: {
@@ -23,7 +23,9 @@ type IImageViewerProps = {
     cocos: IAnnotationCOCOObject[]
 }
 export default function ImageViewer({ isZoom = false, data, masks = [], cocos = [], hiddenLabels }: IImageViewerProps) {
-    const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+    const $cocos = React.useMemo(() => {
+        return cocos.filter((coco) => !hiddenLabels.has(coco.id))
+    }, [cocos, hiddenLabels])
 
     if (!isZoom) {
         return (
@@ -33,17 +35,13 @@ export default function ImageViewer({ isZoom = false, data, masks = [], cocos = 
         )
     }
 
-    const $cocos = React.useMemo(() => {
-        return cocos.filter((coco) => !hiddenLabels.has(coco.id))
-    }, [cocos, hiddenLabels])
-
-    console.log($cocos, hiddenLabels)
-
     return (
         <div className='fullsize' style={{ height: '100%' }}>
             <ZoomWrapper isTools={isZoom ? false : undefined}>
                 <img src={data.src} width='auto' height='100%' alt='dataset view' />
+                {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 <SegmentOverlay masks={masks} />
+                {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 <COCOBBoxOverlay cocos={$cocos} />
             </ZoomWrapper>
         </div>
@@ -72,7 +70,7 @@ export function SegmentOverlay({ masks = [] }: { masks: IObjectImage[] }) {
         }
     }, [canvasRef, imgDatas, masks])
 
-    if (masks.length == 0) {
+    if (masks.length === 0) {
         return <></>
     }
 
@@ -94,12 +92,12 @@ export function COCOBBoxOverlay({ cocos = [] }: { cocos: IImageViewerProps['coco
         canvas.width = width
         canvas.height = height
 
-        cocos.map((coco) => drawBox(canvas, coco.bbox, coco.id))
+        cocos.map((c) => drawBox(canvas, c.bbox, c.id))
 
         // drawSegmentWithCOCOMask(canvas, imgDatas)
     }, [canvasRef, cocos])
 
-    if (cocos.length == 0) {
+    if (cocos.length === 0) {
         return <></>
     }
 

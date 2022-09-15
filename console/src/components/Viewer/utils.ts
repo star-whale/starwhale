@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import Color from 'color'
-import WaveformData from 'waveform-data'
 import { IBBox } from '@/domain/dataset/sdk'
 
 export const RAW_COLORS = [
@@ -91,20 +90,19 @@ export const drawSegmentWithCOCOMask = (canvas: HTMLCanvasElement, imgDatas: IIm
 
     for (let i = 0; i < newImageData.data.length; i += 4) {
         const rawIndex = imgDatas.findIndex((v) => v.img.data[i + 0] > 0)
-        // eslint-disable-next-line no-continue
         if (rawIndex < 0) {
             newImageData.data[i] = 0
             newImageData.data[i + 1] = 0
             newImageData.data[i + 2] = 0
             newImageData.data[i + 3] = 200
-            continue
+        } else {
+            const label = imgDatas[rawIndex].img.data[i + 0]
+            const [r, g, b] = COLORS[label % COLORS.length]
+            newImageData.data[i] = r
+            newImageData.data[i + 1] = g
+            newImageData.data[i + 2] = b
+            newImageData.data[i + 3] = 240
         }
-        const label = imgDatas[rawIndex].img.data[i + 0]
-        const [r, g, b, a = 255] = COLORS[label % COLORS.length]
-        newImageData.data[i] = r
-        newImageData.data[i + 1] = g
-        newImageData.data[i + 2] = b
-        newImageData.data[i + 3] = 240
     }
     ctx?.putImageData(newImageData, 0, 0)
     return newImageData
@@ -176,25 +174,19 @@ export function drawAudioWaveform(canvas: HTMLCanvasElement, waveform: any) {
 
         return height - ((amplitude + offset) * height) / range
     }
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-
     ctx.beginPath()
-
     const channel = waveform.channel(0)
-
     // Loop forwards, drawing the upper half of the waveform
     for (let x = 0; x < waveform.length; x++) {
         const val = channel.max_sample(x)
-
         ctx.lineTo(x + 0.5, scaleY(val, canvas.height) + 0.5)
     }
 
     // Loop backwards, drawing the lower half of the waveform
     for (let x = waveform.length - 1; x >= 0; x--) {
         const val = channel.min_sample(x)
-
         ctx.lineTo(x + 0.5, scaleY(val, canvas.height) + 0.5)
     }
 

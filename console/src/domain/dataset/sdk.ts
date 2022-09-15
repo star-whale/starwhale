@@ -1,6 +1,5 @@
 import isObject from 'lodash/isObject'
-import { IDataType } from '../datastore/sdk'
-import Typer from '../datastore/sdk'
+import Typer, { IDataType } from '../datastore/sdk'
 import { tableDataLink } from '../datastore/utils'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
@@ -57,19 +56,32 @@ export type IAnnotationCOCOObject = {
 export class DatasetObject {
     // raw data
     public size: number
+
     public offset: number
+
     public id: string
+
     public uri: string
+
     public authName: string
+
     public src: string
+
     public mimeType: MIMES[keyof MIMES] | string
+
     public type: TYPES[keyof TYPES] | string
+
     public data: IObjectImage
+
     public columnTypes: Record<string, IDataType>
+
     // annotations
     public cocos: IAnnotationCOCOObject[]
+
     public masks: IObjectImage[]
+
     public summary: Record<string, any>
+
     public objects: any[]
 
     constructor(data: any, columnTypes: any) {
@@ -89,7 +101,7 @@ export class DatasetObject {
         this.objects = []
 
         // @ts-ignore
-        Object.entries(data).forEach(([key, value]: [string, string], i: number) => {
+        Object.entries(data).forEach(([key, value]: [string, string]) => {
             if (!key.startsWith('_annotation')) return
             const attr = key.replace(/^_annotation?_/, '')
 
@@ -103,7 +115,8 @@ export class DatasetObject {
                     this.summary[attr] = annos
                 }
             } catch (e) {
-                console.log(e)
+                console.error(e)
+                throw e
             }
         })
 
@@ -112,9 +125,11 @@ export class DatasetObject {
             this.mimeType = (this.data?.mime_type ?? '') as MIMES
             this.type = (this.data?.type ?? '') as MIMES
         } catch (e) {
-            console.log(e)
+            console.error(e)
+            throw e
         }
     }
+
     setProps(anno: any) {
         if (anno?.type === TYPES.COCO) {
             this.cocos?.push(anno)
@@ -124,10 +139,11 @@ export class DatasetObject {
             this.objects?.push(anno)
         }
     }
-    getDatastoreLink() {}
+
     getCOCOCategories(): number[] {
         return Array.from(new Set(this.cocos?.map((v: IAnnotationCOCOObject) => v.category_id)))
     }
+
     setDataSrc(projectId: string, datasetVersionName: string, datasetVersionVersionName: string, token: string) {
         const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
             uri: this.uri,

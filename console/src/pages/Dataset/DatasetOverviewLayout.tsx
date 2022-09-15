@@ -156,7 +156,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
             .reverse()
             .find((item_) => _.startsWith(location.pathname, item_.path))
         const paths = item?.path?.split('/') ?? []
-        return paths[paths.length - 1] ?? 'overview'
+        return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
     return (

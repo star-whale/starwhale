@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react'
-import { drawAudioWaveform } from './utils'
-import { IObjectImage } from '@/domain/dataset/sdk'
 import WaveformData from 'waveform-data'
-import { DatasetObject } from '../../domain/dataset/sdk'
+import { DatasetObject } from '@/domain/dataset/sdk'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
+import { drawAudioWaveform } from './utils'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -70,7 +69,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
                 // console.log(`Waveform has length ${waveform.length} points`)
                 drawAudioWaveform(canvas, waveform)
             })
-    }, [canvasRef])
+    }, [canvasRef, data.src])
 
     if (!isZoom) {
         return (
@@ -78,6 +77,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
                 className='fullsize'
                 style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             >
+                {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls style={{ width: '100%' }}>
                     <source src={data.src} type={data.mimeType as string} />
                     Your browser does not support the audio element.
@@ -97,6 +97,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
                         // position: 'absolute',
                     }}
                 />
+                {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls>
                     <source src={data.src} type={data.mimeType as string} />
                     Your browser does not support the audio element.

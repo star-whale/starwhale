@@ -1,15 +1,15 @@
 import React from 'react'
 import IconFont from '@/components/IconFont'
-import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import { DatasetObject, MIMES, TYPES } from '@/domain/dataset/sdk'
 import ImageViewer from '@/components/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
+import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 
 export type IDatasetViewerProps = {
     data?: DatasetObject
     isZoom?: boolean
     // coco
-    hiddenLabels: Set<number>
+    hiddenLabels?: Set<number>
 }
 
 export function Placeholder() {
@@ -31,10 +31,11 @@ export function Placeholder() {
     )
 }
 
-export default function DatasetViewer({ data, isZoom = false, hiddenLabels }: IDatasetViewerProps) {
+export default function DatasetViewer({ data, isZoom = false, hiddenLabels = new Set() }: IDatasetViewerProps) {
     const { mimeType, src, type } = data ?? {}
-    if (!data || !src) return <Placeholder />
     const Viewer = React.useMemo(() => {
+        if (!data || !src) return <Placeholder />
+
         switch (type) {
             case TYPES.IMAGE:
                 if (mimeType === MIMES.GRAYSCALE) {
@@ -56,7 +57,7 @@ export default function DatasetViewer({ data, isZoom = false, hiddenLabels }: ID
             default:
                 return <Placeholder />
         }
-    }, [data, src, type, mimeType, hiddenLabels])
+    }, [data, src, type, mimeType, hiddenLabels, isZoom])
 
     return Viewer
 }

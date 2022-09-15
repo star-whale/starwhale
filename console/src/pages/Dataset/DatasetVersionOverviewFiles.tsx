@@ -4,7 +4,6 @@ import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
-import { tableDataLink } from '@/domain/datastore/utils'
 import { getMetaRow } from '@/domain/dataset/utils'
 import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
@@ -13,12 +12,11 @@ import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { getReadableStorageQuantityStr } from '@/utils'
-import Typer from '@/domain/datastore/sdk'
 import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 import { DatasetObject } from '@/domain/dataset/sdk'
+import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -171,7 +169,7 @@ export default function DatasetVersionFiles() {
 
     const datasets = React.useMemo(
         () =>
-            tables?.data?.records?.map((record, index) => {
+            tables?.data?.records?.map((record) => {
                 const dObj = new DatasetObject(record, columnTypes)
                 dObj.setDataSrc(
                     projectId,
@@ -181,13 +179,12 @@ export default function DatasetVersionFiles() {
                 )
                 return dObj ?? []
             }) ?? [],
-        [tables?.data, columnTypes]
+        [tables?.data, columnTypes, projectId, datasetVersion, token]
     )
 
     const Records = React.useMemo(() => {
         if (fileId || !tables.data) return <></>
         const { summary = {} } = datasets?.[0] ?? {}
-        const { records = [] } = tables.data
 
         const rowAction = [
             {
@@ -222,9 +219,9 @@ export default function DatasetVersionFiles() {
             {
                 label: 'size',
                 renderItem: (row: any) =>
-                    isNaN(Number(row.size)) ? '-' : getReadableStorageQuantityStr(Number(row.size)),
+                    Number.isNaN(Number(row.size)) ? '-' : getReadableStorageQuantityStr(Number(row.size)),
             },
-            ...Object.entries(summary).map(([key, value]) => ({
+            ...Object.entries(summary).map(([key]) => ({
                 label: key,
                 renderItem: (row: any) => row?.summary?.[key],
             })),
@@ -309,27 +306,15 @@ export default function DatasetVersionFiles() {
             >
                 {rowAction.map((row) => {
                     return (
-                        <TableBuilderColumn header={row.label} overrides={row?.overrides ?? {}}>
+                        // @ts-ignore
+                        <TableBuilderColumn key={row.label} header={row.label} overrides={row?.overrides}>
                             {row.renderItem}
                         </TableBuilderColumn>
                     )
                 })}
             </TableBuilder>
         )
-    }, [
-        layoutKey,
-        fileId,
-        tables.data,
-        datasets,
-        styles,
-        columnTypes,
-        datasetVersion,
-        datasetVersionId,
-        history,
-        projectId,
-        datasetId,
-        token,
-    ])
+    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId])
 
     return (
         <div className={styles.wrapper}>

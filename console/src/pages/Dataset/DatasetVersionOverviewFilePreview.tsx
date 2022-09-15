@@ -1,19 +1,12 @@
 import React from 'react'
-import { useDataset } from '@dataset/hooks/useDataset'
-import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
-import { useParams } from 'react-router-dom'
-import { useAuth } from '@/api/Auth'
-import { tableDataLink } from '@/domain/datastore/utils'
 import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
-import Typer from '@/domain/datastore/sdk'
 import { createUseStyles } from 'react-jss'
 import { headerHeight } from '@/consts'
 import useTranslation from '../../hooks/useTranslation'
 import IconFont from '../../components/IconFont/index'
 import { DatasetObject } from '../../domain/dataset/sdk'
-import { COLORS } from '@/components/Viewer/utils'
 import { RAW_COLORS } from '../../components/Viewer/utils'
 
 const useStyles = createUseStyles({
@@ -120,23 +113,11 @@ export default function DatasetVersionFilePreview({
     fileId: string
     fullscreen?: boolean
 }) {
-    const { projectId } = useParams<{
-        projectId: string
-        datasetId: string
-        datasetVersionId: string
-    }>()
-    const { dataset: datasetVersion } = useDataset()
-    const { token } = useAuth()
-
-    const columnTypes = React.useMemo(() => {
-        return datasets?.[0]?.columnTypes ?? {}
-    }, [datasets])
-
     const data: any = React.useMemo(() => {
         const row = datasets?.find((v) => v.id === fileId)
-        if (!row) return
+        if (!row) return undefined
         return row
-    }, [datasets, datasetVersion, projectId, token, fileId, columnTypes])
+    }, [datasets, fileId])
 
     const styles = useStyles()
     const [t] = useTranslation()
@@ -147,6 +128,7 @@ export default function DatasetVersionFilePreview({
     const Panel = React.useMemo(() => {
         if (data?.cocos.length > 0) {
             return (
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 <TabControl
                     value={activeKey}
                     onChange={setActiveKey}
@@ -156,10 +138,10 @@ export default function DatasetVersionFilePreview({
                 />
             )
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return <Summary data={data?.summary ?? {}} />
     }, [data, activeKey, setHiddenLabels, hiddenLabels])
-
-    console.log(hiddenLabels)
 
     return (
         <div className={isFullscreen ? styles.layoutFullscreen : styles.layoutNormal}>
@@ -245,7 +227,6 @@ function TabControl({
                 },
             }}
             onChange={({ activeKey }) => {
-                console.log(activeKey)
                 onChange?.(activeKey as string)
             }}
             activeKey={value}
@@ -271,13 +252,13 @@ function TabControl({
                     </div>
                     {data?.cocos?.map((coco) => {
                         return (
-                            <div className={styles.cocoAnnotation}>
+                            <div className={styles.cocoAnnotation} key={coco.id}>
                                 <div
                                     className={styles.cocoAnnotationColor}
                                     style={{
                                         backgroundColor: RAW_COLORS[coco.id % RAW_COLORS.length],
                                     }}
-                                ></div>
+                                />
                                 {coco.id}
                                 <div className={styles.cocoAnnotationShow}>
                                     <Button
@@ -306,14 +287,17 @@ function TabControl({
             <Tab title={`Categories(${data?.getCOCOCategories().length})`}>
                 <div>
                     {data?.getCOCOCategories().map((v) => {
-                        return <div className={styles.cocoAnnotation}>{v}</div>
+                        return (
+                            <div key={v} className={styles.cocoAnnotation}>
+                                {v}
+                            </div>
+                        )
                     })}
                 </div>
             </Tab>
         </Tabs>
     )
 }
-
 function Summary({ data }: { data: Record<string, any> }) {
     const styles = useStyles()
 
