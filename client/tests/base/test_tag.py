@@ -73,3 +73,32 @@ class StandaloneTagTestCase(TestCase):
         assert _manifest["tags"]["test2"] == "gnstmntggi4tinrtmftdgyjzo5wwy2y"
         assert _manifest["versions"]["me3dmn3gg4ytanrtmftdgyjzpbrgimi"]["me3"]
         assert _manifest["versions"]["gnstmntggi4tinrtmftdgyjzo5wwy2y"]["test"]
+
+    def test_auto_fast_tag(self) -> None:
+        version = "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
+        st = StandaloneTag(
+            URI(
+                f"mnist/version/{version}",
+                expected_type=URIType.MODEL,
+            )
+        )
+        assert st._get_manifest()["fast_tag_seq"] == -1
+        st.add_fast_tag()
+        assert st._get_manifest()["fast_tag_seq"] == 0
+        st.add_fast_tag()
+        st.add_fast_tag()
+        st.add_fast_tag()
+        assert st._get_manifest()["fast_tag_seq"] == 3
+        assert st._get_manifest()["tags"]["v0"] == version
+        assert st._get_manifest()["tags"]["v3"] == version
+        st.add(["v4", "v5", "v6"])
+        st.add_fast_tag()
+        assert st._get_manifest()["fast_tag_seq"] == 7
+        assert st._get_manifest()["tags"]["v7"] == version
+
+        st.remove(["v7", "v6"], quiet=True)
+        st.add_fast_tag()
+        assert st._get_manifest()["fast_tag_seq"] == 8
+        assert st._get_manifest()["tags"]["v8"] == version
+
+        assert st.list() == ["v0", "v1", "v2", "v3", "v4", "v5", "v8"]

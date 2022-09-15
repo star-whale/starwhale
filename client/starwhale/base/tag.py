@@ -38,6 +38,7 @@ class StandaloneTag:
     def _get_manifest(self) -> t.Dict[str, t.Any]:
         if not self._manifest_path.exists():
             _dft: t.Dict[str, t.Any] = {
+                "fast_tag_seq": -1,
                 "tags": {},
                 "versions": {},
             }
@@ -57,8 +58,26 @@ class StandaloneTag:
             self._manifest_path, yaml.safe_dump(_manifest, default_flow_style=False)
         )
 
-    def add(self, tags: t.List[str], quiet: bool = False) -> None:
+    def add_fast_tag(self) -> None:
         _manifest = self._get_manifest()
+        _seq = int(_manifest.get("fast_tag_seq", -1))
+        _tag = _seq + 1
+        while True:
+            if f"v{_tag}" in _manifest["tags"]:
+                _tag = _tag + 1
+            else:
+                break
+
+        _manifest["fast_tag_seq"] = _tag
+        self.add(tags=[f"v{_tag}"], manifest=_manifest)
+
+    def add(
+        self,
+        tags: t.List[str],
+        quiet: bool = False,
+        manifest: t.Optional[t.Dict] = None,
+    ) -> None:
+        _manifest = manifest or self._get_manifest()
         _version = self.uri.object.version
 
         if not _version and not quiet:

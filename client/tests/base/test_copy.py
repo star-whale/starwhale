@@ -7,10 +7,13 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils import config as sw_config
 from starwhale.consts import (
     HTTPMethod,
+    VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DUMPED_SWDS_META_FNAME,
     ARCHIVED_SWDS_META_FNAME,
 )
+from starwhale.base.tag import StandaloneTag
+from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
@@ -61,31 +64,45 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     def test_download_bundle_file(self, rm: Mocker) -> None:
+        version = "112233"
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/latest",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/latest/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}/file",
             content=b"test",
         )
 
-        dest_dir = self._sw_config.rootdir / "self" / "model" / "mnist" / "la"
+        dest_dir = (
+            self._sw_config.rootdir
+            / "self"
+            / "model"
+            / "mnist"
+            / f"{version[:VERSION_PREFIX_CNT]}"
+        )
         ensure_dir(dest_dir)
 
         bc = BundleCopy(
-            src_uri="cloud://pre-bare/project/1/model/mnist/version/latest",
+            src_uri=f"cloud://pre-bare/project/1/model/mnist/version/{version}",
             dest_uri="self",
             typ=URIType.MODEL,
         )
         bc.do()
-        swmp_path = dest_dir / "latest.swmp"
+        swmp_path = dest_dir / f"{version}.swmp"
 
         assert swmp_path.exists()
         assert swmp_path.read_bytes() == b"test"
+        st = StandaloneTag(
+            URI(
+                f"mnist/version/{version}",
+                expected_type=URIType.MODEL,
+            )
+        )
+        assert st.list() == ["v0"]
 
     @Mocker()
     def test_upload_bundle_dir(self, rm: Mocker) -> None:
