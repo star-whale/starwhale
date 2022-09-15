@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.api.protocol.datastore;
 
-import ai.starwhale.mlops.datastore.ColumnType;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -30,7 +29,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RecordListVo {
 
-    private Map<String, ColumnType> columnTypes;
+    private Map<String, String> columnTypes;
     private List<Map<String, String>> records;
     private String lastKey;
 }

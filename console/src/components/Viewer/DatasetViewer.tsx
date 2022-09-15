@@ -1,31 +1,18 @@
 import React from 'react'
 import IconFont from '@/components/IconFont'
+import { DatasetObject, MIMES, TYPES } from '@/domain/dataset/sdk'
+import ImageViewer from '@/components/Viewer/ImageViewer'
+import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 
-export enum MIME {
-    GRAYSCALE = 'x/grayscale',
-}
-
 export type IDatasetViewerProps = {
-    data: IDatasetMeta
+    data?: DatasetObject
     isZoom?: boolean
+    // coco
+    hiddenLabels?: Set<number>
 }
 
-export type IDatasetMeta = {
-    type: MIME[keyof MIME]
-    label: string
-    name: string
-    src: string
-}
-
-export default function DatasetViewer({ data, isZoom = false }: IDatasetViewerProps) {
-    const { type } = data
-
-    // eslint-disable-next-line default-case
-    switch (type) {
-        case MIME.GRAYSCALE:
-            return <ImageGrayscaleViewer data={data} isZoom={isZoom} />
-    }
+export function Placeholder() {
     return (
         <p
             style={{
@@ -42,4 +29,35 @@ export default function DatasetViewer({ data, isZoom = false }: IDatasetViewerPr
             <IconFont type='excel' size={28} />
         </p>
     )
+}
+
+export default function DatasetViewer({ data, isZoom = false, hiddenLabels = new Set() }: IDatasetViewerProps) {
+    const { mimeType, src, type } = data ?? {}
+    const Viewer = React.useMemo(() => {
+        if (!data || !src) return <Placeholder />
+
+        switch (type) {
+            case TYPES.IMAGE:
+                if (mimeType === MIMES.GRAYSCALE) {
+                    return <ImageGrayscaleViewer data={{ src }} isZoom={isZoom} />
+                }
+                return (
+                    <ImageViewer
+                        data={{ src }}
+                        cocos={data.cocos ?? []}
+                        masks={data.masks}
+                        isZoom={isZoom}
+                        hiddenLabels={hiddenLabels}
+                    />
+                )
+            case TYPES.AUDIO:
+                return <AudioViewer data={data} isZoom={isZoom} />
+            case TYPES.TEXT:
+                return <p>{data?.data?.display_name}</p>
+            default:
+                return <Placeholder />
+        }
+    }, [data, src, type, mimeType, hiddenLabels, isZoom])
+
+    return Viewer
 }

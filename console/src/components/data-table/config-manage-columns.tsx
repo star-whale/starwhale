@@ -349,7 +349,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                     className={css({
                                         display: 'flex',
                                         height: '42px',
-                                        borderBottom: '1px solid #FFE1F6',
+                                        borderBottom: '1px solid #EEF1F6',
                                         marginBottom: '8px',
                                         fontSize: '14px',
                                         marginLeft: '10px',
@@ -425,7 +425,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                     className={css({
                                         display: 'flex',
                                         height: '42px',
-                                        borderBottom: '1px solid #FFE1F6',
+                                        borderBottom: '1px solid #EEF1F6',
                                         marginBottom: '8px',
                                         marginLeft: '10px',
                                         marginRight: '9px',

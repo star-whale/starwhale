@@ -97,6 +97,10 @@ export default function Button({
                             backgroundColor: 'transparent',
                             color: 'var(--color-brandPrimaryHover)',
                         },
+                        ':focus': {
+                            backgroundColor: 'transparent',
+                            color: 'var(--color-brandPrimaryHover)',
+                        },
                     },
                 },
             },

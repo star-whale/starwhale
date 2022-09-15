@@ -103,6 +103,7 @@
     "vite": "^3.0.4",
     "vite-plugin-multi-pages": "^0.0.8",
     "vite-plugin-svgr": "^2.2.1",
+    "waveform-data": "^4.3.0",
     "web-vitals": "^1.0.1",
     "xterm": "^4.14.1",
     "xterm-addon-fit": "^0.5.0",

@@ -6,13 +6,7 @@ model:
   - models/decoder.pth
   - models/vocab_eng-fra.bin
 
-config:
-  - config/hyperparam.json
-
 run:
-  ppl: code.ppl:NMTPipeline
+  ppl: nmt.ppl:NMTPipeline
 
 desc: nmt by pytorch
-
-tag:
-  - nmt
