@@ -33,7 +33,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestDsFileGetter {
+public class DsFileGetterTest {
 
     @Test
     public void testFileGetter() throws IOException {

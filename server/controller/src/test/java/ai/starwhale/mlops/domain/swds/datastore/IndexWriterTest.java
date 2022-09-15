@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
-import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.swds.index.datastore.IndexWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +31,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
-public class TestIndexWriter {
+public class IndexWriterTest {
 
     @Test
     public void testLegacySchema() {

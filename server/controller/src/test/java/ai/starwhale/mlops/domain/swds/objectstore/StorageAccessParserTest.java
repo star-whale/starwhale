@@ -28,7 +28,7 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestStorageAccessParser {
+public class StorageAccessParserTest {
 
     final String auths = "USER.S3.REGION=region\n"
             + "USER.S3.ENDPOINT=endpoint\n"

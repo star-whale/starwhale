@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestK8sResourcePoolConverter {
+public class K8sResourcePoolConverterTest {
 
     @Test
     public void testNormalCase() {

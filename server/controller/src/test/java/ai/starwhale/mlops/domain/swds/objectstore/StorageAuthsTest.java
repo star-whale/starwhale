@@ -21,7 +21,7 @@ import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestStorageAuths {
+public class StorageAuthsTest {
 
     @Test
     public void testS3() {

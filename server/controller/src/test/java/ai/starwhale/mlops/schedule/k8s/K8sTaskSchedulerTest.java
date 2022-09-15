@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestK8sTaskScheduler {
+public class K8sTaskSchedulerTest {
     public static final String bucket = "bucket";
     public static final String accessKey = "accessKey";
     public static final String secretKey = "secretKey";
@@ -156,11 +156,11 @@ public class TestK8sTaskScheduler {
 
             Map<String, String> initEnv = Map.of("DOWNLOADS",
                     "s3://bucket/path_swmp;/opt/starwhale/swmp/ s3://bucket/path_rt;/opt/starwhale/swrt/",
-                    "SW_S3_BUCKET", TestK8sTaskScheduler.bucket,
-                    "SW_S3_ENDPOINT", TestK8sTaskScheduler.endpoint,
-                    "SW_S3_SECRET", TestK8sTaskScheduler.secretKey,
-                    "SW_S3_ACCESS_KEY", TestK8sTaskScheduler.accessKey,
-                    "SW_S3_REGION", TestK8sTaskScheduler.region,
+                    "SW_S3_BUCKET", K8sTaskSchedulerTest.bucket,
+                    "SW_S3_ENDPOINT", K8sTaskSchedulerTest.endpoint,
+                    "SW_S3_SECRET", K8sTaskSchedulerTest.secretKey,
+                    "SW_S3_ACCESS_KEY", K8sTaskSchedulerTest.accessKey,
+                    "SW_S3_REGION", K8sTaskSchedulerTest.region,
                     FileStorageEnv.ENV_TYPE, "S3");
             Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));

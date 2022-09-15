@@ -40,7 +40,7 @@ import org.springframework.context.ApplicationContext;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class TestJobMapper extends MySqlContainerHolder {
+public class JobMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private JobMapper jobMapper;

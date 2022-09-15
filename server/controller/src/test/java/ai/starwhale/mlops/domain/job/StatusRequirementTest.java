@@ -35,7 +35,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestStatusRequirement {
+public class StatusRequirementTest {
 
     @Test
     public void testAny() {

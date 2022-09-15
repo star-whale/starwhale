@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestK8sJobTemplate {
+public class K8sJobTemplateTest {
 
     K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("");
 
-    public TestK8sJobTemplate() throws IOException {
+    public K8sJobTemplateTest() throws IOException {
     }
 
     @Test
