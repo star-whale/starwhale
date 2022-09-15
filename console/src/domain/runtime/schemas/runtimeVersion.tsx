@@ -9,6 +9,14 @@ export interface IRuntimeVersionSchema extends IResourceSchema {
     owner?: IUserSchema
 }
 
+export interface IRuntimeVersionListSchema extends IResourceSchema {
+    name: string
+    versionName: string
+    versionMeta: string
+    versionTag: string
+    manifest: string
+}
+
 export interface IRuntimeVersionDetailSchema extends IRuntimeVersionSchema {
     modelName?: string
 }
