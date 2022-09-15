@@ -49,13 +49,4 @@ public class GraphNode {
 
     Long entityId;
 
-    public static final Long ID_FAKE = -1L;
-
-    public boolean empty() {
-        return null == this.id || ID_FAKE.equals(this.id);
-    }
-
-    public static GraphNode emptyInstance() {
-        return GraphNode.builder().id(ID_FAKE).build();
-    }
 }
