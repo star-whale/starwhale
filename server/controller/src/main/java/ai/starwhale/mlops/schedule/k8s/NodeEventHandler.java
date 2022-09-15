@@ -68,19 +68,29 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     Node k8sNodeToSwNode(V1Node k8sNode) {
         Node n = new Node();
-        V1NodeStatus status = k8sNode.getStatus();
+        Boolean unschedulable = false;
         V1NodeSpec spec = k8sNode.getSpec();
-        Boolean unschedulable = spec.getUnschedulable();
-        unschedulable = unschedulable == null ? false : true;
-        //        n.setAgentVersion();
-        //        status.getCapacity();
-        //        n.setDevices(); status.capacity.get(cpu)
-        n.setMemorySizeGb(
-                status.getCapacity().get("memory").getNumber().divide(BigDecimal.valueOf(1024 * 1024L)).floatValue());
-        n.setIpAddr(status.getAddresses().get(0).getAddress());
-        n.setSerialNumber(status.getNodeInfo().getSystemUUID());
+        if (null != spec && null != spec.getUnschedulable()) {
+            unschedulable = spec.getUnschedulable();
+        }
         n.setStatus(unschedulable ? AgentStatus.OFFLINE : AgentStatus.ONLINE);
-        n.setAgentVersion("KUBELET:" + status.getNodeInfo().getKubeletVersion());
+        V1NodeStatus status = k8sNode.getStatus();
+        if (status != null) {
+            if (null != status.getCapacity() && null != status.getCapacity().get("memory")
+                    && null != status.getCapacity().get("memory").getNumber()) {
+                n.setMemorySizeGb(
+                        status.getCapacity().get("memory").getNumber().divide(BigDecimal.valueOf(1024 * 1024L))
+                                .floatValue());
+            }
+            if (null != status.getAddresses() && status.getAddresses().size() > 0) {
+                n.setIpAddr(status.getAddresses().get(0).getAddress());
+            }
+
+            if (null != status.getNodeInfo()) {
+                n.setSerialNumber(status.getNodeInfo().getSystemUUID());
+                n.setAgentVersion("KUBELET:" + status.getNodeInfo().getKubeletVersion());
+            }
+        }
         return n;
     }
 
