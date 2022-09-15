@@ -43,41 +43,41 @@ public class NodeEventHandlerTest {
     ResourcePoolCache resourcePoolCache;
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
         k8sResourcePoolConverter = mock(K8sResourcePoolConverter.class);
         agentCache = mock(AgentCache.class);
         resourcePoolCache = mock(ResourcePoolCache.class);
-        nodeEventHandler = new NodeEventHandler(agentCache,resourcePoolCache,k8sResourcePoolConverter);
+        nodeEventHandler = new NodeEventHandler(agentCache, resourcePoolCache, k8sResourcePoolConverter);
     }
 
     @Test
-    public void testOnAdd(){
+    public void testOnAdd() {
         nodeEventHandler.onAdd(new V1Node()
-                        .spec(new V1NodeSpec().unschedulable(false))
-                        .status(new V1NodeStatus()
-                                .nodeInfo(new V1NodeSystemInfo().systemUUID("sysuuit").kubeletVersion("kubv"))
-                                .capacity(Map.of("memory",new Quantity("2G")))
-                                .addAddressesItem(new V1NodeAddress().address("addr")))
-                .metadata(new V1ObjectMeta().labels(Map.of("label1","x","label2","y"))));
+                .spec(new V1NodeSpec().unschedulable(false))
+                .status(new V1NodeStatus()
+                        .nodeInfo(new V1NodeSystemInfo().systemUUID("sysuuit").kubeletVersion("kubv"))
+                        .capacity(Map.of("memory", new Quantity("2G")))
+                        .addAddressesItem(new V1NodeAddress().address("addr")))
+                .metadata(new V1ObjectMeta().labels(Map.of("label1", "x", "label2", "y"))));
         verify(agentCache).nodeReport(any());
         verify(resourcePoolCache).labelReport(any());
     }
 
     @Test
-    public void testOnUpdate(){
-        Assertions.assertThrows(NullPointerException.class,()->{
-            nodeEventHandler.onUpdate(new V1Node(),null);
+    public void testOnUpdate() {
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            nodeEventHandler.onUpdate(new V1Node(), null);
         });
-        nodeEventHandler.onUpdate(null,new V1Node().metadata(new V1ObjectMeta()));
+        nodeEventHandler.onUpdate(null, new V1Node().metadata(new V1ObjectMeta()));
         verify(agentCache).nodeReport(any());
         verify(resourcePoolCache).labelReport(any());
     }
 
     @Test
-    public void testOnDelete(){
-        nodeEventHandler.onDelete(new V1Node(),true);
+    public void testOnDelete() {
+        nodeEventHandler.onDelete(new V1Node(), true);
         verify(agentCache).removeOfflineAgent(any());
-        verify(resourcePoolCache,times(0)).labelReport(any());
+        verify(resourcePoolCache, times(0)).labelReport(any());
     }
 
 }
