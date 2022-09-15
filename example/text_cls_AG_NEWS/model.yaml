@@ -5,19 +5,7 @@ model:
   - models/model.i
   - models/vocab.i
 
-config:
-  - config/hyperparam.json
-
 run:
-  ppl: code.ppl:TextClassificationHandler
-  pip_req: requirements.txt
-  exclude_pkg_data:
-    - venv
-    - .git
-    - .history
-    - .vscode
+  ppl: tcan.ppl:TextClassificationHandler
 
 desc: TextClassification by pytorch
-
-tag:
-  - TextClassification

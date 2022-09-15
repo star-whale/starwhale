@@ -1,11 +1,9 @@
-name: AG_NEWS
+name: ag_news_test
 
-process: code.data_slicer:AGNewsSlicer
+process: tcan.dataset:AGNewsBuildExecutor
 
 desc: AG_NEWS data and label test dataset
-tag:
-  - bin
 
 attr:
   alignment_size: 4k
-  volume_size: 2M
+  volume_size: 8M
