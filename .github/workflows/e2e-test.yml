@@ -31,6 +31,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
 
+    if: github.event_name == 'pull_request'
     outputs:
       client: ${{ steps.filter.outputs.client }}
       server: ${{ steps.filter.outputs.server }}
@@ -56,7 +57,7 @@ jobs:
 
     needs:
       - filter
-    if: ${{ (github.event_name == 'pull_request' && (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' || needs.filter.outputs.scripts == 'true' || needs.filter.outputs.docker == 'true' || needs.filter.outputs.example == 'true')) && !contains(needs.filter.outputs.labels, 'ban-e2e') }}
+    if: ${{  github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' || needs.filter.outputs.scripts == 'true' || needs.filter.outputs.docker == 'true' || needs.filter.outputs.example == 'true') && !contains(needs.filter.outputs.labels, 'ban-e2e'))}}
 
     defaults:
       run:
