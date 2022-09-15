@@ -111,7 +111,7 @@ public class DataStoreController implements DataStoreApi {
                     .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeMap())
+                    .columnTypes(recordList.getColumnTypeStringMap())
                     .records(recordList.getRecords())
                     .build()));
         } catch (SwValidationException e) {
@@ -154,7 +154,7 @@ public class DataStoreController implements DataStoreApi {
                     .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeMap())
+                    .columnTypes(recordList.getColumnTypeStringMap())
                     .records(recordList.getRecords())
                     .lastKey(recordList.getLastKey())
                     .build()));
