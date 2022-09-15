@@ -24,7 +24,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,12 +32,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class JobManager {
 
-    @Resource
-    private JobMapper jobMapper;
+    private final JobMapper jobMapper;
+    private final IdConvertor idConvertor;
 
-    @Resource
-    private IdConvertor idConvertor;
-
+    public JobManager(JobMapper jobMapper, IdConvertor idConvertor) {
+        this.jobMapper = jobMapper;
+        this.idConvertor = idConvertor;
+    }
 
     public Long getJobId(String jobUrl) {
         Job job = fromUrl(jobUrl);

@@ -22,14 +22,16 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.job.po.BaseImageEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class BaseImageConvertor implements Convertor<BaseImageEntity, BaseImageVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
+
+    public BaseImageConvertor(IdConvertor idConvertor) {
+        this.idConvertor = idConvertor;
+    }
 
     @Override
     public BaseImageVo convert(BaseImageEntity baseImageEntity) throws ConvertException {
