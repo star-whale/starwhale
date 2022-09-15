@@ -108,6 +108,13 @@ export default function JobListCard() {
                                         </StyledLink>
                                     </>
                                 ),
+                                [JobStatusType.FAIL]: (
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
+                                            {t('Resume')}
+                                        </StyledLink>
+                                    </>
+                                ),
                                 [JobStatusType.SUCCESS]: (
                                     <TextLink to={`/projects/${projectId}/jobs/${job.id}/results`}>
                                         {t('View Results')}

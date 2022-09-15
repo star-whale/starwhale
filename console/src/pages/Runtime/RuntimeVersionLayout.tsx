@@ -35,7 +35,6 @@ export default function RuntimeVersionLayout({ children }: IRuntimeLayoutProps) 
     ])
 
     const [t] = useTranslation()
-    const runtimeName = runtime?.versionMeta ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -44,7 +43,7 @@ export default function RuntimeVersionLayout({ children }: IRuntimeLayoutProps) 
                 path: `/projects/${projectId}/runtimes`,
             },
             {
-                title: runtimeName,
+                title: runtime?.name ?? '-',
                 path: `/projects/${projectId}/runtimes/${runtimeId}`,
             },
             {
@@ -53,7 +52,7 @@ export default function RuntimeVersionLayout({ children }: IRuntimeLayoutProps) 
             },
         ]
         return items
-    }, [runtimeName, t, projectId, runtimeId])
+    }, [t, projectId, runtimeId, runtime])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

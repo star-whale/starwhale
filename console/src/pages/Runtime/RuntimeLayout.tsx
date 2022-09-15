@@ -64,10 +64,6 @@ export default function RuntimeLayout({ children }: IRuntimeLayoutProps) {
                 value: runtime?.versionName ?? '',
             },
             {
-                label: t('Version Meta'),
-                value: runtime?.versionMeta ?? '',
-            },
-            {
                 label: t('Version Tag'),
                 value: runtime?.versionTag ?? '',
             },

@@ -30,7 +30,7 @@ export default function RuntimeVersionListCard() {
             <Table
                 isLoading={runtimesInfo.isLoading}
                 columns={[
-                    t('Meta'),
+                    t('Runtime Version'),
                     // {
                     //     type: 'tags',
                     //     title: t('Tag'),
@@ -57,8 +57,7 @@ export default function RuntimeVersionListCard() {
                 data={
                     runtimesInfo.data?.list.map((runtime, i) => {
                         return [
-                            runtime.meta,
-                            // runtime.tag,
+                            runtime.name,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             runtime.owner && <User user={runtime.owner} />,
                             i ? (

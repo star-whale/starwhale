@@ -3,7 +3,6 @@ import { IAgentSchema } from './agent'
 
 export enum TaskStatusType {
     CREATED = 'CREATED',
-    ASSIGNING = 'ASSIGNING',
     PAUSED = 'PAUSED',
     PREPARING = 'PREPARING',
     RUNNING = 'RUNNING',
