@@ -307,7 +307,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_swds_meta_tar, 15, "make meta tar"),
-            (self._make_latest_tag, 5, "make latest tag"),
+            (self._make_auto_tags, 5, "make auto tags"),
         ]
         run_with_progress_bar("swds building...", operations)
 

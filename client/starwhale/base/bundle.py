@@ -137,8 +137,9 @@ class LocalStorageBundleMixin:
         logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 
-    def _make_latest_tag(self) -> None:
+    def _make_auto_tags(self) -> None:
         self.tag.add([LATEST_TAG], quiet=True)  # type: ignore
+        self.tag.add_fast_tag()  # type: ignore
 
     def _make_tar(self, ftype: str = "") -> None:
         out = self.store.bundle_dir / f"{self._version}{ftype}"  # type: ignore

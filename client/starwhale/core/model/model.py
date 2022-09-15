@@ -414,7 +414,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
-            (self._make_latest_tag, 5, "make latest tag"),
+            (self._make_auto_tags, 5, "make auto tags"),
         ]
         run_with_progress_bar("model bundle building...", operations)
 
