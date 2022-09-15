@@ -217,14 +217,16 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             raise NoSupportError(f"Artifact reflect error: {data_type}")
 
     # TODO: add to_tensor, to_numpy method
-    def to_bytes(self) -> bytes:
+    def to_bytes(self, encoding: str = "utf-8") -> bytes:
         if isinstance(self.fp, bytes):
             return self.fp
         elif isinstance(self.fp, (str, Path)):
             return Path(self.fp).read_bytes()
         elif isinstance(self.fp, io.IOBase):
-            # TODO: strict to binary io?
-            return self.fp.read()  # type: ignore
+            _pos = self.fp.tell()
+            _content = self.fp.read()
+            self.fp.seek(_pos)
+            return _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
@@ -266,7 +268,11 @@ class Image(BaseArtifact):
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
+        as_mask: bool = False,
+        mask_uri: str = "",
     ) -> None:
+        self.as_mask = as_mask
+        self.mask_uri = mask_uri
         super().__init__(
             fp,
             ArtifactType.Image,
@@ -295,10 +301,17 @@ class GrayscaleImage(Image):
         fp: _TArtifactFP = "",
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
+        as_mask: bool = False,
+        mask_uri: str = "",
     ) -> None:
         shape = shape or (None, None)
         super().__init__(
-            fp, display_name, (shape[0], shape[1], 1), mime_type=MIMEType.GRAYSCALE
+            fp,
+            display_name,
+            (shape[0], shape[1], 1),
+            mime_type=MIMEType.GRAYSCALE,
+            as_mask=as_mask,
+            mask_uri=mask_uri,
         )
 
 
@@ -376,8 +389,8 @@ class Text(BaseArtifact):
             encoding=encoding,
         )
 
-    def to_bytes(self) -> bytes:
-        return self.content.encode(self.encoding)
+    def to_bytes(self, encoding: str = "") -> bytes:
+        return self.content.encode(encoding or self.encoding)
 
     def to_str(self) -> str:
         return self.content
@@ -403,6 +416,8 @@ class COCOObjectAnnotation(ASDictMixin):
         self.segmentation = segmentation
         self.area = area
         self.iscrowd = iscrowd
+
+        self.do_validate()
 
     def do_validate(self) -> None:
         if self.iscrowd not in (0, 1):
