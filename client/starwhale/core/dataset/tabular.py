@@ -1,6 +1,7 @@
 import sys
 import json
 import typing as t
+from copy import deepcopy
 from types import TracebackType
 from pathlib import Path
 
@@ -103,7 +104,12 @@ class TabularDatasetRow(ASDictMixin):
         )
 
     def __eq__(self, o: object) -> bool:
-        return self.__dict__ == o.__dict__
+        s = deepcopy(self.__dict__)
+        o = deepcopy(o.__dict__)
+
+        s.pop("data_origin", None)
+        o.pop("data_origin", None)
+        return s == o
 
     def _do_validate(self) -> None:
         if self.id < 0:
