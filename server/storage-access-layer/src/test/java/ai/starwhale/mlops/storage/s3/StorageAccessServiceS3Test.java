@@ -145,12 +145,15 @@ public class StorageAccessServiceS3Test {
     @Test
     public void testPutHugeFile() throws IOException {
         var data = new byte[20 * 1024 * 1024];
+        var off5m = 5 * 1024 * 1024;
         for (int i = 0; i < data.length; ++i) {
             data[i] = (byte) i;
         }
         this.s3.put("t1", new ByteArrayInputStream(data), data.length);
-        assertThat(this.s3.get("t1", (long) (data.length - 100), 100L).readAllBytes(),
-                is(Arrays.copyOfRange(data, data.length - 100, data.length)));
+        var info = this.s3.head("t1");
+        assertThat(this.s3.get("t1", (long) (data.length - off5m), 100L).readAllBytes(),
+                is(Arrays.copyOfRange(data, data.length - off5m, data.length - off5m + 100)));
+        // TODO: test the whole content after s3mock fix issue with chunk encoding enabled
     }
 
     @Test
