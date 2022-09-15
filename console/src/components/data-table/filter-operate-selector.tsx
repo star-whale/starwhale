@@ -88,7 +88,7 @@ export const Operators: Record<string, OperatorT> = {
         // @ts-ignore
         buildFilter: () => {
             return (data: string, row: any, column: any) => {
-                return column.key in row || row?.attributes.map((attr: any) => attr.name).includes(column.key)
+                return column.key in row || column.key in row?.attributes
             }
         },
     },
@@ -98,7 +98,7 @@ export const Operators: Record<string, OperatorT> = {
         op: 'not exists',
         buildFilter: () => {
             return (data: string, row: any, column: any) => {
-                return !(column.key in row || row?.attributes.map((attr: any) => attr.name).includes(column.key))
+                return !(column.key in row) && !(column.key in row?.attributes)
             }
         },
     },
@@ -155,10 +155,6 @@ export default function FilterOperateSelector({
     disabled,
     columns,
 }: IFilterOperateSelectorProps) {
-    // const [key, setKey] = useState<string | undefined>(raw?.key)
-    // const [value, setValue] = useState<string | undefined>(raw?.value)
-    // const [operator, setOperator] = useState<string | undefined>(raw?.op || '=')
-
     const { key = '', value = '', op = Operators.equal } = raw
 
     const $keys = React.useMemo(() => {
@@ -235,32 +231,6 @@ export default function FilterOperateSelector({
                     value={value}
                 />
             )}
-            {/* <Select
-                size='compact'
-                disabled={disabled}
-                overrides={overrides}
-                options={options}
-                placeholder='-'
-                clearable={false}
-                onChange={({ value }) => {
-                    // @ts-ignore
-                    setValue(value)
-                }}
-                mountNode={document.body}
-                onInputChange={(e) => {
-                    const target = e.target as HTMLInputElement
-                }}
-                onBlurResetsInput={false}
-                value={
-                    value
-                        ? [
-                              {
-                                  id: value,
-                              },
-                          ]
-                        : []
-                }
-            /> */}
         </div>
     )
 }
