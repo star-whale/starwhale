@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-public class TestPasswordEncoder {
+public class PasswordEncoderTest {
 
     @Test
     public void testEncoder() {

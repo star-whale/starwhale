@@ -19,7 +19,7 @@ package ai.starwhale.mlops.login;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 
-public class TestLoginRequest {
+public class LoginRequestTest {
 
     public void login() {
         for (int i = 0; i < 5; i++) {

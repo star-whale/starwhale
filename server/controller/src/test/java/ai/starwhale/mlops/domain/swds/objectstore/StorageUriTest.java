@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.swds.objectstore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestStorageUri {
+public class StorageUriTest {
 
 
     /**

@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.graph;
 
 import org.junit.jupiter.api.Test;
 
-public class TestGraph {
+public class GraphTest {
 
     @Test
     public void testEmptyGraph() {

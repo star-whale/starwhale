@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TestTaskLogK8sCollector {
+public class TaskLogK8sCollectorTest {
 
     StorageAccessService storageService;
 

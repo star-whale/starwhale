@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.user.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,7 +31,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class TestUserMapper extends MySqlContainerHolder {
+public class UserMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private UserMapper userMapper;

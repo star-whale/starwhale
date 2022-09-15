@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class TestStepHelper {
+public class StepHelperTest {
 
     StepHelper stepHelper = new StepHelper();
 

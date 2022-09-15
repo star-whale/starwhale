@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 /**
  * test for {@link TaskWatcherForJobStatus}
  */
-public class TestTaskWatcherForJobStatus {
+public class TaskWatcherForJobStatusTest {
 
     @Test
     public void testJobRunning() {

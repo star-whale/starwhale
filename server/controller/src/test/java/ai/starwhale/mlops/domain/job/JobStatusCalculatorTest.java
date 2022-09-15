@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class TestJobStatusCalculator {
+public class JobStatusCalculatorTest {
 
     JobStatusCalculator jobStatusCalculator = new JobStatusCalculator();
 
