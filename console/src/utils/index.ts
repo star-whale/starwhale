@@ -183,7 +183,7 @@ export function getReadableStorageQuantityStr(bytes?: number): string {
         if (k === intKi) {
             return `${intKi} KB`
         }
-        return `${bytes} KB`
+        return `${k.toFixed(2)} KB`
     }
 
     const mi = bytes / 1024 / 1024
