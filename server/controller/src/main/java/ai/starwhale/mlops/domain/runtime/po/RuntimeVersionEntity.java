@@ -34,6 +34,8 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private Long id;
 
+    private Long versionOrder;
+
     private Long runtimeId;
 
     private Long ownerId;

@@ -43,6 +43,18 @@ public class TableQueryFilter {
         private String name;
     }
 
+    @Data
+    @AllArgsConstructor
+    public static class Constant {
+
+        private ColumnType type;
+        private Object value;
+    }
+
     private Operator operator;
+
+    /**
+     * each operand can be of type TableQueryFilter, Column, or Constant
+     */
     private List<Object> operands;
 }

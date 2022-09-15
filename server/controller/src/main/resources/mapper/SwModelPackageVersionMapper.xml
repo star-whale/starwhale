@@ -9,28 +9,46 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper">
   <sql id="select_swmp_version">
-    select mv.id as mv_id,
-    mv.swmp_id,
-    mv.owner_id,
-    mv.version_name as mv_version_name,
-    mv.version_tag as mv_version_tag,
-    mv.version_meta as mv_version_meta,
-    mv.storage_path as mv_storage_path,
-    mv.manifest as mv_manifest,
-    mv.eval_jobs as mv_eval_jobs,
-    mv.created_time as mv_created_time,
-    mv.modified_time as mv_modified_time,
-    m.swmp_name as swmp_name,
-    u.id as user_id,
-    u.user_name,
-    u.created_time as user_created_time,
-    u.user_enabled
+    select mv.id            as mv_id,
+           mv.swmp_id,
+           mv.owner_id,
+           mv.version_name  as mv_version_name,
+           mv.version_order as mv_version_order,
+           mv.version_tag   as mv_version_tag,
+           mv.version_meta  as mv_version_meta,
+           mv.storage_path  as mv_storage_path,
+           mv.manifest      as mv_manifest,
+           mv.eval_jobs     as mv_eval_jobs,
+           mv.created_time  as mv_created_time,
+           mv.modified_time as mv_modified_time,
+           m.swmp_name      as swmp_name,
+           u.id             as user_id,
+           u.user_name,
+           u.created_time   as user_created_time,
+           u.user_enabled
     from swmp_version as mv,
-    swmp_info as m,
-    user_info as u
+         swmp_info as m,
+         user_info as u
     where mv.owner_id = u.id
-    and mv.swmp_id = m.id
+      and mv.swmp_id = m.id
   </sql>
+
+  <insert id="addNewVersion"
+    keyProperty="id"
+    parameterType="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity"
+    useGeneratedKeys="true">
+    insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta,
+                              storage_path, manifest, eval_jobs)
+    values (#{version.swmpId},
+            #{version.ownerId},
+            #{version.versionName},
+            #{version.versionTag},
+            #{version.versionMeta},
+            #{version.storagePath},
+            #{version.manifest},
+            #{version.evalJobs})
+  </insert>
+
   <select id="listVersions" resultMap="swmpVersionResultMap">
     <include refid="select_swmp_version"/>
     and swmp_id = #{swmpId}
@@ -71,51 +89,73 @@
     limit 1
   </select>
 
-  <insert id="revertTo">
+  <select id="findByVersionOrderAndSwmpId" resultMap="swmpVersionResultMap">
+    <if test="swmpId != null">
+      and mv.swmp_id = #{swmpId}
+    </if>
+    <include refid="select_swmp_version"/>
+    and mv.version_order = #{versionOrder}
+  </select>
+
+  <update id="revertTo">
     update swmp_version
-    set version_order = (select max from ((select max(version_order) as max from swmp_version)) as
-    v) + 1
+    set version_order = if((select version_order
+                            from ((select version_order
+                                   from swmp_version
+                                   where id = #{swmpVersionId})) as v1)
+                             = (select max
+                                from (select max(version_order) as max
+                                      from swmp_version
+                                      where swmp_id = (select swmp_id
+                                                       from swmp_version
+                                                       where id = #{swmpVersionId})) as v2)
+                             and
+                           (select version_order
+                            from ((select version_order
+                                   from swmp_version
+                                   where id = #{swmpVersionId})) as v3)
+                             != 0,
+                           (select version_order
+                            from (select version_order
+                                  from swmp_version
+                                  where id = #{swmpVersionId}) as v4),
+                           (select max
+                            from ((select max(version_order) as max
+                                   from swmp_version
+                                   where swmp_id = (select swmp_id
+                                                    from swmp_version
+                                                    where id = #{swmpVersionId}))) as v5) + 1)
     where id = #{swmpVersionId}
-  </insert>
-
-  <insert id="addNewVersion"
-    parameterType="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity"
-    useGeneratedKeys="true" keyProperty="id">
-    insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta,
-    storage_path, manifest, eval_jobs)
-    values(#{version.swmpId},
-    #{version.ownerId},
-    #{version.versionName},
-    #{version.versionTag},
-    #{version.versionMeta},
-    #{version.storagePath},
-    #{version.manifest},
-    #{version.evalJobs})
-  </insert>
-
-  <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity">
-    update swmp_version set version_tag = #{version.versionTag} where id = #{version.id}
   </update>
 
   <update id="updateTag"
     parameterType="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity">
-    update swmp_version set version_tag = #{tag} where id = #{versionId}
+    update swmp_version
+    set version_tag = #{tag}
+    where id = #{versionId}
+  </update>
+
+  <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity">
+    update swmp_version
+    set version_tag = #{version.versionTag}
+    where id = #{version.id}
   </update>
 
   <resultMap id="swmpVersionResultMap"
     type="ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity">
-    <id property="id" column="mv_id"/>
-    <result property="swmpId" column="swmp_id"/>
-    <result property="swmpName" column="swmp_name"/>
-    <result property="versionName" column="mv_version_name"/>
-    <result property="versionTag" column="mv_version_tag"/>
-    <result property="versionMeta" column="mv_version_meta"/>
-    <result property="storagePath" column="mv_storage_path"/>
-    <result property="manifest" column="mv_manifest"/>
-    <result property="evalJobs" column="mv_eval_jobs"/>
-    <result property="createdTime" column="mv_created_time"/>
-    <result property="modifiedTime" column="mv_modified_time"/>
-    <result property="ownerId" column="owner_id"/>
+    <id column="mv_id" property="id"/>
+    <result column="swmp_id" property="swmpId"/>
+    <result column="swmp_name" property="swmpName"/>
+    <result column="mv_version_order" property="versionOrder"/>
+    <result column="mv_version_name" property="versionName"/>
+    <result column="mv_version_tag" property="versionTag"/>
+    <result column="mv_version_meta" property="versionMeta"/>
+    <result column="mv_storage_path" property="storagePath"/>
+    <result column="mv_manifest" property="manifest"/>
+    <result column="mv_eval_jobs" property="evalJobs"/>
+    <result column="mv_created_time" property="createdTime"/>
+    <result column="mv_modified_time" property="modifiedTime"/>
+    <result column="owner_id" property="ownerId"/>
     <association property="owner"
       resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap"/>
   </resultMap>

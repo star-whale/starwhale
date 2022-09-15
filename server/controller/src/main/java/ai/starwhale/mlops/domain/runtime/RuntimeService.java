@@ -26,6 +26,7 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -127,11 +128,15 @@ public class RuntimeService {
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Resource
+    private VersionAliasConvertor versionAliasConvertor;
+
+    @Resource
     @Qualifier("yamlMapper")
     private ObjectMapper yamlMapper;
 
     private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, projectManager, runtimeManager, runtimeManager, ValidSubject.RUNTIME);
+        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, runtimeManager, runtimeManager,
+                ValidSubject.RUNTIME);
     }
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
@@ -190,6 +195,7 @@ public class RuntimeService {
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))
                     .name(rt.getRuntimeName())
+                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())

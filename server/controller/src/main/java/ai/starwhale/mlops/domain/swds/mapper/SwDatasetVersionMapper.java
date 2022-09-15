@@ -44,6 +44,9 @@ public interface SwDatasetVersionMapper {
     SwDatasetVersionEntity findByDsIdAndVersionName(@Param("datasetId") Long datasetId,
             @Param("versionName") String versionName);
 
+    SwDatasetVersionEntity findByDsIdAndVersionOrder(@Param("datasetId") Long datasetId,
+            @Param("versionOrder") Long versionOrder);
+
     int revertTo(@Param("dsId") Long dsId, @Param("dsVersionId") Long dsVersionId);
 
     int addNewVersion(@Param("version") SwDatasetVersionEntity version);

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -34,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,12 +44,18 @@ import org.springframework.stereotype.Service;
 public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
-    @Resource
-    private RuntimeMapper runtimeMapper;
-    @Resource
-    private RuntimeVersionMapper runtimeVersionMapper;
-    @Resource
-    private IdConvertor idConvertor;
+    private final RuntimeMapper runtimeMapper;
+    private final RuntimeVersionMapper runtimeVersionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
+
+    public RuntimeManager(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.runtimeMapper = runtimeMapper;
+        this.runtimeVersionMapper = runtimeVersionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
         if (idConvertor.isId(versionUrl)) {
@@ -76,6 +82,12 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     @Override
     public BundleVersionEntity findVersionById(Long bundleVersionId) {
         return runtimeVersionMapper.findVersionById(bundleVersionId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+        Long versionOrder = versionAliasConvertor.revert(alias);
+        return runtimeVersionMapper.findByVersionOrderAndRuntimeId(versionOrder, bundleId);
     }
 
     @Override

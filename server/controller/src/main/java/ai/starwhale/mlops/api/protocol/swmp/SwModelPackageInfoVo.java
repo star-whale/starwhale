@@ -39,6 +39,9 @@ public class SwModelPackageInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
+    @JsonProperty("versionAlias")
+    private String versionAlias;
+
     @JsonProperty("versionName")
     private String versionName;
 
@@ -60,7 +63,7 @@ public class SwModelPackageInfoVo implements Serializable {
 
     public static SwModelPackageInfoVo empty() {
         return new SwModelPackageInfoVo("", "",
-                "", "", "", "",
+                "", "", "", "", "",
                 0L, new ArrayList<>());
     }
 
