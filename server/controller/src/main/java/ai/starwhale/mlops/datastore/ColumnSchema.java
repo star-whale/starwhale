@@ -42,9 +42,9 @@ public class ColumnSchema {
         }
         this.name = schema.getName();
         try {
-            this.type = ColumnType.valueOf(schema.getType());
+            this.type = ColumnType.getColumnTypeByName(schema.getType());
         } catch (IllegalArgumentException e) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "invalid column type " + schema.getType());
         }
         this.index = index;

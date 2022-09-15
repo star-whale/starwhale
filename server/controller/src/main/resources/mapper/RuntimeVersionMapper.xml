@@ -19,24 +19,40 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper">
   <sql id="select_runtime_version">
-    select rv.id as rv_id,
-    rv.runtime_id,
-    rv.owner_id,
-    rv.version_name as rv_version_name,
-    rv.version_tag as rv_version_tag,
-    rv.version_meta as rv_version_meta,
-    rv.storage_path as rv_storage_path,
-    rv.image as rv_image,
-    rv.created_time as rv_created_time,
-    rv.modified_time as rv_modified_time,
-    u.id as user_id,
-    u.user_name,
-    u.created_time as user_created_time,
-    u.user_enabled
+    select rv.id            as rv_id,
+           rv.runtime_id,
+           rv.owner_id,
+           rv.version_order as rv_version_order,
+           rv.version_name  as rv_version_name,
+           rv.version_tag   as rv_version_tag,
+           rv.version_meta  as rv_version_meta,
+           rv.storage_path  as rv_storage_path,
+           rv.image         as rv_image,
+           rv.created_time  as rv_created_time,
+           rv.modified_time as rv_modified_time,
+           u.id             as user_id,
+           u.user_name,
+           u.created_time   as user_created_time,
+           u.user_enabled
     from runtime_version as rv,
-    user_info as u
+         user_info as u
     where owner_id = u.id
   </sql>
+
+  <insert id="addNewVersion"
+    keyProperty="id"
+    parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity"
+    useGeneratedKeys="true">
+    insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta,
+                                 storage_path, image)
+    values (#{version.runtimeId},
+            #{version.ownerId},
+            #{version.versionName},
+            #{version.versionTag},
+            #{version.versionMeta},
+            #{version.storagePath},
+            #{version.image})
+  </insert>
 
   <select id="listVersions" resultMap="runtimeVersionResultMap">
     <include refid="select_runtime_version"/>
@@ -78,39 +94,62 @@
     limit 1
   </select>
 
-  <insert id="revertTo">
+  <select id="findByVersionOrderAndRuntimeId" resultMap="runtimeVersionResultMap">
+    <if test="runtimeId != null">
+      and rv.runtime_id = #{runtimeId}
+    </if>
+    <include refid="select_runtime_version"/>
+    and rv.version_order = #{versionOrder}
+  </select>
+
+  <update id="revertTo">
     update runtime_version
-    set version_order = (select max from ((select max(version_order) as max from runtime_version))
-    as v) + 1
+    set version_order = if((select version_order
+                            from ((select version_order
+                                   from runtime_version
+                                   where id = #{rtVersionId})) as v1)
+                             = (select max
+                                from (select max(version_order) as max
+                                      from runtime_version
+                                      where runtime_id = (select runtime_id
+                                                          from runtime_version
+                                                          where id = #{rtVersionId})) as v2)
+                             and
+                           (select version_order
+                            from ((select version_order
+                                   from runtime_version
+                                   where id = #{rtVersionId})) as v3)
+                             != 0,
+                           (select version_order
+                            from (select version_order
+                                  from runtime_version
+                                  where id = #{rtVersionId}) as v4),
+                           (select max
+                            from ((select max(version_order) as max
+                                   from runtime_version
+                                   where runtime_id = (select runtime_id
+                                                       from runtime_version
+                                                       where id = #{rtVersionId}))) as v5) + 1)
     where id = #{rtVersionId}
-  </insert>
-
-  <insert id="addNewVersion"
-    parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity"
-    useGeneratedKeys="true" keyProperty="id">
-    insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta,
-    storage_path, image)
-    values(#{version.runtimeId},
-    #{version.ownerId},
-    #{version.versionName},
-    #{version.versionTag},
-    #{version.versionMeta},
-    #{version.storagePath},
-    #{version.image})
-  </insert>
-
-  <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
-    update runtime_version set version_tag = #{version.versionTag} where id = #{version.id}
   </update>
 
   <update id="updateTag" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
-    update runtime_version set version_tag = #{tag} where id = #{versionId}
+    update runtime_version
+    set version_tag = #{tag}
+    where id = #{versionId}
+  </update>
+
+  <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
+    update runtime_version
+    set version_tag = #{version.versionTag}
+    where id = #{version.id}
   </update>
 
   <resultMap id="runtimeVersionResultMap"
     type="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
     <id property="id" column="rv_id"/>
     <result property="runtimeId" column="runtime_id"/>
+    <result column="rv_version_order" property="versionOrder"/>
     <result property="versionName" column="rv_version_name"/>
     <result property="versionTag" column="rv_version_tag"/>
     <result property="versionMeta" column="rv_version_meta"/>

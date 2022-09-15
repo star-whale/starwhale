@@ -1,11 +1,6 @@
-name: SpeechCommands
-
-process: code.data_slicer:SpeechCommandsSlicer
-
+name: speech_commands_validation
+process: sc.dataset:SpeechCommandsBuildExecutor
 desc: SpeechCommands data and label test dataset
-tag:
-  - bin
-
 attr:
   alignment_size: 4k
   volume_size: 64M

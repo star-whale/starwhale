@@ -49,7 +49,7 @@
     u.modified_time as user_modified_time
     from user_info as u
     <if test="userNamePrefix != null and userNamePrefix != ''">
-      and u.user_name like concat(#{userNamePrefix}, '%')
+      where u.user_name like concat(#{userNamePrefix}, '%')
     </if>
     order by u.user_name
   </select>

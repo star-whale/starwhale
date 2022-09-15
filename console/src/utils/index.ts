@@ -183,7 +183,7 @@ export function getReadableStorageQuantityStr(bytes?: number): string {
         if (k === intKi) {
             return `${intKi} KB`
         }
-        return `${bytes} KB`
+        return `${k.toFixed(2)} KB`
     }
 
     const mi = bytes / 1024 / 1024
@@ -303,4 +303,10 @@ export function longestCommonSubstring(string1: string, string2: string) {
         longestSubstringColumn -= 1
     }
     return longestSubstring
+}
+
+export function parseDecimal(v: number, decimal: number): string {
+    if (v === 0) return String(v)
+    if (v.toString().indexOf('.') === -1) return String(v)
+    return Number(v).toFixed(decimal)
 }

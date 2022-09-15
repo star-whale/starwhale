@@ -210,6 +210,7 @@ class StandaloneModelTestCase(TestCase):
             Context(
                 workdir=Path(_model_data_dir),
                 version="rwerwe9",
+                project="self",
             ),
             "some",
         )

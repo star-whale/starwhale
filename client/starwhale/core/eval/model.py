@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import os
 import json
 import typing as t
 import subprocess
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from collections import defaultdict
-
-from loguru import logger
 
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
@@ -17,12 +14,12 @@ from starwhale.utils.fs import move_dir
 from starwhale.api._impl import wrapper
 from starwhale.base.type import InstanceType, JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.consts.env import SWEnv
 from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.core.eval.store import EvaluationStorage
+from starwhale.api._impl.metric import MetricKind
 from starwhale.core.eval.executor import EvalExecutor
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
@@ -95,22 +92,26 @@ class EvaluationJob(metaclass=ABCMeta):
         raise NotImplementedError
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        # use datastore
-        os.environ[SWEnv.project] = self.uri.project
-        os.environ[SWEnv.eval_version] = self._get_version()
-        logger.debug(
-            f"eval instance:{self.uri.instance}, project:{self.uri.project}, eval_id:{self._get_version()}"
+        evaluation = wrapper.Evaluation(
+            eval_id=self._get_version(), project=self.uri.project
         )
-        _evaluation = wrapper.Evaluation()
-        _summary = _evaluation.get_metrics()
-        return dict(
-            summary=_summary,
-            labels={str(i): l for i, l in enumerate(list(_evaluation.get("labels")))},
-            confusion_matrix=dict(
-                binarylabel=list(_evaluation.get("confusion_matrix/binarylabel"))
-            ),
-            kind=_summary["kind"],
-        )
+        summary = evaluation.get_metrics()
+        kind = summary.get("kind", "")
+
+        ret = {
+            "kind": kind,
+            "summary": summary,
+        }
+
+        if kind == MetricKind.MultiClassification.value:
+            ret["labels"] = {
+                str(i): l for i, l in enumerate(list(evaluation.get("labels")))
+            }
+            ret["confusion_matrix"] = {
+                "binarylabel": list(evaluation.get("confusion_matrix/binarylabel"))
+            }
+
+        return ret
 
     @classmethod
     def _get_job_cls(

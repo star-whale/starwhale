@@ -26,6 +26,8 @@ import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.WalManager;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
@@ -125,30 +127,28 @@ public class MemoryTableImpl implements MemoryTable {
         if (col.getNullValue()) {
             return null;
         }
-        switch (columnSchema.getType()) {
-            case UNKNOWN:
-                return null;
-            case BOOL:
-                return col.getBoolValue();
-            case INT8:
-                return (byte) col.getIntValue();
-            case INT16:
-                return (short) col.getIntValue();
-            case INT32:
-                return (int) col.getIntValue();
-            case INT64:
-                return col.getIntValue();
-            case FLOAT32:
-                return col.getFloatValue();
-            case FLOAT64:
-                return col.getDoubleValue();
-            case STRING:
-                return col.getStringValue();
-            case BYTES:
-                return ByteBuffer.wrap(col.getBytesValue().toByteArray());
-            default:
-                throw new IllegalArgumentException("invalid type " + this);
+        if (columnSchema.getType() == ColumnType.UNKNOWN) {
+            return null;
+        } else if (columnSchema.getType() == ColumnType.BOOL) {
+            return col.getBoolValue();
+        } else if (columnSchema.getType() == ColumnType.INT8) {
+            return (byte) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT16) {
+            return (short) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT32) {
+            return (int) col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.INT64) {
+            return col.getIntValue();
+        } else if (columnSchema.getType() == ColumnType.FLOAT32) {
+            return col.getFloatValue();
+        } else if (columnSchema.getType() == ColumnType.FLOAT64) {
+            return col.getDoubleValue();
+        } else if (columnSchema.getType() == ColumnType.STRING) {
+            return col.getStringValue();
+        } else if (columnSchema.getType() == ColumnType.BYTES) {
+            return ByteBuffer.wrap(col.getBytesValue().toByteArray());
         }
+        throw new IllegalArgumentException("invalid type " + this);
     }
 
 
@@ -243,33 +243,23 @@ public class MemoryTableImpl implements MemoryTable {
             if (value == null) {
                 ret.setNullValue(true);
             } else {
-                switch (colSchema.getType()) {
-                    case UNKNOWN:
-                        ret.setNullValue(true);
-                        break;
-                    case BOOL:
-                        ret.setBoolValue((Boolean) value);
-                        break;
-                    case INT8:
-                    case INT16:
-                    case INT32:
-                    case INT64:
-                        ret.setIntValue(((Number) value).longValue());
-                        break;
-                    case FLOAT32:
-                        ret.setFloatValue((Float) value);
-                        break;
-                    case FLOAT64:
-                        ret.setDoubleValue((Double) value);
-                        break;
-                    case STRING:
-                        ret.setStringValue((String) value);
-                        break;
-                    case BYTES:
-                        ret.setBytesValue(ByteString.copyFrom(((ByteBuffer) value).array()));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("invalid type " + colSchema.getType());
+                if (colSchema.getType() == ColumnType.UNKNOWN) {
+                    ret.setNullValue(true);
+                } else if (colSchema.getType() == ColumnType.BOOL) {
+                    ret.setBoolValue((Boolean) value);
+                } else if (colSchema.getType() == ColumnType.INT8 || colSchema.getType() == ColumnType.INT16
+                        || colSchema.getType() == ColumnType.INT32 || colSchema.getType() == ColumnType.INT64) {
+                    ret.setIntValue(((Number) value).longValue());
+                } else if (colSchema.getType() == ColumnType.FLOAT32) {
+                    ret.setFloatValue((Float) value);
+                } else if (colSchema.getType() == ColumnType.FLOAT64) {
+                    ret.setDoubleValue((Double) value);
+                } else if (colSchema.getType() == ColumnType.STRING) {
+                    ret.setStringValue((String) value);
+                } else if (colSchema.getType() == ColumnType.BYTES) {
+                    ret.setBytesValue(ByteString.copyFrom(((ByteBuffer) value).array()));
+                } else {
+                    throw new IllegalArgumentException("invalid type " + colSchema.getType());
                 }
             }
         }
@@ -323,7 +313,11 @@ public class MemoryTableImpl implements MemoryTable {
         if (orderBy != null) {
             results.sort((a, b) -> {
                 for (var col : orderBy) {
-                    var result = MemoryTableImpl.sortCompare(a.get(col.getColumnName()),
+                    var columnType = this.schema.getColumnSchemaByName(col.getColumnName()).getType();
+                    var result = MemoryTableImpl.sortCompare(
+                            columnType,
+                            a.get(col.getColumnName()),
+                            columnType,
                             b.get(col.getColumnName()));
                     if (result != 0) {
                         if (col.isDescending()) {
@@ -404,32 +398,30 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
-    private static int sortCompare(Object a, Object b) {
-        if (a == null && b == null) {
+    private static int sortCompare(ColumnType type1, Object value1, ColumnType type2, Object value2) {
+        if (value1 == null && value2 == null) {
             return 0;
         }
-        if (a == null) {
+        if (value1 == null) {
             return -1;
         }
-        if (b == null) {
+        if (value2 == null) {
             return 1;
         }
-        var type1 = ColumnType.getColumnType(a);
-        var type2 = ColumnType.getColumnType(b);
-        if (type1 != type2) {
+        if (!type1.equals(type2)) {
             throw new IllegalArgumentException(
                     MessageFormat.format("not same type: {0} and {1}", type1, type2));
         }
         if (type1 == ColumnType.STRING) {
-            return ((String) a).compareTo((String) b);
+            return ((String) value1).compareTo((String) value2);
         } else if (type1 == ColumnType.BYTES) {
-            return ((ByteBuffer) a).compareTo((ByteBuffer) b);
+            return ((ByteBuffer) value1).compareTo((ByteBuffer) value2);
         } else if (type1 == ColumnType.BOOL) {
-            return ((Boolean) a).compareTo((Boolean) b);
-        } else if (type1.getName().equals(ColumnType.INT32.getName())) {
-            return Long.compare(((Number) a).longValue(), ((Number) b).longValue());
-        } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
-            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+            return ((Boolean) value1).compareTo((Boolean) value2);
+        } else if (type1.getCategory().equals(ColumnType.INT32.getCategory())) {
+            return Long.compare(((Number) value1).longValue(), ((Number) value2).longValue());
+        } else if (type1.getCategory().equals(ColumnType.FLOAT32.getCategory())) {
+            return Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
         } else {
             throw new IllegalArgumentException("invalid type " + type1);
         }
@@ -451,7 +443,9 @@ public class MemoryTableImpl implements MemoryTable {
             case LESS:
             case LESS_EQUAL:
                 return MemoryTableImpl.filterCompare(
+                        this.getType(filter.getOperands().get(0)),
                         this.getValue(filter.getOperands().get(0), record),
+                        this.getType(filter.getOperands().get(1)),
                         this.getValue(filter.getOperands().get(1), record),
                         filter.getOperator());
             default:
@@ -459,11 +453,36 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
+    private ColumnType getType(Object operand) {
+        if (operand instanceof TableQueryFilter.Column) {
+            var colName = ((TableQueryFilter.Column) operand).getName();
+            var colSchema = this.schema.getColumnSchemaByName(colName);
+            if (colSchema == null) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "invalid filter, unknown column " + colName);
+            }
+            return colSchema.getType();
+        } else if (operand instanceof TableQueryFilter.Constant) {
+            var type = ((TableQueryFilter.Constant) operand).getType();
+            if (type == null) {
+                throw new SwProcessException(ErrorType.DATASTORE, "invalid filter, constant type is null");
+            }
+            return type;
+        } else if (operand instanceof TableQueryFilter) {
+            return ColumnType.BOOL;
+        } else {
+            throw new IllegalArgumentException("invalid operand type " + operand.getClass());
+        }
+    }
+
     private Object getValue(Object operand, Map<String, Object> record) {
         if (operand instanceof TableQueryFilter.Column) {
             return record.get(((TableQueryFilter.Column) operand).getName());
+        } else if (operand instanceof TableQueryFilter.Constant) {
+            return ((TableQueryFilter.Constant) operand).getValue();
+        } else {
+            throw new IllegalArgumentException("invalid operand type " + operand.getClass());
         }
-        return operand;
     }
 
     private void checkFilter(TableQueryFilter filter) {
@@ -488,84 +507,48 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     private void checkSameType(List<Object> operands) {
-        if (operands.isEmpty()) {
+        var types = operands.stream()
+                .map(this::getType)
+                .filter(t -> t != ColumnType.UNKNOWN)
+                .collect(Collectors.toList());
+        if (types.isEmpty()) {
             return;
         }
-        var firstCol = operands.stream()
-                .filter(x -> x instanceof TableQueryFilter.Column)
-                .map(x -> (TableQueryFilter.Column) x)
-                .findFirst();
-        var type = this.schema.getColumnSchemaByName(firstCol.orElseThrow().getName()).getType();
-        for (var op : operands) {
-            if (op instanceof TableQueryFilter.Column) {
-                var col = (TableQueryFilter.Column) op;
-                var colSchema = this.schema.getColumnSchemaByName(col.getName());
-                if (colSchema == null) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            "invalid filter, unknown column " + col.getName());
-                }
-                if (!type.getName().equals(colSchema.getType().getName())) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format(
-                                    "invalid filter, can not compare column {0} of type {1} "
-                                            + "with column {2} of type {3}",
-                                    col.getName(),
-                                    colSchema.getType(),
-                                    firstCol.orElseThrow().getName(),
-                                    type));
-                }
-            } else if (op != null) {
-                boolean checkFailed;
-                if (op instanceof String) {
-                    checkFailed = type != ColumnType.STRING;
-                } else if (op instanceof ByteBuffer) {
-                    checkFailed = type != ColumnType.BYTES;
-                } else if (op instanceof Boolean) {
-                    checkFailed = type != ColumnType.BOOL;
-                } else if (op instanceof Number) {
-                    checkFailed = !type.getName().equals(ColumnType.INT32.getName())
-                            && !type.getName().equals(ColumnType.FLOAT32.getName());
-                } else {
-                    throw new IllegalArgumentException("unexpected operand class " + op.getClass());
-                }
-                if (checkFailed) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format(
-                                    "invalid filter, can not compare column {0} of type {1} with value {2} of type {3}",
-                                    firstCol.orElseThrow().getName(),
-                                    type,
-                                    op,
-                                    op.getClass()));
-                }
+        ColumnType type1 = types.get(0);
+        for (var type : types) {
+            if (!type.getCategory().equals(type1.getCategory())) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        MessageFormat.format("invalid filter, can not compare {0} with {1}", type1, type));
             }
         }
-
     }
 
-
-    private static boolean filterCompare(Object a, Object b, TableQueryFilter.Operator op) {
-        if (a == null || b == null) {
-            return a == null && b == null && op == TableQueryFilter.Operator.EQUAL;
+    private static boolean filterCompare(
+            ColumnType type1,
+            Object value1,
+            ColumnType type2,
+            Object value2,
+            TableQueryFilter.Operator op) {
+        if (value1 == null || value2 == null) {
+            return value1 == null && value2 == null && op == TableQueryFilter.Operator.EQUAL;
         }
         int result;
-        var type1 = ColumnType.getColumnType(a);
-        var type2 = ColumnType.getColumnType(b);
-        if (type1.getName().equals(type2.getName())) {
+        if (type1.getCategory().equals(type2.getCategory())) {
             if (type1 == ColumnType.BOOL) {
-                result = ((Boolean) a).compareTo((Boolean) b);
+                result = ((Boolean) value1).compareTo((Boolean) value2);
             } else if (type1 == ColumnType.STRING) {
-                result = ((String) a).compareTo((String) b);
+                result = ((String) value1).compareTo((String) value2);
             } else if (type1 == ColumnType.BYTES) {
-                result = ((ByteBuffer) a).compareTo((ByteBuffer) b);
-            } else if (type1.getName().equals(ColumnType.INT32.getName())) {
-                result = Long.compare(((Number) a).longValue(), ((Number) b).longValue());
-            } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
-                result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+                result = ((ByteBuffer) value1).compareTo((ByteBuffer) value2);
+            } else if (type1.getCategory().equals(ColumnType.INT32.getCategory())) {
+                result = Long.compare(((Number) value1).longValue(), ((Number) value2).longValue());
+            } else if (type1.getCategory().equals(ColumnType.FLOAT32.getCategory())) {
+                result = Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
             } else {
                 throw new IllegalArgumentException("invalid type " + type1);
             }
-        } else if (a instanceof Number && b instanceof Number) {
-            result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        } else if (value1 instanceof Number && value2 instanceof Number) {
+            result = Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
         } else {
             throw new IllegalArgumentException("can not compare " + type1 + " with " + type2);
         }

@@ -114,6 +114,7 @@ externalS3OSS:
   secretKey: ""
   defaultBuckets: starwhale
   region: "local"
+  type: "s3" # supported type: s3, aliyun
 
 controller:
   taskSplitSize: 2

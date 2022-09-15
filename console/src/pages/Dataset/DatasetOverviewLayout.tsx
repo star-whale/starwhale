@@ -6,7 +6,6 @@ import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Accordion from '@/components/Accordion'
-import { Panel } from 'baseui/accordion'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
@@ -14,6 +13,7 @@ import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
 import _ from 'lodash'
 import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
+import { Panel } from 'baseui/accordion'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -156,48 +156,41 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
             .reverse()
             .find((item_) => _.startsWith(location.pathname, item_.path))
         const paths = item?.path?.split('/') ?? []
-        return paths[paths.length - 1] ?? 'overview'
+        return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems}>
-            <Accordion
-                overrides={{
-                    Root: {
-                        style: {
-                            flex: 1,
-                            display: 'flex',
-                            fontSize: '14px',
-                        },
-                    },
-                }}
-                accordion={false}
-            >
+            <Accordion accordion overrides={{ ToggleIcon: () => <></> }}>
                 <Panel title={t('Version and Files')} expanded>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                        <div style={{ width: '280px' }}>
-                            <DatasetVersionSelector
-                                projectId={projectId}
-                                datasetId={datasetId}
-                                value={datasetVersionId}
-                                onChange={(v) =>
-                                    history.push(
-                                        `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}`
-                                    )
-                                }
-                            />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                            <div style={{ width: '280px' }}>
+                                <DatasetVersionSelector
+                                    projectId={projectId}
+                                    datasetId={datasetId}
+                                    value={datasetVersionId}
+                                    onChange={(v) =>
+                                        history.push(
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}`
+                                        )
+                                    }
+                                />
+                            </div>
+                            <Button
+                                size='compact'
+                                kind='secondary'
+                                startEnhancer={() => <IconFont type='runtime' />}
+                                onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)}
+                            >
+                                {t('History')}
+                            </Button>
                         </div>
-                        <Button
-                            size='compact'
-                            kind='secondary'
-                            startEnhancer={() => <IconFont type='runtime' />}
-                            onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)}
-                        >
-                            {t('History')}
-                        </Button>
+                        {datasetVersionId && <BaseNavTabs navItems={navItems} />}
+                        <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
+                            {children}
+                        </div>
                     </div>
-                    {datasetVersionId && <BaseNavTabs navItems={navItems} />}
-                    <div style={{ paddingTop: '12px', flex: '1' }}>{children}</div>
                 </Panel>
             </Accordion>
         </BaseSubLayout>

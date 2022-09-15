@@ -50,9 +50,6 @@ public class Graph {
                 k -> Collections.synchronizedList(new LinkedList<>()));
     }
 
-    public static Graph emptyInstance() {
-        return new Graph();
-    }
 
     public boolean empty() {
         return false;

@@ -90,7 +90,7 @@ public class IndexWriter {
 
     private TableSchemaDesc toSchema(Map<String, ColumnType> tableSchemaMap) {
         List<ColumnSchemaDesc> columnSchemaDescs = tableSchemaMap.entrySet().stream()
-                .map(entry -> new ColumnSchemaDesc(entry.getKey(), entry.getValue().name())).collect(
+                .map(entry -> new ColumnSchemaDesc(entry.getKey(), entry.getValue().toString())).collect(
                         Collectors.toList());
         return new TableSchemaDesc("id", columnSchemaDescs);
     }

@@ -20,24 +20,27 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
-import java.util.Objects;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SwdsVersionConvertor implements Convertor<SwDatasetVersionEntity, DatasetVersionVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
+    private final UserConvertor userConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private UserConvertor userConvertor;
-
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    public SwdsVersionConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
+            LocalDateTimeConvertor localDateTimeConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     @Override
     public DatasetVersionVo convert(SwDatasetVersionEntity entity)
@@ -47,6 +50,7 @@ public class SwdsVersionConvertor implements Convertor<SwDatasetVersionEntity, D
         }
         return DatasetVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
+                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                 .name(entity.getVersionName())
                 .owner(userConvertor.convert(entity.getOwner()))
                 .tag(entity.getVersionTag())
@@ -58,12 +62,6 @@ public class SwdsVersionConvertor implements Convertor<SwDatasetVersionEntity, D
     @Override
     public SwDatasetVersionEntity revert(DatasetVersionVo vo)
             throws ConvertException {
-        Objects.requireNonNull(vo, "datasetVersionVo");
-        return SwDatasetVersionEntity.builder()
-                .id(idConvertor.revert(vo.getId()))
-                .versionName(vo.getName())
-                .ownerId(idConvertor.revert(vo.getOwner().getId()))
-                .versionTag(vo.getTag())
-                .build();
+        throw new UnsupportedOperationException();
     }
 }

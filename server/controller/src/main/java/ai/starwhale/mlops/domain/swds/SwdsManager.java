@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.swds;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -34,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,14 +44,18 @@ import org.springframework.stereotype.Service;
 public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
-    @Resource
-    private SwDatasetMapper datasetMapper;
+    private final SwDatasetMapper datasetMapper;
+    private final SwDatasetVersionMapper datasetVersionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
 
-    @Resource
-    private SwDatasetVersionMapper datasetVersionMapper;
-
-    @Resource
-    private IdConvertor idConvertor;
+    public SwdsManager(SwDatasetMapper datasetMapper, SwDatasetVersionMapper datasetVersionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
+        this.datasetMapper = datasetMapper;
+        this.datasetVersionMapper = datasetVersionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+    }
 
     public Long getSwdsVersionId(String versionUrl, Long swdsId) {
         if (idConvertor.isId(versionUrl)) {
@@ -78,6 +82,12 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Override
     public BundleVersionEntity findVersionById(Long bundleVersionId) {
         return datasetVersionMapper.getVersionById(bundleVersionId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+        Long versionOrder = versionAliasConvertor.revert(alias);
+        return datasetVersionMapper.findByDsIdAndVersionOrder(bundleId, versionOrder);
     }
 
     @Override

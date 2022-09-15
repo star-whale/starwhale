@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.bundle;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
@@ -32,16 +33,19 @@ public class BundleManager {
     public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
     private final ProjectAccessor projectAccessor;
     private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
     private final BundleAccessor bundleAccessor;
     private final BundleVersionAccessor bundleVersionAccessor;
     private final ValidSubject validSubject;
 
     public BundleManager(IdConvertor idConvertor,
+            VersionAliasConvertor versionAliasConvertor,
             ProjectAccessor projectAccessor,
             BundleAccessor bundleAccessor,
             BundleVersionAccessor bundleVersionAccessor,
             ValidSubject validSubject) {
         this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
         this.projectAccessor = projectAccessor;
         this.bundleAccessor = bundleAccessor;
         this.bundleVersionAccessor = bundleVersionAccessor;
@@ -81,6 +85,8 @@ public class BundleManager {
         BundleVersionEntity entity;
         if (idConvertor.isId(versionUrl)) {
             entity = bundleVersionAccessor.findVersionById(idConvertor.revert(versionUrl));
+        } else if (versionAliasConvertor.isVersionAlias(versionUrl)) {
+            entity = bundleVersionAccessor.findVersionByAliasAndBundleId(versionUrl, bundleId);
         } else {
             entity = bundleVersionAccessor.findVersionByNameAndBundleId(versionUrl, bundleId);
         }

@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
@@ -166,7 +167,7 @@ public class DataStoreTest {
                 .columns(Map.of("a", "a"))
                 .filter(TableQueryFilter.builder()
                         .operator(TableQueryFilter.Operator.GREATER)
-                        .operands(List.of(new TableQueryFilter.Column("a"), 1))
+                        .operands(List.of(new TableQueryFilter.Column("a"), new Constant(ColumnType.INT32, 1)))
                         .build())
                 .orderBy(List.of(new OrderByDesc("a")))
                 .start(1)
@@ -182,7 +183,7 @@ public class DataStoreTest {
                 .tableName("t1")
                 .filter(TableQueryFilter.builder()
                         .operator(TableQueryFilter.Operator.GREATER)
-                        .operands(List.of(new TableQueryFilter.Column("a"), 1))
+                        .operands(List.of(new TableQueryFilter.Column("a"), new Constant(ColumnType.INT32, 1)))
                         .build())
                 .orderBy(List.of(new OrderByDesc("a")))
                 .start(1)

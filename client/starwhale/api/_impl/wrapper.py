@@ -47,19 +47,20 @@ class Logger:
 
 
 class Evaluation(Logger):
-    def __init__(self, eval_id: Optional[str] = None):
-        if eval_id is None:
-            eval_id = os.getenv(SWEnv.eval_version, None)
-        if eval_id is None:
+    def __init__(self, eval_id: str = "", project: str = ""):
+        eval_id = eval_id or os.getenv(SWEnv.eval_version, "")
+        if not eval_id:
             raise RuntimeError("eval id should not be None")
         if re.match(r"^[A-Za-z0-9-_]+$", eval_id) is None:
             raise RuntimeError(
                 f"invalid eval id {eval_id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
             )
         self.eval_id = eval_id
-        self.project = os.getenv(SWEnv.project)
-        if self.project is None:
+
+        self.project = project or os.getenv(SWEnv.project, "")
+        if not self.project:
             raise RuntimeError(f"{SWEnv.project} is not set")
+
         self._results_table_name = self._get_datastore_table_name("results")
         self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])

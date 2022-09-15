@@ -20,6 +20,10 @@ import static ai.starwhale.mlops.api.protocol.Code.internalServerError;
 
 public class ConvertException extends StarwhaleException {
 
+    public ConvertException(String message) {
+        super(message);
+    }
+
     public ConvertException(String message, Throwable e) {
         super(message, e);
     }

@@ -36,6 +36,9 @@ public class SwModelPackageVersionVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
+    @JsonProperty("alias")
+    private String alias;
+
     @JsonProperty("tag")
     private String tag;
 
@@ -55,7 +58,7 @@ public class SwModelPackageVersionVo implements Serializable {
     private UserVo owner;
 
     public static SwModelPackageVersionVo empty() {
-        return new SwModelPackageVersionVo("", "", "", "{}", "",
+        return new SwModelPackageVersionVo("", "", "", "", "{}", "",
                 0L, -1L, UserVo.empty());
     }
 }
