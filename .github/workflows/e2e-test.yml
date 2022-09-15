@@ -31,7 +31,6 @@ jobs:
   filter:
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'pull_request'
     outputs:
       client: ${{ steps.filter.outputs.client }}
       server: ${{ steps.filter.outputs.server }}
