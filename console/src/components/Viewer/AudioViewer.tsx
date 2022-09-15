@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+// @ts-ignore
 import WaveformData from 'waveform-data'
 import { DatasetObject } from '@/domain/dataset/sdk'
 import { createUseStyles } from 'react-jss'
