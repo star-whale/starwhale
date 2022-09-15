@@ -237,6 +237,12 @@ class DatasetTermViewJson(DatasetTermView):
 
         self.pretty_json(r)
 
+    def history(self, fullname: bool = False) -> None:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        self.pretty_json(
+            BaseTermView.get_history_data(self.dataset.history(), fullname)
+        )
+
 
 def get_term_view(ctx_obj: t.Dict) -> t.Type[DatasetTermView]:
     return (

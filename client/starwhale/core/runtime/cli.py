@@ -201,8 +201,9 @@ def _info(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
 @runtime_cmd.command("history", help="Show runtime history")
 @click.argument("runtime", required=True)
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _history(runtime: str, fullname: bool) -> None:
-    RuntimeTermView(runtime).history(fullname)
+@click.pass_obj
+def _history(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
+    view(runtime).history(fullname)
 
 
 @runtime_cmd.command("restore")
