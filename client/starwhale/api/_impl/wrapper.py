@@ -47,7 +47,7 @@ class Logger:
 
 
 class Evaluation(Logger):
-    def __init__(self, eval_id: str = "", project: str = ""):
+    def __init__(self, eval_id: str = "", project: str = "", instance: str = ""):
         eval_id = eval_id or os.getenv(SWEnv.eval_version, "")
         if not eval_id:
             raise RuntimeError("eval id should not be None")
@@ -64,7 +64,7 @@ class Evaluation(Logger):
         self._results_table_name = self._get_datastore_table_name("results")
         self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])
-        self._data_store = data_store.get_data_store()
+        self._data_store = data_store.get_data_store(instance_uri=instance)
 
     def _get_datastore_table_name(self, table_name: str) -> str:
         return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
