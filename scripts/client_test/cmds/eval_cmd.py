@@ -1,8 +1,8 @@
 import json
 from typing import Tuple, Dict, Any, List
 
+from . import CLI
 from .base.invoke import invoke
-from .base.environment import CLI
 
 
 class Evaluation:

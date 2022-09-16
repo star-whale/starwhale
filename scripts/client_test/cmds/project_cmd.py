@@ -1,7 +1,7 @@
 import json
 from typing import Tuple, List, Dict, Any
 
-from .base.environment import CLI
+from . import CLI
 from .base.invoke import invoke
 
 

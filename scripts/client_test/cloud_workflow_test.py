@@ -4,9 +4,7 @@ import tempfile
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.base.invoke import invoke
-from cmds.model_cmd import Model
-from cmds.dataset_cmd import Dataset
-from cmds.runtime_cmd import Runtime
+from cmds.artifacts_cmd import Model, Dataset, Runtime
 from cmds.eval_cmd import Evaluation
 
 with tempfile.TemporaryDirectory() as _work_dir:
@@ -36,9 +34,9 @@ with tempfile.TemporaryDirectory() as _work_dir:
     assert res
     print(f"login res:{res}")
 
-    # use local instance
-    instance.select("local")
-    res = Project().select("self")
+    # use cloud instance
+    instance.select("cloud")
+    res = Project().select("starwhale")
     assert res
     print(f"project select self:{res}")
 
@@ -48,7 +46,8 @@ with tempfile.TemporaryDirectory() as _work_dir:
     assert len(model.list()) == 0
     assert model.build(workdir=f"{_work_dir}/example/mnist")
     assert len(model.list()) == 1
-    print(f"swmp info:{model.info('mnist/version/latest')}")
+    swmp = model.info('mnist/version/latest')
+    assert model.copy(src_uri='mnist/version/latest', target_project="cloud://cloud/project/starwhale", force=True)
 
     # 2.dataset build
     print("build dataset...")
@@ -56,7 +55,11 @@ with tempfile.TemporaryDirectory() as _work_dir:
     assert len(dataset.list()) == 0
     assert dataset.build(workdir=f"{_work_dir}/example/mnist")
     assert len(dataset.list()) == 1
-    print(f"swds info:{dataset.info('mnist/version/latest')}")
+    swds = dataset.info('mnist/version/latest')
+    assert dataset.copy(src_uri='mnist/version/latest',
+                        target_project="cloud://cloud/project/starwhale",
+                        with_auth=True,
+                        force=True)
 
     # 3.runtime build
     print("build runtime...")
@@ -64,13 +67,14 @@ with tempfile.TemporaryDirectory() as _work_dir:
     assert len(rt.list()) == 0
     assert rt.build(workdir=f"{_work_dir}/example/runtime/pytorch")
     assert len(rt.list()) == 1
-    print(f"swrt info:{rt.info('pytorch/version/latest')}")
+    swrt = rt.info('pytorch/version/latest')
+    assert rt.copy(src_uri='pytorch/version/latest', target_project="cloud://cloud/project/starwhale", force=True)
 
     # 4.eval run
     print("run eval...")
     _eval = Evaluation()
     assert len(_eval.list()) == 0
-    assert _eval.run(model="mnist/version/latest", dataset="mnist/version/latest")
+    assert _eval.run(model=swmp["version"], dataset=swds["version"], runtime=swrt["version"], project="starwhale")
     _eval_list = _eval.list()
     assert len(_eval_list) == 1
 

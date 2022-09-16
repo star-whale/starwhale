@@ -3,7 +3,6 @@ import tempfile
 
 from .invoke import invoke
 
-CLI = "swcli"
 
 
 class Environment:
@@ -14,7 +13,7 @@ class Environment:
         self._init_local_data_dir()
         self._install_sw()
         self._create_test_dir()
-        self._download_test_data()
+        self._download_and_extract_test_data()
 
     def _install_sw(self):
         invoke(["cp", "-rf", f"{self.src_dir}/client", f"{self.work_dir}/client"])
@@ -28,7 +27,8 @@ class Environment:
     def _create_test_dir(self):
         invoke(["cp", "-rf", f"{self.src_dir}/example", f"{self.work_dir}/example"])
 
-    def _download_test_data(self):
+    def _download_and_extract_test_data(self):
+        # TODO use make
         invoke(["wget", "-P", f"{self.work_dir}/example/mnist/data",
                 "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz"])
         invoke(["wget", "-P", f"{self.work_dir}/example/mnist/data",
@@ -37,7 +37,10 @@ class Environment:
                 "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz"])
         invoke(["wget", "-P", f"{self.work_dir}/example/mnist/data",
                 "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz"])
-        invoke(["gzip", "-d", "--", f"{self.work_dir}/example/mnist/data/*.gz"])
+        invoke(["gzip", "-d", f"{self.work_dir}/example/mnist/data/train-images-idx3-ubyte.gz"])
+        invoke(["gzip", "-d", f"{self.work_dir}/example/mnist/data/train-labels-idx1-ubyte.gz"])
+        invoke(["gzip", "-d", f"{self.work_dir}/example/mnist/data/t10k-images-idx3-ubyte.gz"])
+        invoke(["gzip", "-d", f"{self.work_dir}/example/mnist/data/t10k-labels-idx1-ubyte.gz"])
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.tmp_dir.cleanup()

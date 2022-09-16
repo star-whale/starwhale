@@ -1,7 +1,7 @@
 import json
 from typing import Tuple, Dict, Any, List
 
-from .base.environment import CLI
+from . import CLI
 from .base.invoke import invoke, invoke_with_react
 
 
