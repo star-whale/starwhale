@@ -222,7 +222,7 @@ class PipelineHandler(metaclass=ABCMeta):
             _iter = PPLResultIterator(
                 data=self.evaluation.get_results(), deserializer=self.deserialize
             )
-            output = self.cmp(_iter)
+            self.cmp(_iter)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             self._timeline_writer.write(
@@ -231,7 +231,6 @@ class PipelineHandler(metaclass=ABCMeta):
             raise
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
-            self._sw_logger.debug(f"cmp result:{output}")
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:

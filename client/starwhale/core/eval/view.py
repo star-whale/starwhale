@@ -202,7 +202,7 @@ class JobTermView(BaseTermView):
                     _k, *(f"{float(_v[_k2]):.4f}" for _k2 in keys if _k2 != "id")
                 )
 
-            console.rule(f"[bold green]{report['kind'].upper()} Report")
+            console.rule(f"[bold green]{report['kind'].upper()} Label Metrics Report")
             console.print(table)
 
         def _print_confusion_matrix() -> None:
@@ -220,15 +220,8 @@ class JobTermView(BaseTermView):
                     *[f"{float(bl[i]):.4f}" for i in bl if i != "id"],
                 )
 
-            mtable = Table(box=box.SIMPLE)
-            mtable.add_column("Label", style="cyan")
-            for n in ("TP", "TN", "FP", "FN"):
-                mtable.add_column(n)
-            for idx, ml in enumerate(cm.get("multilabel", [])):
-                mtable.add_row(sort_label_names[idx], *[str(_) for _ in ml[0] + ml[1]])
-
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
-            console.print(self.comparison(mtable, btable))
+            console.print(btable)
 
         _print_labels()
         _print_confusion_matrix()
