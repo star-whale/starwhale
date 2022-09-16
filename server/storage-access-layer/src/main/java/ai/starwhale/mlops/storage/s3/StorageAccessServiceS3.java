@@ -33,7 +33,6 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
-import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
@@ -60,11 +59,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     public StorageAccessServiceS3(S3Config s3Config) {
         this.s3Config = s3Config;
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(s3Config.getAccessKey(), s3Config.getSecretKey());
-        final S3Configuration config = S3Configuration.builder()
-                .chunkedEncodingEnabled(false)
-                .build();
         S3ClientBuilder s3ClientBuilder = S3Client.builder()
-                .serviceConfiguration(config)
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .region(Region.of(s3Config.getRegion()));
         if (s3Config.overWriteEndPoint()) {
