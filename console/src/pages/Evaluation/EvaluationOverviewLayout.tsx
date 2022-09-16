@@ -198,7 +198,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
             ),
         }
         return actions[job.jobStatus]
-    }, [job, info, t])
+    }, [job, t, handleAction])
 
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
