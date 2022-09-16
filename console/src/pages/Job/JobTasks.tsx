@@ -26,10 +26,10 @@ export default function JobTasks() {
     const onAction = useCallback(
         async (type, task: ITaskSchema) => {
             setCurrentTask(task)
-            if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
-                setCurrentLogFiles({
-                    [task?.uuid]: 'ws',
-                })
+            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+                // setCurrentLogFiles({
+                //     [task?.uuid]: 'ws',
+                // })
             } else {
                 const data = await fetchTaskOfflineLogFiles(task?.id)
                 if (_.isEmpty(data)) {

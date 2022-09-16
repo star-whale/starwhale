@@ -38,7 +38,7 @@ public class SwBufferInputStream extends InputStream {
         if (this.offset >= this.buffer.capacity()) {
             return -1;
         }
-        return this.buffer.getByte(this.offset++);
+        return (this.buffer.getByte(this.offset++) & 0xFF);
     }
 
     @Override

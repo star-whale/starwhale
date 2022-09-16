@@ -817,7 +817,6 @@ class LocalDataStore:
                 self.columns = columns
                 self.keep_none = keep_none
 
-        logger.debug(f"scan enter, table size:{len(tables)}")
         infos: List[TableInfo] = []
         for table_desc in tables:
             table = self.tables.get(table_desc.table_name, None)
@@ -901,7 +900,7 @@ class LocalDataStore:
 
 
 class RemoteDataStore:
-    def __init__(self, instance_uri: str, token: str) -> None:
+    def __init__(self, instance_uri: str, token: str = "") -> None:
         self.instance_uri = instance_uri
         self.token = token or os.getenv(SWEnv.instance_token)
         if self.token is None:

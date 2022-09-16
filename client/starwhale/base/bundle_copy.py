@@ -20,10 +20,12 @@ from starwhale.consts import (
     HTTPMethod,
     AUTH_ENV_FNAME,
     VERSION_PREFIX_CNT,
+    STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
     DUMPED_SWDS_META_FNAME,
     ARCHIVED_SWDS_META_FNAME,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, InstanceType, get_bundle_type_by_uri
@@ -211,6 +213,15 @@ class BundleCopy(CloudRequestMixed):
                     self._do_download_bundle_dir(progress)
                 else:
                     self._do_download_bundle_tar(progress)
+
+                _dest_uri = URI.capsulate_uri(
+                    instance=STANDALONE_INSTANCE,
+                    project=self.dest_uri.project,
+                    obj_type=self.typ,
+                    obj_name=self.bundle_name,
+                    obj_ver=self.bundle_version,
+                )
+                StandaloneTag(_dest_uri).add_fast_tag()
 
     def _do_upload_bundle_dir(
         self, progress: Progress, add_data_uri_header: bool = False

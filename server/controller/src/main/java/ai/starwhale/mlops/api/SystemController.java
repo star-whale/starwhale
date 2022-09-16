@@ -27,7 +27,6 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
-import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,8 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class SystemController implements SystemApi {
 
-    @Resource
-    private SystemService systemService;
+    private final SystemService systemService;
+
+    public SystemController(SystemService systemService) {
+        this.systemService = systemService;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<AgentVo>>> listAgent(String ip, Integer pageNum,

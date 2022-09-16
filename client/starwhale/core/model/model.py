@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import typing as t
 from abc import ABCMeta
 from pathlib import Path
@@ -303,8 +302,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print(
                 f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
-            if _status != STATUS.SUCCESS:
-                sys.exit(-1)
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -414,7 +411,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
-            (self._make_latest_tag, 5, "make latest tag"),
+            (self._make_auto_tags, 5, "make auto tags"),
         ]
         run_with_progress_bar("model bundle building...", operations)
 

@@ -277,6 +277,8 @@
               <exclude>**/ai/starwhale/mlops/datastore/*Wal.*</exclude>
               <exclude>**/ai/starwhale/mlops/datastore/*Wal$*.*</exclude>
               <exclude>**/ai/starwhale/mlops/datastore/Wal.*</exclude>
+              <exclude>**/ai/starwhale/mlops/**/*Config.*</exclude>
+              <exclude>**/ai/starwhale/mlops/**/*Properties.*</exclude>
             </excludes>
           </configuration>
           <version>0.8.6</version>

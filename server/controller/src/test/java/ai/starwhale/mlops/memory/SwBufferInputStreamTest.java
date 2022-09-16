@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
+import java.io.IOException;
 import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,5 +55,15 @@ public class SwBufferInputStreamTest {
         assertThat(Arrays.copyOfRange(b, 0, 8), is(new byte[]{'2', '3', '4', '5', '6', '7', '8', '9'}));
         assertThat(this.inputStream.read(b, 0, 10), is(-1));
         assertThat(this.inputStream.read(b, 0, 10), is(-1));
+    }
+
+    @Test
+    public void testReadff() throws IOException {
+        var buf = this.bufferManager.allocate(1);
+        buf.setByte(0, (byte) 0xFF);
+        try (var is = new SwBufferInputStream(buf)) {
+            var b = is.read();
+            assertThat(b, is(0xFF));
+        }
     }
 }

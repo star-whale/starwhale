@@ -535,7 +535,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
-            (self._make_latest_tag, 5, "make latest tag"),
+            (self._make_auto_tags, 5, "make auto tags"),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
