@@ -35,7 +35,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,24 +46,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class JobController implements JobApi {
 
-    @Resource
-    private JobService jobService;
+    private final JobService jobService;
+    private final TaskService taskService;
+    private final IdConvertor idConvertor;
+    private final DagQuerier dagQuerier;
+    private final InvokerManager<String, String> jobActions;
 
-    @Resource
-    private TaskService taskService;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private DagQuerier dagQuerier;
-
-
-    private final InvokerManager<String, String> jobActions = InvokerManager.<String, String>create()
-            .addInvoker("cancel", (String jobUrl) -> jobService.cancelJob(jobUrl))
-            .addInvoker("pause", (String jobUrl) -> jobService.pauseJob(jobUrl))
-            .addInvoker("resume", (String jobUrl) -> jobService.resumeJob(jobUrl))
-            .unmodifiable();
+    public JobController(JobService jobService, TaskService taskService, IdConvertor idConvertor,
+            DagQuerier dagQuerier) {
+        this.jobService = jobService;
+        this.taskService = taskService;
+        this.idConvertor = idConvertor;
+        this.dagQuerier = dagQuerier;
+        this.jobActions = InvokerManager.<String, String>create()
+                .addInvoker("cancel", jobService::cancelJob)
+                .addInvoker("pause", jobService::pauseJob)
+                .addInvoker("resume", jobService::resumeJob)
+                .unmodifiable();
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(String projectUrl, String swmpId,
