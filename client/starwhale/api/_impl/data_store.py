@@ -901,7 +901,7 @@ class LocalDataStore:
 
 
 class RemoteDataStore:
-    def __init__(self, instance_uri: str, token: str) -> None:
+    def __init__(self, instance_uri: str, token: str = "") -> None:
         self.instance_uri = instance_uri
         self.token = token or os.getenv(SWEnv.instance_token)
         if self.token is None:
@@ -1039,6 +1039,7 @@ def get_data_store(instance_uri: str = "") -> DataStore:
     if _instance_uri is None or _instance_uri == "local":
         return LocalDataStore.get_instance()
     else:
+        print(f"instance:{instance_uri}")
         return RemoteDataStore(
             instance_uri=_instance_uri,
             token=SWCliConfigMixed().get_sw_token(instance=instance_uri),
