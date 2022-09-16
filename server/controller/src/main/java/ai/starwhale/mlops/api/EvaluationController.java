@@ -73,18 +73,4 @@ public class EvaluationController implements EvaluationApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(String projectUrl,
-            String filter, Integer pageNum, Integer pageSize) {
-        PageInfo<SummaryVo> vos = evaluationService.listEvaluationSummary(
-                projectUrl,
-                SummaryFilter.parse(filter),
-                PageParams.builder()
-                        .pageNum(pageNum)
-                        .pageSize(pageSize)
-                        .build());
-        return ResponseEntity.ok(Code.success.asResponse(vos));
-    }
-
-
 }

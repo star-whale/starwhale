@@ -38,9 +38,6 @@ public interface ProjectMapper {
     List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId, @Param("order") String order,
             @Param("isDeleted") Integer isDeleted);
 
-    List<ProjectEntity> listProjectsByOwnerName(@Param("userName") String userName, @Param("order") String order,
-            @Param("isDeleted") Integer isDeleted);
-
     ProjectEntity findProject(@Param("id") Long id);
 
     ProjectEntity findProjectByName(@NotNull @Param("projectName") String projectName);

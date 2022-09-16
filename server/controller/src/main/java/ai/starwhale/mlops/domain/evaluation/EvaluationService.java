@@ -113,15 +113,6 @@ public class EvaluationService {
         return res > 0;
     }
 
-    public PageInfo<SummaryVo> listEvaluationSummary(String projectUrl,
-            SummaryFilter summaryFilter, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null,
-                JobStatus.SUCCESS);
-        return PageUtil.toPageInfo(jobEntities, this::toSummary);
-    }
-
     private SummaryVo toSummary(JobEntity entity) {
         if (summaryCache.containsKey(entity.getId())) {
             return summaryCache.get(entity.getId());

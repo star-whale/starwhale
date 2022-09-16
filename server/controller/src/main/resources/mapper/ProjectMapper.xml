@@ -11,8 +11,8 @@
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
   <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity"
     useGeneratedKeys="true" keyProperty="id">
-    insert into project_info(project_name, owner_id, privacy, project_description)
-    values (#{project.projectName}, #{project.ownerId}, #{project.privacy}, #{project.description})
+    insert into project_info(project_name, owner_id, privacy, project_description, is_default)
+    values (#{project.projectName}, #{project.ownerId}, #{project.privacy}, #{project.description}, #{project.isDefault})
   </insert>
 
   <update id="deleteProject" parameterType="java.lang.Long">
@@ -40,7 +40,10 @@
         owner_id = #{project.ownerId},
       </if>
       <if test="project.privacy != null">
-        privacy = #{project.privacy}
+        privacy = #{project.privacy},
+      </if>
+      <if test="project.isDefault != null">
+        is_default = #{project.isDefault}
       </if>
     </set>
     where id = #{project.id}
@@ -89,16 +92,6 @@
     </if>
   </select>
 
-  <select id="listProjectsByOwnerName" parameterType="java.lang.String"
-    resultMap="projectResultMap">
-    <include refid="select_project"/>
-    and p.is_deleted = #{isDeleted}
-    and u.user_name like concat(#{userName}, '%')
-    <if test="order != null and order != ''">
-      order by ${order}
-    </if>
-  </select>
-
   <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">
     <include refid="select_project"/>
     and p.id = #{id}
@@ -119,10 +112,10 @@
   <select id="listObjectCounts"
     resultType="ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity">
     select p.id as project_id,
-    c1.count_model,
-    c2.count_dataset,
-    c3.count_member,
-    c4.count_jobs
+    COALESCE(c1.count_model,0),
+    COALESCE(c2.count_dataset,0),
+    COALESCE(c3.count_member,0),
+    COALESCE(c4.count_jobs,0)
     from project_info as p
     left join
     (select count(*) as count_model, project_id from swmp_info group by project_id) as c1
