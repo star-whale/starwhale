@@ -520,6 +520,12 @@ const locales0 = {
     'Manage Views': {
         en: 'Manage Views',
     },
+    'Select a view': {
+        en: 'Select a view',
+    },
+    'All runs': {
+        en: 'All runs',
+    },
     'Edit': {
         en: 'Edit',
     },

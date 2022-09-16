@@ -37,7 +37,10 @@ export default function DatasetListCard() {
                 data={
                     datasetsInfo.data?.list.map((dataset) => {
                         return [
-                            <TextLink key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}`}>
+                            <TextLink
+                                key={dataset.id}
+                                to={`/projects/${projectId}/datasets/${dataset.id}/versions/${dataset.version?.id}/files`}
+                            >
                                 {dataset.name}
                             </TextLink>,
                             dataset.owner && <User user={dataset.owner} />,

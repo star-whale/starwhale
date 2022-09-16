@@ -69,7 +69,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         handlePinOne,
         handleEmpty,
     } = useSelection<T>({
-        initialSelectedIds: props.view?.selectedIds ?? [],
+        initialSelectedIds: props.view?.selectedIds ?? columnAllIds,
         initialPinnedIds: props.view?.pinnedIds ?? [],
         initialSortedIds: props.view?.sortedIds ?? [],
     })

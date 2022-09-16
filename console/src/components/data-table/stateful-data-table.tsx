@@ -225,7 +225,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 )}
                                 {filterable && (
                                     <FilterOperateMenu
-                                        filters={store.currentView.filters ?? []}
+                                        filters={store.currentView?.filters ?? []}
                                         columns={props.columns}
                                         rows={props.rows}
                                         onFilterSet={handeFilterSet}
