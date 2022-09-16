@@ -18,6 +18,7 @@ package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwValidationException;
+import cn.hutool.core.collection.CollectionUtil;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,7 +149,9 @@ public class DataStore {
                 ret.keepNone = info.isKeepNone();
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
-
+            if (CollectionUtil.isEmpty(tables)) {
+                return new RecordList(Map.of(), List.of(), null);
+            }
             var columnTypeMap = new HashMap<String, ColumnType>();
             for (var table : tables) {
                 if (table.schema.getKeyColumnType() != tables.get(0).schema.getKeyColumnType()) {
