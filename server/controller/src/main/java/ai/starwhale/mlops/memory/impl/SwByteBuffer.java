@@ -122,6 +122,9 @@ public class SwByteBuffer implements SwBuffer {
     @Override
     public void setBytes(int index, byte[] b, int offset, int len) {
         this.buf.position(index);
+        if (len > this.buf.remaining()) {
+            len = this.buf.remaining();
+        }
         this.buf.put(b, offset, len);
     }
 
@@ -141,7 +144,7 @@ public class SwByteBuffer implements SwBuffer {
 
     @Override
     public void copyTo(SwBuffer buf) {
-        buf.setBytes(0, this.buf.array(), 0, this.buf.limit());
+        buf.setBytes(0, this.buf.array(), this.buf.arrayOffset(), this.buf.limit());
     }
 
     @Override
