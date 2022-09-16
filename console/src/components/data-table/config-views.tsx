@@ -47,7 +47,7 @@ function ConfigViews(props: PropsT) {
                 label: t('All runs'),
             },
         ]
-    }, [store.views])
+    }, [store.views, t])
 
     const viewListRef = useRef(null)
     const viewRef = useRef(null)
@@ -208,7 +208,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
         index: number
         style: React.CSSProperties
     }) => {
-        // eslint-disable-next-line @typescript-eslint/no-shadow
+        // eslint-disable-next-line
         const { item, overrides, ...restChildProps } = data[index].props
 
         return (
@@ -219,7 +219,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
                     boxSizing: 'border-box',
                     ...style,
                 }}
-                // eslint-disable-next-line react/jsx-props-no-spreading
+                // eslint-disable-next-line
                 {..._.omit(restChildProps, ['resetMenu', 'renderAll', 'renderHrefAsAnchor', 'getItemLabel'])}
                 key={item.id}
             >

@@ -46,4 +46,8 @@ export default defineConfig({
         }),
         // mpa(),
     ],
-})
+    esbuild: {
+        logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    },
+})01
+
