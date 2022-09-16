@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import _ from 'lodash'
+import _, { isPlainObject } from 'lodash'
 import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
@@ -63,6 +63,9 @@ export default function JobTasks() {
         let obj
         try {
             obj = JSON.parse(part)
+            if (!isPlainObject(obj)) {
+                return part
+            }
         } catch (e) {
             return part
         }
@@ -161,9 +164,6 @@ export default function JobTasks() {
                                     paddingTop: '0px',
                                     backgroundColor: 'var(--color-brandBgSecondary)',
                                 },
-                            },
-                            PanelContainer: {
-                                style: {},
                             },
                         }}
                         onChange={({ expanded }) => {
