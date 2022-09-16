@@ -93,7 +93,9 @@ class EvaluationJob(metaclass=ABCMeta):
 
     def _get_report(self) -> t.Dict[str, t.Any]:
         evaluation = wrapper.Evaluation(
-            eval_id=self._get_version(), project=self.uri.project
+            eval_id=self._get_version(),
+            project=self.uri.project,
+            instance=self.uri.instance,
         )
         summary = evaluation.get_metrics()
         kind = summary.get("kind", "")

@@ -1,5 +1,4 @@
 import os
-import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -10,16 +9,19 @@ from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
-from starwhale.utils.config import load_swcli_config
+from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.eval.view import JobTermView, JobTermViewRich
 from starwhale.core.eval.model import CloudEvaluationJob, StandaloneEvaluationJob
 from starwhale.core.eval.store import EvaluationStorage
 
-from .. import ROOT_DIR
+from .. import ROOT_DIR, get_predefined_config_yaml
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
 _cmp_report = open(f"{_job_data_dir}/cmp_report.jsonl").read()
+_job_list = open(f"{_job_data_dir}/job_list_resp.json").read()
+_task_list = open(f"{_job_data_dir}/task_list.json").read()
+_existed_config_contents = get_predefined_config_yaml()
 
 
 class StandaloneEvaluationJobTestCase(TestCase):
@@ -137,9 +139,14 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert m_call.call_count == 3
 
 
-class CloudJobTestCase(unittest.TestCase):
+class CloudJobTestCase(TestCase):
     def setUp(self):
-        self.instance_uri = "http://1.1.1.1:8888"
+        self.setUpPyfakefs()
+        sw_config._config = {}
+        path = get_swcli_config_path()
+        self.fs.create_file(path, contents=_existed_config_contents)
+
+        self.instance_uri = "http://1.1.1.1:8182"
         self.project_uri = f"{self.instance_uri}/project/self"
         self.job_name = "15"
         self.job_uri = f"{self.project_uri}/{URIType.EVALUATION}/{self.job_name}"
@@ -172,7 +179,7 @@ class CloudJobTestCase(unittest.TestCase):
             resource="gpu:1",
         )
         assert m_console.call_count == 2
-        assert "project/self/job/11" in m_console.call_args[0][0]
+        assert "project/self/evaluation/11" in m_console.call_args[0][0]
 
     @Mocker()
     @patch("starwhale.core.eval.view.console.print")
@@ -180,7 +187,7 @@ class CloudJobTestCase(unittest.TestCase):
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job",
-            text=open(f"{_job_data_dir}/job_list_resp.json").read(),
+            text=_job_list,
         )
 
         jobs, pager = CloudEvaluationJob.list(
@@ -223,15 +230,16 @@ class CloudJobTestCase(unittest.TestCase):
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}",
-            text=open(f"{_job_data_dir}/job_manifest.yaml").read(),
+            text=_job_manifest,
         )
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/task",
-            text=open(f"{_job_data_dir}/task_list.json").read(),
+            text=_task_list,
         )
 
         info = CloudEvaluationJob(URI(self.job_uri)).info()
+        print(f"info oo :{info}")
         assert len(info["tasks"][0]) == 3
         assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
         assert info["tasks"][0][0]["id"] == "40"

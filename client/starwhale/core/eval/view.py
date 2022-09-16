@@ -153,7 +153,6 @@ class JobTermView(BaseTermView):
         table.add_column("ID", justify="left", style="cyan", no_wrap=True)
         table.add_column("UUID")
         table.add_column("Status", style="magenta")
-        table.add_column("Agent")
         table.add_column("Duration")
         table.add_column("Created")
         table.add_column("Finished")
@@ -164,7 +163,6 @@ class JobTermView(BaseTermView):
                 _t["id"],
                 _t["uuid"],
                 f"[{style}]{icon}{status}[/]",
-                _t["agent"]["ip"],
                 "",
                 _t["created_at"],
                 "",
@@ -243,7 +241,7 @@ class JobTermView(BaseTermView):
         task_index: int = 0,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
-        ok, reason = EvaluationJob.run(
+        ok, version = EvaluationJob.run(
             _project_uri,
             model_uri,
             dataset_uris,
@@ -265,16 +263,16 @@ class JobTermView(BaseTermView):
                 f":clap: success to create job(project id: [red]{_project_uri.full_uri}[/])"
             )
             if _project_uri.instance_type == InstanceType.CLOUD:
-                _job_uri = f"{_project_uri.full_uri}/job/{reason}"
+                _job_uri = f"{_project_uri.full_uri}/evaluation/{version}"
             else:
-                _job_uri = f"{reason[:SHORT_VERSION_CNT]}"
+                _job_uri = f"{version[:SHORT_VERSION_CNT]}"
 
             console.print(
                 f":bird: run cmd to fetch eval info: [bold green]swcli eval info {_job_uri}[/]"
             )
         else:
             console.print(
-                f":collision: failed to create eval job, notice: [red]{reason}[/]"
+                f":collision: failed to create eval job, notice: [red]{version}[/]"
             )
 
     @classmethod

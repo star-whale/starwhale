@@ -900,9 +900,9 @@ class LocalDataStore:
 
 
 class RemoteDataStore:
-    def __init__(self, instance_uri: str) -> None:
+    def __init__(self, instance_uri: str, token: str = "") -> None:
         self.instance_uri = instance_uri
-        self.token = os.getenv(SWEnv.instance_token)
+        self.token = token or os.getenv(SWEnv.instance_token)
         if self.token is None:
             raise RuntimeError("SW_TOKEN is not found in environment")
 
@@ -1033,12 +1033,16 @@ class DataStore(Protocol):
         ...
 
 
-def get_data_store() -> DataStore:
-    instance_uri = os.getenv(SWEnv.instance_uri)
-    if instance_uri is None or instance_uri == "local":
+def get_data_store(instance_uri: str = "") -> DataStore:
+    _instance_uri = instance_uri or os.getenv(SWEnv.instance_uri)
+    if _instance_uri is None or _instance_uri == "local":
         return LocalDataStore.get_instance()
     else:
-        return RemoteDataStore(instance_uri)
+        print(f"instance:{instance_uri}")
+        return RemoteDataStore(
+            instance_uri=_instance_uri,
+            token=SWCliConfigMixed().get_sw_token(instance=instance_uri),
+        )
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
