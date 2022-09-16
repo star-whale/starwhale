@@ -31,6 +31,8 @@ class PFPDatasetBuildExecutor(BuildExecutor):
                     display_name=name,
                     mime_type=MIMEType.PNG,
                     shape=(height, width, 3),
+                    as_mask=True,
+                    mask_uri=name,
                 ).carry_raw_data(),
                 "image": {"id": idx, "height": height, "width": width, "name": name},
                 "object_nums": len(coco_annotations),

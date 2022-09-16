@@ -1,12 +1,28 @@
+import io
 import os
 import json
+import base64
 import struct
 import typing as t
 from pathlib import Path
 
+from pyfakefs.fake_filesystem_unittest import TestCase
+
 from starwhale.utils.fs import blake2b_file
-from starwhale.api.dataset import Link, MIMEType, GrayscaleImage, UserRawBuildExecutor
-from starwhale.core.dataset.type import ArtifactType
+from starwhale.api.dataset import Link, MIMEType, UserRawBuildExecutor
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.core.dataset.type import (
+    Text,
+    Audio,
+    Image,
+    Binary,
+    ClassLabel,
+    BoundingBox,
+    ArtifactType,
+    BaseArtifact,
+    GrayscaleImage,
+    COCOObjectAnnotation,
+)
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
 from starwhale.api._impl.dataset.builder import (
@@ -179,3 +195,125 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.data_type["type"] == ArtifactType.Image.value
         assert meta.data_type["mime_type"] == MIMEType.GRAYSCALE.value
         assert meta.data_type["shape"] == [28, 28, 1]
+
+
+class TestDatasetType(TestCase):
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    def test_binary(self) -> None:
+        b = Binary(b"test")
+        assert b.to_bytes() == b"test"
+        assert b.astype() == {
+            "type": ArtifactType.Binary,
+            "mime_type": MIMEType.UNDEFINED,
+            "shape": (1,),
+            "encoding": "",
+            "display_name": "",
+        }
+
+    def test_image(self) -> None:
+        fp = io.StringIO("test")
+        img = Image(fp, display_name="t", shape=(28, 28, 3), mime_type=MIMEType.PNG)
+        assert img.to_bytes() == b"test"
+        _asdict = img.asdict()
+        assert not _asdict["as_mask"]
+        assert "fp" not in _asdict
+        assert "_raw_base64_data" not in _asdict
+        assert _asdict["type"] == "image"
+        assert _asdict["display_name"] == "t"
+        assert _asdict["shape"] == (28, 28, 3)
+        assert json.loads(json.dumps(_asdict))["type"] == "image"
+
+        fp = io.BytesIO(b"test")
+        img = GrayscaleImage(fp, shape=(28, 28, 1)).carry_raw_data()
+        assert img.to_bytes() == b"test"
+        _asdict = json.loads(json.dumps(img.asdict()))
+        assert _asdict["type"] == "image"
+        assert _asdict["mime_type"] == MIMEType.GRAYSCALE.value
+        assert _asdict["shape"] == [28, 28, 1]
+        assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
+
+    def test_audio(self) -> None:
+        fp = "/test/1.wav"
+        self.fs.create_file(fp, contents="test")
+        audio = Audio(fp)
+        _asdict = json.loads(json.dumps(audio.asdict()))
+        assert _asdict["mime_type"] == MIMEType.WAV.value
+        assert _asdict["type"] == "audio"
+        assert audio.to_bytes() == b"test"
+
+    def test_bbox(self) -> None:
+        bbox = BoundingBox(1, 2, 3, 4)
+        assert bbox.to_list() == [1, 2, 3, 4]
+        _asdict = json.loads(json.dumps(bbox.asdict()))
+        assert _asdict["type"] == "bounding_box"
+        assert _asdict["x"] == 1
+        assert _asdict["y"] == 2
+        assert _asdict["width"] == 3
+        assert _asdict["height"] == 4
+
+    def test_text(self) -> None:
+        text = Text("test")
+        _asdict = json.loads(json.dumps(text.asdict()))
+        assert text.to_bytes() == b"test"
+        assert "fp" not in _asdict
+        assert _asdict["content"] == "test"
+        assert _asdict["type"] == "text"
+        assert _asdict["mime_type"] == MIMEType.PLAIN.value
+
+    def test_coco(self) -> None:
+        coco = COCOObjectAnnotation(
+            id=1,
+            image_id=1,
+            category_id=1,
+            segmentation={"counts": "abcd"},
+            area=100,
+            bbox=BoundingBox(1, 2, 3, 4),
+            iscrowd=1,
+        )
+        _asdict = json.loads(json.dumps(coco.asdict()))
+        assert _asdict["type"] == "coco_object_annotation"
+
+        with self.assertRaises(FieldTypeOrValueError):
+            coco = COCOObjectAnnotation(
+                id=1,
+                image_id=1,
+                category_id=1,
+                segmentation={"counts": "abcd"},
+                area=100,
+                bbox=BoundingBox(1, 2, 3, 4),
+                iscrowd=3,
+            )
+
+    def test_class_label(self) -> None:
+        cl = ClassLabel([1, 2, 3])
+        _asdict = json.loads(json.dumps(cl.asdict()))
+        assert _asdict["type"] == "class_label"
+        assert _asdict["names"] == [1, 2, 3]
+
+        cl = ClassLabel.from_num_classes(3)
+        assert cl.names == [0, 1, 2]
+
+        with self.assertRaises(FieldTypeOrValueError):
+            ClassLabel.from_num_classes(0)
+
+    def test_reflect(self) -> None:
+        img = BaseArtifact.reflect(b"test", data_type={"type": "image"})
+        assert isinstance(img, Image)
+        assert img.type.value == "image"
+
+        text = BaseArtifact.reflect(
+            b"text", data_type={"type": "text", "encoding": "utf-8"}
+        )
+        assert isinstance(text, Text)
+        assert text.content == "text"
+
+        audio = BaseArtifact.reflect(b"audio", data_type={"type": "audio"})
+        assert isinstance(audio, Audio)
+
+        b = BaseArtifact.reflect(b"fsdf", data_type={})
+        assert isinstance(b, Binary)
+
+        with self.assertRaises(NoSupportError):
+            BaseArtifact.reflect(b"", data_type={"type": 1})
