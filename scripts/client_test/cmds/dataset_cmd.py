@@ -1,7 +1,7 @@
 import json
 from typing import Tuple, Dict, Any, List
 
-from .base.invoke import invoke
+from .base.invoke import invoke, invoke_with_react
 from .base.environment import CLI
 
 
@@ -123,8 +123,15 @@ class Dataset:
         _res, _err = invoke([CLI, "-o", "json", self._cmd, "summary", uri])
         return json.loads(_res) if not _err else {}
 
-    def copy(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "", "", "", "", "", "", "", ])
+    def copy(self, src_uri: str, target_project: str, with_auth: bool, force: bool) -> bool:
+        _valid_str = "copy done"
+        _args = [CLI, self._cmd, "copy", src_uri, target_project]
+        if force:
+            _args.append("--force")
+        if with_auth:
+            _args.append("--with-auth")
+        _res, _err = invoke(_args)
+        return True if not _err and _valid_str in _res else False
 
     def diff(self, base_uri: str, compare_uri: str) -> Dict[str, Any]:
         """
@@ -176,8 +183,13 @@ class Dataset:
         _res, _err = invoke([CLI, "-o", "json", self._cmd, "diff", base_uri, compare_uri])
         return json.loads(_res) if not _err else {}
 
-    def remove(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "", "", "", "", "", "", "", ])
+    def remove(self, uri: str, force: bool) -> bool:
+        _valid_str = "do successfully"
+        _args = [CLI, self._cmd, "remove", uri]
+        if force:
+            _args.append("--force")
+        _res, _err = invoke_with_react(_args)
+        return True if not _err and _valid_str in _res else False
 
     def recover(self) -> Tuple[str, str]:
         return invoke([CLI, self._cmd, "", "", "", "", "", "", "", ])

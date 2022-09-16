@@ -1,7 +1,7 @@
 import json
 from typing import Tuple, List, Dict, Any
 
-from .base.invoke import invoke
+from .base.invoke import invoke, invoke_with_react
 from .base.environment import CLI
 
 
@@ -94,14 +94,24 @@ class Model:
         _res, _err = invoke([CLI, self._cmd, "eval", "", "", "", "", "", "", ])
         return True if not _err and _valid_str in _res else False
 
-    def copy(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "copy", "", "", "", "", "", "", ])
+    def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
+        _valid_str = "copy done"
+        _args = [CLI, self._cmd, "copy", src_uri, target_project]
+        if force:
+            _args.append("--force")
+        _res, _err = invoke(_args)
+        return True if not _err and _valid_str in _res else False
 
     def extract(self) -> Tuple[str, str]:
         return invoke([CLI, self._cmd, "extract", "", "", "", "", "", "", ])
 
-    def remove(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "remove", "", "", "", "", "", "", ])
+    def remove(self, uri: str, force: bool) -> bool:
+        _valid_str = "do successfully"
+        _args = [CLI, self._cmd, "remove", uri]
+        if force:
+            _args.append("--force")
+        _res, _err = invoke_with_react(_args)
+        return True if not _err and _valid_str in _res else False
 
     def recover(self) -> Tuple[str, str]:
         return invoke([CLI, self._cmd, "recover", "", "", "", "", "", "", ])
