@@ -29,12 +29,12 @@ class Process:
 
     def __init__(
         self,
-        prefix_path: Path,
+        prefix_path: t.Union[Path, str],
         target: t.Callable,
         args: t.Tuple = (),
         kwargs: t.Dict[str, t.Any] = {},
     ) -> None:
-        self._prefix_path = prefix_path.resolve()
+        self._prefix_path = Path(prefix_path).resolve()
         self._target = target
         self._args = args
         self._kwargs = kwargs
