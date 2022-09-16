@@ -34,12 +34,6 @@ with tempfile.TemporaryDirectory() as _work_dir:
     assert res
     print(f"login res:{res}")
 
-    # use cloud instance
-    instance.select("cloud")
-    res = Project().select("starwhale")
-    assert res
-    print(f"project select self:{res}")
-
     # 1.model build
     print("build model...")
     model = Model()
@@ -70,16 +64,26 @@ with tempfile.TemporaryDirectory() as _work_dir:
     swrt = rt.info('pytorch/version/latest')
     assert rt.copy(src_uri='pytorch/version/latest', target_project="cloud://cloud/project/starwhale", force=True)
 
-    # 4.eval run
+    # use cloud instance
+    instance.select("cloud")
+    res = Project().select("starwhale")
+    assert res
+    print(f"project select self:{res}")
+
+    # eval run
     print("run eval...")
     _eval = Evaluation()
-    assert len(_eval.list()) == 0
+    _origin_job_list = _eval.list(project="starwhale")
+    assert len(_origin_job_list) != 0
+
     assert _eval.run(model=swmp["version"], dataset=swds["version"], runtime=swrt["version"], project="starwhale")
-    _eval_list = _eval.list()
-    assert len(_eval_list) == 1
+    _new_job_list = _eval.list(project="starwhale")
+    assert len(_new_job_list) == len(_origin_job_list) + 1
 
-    print(f"eval info:{_eval.info(_eval_list[0]['manifest']['version'])}")
+    _origin_job_ids = [j["manifest"]["id"] for j in _origin_job_list]
+    _new_job_ids = [j["manifest"]["id"] for j in _new_job_list]
 
-    res, err = invoke(["ls", "-l", _work_dir])
-    print(f"workdir is {res}")
+    _new_job_id = list(set(_new_job_ids) - set(_origin_job_ids))
+
+    print(f"eval info {_new_job_id[0]}:{_eval.info(f'http://console.pre.intra.starwhale.ai/project/starwhale/evaluation/{_new_job_id[0]}')}")
 
