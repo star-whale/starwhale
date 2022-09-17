@@ -71,4 +71,15 @@ public interface EvaluationApi {
             @Valid @RequestBody ConfigRequest configRequest
     );
 
+    @Operation(summary = "List Evaluation Summary")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/project/{projectUrl}/evaluation")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @RequestParam(value = "filter") String filter,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize
+    );
 }

@@ -104,4 +104,26 @@ public class EvaluationControllerTest {
                 () -> controller.createViewConfig("p2", request));
     }
 
+    @Test
+    public void testListEvaluationSummary() {
+        given(evaluationService.listEvaluationSummary(
+                same("p1"),
+                any(SummaryFilter.class),
+                any(PageParams.class)
+        )).willAnswer(invocation -> {
+            PageParams pageParams = invocation.getArgument(2);
+            try (Page<SummaryVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
+                return page.toPageInfo();
+            }
+        });
+
+        var resp = controller.listEvaluationSummary(
+                "p1", "", 1, 5);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
+                notNullValue(),
+                is(hasProperty("pageNum", is(1))),
+                is(hasProperty("pageSize", is(5)))
+        ));
+    }
 }
