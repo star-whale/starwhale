@@ -57,7 +57,6 @@ public class JobConverterTest {
 
     @BeforeEach
     public void setUp() {
-        IdConvertor idConvertor = new IdConvertor();
         UserConvertor userConvertor = mock(UserConvertor.class);
         given(userConvertor.convert(any(UserEntity.class)))
                 .willReturn(UserVo.builder().build());
@@ -77,7 +76,8 @@ public class JobConverterTest {
         ResourcePoolMapper resourcePoolMapper = mock(ResourcePoolMapper.class);
         given(resourcePoolMapper.findById(anyLong()))
                 .willReturn(ResourcePoolEntity.builder().build());
-
+        IdConvertor idConvertor = new IdConvertor();
+        
         jobConvertor = new JobConvertor(
                 idConvertor,
                 userConvertor,
