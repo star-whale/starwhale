@@ -63,7 +63,7 @@ class BaseBundle(metaclass=ABCMeta):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         raise NotImplementedError
 
     @classmethod

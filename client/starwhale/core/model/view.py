@@ -35,9 +35,7 @@ class ModelTermView(BaseTermView):
 
     @BaseTermView._pager
     @BaseTermView._header
-    def history(
-        self, fullname: bool = False
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    def history(self, fullname: bool = False) -> t.List[t.Dict[str, t.Any]]:
         fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
         return self._print_history(
             title="Model History List", history=self.model.history(), fullname=fullname

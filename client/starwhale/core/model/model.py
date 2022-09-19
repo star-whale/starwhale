@@ -310,10 +310,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
 
         _r = []
         for _bf in self.store.iter_bundle_history():
+            if not _bf.path.is_file():
+                continue
+
             _manifest = ModelStorage.get_manifest_by_path(
                 _bf.path, BundleType.MODEL, URIType.MODEL
             )
@@ -328,7 +331,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     size=_bf.path.stat().st_size,
                 )
             )
-        return _r, {}
+        return _r
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         _ok, _reason = move_dir(self.store.loc, self.store.recover_loc, force)
@@ -365,6 +368,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             bundle_type=BundleType.MODEL,
             uri_type=URIType.MODEL,
         ):
+            if not _bf.path.is_file():
+                continue
+
             _manifest = ModelStorage.get_manifest_by_path(
                 _bf.path, BundleType.MODEL, URIType.MODEL
             )

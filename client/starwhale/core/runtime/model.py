@@ -55,7 +55,7 @@ from starwhale.base.type import (
     RuntimeArtifactType,
     RuntimeLockFileType,
 )
-from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
@@ -431,11 +431,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-
+    ) -> t.List[t.Dict[str, t.Any]]:
         # TODO: time order
         _r = []
         for _bf in self.store.iter_bundle_history():
+            if not _bf.path.is_file():
+                continue
+
             _r.append(
                 dict(
                     version=_bf.version,
@@ -445,7 +447,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     tags=_bf.tags,
                 )
             )
-        return _r, {}
+        return _r
 
     def buildImpl(
         self,
@@ -731,6 +733,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         for _bf in RuntimeStorage.iter_all_bundles(
             project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
         ):
+            if not _bf.path.is_file():
+                continue
+
             # TODO: add more manifest info
             rs[_bf.name].append(
                 {
@@ -1225,7 +1230,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 shutil.copyfile(str(_src), str(_dest))
 
 
-class CloudRuntime(CloudRequestMixed, Runtime):
+class CloudRuntime(CloudBundleModelMixin, Runtime):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
