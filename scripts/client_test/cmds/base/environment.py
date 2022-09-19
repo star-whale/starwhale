@@ -11,8 +11,6 @@ class Environment:
     def prepare(self):
         self._config_local_data_dir()
         self._install_sw()
-        self._create_test_dir()
-        self._download_and_extract_test_data()
 
     def _install_sw(self):
         invoke(["cp", "-rf", f"{self.src_dir}/client", f"{self.work_dir}/client"])
@@ -23,12 +21,11 @@ class Environment:
         os.environ["SW_CLI_CONFIG"] = f"{self.work_dir}/config.yaml"
         os.environ["SW_LOCAL_STORAGE"] = f"{self.work_dir}/data"
 
-    def _create_test_dir(self):
+    def prepare_mnist_dir(self):
         invoke(["cp", "-rf", f"{self.src_dir}/example", f"{self.work_dir}/example"])
         invoke(["rm", "-rf", f"{self.work_dir}/example/mnist/.venv"])
         invoke(["rm", "-rf", f"{self.work_dir}/example/mnist/runtime.yaml"])
 
-    def _download_and_extract_test_data(self):
         # TODO use make
         invoke(["wget", "-P", f"{self.work_dir}/example/mnist/data",
                 "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz"])
