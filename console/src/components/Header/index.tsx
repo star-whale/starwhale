@@ -4,6 +4,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
+import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
@@ -17,6 +18,9 @@ import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { TextLink } from '@/components/Link'
 import classNames from 'classnames'
 import { useAuth } from '@/api/Auth'
+import CopyToClipboard from 'react-copy-to-clipboard'
+import Button from '@/components/Button'
+import Input from '@/components/Input'
 import IconFont from '../IconFont'
 import Logo from './Logo'
 import Avatar from '../Avatar'
@@ -247,7 +251,7 @@ const useStyles = createUseStyles({
 })
 
 export default function Header() {
-    const [, theme] = useStyletron()
+    const [css, theme] = useStyletron()
     const themeType = useCurrentThemeType()
     const styles = useStyles({ theme, themeType })
     const headerStyles = useHeaderStyles({ theme })
@@ -257,12 +261,14 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const [currentUserRole] = useCurrentUserRoles()
     const [sysRole, setSysRole] = useState('GUEST')
+    const title = !!useSearchParam('token')
 
     const [t] = useTranslation()
     const history = useHistory()
-    const { onLogout } = useAuth()
+    const { token, onLogout } = useAuth()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+    const [isShowTokenOpen, setIsShowTokenOpen] = useState(title)
     const handleChangePassword = useCallback(
         async (data: IChangePasswordSchema) => {
             await changePassword(data)
@@ -340,6 +346,17 @@ export default function Header() {
                                 <IconFont type='a-passwordresets' />
                                 <span>{t('Change Password')}</span>
                             </div>
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className={styles.userMenuItem}
+                                onClick={() => {
+                                    setIsShowTokenOpen(true)
+                                }}
+                            >
+                                <IconFont type='token' />
+                                <span>{t('Get Token')}</span>
+                            </div>
                         </div>
                         <div className={styles.divider} />
                         <div className={styles.userMenuItems}>
@@ -362,6 +379,22 @@ export default function Header() {
                 <hr />
                 <ModalBody>
                     <PasswordForm currentUser={currentUser} onSubmit={handleChangePassword} />
+                </ModalBody>
+            </Modal>
+            <Modal animate closeable onClose={() => setIsShowTokenOpen(false)} isOpen={isShowTokenOpen}>
+                <ModalHeader>{t('Get Token')}</ModalHeader>
+                <ModalBody>
+                    <div className={css({ display: 'flex', marginTop: '10px' })}>
+                        <Input value={token ?? ''} />
+                        <CopyToClipboard
+                            text={token ?? ''}
+                            onCopy={() => {
+                                toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                            }}
+                        >
+                            <Button>copy</Button>
+                        </CopyToClipboard>
+                    </div>
                 </ModalBody>
             </Modal>
         </header>

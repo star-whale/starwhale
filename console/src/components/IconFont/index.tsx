@@ -63,6 +63,7 @@ const iconTypes = [
     'view',
     'grid',
     'fullscreen',
+    'token',
 ]
 
 interface IIconFontProps {
