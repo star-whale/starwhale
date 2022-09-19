@@ -117,10 +117,10 @@ public class EvaluationService {
             SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null,
-                JobStatus.SUCCESS);
+        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, null);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
+
 
     private SummaryVo toSummary(JobEntity entity) {
         if (summaryCache.containsKey(entity.getId())) {

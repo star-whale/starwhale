@@ -122,7 +122,7 @@ public class EvaluationServiceTest {
 
     @Test
     public void testListEvaluationSummary() {
-        given(jobMapper.listJobsByStatus(same(1L), any(), any()))
+        given(jobMapper.listJobs(same(1L), any()))
                 .willReturn(List.of(
                         JobEntity.builder()
                                 .id(1L)

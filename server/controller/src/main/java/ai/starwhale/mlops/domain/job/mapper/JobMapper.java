@@ -28,9 +28,6 @@ public interface JobMapper {
 
     List<JobEntity> listJobs(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId);
 
-    List<JobEntity> listJobsByStatus(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId,
-            @Param("jobStatus") JobStatus jobStatus);
-
     JobEntity findJobById(@Param("jobId") Long jobId);
 
     JobEntity findJobByUuid(@Param("uuid") String uuid);
@@ -42,8 +39,6 @@ public interface JobMapper {
     void updateJobStatus(@Param("jobIds") List<Long> jobIds, @Param("jobStatus") JobStatus jobStatus);
 
     void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds, @Param("finishedTime") LocalDateTime finishedTime);
-
-    void updateJobResultPath(@Param("jobId") Long jobId, @Param("resultDir") String resultDir);
 
     int updateJobComment(@Param("id") Long id, @Param("comment") String comment);
 

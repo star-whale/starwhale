@@ -28,15 +28,16 @@ import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
-import org.springframework.context.ApplicationContext;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -57,39 +58,144 @@ public class JobMapperTest extends MySqlContainerHolder {
     @Autowired
     private SwModelPackageVersionMapper swModelPackageVersionMapper;
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    UserEntity user;
+    ProjectEntity project;
+    SwModelPackageEntity swmp;
+    SwModelPackageVersionEntity swModelPackageVersionEntity;
+    JobEntity jobPaused;
+    JobEntity jobCreated;
 
-    @Test
-    public void testListJobs() {
-        UserEntity user = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
+    @BeforeEach
+    public void initData() {
+        user = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
         userMapper.createUser(user);
-        ProjectEntity project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(0)
+        project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(0)
                 .build();
         projectMapper.createProject(project);
-        SwModelPackageEntity swmp = SwModelPackageEntity.builder().swmpName("swmp").projectId(project.getId())
+        swmp = SwModelPackageEntity.builder().swmpName("swmp").projectId(project.getId())
                 .ownerId(user.getId()).build();
         swModelPackageMapper.addSwModelPackage(swmp);
-        SwModelPackageVersionEntity swModelPackageVersionEntity = SwModelPackageVersionEntity.builder()
+        swModelPackageVersionEntity = SwModelPackageVersionEntity.builder()
                 .swmpId(swmp.getId())
                 .versionName("vn")
                 .ownerId(user.getId()).evalJobs("")
                 .manifest("mf").versionMeta("mt").storagePath("s").build();
         swModelPackageVersionMapper.addNewVersion(swModelPackageVersionEntity);
-        JobEntity job = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build();
-        jobMapper.addJob(job);
+        jobCreated = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
+                .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
+                .resultOutputPath("").type(JobType.EVALUATION)
+                .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build();
+        jobMapper.addJob(jobPaused);
+        jobMapper.addJob(jobCreated);
+    }
+
+    @Test
+    public void testListJobs() {
         List<JobEntity> jobEntities = jobMapper.listJobs(project.getId(), null);
-        Assertions.assertEquals(1, jobEntities.size());
-        validateJob(job, user, project, swModelPackageVersionEntity, jobEntities.get(0));
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                        project, swModelPackageVersionEntity, jobEntity));
         jobEntities = jobMapper.listJobs(project.getId(), swModelPackageVersionEntity.getId());
-        Assertions.assertEquals(1, jobEntities.size());
-        validateJob(job, user, project, swModelPackageVersionEntity, jobEntities.get(0));
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                        project, swModelPackageVersionEntity, jobEntity));
         jobEntities = jobMapper.listJobs(project.getId(), swModelPackageVersionEntity.getId() + 1234L);
         Assertions.assertIterableEquals(List.of(), jobEntities);
 
+    }
+
+    @Test
+    public void testFindById() {
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+    }
+
+    @Test
+    public void testFindByUuId() {
+        validateJob(jobPaused, user, project, swModelPackageVersionEntity,
+                jobMapper.findJobByUuid(jobPaused.getJobUuid()));
+    }
+
+    @Test
+    public void testFindByStatusIn() {
+        List<JobEntity> jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED));
+        Assertions.assertEquals(1, jobEntities.size());
+        validateJob(jobPaused, user, project, swModelPackageVersionEntity, jobEntities.get(0));
+
+        jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED));
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                        project, swModelPackageVersionEntity, jobEntity));
+
+        jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED, JobStatus.FAIL));
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                        project, swModelPackageVersionEntity, jobEntity));
+
+        jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.CANCELED));
+        Assertions.assertEquals(0, jobEntities.size());
+
+    }
+
+    @Test
+    public void testUpdateStatus() {
+        jobMapper.updateJobStatus(List.of(jobCreated.getId()), JobStatus.SUCCESS);
+        JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
+        jobCreated.setJobStatus(JobStatus.SUCCESS);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+    }
+
+    @Test
+    public void testUpdateFinishedTime() {
+        LocalDateTime now = LocalDateTime.now();
+        jobMapper.updateJobFinishedTime(List.of(jobCreated.getId()), now);
+        JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
+        jobCreated.setFinishedTime(now);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+    }
+
+    @Test
+    public void testeUpdateJobComment() {
+        String comment = "any comment";
+        jobMapper.updateJobComment(jobCreated.getId(), comment);
+        JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
+        jobCreated.setComment(comment);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+    }
+
+    @Test
+    public void testUpdateJobCommentByUuid() {
+        String comment = "any comment";
+        jobMapper.updateJobCommentByUuid(jobCreated.getJobUuid(), comment);
+        JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
+        jobCreated.setComment(comment);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+    }
+
+    @Test
+    public void testRemoveJob() {
+        jobMapper.removeJob(jobCreated.getId());
+        jobCreated.setIsDeleted(1);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+
+        jobMapper.recoverJob(jobCreated.getId());
+        jobCreated.setIsDeleted(0);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+
+        jobMapper.removeJobByUuid(jobCreated.getJobUuid());
+        jobCreated.setIsDeleted(1);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+
+        jobMapper.recoverJobByUuid(jobCreated.getJobUuid());
+        jobCreated.setIsDeleted(0);
+        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
     }
 
     private void validateJob(JobEntity expectedJob, UserEntity user, ProjectEntity project,
@@ -109,8 +215,15 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals("swmp", jobEntity.getModelName());
         Assertions.assertEquals(expectedJob.getComment(), jobEntity.getComment());
         Assertions.assertNotNull(jobEntity.getCreatedTime());
-        Assertions.assertNull(jobEntity.getFinishedTime());
-        Assertions.assertEquals(0, jobEntity.getIsDeleted());
+        final int milli500 = 5;
+        if (null != expectedJob.getFinishedTime()) {
+            Assertions.assertTrue(
+                    Math.abs(expectedJob.getFinishedTime().compareTo(jobEntity.getFinishedTime())) <= milli500);
+        } else {
+            Assertions.assertNull(jobEntity.getFinishedTime());
+        }
+        Assertions.assertEquals(null == expectedJob.getIsDeleted() ? 0 : expectedJob.getIsDeleted(),
+                jobEntity.getIsDeleted());
         validUser(user, jobEntity.getOwner());
         validateSwModelPackageVersionEntity(swModelPackageVersionEntity, user, jobEntity.getSwmpVersion());
         validProject(project, user, jobEntity.getProject());
