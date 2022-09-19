@@ -23,6 +23,8 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.OSSErrorCode;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
@@ -45,8 +47,15 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
-        var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
-        return new StorageObjectInfo(true, resp.getContentLength(), MetaHelper.mapToString(resp.getUserMetadata()));
+        try {
+            var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
+            return new StorageObjectInfo(true, resp.getContentLength(), MetaHelper.mapToString(resp.getUserMetadata()));
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                return new StorageObjectInfo(false, 0L, null);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -76,8 +85,15 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) throws IOException {
-        var resp = this.ossClient.listObjects(this.bucket, path);
-        return resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey);
+        try {
+            var resp = this.ossClient.listObjects(this.bucket, path);
+            return resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey);
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                return Stream.empty();
+            }
+            throw e;
+        }
     }
 
     @Override
