@@ -5,6 +5,7 @@ export const isPromise = (obj: any) =>
     !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function'
 
 export function millisecondsToTimeStr(milliseconds: number): string {
+    if (milliseconds < 0) return '-'
     let result = ''
     let temp = Math.floor(milliseconds / 1000)
     const hours = Math.floor(temp / 3600)

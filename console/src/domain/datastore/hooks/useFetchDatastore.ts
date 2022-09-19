@@ -2,20 +2,28 @@ import React from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
 import { IListQuerySchema } from '@/domain/base/schemas/list'
-import { scanTable, queryTable } from '../services/datastore'
+import { scanTable, queryTable, listTables } from '../services/datastore'
 
-export function useScanDatastore(query: any) {
+export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
         refetchOnWindowFocus: false,
-        enabled: false,
+        enabled,
     })
     return info
 }
 
-export function useQueryDatastore(query: any) {
+export function useQueryDatastore(query: any, enabled = false) {
     const info = useQuery(`queryDatastore:${qs.stringify(query)}`, () => queryTable(query), {
         refetchOnWindowFocus: false,
-        enabled: false,
+        enabled,
+    })
+    return info
+}
+
+export function useListDatastoreTables(query: any, enabled = false) {
+    const info = useQuery(`listTables:${qs.stringify(query)}`, () => listTables(query), {
+        refetchOnWindowFocus: false,
+        enabled,
     })
     return info
 }

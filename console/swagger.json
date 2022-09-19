@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.1",
     "info": {
-        "title": "StarWhale Rest Api",
-        "description": "Rest Api for starWhale controller",
+        "title": "Starwhale Rest Api",
+        "description": "Rest Api for Starwhale controller",
         "version": "{sw.version:1.0}"
     },
     "servers": [
@@ -299,7 +299,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ProjectVO"
+                                    "$ref": "#/components/schemas/ProjectVo"
                                 }
                             }
                         }
@@ -653,7 +653,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SWMPTagRequest"
+                                "$ref": "#/components/schemas/SwmpTagRequest"
                             }
                         }
                     },
@@ -758,7 +758,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SWMPTagRequest"
+                                "$ref": "#/components/schemas/SwmpTagRequest"
                             }
                         }
                     },
@@ -850,7 +850,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/JobVO"
+                                    "$ref": "#/components/schemas/JobVo"
                                 }
                             }
                         }
@@ -982,7 +982,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SWDSTagRequest"
+                                "$ref": "#/components/schemas/SwdsTagRequest"
                             }
                         }
                     },
@@ -1088,7 +1088,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SWDSTagRequest"
+                                "$ref": "#/components/schemas/SwdsTagRequest"
                             }
                         }
                     },
@@ -1311,7 +1311,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListSystemRoleVO"
+                                    "$ref": "#/components/schemas/ResponseMessageListSystemRoleVo"
                                 }
                             }
                         }
@@ -1521,7 +1521,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                             "type": "string"
                         }
                     },
@@ -1598,7 +1598,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVO"
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVo"
                                 }
                             }
                         }
@@ -1683,7 +1683,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RevertSWMPVersionRequest"
+                                "$ref": "#/components/schemas/RevertSwmpVersionRequest"
                             }
                         }
                     },
@@ -1726,7 +1726,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                             "type": "string"
                         }
                     },
@@ -1743,7 +1743,7 @@
                         "in": "query",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
+                            "$ref": "#/components/schemas/ClientSwmpRequest"
                         }
                     }
                 ],
@@ -2000,7 +2000,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageConfigVO"
+                                    "$ref": "#/components/schemas/ResponseMessageConfigVo"
                                 }
                             }
                         }
@@ -2079,7 +2079,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RevertSWDSRequest"
+                                "$ref": "#/components/schemas/RevertSwdsRequest"
                             }
                         }
                     },
@@ -2106,7 +2106,7 @@
                 ],
                 "summary": "Create a new dataset version",
                 "description": "Create a new version of the dataset. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "uploadDS",
+                "operationId": "uploadDs",
                 "parameters": [
                     {
                         "name": "X-SW-UPLOAD-ID",
@@ -2137,7 +2137,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                             "type": "string"
                         }
                     },
@@ -2240,7 +2240,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageRecordListVO"
+                                    "$ref": "#/components/schemas/ResponseMessageRecordListVo"
                                 }
                             }
                         }
@@ -2270,7 +2270,37 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageRecordListVO"
+                                    "$ref": "#/components/schemas/ResponseMessageRecordListVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore/listTables": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "listTables",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ListTablesRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageTableNameListVo"
                                 }
                             }
                         }
@@ -2351,7 +2381,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserVO"
+                                    "$ref": "#/components/schemas/UserVo"
                                 }
                             }
                         }
@@ -2406,7 +2436,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserVO"
+                                    "$ref": "#/components/schemas/UserVo"
                                 }
                             }
                         }
@@ -2437,7 +2467,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListUserRoleVO"
+                                    "$ref": "#/components/schemas/ResponseMessageListUserRoleVo"
                                 }
                             }
                         }
@@ -2458,7 +2488,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SystemVersionVO"
+                                    "$ref": "#/components/schemas/SystemVersionVo"
                                 }
                             }
                         }
@@ -2480,7 +2510,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UpgradeProgressVO"
+                                    "$ref": "#/components/schemas/UpgradeProgressVo"
                                 }
                             }
                         }
@@ -2501,7 +2531,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SystemVersionVO"
+                                    "$ref": "#/components/schemas/SystemVersionVo"
                                 }
                             }
                         }
@@ -2618,7 +2648,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListRoleVO"
+                                    "$ref": "#/components/schemas/ResponseMessageListRoleVo"
                                 }
                             }
                         }
@@ -2730,7 +2760,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageRuntimeInfoVO"
+                                    "$ref": "#/components/schemas/ResponseMessageRuntimeInfoVo"
                                 }
                             }
                         }
@@ -2849,7 +2879,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessagePageInfoRuntimeVersionVO"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoRuntimeVersionVo"
                                 }
                             }
                         }
@@ -3013,7 +3043,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SWModelPackageInfoVO"
+                                    "$ref": "#/components/schemas/SwModelPackageInfoVo"
                                 }
                             }
                         }
@@ -3162,7 +3192,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                             "type": "string"
                         }
                     },
@@ -3289,7 +3319,7 @@
                     "Job"
                 ],
                 "summary": "DAG of Job",
-                "operationId": "getJobDAG",
+                "operationId": "getJobDag",
                 "parameters": [
                     {
                         "name": "projectUrl",
@@ -3374,7 +3404,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessagePageInfoSummaryVO"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoSummaryVo"
                                 }
                             }
                         }
@@ -3405,7 +3435,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListAttributeVO"
+                                    "$ref": "#/components/schemas/ResponseMessageListAttributeVo"
                                 }
                             }
                         }
@@ -3518,7 +3548,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SWDatasetInfoVO"
+                                    "$ref": "#/components/schemas/SwDatasetInfoVo"
                                 }
                             }
                         }
@@ -3695,6 +3725,24 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "offset in the content",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "data size",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -3711,7 +3759,7 @@
                 ],
                 "summary": "Pull SWDS files",
                 "description": "Pull SWDS files part by part. ",
-                "operationId": "pullDS",
+                "operationId": "pullDs",
                 "parameters": [
                     {
                         "name": "projectUrl",
@@ -3891,7 +3939,7 @@
                 "type": "object",
                 "properties": {
                     "projectName": {
-                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                         "type": "string"
                     },
                     "ownerId": {
@@ -3919,7 +3967,7 @@
                     }
                 }
             },
-            "SWMPTagRequest": {
+            "SwmpTagRequest": {
                 "required": [
                     "tag"
                 ],
@@ -3944,7 +3992,7 @@
                     }
                 }
             },
-            "SWDSTagRequest": {
+            "SwdsTagRequest": {
                 "required": [
                     "tag"
                 ],
@@ -3970,6 +4018,9 @@
                         "type": "string"
                     },
                     "userPwd": {
+                        "type": "string"
+                    },
+                    "salt": {
                         "type": "string"
                     }
                 }
@@ -4014,7 +4065,7 @@
                 "type": "object",
                 "properties": {
                     "projectName": {
-                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
                         "type": "string"
                     },
                     "ownerId": {
@@ -4029,14 +4080,11 @@
                 }
             },
             "RuntimeRevertRequest": {
+                "required": [
+                    "versionUrl"
+                ],
                 "type": "object",
                 "properties": {
-                    "version": {
-                        "type": "string"
-                    },
-                    "versionId": {
-                        "type": "string"
-                    },
                     "versionUrl": {
                         "type": "string"
                     }
@@ -4059,21 +4107,18 @@
                     }
                 }
             },
-            "RevertSWMPVersionRequest": {
+            "RevertSwmpVersionRequest": {
+                "required": [
+                    "versionUrl"
+                ],
                 "type": "object",
                 "properties": {
-                    "version": {
-                        "type": "string"
-                    },
-                    "versionId": {
-                        "type": "string"
-                    },
                     "versionUrl": {
                         "type": "string"
                     }
                 }
             },
-            "ClientSWMPRequest": {
+            "ClientSwmpRequest": {
                 "type": "object",
                 "properties": {
                     "swmp": {
@@ -4113,8 +4158,8 @@
                         "type": "string"
                     },
                     "deviceAmount": {
-                        "type": "integer",
-                        "format": "int32"
+                        "type": "number",
+                        "format": "float"
                     },
                     "comment": {
                         "type": "string"
@@ -4139,15 +4184,12 @@
                     }
                 }
             },
-            "RevertSWDSRequest": {
+            "RevertSwdsRequest": {
+                "required": [
+                    "versionUrl"
+                ],
                 "type": "object",
                 "properties": {
-                    "version": {
-                        "type": "string"
-                    },
-                    "versionId": {
-                        "type": "string"
-                    },
                     "versionUrl": {
                         "type": "string"
                     }
@@ -4309,6 +4351,12 @@
                     },
                     "keepNone": {
                         "type": "boolean"
+                    },
+                    "rawResult": {
+                        "type": "boolean"
+                    },
+                    "ignoreNonExistingTable": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -4329,25 +4377,13 @@
                     }
                 }
             },
-            "RecordListVO": {
+            "RecordListVo": {
                 "type": "object",
                 "properties": {
                     "columnTypes": {
                         "type": "object",
                         "additionalProperties": {
-                            "type": "string",
-                            "enum": [
-                                "UNKNOWN",
-                                "BOOL",
-                                "INT8",
-                                "INT16",
-                                "INT32",
-                                "INT64",
-                                "FLOAT32",
-                                "FLOAT64",
-                                "STRING",
-                                "BYTES"
-                            ]
+                            "type": "string"
                         }
                     },
                     "records": {
@@ -4364,7 +4400,7 @@
                     }
                 }
             },
-            "ResponseMessageRecordListVO": {
+            "ResponseMessageRecordListVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4374,7 +4410,7 @@
                         "type": "string"
                     },
                     "data": {
-                        "$ref": "#/components/schemas/RecordListVO"
+                        "$ref": "#/components/schemas/RecordListVo"
                     }
                 }
             },
@@ -4420,6 +4456,15 @@
                     "limit": {
                         "type": "integer",
                         "format": "int32"
+                    },
+                    "keepNone": {
+                        "type": "boolean"
+                    },
+                    "rawResult": {
+                        "type": "boolean"
+                    },
+                    "ignoreNonExistingTable": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -4465,6 +4510,39 @@
                     },
                     "bytesValue": {
                         "type": "string"
+                    }
+                }
+            },
+            "ListTablesRequest": {
+                "type": "object",
+                "properties": {
+                    "prefix": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ResponseMessageTableNameListVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/TableNameListVo"
+                    }
+                }
+            },
+            "TableNameListVo": {
+                "type": "object",
+                "properties": {
+                    "tables": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             },
@@ -4546,7 +4624,7 @@
                     }
                 }
             },
-            "UserVO": {
+            "UserVo": {
                 "title": "User",
                 "type": "object",
                 "properties": {
@@ -4566,7 +4644,7 @@
                 },
                 "description": "User object"
             },
-            "ProjectVO": {
+            "ProjectVo": {
                 "title": "Project",
                 "type": "object",
                 "properties": {
@@ -4587,15 +4665,15 @@
                         "format": "int64"
                     },
                     "owner": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     },
                     "statistics": {
-                        "$ref": "#/components/schemas/StatisticsVO"
+                        "$ref": "#/components/schemas/StatisticsVo"
                     }
                 },
                 "description": "Project object"
             },
-            "ResponseMessageListUserRoleVO": {
+            "ResponseMessageListUserRoleVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4607,12 +4685,12 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/UserRoleVO"
+                            "$ref": "#/components/schemas/UserRoleVo"
                         }
                     }
                 }
             },
-            "RoleVO": {
+            "RoleVo": {
                 "title": "User",
                 "type": "object",
                 "properties": {
@@ -4631,7 +4709,7 @@
                 },
                 "description": "User object"
             },
-            "StatisticsVO": {
+            "StatisticsVo": {
                 "type": "object",
                 "properties": {
                     "modelCounts": {
@@ -4652,7 +4730,7 @@
                     }
                 }
             },
-            "UserRoleVO": {
+            "UserRoleVo": {
                 "title": "Role",
                 "type": "object",
                 "properties": {
@@ -4660,15 +4738,15 @@
                         "type": "string"
                     },
                     "project": {
-                        "$ref": "#/components/schemas/ProjectVO"
+                        "$ref": "#/components/schemas/ProjectVo"
                     },
                     "role": {
-                        "$ref": "#/components/schemas/RoleVO"
+                        "$ref": "#/components/schemas/RoleVo"
                     }
                 },
                 "description": "User Role object"
             },
-            "SystemVersionVO": {
+            "SystemVersionVo": {
                 "title": "Version",
                 "type": "object",
                 "properties": {
@@ -4681,7 +4759,7 @@
                 },
                 "description": "System verion"
             },
-            "UpgradeProgressVO": {
+            "UpgradeProgressVo": {
                 "title": "Progress",
                 "type": "object",
                 "properties": {
@@ -4699,7 +4777,7 @@
                 },
                 "description": "Upgrade progress object"
             },
-            "ResponseMessageListSystemRoleVO": {
+            "ResponseMessageListSystemRoleVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4711,12 +4789,12 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/SystemRoleVO"
+                            "$ref": "#/components/schemas/SystemRoleVo"
                         }
                     }
                 }
             },
-            "SystemRoleVO": {
+            "SystemRoleVo": {
                 "title": "Role",
                 "type": "object",
                 "properties": {
@@ -4724,15 +4802,15 @@
                         "type": "string"
                     },
                     "user": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     },
                     "role": {
-                        "$ref": "#/components/schemas/RoleVO"
+                        "$ref": "#/components/schemas/RoleVo"
                     }
                 },
                 "description": "System Role object"
             },
-            "ResponseMessageListRoleVO": {
+            "ResponseMessageListRoleVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4744,12 +4822,12 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/RoleVO"
+                            "$ref": "#/components/schemas/RoleVo"
                         }
                     }
                 }
             },
-            "ResponseMessageRuntimeInfoVO": {
+            "ResponseMessageRuntimeInfoVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4759,11 +4837,11 @@
                         "type": "string"
                     },
                     "data": {
-                        "$ref": "#/components/schemas/RuntimeInfoVO"
+                        "$ref": "#/components/schemas/RuntimeInfoVo"
                     }
                 }
             },
-            "RuntimeInfoVO": {
+            "RuntimeInfoVo": {
                 "title": "RuntimeInfo",
                 "type": "object",
                 "properties": {
@@ -4774,6 +4852,9 @@
                         "type": "string"
                     },
                     "versionName": {
+                        "type": "string"
+                    },
+                    "versionAlias": {
                         "type": "string"
                     },
                     "versionTag": {
@@ -4792,13 +4873,13 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVO"
+                            "$ref": "#/components/schemas/StorageFileVo"
                         }
                     }
                 },
                 "description": "Runtime information object"
             },
-            "StorageFileVO": {
+            "StorageFileVo": {
                 "title": "StorageFile",
                 "type": "object",
                 "properties": {
@@ -4811,7 +4892,7 @@
                 },
                 "description": "Storage file object"
             },
-            "PageInfoRuntimeVersionVO": {
+            "PageInfoRuntimeVersionVo": {
                 "type": "object",
                 "properties": {
                     "total": {
@@ -4821,7 +4902,7 @@
                     "list": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/RuntimeVersionVO"
+                            "$ref": "#/components/schemas/RuntimeVersionVo"
                         }
                     },
                     "pageNum": {
@@ -4889,7 +4970,7 @@
                     }
                 }
             },
-            "ResponseMessagePageInfoRuntimeVersionVO": {
+            "ResponseMessagePageInfoRuntimeVersionVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4899,11 +4980,11 @@
                         "type": "string"
                     },
                     "data": {
-                        "$ref": "#/components/schemas/PageInfoRuntimeVersionVO"
+                        "$ref": "#/components/schemas/PageInfoRuntimeVersionVo"
                     }
                 }
             },
-            "RuntimeVersionVO": {
+            "RuntimeVersionVo": {
                 "title": "RuntimeVersion",
                 "type": "object",
                 "properties": {
@@ -4916,10 +4997,13 @@
                     "tag": {
                         "type": "string"
                     },
+                    "alias": {
+                        "type": "string"
+                    },
                     "meta": {
                         "type": "object"
                     },
-                    "manifest": {
+                    "image": {
                         "type": "string"
                     },
                     "createdTime": {
@@ -4927,12 +5011,12 @@
                         "format": "int64"
                     },
                     "owner": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     }
                 },
                 "description": "Runtime version object"
             },
-            "ProjectRoleVO": {
+            "ProjectRoleVo": {
                 "title": "Role",
                 "type": "object",
                 "properties": {
@@ -4940,18 +5024,18 @@
                         "type": "string"
                     },
                     "user": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     },
                     "project": {
-                        "$ref": "#/components/schemas/ProjectVO"
+                        "$ref": "#/components/schemas/ProjectVo"
                     },
                     "role": {
-                        "$ref": "#/components/schemas/RoleVO"
+                        "$ref": "#/components/schemas/RoleVo"
                     }
                 },
                 "description": "Project Role object"
             },
-            "ResponseMessageListProjectRoleVO": {
+            "ResponseMessageListProjectRoleVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4963,12 +5047,12 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/ProjectRoleVO"
+                            "$ref": "#/components/schemas/ProjectRoleVo"
                         }
                     }
                 }
             },
-            "SWModelPackageInfoVO": {
+            "SwModelPackageInfoVo": {
                 "title": "ModelInfo",
                 "type": "object",
                 "properties": {
@@ -4976,6 +5060,9 @@
                         "type": "string"
                     },
                     "name": {
+                        "type": "string"
+                    },
+                    "versionAlias": {
                         "type": "string"
                     },
                     "versionName": {
@@ -4997,13 +5084,13 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVO"
+                            "$ref": "#/components/schemas/StorageFileVo"
                         }
                     }
                 },
                 "description": "SWModelPackage information object"
             },
-            "JobVO": {
+            "JobVo": {
                 "title": "Job",
                 "type": "object",
                 "properties": {
@@ -5026,7 +5113,7 @@
                         }
                     },
                     "runtime": {
-                        "$ref": "#/components/schemas/RuntimeVO"
+                        "$ref": "#/components/schemas/RuntimeVo"
                     },
                     "device": {
                         "type": "string"
@@ -5036,7 +5123,7 @@
                         "format": "int32"
                     },
                     "owner": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     },
                     "createdTime": {
                         "type": "integer",
@@ -5074,7 +5161,7 @@
                 },
                 "description": "Job object"
             },
-            "RuntimeVO": {
+            "RuntimeVo": {
                 "title": "Runtime",
                 "type": "object",
                 "properties": {
@@ -5089,10 +5176,10 @@
                         "format": "int64"
                     },
                     "owner": {
-                        "$ref": "#/components/schemas/UserVO"
+                        "$ref": "#/components/schemas/UserVo"
                     },
                     "version": {
-                        "$ref": "#/components/schemas/RuntimeVersionVO"
+                        "$ref": "#/components/schemas/RuntimeVersionVo"
                     }
                 },
                 "description": "Runtime object"
@@ -5159,7 +5246,7 @@
                     }
                 }
             },
-            "AttributeValueVO": {
+            "AttributeValueVo": {
                 "type": "object",
                 "properties": {
                     "name": {
@@ -5173,7 +5260,7 @@
                     }
                 }
             },
-            "PageInfoSummaryVO": {
+            "PageInfoSummaryVo": {
                 "type": "object",
                 "properties": {
                     "total": {
@@ -5183,7 +5270,7 @@
                     "list": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/SummaryVO"
+                            "$ref": "#/components/schemas/SummaryVo"
                         }
                     },
                     "pageNum": {
@@ -5251,7 +5338,7 @@
                     }
                 }
             },
-            "ResponseMessagePageInfoSummaryVO": {
+            "ResponseMessagePageInfoSummaryVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -5261,11 +5348,11 @@
                         "type": "string"
                     },
                     "data": {
-                        "$ref": "#/components/schemas/PageInfoSummaryVO"
+                        "$ref": "#/components/schemas/PageInfoSummaryVo"
                     }
                 }
             },
-            "SummaryVO": {
+            "SummaryVo": {
                 "title": "Evaluation",
                 "type": "object",
                 "properties": {
@@ -5318,13 +5405,13 @@
                     "attributes": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/AttributeValueVO"
+                            "$ref": "#/components/schemas/AttributeValueVo"
                         }
                     }
                 },
                 "description": "Evaluation Summary object"
             },
-            "ConfigVO": {
+            "ConfigVo": {
                 "title": "Evaluation",
                 "type": "object",
                 "properties": {
@@ -5341,7 +5428,7 @@
                 },
                 "description": "Evaluation View Config object"
             },
-            "ResponseMessageConfigVO": {
+            "ResponseMessageConfigVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -5351,11 +5438,11 @@
                         "type": "string"
                     },
                     "data": {
-                        "$ref": "#/components/schemas/ConfigVO"
+                        "$ref": "#/components/schemas/ConfigVo"
                     }
                 }
             },
-            "AttributeVO": {
+            "AttributeVo": {
                 "title": "Evaluation",
                 "type": "object",
                 "properties": {
@@ -5368,7 +5455,7 @@
                 },
                 "description": "Evaluation Attribute object"
             },
-            "ResponseMessageListAttributeVO": {
+            "ResponseMessageListAttributeVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -5380,7 +5467,7 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/AttributeVO"
+                            "$ref": "#/components/schemas/AttributeVo"
                         }
                     }
                 }
@@ -5398,16 +5485,21 @@
                         "type": "string",
                         "enum": [
                             "S3",
+                            "ALIYUN",
                             "HDFS",
                             "NFS",
                             "LOCAL_FS",
                             "REST_RESOURCE",
                             "FTP"
                         ]
+                    },
+                    "keyPrefix": {
+                        "type": "string",
+                        "writeOnly": true
                     }
                 }
             },
-            "SWDatasetInfoVO": {
+            "SwDatasetInfoVo": {
                 "title": "DatasetInfo",
                 "type": "object",
                 "properties": {
@@ -5429,6 +5521,9 @@
                     "versionName": {
                         "type": "string"
                     },
+                    "versionAlias": {
+                        "type": "string"
+                    },
                     "versionTag": {
                         "type": "string"
                     },
@@ -5442,7 +5537,7 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVO"
+                            "$ref": "#/components/schemas/StorageFileVo"
                         }
                     }
                 },

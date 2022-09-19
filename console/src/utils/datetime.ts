@@ -6,10 +6,12 @@ export function formatDateTime(s: string, format = 'YYYY-MM-DDTHH:mm:ssZ'): stri
 }
 
 export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DDTHH:mm:ssZ'): string {
+    if (s < 0) return '-'
     return moment.tz(s, moment.tz.guess()).format(format ?? dateTimeFormat)
 }
 
 export function durationToStr(v: number) {
+    if (v < 0) return '-'
     const units = ['μs', 'ms', 's', 'm', 'h', 'd']
     let basic = 1000
     let unitIdx = 1

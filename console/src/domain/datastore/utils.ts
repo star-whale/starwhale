@@ -47,3 +47,11 @@ export function tableNameOfRocAuc(projectName: string, evaluationUuid: string, l
 export function tableNameOfSummary(projectName: string) {
     return `project/${projectName}/eval/summary`
 }
+
+export function tablesOfEvaluation(projectName: string, evaluationUuid: string) {
+    return `project/${projectName}/eval/${evaluationUuid.substring(0, VERSION_PREFIX_CNT)}/${evaluationUuid}`
+}
+
+export function showTableName(name: string) {
+    return name.split('/').slice(5).join('/')
+}
