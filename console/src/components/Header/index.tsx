@@ -4,6 +4,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
+import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
@@ -260,13 +261,14 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const [currentUserRole] = useCurrentUserRoles()
     const [sysRole, setSysRole] = useState('GUEST')
+    const title = !!useSearchParam('token')
 
     const [t] = useTranslation()
     const history = useHistory()
     const { token, onLogout } = useAuth()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
-    const [isShowTokenOpen, setIsShowTokenOpen] = useState(false)
+    const [isShowTokenOpen, setIsShowTokenOpen] = useState(title)
     const handleChangePassword = useCallback(
         async (data: IChangePasswordSchema) => {
             await changePassword(data)
@@ -352,7 +354,7 @@ export default function Header() {
                                     setIsShowTokenOpen(true)
                                 }}
                             >
-                                <IconFont type='password' />
+                                <IconFont type='token' />
                                 <span>{t('Get Token')}</span>
                             </div>
                         </div>
