@@ -43,7 +43,7 @@ class BaseArtifact:
              fullname: bool = False,
              show_removed: bool = False,
              page: int = 1,
-             size: int = 20,) -> List[Dict[str, Any]]:
+             size: int = 20, ) -> List[Dict[str, Any]]:
         _args = [CLI, "-o", "json", self.name, "list", "--page", str(page), "--size", str(size)]
         if project:
             _args.extend(["--project", project])
@@ -137,7 +137,7 @@ class Model(BaseArtifact):
         return True if not _err and _valid_str in _res else False
 
     def extract(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "extract", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "extract"])
 
     def eval(self,
              workdir: str,
@@ -147,7 +147,7 @@ class Model(BaseArtifact):
              step: str = "",
              task_index: int = 0,
              runtime_uri: str = "",
-             dataset_uri: str = "",) -> bool:
+             dataset_uri: str = "", ) -> bool:
         _valid_str = "finish run, success"
         _args = [CLI, self.name, "eval"]
         if project:
@@ -163,7 +163,7 @@ class Model(BaseArtifact):
         if dataset_uri:
             _args.extend(["--dataset", dataset_uri])
         _args.append(workdir)
-        _res, _err = invoke([CLI, self.name, "eval", "", "", "", "", "", "", ])
+        _res, _err = invoke(_args)
         return True if not _err and _valid_str in _res else False
 
 
@@ -177,7 +177,7 @@ class Dataset(BaseArtifact):
               dataset_yaml: str = "",
               append: bool = False,
               append_from: str = "",
-              runtime_uri: str = "",) -> bool:
+              runtime_uri: str = "", ) -> bool:
         _args = [CLI, self.name, "build"]
 
         if project:
@@ -275,7 +275,7 @@ class Dataset(BaseArtifact):
 
 
 class Runtime(BaseArtifact):
-    def __init__(self,):
+    def __init__(self, ):
         super().__init__("runtime")
 
     def build(self,
@@ -310,8 +310,14 @@ class Runtime(BaseArtifact):
         # TODO use version match
         return True if not _err else False
 
-    def activate(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+    def activate(self, uri: str, path: str) -> Tuple[str, str]:
+        """
+        activate
+        :param uri: Runtime uri which has already been restored
+        :param path: User's runtime workdir
+        :return:
+        """
+        return invoke([CLI, self.name, "activate", "--uri", uri, "--path", path])
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
         _valid_str = "copy done"
@@ -321,20 +327,33 @@ class Runtime(BaseArtifact):
         _res, _err = invoke(_args)
         return True if not _err and _valid_str in _res else False
 
-    def extract(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+    def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Tuple[str, str]:
+        """
+        extract
+        :param uri:
+        :param force:Force to extract runtime
+        :param target_dir:Extract target dir.if omitted, sw will use starwhale  default workdir
+        :return:
+        """
+        _args = [CLI, self.name, "extract", uri]
+        if force:
+            _args.append("--force")
+        if target_dir:
+            _args.extend(["--target-dir", target_dir])
+        return invoke(_args)
 
+    # TODO impl valid result logic
     def lock(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "lock"])
 
     def restore(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "restore"])
 
     def quick_start_shell(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "quick-start", "shell"])
 
     def quick_start_uri(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "quick-start", "uri"])
 
     def dockerize(self) -> Tuple[str, str]:
-        return invoke([CLI, self.name, "dockerize", "", "", "", "", "", "", ])
+        return invoke([CLI, self.name, "dockerize"])
