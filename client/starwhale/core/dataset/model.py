@@ -172,12 +172,15 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         _r = []
 
         for _bf in self.store.iter_bundle_history():
-            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
+            _manifest_path = _bf.path / DEFAULT_MANIFEST_NAME
+            if not _manifest_path.exists():
+                continue
 
+            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
             _r.append(
                 dict(
                     name=_manifest["name"],
@@ -189,7 +192,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 )
             )
 
-        return _r, {}
+        return _r
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove by tag

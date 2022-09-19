@@ -319,11 +319,12 @@ class StandaloneRuntimeTestCase(TestCase):
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
+        ensure_dir(sr.store.bundle_dir / f"xx{sr.store.bundle_type}")
         info = sr.info()
         assert info["project"] == "self"
         assert "version" not in info
-        assert len(info["history"][0]) == 1
-        assert info["history"][0][0]["version"] == build_version
+        assert len(info["history"]) == 1
+        assert info["history"][0]["version"] == build_version
 
         uri = URI(f"{name}/version/{build_version[:6]}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)

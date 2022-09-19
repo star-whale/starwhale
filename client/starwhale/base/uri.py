@@ -51,7 +51,7 @@ class URI:
         return self.full_uri
 
     def __repr__(self) -> str:
-        return f"instance:{self.instance}, instance_type:{self.instance_type}, projec:{self.project}, object:{self.object}"
+        return f"instance:{self.instance}, instance_type:{self.instance_type}, project:{self.project}, object:{self.object}"
 
     def _do_parse_instance_uri(self, raw: str) -> t.Tuple[InstanceField, str]:
         _remain: str = raw

@@ -106,11 +106,12 @@ class StandaloneModelTestCase(TestCase):
 
         model_uri = URI(name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
+        ensure_dir(sm.store.bundle_dir / f"xx{sm.store.bundle_type}")
         _info = sm.info()
 
-        assert len(_info["history"][0]) == 1
-        assert _info["history"][0][0]["name"] == name
-        assert _info["history"][0][0]["version"] == build_version
+        assert len(_info["history"]) == 1
+        assert _info["history"][0]["name"] == name
+        assert _info["history"][0]["version"] == build_version
 
         _history = sm.history()
         assert _info["history"] == _history

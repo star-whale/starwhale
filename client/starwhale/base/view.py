@@ -130,9 +130,9 @@ class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def _print_history(
         title: str,
-        history: t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]],
+        history: t.List[t.Dict[str, t.Any]],
         fullname: bool = False,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         custom_header = {0: {"justify": "left", "style": "cyan", "no_wrap": True}}
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
@@ -151,7 +151,7 @@ class BaseTermView(SWCliConfigMixed):
             console.print(":tea: not found info")
             return
 
-        _history = _info.pop("history", (list(), dict()))
+        _history = _info.pop("history", [])
 
         console.rule("[green bold]Inspect Details")
         console.print(Pretty(_info, expand_all=True))
@@ -291,7 +291,7 @@ class BaseTermView(SWCliConfigMixed):
             return dict()
 
         result = _info
-        _history = _info.pop("history", (list(), dict()))
+        _history = _info.pop("history", [])
 
         if _history:
             result["history"] = BaseTermView.get_history_data(_history, fullname)
@@ -300,11 +300,12 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def get_history_data(
-        history: t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]],
+        history: t.List[t.Dict[str, t.Any]],
         fullname: bool = False,
     ) -> t.List[t.Dict]:
         result = list()
-        for _h in history[0]:
+
+        for _h in history:
             _version = _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT]
             if _h.get("id"):
                 _version = f"[{_h['id']:2}] {_version}"
