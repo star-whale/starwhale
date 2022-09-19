@@ -14,7 +14,7 @@ export function useProjectRole(projectId: string) {
             return m?.user?.id === currentUser?.id
         })
         if (!member) return Role.NONE
-        return member?.role?.code ?? Role.NONE
+        return (member?.role?.code as Role) ?? Role.NONE
     }, [currentUser, members])
 
     return {
