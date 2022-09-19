@@ -267,7 +267,7 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public RecordResults query(
+    public List<RecordResult> query(
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
@@ -276,7 +276,7 @@ public class MemoryTableImpl implements MemoryTable {
             boolean keepNone,
             boolean rawResult) {
         if (this.schema == null) {
-            return new RecordResults(0, Collections.emptyList());
+            return Collections.emptyList();
         }
         this.schema.getColumnTypeMapping(columns); // check if all column names are valid
         if (orderBy != null) {
@@ -330,22 +330,21 @@ public class MemoryTableImpl implements MemoryTable {
             });
         }
 
-        return new RecordResults(results.size(),
-            results.subList(start, end).stream().map(record -> {
-                var r = new HashMap<String, Object>();
-                for (var entry : columns.entrySet()) {
-                    var value = record.get(entry.getKey());
-                    if (keepNone || value != null) {
-                        r.put(entry.getValue(), value);
-                    }
+        return results.subList(start, end).stream().map(record -> {
+            var r = new HashMap<String, Object>();
+            for (var entry : columns.entrySet()) {
+                var value = record.get(entry.getKey());
+                if (keepNone || value != null) {
+                    r.put(entry.getValue(), value);
                 }
-                return new RecordResult(record.get(this.schema.getKeyColumn()), r);
-            }).collect(Collectors.toList()));
+            }
+            return new RecordResult(record.get(this.schema.getKeyColumn()), r);
+        }).collect(Collectors.toList());
     }
 
 
     @Override
-    public RecordResults scan(
+    public List<RecordResult> scan(
             @NonNull Map<String, String> columns,
             String start,
             boolean startInclusive,
@@ -354,10 +353,10 @@ public class MemoryTableImpl implements MemoryTable {
             int limit,
             boolean keepNone) {
         if (this.schema == null) {
-            return new RecordResults(0, Collections.emptyList());
+            return Collections.emptyList();
         }
         if (this.recordMap.isEmpty() || limit == 0) {
-            return new RecordResults(0, Collections.emptyList());
+            return Collections.emptyList();
         }
 
         var startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
@@ -372,7 +371,7 @@ public class MemoryTableImpl implements MemoryTable {
         }
         //noinspection rawtypes,unchecked
         if (((Comparable) startKey).compareTo(endKey) > 0) {
-            return new RecordResults(0, Collections.emptyList());
+            return Collections.emptyList();
         }
         var keyColumn = this.schema.getKeyColumn();
         var records = new ArrayList<RecordResult>();
@@ -393,9 +392,9 @@ public class MemoryTableImpl implements MemoryTable {
             }
         }
         if (records.isEmpty()) {
-            return new RecordResults(0, Collections.emptyList());
+            return Collections.emptyList();
         } else {
-            return new RecordResults(records);
+            return records;
         }
     }
 

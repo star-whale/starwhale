@@ -36,15 +36,8 @@ public interface MemoryTable {
         Object key;
         Map<String, Object> values;
     }
-    @Data
-    @AllArgsConstructor
-    class RecordResults {
 
-        Integer totalSize;
-        List<RecordResult> recordResults;
-    }
-
-    RecordResults query(Map<String, String> columns,
+    List<RecordResult> query(Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
             int start,
