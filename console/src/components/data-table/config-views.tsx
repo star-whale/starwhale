@@ -19,6 +19,8 @@ type PropsT = {
     useStore: IStore
 }
 
+const ALLRUNS = 'all'
+
 function ConfigViews(props: PropsT) {
     const [t] = useTranslation()
 
@@ -33,13 +35,19 @@ function ConfigViews(props: PropsT) {
     }, [store.currentView])
 
     const $options: any = useMemo(() => {
-        return store.views
-            .filter((v) => v.isShow)
-            .map((v) => ({
-                id: v.id,
-                label: v.name,
-            }))
-    }, [store.views])
+        return [
+            ...store.views
+                .filter((v) => v.isShow)
+                .map((v) => ({
+                    id: v.id,
+                    label: v.name,
+                })),
+            {
+                id: ALLRUNS,
+                label: t('All runs'),
+            },
+        ]
+    }, [store.views, t])
 
     const viewListRef = useRef(null)
     const viewRef = useRef(null)
@@ -56,7 +64,7 @@ function ConfigViews(props: PropsT) {
             <Select
                 size='compact'
                 options={$options}
-                placeholder='Select a view'
+                placeholder={t('Select a view')}
                 clearable={false}
                 overrides={{
                     DropdownContainer: {
@@ -75,6 +83,16 @@ function ConfigViews(props: PropsT) {
                 }}
                 onChange={(params) => {
                     const id = params.option?.id as string
+                    if (id === ALLRUNS) {
+                        store.onCurrentViewColumnsChange(
+                            props.columns.map((v) => v.key),
+                            [],
+                            []
+                        )
+                        store.onCurrentViewFiltersChange([])
+                        return
+                    }
+
                     setSelectId(id)
                     const view = store.views.find((v) => v.id === id)
                     useStore.setState({ currentView: view as ConfigT })
@@ -190,7 +208,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
         index: number
         style: React.CSSProperties
     }) => {
-        // eslint-disable-next-line @typescript-eslint/no-shadow
+        // eslint-disable-next-line
         const { item, overrides, ...restChildProps } = data[index].props
 
         return (
@@ -201,7 +219,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
                     boxSizing: 'border-box',
                     ...style,
                 }}
-                // eslint-disable-next-line react/jsx-props-no-spreading
+                // eslint-disable-next-line
                 {..._.omit(restChildProps, ['resetMenu', 'renderAll', 'renderHrefAsAnchor', 'getItemLabel'])}
                 key={item.id}
             >

@@ -49,12 +49,10 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,7 +61,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -75,58 +72,48 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class JobService {
 
-    @Resource
-    private JobMapper jobMapper;
+    private final JobMapper jobMapper;
+    private final JobSwdsVersionMapper jobSwdsVersionMapper;
+    private final TaskMapper taskMapper;
+    private final JobConvertor jobConvertor;
+    private final JobBoConverter jobBoConverter;
+    private final JobSpliterator jobSpliterator;
+    private final HotJobHolder hotJobHolder;
+    private final JobLoader jobLoader;
+    private final ResultQuerier resultQuerier;
+    private final StoragePathCoordinator storagePathCoordinator;
+    private final UserService userService;
+    private final ProjectManager projectManager;
+    private final JobManager jobManager;
+    private final SwmpManager swmpManager;
+    private final SwdsManager swdsManager;
+    private final RuntimeManager runtimeManager;
+    private final ResourcePoolManager resourcePoolManager;
 
-    @Resource
-    private JobSwdsVersionMapper jobSwdsVersionMapper;
-
-    @Resource
-    private JobConvertor jobConvertor;
-
-    @Resource
-    private JobBoConverter jobBoConverter;
-
-    @Resource
-    private UserService userService;
-
-    @Resource
-    private JobSpliterator jobSpliterator;
-
-    @Resource
-    private SwTaskScheduler swTaskScheduler;
-
-    @Resource
-    private HotJobHolder hotJobHolder;
-
-    @Resource
-    private JobLoader jobLoader;
-
-    @Resource
-    private TaskMapper taskMapper;
-
-    @Resource
-    private ResultQuerier resultQuerier;
-
-    @Resource
-    private StoragePathCoordinator storagePathCoordinator;
-
-    @Resource
-    private ProjectManager projectManager;
-    @Resource
-    private JobManager jobManager;
-
-    @Resource
-    private SwmpManager swmpManager;
-
-    @Resource
-    private SwdsManager swdsManager;
-
-    @Resource
-    private RuntimeManager runtimeManager;
-
-    @Resource
-    private ResourcePoolManager resourcePoolManager;
+    public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
+            TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
+            JobSpliterator jobSpliterator, ResourcePoolManager resourcePoolManager, HotJobHolder hotJobHolder,
+            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
+            ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
+            UserService userService) {
+        this.jobBoConverter = jobBoConverter;
+        this.jobMapper = jobMapper;
+        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
+        this.taskMapper = taskMapper;
+        this.jobConvertor = jobConvertor;
+        this.runtimeManager = runtimeManager;
+        this.jobSpliterator = jobSpliterator;
+        this.resourcePoolManager = resourcePoolManager;
+        this.hotJobHolder = hotJobHolder;
+        this.projectManager = projectManager;
+        this.jobManager = jobManager;
+        this.jobLoader = jobLoader;
+        this.swmpManager = swmpManager;
+        this.resultQuerier = resultQuerier;
+        this.swdsManager = swdsManager;
+        this.storagePathCoordinator = storagePathCoordinator;
+        this.userService = userService;
+    }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -266,7 +253,7 @@ public class JobService {
 
     Stream<Job> findAllNewJobs() {
         final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED));
-        return newJobs.stream().map(entity -> jobBoConverter.fromEntity(entity));
+        return newJobs.stream().map(jobBoConverter::fromEntity);
     }
 
     /**
@@ -329,9 +316,7 @@ public class JobService {
     private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
         CompletableFuture.runAsync(() -> {
             TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-            tasks.forEach(task -> {
-                task.updateStatus(taskStatus);
-            });
+            tasks.forEach(task -> task.updateStatus(taskStatus));
             TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
         });
     }

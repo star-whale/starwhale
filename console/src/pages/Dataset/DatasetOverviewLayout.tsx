@@ -161,7 +161,19 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
 
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems}>
-            <Accordion accordion overrides={{ ToggleIcon: () => <></> }}>
+            <Accordion
+                accordion
+                overrides={{
+                    ToggleIcon: () => <></>,
+                    ContentAnimationContainer: {
+                        style: {
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                        },
+                    },
+                }}
+            >
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>

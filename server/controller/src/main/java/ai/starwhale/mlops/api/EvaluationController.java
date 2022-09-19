@@ -86,5 +86,4 @@ public class EvaluationController implements EvaluationApi {
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
-
 }

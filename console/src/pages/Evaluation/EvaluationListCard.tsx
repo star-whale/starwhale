@@ -174,9 +174,10 @@ export default function EvaluationListCard() {
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
+                                if (props?.value === undefined) return '-'
                                 return <p title={props?.value}>{parseDecimal(props?.value, 4)}</p>
                             },
-                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? 0,
+                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? undefined,
                         })
                     )
                     break

@@ -72,18 +72,6 @@
     order by job_id desc
   </select>
 
-  <select id="listJobsByStatus" resultMap="jobResultMap">
-    <include refid="select_jobs"/>
-    <where>
-      and job_is_deleted = 0
-      and project_id = #{projectId}
-    </where>
-    <if test="swmpId != null and swmpId != ''">
-      and swmp_id = #{swmpId}
-    </if>
-    order by job_id desc
-  </select>
-
   <select id="findJobById" resultMap="jobResultMap">
     <include refid="select_jobs"/>
     <where>
@@ -124,9 +112,6 @@
       open="(" separator="," close=")">
       #{item}
     </foreach>
-  </update>
-  <update id="updateJobResultPath">
-    update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
   </update>
 
   <update id="updateJobComment">

@@ -19,6 +19,7 @@ package ai.starwhale.mlops.memory.impl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.memory.SwBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -78,5 +79,32 @@ public class SwByteBufferTest {
         assertThat(buf.asByteBuffer(), is(ByteBuffer.wrap("12345".getBytes(StandardCharsets.UTF_8))));
         this.buffer.setString(0, "1234567890");
         assertThat(buf.asByteBuffer(), is(ByteBuffer.wrap("23456".getBytes(StandardCharsets.UTF_8))));
+    }
+
+    @Test
+    public void testCopyTo() {
+        var base = new SwByteBuffer(5);
+        base.setBytes(0, new byte[]{1, 2, 3, 4, 5}, 0, 5);
+        // make a SwBuffer with non-zero offset
+        var src = base.slice(1, base.capacity() - 1);
+        var dst = new SwByteBuffer(5);
+        src.copyTo(dst);
+        assertThat(dst.getByte(0), is(src.getByte(0)));
+    }
+
+    @Test
+    void testSetBytes() {
+        final int cap = 3;
+        var buf = new SwByteBuffer(cap);
+        var src = new byte[]{1, 2, 3, 4};
+        buf.setBytes(0, src, 0, src.length);
+
+        var b = new byte[5];
+        assertThat(buf.getBytes(0, b, 0, b.length), is(cap));
+        assertThat(b, is(new byte[]{1, 2, 3, 0, 0}));
+
+        buf.setBytes(1, src, 0, src.length);
+        assertThat(buf.getBytes(0, b, 0, b.length), is(cap));
+        assertThat(b, is(new byte[]{1, 1, 2, 0, 0}));
     }
 }

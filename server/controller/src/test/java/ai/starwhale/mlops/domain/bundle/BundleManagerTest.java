@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -46,7 +47,15 @@ public class BundleManagerTest {
     @BeforeEach
     public void setUp() {
         projectAccessor = mock(ProjectAccessor.class);
+        given(projectAccessor.getProjectId(anyString()))
+                .willReturn(1L);
         bundleAccessor = mock(BundleAccessor.class);
+        given(bundleAccessor.findById(same(1L)))
+                .willReturn(EntityWrapper.builder().id(1L).build());
+        given(bundleAccessor.findByName(same("bundle1"), anyLong()))
+                .willReturn(EntityWrapper.builder().id(2L).name("bundle1").build());
+        given(projectAccessor.getProjectId(anyString()))
+                .willReturn(1L);
         bundleVersionAccessor = mock(BundleVersionAccessor.class);
         bundleManager = new BundleManager(
                 new IdConvertor(),
@@ -59,15 +68,32 @@ public class BundleManagerTest {
     }
 
     @Test
+    public void testGetBundleId() {
+        var res = bundleManager.getBundleId(BundleUrl.create("1", "1"));
+        assertThat(res, is(1L));
+
+        res = bundleManager.getBundleId(BundleUrl.create("1", "bundle1"));
+        assertThat(res, is(2L));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> bundleManager.getBundleId(BundleUrl.create("1", "bundle2")));
+
+    }
+
+    @Test
     public void testGetBundleVersionId() {
         given(bundleVersionAccessor.findVersionById(same(1L)))
-                .willReturn(EntityWrapper.builder().id(1L).name("byId").build());
+                .willReturn(VersionEntityWrapper.builder().id(1L).name("byId").build());
         given(bundleVersionAccessor.findVersionByAliasAndBundleId(anyString(), anyLong()))
-                .willReturn(EntityWrapper.builder().id(2L).name("byAlias").build());
+                .willReturn(VersionEntityWrapper.builder().id(2L).name("byAlias").build());
         given(bundleVersionAccessor.findVersionByNameAndBundleId(anyString(), anyLong()))
-                .willReturn(EntityWrapper.builder().id(3L).name("byName").build());
+                .willReturn(VersionEntityWrapper.builder().id(3L).name("byName").build());
 
         var res = bundleManager.getBundleVersionId(
+                BundleVersionUrl.create("1", "1", "1"));
+        assertThat(res, is(1L));
+
+        res = bundleManager.getBundleVersionId(
                 BundleVersionUrl.create("", "", "1"), 1L);
         assertThat(res, is(1L));
 
@@ -87,7 +113,25 @@ public class BundleManagerTest {
 
     @Data
     @Builder
-    private static class EntityWrapper implements BundleVersionEntity {
+    private static class EntityWrapper implements BundleEntity {
+
+        private Long id;
+        private String name;
+
+        @Override
+        public Long getId() {
+            return id;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
+
+    @Data
+    @Builder
+    private static class VersionEntityWrapper implements BundleVersionEntity {
 
         private Long id;
         private String name;

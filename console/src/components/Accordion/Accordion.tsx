@@ -21,13 +21,6 @@ export default function Accordion({ children, ...props }: IAccordionProps) {
                     flexDirection: 'column',
                 },
             },
-            ContentAnimationContainer: {
-                style: {
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                },
-            },
             Header: {
                 style: {
                     backgroundColor: '#F7F8FA',

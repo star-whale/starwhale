@@ -13,6 +13,7 @@ const useStyles = createUseStyles({
         justifyContent: 'center',
         alignItems: 'center',
         padding: '20px ',
+        overflow: 'auto',
     },
     card: {
         'display': 'flex',

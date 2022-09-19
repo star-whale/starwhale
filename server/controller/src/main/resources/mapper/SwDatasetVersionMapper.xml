@@ -13,6 +13,7 @@
            dataset_id,
            dsv.version_order as dsv_version_order,
            dsv.owner_id,
+           dsv.files_uploaded,
            dsv.size          as dsv_size,
            dsv.index_table   as dsv_index_table,
            dsv.storage_auths as dsv_storage_auths,
@@ -72,11 +73,11 @@
     keyProperty="id" parameterType="ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity"
     useGeneratedKeys="true">
     insert into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag,
-                                 version_meta, storage_path, files_uploaded)
+                                 version_meta, storage_path, files_uploaded, storage_auths)
     values (#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.size},
             #{version.indexTable}, #{version.versionTag}, #{version.versionMeta},
             #{version.storagePath},
-            #{version.filesUploaded})
+            #{version.filesUploaded}, #{version.storageAuths})
   </insert>
 
   <select id="getVersionById" resultMap="dsVersionResultMap">

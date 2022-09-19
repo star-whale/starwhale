@@ -35,35 +35,33 @@ import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 @Component
 public class JobConvertor implements Convertor<JobEntity, JobVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
+    private final UserConvertor userConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+    private final ResourcePoolConverter resourcePoolConverter;
+    private final RuntimeService runtimeService;
+    private final JobSwdsVersionMapper jobSwdsVersionMapper;
+    private final ResourcePoolMapper resourcePoolMapper;
 
-    @Resource
-    private UserConvertor userConvertor;
-
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
-    @Resource
-    private RuntimeService runtimeService;
-
-    @Resource
-    private JobSwdsVersionMapper jobSwdsVersionMapper;
-
-    @Resource
-    private ResourcePoolMapper resourcePoolMapper;
-
-    @Resource
-    private ResourcePoolConverter resourcePoolConverter;
+    public JobConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
+            LocalDateTimeConvertor localDateTimeConvertor, ResourcePoolConverter resourcePoolConverter,
+            RuntimeService runtimeService, JobSwdsVersionMapper jobSwdsVersionMapper,
+            ResourcePoolMapper resourcePoolMapper) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+        this.resourcePoolConverter = resourcePoolConverter;
+        this.runtimeService = runtimeService;
+        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
+        this.resourcePoolMapper = resourcePoolMapper;
+    }
 
     @Override
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
@@ -102,8 +100,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
 
     @Override
     public JobEntity revert(JobVo jobVo) throws ConvertException {
-        Objects.requireNonNull(jobVo, "jobVo");
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     private String getDeviceName(int deviceType) {
