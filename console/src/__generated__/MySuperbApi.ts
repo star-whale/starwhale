@@ -30,7 +30,7 @@ export interface UserRoleUpdateRequest {
 }
 
 export interface UpdateProjectRequest {
-    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,80}$ */
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
     projectName?: string
     ownerId?: string
     privacy?: string
@@ -42,7 +42,7 @@ export interface RuntimeTagRequest {
     action?: string
 }
 
-export interface SWMPTagRequest {
+export interface SwmpTagRequest {
     tag: string
     action?: string
 }
@@ -51,7 +51,7 @@ export interface JobModifyRequest {
     comment: string
 }
 
-export interface SWDSTagRequest {
+export interface SwdsTagRequest {
     tag: string
     action?: string
 }
@@ -60,6 +60,7 @@ export interface UserRequest {
     /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,32}$ */
     userName: string
     userPwd: string
+    salt?: string
 }
 
 export interface UserCheckPasswordRequest {
@@ -73,7 +74,7 @@ export interface UserRoleAddRequest {
 }
 
 export interface CreateProjectRequest {
-    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,80}$ */
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
     projectName: string
     ownerId: string
     privacy: string
@@ -81,9 +82,7 @@ export interface CreateProjectRequest {
 }
 
 export interface RuntimeRevertRequest {
-    version?: string
-    versionId?: string
-    versionUrl?: string
+    versionUrl: string
 }
 
 export interface ClientRuntimeRequest {
@@ -93,13 +92,11 @@ export interface ClientRuntimeRequest {
     manifest?: string
 }
 
-export interface RevertSWMPVersionRequest {
-    version?: string
-    versionId?: string
-    versionUrl?: string
+export interface RevertSwmpVersionRequest {
+    versionUrl: string
 }
 
-export interface ClientSWMPRequest {
+export interface ClientSwmpRequest {
     swmp?: string
     project?: string
     force?: string
@@ -112,7 +109,7 @@ export interface JobRequest {
     runtimeVersionUrl: string
     device: string
 
-    /** @format int32 */
+    /** @format float */
     deviceAmount: number
     comment?: string
     resourcePool?: string
@@ -123,10 +120,8 @@ export interface ConfigRequest {
     content: string
 }
 
-export interface RevertSWDSRequest {
-    version?: string
-    versionId?: string
-    versionUrl?: string
+export interface RevertSwdsRequest {
+    versionUrl: string
 }
 
 export interface UploadRequest {
@@ -186,6 +181,8 @@ export interface ScanTableRequest {
     /** @format int32 */
     limit?: number
     keepNone?: boolean
+    rawResult?: boolean
+    ignoreNonExistingTable?: boolean
 }
 
 export interface TableDesc {
@@ -194,19 +191,16 @@ export interface TableDesc {
     keepNone?: boolean
 }
 
-export interface RecordListVO {
-    columnTypes?: Record<
-        string,
-        'UNKNOWN' | 'BOOL' | 'INT8' | 'INT16' | 'INT32' | 'INT64' | 'FLOAT32' | 'FLOAT64' | 'STRING' | 'BYTES'
-    >
+export interface RecordListVo {
+    columnTypes?: Record<string, string>
     records?: Record<string, string>[]
     lastKey?: string
 }
 
-export interface ResponseMessageRecordListVO {
+export interface ResponseMessageRecordListVo {
     code?: string
     message?: string
-    data?: RecordListVO
+    data?: RecordListVo
 }
 
 export interface OrderByDesc {
@@ -226,6 +220,9 @@ export interface QueryTableRequest {
 
     /** @format int32 */
     limit?: number
+    keepNone?: boolean
+    rawResult?: boolean
+    ignoreNonExistingTable?: boolean
 }
 
 export interface TableQueryFilterDesc {
@@ -245,6 +242,20 @@ export interface TableQueryOperandDesc {
     floatValue?: number
     stringValue?: string
     bytesValue?: string
+}
+
+export interface ListTablesRequest {
+    prefix?: string
+}
+
+export interface ResponseMessageTableNameListVo {
+    code?: string
+    message?: string
+    data?: TableNameListVo
+}
+
+export interface TableNameListVo {
+    tables?: string[]
 }
 
 export interface PageInfo {
@@ -294,7 +305,7 @@ export interface PageInfo {
 /**
  * User object
  */
-export interface UserVO {
+export interface UserVo {
     id?: string
     name?: string
 
@@ -306,7 +317,7 @@ export interface UserVO {
 /**
  * Project object
  */
-export interface ProjectVO {
+export interface ProjectVo {
     id?: string
     name?: string
     description?: string
@@ -316,27 +327,27 @@ export interface ProjectVO {
     createdTime?: number
 
     /** User object */
-    owner?: UserVO
-    statistics?: StatisticsVO
+    owner?: UserVo
+    statistics?: StatisticsVo
 }
 
-export interface ResponseMessageListUserRoleVO {
+export interface ResponseMessageListUserRoleVo {
     code?: string
     message?: string
-    data?: UserRoleVO[]
+    data?: UserRoleVo[]
 }
 
 /**
  * User object
  */
-export interface RoleVO {
+export interface RoleVo {
     id?: string
     name?: string
     code?: string
     description?: string
 }
 
-export interface StatisticsVO {
+export interface StatisticsVo {
     /** @format int32 */
     modelCounts?: number
 
@@ -353,20 +364,20 @@ export interface StatisticsVO {
 /**
  * User Role object
  */
-export interface UserRoleVO {
+export interface UserRoleVo {
     id?: string
 
     /** Project object */
-    project?: ProjectVO
+    project?: ProjectVo
 
     /** User object */
-    role?: RoleVO
+    role?: RoleVo
 }
 
 /**
  * System verion
  */
-export interface SystemVersionVO {
+export interface SystemVersionVo {
     id?: string
     version?: string
 }
@@ -374,74 +385,75 @@ export interface SystemVersionVO {
 /**
  * Upgrade progress object
  */
-export interface UpgradeProgressVO {
+export interface UpgradeProgressVo {
     phase?: 'downloading' | 'upgrading'
 
     /** @format int32 */
     progress?: number
 }
 
-export interface ResponseMessageListSystemRoleVO {
+export interface ResponseMessageListSystemRoleVo {
     code?: string
     message?: string
-    data?: SystemRoleVO[]
+    data?: SystemRoleVo[]
 }
 
 /**
  * System Role object
  */
-export interface SystemRoleVO {
+export interface SystemRoleVo {
     id?: string
 
     /** User object */
-    user?: UserVO
+    user?: UserVo
 
     /** User object */
-    role?: RoleVO
+    role?: RoleVo
 }
 
-export interface ResponseMessageListRoleVO {
+export interface ResponseMessageListRoleVo {
     code?: string
     message?: string
-    data?: RoleVO[]
+    data?: RoleVo[]
 }
 
-export interface ResponseMessageRuntimeInfoVO {
+export interface ResponseMessageRuntimeInfoVo {
     code?: string
     message?: string
 
     /** Runtime information object */
-    data?: RuntimeInfoVO
+    data?: RuntimeInfoVo
 }
 
 /**
  * Runtime information object
  */
-export interface RuntimeInfoVO {
+export interface RuntimeInfoVo {
     id?: string
     name?: string
     versionName?: string
+    versionAlias?: string
     versionTag?: string
     versionMeta?: string
     manifest?: string
 
     /** @format int64 */
     createdTime?: number
-    files?: StorageFileVO[]
+    files?: StorageFileVo[]
 }
 
 /**
  * Storage file object
  */
-export interface StorageFileVO {
+export interface StorageFileVo {
     name?: string
     size?: string
 }
 
-export interface PageInfoRuntimeVersionVO {
+export interface PageInfoRuntimeVersionVo {
     /** @format int64 */
     total?: number
-    list?: RuntimeVersionVO[]
+    list?: RuntimeVersionVo[]
 
     /** @format int32 */
     pageNum?: number
@@ -482,57 +494,59 @@ export interface PageInfoRuntimeVersionVO {
     navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoRuntimeVersionVO {
+export interface ResponseMessagePageInfoRuntimeVersionVo {
     code?: string
     message?: string
-    data?: PageInfoRuntimeVersionVO
+    data?: PageInfoRuntimeVersionVo
 }
 
 /**
  * Runtime version object
  */
-export interface RuntimeVersionVO {
+export interface RuntimeVersionVo {
     id?: string
     name?: string
     tag?: string
+    alias?: string
     meta?: object
-    manifest?: string
+    image?: string
 
     /** @format int64 */
     createdTime?: number
 
     /** User object */
-    owner?: UserVO
+    owner?: UserVo
 }
 
 /**
  * Project Role object
  */
-export interface ProjectRoleVO {
+export interface ProjectRoleVo {
     id?: string
 
     /** User object */
-    user?: UserVO
+    user?: UserVo
 
     /** Project object */
-    project?: ProjectVO
+    project?: ProjectVo
 
     /** User object */
-    role?: RoleVO
+    role?: RoleVo
 }
 
-export interface ResponseMessageListProjectRoleVO {
+export interface ResponseMessageListProjectRoleVo {
     code?: string
     message?: string
-    data?: ProjectRoleVO[]
+    data?: ProjectRoleVo[]
 }
 
 /**
  * SWModelPackage information object
  */
-export interface SWModelPackageInfoVO {
+export interface SwModelPackageInfoVo {
     id?: string
     name?: string
+    versionAlias?: string
     versionName?: string
     versionTag?: string
     versionMeta?: string
@@ -540,13 +554,13 @@ export interface SWModelPackageInfoVO {
 
     /** @format int64 */
     createdTime?: number
-    files?: StorageFileVO[]
+    files?: StorageFileVo[]
 }
 
 /**
  * Job object
  */
-export interface JobVO {
+export interface JobVo {
     id?: string
     uuid?: string
     modelName?: string
@@ -554,14 +568,14 @@ export interface JobVO {
     datasets?: string[]
 
     /** Runtime object */
-    runtime?: RuntimeVO
+    runtime?: RuntimeVo
     device?: string
 
     /** @format int32 */
     deviceAmount?: number
 
     /** User object */
-    owner?: UserVO
+    owner?: UserVo
 
     /** @format int64 */
     createdTime?: number
@@ -589,7 +603,7 @@ export interface JobVO {
 /**
  * Runtime object
  */
-export interface RuntimeVO {
+export interface RuntimeVo {
     id?: string
     name?: string
 
@@ -597,10 +611,10 @@ export interface RuntimeVO {
     createdTime?: number
 
     /** User object */
-    owner?: UserVO
+    owner?: UserVo
 
     /** Runtime version object */
-    version?: RuntimeVersionVO
+    version?: RuntimeVersionVo
 }
 
 export interface Graph {
@@ -630,16 +644,16 @@ export interface GraphNode {
     entityId?: number
 }
 
-export interface AttributeValueVO {
+export interface AttributeValueVo {
     name?: string
     type?: string
     value?: string
 }
 
-export interface PageInfoSummaryVO {
+export interface PageInfoSummaryVo {
     /** @format int64 */
     total?: number
-    list?: SummaryVO[]
+    list?: SummaryVo[]
 
     /** @format int32 */
     pageNum?: number
@@ -680,16 +694,16 @@ export interface PageInfoSummaryVO {
     navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoSummaryVO {
+export interface ResponseMessagePageInfoSummaryVo {
     code?: string
     message?: string
-    data?: PageInfoSummaryVO
+    data?: PageInfoSummaryVo
 }
 
 /**
  * Evaluation Summary object
  */
-export interface SummaryVO {
+export interface SummaryVo {
     id?: string
     uuid?: string
     projectId?: string
@@ -712,13 +726,13 @@ export interface SummaryVO {
 
     /** @format int64 */
     duration?: number
-    attributes?: AttributeValueVO[]
+    attributes?: AttributeValueVo[]
 }
 
 /**
  * Evaluation View Config object
  */
-export interface ConfigVO {
+export interface ConfigVo {
     name?: string
     content?: string
 
@@ -726,48 +740,50 @@ export interface ConfigVO {
     createTime?: number
 }
 
-export interface ResponseMessageConfigVO {
+export interface ResponseMessageConfigVo {
     code?: string
     message?: string
 
     /** Evaluation View Config object */
-    data?: ConfigVO
+    data?: ConfigVo
 }
 
 /**
  * Evaluation Attribute object
  */
-export interface AttributeVO {
+export interface AttributeVo {
     name?: string
     type?: string
 }
 
-export interface ResponseMessageListAttributeVO {
+export interface ResponseMessageListAttributeVo {
     code?: string
     message?: string
-    data?: AttributeVO[]
+    data?: AttributeVo[]
 }
 
 export interface FileStorageEnv {
     envs?: Record<string, string>
-    envType?: 'S3' | 'HDFS' | 'NFS' | 'LOCAL_FS' | 'REST_RESOURCE' | 'FTP'
+    envType?: 'S3' | 'ALIYUN' | 'HDFS' | 'NFS' | 'LOCAL_FS' | 'REST_RESOURCE' | 'FTP'
+    keyPrefix?: string
 }
 
 /**
  * SWDataset information object
  */
-export interface SWDatasetInfoVO {
+export interface SwDatasetInfoVo {
     indexTable?: string
     fileStorageEnvs?: Record<string, FileStorageEnv>
     id?: string
     name?: string
     versionName?: string
+    versionAlias?: string
     versionTag?: string
     versionMeta?: string
 
     /** @format int64 */
     createdTime?: number
-    files?: StorageFileVO[]
+    files?: StorageFileVo[]
 }
 
 export interface UserRoleDeleteRequest {
@@ -898,11 +914,11 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title StarWhale Rest Api
+ * @title Starwhale Rest Api
  * @version {sw.version:1.0}
  * @baseUrl http://console.pre.intra.starwhale.ai
  *
- * Rest Api for starWhale controller
+ * Rest Api for Starwhale controller
  */
 export class Api<SecurityDataType extends unknown> {
     http: HttpClient<SecurityDataType>
@@ -1040,10 +1056,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get a project by Url
          * @request GET:/api/v1/project/{projectUrl}
          * @secure
-         * @response `200` `ProjectVO` ok.
+         * @response `200` `ProjectVo` ok.
          */
         getProjectByUrl: (projectUrl: string, params: RequestParams = {}) =>
-            this.http.request<ProjectVO, any>({
+            this.http.request<ProjectVo, any>({
                 path: `/api/v1/project/${projectUrl}`,
                 method: 'GET',
                 secure: true,
@@ -1216,7 +1232,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             modelUrl: string,
             versionUrl: string,
-            data: SWMPTagRequest,
+            data: SwmpTagRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1261,7 +1277,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             modelUrl: string,
             versionUrl: string,
-            data: SWMPTagRequest,
+            data: SwmpTagRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1300,10 +1316,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Job information
          * @request GET:/api/v1/project/{projectUrl}/job/{jobUrl}
          * @secure
-         * @response `200` `JobVO` OK
+         * @response `200` `JobVo` OK
          */
         findJob: (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
-            this.http.request<JobVO, any>({
+            this.http.request<JobVo, any>({
                 path: `/api/v1/project/${projectUrl}/job/${jobUrl}`,
                 method: 'GET',
                 secure: true,
@@ -1365,7 +1381,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             datasetUrl: string,
             versionUrl: string,
-            data: SWDSTagRequest,
+            data: SwdsTagRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1410,7 +1426,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             datasetUrl: string,
             versionUrl: string,
-            data: SWDSTagRequest,
+            data: SwdsTagRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1525,10 +1541,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary List system role of users
          * @request GET:/api/v1/role
          * @secure
-         * @response `200` `ResponseMessageListSystemRoleVO` ok
+         * @response `200` `ResponseMessageListSystemRoleVo` ok
          */
         listSystemRoles: (params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListSystemRoleVO, any>({
+            this.http.request<ResponseMessageListSystemRoleVo, any>({
                 path: `/api/v1/role`,
                 method: 'GET',
                 secure: true,
@@ -1661,10 +1677,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary List project roles
          * @request GET:/api/v1/project/{projectUrl}/role
          * @secure
-         * @response `200` `ResponseMessageListProjectRoleVO` ok
+         * @response `200` `ResponseMessageListProjectRoleVo` ok
          */
         listProjectRole: (projectUrl: string, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListProjectRoleVO, any>({
+            this.http.request<ResponseMessageListProjectRoleVo, any>({
                 path: `/api/v1/project/${projectUrl}/role`,
                 method: 'GET',
                 secure: true,
@@ -1703,7 +1719,7 @@ export class Api<SecurityDataType extends unknown> {
         revertModelVersion: (
             projectUrl: string,
             modelUrl: string,
-            data: RevertSWMPVersionRequest,
+            data: RevertSwmpVersionRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1729,7 +1745,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             modelName: string,
             versionName: string,
-            query: { uploadRequest: ClientSWMPRequest },
+            query: { uploadRequest: ClientSwmpRequest },
             data: { file: File },
             params: RequestParams = {}
         ) =>
@@ -1833,10 +1849,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get View Config
          * @request GET:/api/v1/project/{projectUrl}/evaluation/view/config
          * @secure
-         * @response `200` `ResponseMessageConfigVO` ok
+         * @response `200` `ResponseMessageConfigVo` ok
          */
         getViewConfig: (projectUrl: string, query: { name: string }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageConfigVO, any>({
+            this.http.request<ResponseMessageConfigVo, any>({
                 path: `/api/v1/project/${projectUrl}/evaluation/view/config`,
                 method: 'GET',
                 query: query,
@@ -1877,7 +1893,7 @@ export class Api<SecurityDataType extends unknown> {
         revertDatasetVersion: (
             projectUrl: string,
             datasetUrl: string,
-            data: RevertSWDSRequest,
+            data: RevertSwdsRequest,
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessageString, any>({
@@ -1944,10 +1960,10 @@ export class Api<SecurityDataType extends unknown> {
          * @name ScanTable
          * @request POST:/api/v1/datastore/scanTable
          * @secure
-         * @response `200` `ResponseMessageRecordListVO` OK
+         * @response `200` `ResponseMessageRecordListVo` OK
          */
         scanTable: (data: ScanTableRequest, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageRecordListVO, any>({
+            this.http.request<ResponseMessageRecordListVo, any>({
                 path: `/api/v1/datastore/scanTable`,
                 method: 'POST',
                 body: data,
@@ -1963,11 +1979,30 @@ export class Api<SecurityDataType extends unknown> {
          * @name QueryTable
          * @request POST:/api/v1/datastore/queryTable
          * @secure
-         * @response `200` `ResponseMessageRecordListVO` OK
+         * @response `200` `ResponseMessageRecordListVo` OK
          */
         queryTable: (data: QueryTableRequest, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageRecordListVO, any>({
+            this.http.request<ResponseMessageRecordListVo, any>({
                 path: `/api/v1/datastore/queryTable`,
+                method: 'POST',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags data-store-controller
+         * @name ListTables
+         * @request POST:/api/v1/datastore/listTables
+         * @secure
+         * @response `200` `ResponseMessageTableNameListVo` OK
+         */
+        listTables: (data: ListTablesRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageTableNameListVo, any>({
+                path: `/api/v1/datastore/listTables`,
                 method: 'POST',
                 body: data,
                 secure: true,
@@ -2002,10 +2037,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get a user by user ID
          * @request GET:/api/v1/user/{userId}
          * @secure
-         * @response `200` `UserVO` ok.
+         * @response `200` `UserVo` ok.
          */
         getUserById: (userId: string, params: RequestParams = {}) =>
-            this.http.request<UserVO, any>({
+            this.http.request<UserVo, any>({
                 path: `/api/v1/user/${userId}`,
                 method: 'GET',
                 secure: true,
@@ -2040,10 +2075,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the current logged in user.
          * @request GET:/api/v1/user/current
          * @secure
-         * @response `200` `UserVO` ok.
+         * @response `200` `UserVo` ok.
          */
         getCurrentUser: (params: RequestParams = {}) =>
-            this.http.request<UserVO, any>({
+            this.http.request<UserVo, any>({
                 path: `/api/v1/user/current`,
                 method: 'GET',
                 secure: true,
@@ -2059,10 +2094,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the current user roles.
          * @request GET:/api/v1/user/current/role
          * @secure
-         * @response `200` `ResponseMessageListUserRoleVO` ok
+         * @response `200` `ResponseMessageListUserRoleVo` ok
          */
         getCurrentUserRoles: (query?: { projectUrl?: string }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListUserRoleVO, any>({
+            this.http.request<ResponseMessageListUserRoleVo, any>({
                 path: `/api/v1/user/current/role`,
                 method: 'GET',
                 query: query,
@@ -2078,10 +2113,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get current version of the system
          * @request GET:/api/v1/system/version
          * @secure
-         * @response `200` `SystemVersionVO` ok
+         * @response `200` `SystemVersionVo` ok
          */
         getCurrentVersion: (params: RequestParams = {}) =>
-            this.http.request<SystemVersionVO, any>({
+            this.http.request<SystemVersionVo, any>({
                 path: `/api/v1/system/version`,
                 method: 'GET',
                 secure: true,
@@ -2097,10 +2132,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the current upgrade progress
          * @request GET:/api/v1/system/version/progress
          * @secure
-         * @response `200` `UpgradeProgressVO` ok
+         * @response `200` `UpgradeProgressVo` ok
          */
         getUpgradeProgress: (params: RequestParams = {}) =>
-            this.http.request<UpgradeProgressVO, any>({
+            this.http.request<UpgradeProgressVo, any>({
                 path: `/api/v1/system/version/progress`,
                 method: 'GET',
                 secure: true,
@@ -2116,10 +2151,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get latest version of the system
          * @request GET:/api/v1/system/version/latest
          * @secure
-         * @response `200` `SystemVersionVO` ok
+         * @response `200` `SystemVersionVo` ok
          */
         getLatestVersion: (params: RequestParams = {}) =>
-            this.http.request<SystemVersionVO, any>({
+            this.http.request<SystemVersionVo, any>({
                 path: `/api/v1/system/version/latest`,
                 method: 'GET',
                 secure: true,
@@ -2193,10 +2228,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary List role enums
          * @request GET:/api/v1/role/enums
          * @secure
-         * @response `200` `ResponseMessageListRoleVO` ok
+         * @response `200` `ResponseMessageListRoleVo` ok
          */
         listRoles: (params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListRoleVO, any>({
+            this.http.request<ResponseMessageListRoleVo, any>({
                 path: `/api/v1/role/enums`,
                 method: 'GET',
                 secure: true,
@@ -2235,7 +2270,7 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the information of a runtime
          * @request GET:/api/v1/project/{projectUrl}/runtime/{runtimeUrl}
          * @secure
-         * @response `200` `ResponseMessageRuntimeInfoVO` OK
+         * @response `200` `ResponseMessageRuntimeInfoVo` OK
          */
         getRuntimeInfo: (
             projectUrl: string,
@@ -2243,7 +2278,7 @@ export class Api<SecurityDataType extends unknown> {
             query?: { runtimeVersionUrl?: string },
             params: RequestParams = {}
         ) =>
-            this.http.request<ResponseMessageRuntimeInfoVO, any>({
+            this.http.request<ResponseMessageRuntimeInfoVo, any>({
                 path: `/api/v1/project/${projectUrl}/runtime/${runtimeUrl}`,
                 method: 'GET',
                 query: query,
@@ -2279,7 +2314,7 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the list of the runtime versions
          * @request GET:/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version
          * @secure
-         * @response `200` `ResponseMessagePageInfoRuntimeVersionVO` OK
+         * @response `200` `ResponseMessagePageInfoRuntimeVersionVo` OK
          */
         listRuntimeVersion: (
             projectUrl: string,
@@ -2287,7 +2322,7 @@ export class Api<SecurityDataType extends unknown> {
             query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
             params: RequestParams = {}
         ) =>
-            this.http.request<ResponseMessagePageInfoRuntimeVersionVO, any>({
+            this.http.request<ResponseMessagePageInfoRuntimeVersionVo, any>({
                 path: `/api/v1/project/${projectUrl}/runtime/${runtimeUrl}/version`,
                 method: 'GET',
                 query: query,
@@ -2346,7 +2381,7 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Model information
          * @request GET:/api/v1/project/{projectUrl}/model/{modelUrl}
          * @secure
-         * @response `200` `SWModelPackageInfoVO` OK
+         * @response `200` `SwModelPackageInfoVo` OK
          */
         getModelInfo: (
             projectUrl: string,
@@ -2354,7 +2389,7 @@ export class Api<SecurityDataType extends unknown> {
             query?: { versionUrl?: string },
             params: RequestParams = {}
         ) =>
-            this.http.request<SWModelPackageInfoVO, any>({
+            this.http.request<SwModelPackageInfoVo, any>({
                 path: `/api/v1/project/${projectUrl}/model/${modelUrl}`,
                 method: 'GET',
                 query: query,
@@ -2495,14 +2530,14 @@ export class Api<SecurityDataType extends unknown> {
          * @summary List Evaluation Summary
          * @request GET:/api/v1/project/{projectUrl}/evaluation
          * @secure
-         * @response `200` `ResponseMessagePageInfoSummaryVO` ok
+         * @response `200` `ResponseMessagePageInfoSummaryVo` ok
          */
         listEvaluationSummary: (
             projectUrl: string,
             query: { filter: string; pageNum?: number; pageSize?: number },
             params: RequestParams = {}
         ) =>
-            this.http.request<ResponseMessagePageInfoSummaryVO, any>({
+            this.http.request<ResponseMessagePageInfoSummaryVo, any>({
                 path: `/api/v1/project/${projectUrl}/evaluation`,
                 method: 'GET',
                 query: query,
@@ -2518,10 +2553,10 @@ export class Api<SecurityDataType extends unknown> {
          * @summary List Evaluation Summary Attributes
          * @request GET:/api/v1/project/{projectUrl}/evaluation/view/attribute
          * @secure
-         * @response `200` `ResponseMessageListAttributeVO` ok
+         * @response `200` `ResponseMessageListAttributeVo` ok
          */
         listAttributes: (projectUrl: string, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListAttributeVO, any>({
+            this.http.request<ResponseMessageListAttributeVo, any>({
                 path: `/api/v1/project/${projectUrl}/evaluation/view/attribute`,
                 method: 'GET',
                 secure: true,
@@ -2560,7 +2595,7 @@ export class Api<SecurityDataType extends unknown> {
          * @summary Get the information of a dataset
          * @request GET:/api/v1/project/{projectUrl}/dataset/{datasetUrl}
          * @secure
-         * @response `200` `SWDatasetInfoVO` OK
+         * @response `200` `SwDatasetInfoVo` OK
          */
         getDatasetInfo: (
             projectUrl: string,
@@ -2568,7 +2603,7 @@ export class Api<SecurityDataType extends unknown> {
             query?: { versionUrl?: string },
             params: RequestParams = {}
         ) =>
-            this.http.request<SWDatasetInfoVO, any>({
+            this.http.request<SwDatasetInfoVo, any>({
                 path: `/api/v1/project/${projectUrl}/dataset/${datasetUrl}`,
                 method: 'GET',
                 query: query,
@@ -2634,7 +2669,7 @@ export class Api<SecurityDataType extends unknown> {
             projectUrl: string,
             datasetUrl: string,
             versionUrl: string,
-            query: { uri: string; authName?: string },
+            query: { uri: string; authName?: string; offset?: string; size?: string },
             params: RequestParams = {}
         ) =>
             this.http.request<void, any>({

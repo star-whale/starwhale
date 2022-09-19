@@ -35,7 +35,7 @@ export function useParseRocAuc(data: RecordListVO = {}) {
             return parseInt(a.id, 10) - parseInt(b.id, 10)
         })
         records.forEach((item, i) => {
-            if (i % 6 !== 0) return
+            if (i > 20 && i % 20 !== 0) return
 
             fpr.push(Number(item.fpr))
             tpr.push(Number(item.tpr))
