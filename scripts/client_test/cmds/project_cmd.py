@@ -71,7 +71,7 @@ class Project:
         """
         res, err = invoke([CLI, self.project_cmd, "remove", project])
         _p = self.info(project)
-        return True if not err and not _p else False
+        return not err and not _p
 
     def recover(self, project: str) -> bool:
         """
@@ -82,7 +82,7 @@ class Project:
         """
         res, err = invoke([CLI, self.project_cmd, "recover", project])
         _p = self.info(project)
-        return True if not err and _p else False
+        return not err and _p
 
     def select(self, project: str) -> bool:
         """
@@ -93,4 +93,4 @@ class Project:
         """
         _valid_str = "successfully"
         res, err = invoke([CLI, self.project_cmd, "select", project])
-        return True if not err and _valid_str in res else False
+        return not err and _valid_str in res

@@ -69,7 +69,7 @@ class BaseArtifact:
         if force:
             _args.append("--force")
         _res, _err = invoke_with_react(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def history(self, name: str, fullname: bool = False) -> List[Dict[str, Any]]:
         """
@@ -108,7 +108,7 @@ class BaseArtifact:
             _args.extend("--quiet")
         _args.extend(tags)
         _res, _err = invoke(_args)
-        return True if not _err else False
+        return not _err
 
 
 class Model(BaseArtifact):
@@ -126,7 +126,7 @@ class Model(BaseArtifact):
         _args.append(workdir)
         _res, _err = invoke(_args)
         # TODO use version match
-        return True if not _err else False
+        return not _err
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
         _valid_str = "copy done"
@@ -134,7 +134,7 @@ class Model(BaseArtifact):
         if force:
             _args.append("--force")
         _res, _err = invoke(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def extract(self) -> Tuple[str, str]:
         return invoke([CLI, self.name, "extract"])
@@ -164,7 +164,7 @@ class Model(BaseArtifact):
             _args.extend(["--dataset", dataset_uri])
         _args.append(workdir)
         _res, _err = invoke(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
 
 class Dataset(BaseArtifact):
@@ -192,7 +192,7 @@ class Dataset(BaseArtifact):
         _args.append(workdir)
         _res, _err = invoke(_args)
         # TODO use version match
-        return True if not _err else False
+        return not _err
 
     def summary(self, uri: str) -> Dict[str, Any]:
         """
@@ -221,7 +221,7 @@ class Dataset(BaseArtifact):
         if with_auth:
             _args.append("--with-auth")
         _res, _err = invoke(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def diff(self, base_uri: str, compare_uri: str) -> Dict[str, Any]:
         """
@@ -308,7 +308,7 @@ class Runtime(BaseArtifact):
 
         _res, _err = invoke(_args)
         # TODO use version match
-        return True if not _err else False
+        return not _err
 
     def activate(self, uri: str, path: str) -> Tuple[str, str]:
         """
@@ -325,7 +325,7 @@ class Runtime(BaseArtifact):
         if force:
             _args.append("--force")
         _res, _err = invoke(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Tuple[str, str]:
         """

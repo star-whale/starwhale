@@ -22,7 +22,7 @@ class Instance:
         _valid_str = "successfully"
         _res, _err = invoke([CLI, self.instance_cmd, "login", "--username", user, "--password", password, "--alias",
                              alias, url])
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def info(self, instance: str = "") -> Dict[str, Any]:
         """
@@ -108,4 +108,4 @@ class Instance:
         """
         _failed_str = "failed"
         _res, _err = invoke([CLI, self.instance_cmd, "select", instance])
-        return True if not _err and _failed_str not in _res else False
+        return not _err and _failed_str not in _res

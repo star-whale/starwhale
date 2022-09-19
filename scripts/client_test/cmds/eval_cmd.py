@@ -58,7 +58,7 @@ class Evaluation:
             _args.extend(["--step", step, "--task-index", task_index])
         _args.append(project)
         _res, _err = invoke(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def info(self, version: str) -> Dict[str, Any]:
         """
