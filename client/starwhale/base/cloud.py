@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from datetime import datetime, timedelta
 
+import yaml
 import requests
 from rich.progress import TaskID, Progress
 from requests_toolbelt.multipart.encoder import (  # type: ignore
@@ -223,7 +224,7 @@ class CloudRequestMixed:
                     "id": _h["id"],
                     "name": name,
                     "version": _h["name"],
-                    "size": _h.get("size", 0),
+                    "size": self.get_bundle_size_from_resp(typ, _h),
                     "created_at": self.fmt_timestamp(_h["createdTime"]),
                     "is_removed": _h.get("is_removed", False),
                 }
@@ -257,6 +258,27 @@ class CloudRequestMixed:
             )[0]
 
         return objects, self.parse_pager(r)
+
+    def get_bundle_size_from_resp(self, typ: str, item: t.Dict) -> int:
+        default_size = 0
+        size = item.get("size", default_size)
+        if size:
+            return int(size)
+        meta_str = item.get("meta", False)
+        if not meta_str:
+            return default_size
+
+        meta = yaml.safe_load(meta_str)
+        if not isinstance(meta, dict):
+            return default_size
+
+        if typ == "dataset":
+            return int(meta.get("dataset_byte_size", default_size))
+        if typ == "runtime":
+            # no size info in meta for now
+            return default_size
+
+        return default_size
 
 
 class CloudBundleModelMixin(CloudRequestMixed):
