@@ -15,7 +15,7 @@ class Project:
         """
         _valid_str = "do successfully"
         res, err = invoke([CLI, self.project_cmd, "create", name])
-        return True if not err and _valid_str in res else False
+        return not err and _valid_str in res
 
     def info(self, project: str) -> Dict[str, Any]:
         """
