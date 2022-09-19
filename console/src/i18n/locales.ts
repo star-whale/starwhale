@@ -345,6 +345,9 @@ const locales0 = {
     'Change Password': {
         en: 'Change Password',
     },
+    'Get Token': {
+        en: 'Get Token',
+    },
     'Password Not Equal': {
         en: 'The passwords you entered do not match',
     },
