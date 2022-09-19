@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 from starwhale.utils import config as sw_config
 from starwhale.consts import ENV_SW_CLI_CONFIG, ENV_SW_LOCAL_STORAGE
 from starwhale.utils.fs import empty_dir, ensure_dir
+from starwhale.api._impl.data_store import LocalDataStore
 
 
 class BaseTestCase(unittest.TestCase):
@@ -14,6 +15,7 @@ class BaseTestCase(unittest.TestCase):
         os.environ[ENV_SW_CLI_CONFIG] = os.path.join(self.local_storage, "config.yaml")
         os.environ[ENV_SW_LOCAL_STORAGE] = self.local_storage
         sw_config._config = {}
+        LocalDataStore._instance = None
 
         self.datastore_root = str(sw_config.SWCliConfigMixed().datastore_dir)
         ensure_dir(self.datastore_root)

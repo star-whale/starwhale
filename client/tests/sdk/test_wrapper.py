@@ -25,19 +25,21 @@ class TestEvaluation(BaseTestCase):
         eval.log_result("0", 3)
         eval.log_result("1", 4)
         eval.log_result("2", 5, a="0", B="1")
+        eval.log_result("3", 6, c=None)
         eval.close()
         self.assertEqual(
             [
                 {"id": "0", "result": 3},
                 {"id": "1", "result": 4},
                 {"id": "2", "result": 5, "a": "0", "b": "1"},
+                {"id": "3", "result": 6},
             ],
             list(eval.get_results()),
         )
 
     def test_log_metrics(self) -> None:
         eval = wrapper.Evaluation()
-        eval.log_metrics(a=0, B=1)
+        eval.log_metrics(a=0, B=1, c=None)
         eval.log_metrics({"a/b": 2})
         eval.close()
         self.assertEqual(
