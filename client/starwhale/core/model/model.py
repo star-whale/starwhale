@@ -281,6 +281,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
+            raise
         finally:
             _manifest.update(
                 {
