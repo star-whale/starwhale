@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.objectstore;
+package ai.starwhale.mlops.storage;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

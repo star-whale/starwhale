@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.domain.swds.converter;
 
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swds.objectstore.StorageAuths;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
+import ai.starwhale.mlops.storage.env.UserStorageAuthEnv;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -28,21 +28,21 @@ import org.springframework.util.StringUtils;
 @Component
 public class SwdsBoConverter {
 
-    final StorageProperties storageProperties;
+    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
 
-    public SwdsBoConverter(StorageProperties storageProperties) {
-        this.storageProperties = storageProperties;
+    public SwdsBoConverter(StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
+        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
     }
 
     public SwDataSet fromEntity(SwDatasetVersionEntity swDatasetVersionEntity) {
-        Map<String, FileStorageEnv> fileStorageEnvs;
+        Map<String, StorageEnv> fileStorageEnvs;
         if (StringUtils.hasText(swDatasetVersionEntity.getStorageAuths())) {
-            StorageAuths storageAuths = new StorageAuths(swDatasetVersionEntity.getStorageAuths());
+            UserStorageAuthEnv storageAuths = new UserStorageAuthEnv(swDatasetVersionEntity.getStorageAuths());
             fileStorageEnvs = storageAuths.allEnvs();
         } else {
-            fileStorageEnvs = storageProperties.toFileStorageEnvs();
+            fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
         }
-        fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(FileStorageEnv.ENV_KEY_PREFIX,
+        fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(StorageEnv.ENV_KEY_PREFIX,
                 swDatasetVersionEntity.getStoragePath()));
         return SwDataSet.builder()
                 .id(swDatasetVersionEntity.getId())

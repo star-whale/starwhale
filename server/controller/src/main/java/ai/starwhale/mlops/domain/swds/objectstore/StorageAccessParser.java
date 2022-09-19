@@ -21,11 +21,10 @@ import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.s3.S3Config;
-import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
-import java.util.Map;
+import ai.starwhale.mlops.storage.StorageUri;
+import ai.starwhale.mlops.storage.env.StorageEnv;
+import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
+import ai.starwhale.mlops.storage.env.UserStorageAuthEnv;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -37,16 +36,20 @@ public class StorageAccessParser {
 
     final SwDatasetVersionMapper swDatasetVersionMapper;
 
+    final UserStorageAccessServiceBuilder userStorageAccessServiceBuilder;
+
     ConcurrentHashMap<String, StorageAccessService> storageAccessServicePool = new ConcurrentHashMap<>();
 
     public StorageAccessParser(StorageAccessService defaultStorageAccessService,
-                               SwDatasetVersionMapper swDatasetVersionMapper) {
+            SwDatasetVersionMapper swDatasetVersionMapper,
+            UserStorageAccessServiceBuilder userStorageAccessServiceBuilder) {
         this.defaultStorageAccessService = defaultStorageAccessService;
         this.swDatasetVersionMapper = swDatasetVersionMapper;
+        this.userStorageAccessServiceBuilder = userStorageAccessServiceBuilder;
     }
 
     public StorageAccessService getStorageAccessServiceFromAuth(Long datasetId, String uri,
-                                                                String authName) {
+            String authName) {
         if (StringUtils.hasText(authName)) {
             authName = authName.toUpperCase(); // env vars are uppercase always
         }
@@ -62,73 +65,24 @@ public class StorageAccessParser {
             return defaultStorageAccessService;
         }
 
-        StorageAuths storageAuths = new StorageAuths(storageAuthsText);
-        FileStorageEnv env = storageAuths.getEnv(authName);
+        UserStorageAuthEnv storageAuths = new UserStorageAuthEnv(storageAuthsText);
+        StorageEnv env = storageAuths.getEnv(authName);
         if (null == env) {
             return defaultStorageAccessService;
         }
 
-        switch (env.getEnvType()) {
-            case S3:
-                var s3 = new StorageAccessServiceS3(env2S3Config(new StorageUri(uri), env, authName));
-                storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), s3);
-                return s3;
-            case ALIYUN:
-                var aliyun = new StorageAccessServiceAliyun(env2S3Config(new StorageUri(uri), env, authName));
-                storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), aliyun);
-                return aliyun;
-            default:
-                throw new SwValidationException(ValidSubject.SWDS).tip(
-                        "file system not supported yet: " + env.getEnvType());
+        StorageAccessService storageAccessService = userStorageAccessServiceBuilder.build(env, new StorageUri(uri),
+                authName);
+        if (null == storageAccessService) {
+            throw new SwValidationException(ValidSubject.SWDS).tip(
+                    "file system not supported yet: " + env.getEnvType());
         }
+        storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), storageAccessService);
+        return storageAccessService;
     }
 
     String formatKey(Long datasetId, String authName) {
         return datasetId.toString() + authName;
-    }
-
-
-    static final String KEY_BUCKET = "USER.S3.%sBUCKET";
-    static final String KEY_REGION = "USER.S3.%sREGION";
-    static final String KEY_ENDPOINT = "USER.S3.%sENDPOINT";
-    static final String KEY_SECRET = "USER.S3.%sSECRET";
-    static final String KEY_ACCESS_KEY = "USER.S3.%sACCESS_KEY";
-
-    S3Config env2S3Config(StorageUri storageUri, FileStorageEnv env, String authName) {
-        if (StringUtils.hasText(authName)) {
-            authName = authName + ".";
-        } else {
-            authName = "";
-        }
-        authName = authName.toUpperCase();
-        Map<String, String> envs = env.getEnvs();
-        String bucket = StringUtils.hasText(storageUri.getBucket()) ? storageUri.getBucket()
-                : envs.get(String.format(KEY_BUCKET, authName));
-        String accessKey = StringUtils.hasText(storageUri.getUsername()) ? storageUri.getUsername()
-                : envs.get(String.format(KEY_ACCESS_KEY, authName));
-        String accessSecret =
-                StringUtils.hasText(storageUri.getPassword()) ? storageUri.getPassword()
-                        : envs.get(String.format(KEY_SECRET, authName));
-        String endpoint = StringUtils.hasText(storageUri.getHost()) ? buildEndPoint(storageUri)
-                : envs.get(String.format(KEY_ENDPOINT, authName));
-        return S3Config.builder()
-                .bucket(bucket)
-                .accessKey(accessKey)
-                .secretKey(accessSecret)
-                .region(envs.get(String.format(KEY_REGION, authName)))
-                .endpoint(endpoint)
-                .build();
-    }
-
-    private String buildEndPoint(StorageUri storageUri) {
-        if (null == storageUri.getPort() || 80 == storageUri.getPort()) {
-            return "http://" + storageUri.getHost();
-        } else if (443 == storageUri.getPort()) {
-            return "https://" + storageUri.getHost();
-        } else {
-            return "http://" + storageUri.getHost() + ":" + storageUri.getPort();
-        }
-
     }
 
 }
