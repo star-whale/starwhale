@@ -86,7 +86,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
             <div className={styles.row}>
                 <div className={styles.rowValue}>{[project.owner?.name, project.name].join('/')}</div>
                 <div className={styles.rowEnd}>
-                    <WithAuth role={role} id='project.edit'>
+                    <WithAuth role={role} id='project.update'>
                         <Button
                             onClick={() => onEdit?.()}
                             size='compact'
