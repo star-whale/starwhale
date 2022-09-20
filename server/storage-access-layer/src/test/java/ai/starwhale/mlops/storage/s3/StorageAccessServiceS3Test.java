@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,7 @@ public class StorageAccessServiceS3Test {
     private static final S3MockContainer s3Mock =
             new S3MockContainer(System.getProperty("s3mock.version", "latest"))
                     .withValidKmsKeys("arn:aws:kms:us-east-1:1234567890:key/valid-test-key-ref")
-                    .withInitialBuckets("test");
+                    .withInitialBuckets("test,huge");
 
     private StorageAccessServiceS3 s3;
     private S3Client client;
@@ -160,5 +161,36 @@ public class StorageAccessServiceS3Test {
     public void testDelete() throws IOException {
         this.s3.delete("x");
         assertThat(this.s3.list("").collect(Collectors.toList()), containsInAnyOrder("t1", "t2", "t/1", "t/2"));
+    }
+
+    @Test
+    public void testListHugeNumberOfFiles() {
+        var s3 = new StorageAccessServiceS3(
+                S3Config.builder()
+                        .bucket("huge")
+                        .accessKey("ak")
+                        .secretKey("sk")
+                        .region("us-west-1")
+                        .endpoint(s3Mock.getHttpEndpoint())
+                        .hugeFileThreshold(10 * 1024 * 1024)
+                        .hugeFilePartSize(5 * 1024 * 1024)
+                        .build());
+
+        final String prefix = "huge-number";
+        // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html#API_ListObjectsV2_RequestSyntax
+        // By default the action returns up to 1,000 key names.
+        // The response might contain fewer keys but will never contain more
+        final int count = 1001;
+
+        var expectedFiles = new ArrayList<String>();
+        for (int i = 0; i < count; i++) {
+            var path = prefix + "/" + i;
+            expectedFiles.add(path);
+            s3.put(path, new byte[] {7});
+        }
+
+        var resp = s3.list(prefix + "/").collect(Collectors.toList());
+        assertThat(resp.size(), is(count));
+        assertThat(resp, containsInAnyOrder(expectedFiles.toArray()));
     }
 }
