@@ -165,7 +165,12 @@ def _build(
 
 @runtime_cmd.command("remove")
 @click.argument("runtime")
-@click.option("-f", "--force", is_flag=True, help="Force to remove runtime")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force to remove runtime, the removed runtime cannot recover",
+)
 def _remove(runtime: str, force: bool) -> None:
     """
     Remove runtime

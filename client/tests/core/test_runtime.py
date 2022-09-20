@@ -416,6 +416,14 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not os.path.exists(recover_snapshot_path)
         assert os.path.exists(swrt_snapshot_path)
 
+        rtv = RuntimeTermView(f"{name}/version/{build_version}")
+        ok, _ = rtv.remove(True)
+        assert ok
+        assert not os.path.exists(recover_path)
+        assert not os.path.exists(swrt_path)
+        assert not os.path.exists(recover_snapshot_path)
+        assert not os.path.exists(swrt_snapshot_path)
+
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.is_venv")
     @patch("starwhale.utils.venv.is_conda")

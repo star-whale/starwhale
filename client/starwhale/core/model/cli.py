@@ -89,9 +89,14 @@ def _history(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
 
 @model_cmd.command("remove", help="Remove model")
 @click.argument("model")
-@click.option("-f", "--force", is_flag=True, help="Force to remove model")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force to remove model, the removed model cannot recover",
+)
 def _remove(model: str, force: bool) -> None:
-    click.confirm("continue to delete?", abort=True)
+    click.confirm("continue to remove?", abort=True)
     ModelTermView(model).remove(force)
 
 

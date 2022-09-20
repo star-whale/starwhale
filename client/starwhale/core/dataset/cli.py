@@ -94,7 +94,12 @@ def _info(view: t.Type[DatasetTermView], dataset: str, fullname: bool) -> None:
 
 @dataset_cmd.command("remove")
 @click.argument("dataset")
-@click.option("-f", "--force", is_flag=True, help="Force to remove dataset")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force to remove dataset, the removed dataset cannot recover",
+)
 @click.pass_obj
 def _remove(view: t.Type[DatasetTermView], dataset: str, force: bool) -> None:
     """

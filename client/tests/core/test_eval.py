@@ -120,6 +120,17 @@ class StandaloneEvaluationJobTestCase(TestCase):
             / self.job_name
         ).exists()
 
+        job.remove(True)
+        assert not os.path.exists(self.job_dir)
+        assert not (
+            Path(self.root)
+            / "self"
+            / URIType.EVALUATION
+            / RECOVER_DIRNAME
+            / self.job_name[:2]
+            / self.job_name
+        ).exists()
+
     @patch("starwhale.core.eval.model.subprocess.check_output")
     @patch("starwhale.core.eval.model.check_call")
     def test_actions(self, m_call: MagicMock, m_call_output: MagicMock):

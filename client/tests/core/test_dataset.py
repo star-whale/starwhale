@@ -116,7 +116,7 @@ class StandaloneDatasetTestCase(TestCase):
             f"mnist/version/{build_version}", expected_type=URIType.DATASET
         )
         sd = StandaloneDataset(dataset_uri)
-        _ok, _ = sd.remove(True)
+        _ok, _ = sd.remove(False)
         assert _ok
 
         _list, _ = StandaloneDataset.list(URI(""))
@@ -134,6 +134,10 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(fname).remove()
         DatasetTermView(fname).recover()
         DatasetTermView.list()
+
+        sd.remove(True)
+        _list, _ = StandaloneDataset.list(URI(""))
+        assert len(_list[name]) == 0
 
         DatasetTermView.build(workdir, "self")
 
