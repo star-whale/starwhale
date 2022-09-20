@@ -166,6 +166,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     jobRuntime.getDeviceAmount());
         }
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
+        runtimeResources.forEach(runtimeResource -> runtimeResource.setNum(runtimeResource.getNum() * 1000));
         if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }
