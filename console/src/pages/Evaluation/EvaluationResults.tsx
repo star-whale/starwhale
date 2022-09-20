@@ -14,7 +14,7 @@ const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
-const PAGE_TABLE_SIZE = 10
+const PAGE_TABLE_SIZE = 100
 
 function ConfusionMatrix({ fetch }: any) {
     const { labels, binarylabel } = useParseConfusionMatrix(fetch?.data)
@@ -65,7 +65,7 @@ function EvaluationViewer({ table }: { table: string }) {
         return info.data?.columnTypes ?? {}
     }, [info])
     const columns = React.useMemo(() => {
-        return Object.keys(columnTypes) ?? []
+        return Object.keys(columnTypes).sort((a) => (a === 'id' ? -1 : 1)) ?? []
     }, [columnTypes])
     const data = React.useMemo(() => {
         if (!info.data) return []

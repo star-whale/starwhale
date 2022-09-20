@@ -323,11 +323,13 @@ export default function DatasetVersionFiles() {
                     value={layoutKey}
                     onChange={(key) => {
                         setLayoutKey(key)
+                        const newSize = key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
+
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
-                                    ...page,
-                                    pageSize: key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE,
+                                    pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
+                                    pageSize: newSize,
                                 }
                             )}`
                         )

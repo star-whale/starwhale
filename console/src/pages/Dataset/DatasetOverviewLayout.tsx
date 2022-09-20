@@ -189,14 +189,18 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                     }
                                 />
                             </div>
-                            <Button
-                                size='compact'
-                                kind='secondary'
-                                startEnhancer={() => <IconFont type='runtime' />}
-                                onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)}
-                            >
-                                {t('History')}
-                            </Button>
+                            {datasetVersionId && (
+                                <Button
+                                    size='compact'
+                                    as='withIcon'
+                                    startEnhancer={() => <IconFont type='runtime' />}
+                                    onClick={() =>
+                                        history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)
+                                    }
+                                >
+                                    {t('History')}
+                                </Button>
+                            )}
                         </div>
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>

@@ -12,7 +12,7 @@ import { useHistory } from 'react-router-dom'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { createUseStyles } from 'react-jss'
 import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMembers'
-import Button from '@/components/Button/Button'
+import Button from '@/components/Button'
 import { useQuery } from 'react-query'
 import Avatar from '@/components/Avatar'
 import WithAuth from '@/api/WithAuth'
@@ -90,7 +90,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <Button
                             onClick={() => onEdit?.()}
                             size='compact'
-                            kind='secondary'
+                            as='withIcon'
                             startEnhancer={() => <IconFont type='edit' size={13} />}
                         >
                             {t('Edit')}
@@ -128,7 +128,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <Button
                             onClick={() => history.push(`/projects/${project.id}/members`)}
                             size='compact'
-                            kind='secondary'
+                            as='withIcon'
                             startEnhancer={() => <IconFont type='a-managemember' size={13} />}
                         >
                             {t('Manage Member')}

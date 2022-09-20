@@ -4,19 +4,11 @@ import { mergeOverrides } from '@/utils/baseui'
 import { useStyletron } from 'baseui'
 
 export interface IButtonProps extends ButtonProps {
-    as?: 'link' | 'button' | 'transparent'
+    as?: 'link' | 'button' | 'transparent' | withIcon
     kind?: KIND[keyof KIND]
     isFull?: boolean
     className?: string
 }
-
-// const useStyles = createUseStyles({
-// baseButton: {
-//     style: {
-//         borderRadius: theme.borders.radius100,
-//     }
-// }
-// })
 
 /* eslint-disable react/jsx-props-no-spreading */
 export default function Button({
@@ -100,6 +92,31 @@ export default function Button({
                         ':focus': {
                             backgroundColor: 'transparent',
                             color: 'var(--color-brandPrimaryHover)',
+                        },
+                    },
+                },
+            },
+            props.overrides
+        )
+    } else if (as === 'withIcon') {
+        overrides = mergeOverrides(
+            {
+                BaseButton: {
+                    style: {
+                        'borderTopLeftRadius': theme.borders.radius200,
+                        'borderTopRightRadius': theme.borders.radius200,
+                        'borderBottomLeftRadius': theme.borders.radius200,
+                        'borderBottomRightRadius': theme.borders.radius200,
+                        'width': isFull ? '100%' : 'auto',
+                        'backgroundColor': '#F4F5F7',
+                        'color': 'rgba(2,16,43,0.60)',
+                        ':hover': {
+                            backgroundColor: '#F0F4FF',
+                            color: '#5181E0',
+                        },
+                        ':active': {
+                            backgroundColor: '#F0F4FF',
+                            color: '#1C4CAD',
                         },
                     },
                 },
