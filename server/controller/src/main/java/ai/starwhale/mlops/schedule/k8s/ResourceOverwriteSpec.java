@@ -81,7 +81,7 @@ public class ResourceOverwriteSpec {
                 .collect(convertToMap());
         this.resourceSelector = new V1ResourceRequirements().requests(resourceRequiredMap);
         Map<String, Quantity> resourceLimitMap = runtimeResources.stream()
-                .filter(runtimeResource -> !RESOURCE_CPU.equals(runtimeResource.getType()))
+                .filter(runtimeResource -> !k8sResource(runtimeResource.getType()))
                 .collect(convertToMap());
         resourceSelector.limits(resourceLimitMap);
     }
