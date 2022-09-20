@@ -1067,7 +1067,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
         def _build(_manifest: t.Dict[str, t.Any]) -> None:
-            _tags = tags or []
+            _tags = list(tags or [])
             _platforms = platforms or []
             _dc_image = _manifest["configs"].get("docker", {}).get("image")
             if _dc_image:

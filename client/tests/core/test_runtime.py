@@ -873,7 +873,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert f"--file {dockerfile_path}" in build_cmd
 
         RuntimeTermView(f"{name}/version/{version}").dockerize(
-            tags=[],
+            tags=("t1", "t2", "t3"),  # type: ignore
             push=False,
             platforms=[SupportArch.ARM64],
             dry_run=False,
