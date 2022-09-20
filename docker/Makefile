@@ -20,6 +20,10 @@ DH_NODEJS_IMAGE := ${GHCR_IO_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
 
+ifndef YARN_REGISTRY
+	YARN_REGISTRY = https://registry.npmmirror.com
+endif
+
 ifndef RELEASE_VERSION
 	RELEASE_VERSION = ${LATEST_R_VERSION}-nightly-${DATE}-${GIT_REVISION}
 endif
@@ -135,10 +139,9 @@ build-console:
 		-u $(shell id -u):$(shell id -g) \
 		-v ${YARN_VOLUME}:/var/yarn-cache \
 		-v ${ROOT_DIR}console:/app \
-		-e YARN_REGISTRY=https://registry.npmmirror.com \
 		-e HOME=/var/yarn-cache \
 		-w /app ${DH_NODEJS_IMAGE} \
-		/bin/sh -c "yarn config set network-timeout 600000 -g && yarn && yarn build"
+		/bin/sh -c "npm config set registry ${YARN_REGISTRY} && yarn config set network-timeout 600000 -g && yarn && yarn build"
 
 build-jar:
 	docker volume create --name ${MVN_VOLUME} && \
