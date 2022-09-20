@@ -1,5 +1,4 @@
 import React from 'react'
-import { useDataset } from '@dataset/hooks/useDataset'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
@@ -16,6 +15,7 @@ import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
 import { DatasetObject } from '@/domain/dataset/sdk'
+import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 
 const useCardStyles = createUseStyles({
@@ -139,10 +139,10 @@ export default function DatasetVersionFiles() {
         fileId: string
     }>()
     const [page, setPage] = usePage()
-    const { dataset: datasetVersion } = useDataset()
     const { token } = useAuth()
     const history = useHistory()
     const styles = useCardStyles()
+    const { datasetVersion } = useDatasetVersion()
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
 
