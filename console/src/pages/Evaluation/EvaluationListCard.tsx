@@ -25,6 +25,7 @@ import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { parseDecimal } from '@/utils'
+import { WithCurrentAuth } from '@/api/WithAuth'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -359,16 +360,18 @@ export default function EvaluationListCard() {
                     marginBottom: 0,
                 }}
                 extra={
-                    <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                        size={ButtonSize.compact}
-                        onClick={() => {
-                            history.push('new_job')
-                        }}
-                        isLoading={evaluationsInfo.isLoading}
-                    >
-                        {t('create')}
-                    </Button>
+                    <WithCurrentAuth id='evaluation.create'>
+                        <Button
+                            startEnhancer={<IconFont type='add' kind='white' />}
+                            size={ButtonSize.compact}
+                            onClick={() => {
+                                history.push('new_job')
+                            }}
+                            isLoading={evaluationsInfo.isLoading}
+                        >
+                            {t('create')}
+                        </Button>
+                    </WithCurrentAuth>
                 }
             >
                 <StoreProvider initState={{}}>

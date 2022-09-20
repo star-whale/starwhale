@@ -640,6 +640,15 @@ const locales0 = {
     'Exit Fullscreen': {
         en: 'Exit Fullscreen',
     },
+    'Remove Project Success': {
+        en: 'Remove Project Success',
+    },
+    'Confirm Remove Project?': {
+        en: 'Confirm Remove Project? ',
+    },
+    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.': {
+        en: 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

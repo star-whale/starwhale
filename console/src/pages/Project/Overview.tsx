@@ -15,6 +15,8 @@ import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMe
 import Button from '@/components/Button/Button'
 import { useQuery } from 'react-query'
 import Avatar from '@/components/Avatar'
+import WithAuth from '@/api/WithAuth'
+import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -77,20 +79,23 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     const styles = useCardStyles()
     const history = useHistory()
     const members = useFetchProjectMembers(project.id)
+    const { role } = useFetchProjectRole(project.id)
 
     return (
         <div className={styles.card}>
             <div className={styles.row}>
                 <div className={styles.rowValue}>{[project.owner?.name, project.name].join('/')}</div>
                 <div className={styles.rowEnd}>
-                    <Button
-                        onClick={() => onEdit?.()}
-                        size='compact'
-                        kind='secondary'
-                        startEnhancer={() => <IconFont type='edit' size={13} />}
-                    >
-                        {t('Edit')}
-                    </Button>
+                    <WithAuth role={role} id='project.update'>
+                        <Button
+                            onClick={() => onEdit?.()}
+                            size='compact'
+                            kind='secondary'
+                            startEnhancer={() => <IconFont type='edit' size={13} />}
+                        >
+                            {t('Edit')}
+                        </Button>
+                    </WithAuth>
                 </div>
             </div>
             <div className={styles.row}>
@@ -119,14 +124,16 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
             <div className={styles.row}>
                 <div className={styles.rowKey}>{t('Member')}: </div>
                 <div className={styles.rowEnd}>
-                    <Button
-                        onClick={() => history.push(`/projects/${project.id}/members`)}
-                        size='compact'
-                        kind='secondary'
-                        startEnhancer={() => <IconFont type='a-managemember' size={13} />}
-                    >
-                        {t('Manage Member')}
-                    </Button>
+                    <WithAuth role={role} id='member.update'>
+                        <Button
+                            onClick={() => history.push(`/projects/${project.id}/members`)}
+                            size='compact'
+                            kind='secondary'
+                            startEnhancer={() => <IconFont type='a-managemember' size={13} />}
+                        >
+                            {t('Manage Member')}
+                        </Button>
+                    </WithAuth>
                 </div>
             </div>
             <div className={styles.row}>
