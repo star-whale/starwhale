@@ -752,12 +752,15 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def quickstart_from_uri(
         cls,
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         uri: URI,
         force: bool = False,
         restore: bool = False,
     ) -> None:
+        workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
+
         if uri.instance_type == InstanceType.CLOUD:
             console.print(f":cloud: copy runtime from {uri} to local")
             _dest_project_uri = f"{STANDALONE_INSTANCE}/project/{DEFAULT_PROJECT}"
@@ -835,6 +838,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         interactive: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
         console.print(f":printer: render runtime.yaml @ {workdir}")
         python_version = get_python_version()
 
@@ -849,7 +853,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.print(
                 f":construction_worker: create {mode} isolated python environment..."
             )
-            ensure_dir(workdir)
             _id = create_python_env(
                 mode=mode,
                 name=name,

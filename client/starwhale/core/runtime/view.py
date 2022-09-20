@@ -155,7 +155,7 @@ class RuntimeTermView(BaseTermView):
     @BaseTermView._only_standalone
     def quickstart_from_uri(
         cls,
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         uri: URI,
         force: bool = False,
