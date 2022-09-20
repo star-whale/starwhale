@@ -8,7 +8,7 @@ import { IDatasetVersionDetailSchema } from '@/domain/dataset/schemas/datasetVer
 import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { ThemeType } from '@/theme'
-import { Role } from '@/api/WithAuth'
+import { Role } from '@/api/const'
 import { IRuntimeDetailSchema } from '../domain/runtime/schemas/runtime'
 import { IRuntimeVersionDetailSchema } from '../domain/runtime/schemas/runtimeVersion'
 

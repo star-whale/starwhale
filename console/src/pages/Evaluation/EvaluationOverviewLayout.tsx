@@ -13,8 +13,7 @@ import { Panel } from 'baseui/accordion'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
-import WithAuth from '@/api/WithAuth'
-import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -168,8 +167,6 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         [jobInfo, projectId, t]
     )
 
-    const { role } = useProjectRole()
-
     const extra = React.useMemo(() => {
         if (!job) return <></>
 
@@ -202,12 +199,8 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
             ),
         }
 
-        return (
-            <WithAuth role={role} id='evaluation.action'>
-                {actions[job.jobStatus]}
-            </WithAuth>
-        )
-    }, [job, t, handleAction, role])
+        return <WithCurrentAuth id='evaluation.action'>{actions[job.jobStatus]}</WithCurrentAuth>
+    }, [job, t, handleAction])
 
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>

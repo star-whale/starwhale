@@ -1,5 +1,5 @@
 import React from 'react'
-import { Role } from '@/api/WithAuth'
+import { Role } from '@/api/const'
 import { useQuery } from 'react-query'
 import { useCurrentUser } from '../../../hooks/useCurrentUser'
 import { listProjectRole } from '../services/project'

@@ -17,8 +17,7 @@ import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import MemberAddForm from '@project/components/MemberAddForm'
 import { ConfirmButton } from '@/components/Modal/confirm'
-import WithAuth from '@/api/WithAuth'
-import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ProjectMembers() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -34,13 +33,11 @@ export default function ProjectMembers() {
         setData(items.filter((i) => (filter && i.user.name.includes(filter)) || filter === ''))
     }, [filter, members.data])
 
-    const { role: roleCode } = useProjectRole()
-
     return (
         <Card
             title={t('Manage Project Members')}
             extra={
-                <WithAuth role={roleCode} id='member.create'>
+                <WithCurrentAuth id='member.create'>
                     <Button
                         startEnhancer={<IconFont type='add' kind='white' />}
                         size={ButtonSize.compact}
@@ -50,7 +47,7 @@ export default function ProjectMembers() {
                     >
                         {t('Add Project Member')}
                     </Button>
-                </WithAuth>
+                </WithCurrentAuth>
             }
         >
             <div className={css({ marginBottom: '20px', width: '280px' })}>
@@ -67,7 +64,7 @@ export default function ProjectMembers() {
                     data.map(({ id, user, role }) => [
                         user.name,
                         <div style={{ maxWidth: '200px', padding: '5px 0 5px 0' }} key={id}>
-                            <WithAuth role={roleCode} id='member.update'>
+                            <WithCurrentAuth id='member.update'>
                                 {(bool: boolean) =>
                                     bool ? (
                                         <RoleSelector
@@ -84,10 +81,10 @@ export default function ProjectMembers() {
                                         role.name
                                     )
                                 }
-                            </WithAuth>
+                            </WithCurrentAuth>
                         </div>,
                         user.createdTime && formatTimestampDateTime(user.createdTime),
-                        <WithAuth role={roleCode} id='member.delete' key={id}>
+                        <WithCurrentAuth id='member.delete' key={id}>
                             <ConfirmButton
                                 as='link'
                                 key={id}
@@ -100,7 +97,7 @@ export default function ProjectMembers() {
                             >
                                 {t('Remove Project Member')}
                             </ConfirmButton>
-                        </WithAuth>,
+                        </WithCurrentAuth>,
                     ]) ?? []
                 }
             />

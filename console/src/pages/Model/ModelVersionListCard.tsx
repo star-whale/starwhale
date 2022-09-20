@@ -13,8 +13,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
-import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
-import WithAuth from '@/api/WithAuth'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -40,7 +39,6 @@ export default function ModelVersionListCard() {
         },
         [modelsInfo, projectId, modelId, t]
     )
-    const { role } = useProjectRole()
 
     return (
         <Card title={t('model versions')}>
@@ -54,11 +52,11 @@ export default function ModelVersionListCard() {
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
                             i ? (
-                                <WithAuth role={role} id='model.version.revert'>
+                                <WithCurrentAuth id='model.version.revert'>
                                     <Button as='link' size='mini' key={model.id} onClick={() => handleAction(model.id)}>
                                         {t('Revert')}
                                     </Button>
-                                </WithAuth>
+                                </WithCurrentAuth>
                             ) : (
                                 ''
                             ),
