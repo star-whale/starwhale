@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.bo;
 
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,5 +65,5 @@ public class SwDataSet {
     /**
      * the necessary information to access to file storages key: storage name value: envs
      */
-    Map<String, FileStorageEnv> fileStorageEnvs;
+    Map<String, StorageEnv> fileStorageEnvs;
 }

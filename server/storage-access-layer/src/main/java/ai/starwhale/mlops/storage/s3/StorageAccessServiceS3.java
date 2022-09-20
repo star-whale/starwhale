@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -50,6 +51,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 
+@Slf4j
 public class StorageAccessServiceS3 implements StorageAccessService {
 
     final S3Config s3Config;
@@ -149,11 +151,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                             .build())
                     .build());
         } catch (Throwable t) {
+            log.error("multipart file upload aborted", t);
             this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
                     .bucket(this.s3Config.getBucket())
                     .key(path)
                     .uploadId(uploadId)
                     .build());
+            throw new IOException(t);
         }
     }
 

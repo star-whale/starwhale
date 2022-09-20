@@ -16,12 +16,13 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
+import ai.starwhale.mlops.storage.env.StorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
+import ai.starwhale.mlops.storage.env.UserStorageAuthEnv;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class StorageAuthsTest {
+public class UserStorageAuthEnvTest {
 
     @Test
     public void testS3() {
@@ -33,23 +34,23 @@ public class StorageAuthsTest {
                 + "USER.S3.myname.SECRET=secret1\n"
                 + "USER.S3.MNIST.SECRET=\n"
                 + "USER.S3.myname.ACCESS_KEY=access_key1\n";
-        StorageAuths storageAuths = new StorageAuths(auths);
-        FileStorageEnv defaultEnv = storageAuths.getEnv("");
-        Assertions.assertEquals(FileSystemEnvType.S3, defaultEnv.getEnvType());
+        UserStorageAuthEnv storageAuths = new UserStorageAuthEnv(auths);
+        StorageEnv defaultEnv = storageAuths.getEnv("");
+        Assertions.assertEquals(StorageEnvType.S3, defaultEnv.getEnvType());
         Assertions.assertEquals("region", defaultEnv.getEnvs().get("USER.S3.REGION"));
         Assertions.assertEquals("endpoint", defaultEnv.getEnvs().get("USER.S3.ENDPOINT"));
         Assertions.assertEquals("secret", defaultEnv.getEnvs().get("USER.S3.SECRET"));
         Assertions.assertEquals("access_key", defaultEnv.getEnvs().get("USER.S3.ACCESS_KEY"));
 
-        FileStorageEnv myEnv = storageAuths.getEnv("myname");
-        Assertions.assertEquals(FileSystemEnvType.S3, myEnv.getEnvType());
+        StorageEnv myEnv = storageAuths.getEnv("myname");
+        Assertions.assertEquals(StorageEnvType.S3, myEnv.getEnvType());
         Assertions.assertNull(myEnv.getEnvs().get("USER.S3.myname.REGION"));
         Assertions.assertEquals("endpoint1", myEnv.getEnvs().get("USER.S3.MYNAME.ENDPOINT"));
         Assertions.assertEquals("secret1", myEnv.getEnvs().get("USER.S3.MYNAME.SECRET"));
         Assertions.assertEquals("access_key1", myEnv.getEnvs().get("USER.S3.MYNAME.ACCESS_KEY"));
 
-        FileStorageEnv mnist = storageAuths.getEnv("MNIST");
-        Assertions.assertEquals(FileSystemEnvType.S3, mnist.getEnvType());
+        StorageEnv mnist = storageAuths.getEnv("MNIST");
+        Assertions.assertEquals(StorageEnvType.S3, mnist.getEnvType());
         Assertions.assertEquals("", mnist.getEnvs().get("USER.S3.MNIST.SECRET"));
     }
 

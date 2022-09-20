@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.api.protocol.swds;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVo;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -50,11 +50,6 @@ public class SwDatasetInfoVo implements Serializable {
      * the table name for index in DataStore
      */
     String indexTable;
-
-    /**
-     * the necessary information to access to file storages key: storage name value: envs
-     */
-    Map<String, FileStorageEnv> fileStorageEnvs;
 
     @JsonProperty("versionTag")
     private String versionTag;

@@ -18,6 +18,9 @@ package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
+import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
+import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -29,7 +32,7 @@ import org.springframework.context.annotation.Configuration;
 public class StorageAccessConfig {
 
     @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3")
     public StorageAccessService s3(StorageProperties storageProperties) {
         return new StorageAccessServiceS3(storageProperties.getS3Config());
     }
@@ -39,4 +42,22 @@ public class StorageAccessConfig {
     public StorageAccessService aliyun(StorageProperties storageProperties) {
         return new StorageAccessServiceAliyun(storageProperties.getS3Config());
     }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "minio", matchIfMissing = true)
+    public StorageAccessService minio(StorageProperties storageProperties) {
+        return new StorageAccessServiceMinio(storageProperties.getS3Config());
+    }
+
+    @Bean
+    public StorageEnvsPropertiesConverter storageEnvsPropertiesConverter(StorageProperties storageProperties) {
+        return new StorageEnvsPropertiesConverter(storageProperties);
+    }
+
+    @Bean
+    public UserStorageAccessServiceBuilder userStorageAccessServiceBuilder(
+            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
+        return new UserStorageAccessServiceBuilder(storageEnvsPropertiesConverter);
+    }
+
 }

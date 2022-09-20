@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.env;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
 import org.junit.jupiter.api.Test;
 
 public class AliyunEnvTest extends S3EnvTest {
     @Test
     public void testSet() {
         var aliyunEnv = new AliyunEnv();
-        assertThat(aliyunEnv.getEnvType(), is(FileStorageEnv.FileSystemEnvType.ALIYUN));
+        assertThat(aliyunEnv.getEnvType(), is(StorageEnvType.ALIYUN));
         var conf = randomString();
         aliyunEnv.setExtraS3Configs(conf);
         assertThat(mapContains(aliyunEnv.getEnvs(), AliyunEnv.ENV_EXTRA_S3_CONFIGS, conf), is(true));
