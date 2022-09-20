@@ -19,7 +19,7 @@ from starwhale.utils import (
     sort_obj_list,
     snake_to_camel,
 )
-from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
+from starwhale.consts import UserRoleType, SHORT_VERSION_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.error import FileFormatError
@@ -66,6 +66,21 @@ class BaseTermView(SWCliConfigMixed):
                 rprint(p)
 
             _print()
+            return func(*args, **kwargs)  # type: ignore
+
+        return _wrapper
+
+    @staticmethod
+    def _only_standalone(func: t.Callable) -> t.Callable:
+        @wraps(func)
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+            sw = SWCliConfigMixed()
+            if sw.current_instance != STANDALONE_INSTANCE:
+                console.print(
+                    ":see_no_evil: This command only supports running in the standalone instance."
+                )
+                sys.exit(1)
+
             return func(*args, **kwargs)  # type: ignore
 
         return _wrapper
