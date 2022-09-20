@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import sys
 import math
-import base64
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
