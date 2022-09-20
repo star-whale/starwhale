@@ -157,11 +157,11 @@ class StandaloneRuntimeTestCase(TestCase):
         name = "rttest"
         version = "112233"
         cloud_uri = URI(f"http://0.0.0.0:80/project/1/runtime/{name}/version/{version}")
-        ensure_dir(workdir / ".extract")
+        extract_dir = workdir / ".extract"
+        ensure_dir(extract_dir)
 
         runtime_config = self.get_runtime_config()
         runtime_config["name"] = name
-        extract_dir = workdir / ".extract"
         ensure_file(
             extract_dir / DefaultYAMLName.RUNTIME,
             content=yaml.safe_dump(runtime_config),

@@ -35,7 +35,7 @@ runtime_cmd.add_command(quickstart)
 
 @quickstart.command("uri")
 @click.argument("uri", required=True)
-@click.argument("workdir", required=True, type=click.Path(exists=True, file_okay=False))
+@click.argument("workdir", required=True)
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option("-n", "--name", default="", help="Runtime name")
 @click.option(
@@ -63,7 +63,7 @@ def _quickstart_from_uri(
 
 
 @quickstart.command("shell", help="Quickstart from interactive shell")
-@click.argument("workdir", type=click.Path(exists=True, file_okay=False))
+@click.argument("workdir", required=True)
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option(
     "-p",
