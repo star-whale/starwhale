@@ -5,6 +5,8 @@ export const Privileges = {
     'member.update': true,
     'member.create': true,
     'member.read': true,
+    'project.update': true,
+    'project.delete': true,
 }
 export type IPrivileges = typeof Privileges
 
@@ -27,6 +29,8 @@ export const RolePrivilege: Record<Role, any> = {
         'member.delete': false,
         'member.update': false,
         'member.create': false,
+        'project.update': false,
+        'project.delete': false,
     },
     NONE: {},
 }

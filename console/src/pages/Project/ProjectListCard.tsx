@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Card from '@/components/Card'
-import { changeProject, createProject } from '@project/services/project'
+import { changeProject, createProject, removeProject } from '@project/services/project'
 import { usePage } from '@/hooks/usePage'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import ProjectForm from '@project/components/ProjectForm'
@@ -18,9 +18,14 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { IconLink, TextLink } from '@/components/Link'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import WithAuth from '@/api/WithAuth'
+import { ConfirmButton } from '@/components/Modal/confirm'
+import { toaster } from 'baseui/toast'
 
 type IProjectCardProps = {
     project: IProjectSchema
+    query: ReturnType<typeof useFetchProjects>
     onEdit?: () => void
 }
 
@@ -118,10 +123,11 @@ const useCardStyles = createUseStyles({
     },
 })
 
-const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
+const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
     const styles = useCardStyles()
+    const { role } = useProjectRole(project?.id)
 
     return (
         <div className={styles.card}>
@@ -247,11 +253,43 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     >
                         <IconFont type='setting' size={12} style={{ color: 'rgba(2,16,43,0.60)' }} />
                     </IconLink>
-                    <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
-                        <Button
-                            onClick={onEdit}
-                            size='compact'
-                            kind='secondary'
+                    <WithAuth role={role} id='project.update'>
+                        <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
+                            <Button
+                                onClick={onEdit}
+                                size='compact'
+                                kind='secondary'
+                                overrides={{
+                                    BaseButton: {
+                                        style: {
+                                            'display': 'flex',
+                                            'fontSize': '12px',
+                                            'backgroundColor': '#F4F5F7',
+                                            'width': '20px',
+                                            'height': '20px',
+                                            'textDecoration': 'none',
+                                            'color': 'gray !important',
+                                            'paddingLeft': '10px',
+                                            'paddingRight': '10px',
+                                            ':hover span': {
+                                                color: ' #5181E0  !important',
+                                            },
+                                            ':hover': {
+                                                backgroundColor: '#F0F4FF',
+                                            },
+                                        },
+                                    },
+                                }}
+                            >
+                                <IconFont type='edit' size={10} />
+                            </Button>
+                        </StatefulTooltip>
+                    </WithAuth>
+                    <WithAuth role={role} id='project.delete'>
+                        <ConfirmButton
+                            as='link'
+                            key={project?.id}
+                            title={t('Confirm Remove Project?')}
                             overrides={{
                                 BaseButton: {
                                     style: {
@@ -273,10 +311,15 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                                     },
                                 },
                             }}
+                            onClick={async () => {
+                                await removeProject(project?.id)
+                                toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
+                                await query.refetch()
+                            }}
                         >
-                            <IconFont type='edit' size={10} />
-                        </Button>
-                    </StatefulTooltip>
+                            <IconFont type='delete' size={10} />
+                        </ConfirmButton>
+                    </WithAuth>
                 </div>
             </div>
         </div>
@@ -331,6 +374,7 @@ export default function ProjectListCard() {
                 <ProjectCard
                     key={project.id}
                     project={project}
+                    query={projectsInfo}
                     onEdit={() => {
                         setEditProject(project)
                         setIsCreateProjectOpen(true)
