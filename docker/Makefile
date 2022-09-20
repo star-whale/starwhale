@@ -1,5 +1,6 @@
 SHELL=/bin/sh
 GIT_REVISION = $(shell git rev-parse --short HEAD)
+GIT_INFO = $(shell git config --get remote.origin.url)/$(shell git branch --show-current)
 DATE = $(shell date "+%Y%m%d")
 LATEST_R_VERSION = $(patsubst v%,%,$(shell git describe --tags --abbrev=0))
 
@@ -40,6 +41,8 @@ define build-image
 		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
 		--build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
+		--build-arg SW_SERVER_VERSION=$(RELEASE_VERSION) \
+		--build-arg GIT_INFO=$(GIT_INFO) \
 		-t ${DOCKER_HUB_REPO}/$(1):$(2) \
 		-t ${DOCKER_HUB_REPO}/$(1):latest \
 		-t ${GHCR_IO_REPO}/$(1):$(2) \
