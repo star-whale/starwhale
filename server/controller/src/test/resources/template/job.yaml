@@ -33,7 +33,7 @@ spec:
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
             - ppl
           volumeMounts:
