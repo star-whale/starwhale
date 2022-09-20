@@ -1,6 +1,6 @@
 SHELL=/bin/sh
 GIT_REVISION = $(shell git rev-parse --short HEAD)
-GIT_INFO = $(shell git config --get remote.origin.url)/$(shell git branch --show-current)
+GIT_INFO = $(shell git config --get remote.origin.url | rev | cut -c 5- | rev)/tree/$(shell git branch --show-current)
 DATE = $(shell date "+%Y%m%d")
 LATEST_R_VERSION = $(patsubst v%,%,$(shell git describe --tags --abbrev=0))
 
