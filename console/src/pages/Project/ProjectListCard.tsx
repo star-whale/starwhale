@@ -22,6 +22,7 @@ import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import WithAuth from '@/api/WithAuth'
 import { ConfirmButton } from '@/components/Modal/confirm'
 import { toaster } from 'baseui/toast'
+import { LabelMedium } from 'baseui/typography'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -289,7 +290,16 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         <ConfirmButton
                             as='link'
                             key={project?.id}
-                            title={t('Confirm Remove Project?')}
+                            title={
+                                <div>
+                                    <p>{t('Confirm Remove Project?')}</p>
+                                    <LabelMedium>
+                                        {t(
+                                            'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
+                                        )}
+                                    </LabelMedium>
+                                </div>
+                            }
                             overrides={{
                                 BaseButton: {
                                     style: {
@@ -305,6 +315,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                         ':hover span': {
                                             color: ' #5181E0  !important',
                                         },
+
                                         ':hover': {
                                             backgroundColor: '#F0F4FF',
                                         },
@@ -382,7 +393,7 @@ export default function ProjectListCard() {
                 />
             )
         })
-    }, [data, filter])
+    }, [projectsInfo, data, filter])
 
     return (
         <Card

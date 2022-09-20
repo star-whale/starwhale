@@ -644,7 +644,10 @@ const locales0 = {
         en: 'Remove Project Success',
     },
     'Confirm Remove Project?': {
-        en: 'Confirm Remove Project?',
+        en: 'Confirm Remove Project? ',
+    },
+    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.': {
+        en: 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.',
     },
 }
 
