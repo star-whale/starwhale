@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.util.MetaHelper;
+import com.google.common.collect.Streams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -193,12 +194,18 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) {
+        Stream<String> files = Stream.empty();
         try {
-            final ListObjectsResponse listObjectsResponse = s3client.listObjects(
-                    ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
-            return listObjectsResponse.contents().stream().map(S3Object::key);
+            ListObjectsResponse resp;
+            var reqBuilder = ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path);
+            do {
+                resp = s3client.listObjects(reqBuilder.build());
+                files = Streams.concat(files, resp.contents().stream().map(S3Object::key));
+                reqBuilder.marker(resp.nextMarker());
+            } while (resp.isTruncated());
+            return files;
         } catch (NoSuchKeyException e) {
-            return Stream.empty();
+            return files;
         }
     }
 
