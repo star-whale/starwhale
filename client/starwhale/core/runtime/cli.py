@@ -371,9 +371,9 @@ def _lock(
 )
 def _dockerize(
     uri: str,
-    tag: t.List[str],
+    tag: t.Tuple[str],
     push: bool,
-    platform: t.List[str],
+    platform: t.Tuple[str],
     dry_run: bool,
     use_starwhale_builder: bool,
     reset_qemu_static: bool,
@@ -383,5 +383,10 @@ def _dockerize(
     URI (str): Starwhale Runtime URI in the standalone instance
     """
     RuntimeTermView(uri).dockerize(
-        tag, push, platform, dry_run, use_starwhale_builder, reset_qemu_static
+        list(tag),
+        push,
+        list(platform),
+        dry_run,
+        use_starwhale_builder,
+        reset_qemu_static,
     )
