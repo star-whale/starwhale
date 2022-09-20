@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swds.converter;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -36,16 +35,13 @@ public class SwdsVoConvertor implements Convertor<SwDatasetEntity, DatasetVo> {
     @Resource
     private UserConvertor userConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
     @Override
     public DatasetVo convert(SwDatasetEntity entity) throws ConvertException {
         return DatasetVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getDatasetName())
                 .owner(userConvertor.convert(entity.getOwner()))
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

@@ -19,16 +19,16 @@ package ai.starwhale.mlops.domain.user.po;
 import ai.starwhale.mlops.common.BaseEntity;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode
 @Data
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class UserEntity extends BaseEntity implements Serializable {
 
     private Long id;

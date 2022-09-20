@@ -18,18 +18,19 @@ package ai.starwhale.mlops.domain.task.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import java.time.LocalDateTime;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode
 @Data
-@Builder
-@AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
+@AllArgsConstructor
 public class TaskEntity extends BaseEntity {
 
     private Long id;
@@ -44,8 +45,10 @@ public class TaskEntity extends BaseEntity {
 
     private String taskRequest;
 
-    private LocalDateTime startedTime;
+    @Builder.Default
+    private Date startedTime = defaultDate;
 
-    private LocalDateTime finishedTime;
+    @Builder.Default
+    private Date finishedTime = defaultDate;
 
 }

@@ -92,8 +92,7 @@ public class EvaluationService {
         Long userId = userService.currentUserDetail().getId();
         Long projectId = projectManager.getProjectId(configQuery.getProjectUrl());
 
-        ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId,
-                configQuery.getName());
+        ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId, configQuery.getName());
         if (viewConfig == null) {
             return null;
         }

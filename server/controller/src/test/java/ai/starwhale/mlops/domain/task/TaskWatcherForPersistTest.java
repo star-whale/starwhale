@@ -16,11 +16,12 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -31,6 +32,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -43,9 +45,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testReady2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
-                localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -54,17 +54,15 @@ public class TaskWatcherForPersistTest {
                         Clazz.CPU).build()).build()).build())
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskMapper).updateTaskStartedTime(task.getId(),
-                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper).updateTaskStartedTime(eq(task.getId()),
+                argThat(d -> d.getTime() > 0 && d.before(new Date())));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
     @Test
     public void testRunning2Success() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
-                localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -73,8 +71,8 @@ public class TaskWatcherForPersistTest {
                         Clazz.CPU).build()).build()).build())
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.RUNNING);
-        verify(taskMapper).updateTaskFinishedTime(task.getId(),
-                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper).updateTaskFinishedTime(eq(task.getId()),
+                argThat(d -> d.getTime() > 0 && d.before(new Date())));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
 
     }
@@ -82,9 +80,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testRunning2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper,
-                localDateTimeConvertor);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -94,10 +90,8 @@ public class TaskWatcherForPersistTest {
                 .build();
         task = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
         task.updateStatus(TaskStatus.RUNNING);
-        verify(taskMapper, times(0)).updateTaskStartedTime(task.getId(),
-                localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper, times(0)).updateTaskFinishedTime(task.getId(),
-                localDateTimeConvertor.revert(System.currentTimeMillis()));
+        verify(taskMapper, times(0)).updateTaskStartedTime(task.getId(), new Date());
+        verify(taskMapper, times(0)).updateTaskFinishedTime(task.getId(), new Date());
         verify(taskMapper, times(0)).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 

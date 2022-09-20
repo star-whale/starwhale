@@ -22,7 +22,6 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
@@ -125,9 +124,6 @@ public class RuntimeService {
     private HotJobHolder jobHolder;
 
     @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
-    @Resource
     private VersionAliasConvertor versionAliasConvertor;
 
     @Resource
@@ -199,7 +195,7 @@ public class RuntimeService {
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
+                    .createdTime(versionEntity.getCreatedTime().getTime())
                     .files(collect)
                     .build();
 

@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.evaluation;
 
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import org.springframework.stereotype.Component;
@@ -26,10 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ViewConfigConvertor implements Convertor<ViewConfigEntity, ConfigVo> {
 
-    private final LocalDateTimeConvertor localDateTimeConvertor;
-
-    public ViewConfigConvertor(LocalDateTimeConvertor localDateTimeConvertor) {
-        this.localDateTimeConvertor = localDateTimeConvertor;
+    public ViewConfigConvertor() {
     }
 
     @Override
@@ -40,7 +36,7 @@ public class ViewConfigConvertor implements Convertor<ViewConfigEntity, ConfigVo
         return ConfigVo.builder()
                 .name(entity.getConfigName())
                 .content(entity.getContent())
-                .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createTime(entity.getCreatedTime().getTime())
                 .build();
     }
 
