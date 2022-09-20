@@ -178,20 +178,34 @@ class Evaluation:
         _res, _err = invoke(_args)
         return json.loads(_res) if not _err else []
 
-    def cancel(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "cancel", "", "", "", "", "", "", ])
+    def cancel(self, uri: str, force: bool = False) -> bool:
+        return self._operate("cancel", uri=uri, force=force)
 
-    def compare(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "compare", "", "", "", "", "", "", ])
+    def compare(self, base_uri: str, compare_uri: str) -> str:
+        _res, _err = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
+        return _res
 
-    def pause(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "pause", "", "", "", "", "", "", ])
+    def pause(self, uri: str, force: bool = False) -> bool:
+        return self._operate("pause", uri=uri, force=force)
 
-    def remove(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "remove", "", "", "", "", "", "", ])
+    def remove(self, uri: str, force: bool = False) -> bool:
+        return self._operate("remove", uri=uri, force=force)
 
-    def recover(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "recover", "", "", "", "", "", "", ])
+    def recover(self, uri: str, force: bool = False) -> bool:
+        return self._operate("recover", uri=uri, force=force)
 
-    def resume(self) -> Tuple[str, str]:
-        return invoke([CLI, self._cmd, "resume", "", "", "", "", "", "", ])
+    def resume(self, uri: str, force: bool = False) -> bool:
+        return self._operate("resume", uri=uri, force=force)
+
+    def _operate(self, name: str, uri: str, force: bool = False):
+        """
+        :param uri: version or uri(evaluation/{version})
+        :param force: bool
+        :return:
+        """
+        _valid_str = "successfully"
+        _args = [CLI, self._cmd, name, uri]
+        if force:
+            _args.append("--force")
+        _res, _err = invoke(_args)
+        return not _err and _valid_str in _res

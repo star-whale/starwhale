@@ -292,7 +292,11 @@ class StandaloneEvaluationJob(EvaluationJob):
             ["docker", "ps", "-f", f"label=version={self.store.id}", "-q"]
         )
         _container = out.decode().strip()
-
+        if not _container:
+            return (
+                False,
+                f"failed to {action} container, reason: not found container by label=version={self.store.id}",
+            )
         cmd += [_container]
         try:
             check_call(cmd)

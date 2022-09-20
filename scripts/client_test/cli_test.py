@@ -109,6 +109,8 @@ class TestCli:
         assert self.evaluation.info(
             f'{cloud_uri}/project/{cloud_project}/evaluation/{_new_job_id[0]}')
 
+        self.instance.select("local")
+
     def test_mnist(self, work_dir) -> None:
         _environment = Environment(src_dir=ROOT_DIR, work_dir=work_dir)
         _environment.prepare_mnist_dir()
