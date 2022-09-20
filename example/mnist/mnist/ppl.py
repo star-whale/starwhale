@@ -61,7 +61,7 @@ class MNISTInference(PipelineHandler):
 
     def _load_model(self, device):
         model = Net().to(device)
-        model.load_state_dict(torch.load(str(ROOTDIR / "models/mnist_cnn.pt")))
+        model.load_state_dict(torch.load(str(ROOTDIR / "models/mnist_cnn.pt"), map_location=device))
         model.eval()
         print("load mnist model, start to inference...")
         return model

@@ -6,11 +6,11 @@ configs:
   docker:
     image: ghcr.io/star-whale/runtime/pytorch
   pip:
-    extra_index_url: https://pypi.doubanio.com/simple
+    extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple
     index_url: https://pypi.tuna.tsinghua.edu.cn/simple
     trusted_host:
       - pypi.tuna.tsinghua.edu.cn
-      - pypi.doubanio.com
+      - mirrors.bfsu.edu.cn
 dependencies:
   - pip:
       - Pillow

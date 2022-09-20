@@ -36,7 +36,7 @@ class MaskRCnn(PipelineHandler):
 
         evaluator = make_coco_evaluator(annotations, iou_types=["bbox", "segm"])
         for index, pred in pred_results:
-            evaluator.update({index: pred})
+            evaluator.update({index: {k: v.cpu() for k, v in pred.items()}})
 
         evaluator.synchronize_between_processes()
         evaluator.accumulate()

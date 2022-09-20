@@ -52,7 +52,7 @@ class TextClassificationHandler(PipelineHandler):
     def _load_model(self, device):
         model_path = _ROOT_DIR + "/models/model.i"
         model = TextClassificationModel(1308713, 32, _NUM_CLASSES).to(device)
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         return model
 
