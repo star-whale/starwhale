@@ -115,6 +115,7 @@ export class DatasetObject {
                     this.summary[attr] = annos
                 }
             } catch (e) {
+                // eslint-disable-next-line no-console
                 console.error(e)
                 throw e
             }
@@ -125,6 +126,7 @@ export class DatasetObject {
             this.mimeType = (this.data?.mime_type ?? '') as MIMES
             this.type = (this.data?.type ?? '') as MIMES
         } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e)
             throw e
         }

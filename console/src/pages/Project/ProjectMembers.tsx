@@ -34,7 +34,7 @@ export default function ProjectMembers() {
         setData(items.filter((i) => (filter && i.user.name.includes(filter)) || filter === ''))
     }, [filter, members.data])
 
-    const { role: roleCode } = useProjectRole(projectId)
+    const { role: roleCode } = useProjectRole()
 
     return (
         <Card

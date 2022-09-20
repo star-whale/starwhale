@@ -15,8 +15,8 @@ import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMe
 import Button from '@/components/Button/Button'
 import { useQuery } from 'react-query'
 import Avatar from '@/components/Avatar'
-import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import WithAuth from '@/api/WithAuth'
+import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -79,7 +79,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     const styles = useCardStyles()
     const history = useHistory()
     const members = useFetchProjectMembers(project.id)
-    const { role } = useProjectRole(project.id)
+    const { role } = useFetchProjectRole(project.id)
 
     return (
         <div className={styles.card}>

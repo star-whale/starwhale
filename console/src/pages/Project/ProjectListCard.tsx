@@ -18,11 +18,11 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { IconLink, TextLink } from '@/components/Link'
-import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import WithAuth from '@/api/WithAuth'
 import { ConfirmButton } from '@/components/Modal/confirm'
 import { toaster } from 'baseui/toast'
 import { LabelMedium } from 'baseui/typography'
+import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -128,7 +128,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
     const styles = useCardStyles()
-    const { role } = useProjectRole(project?.id)
+    const { role } = useFetchProjectRole(project?.id)
 
     return (
         <div className={styles.card}>

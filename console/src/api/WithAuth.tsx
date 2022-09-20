@@ -7,6 +7,11 @@ export const Privileges = {
     'member.read': true,
     'project.update': true,
     'project.delete': true,
+    'evaluation.action': true,
+    'evaluation.create': true,
+    'runtime.version.revert': true,
+    'model.version.revert': true,
+    'dataset.version.revert': true,
 }
 export type IPrivileges = typeof Privileges
 
@@ -23,6 +28,7 @@ export const RolePrivilege: Record<Role, any> = {
     },
     MAINTAINER: {
         ...Privileges,
+        'member.update': false,
     },
     GUEST: {
         ...Privileges,
@@ -31,6 +37,11 @@ export const RolePrivilege: Record<Role, any> = {
         'member.create': false,
         'project.update': false,
         'project.delete': false,
+        'evaluation.action': false,
+        'evaluation.create': false,
+        'runtime.version.revert': false,
+        'model.version.revert': false,
+        'dataset.version.revert': false,
     },
     NONE: {},
 }

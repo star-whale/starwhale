@@ -25,6 +25,8 @@ import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { parseDecimal } from '@/utils'
+import WithAuth from '@/api/WithAuth'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -55,6 +57,7 @@ export default function EvaluationListCard() {
         },
         [evaluationsInfo, projectId]
     )
+    const { role } = useProjectRole()
 
     const store = useEvaluationStore()
 
@@ -359,16 +362,18 @@ export default function EvaluationListCard() {
                     marginBottom: 0,
                 }}
                 extra={
-                    <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                        size={ButtonSize.compact}
-                        onClick={() => {
-                            history.push('new_job')
-                        }}
-                        isLoading={evaluationsInfo.isLoading}
-                    >
-                        {t('create')}
-                    </Button>
+                    <WithAuth role={role} id='evaluation.create'>
+                        <Button
+                            startEnhancer={<IconFont type='add' kind='white' />}
+                            size={ButtonSize.compact}
+                            onClick={() => {
+                                history.push('new_job')
+                            }}
+                            isLoading={evaluationsInfo.isLoading}
+                        >
+                            {t('create')}
+                        </Button>
+                    </WithAuth>
                 }
             >
                 <StoreProvider initState={{}}>
