@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import sys
 import math
-import base64
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
@@ -183,13 +182,13 @@ class PipelineHandler(metaclass=ABCMeta):
         return self._builtin_serialize(data)
 
     def ppl_result_deserialize(self, data: bytes) -> t.Any:
-        return dill.loads(base64.b64decode(data))
+        return dill.loads(data)
 
     def annotations_serialize(self, data: t.Any) -> bytes:
         return self._builtin_serialize(data)
 
     def annotations_deserialize(self, data: bytes) -> bytes:
-        return dill.loads(base64.b64decode(data))  # type: ignore
+        return dill.loads(data)  # type: ignore
 
     def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
         data["result"] = self.ppl_result_deserialize(data["result"])
@@ -287,11 +286,10 @@ class PipelineHandler(metaclass=ABCMeta):
         self._timeline_writer.write(_timeline)
 
         annotations = {} if self.ignore_annotations else annotations
-        _b64: t.Callable[[bytes], str] = lambda x: base64.b64encode(x).decode("ascii")
         self.evaluation.log_result(
             data_id=idx,
-            result=_b64(self.ppl_result_serialize(pred)),
-            annotations=_b64(self.annotations_serialize(annotations)),
+            result=self.ppl_result_serialize(pred),
+            annotations=self.annotations_serialize(annotations),
         )
         self._update_status(STATUS.RUNNING)
 
