@@ -752,12 +752,15 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def quickstart_from_uri(
         cls,
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         uri: URI,
         force: bool = False,
         restore: bool = False,
     ) -> None:
+        workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
+
         if uri.instance_type == InstanceType.CLOUD:
             console.print(f":cloud: copy runtime from {uri} to local")
             _dest_project_uri = f"{STANDALONE_INSTANCE}/project/{DEFAULT_PROJECT}"
@@ -835,6 +838,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         interactive: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
         console.print(f":printer: render runtime.yaml @ {workdir}")
         python_version = get_python_version()
 
@@ -849,7 +853,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.print(
                 f":construction_worker: create {mode} isolated python environment..."
             )
-            ensure_dir(workdir)
             _id = create_python_env(
                 mode=mode,
                 name=name,
@@ -1067,7 +1070,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
         def _build(_manifest: t.Dict[str, t.Any]) -> None:
-            _tags = tags or []
+            _tags = list(tags or [])
             _platforms = platforms or []
             _dc_image = _manifest["configs"].get("docker", {}).get("image")
             if _dc_image:
@@ -1246,5 +1249,5 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")

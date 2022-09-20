@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.s3;
 
 /**
  * BotoS3Config is for boto3 configuration communicate with starwhale python sdk

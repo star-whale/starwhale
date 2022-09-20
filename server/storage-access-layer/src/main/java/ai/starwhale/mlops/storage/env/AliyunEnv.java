@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.env;
 
 public class AliyunEnv extends S3Env {
     public static final String ENV_EXTRA_S3_CONFIGS = "SW_S3_EXTRA_CONFIGS";
 
     public AliyunEnv() {
-        super(FileSystemEnvType.ALIYUN);
+        super(StorageEnvType.ALIYUN);
     }
 
     public void setExtraS3Configs(String extraS3Configs) {

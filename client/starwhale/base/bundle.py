@@ -105,7 +105,6 @@ class BaseBundle(metaclass=ABCMeta):
             yaml_name = yaml_name or self.yaml_name
             self.buildImpl(workdir, yaml_name, **kw)
 
-    @abstractmethod
     def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
         raise NotImplementedError
 
@@ -164,6 +163,9 @@ class LocalStorageBundleMixin:
     def _get_bundle_info(self) -> t.Dict[str, t.Any]:
         _uri = self.uri  # type: ignore
         _store = self.store  # type: ignore
+
+        if not _store.bundle_path.exists():
+            return {}
 
         _manifest: t.Dict[str, t.Any] = {
             "uri": _uri.full_uri,

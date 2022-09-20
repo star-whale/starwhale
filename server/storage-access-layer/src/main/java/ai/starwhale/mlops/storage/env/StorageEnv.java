@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.env;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,28 +23,28 @@ import lombok.Getter;
 /**
  * holds storage connection information
  */
-public class FileStorageEnv {
+public class StorageEnv {
 
     @Getter
     Map<String, String> envs = new HashMap<>();
 
     @Getter
-    FileSystemEnvType envType;
+    StorageEnvType envType;
 
     public static final String ENV_TYPE = "SW_STORAGE_ENV_TYPE";
 
     public static final String ENV_KEY_PREFIX = "SW_OBJECT_STORE_KEY_PREFIX";
 
-    public enum FileSystemEnvType {
-        S3, ALIYUN, HDFS, NFS, LOCAL_FS, REST_RESOURCE, FTP
+    public enum StorageEnvType {
+        S3, MINIO, ALIYUN, HDFS, NFS, LOCAL_FS, REST_RESOURCE, FTP
     }
 
-    public FileStorageEnv add(String name, String value) {
+    public StorageEnv add(String name, String value) {
         envs.put(name.toUpperCase(), value);
         return this;
     }
 
-    public FileStorageEnv(FileSystemEnvType envType) {
+    public StorageEnv(StorageEnvType envType) {
         this.envType = envType;
         envs.put(ENV_TYPE, envType.name());
     }

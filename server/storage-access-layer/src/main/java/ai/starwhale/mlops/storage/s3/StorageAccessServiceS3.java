@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.util.MetaHelper;
+import com.google.common.collect.Streams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -50,6 +52,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 
+@Slf4j
 public class StorageAccessServiceS3 implements StorageAccessService {
 
     final S3Config s3Config;
@@ -149,11 +152,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                             .build())
                     .build());
         } catch (Throwable t) {
+            log.error("multipart file upload aborted", t);
             this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
                     .bucket(this.s3Config.getBucket())
                     .key(path)
                     .uploadId(uploadId)
                     .build());
+            throw new IOException(t);
         }
     }
 
@@ -189,12 +194,18 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) {
+        Stream<String> files = Stream.empty();
         try {
-            final ListObjectsResponse listObjectsResponse = s3client.listObjects(
-                    ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
-            return listObjectsResponse.contents().stream().map(S3Object::key);
+            ListObjectsResponse resp;
+            var reqBuilder = ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path);
+            do {
+                resp = s3client.listObjects(reqBuilder.build());
+                files = Streams.concat(files, resp.contents().stream().map(S3Object::key));
+                reqBuilder.marker(resp.nextMarker());
+            } while (resp.isTruncated());
+            return files;
         } catch (NoSuchKeyException e) {
-            return Stream.empty();
+            return files;
         }
     }
 

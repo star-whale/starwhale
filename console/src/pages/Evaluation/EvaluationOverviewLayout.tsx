@@ -13,6 +13,7 @@ import { Panel } from 'baseui/accordion'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -197,7 +198,8 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 </>
             ),
         }
-        return actions[job.jobStatus]
+
+        return <WithCurrentAuth id='evaluation.action'>{actions[job.jobStatus]}</WithCurrentAuth>
     }, [job, t, handleAction])
 
     return (

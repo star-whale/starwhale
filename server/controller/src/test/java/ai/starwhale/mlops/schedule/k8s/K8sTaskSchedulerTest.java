@@ -38,8 +38,9 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
+import ai.starwhale.mlops.storage.env.StorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
+import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -83,7 +84,7 @@ public class K8sTaskSchedulerTest {
                 new K8sJobTemplateMock(""),
                 null,
                 null,
-                "http://instanceUri");
+                "http://instanceUri", new StorageEnvsPropertiesConverter(storageProperties));
         scheduler.schedule(Set.of(mockTask()), null);
         verify(k8sClient).deploy(any());
     }
@@ -99,7 +100,7 @@ public class K8sTaskSchedulerTest {
                 .swDataSets(
                         List.of(SwDataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).fileStorageEnvs(Map.of("FS",
-                                        new FileStorageEnv(FileSystemEnvType.S3).add("envS4", "envS4V"))).build()))
+                                        new StorageEnv(StorageEnvType.S3).add("envS4", "envS4V"))).build()))
                 .evalJobDdl("")
                 .resourcePool(ResourcePool.builder().label("bj01").build())
                 .project(Project.builder().name("project").build())
@@ -145,8 +146,8 @@ public class K8sTaskSchedulerTest {
                     "SW_INSTANCE_URI", "http://instanceUri",
                     "SW_TASK_STEP", "cmp",
                     "ENVS4", "envS4V",
-                    FileStorageEnv.ENV_KEY_PREFIX, "swds_path",
-                    FileStorageEnv.ENV_TYPE, "S3"
+                    StorageEnv.ENV_KEY_PREFIX, "swds_path",
+                    StorageEnv.ENV_TYPE, "S3"
             );
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
@@ -161,7 +162,7 @@ public class K8sTaskSchedulerTest {
                     "SW_S3_SECRET", K8sTaskSchedulerTest.secretKey,
                     "SW_S3_ACCESS_KEY", K8sTaskSchedulerTest.accessKey,
                     "SW_S3_REGION", K8sTaskSchedulerTest.region,
-                    FileStorageEnv.ENV_TYPE, "S3");
+                    StorageEnv.ENV_TYPE, "S3");
             Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);

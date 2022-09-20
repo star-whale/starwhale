@@ -1,35 +1,6 @@
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import React from 'react'
-
-export const Privileges = {
-    'member.delete': true,
-    'member.update': true,
-    'member.create': true,
-    'member.read': true,
-}
-export type IPrivileges = typeof Privileges
-
-export enum Role {
-    OWNER = 'OWNER',
-    GUEST = 'GUEST',
-    MAINTAINER = 'MAINTAINER',
-    NONE = 'NONE',
-}
-
-export const RolePrivilege: Record<Role, any> = {
-    OWNER: {
-        ...Privileges,
-    },
-    MAINTAINER: {
-        ...Privileges,
-    },
-    GUEST: {
-        ...Privileges,
-        'member.delete': false,
-        'member.update': false,
-        'member.create': false,
-    },
-    NONE: {},
-}
+import { IPrivileges, Privileges, Role, RolePrivilege } from './const'
 
 function hasPrivilege(role: Role, id: string) {
     return RolePrivilege[role]?.[id] ?? false
@@ -51,4 +22,13 @@ export default function WithAuth({
     }
     if (!isPrivileged) return <></>
     return children
+}
+
+export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; children: React.ReactElement | any }) {
+    const { role } = useProjectRole()
+    return (
+        <WithAuth role={role} id={id}>
+            {children}
+        </WithAuth>
+    )
 }

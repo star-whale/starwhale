@@ -55,7 +55,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -106,9 +106,6 @@ public class SwDatasetService {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private StorageProperties storageProperties;
 
     @Resource
     private DsFileGetter dsFileGetter;
@@ -180,9 +177,6 @@ public class SwDatasetService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<StorageFileVo> collect = storageService.listStorageFile(storagePath);
-            Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
-            fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(FileStorageEnv.ENV_KEY_PREFIX,
-                    versionEntity.getStoragePath()));
             return SwDatasetInfoVo.builder()
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
@@ -191,7 +185,6 @@ public class SwDatasetService {
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
-                    .fileStorageEnvs(fileStorageEnvs)
                     .indexTable(versionEntity.getIndexTable())
                     .files(collect)
                     .build();

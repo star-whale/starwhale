@@ -32,9 +32,8 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.fs.AliyunEnv;
-import ai.starwhale.mlops.storage.fs.BotoS3Config;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
@@ -75,6 +74,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
     final String instanceUri;
+    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
 
     public K8sTaskScheduler(K8sClient k8sClient,
             StorageProperties storageProperties,
@@ -83,7 +83,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             K8sResourcePoolConverter resourcePoolConverter,
             K8sJobTemplate k8sJobTemplate,
             ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri) {
+            ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri,
+            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
         this.k8sClient = k8sClient;
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
@@ -93,6 +94,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
+        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
     }
 
     @Override
@@ -163,9 +165,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         if (null != jobRuntime.getDeviceClass() && null != jobRuntime.getDeviceAmount()) {
             return new ResourceOverwriteSpec(
                     jobRuntime.getDeviceClass(),
-                    jobRuntime.getDeviceAmount().toString() + "m");
+                    jobRuntime.getDeviceAmount());
         }
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
+        runtimeResources.forEach(runtimeResource -> runtimeResource.setNum(runtimeResource.getNum() * 1000));
         if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }
@@ -190,7 +193,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
                 .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
 
-        coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, swDataSet.getPath());
+        coreContainerEnvs.put(StorageEnv.ENV_KEY_PREFIX, swDataSet.getPath());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
@@ -204,9 +207,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
         Map<String, String> initContainerEnvs = new HashMap<>();
-        Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
+        Map<String, StorageEnv> fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
         // Ignore keys, we use only one key by now
-        fileStorageEnvs.values().forEach((FileStorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
+        fileStorageEnvs.values().forEach((StorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
 
         List<String> downloads = new ArrayList<>();
         String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";

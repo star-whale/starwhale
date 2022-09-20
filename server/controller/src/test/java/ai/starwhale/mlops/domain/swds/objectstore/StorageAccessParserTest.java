@@ -16,15 +16,16 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
-import ai.starwhale.mlops.storage.s3.S3Config;
+import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
+import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -39,16 +40,17 @@ public class StorageAccessParserTest {
             + "USER.S3.MNIST.SECRET=\n"
             + "USER.S3.MYNAME.ACCESS_KEY=access_key1\n";
 
+    StorageAccessService defaultStorageAccessService = mock(StorageAccessService.class);
+
+    SwDatasetVersionMapper swDatasetVersionMapper = mock(SwDatasetVersionMapper.class);
+
+
     @Test
     public void testDefaultService() {
-        StorageAccessService defaultStorageAccessService = mock(StorageAccessService.class);
-        SwDatasetVersionMapper swDatasetVersionMapper = mock(SwDatasetVersionMapper.class);
-        when(swDatasetVersionMapper.getVersionById(1L)).thenReturn(
-                SwDatasetVersionEntity.builder().id(1L).storageAuths(auths).build());
         when(swDatasetVersionMapper.getVersionById(2L)).thenReturn(
                 SwDatasetVersionEntity.builder().id(2L).storageAuths("").build());
         StorageAccessParser storageAccessParser = new StorageAccessParser(defaultStorageAccessService,
-                swDatasetVersionMapper);
+                swDatasetVersionMapper, null);
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(2L,
                 "s3://renyanda/bdc/xyf",
                 "myname");
@@ -56,21 +58,21 @@ public class StorageAccessParserTest {
     }
 
     @Test
-    public void testEnv2S3Config() {
-        StorageAccessParser storageAccessParser = new StorageAccessParser(null, null);
-        S3Config s3Config = storageAccessParser.env2S3Config(
-                new StorageUri("s3://renyanda/bdc/xyf"), new FileStorageEnv(
-                        FileSystemEnvType.S3)
-                        .add("USER.S3.MYTEST.ENDPOINT", "endpoint")
-                        .add("USER.S3.URTEST.ENDPOINT", "EDP")
-                        .add("USER.S4.mytest.endpoint", "dpd")
-                        .add("USER.S3.mytest.SECRET", "SCret")
-                        .add("USER.S3.mytest.ACCESS_KEY", "ack")
-                        .add("USER.S3.mytest.BUCKET", "bkt")
-                        .add("USER.S3.MYTEST.REGION", "region"), "mytest");
-        Assertions.assertEquals("renyanda", s3Config.getBucket());
-        Assertions.assertEquals("ack", s3Config.getAccessKey());
-        Assertions.assertEquals("SCret", s3Config.getSecretKey());
-        Assertions.assertEquals("region", s3Config.getRegion());
+    public void testCache() {
+        when(swDatasetVersionMapper.getVersionById(1L)).thenReturn(
+                SwDatasetVersionEntity.builder().id(1L).storageAuths(auths).build());
+        UserStorageAccessServiceBuilder userStorageAccessServiceBuilder = mock(UserStorageAccessServiceBuilder.class);
+        StorageAccessServiceMinio storageAccessServiceMinio = mock(StorageAccessServiceMinio.class);
+        when(userStorageAccessServiceBuilder.build(any(), any(), any())).thenReturn(storageAccessServiceMinio);
+        StorageAccessParser storageAccessParser = new StorageAccessParser(defaultStorageAccessService,
+                swDatasetVersionMapper, userStorageAccessServiceBuilder);
+
+        StorageAccessService myname = storageAccessParser.getStorageAccessServiceFromAuth(1L, "s3://renyanda/bdc/xyf",
+                "myname");
+        Assertions.assertEquals(storageAccessServiceMinio, myname);
+        myname = storageAccessParser.getStorageAccessServiceFromAuth(1L, "s3://renyanda/bdc/xyfzzz",
+                "myname");
+        Assertions.assertEquals(storageAccessServiceMinio, myname);
+        verify(userStorageAccessServiceBuilder).build(any(), any(), any());
     }
 }

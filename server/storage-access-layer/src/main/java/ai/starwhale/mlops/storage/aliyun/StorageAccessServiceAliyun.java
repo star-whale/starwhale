@@ -27,11 +27,15 @@ import com.aliyun.oss.OSSErrorCode;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
+import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.google.common.collect.Streams;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
 public class StorageAccessServiceAliyun implements StorageAccessService {
@@ -85,12 +89,19 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) throws IOException {
+        Stream<String> files = Stream.empty();
         try {
-            var resp = this.ossClient.listObjects(this.bucket, path);
-            return resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey);
+            var req = new ListObjectsRequest(this.bucket).withPrefix(path);
+            ObjectListing resp;
+            do {
+                resp = this.ossClient.listObjects(req);
+                files = Streams.concat(files, resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey));
+                req.setMarker(resp.getNextMarker());
+            } while (resp.isTruncated());
+            return files;
         } catch (OSSException e) {
             if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
-                return Stream.empty();
+                return files;
             }
             throw e;
         }

@@ -18,6 +18,11 @@ export async function createProject(data: ICreateProjectSchema): Promise<IProjec
     return resp.data
 }
 
+export async function removeProject(projectId: string): Promise<string> {
+    const { data } = await axios.delete<string>(`/api/v1/project/${projectId}`)
+    return data
+}
+
 export async function changeProject(projectId: string, data: ICreateProjectSchema): Promise<IProjectSchema> {
     const resp = await axios.put<IProjectSchema>(`/api/v1/project/${projectId}`, data)
     return resp.data
