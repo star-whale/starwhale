@@ -61,7 +61,7 @@ class BaseArtifact:
         if force:
             _args.append("--force")
         _res, _err = invoke_with_react(_args)
-        return True if not _err and _valid_str in _res else False
+        return not _err and _valid_str in _res
 
     def recover(self, uri: str, force: bool) -> bool:
         _valid_str = "do successfully"
