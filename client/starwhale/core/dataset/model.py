@@ -481,5 +481,5 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         _manifest: t.Dict[str, t.Any] = yaml.safe_load(r["data"].get("versionMeta", {}))
         return DatasetSummary(**_manifest.get("dataset_summary", {}))
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
         raise NoSupportError("no support build dataset in the cloud instance")

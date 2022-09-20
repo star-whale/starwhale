@@ -105,7 +105,6 @@ class BaseBundle(metaclass=ABCMeta):
             yaml_name = yaml_name or self.yaml_name
             self.buildImpl(workdir, yaml_name, **kw)
 
-    @abstractmethod
     def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
         raise NotImplementedError
 

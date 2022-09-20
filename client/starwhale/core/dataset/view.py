@@ -145,6 +145,7 @@ class DatasetTermView(BaseTermView):
         return _data, _pager
 
     @classmethod
+    @BaseTermView._only_standalone
     def build(
         cls,
         workdir: str,
