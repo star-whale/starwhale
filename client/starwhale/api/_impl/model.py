@@ -240,8 +240,10 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: support multi dataset uris
         _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
         _dataset = Dataset.get_dataset(_dataset_uri)
+        _dataset_summary = _dataset.summary()
+        _dataset_rows = _dataset_summary.rows if _dataset_summary else 0
         dataset_row_start, dataset_row_end = calculate_index(
-            _dataset.summary().rows, self.context.total, self.context.index
+            _dataset_rows, self.context.total, self.context.index
         )
         self._sw_logger.debug(
             f"step:{self.context.step}, ds start from:{dataset_row_start} to:{dataset_row_end}"

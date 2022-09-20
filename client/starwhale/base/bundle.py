@@ -164,6 +164,9 @@ class LocalStorageBundleMixin:
         _uri = self.uri  # type: ignore
         _store = self.store  # type: ignore
 
+        if not _store.bundle_path.exists():
+            return {}
+
         _manifest: t.Dict[str, t.Any] = {
             "uri": _uri.full_uri,
             "project": _uri.project,
