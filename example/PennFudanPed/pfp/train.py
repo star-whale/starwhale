@@ -206,7 +206,6 @@ def evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
-    cpu_device = torch.device("cpu")
     model.eval()
     metric_logger = MetricLogger(delimiter="  ")
     header = "Test:"
@@ -222,13 +221,19 @@ def evaluate(model, data_loader, device):
         model_time = time.time()
         outputs = model(images)
 
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        res = {
-            target["image_id"].item(): output
-            for target, output in zip(targets, outputs)
-        }
+        res = {}
+        outputs = [{k: v.cpu() for k, v in t.items()} for t in outputs]
+        for target, output in zip(targets, outputs):
+            image_id = target["image_id"].item()
+            prepare_outputs = {}
+            for typ in iou_types:
+                prepare_outputs[typ] = CocoEvaluator.prepare_predictions(
+                    {image_id: output}, typ
+                )
+            res[image_id] = prepare_outputs
+
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time
@@ -274,7 +279,7 @@ def train():
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test,
-        batch_size=1,
+        batch_size=2,
         shuffle=False,
         num_workers=4,
         collate_fn=collate_fn,
