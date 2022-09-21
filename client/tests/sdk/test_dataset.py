@@ -8,8 +8,8 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale import Link, MIMEType, UserRawBuildExecutor
 from starwhale.utils.fs import blake2b_file
-from starwhale.api.dataset import Link, MIMEType, UserRawBuildExecutor
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
     Text,

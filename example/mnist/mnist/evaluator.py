@@ -5,10 +5,7 @@ import torch
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import Image
+from starwhale import Image, Context, PipelineHandler, multi_classification
 
 try:
     from .model import Net
@@ -68,7 +65,7 @@ class MNISTInference(PipelineHandler):
 
 
 if __name__ == "__main__":
-    from starwhale.api.job import Context
+    from starwhale import Context
 
     context = Context(
         workdir=Path("."),
