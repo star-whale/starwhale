@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -144,17 +143,8 @@ public class EvaluationService {
                 .owner(jobVo.getOwner().getName())
                 .duration(jobVo.getDuration())
                 .attributes(Lists.newArrayList())
+                .jobStatus(jobVo.getJobStatus())
                 .build();
-        // TODO:remove all of these implements
-        /*Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
-        for (Entry<String, Object> entry : result.entrySet()) {
-            String value = String.valueOf(entry.getValue());
-            summaryVo.getAttributes().add(AttributeValueVo.builder()
-                .name(entry.getKey())
-                .type(getAttributeType(value))
-                .value(value)
-                .build());
-        }*/
 
         // only cache the jobs which have the final status
         if (jobStatusMachine.isFinal(entity.getJobStatus())) {
