@@ -1,93 +1,95 @@
-import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
+import { useRuntime, useRuntimeLoading } from '@/domain/runtime/hooks/useRuntime'
 import useTranslation from '@/hooks/useTranslation'
 import React, { useEffect, useMemo } from 'react'
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useQuery } from 'react-query'
+import { useHistory, useParams, useLocation } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
+import { fetchRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Accordion from '@/components/Accordion'
-import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
-import { BaseNavTabs } from '@/components/BaseNavTabs'
-import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
-import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
-import Button from '@/components/Button'
-import IconFont from '@/components/IconFont'
 import { Panel } from 'baseui/accordion'
-import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
+import Button from '@/components/Button'
+import { BaseNavTabs } from '@/components/BaseNavTabs'
+import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
+import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 
-export interface IDatasetLayoutProps {
+export interface IRuntimeLayoutProps {
     children: React.ReactNode
 }
 
-export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps) {
-    const { projectId, datasetId, datasetVersionId } = useParams<{
-        datasetId: string
+export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps) {
+    const { projectId, runtimeId, runtimeVersionId } = useParams<{
+        runtimeId: string
         projectId: string
-        datasetVersionId: string
+        runtimeVersionId: string
     }>()
-    const datasetInfo = useFetchDataset(projectId, datasetId)
-    const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
-    const { dataset, setDataset } = useDataset()
-    const { setDatasetVersion } = useDatasetVersion()
-    const [page] = usePage()
-    const { setDatasetLoading } = useDatasetLoading()
-    const history = useHistory()
-    const [t] = useTranslation()
-
+    const runtimeInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}`, () => fetchRuntime(projectId, runtimeId))
+    const { runtime, setRuntime } = useRuntime()
+    const { setRuntimeLoading } = useRuntimeLoading()
     useEffect(() => {
-        setDatasetLoading(datasetInfo.isLoading)
-        if (datasetInfo.isSuccess) {
-            if (datasetInfo.data?.versionName !== dataset?.versionName) {
-                setDataset(datasetInfo.data)
+        setRuntimeLoading(runtimeInfo.isLoading)
+        if (runtimeInfo.isSuccess) {
+            if (runtimeInfo.data.versionMeta !== runtime?.versionMeta) {
+                setRuntime(runtimeInfo.data)
             }
-        } else if (datasetInfo.isLoading) {
-            setDataset(undefined)
+        } else if (runtimeInfo.isLoading) {
+            setRuntime(undefined)
         }
-    }, [dataset?.versionName, datasetInfo, setDataset, setDatasetLoading])
-
-    useEffect(() => {
-        if (datasetVersionInfo.data) {
-            setDatasetVersion(datasetVersionInfo.data)
-        }
-    }, [datasetVersionInfo.data, setDatasetVersion])
+    }, [
+        runtime?.versionMeta,
+        runtimeInfo.data,
+        runtimeInfo.isLoading,
+        runtimeInfo.isSuccess,
+        setRuntime,
+        setRuntimeLoading,
+    ])
+    const history = useHistory()
+    const [page] = usePage()
+    const [t] = useTranslation()
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('Datasets'),
-                path: `/projects/${projectId}/datasets`,
+                title: t('Runtimes'),
+                path: `/projects/${projectId}/runtimes`,
             },
             {
-                title: dataset?.versionName ?? '-',
-                path: `/projects/${projectId}/datasets/${datasetId}`,
+                title: runtime?.name ?? '-',
+                path: `/projects/${projectId}/runtimes/${runtimeId}`,
             },
         ]
         return items
-    }, [datasetId, projectId, dataset, t])
+    }, [projectId, runtimeId, t, runtime])
 
-    const info = React.useMemo(() => {
+    const header = React.useMemo(() => {
         const items = [
             {
+                label: t('Runtime Name'),
+                value: runtime?.name ?? '',
+            },
+            {
                 label: t('Version Name'),
-                value: dataset?.versionName ?? '',
+                value: runtime?.versionName ?? '',
             },
             {
                 label: t('Version Tag'),
-                value: dataset?.versionTag ?? '',
+                value: runtime?.versionTag ?? '',
             },
             {
                 label: t('Created'),
-                value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
+                value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
             },
         ]
-        return (
+
+        const info = (
             <div
                 style={{
                     fontSize: '14px',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
                     gap: '12px',
                 }}
             >
@@ -107,39 +109,35 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 ))}
             </div>
         )
-    }, [dataset, t])
-
-    const header = useMemo(
-        () => (
+        return (
             <div className='mb-20'>
                 <Accordion accordion>
-                    <Panel title={t('Overview')}>{info}</Panel>
+                    <Panel title={`${t('Runtime ID')}: ${runtime?.id ?? ''}`}>{info}</Panel>
                 </Accordion>
             </div>
-        ),
-        [info, t]
-    )
+        )
+    }, [runtime, t])
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Overview'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview`,
+                path: `/projects/${projectId}/runtimes/${runtimeId}/versions/${runtimeVersionId}/overview`,
                 pattern: '/\\/overview\\/?',
             },
             {
                 title: t('Metadata'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta`,
+                path: `/projects/${projectId}/runtimes/${runtimeId}/versions/${runtimeVersionId}/meta`,
                 pattern: '/\\/meta\\/?',
             },
             {
                 title: t('Files'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files`,
+                path: `/projects/${projectId}/runtimes/${runtimeId}/versions/${runtimeVersionId}/files`,
                 pattern: '/\\/files\\/?',
             },
         ]
         return items
-    }, [projectId, datasetId, datasetVersionId, t])
+    }, [projectId, runtimeId, runtimeVersionId, t])
 
     const location = useLocation()
     const activeItemId = useMemo(() => {
@@ -152,7 +150,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     }, [location.pathname, navItems])
 
     return (
-        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems}>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header}>
             <Accordion
                 accordion
                 overrides={{
@@ -170,33 +168,33 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                             <div style={{ width: '280px' }}>
-                                <DatasetVersionSelector
+                                <RuntimeVersionSelector
                                     projectId={projectId}
-                                    datasetId={datasetId}
-                                    value={datasetVersionId}
-                                    onChange={(v) =>
+                                    runtimeId={runtimeId}
+                                    value={runtimeVersionId}
+                                    onChange={(v: string) =>
                                         history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                            `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
                                                 page
                                             )}`
                                         )
                                     }
                                 />
                             </div>
-                            {datasetVersionId && (
+                            {runtimeVersionId && (
                                 <Button
                                     size='compact'
                                     as='withIcon'
                                     startEnhancer={() => <IconFont type='runtime' />}
                                     onClick={() =>
-                                        history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)
+                                        history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)
                                     }
                                 >
                                     {t('History')}
                                 </Button>
                             )}
                         </div>
-                        {datasetVersionId && <BaseNavTabs navItems={navItems} />}
+                        {runtimeVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}
                         </div>

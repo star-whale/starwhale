@@ -45,6 +45,9 @@ const locales0 = {
     'dataset versions': {
         en: 'Dataset Versions',
     },
+    'Alias': {
+        en: 'Alias',
+    },
     'datasets': {
         en: 'Datasets',
     },
@@ -441,6 +444,9 @@ const locales0 = {
     'Files': {
         en: 'Files',
     },
+    'Version ID': {
+        en: 'Version ID',
+    },
     'Version Name': {
         en: 'Version Name',
     },
@@ -648,6 +654,9 @@ const locales0 = {
     },
     'All the evaluations, datasets, models, and runtimes belong to the project will be removed.': {
         en: 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.',
+    },
+    'Image': {
+        en: 'Image',
     },
 }
 

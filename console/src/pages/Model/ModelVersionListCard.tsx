@@ -44,10 +44,12 @@ export default function ModelVersionListCard() {
         <Card title={t('model versions')}>
             <Table
                 isLoading={modelsInfo.isLoading}
-                columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
+                columns={[t('sth name', [t('Model')]), t('Alias'), t('Meta'), t('Created'), t('Owner'), t('Action')]}
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
+                            model.name,
+                            model.alias,
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,

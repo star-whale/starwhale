@@ -39,16 +39,19 @@ export default function DatasetVersionSelector({
 
     useEffect(() => {
         if (datasetVersionsInfo.isSuccess) {
-            setOptions(
+            const ops =
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
                     label: item.name + (item.tag ? `/${item.tag}` : ''),
                 })) ?? []
-            )
+            setOptions(ops)
+            if (!value) {
+                onChange?.(ops[0]?.id)
+            }
         } else {
             setOptions([])
         }
-    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess])
+    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess, value, onChange])
 
     return (
         <Select

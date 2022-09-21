@@ -3,7 +3,7 @@ import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { showTableName, tablesOfEvaluation } from '@/domain/datastore/utils'
+import { showTableName, tableNameOfSummary, tablesOfEvaluation } from '@/domain/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { useListDatastoreTables, useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
@@ -46,7 +46,7 @@ function RocAuc({ fetch, name }: { fetch: any; name: string }) {
     )
 }
 
-function EvaluationViewer({ table }: { table: string }) {
+function EvaluationViewer({ table, filter }: { table: string; filter?: Record<string, any> }) {
     const query = React.useMemo(
         () => ({
             tableName: table,
@@ -54,8 +54,9 @@ function EvaluationViewer({ table }: { table: string }) {
             limit: PAGE_TABLE_SIZE,
             rawResult: true,
             ignoreNonExistingTable: true,
+            filter,
         }),
-        [table]
+        [table, filter]
     )
 
     const info = useQueryDatastore(query, true)
@@ -127,6 +128,17 @@ function EvaluationResults() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [project?.name, job?.uuid])
 
+    const tables = React.useMemo(() => {
+        const names = []
+        if (project?.name) names.push(tableNameOfSummary(project?.name as string))
+
+        return [
+            ...names,
+            // TODO hard code remove results
+            ...(allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)).filter((v) => !v.includes('results')) ?? []),
+        ]
+    }, [allTables, project])
+
     return (
         <div style={{ width: '100%', height: 'auto' }}>
             <div
@@ -137,14 +149,22 @@ function EvaluationResults() {
                     gridGap: '16px',
                 }}
             >
-                {allTables.data?.tables
-                    ?.sort((a, b) => (a > b ? 1 : -1))
-                    .map((name) => {
-                        // TODO hard code
-                        if (name.includes('results')) return <></>
-
-                        return <EvaluationViewer table={name} key={name} />
-                    })}
+                {tables.map((name) => {
+                    let filter
+                    if (name.includes('/summary') && job?.uuid)
+                        filter = {
+                            operator: 'EQUAL',
+                            operands: [
+                                {
+                                    stringValue: job?.uuid,
+                                },
+                                {
+                                    columnName: 'id',
+                                },
+                            ],
+                        }
+                    return <EvaluationViewer table={name} key={name} filter={filter} />
+                })}
             </div>
         </div>
     )

@@ -53,5 +53,6 @@ export function tablesOfEvaluation(projectName: string, evaluationUuid: string) 
 }
 
 export function showTableName(name: string) {
+    if (name.includes('/summary')) return name.split('/').slice(3).join('/')
     return name.split('/').slice(5).join('/')
 }

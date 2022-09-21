@@ -39,16 +39,19 @@ export default function RuntimeVersionSelector({
 
     useEffect(() => {
         if (runtimeVersionsInfo.isSuccess) {
-            setOptions(
+            const ops =
                 runtimeVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []
-            )
+            setOptions(ops)
+            if (!value) {
+                onChange?.(ops[0]?.id)
+            }
         } else {
             setOptions([])
         }
-    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess])
+    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess, value, onChange])
 
     return (
         <Select
