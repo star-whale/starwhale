@@ -4,8 +4,18 @@ import { IUserSchema } from '@user/schemas/user'
 export interface IModelVersionSchema extends IResourceSchema {
     name: string
     tag: string
+    alias: string
     meta: Record<string, unknown>
     owner?: IUserSchema
+}
+
+export interface IModelVersionListSchema extends IResourceSchema {
+    name: string
+    versionName: string
+    versionMeta: string
+    versionTag: string
+    versionAlias: string
+    manifest: string
 }
 
 export interface IModelVersionDetailSchema extends IModelVersionSchema {

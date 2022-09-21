@@ -12,6 +12,7 @@ export interface IModelDetailSchema {
     versionMeta?: string
     versionName?: string
     versionTag?: string
+    versionAlias?: string
     createdTime?: number
     files?: Array<IModelFileSchema>
 }
