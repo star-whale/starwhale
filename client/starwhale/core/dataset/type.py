@@ -165,6 +165,7 @@ class ArtifactType(Enum):
     Video = "video"
     Audio = "audio"
     Text = "text"
+    Link = "link"
 
 
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
@@ -213,6 +214,8 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             return Audio(raw_data, mime_type=mime_type, shape=shape)
         elif not dtype or dtype == ArtifactType.Binary.value:
             return Binary(raw_data)
+        elif dtype == ArtifactType.Link.value:
+            return cls.reflect(raw_data, data_type["data_type"])
         else:
             raise NoSupportError(f"Artifact reflect error: {data_type}")
 
@@ -436,7 +439,7 @@ class Link(ASDictMixin):
         data_type: t.Optional[BaseArtifact] = None,
         with_local_fs_data: bool = False,
     ) -> None:
-        self.type = "link"
+        self.type = ArtifactType.Link
         self.uri = uri.strip()
         self.offset = offset
         self.size = size

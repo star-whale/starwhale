@@ -317,3 +317,8 @@ class TestDatasetType(TestCase):
 
         with self.assertRaises(NoSupportError):
             BaseArtifact.reflect(b"", data_type={"type": 1})
+
+        link_audio = BaseArtifact.reflect(
+            b"link", data_type={"type": "link", "data_type": {"type": "audio"}}
+        )
+        assert isinstance(link_audio, Audio)
