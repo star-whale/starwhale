@@ -242,6 +242,7 @@ public class ProjectService {
         return id;
     }
 
+    @Transactional
     public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId,
             String privacy) {
         if (StrUtil.isNotEmpty(projectName)
