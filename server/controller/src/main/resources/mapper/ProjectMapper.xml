@@ -33,7 +33,7 @@
       <if test="project.projectName != null and project.projectName != ''">
         project_name = #{project.projectName},
       </if>
-      <if test="project.description != null and project.description != ''">
+      <if test="project.description != null">
         project_description = #{project.description},
       </if>
       <if test="project.ownerId != null">
