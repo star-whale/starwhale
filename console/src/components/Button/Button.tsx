@@ -4,7 +4,7 @@ import { mergeOverrides } from '@/utils/baseui'
 import { useStyletron } from 'baseui'
 
 export interface IButtonProps extends ButtonProps {
-    as?: 'link' | 'button' | 'transparent' | withIcon
+    as?: 'link' | 'button' | 'transparent' | 'withIcon'
     kind?: KIND[keyof KIND]
     isFull?: boolean
     className?: string
