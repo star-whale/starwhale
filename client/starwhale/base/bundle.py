@@ -11,7 +11,6 @@ from loguru import logger
 from fs.walk import Walker
 from fs.tarfs import TarFS
 
-from starwhale import __version__
 from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
     LATEST_TAG,
@@ -22,6 +21,7 @@ from starwhale.consts import (
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file, extract_tar
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
@@ -117,7 +117,7 @@ class LocalStorageBundleMixin:
         self._manifest["name"] = self.name  # type: ignore
         self._manifest["build"] = dict(
             os=platform.system(),
-            sw_version=__version__,
+            sw_version=STARWHALE_VERSION,
         )
 
         # TODO: add signature for import files: model, config

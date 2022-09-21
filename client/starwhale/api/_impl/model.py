@@ -76,11 +76,21 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
     ) -> None:
         self.context = context
-        self._init_dir()
 
         # TODO: add args for compare result and label directly
         self.ignore_annotations = ignore_annotations
         self.ignore_error = ignore_error
+
+        _logdir = EvaluationStorage.local_run_dir(
+            self.context.project, self.context.version
+        )
+        _run_dir = (
+            _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
+        )
+        self.status_dir = _run_dir / RunSubDirType.STATUS
+        self.log_dir = _run_dir / RunSubDirType.LOG
+        ensure_dir(self.status_dir)
+        ensure_dir(self.log_dir)
 
         self.logger, self._sw_logger = self._init_logger()
         self._stdout_changed = False
@@ -94,18 +104,6 @@ class PipelineHandler(metaclass=ABCMeta):
             eval_id=self.context.version, project=self.context.project
         )
         self._monkey_patch()
-
-    def _init_dir(self) -> None:
-        _logdir = EvaluationStorage.local_run_dir(
-            self.context.project, self.context.version
-        )
-        _run_dir = (
-            _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
-        )
-        self.status_dir = _run_dir / RunSubDirType.STATUS
-        self.log_dir = _run_dir / RunSubDirType.LOG
-        ensure_dir(self.status_dir)
-        ensure_dir(self.log_dir)
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
