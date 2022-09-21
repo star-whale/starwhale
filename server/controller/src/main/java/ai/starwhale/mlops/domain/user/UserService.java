@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
@@ -45,7 +46,9 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +71,8 @@ public class UserService implements UserDetailsService {
     private final ProjectMapper projectMapper;
     private final ProjectRoleMapper projectRoleMapper;
     private final ProjectManager projectManager;
+
+    private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
     private final RoleConvertor roleConvertor;
     private final UserRoleConvertor userRoleConvertor;
@@ -75,7 +80,8 @@ public class UserService implements UserDetailsService {
     private final SaltGenerator saltGenerator;
 
     public UserService(UserMapper userMapper, RoleMapper roleMapper, ProjectMapper projectMapper,
-            ProjectRoleMapper projectRoleMapper, ProjectManager projectManager, UserConvertor userConvertor,
+            ProjectRoleMapper projectRoleMapper, ProjectManager projectManager, IdConvertor idConvertor,
+            UserConvertor userConvertor,
             RoleConvertor roleConvertor, UserRoleConvertor userRoleConvertor, SystemRoleConvertor systemRoleConvertor,
             SaltGenerator saltGenerator) {
         this.userMapper = userMapper;
@@ -83,6 +89,7 @@ public class UserService implements UserDetailsService {
         this.projectMapper = projectMapper;
         this.projectRoleMapper = projectRoleMapper;
         this.projectManager = projectManager;
+        this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
         this.roleConvertor = roleConvertor;
         this.userRoleConvertor = userRoleConvertor;
@@ -138,7 +145,20 @@ public class UserService implements UserDetailsService {
                     .tip(String.format("Unable to find user by name %s", user.getName())),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return userConvertor.convert(userEntity);
+        UserVo userVo = userConvertor.convert(userEntity);
+        List<ProjectRoleEntity> roleEntities = projectRoleMapper.listUserRoles(userEntity.getId(),
+                null);
+        Map<String, String> roles = new HashMap<>();
+        roleEntities.forEach(entity -> {
+            if (entity.getProject().getId() == 0) {
+                userVo.setSystemRole(entity.getRole().getRoleCode());
+                return;
+            }
+            String key = idConvertor.convert(entity.getProject().getId());
+            roles.put(key, entity.getRole().getRoleCode());
+        });
+        userVo.setProjectRoles(roles);
+        return userVo;
     }
 
     public User currentUserDetail() {
