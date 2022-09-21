@@ -148,6 +148,7 @@ public class ProjectService {
      * @param project Object of the project to create.
      * @return ID of the project was created.
      */
+    @Transactional
     public Long createProject(Project project) {
         Assert.notNull(project.getName(), "Project name must not be null");
         if (projectManager.existProject(project.getName())) {

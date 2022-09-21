@@ -42,6 +42,8 @@ public interface ProjectMapper {
 
     ProjectEntity findProjectByName(@NotNull @Param("projectName") String projectName);
 
+    ProjectEntity findProjectByNameForUpdate(@NotNull @Param("projectName") String projectName);
+
     ProjectEntity findDefaultProject(@Param("userId") Long userId);
 
     int modifyProject(@Param("project") ProjectEntity project);
