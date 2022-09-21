@@ -4,6 +4,7 @@ import { DatasetObject, MIMES, TYPES } from '@/domain/dataset/sdk'
 import ImageViewer from '@/components/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
+import TextViewer from './TextViewer'
 
 export type IDatasetViewerProps = {
     data?: DatasetObject
@@ -53,7 +54,7 @@ export default function DatasetViewer({ data, isZoom = false, hiddenLabels = new
             case TYPES.AUDIO:
                 return <AudioViewer data={data} isZoom={isZoom} />
             case TYPES.TEXT:
-                return <p>{data?.data?.display_name}</p>
+                return <TextViewer data={data} isZoom={isZoom} />
             default:
                 return <Placeholder />
         }

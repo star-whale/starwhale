@@ -32,7 +32,7 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
         overrides.MaskToggleShowIcon = () => <IconFont type='eye' kind='gray' />
         overrides.MaskToggleHideIcon = () => <IconFont type='eye_off' kind='gray' />
         overrides.MaskToggleButton = {
-            props: { tabindex: -1 },
+            props: { tabIndex: -1 },
         }
     }
 

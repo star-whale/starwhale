@@ -1,3 +1,4 @@
+import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import React from 'react'
 import { IPrivileges, Privileges, Role, RolePrivilege } from './const'
@@ -21,7 +22,7 @@ export default function WithAuth({
         return children(isPrivileged)
     }
     if (!isPrivileged) return <></>
-    return children
+    return <ErrorBoundary>{children ?? <></>}</ErrorBoundary>
 }
 
 export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; children: React.ReactElement | any }) {

@@ -351,19 +351,6 @@ function FilterOperateMenu(props: PropsT) {
                                             borderRight: 0,
                                         },
                                     },
-                                    // Action: {
-                                    //     style: {
-                                    //         background: 'rgba(2,16,43,0.20)',
-                                    //         borderRadius: '50%',
-                                    //         color: '#fff',
-                                    //     },
-                                    // },
-                                    // ActionIcon: {
-                                    //     style: {
-                                    //         width: 8,
-                                    //         height: 8,
-                                    //     },
-                                    // },
                                 }}
                                 onActionClick={handleSelectNone}
                             >

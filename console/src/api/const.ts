@@ -27,6 +27,8 @@ export const RolePrivilege: Record<Role, any> = {
     MAINTAINER: {
         ...Privileges,
         'member.update': false,
+        'member.delete': false,
+        'member.create': false,
     },
     GUEST: {
         'member.read': true,
