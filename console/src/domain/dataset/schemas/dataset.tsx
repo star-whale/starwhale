@@ -15,6 +15,7 @@ export interface IDatasetDetailSchema {
     versionMeta?: string
     versionName?: string
     versionTag?: string
+    versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
 }

@@ -33,7 +33,7 @@ export default function DatasetListCard() {
         <Card title={t('Datasets')}>
             <Table
                 isLoading={datasetsInfo.isLoading}
-                columns={[t('sth name', [t('Dataset')]), t('Owner'), t('Created'), t('Action')]}
+                columns={[t('sth name', [t('Dataset')]), t('Alias'), t('Owner'), t('Created'), t('Action')]}
                 data={
                     datasetsInfo.data?.list.map((dataset) => {
                         return [
@@ -43,6 +43,7 @@ export default function DatasetListCard() {
                             >
                                 {dataset.name}
                             </TextLink>,
+                            dataset.version?.alias,
                             dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <TextLink key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}/versions`}>

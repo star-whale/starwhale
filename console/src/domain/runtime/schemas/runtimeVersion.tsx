@@ -7,6 +7,8 @@ export interface IRuntimeVersionSchema extends IResourceSchema {
     tag: string
     meta: Record<string, unknown>
     owner?: IUserSchema
+    alias: string
+    image: string
 }
 
 export interface IRuntimeVersionListSchema extends IResourceSchema {
@@ -14,6 +16,7 @@ export interface IRuntimeVersionListSchema extends IResourceSchema {
     versionName: string
     versionMeta: string
     versionTag: string
+    versionAlias: string
     manifest: string
 }
 

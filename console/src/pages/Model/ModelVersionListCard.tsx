@@ -48,6 +48,8 @@ export default function ModelVersionListCard() {
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
+                            model.name,
+                            model.versionAlias,
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,

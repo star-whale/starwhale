@@ -27,9 +27,7 @@ import JobOverviewLayout from '@/pages/Job/JobOverviewLayout'
 import SettingsOverviewLayout from '@/pages/Settings/SettingsOverviewLayout'
 import SettingAgentListCard from '@/pages/Settings/SettingAgentListCard'
 import RuntimeVersionListCard from '@/pages/Runtime/RuntimeVersionListCard'
-import RuntimeVersionLayout from '@/pages/Runtime/RuntimeVersionLayout'
-import RuntimeLayout from '@/pages/Runtime/RuntimeLayout'
-import RuntimeOverview from '@/pages/Runtime/Overview'
+import RuntimeVersionOverviewFiles from '@/pages/Runtime/RuntimeVersionOverviewFiles'
 import ProjectRuntimes from '@/pages/Project/Runtimes'
 import JobDAG from '@/pages/Job/JobDAG'
 import ProjectEvaluations from '@/pages/Project/Evaluations'
@@ -45,10 +43,12 @@ import { useAuth } from './api/Auth'
 import DatasetVersionOverview from './pages/Dataset/DatasetVersionOverview'
 import DatasetVersionOverviewMeta from './pages/Dataset/DatasetVersionOverviewMeta'
 import DatasetVersionOverviewFiles from './pages/Dataset/DatasetVersionOverviewFiles'
+import RuntimeVersionOverviewMeta from './pages/Runtime/RuntimeVersionOverviewMeta'
+import RuntimeVersionOverview from './pages/Runtime/RuntimeVersionOverview'
+import RuntimeOverviewLayout from './pages/Runtime/RuntimeOverviewLayout'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
-        // background: 'var(--color-brandRootBackground)',
         display: 'flex',
         flexFlow: 'column nowrap',
         height: '100vh',
@@ -223,27 +223,35 @@ const Routes = () => {
                                 </DatasetOverviewLayout>
                             </Route>
                             {/* runtime */}
-                            <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>
-                                <RuntimeVersionLayout>
-                                    <Switch>
-                                        <Route
-                                            exact
-                                            path='/projects/:projectId/runtimes/:runtimeId/versions'
-                                            component={RuntimeVersionListCard}
-                                        />
-                                    </Switch>
-                                </RuntimeVersionLayout>
-                            </Route>
-                            <Route exact path='/projects/:projectId/runtimes/:runtimeId/:path?/:path?'>
-                                <RuntimeLayout>
+                            <Route
+                                exact
+                                path='/projects/:projectId/runtimes/:runtimeId/:path?/:runtimeVersionId?/:path?/:fileId?'
+                            >
+                                <RuntimeOverviewLayout>
                                     <Switch>
                                         <Route
                                             exact
                                             path='/projects/:projectId/runtimes/:runtimeId'
-                                            component={RuntimeOverview}
+                                            component={RuntimeVersionListCard}
                                         />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/runtimes/:runtimeId/versions/:runtimeVersionId/overview'
+                                            component={RuntimeVersionOverview}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/runtimes/:runtimeId/versions/:runtimeVersionId/meta'
+                                            component={RuntimeVersionOverviewMeta}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/runtimes/:runtimeId/versions/:runtimeVersionId/files'
+                                            component={RuntimeVersionOverviewFiles}
+                                        />
+                                        <Redirect to='/projects/:projectId/runtimes/:runtimeId' />
                                     </Switch>
-                                </RuntimeLayout>
+                                </RuntimeOverviewLayout>
                             </Route>
                             {/* model */}
                             <Route exact path='/projects/:projectId/models/:modelId/versions'>

@@ -45,7 +45,7 @@ export default function DatasetVersionListCard() {
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Alias'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
                             return [
@@ -55,6 +55,7 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
+                                datasetVersion.alias,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 i ? (
