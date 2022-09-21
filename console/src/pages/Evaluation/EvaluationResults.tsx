@@ -87,7 +87,6 @@ function EvaluationViewer({ table }: { table: string }) {
     // TODO hard code
     if (table.includes('confusion_matrix')) return <ConfusionMatrix name={table} fetch={info} />
     if (table.includes('roc_auc') && !table.includes('summary')) return <RocAuc name={table} fetch={info} />
-    if (table.includes('results')) return <></>
 
     return (
         <Card outTitle={showTableName(table)} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
@@ -141,6 +140,9 @@ function EvaluationResults() {
                 {allTables.data?.tables
                     ?.sort((a, b) => (a > b ? 1 : -1))
                     .map((name) => {
+                        // TODO hard code
+                        if (name.includes('results')) return <></>
+
                         return <EvaluationViewer table={name} key={name} />
                     })}
             </div>

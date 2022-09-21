@@ -207,7 +207,9 @@ export default function DatasetVersionFiles() {
                             onClick={() => {
                                 setIsFullscreen(false)
                                 history.push(
-                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
+                                        row.id
+                                    }?${qs.stringify(page)}`
                                 )
                             }}
                         >
@@ -250,7 +252,9 @@ export default function DatasetVersionFiles() {
                                     onClick={() => {
                                         setIsFullscreen(true)
                                         history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
+                                                row.id
+                                            }?${qs.stringify(page)}`
                                         )
                                     }}
                                 >
@@ -314,7 +318,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId])
+    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
 
     return (
         <div className={styles.wrapper}>
