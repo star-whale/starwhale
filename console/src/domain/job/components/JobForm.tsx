@@ -7,14 +7,10 @@ import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
 import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector'
-import MultiTags from '@/components/Tag/MultiTags'
 import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
-import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
-import { usePage } from '@/hooks/usePage'
-import IconFont from '@/components/IconFont'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
 import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
 import DeviceSelector from '@/domain/setting/components/DeviceSelector'
@@ -34,8 +30,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
     const [runtimeId, setRuntimeId] = useState('')
-    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
-    const [page] = usePage()
+    // const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
+    // const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -60,7 +56,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'datasetVersionIdsArr',
                         'runtimeId',
                     ]),
-                    datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
+                    // datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
+                    datasetVersionUrls: values_.datasetVersionId,
                 })
                 history.goBack()
             } finally {
@@ -70,28 +67,28 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [onSubmit, history]
     )
 
-    const handleAddDataset = useCallback(() => {
-        const datasetVersionId = form.getFieldValue('datasetVersionId') as string
-        if (!datasetVersionId) return
-        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
-        const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
-        form.setFieldsValue({
-            datasetVersionIdsArr: Array.from(ids),
-        })
-        setDatasetVersionIds(Array.from(ids).join(','))
-    }, [form])
+    // const handleAddDataset = useCallback(() => {
+    //     const datasetVersionId = form.getFieldValue('datasetVersionId') as string
+    //     if (!datasetVersionId) return
+    //     const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
+    //     const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
+    //     form.setFieldsValue({
+    //         datasetVersionIdsArr: Array.from(ids),
+    //     })
+    //     setDatasetVersionIds(Array.from(ids).join(','))
+    // }, [form])
 
-    const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+    // const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
     const [t] = useTranslation()
 
-    const getValueLabel = useCallback(
-        (args) => {
-            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
-            return [dataset?.version?.id, dataset?.version?.name].join('-')
-        },
-        [datasetsInfo]
-    )
+    // const getValueLabel = useCallback(
+    //     (args) => {
+    //         const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
+    //         return [dataset?.version?.id, dataset?.version?.name].join('-')
+    //     },
+    //     [datasetsInfo]
+    // )
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -154,7 +151,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         />
                     </FormItem>
                 )}
-                <div className='fac'>
+                {/* <div className='fac'>
                     <Button
                         size='compact'
                         type='button'
@@ -163,13 +160,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         Add
                     </Button>
-                </div>
+                </div> */}
             </div>
-            <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
+            {/* <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
-            </div>
+            </div> */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
                 <FormItem label={t('Runtime')} name='runtimeId' required>

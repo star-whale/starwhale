@@ -46,8 +46,7 @@ function RocAuc({ fetch, name }: { fetch: any; name: string }) {
     )
 }
 
-function EvaluationViewer({ table }: { table: string }) {
-    console.log(table)
+function EvaluationViewer({ table, filter }: { table: string; filter?: Record<string, any> }) {
     const query = React.useMemo(
         () => ({
             tableName: table,
@@ -55,8 +54,9 @@ function EvaluationViewer({ table }: { table: string }) {
             limit: PAGE_TABLE_SIZE,
             rawResult: true,
             ignoreNonExistingTable: true,
+            filter,
         }),
-        [table]
+        [table, filter]
     )
 
     const info = useQueryDatastore(query, true)
@@ -150,7 +150,20 @@ function EvaluationResults() {
                 }}
             >
                 {tables.map((name) => {
-                    return <EvaluationViewer table={name} key={name} />
+                    let filter
+                    if (name.includes('/summary') && job?.uuid)
+                        filter = {
+                            operator: 'EQUAL',
+                            operands: [
+                                {
+                                    stringValue: job?.uuid,
+                                },
+                                {
+                                    columnName: 'id',
+                                },
+                            ],
+                        }
+                    return <EvaluationViewer table={name} key={name} filter={filter} />
                 })}
             </div>
         </div>
