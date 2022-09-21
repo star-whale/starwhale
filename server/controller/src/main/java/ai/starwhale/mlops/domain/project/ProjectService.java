@@ -244,6 +244,11 @@ public class ProjectService {
 
     public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId,
             String privacy) {
+        if (StrUtil.isNotEmpty(projectName)
+                && projectManager.existProject(projectName)) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
+                    .tip(String.format("Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
+        }
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = ProjectEntity.builder()
                 .id(projectId)
