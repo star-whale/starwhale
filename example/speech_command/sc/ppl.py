@@ -104,7 +104,7 @@ class M5Inference(PipelineHandler):
 
     def _load_model(self, device):
         model = M5(n_input=1, n_output=len(ALL_LABELS))
-        model.load_state_dict(torch.load(str(ROOTDIR / "models/m5.pth")))
+        model.load_state_dict(torch.load(str(ROOTDIR / "models/m5.pth"), map_location=device))
         model.to(device)
         model.eval()
         print("m5 model loaded, start to inference...")
