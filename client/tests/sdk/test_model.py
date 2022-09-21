@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale import get_data_loader, PipelineHandler, UserRawDataLoader
+from starwhale import Context, get_data_loader, PipelineHandler, UserRawDataLoader
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -18,7 +18,6 @@ from starwhale.base.type import (
     DataOriginType,
     ObjectStoreType,
 )
-from starwhale.api._impl.job import Context
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
