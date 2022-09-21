@@ -236,6 +236,9 @@ public class ProjectServiceTest {
 
         res = service.modifyProject("2", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(false));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> service.modifyProject("1", "exist_project", "", 1L, "PUBLIC"));
     }
 
     @Test
