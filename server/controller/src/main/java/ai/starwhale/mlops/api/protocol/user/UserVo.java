@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api.protocol.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -35,8 +36,11 @@ public class UserVo {
 
     private Boolean isEnabled;
 
+    private String systemRole;
+
+    private Map<String, String> projectRoles;
 
     public static UserVo empty() {
-        return new UserVo("", "", -1L, false);
+        return new UserVo("", "", -1L, false, "", Map.of());
     }
 }
