@@ -54,8 +54,7 @@ public class TaskWatcherForPersistTest {
                         Clazz.CPU).build()).build()).build())
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskMapper).updateTaskStartedTime(eq(task.getId()),
-                argThat(d -> d.getTime() > 0 && d.before(new Date())));
+        verify(taskMapper).updateTaskStartedTime(eq(task.getId()), argThat(d -> d.getTime() > 0));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
@@ -72,7 +71,7 @@ public class TaskWatcherForPersistTest {
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.RUNNING);
         verify(taskMapper).updateTaskFinishedTime(eq(task.getId()),
-                argThat(d -> d.getTime() > 0 && d.before(new Date())));
+                argThat(d -> d.getTime() > 0));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
 
     }

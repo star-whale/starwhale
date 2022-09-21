@@ -67,7 +67,7 @@ public class TaskWatcherForJobStatusTest {
 
         Step step = task.getStep();
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
-        verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0 && d.before(new Date())));
+        verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0));
         verify(stepTriggerContext).triggerNextStep(step);
         verify(jobUpdateHelper).updateJob(step.getJob());
 
@@ -100,7 +100,7 @@ public class TaskWatcherForJobStatusTest {
 
         Step step = task.getStep();
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
-        verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0 && d.before(new Date())));
+        verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0));
         verify(stepTriggerContext, times(0)).triggerNextStep(step);
         verify(jobUpdateHelper).updateJob(step.getJob());
 
