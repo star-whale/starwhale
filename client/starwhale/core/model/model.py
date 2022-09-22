@@ -335,13 +335,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return _r
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        _ok, _reason = move_dir(self.store.loc, self.store.recover_loc, force)
-        _ok2, _reason2 = True, ""
-        if self.store.snapshot_workdir.exists():
-            _ok2, _reason2 = move_dir(
-                self.store.snapshot_workdir, self.store.recover_snapshot_workdir, force
-            )
-        return _ok and _ok2, _reason + _reason2
+        return self._do_remove(force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support short version to recover, today only support full-version

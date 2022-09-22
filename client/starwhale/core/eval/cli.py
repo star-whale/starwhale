@@ -97,7 +97,12 @@ def _run(
 
 @eval_job_cmd.command("remove", help="Remove job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="Force to remove")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force to remove, the removed job cannot recover",
+)
 def _remove(job: str, force: bool) -> None:
     click.confirm("continue to remove?", abort=True)
     JobTermView(job).remove(force)

@@ -10,7 +10,7 @@ from collections import defaultdict
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir
+from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.api._impl import wrapper
 from starwhale.base.type import InstanceType, JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
@@ -262,7 +262,11 @@ class StandaloneEvaluationJob(EvaluationJob):
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        return move_dir(self.store.loc, self.store.recover_loc, force)
+        if force:
+            empty_dir(self.store.loc)
+            return True, ""
+        else:
+            return move_dir(self.store.loc, self.store.recover_loc, False)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         return move_dir(self.store.recover_loc, self.store.loc, force)

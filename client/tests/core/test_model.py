@@ -122,7 +122,7 @@ class StandaloneModelTestCase(TestCase):
 
         model_uri = URI(f"{name}/version/{build_version}", expected_type=URIType.MODEL)
         sd = StandaloneModel(model_uri)
-        _ok, _ = sd.remove(True)
+        _ok, _ = sd.remove(False)
         assert _ok
 
         _list, _ = StandaloneModel.list(URI(""))
@@ -141,6 +141,11 @@ class StandaloneModelTestCase(TestCase):
         ModelTermView(fname).recover()
         ModelTermView.list(show_removed=True)
         ModelTermView.list()
+
+        _ok, _ = sd.remove(True)
+        assert _ok
+        _list, _ = StandaloneModel.list(URI(""))
+        assert len(_list[name]) == 0
 
         ModelTermView.build(workdir, "self")
 

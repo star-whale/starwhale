@@ -24,7 +24,7 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, copy_file, ensure_dir
+from starwhale.utils.fs import move_dir, copy_file, empty_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
@@ -196,7 +196,11 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove by tag
-        return move_dir(self.store.snapshot_workdir, self.store.recover_loc, force)
+        if force:
+            empty_dir(self.store.snapshot_workdir)
+            return True, ""
+        else:
+            return move_dir(self.store.snapshot_workdir, self.store.recover_loc, False)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         dest_path = (
