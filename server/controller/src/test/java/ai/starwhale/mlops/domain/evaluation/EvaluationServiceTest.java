@@ -149,6 +149,7 @@ public class EvaluationServiceTest {
                             .createdTime(10L)
                             .stopTime(11L)
                             .owner(UserVo.builder().name("owner" + entity.getId()).build())
+                            .jobStatus(JobStatus.SUCCESS)
                             .build();
                 });
         var res = service.listEvaluationSummary(
@@ -167,7 +168,8 @@ public class EvaluationServiceTest {
                                         hasProperty("device", is("device1")),
                                         hasProperty("datasets", is("1,2,3")),
                                         hasProperty("duration", is(1L)),
-                                        hasProperty("owner", is("owner1"))
+                                        hasProperty("owner", is("owner1")),
+                                        hasProperty("jobStatus", is(JobStatus.SUCCESS))
                                 ))
                         )
                 )))

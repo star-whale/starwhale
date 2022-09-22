@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.evaluation;
 
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -70,6 +71,9 @@ public class SummaryVo {
 
     @JsonProperty("duration")
     public Long duration;
+
+    @JsonProperty("jobStatus")
+    private JobStatus jobStatus;
 
     @JsonProperty("attributes")
     private List<AttributeValueVo> attributes;
