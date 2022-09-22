@@ -63,9 +63,8 @@ swcli runtime quickstart shell . --python-env=venv --create-env --name pytorch-m
 
 echo "execute test for mnist example"
 pushd ../../scripts/client_test
-python3 -m pip install -r requirements.txt
 swcli --version
-pytest cli_test.py
+python3 cli_test.py mnist
 popd
 
 echo "done"
