@@ -7,6 +7,6 @@ model:
   - models/vocab_eng-fra.bin
 
 run:
-  ppl: nmt.ppl:NMTPipeline
+  handler: nmt.evaluator:NMTPipeline
 
 desc: nmt by pytorch
