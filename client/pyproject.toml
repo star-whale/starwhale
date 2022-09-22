@@ -26,6 +26,7 @@ exclude = [
     "dist",
     "__pycache__",
     "tests",
+    "dummy/setup.py",
 ]
 show_column_numbers = true
 ignore_missing_imports = true

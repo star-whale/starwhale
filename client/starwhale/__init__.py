@@ -1,6 +1,6 @@
 from starwhale.api.job import step, Context
 from starwhale.version import STARWHALE_VERSION as __version__
-from starwhale.api.model import PipelineHandler
+from starwhale.api.model import PipelineHandler, PPLResultIterator
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (
     Link,
@@ -51,4 +51,5 @@ __all__ = [
     "BoundingBox",
     "GrayscaleImage",
     "COCOObjectAnnotation",
+    "PPLResultIterator",
 ]

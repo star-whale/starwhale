@@ -39,22 +39,22 @@ format:
 .POHNY: ci-format-checker
 ci-format-checker:
 	echo "run black"
-	black --check --config pyproject.toml .
+	black --check --config pyproject.toml . ../example
 
 .POHNY: ci-lint
 ci-lint:
 	echo "run flake8"
-	flake8 .
+	flake8 . ../example
 
 .POHNY: ci-mypy
 ci-mypy:
 	echo "run mypy"
-	mypy .
+	mypy . ../example/mnist
 
 .POHNY: ci-isort
 ci-isort:
 	echo "run isort"
-	isort --check .
+	isort --check . ../example
 
 .POHNY: ut
 ut:
