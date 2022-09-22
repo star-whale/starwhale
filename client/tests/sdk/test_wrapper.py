@@ -12,8 +12,6 @@ from .test_base import BaseTestCase
 class TestEvaluation(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
-        os.environ[SWEnv.project] = "test"
-        os.environ[SWEnv.eval_version] = "tt"
 
     def tearDown(self) -> None:
         super().tearDown()
@@ -21,7 +19,7 @@ class TestEvaluation(BaseTestCase):
         os.environ.pop(SWEnv.instance_token, None)
 
     def test_log_results_and_scan(self) -> None:
-        eval = wrapper.Evaluation("test")
+        eval = wrapper.Evaluation("tt", "test")
         eval.log_result("0", 3)
         eval.log_result("1", 4)
         eval.log_result("2", 5, a="0", B="1")
@@ -38,7 +36,7 @@ class TestEvaluation(BaseTestCase):
         )
 
     def test_log_metrics(self) -> None:
-        eval = wrapper.Evaluation()
+        eval = wrapper.Evaluation("tt", "test")
         eval.log_metrics(a=0, B=1, c=None)
         eval.log_metrics({"a/b": 2})
         eval.close()
@@ -61,7 +59,7 @@ class TestEvaluation(BaseTestCase):
 
         os.environ[SWEnv.instance_token] = "abcd"
         os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
-        eval = wrapper.Evaluation("test")
+        eval = wrapper.Evaluation("tt", "test")
         eval.log_result("0", 3)
         eval.log_metrics({"a/b": 2})
 
@@ -83,10 +81,9 @@ class TestEvaluation(BaseTestCase):
 class TestDataset(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
-        os.environ[SWEnv.project] = "test"
 
     def test_put_and_scan(self) -> None:
-        dataset = wrapper.Dataset("dt")
+        dataset = wrapper.Dataset("dt", "test")
         dataset.put("0", a=1, b=2)
         dataset.put("1", a=2, b=3)
         dataset.put("2", a=3, b=4)
