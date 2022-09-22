@@ -1,31 +1,17 @@
-import os
 
 from .invoke import invoke
 
 
-class Environment:
-    def __init__(self, src_dir: str, work_dir: str):
-        self.src_dir = src_dir
+class EnvironmentPrepare:
+    def __init__(self, work_dir: str) -> None:
         self.work_dir = work_dir
 
-    def prepare(self):
-        self._config_local_data_dir()
-        self._install_sw()
+    def prepare_mnist_requirements(self) -> None:
+        _res, _err = invoke(["python3", "-m", "pip", "install", "-r",
+                             f"{self.work_dir}/example/mnist/requirements-sw-lock.txt"])
+        print(f"install package info:{_res}, err is:{_err}")
 
-    def _install_sw(self):
-        invoke(["cp", "-rf", f"{self.src_dir}/client", f"{self.work_dir}/client"])
-
-        invoke(["pip", "install", "-e", f"{self.work_dir}/client"])
-
-    def _config_local_data_dir(self):
-        os.environ["SW_CLI_CONFIG"] = f"{self.work_dir}/config.yaml"
-        os.environ["SW_LOCAL_STORAGE"] = f"{self.work_dir}/data"
-
-    def prepare_mnist_dir(self):
-        invoke(["cp", "-rf", f"{self.src_dir}/example", f"{self.work_dir}/example"])
-        invoke(["rm", "-rf", f"{self.work_dir}/example/mnist/.venv"])
-        invoke(["rm", "-rf", f"{self.work_dir}/example/mnist/runtime.yaml"])
-
+    def prepare_mnist_data(self) -> None:
         # TODO use make
         invoke(["wget", "-P", f"{self.work_dir}/example/mnist/data",
                 "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz"])

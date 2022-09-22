@@ -64,69 +64,155 @@ class Evaluation:
         """
         :param version:
         :return:
-            {
-                "manifest": {
-                    "created_at": "2022-09-15 15:10:08 CST",
-                    "datasets": [
-                        "local/project/self/dataset/mnist/version/latest"
-                    ],
-                    "desc": null,
-                    "finished_at": "2022-09-15 15:10:29 CST",
-                    "model": "mnist/version/latest",
-                    "model_dir": "/home/star_g/.starwhale/self/workdir/model/mnist/g4/g4ytkzbwge2dinrtmftdgyjznazhczy/src",
-                    "name": "default",
-                    "project": "self",
-                    "runtime": "",
-                    "status": "success",
-                    "step": "",
-                    "task_index": 0,
-                    "version": "gzswgmlgmeztemzxme4gkzldgm2xqny"
-                },
-                "report": {
-                    "confusion_matrix": {
-                        "binarylabel": [
-                            {
-                                "0": 0.0977,
-                                "1": 0.0,
-                                "2": 0.0,
-                                "3": 0.0,
-                                "4": 0.0,
-                                "5": 0.0,
-                                "6": 0.0001,
-                                "7": 0.0001,
-                                "8": 0.0001,
-                                "9": 0.0,
-                                "id": 0
+            local:{
+                    "manifest": {
+                        "created_at": "2022-09-15 15:10:08 CST",
+                        "datasets": [
+                            "local/project/self/dataset/mnist/version/latest"
+                        ],
+                        "desc": null,
+                        "finished_at": "2022-09-15 15:10:29 CST",
+                        "model": "mnist/version/latest",
+                        "model_dir": "/home/star_g/.starwhale/self/workdir/model/mnist/g4/g4ytkzbwge2dinrtmftdgyjznazhczy/src",
+                        "name": "default",
+                        "project": "self",
+                        "runtime": "",
+                        "status": "success",
+                        "step": "",
+                        "task_index": 0,
+                        "version": "gzswgmlgmeztemzxme4gkzldgm2xqny"
+                    },
+                    "report": {
+                        "confusion_matrix": {
+                            "binarylabel": [
+                                {
+                                    "0": 0.0977,
+                                    "1": 0.0,
+                                    "2": 0.0,
+                                    "3": 0.0,
+                                    "4": 0.0,
+                                    "5": 0.0,
+                                    "6": 0.0001,
+                                    "7": 0.0001,
+                                    "8": 0.0001,
+                                    "9": 0.0,
+                                    "id": 0
+                                },
+                                ...
+                            ]
+                        },
+                        "kind": "multi_classification",
+                        "labels": {
+                            "0": {
+                                "f1-score": 0.9903699949315762,
+                                "id": "0",
+                                "precision": 0.9838872104733132,
+                                "recall": 0.996938775510204,
+                                "support": 980
                             },
                             ...
-                        ]
-                    },
-                    "kind": "multi_classification",
-                    "labels": {
-                        "0": {
-                            "f1-score": 0.9903699949315762,
-                            "id": "0",
-                            "precision": 0.9838872104733132,
-                            "recall": 0.996938775510204,
-                            "support": 980
                         },
-                        ...
-                    },
-                    "summary": {
-                        "accuracy": 0.9894,
-                        "id": "gzswgmlgmeztemzxme4gkzldgm2xqny",
-                        "kind": "multi_classification",
-                        "macro avg/f1-score": 0.9893068278560861,
-                        "macro avg/precision": 0.9893024234074879,
-                        "macro avg/recall": 0.9893615007448199,
-                        "macro avg/support": 10000,
-                        "weighted avg/f1-score": 0.9893988328111353,
-                        "weighted avg/precision": 0.9894464486215673,
-                        "weighted avg/recall": 0.9894,
-                        "weighted avg/support": 10000
+                        "summary": {
+                            "accuracy": 0.9894,
+                            "id": "gzswgmlgmeztemzxme4gkzldgm2xqny",
+                            "kind": "multi_classification",
+                            "macro avg/f1-score": 0.9893068278560861,
+                            "macro avg/precision": 0.9893024234074879,
+                            "macro avg/recall": 0.9893615007448199,
+                            "macro avg/support": 10000,
+                            "weighted avg/f1-score": 0.9893988328111353,
+                            "weighted avg/precision": 0.9894464486215673,
+                            "weighted avg/recall": 0.9894,
+                            "weighted avg/support": 10000
+                        }
                     }
                 }
-            }
+            cloud:{
+                    "manifest": {
+                        "comment": null,
+                        "createdTime": 1663297648000,
+                        "datasets": [
+                            "gi4toodchfsggnrtmftdgyjzpjtho2y"
+                        ],
+                        "device": "CPU",
+                        "deviceAmount": 1000,
+                        "duration": 57000,
+                        "id": "72",
+                        "jobStatus": "FAIL",
+                        "modelName": "mnist",
+                        "modelVersion": "g4ytkzbwge2dinrtmftdgyjznazhczy",
+                        "owner": {
+                            "createdTime": 1650970583000,
+                            "id": "1",
+                            "isEnabled": true,
+                            "name": "starwhale",
+                            "projectRoles": null,
+                            "systemRole": null
+                        },
+                        "resourcePool": "default",
+                        "runtime": {
+                            "createdTime": 1661483449000,
+                            "id": "9",
+                            "name": "pytorch",
+                            "owner": {
+                                "createdTime": 1650970583000,
+                                "id": "1",
+                                "isEnabled": true,
+                                "name": "starwhale",
+                                "projectRoles": null,
+                                "systemRole": null
+                            },
+                            "version": {
+                                "alias": "v37",
+                                "createdTime": 1663296946000,
+                                "id": "39",
+                                "image": "ghcr.io/star-whale/starwhale:latest-cuda11.4",
+                                "meta": "artifacts:\n  dependencies:\n  - dependencies/requirements-sw-lock.txt\n  files:\n  - _swrt_dest: files/bin/prepare.sh\n    dest: bin/prepare.sh\n    name: prepare\n    post: bash bin/prepare.sh\n    pre: ls bin/prepare.sh\n    src: scripts/prepare.sh\n  runtime_yaml: runtime.yaml\n  wheels:\n  - wheels/dummy-0.0.0-py3-none-any.whl\nbase_image: ghcr.io/star-whale/starwhale:latest-cuda11.4\nbuild:\n  os: Linux\n  sw_version: 0.0.0.dev0\nconfigs:\n  conda:\n    channels:\n    - conda-forge\n  docker:\n    image: ghcr.io/star-whale/runtime/pytorch\n  pip:\n    extra_index_url:\n    - https://mirrors.bfsu.edu.cn/pypi/web/simple/\n    index_url: https://pypi.doubanio.com/simple/\n    trusted_host:\n    - mirrors.bfsu.edu.cn\n    - pypi.doubanio.com\ncreated_at: 2022-09-14 17:58:05 CST\ndependencies:\n  conda_files: []\n  conda_pkgs: []\n  local_packaged_env: false\n  pip_files:\n  - requirements-sw-lock.txt\n  pip_pkgs:\n  - numpy >= 1.23.2\n  - scikit-learn\nenvironment:\n  arch:\n  - noarch\n  auto_lock_dependencies: false\n  lock:\n    env_name: ''\n    env_prefix_path: ''\n    shell:\n      python_env: conda\n      python_version: 3.9.12\n      use_conda: true\n      use_venv: false\n    starwhale_version: 0.0.0.dev0\n    system: Linux\n    use_shell_detection: true\n  mode: venv\n  python: '3.8'\nname: pytorch\nversion: mjqtinbtgjqtezjyg44tkzjwnm2gmny\n",
+                                "name": "mjqtinbtgjqtezjyg44tkzjwnm2gmny",
+                                "owner": {
+                                    "createdTime": 1650970583000,
+                                    "id": "1",
+                                    "isEnabled": true,
+                                    "name": "starwhale",
+                                    "projectRoles": null,
+                                    "systemRole": null
+                                },
+                                "tag": null
+                            }
+                        },
+                        "stopTime": 1663297705000,
+                        "uuid": "67c88413bf654b49858d001280c58cc7"
+                    },
+                    "report": {
+                        "kind": "",
+                        "summary": {}
+                    },
+                    "tasks": [
+                        [
+                            {
+                                "createdTime": -1,
+                                "created_at": "1970-01-01 07:59:59",
+                                "id": "168",
+                                "resourcePool": "default",
+                                "taskStatus": "CREATED",
+                                "uuid": "9ae3e99d-2761-4d84-bc35-87a17f71ae81"
+                            },
+                            {
+                                "createdTime": 1663297650000,
+                                "created_at": "2022-09-16 11:07:30",
+                                "id": "167",
+                                "resourcePool": "default",
+                                "taskStatus": "FAIL",
+                                "uuid": "62c52e86-2b74-42bc-b2c3-50c44a41abc7"
+                            }
+                        ],
+                        {
+                            "current": 2,
+                            "remain": 0,
+                            "total": 2
+                        }
+                    ]
+                }
         """
         _res, _err = invoke([CLI, "-o", "json", self._cmd, "info", version])
         return json.loads(_res) if not _err else {}
