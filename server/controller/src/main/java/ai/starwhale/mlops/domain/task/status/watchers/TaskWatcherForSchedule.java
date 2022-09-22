@@ -79,6 +79,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     private void addToDeleteQueue(Task task) {
         var deleteTime = task.getStartTime() + deletionDelayMilliseconds;
         taskToDeletes.put(new TaskToDelete(task.getId(), deleteTime));
+        log.debug("add task {} to delete queue, delete time {}", task.getId(), deleteTime);
     }
 
     @Scheduled(fixedDelay = 30000)
@@ -87,6 +88,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
         List<Long> taskIds = new ArrayList<>();
         while (task != null) {
             taskIds.add(task.getTaskId());
+            log.debug("delete task {}", task.getTaskId());
             task = taskToDeletes.poll();
         }
         taskScheduler.stopSchedule(taskIds);
