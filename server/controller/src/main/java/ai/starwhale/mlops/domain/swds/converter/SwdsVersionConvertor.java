@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swds.converter;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -31,14 +30,12 @@ public class SwdsVersionConvertor implements Convertor<SwDatasetVersionEntity, D
 
     private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
-    private final LocalDateTimeConvertor localDateTimeConvertor;
     private final VersionAliasConvertor versionAliasConvertor;
 
     public SwdsVersionConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
-            LocalDateTimeConvertor localDateTimeConvertor, VersionAliasConvertor versionAliasConvertor) {
+            VersionAliasConvertor versionAliasConvertor) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
@@ -55,7 +52,7 @@ public class SwdsVersionConvertor implements Convertor<SwDatasetVersionEntity, D
                 .owner(userConvertor.convert(entity.getOwner()))
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

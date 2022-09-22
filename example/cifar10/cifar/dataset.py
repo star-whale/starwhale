@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PIL import Image as PILImage
 
-from starwhale.api.dataset import Image, MIMEType, BuildExecutor
+from starwhale import Image, MIMEType, BuildExecutor
 
 ROOT_DIR = Path(__file__).parent.parent / "data" / "cifar-10-batches-py"
 TRAIN_DATASET_PATHS = [ROOT_DIR / f"data_batch_{i}" for i in range(1, 6)]

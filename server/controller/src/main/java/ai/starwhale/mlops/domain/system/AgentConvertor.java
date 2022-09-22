@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.system;
 import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
@@ -32,9 +31,6 @@ public class AgentConvertor implements Convertor<AgentEntity, AgentVo> {
     @Resource
     private IdConvertor idConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
     @Override
     public AgentVo convert(AgentEntity agentEntity) throws ConvertException {
         if (agentEntity == null) {
@@ -43,7 +39,7 @@ public class AgentConvertor implements Convertor<AgentEntity, AgentVo> {
         return AgentVo.builder()
                 .id(idConvertor.convert(agentEntity.getId()))
                 .ip(agentEntity.getAgentIp())
-                .connectedTime(localDateTimeConvertor.convert(agentEntity.getConnectTime()))
+                .connectedTime(agentEntity.getConnectTime().getTime())
                 .status(agentEntity.getStatus())
                 .version(agentEntity.getAgentVersion())
                 .serialNumber(agentEntity.getSerialNumber())

@@ -6,13 +6,7 @@ import torch
 from PIL import Image as PILImage
 from pycocotools import mask as coco_mask
 
-from starwhale.api.dataset import (
-    Image,
-    MIMEType,
-    BoundingBox,
-    BuildExecutor,
-    COCOObjectAnnotation,
-)
+from starwhale import Image, MIMEType, BoundingBox, BuildExecutor, COCOObjectAnnotation
 
 
 class PFPDatasetBuildExecutor(BuildExecutor):

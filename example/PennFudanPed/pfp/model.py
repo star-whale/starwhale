@@ -1,4 +1,3 @@
-from torchvision.models import ResNet50_Weights
 from torchvision.ops.misc import FrozenBatchNorm2d
 from torchvision.models.detection import maskrcnn_resnet50_fpn
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor

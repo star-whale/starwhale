@@ -4,17 +4,17 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
-from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
-from starwhale.api.dataset import (
+from starwhale import (
     MIMEType,
     S3LinkAuth,
     get_data_loader,
     SWDSBinDataLoader,
     UserRawDataLoader,
 )
+from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
+from starwhale.base.uri import URI
+from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,

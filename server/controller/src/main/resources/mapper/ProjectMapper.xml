@@ -103,6 +103,13 @@
     and p.is_deleted = 0
   </select>
 
+  <select id="findProjectByNameForUpdate" parameterType="java.lang.String"
+    resultMap="projectResultMap">
+    <include refid="select_project"/>
+    and p.project_name = #{projectName}
+    for update
+  </select>
+
   <select id="findDefaultProject" parameterType="java.lang.Long" resultMap="projectResultMap">
     <include refid="select_project"/>
     and p.owner_id = #{userId}

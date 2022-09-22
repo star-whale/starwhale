@@ -14,10 +14,11 @@ import { IChangePasswordSchema } from '@user/schemas/user'
 import { changePassword } from '@user/services/user'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { toaster } from 'baseui/toast'
-import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { TextLink } from '@/components/Link'
 import classNames from 'classnames'
 import { useAuth } from '@/api/Auth'
+import { useUserRoles } from '@/domain/user/hooks/useUserRoles'
+import { Role } from '@/api/const'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
@@ -258,15 +259,11 @@ export default function Header() {
     const ctx = useContext(SidebarContext)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const [currentUserRole] = useCurrentUserRoles()
-    const [sysRole, setSysRole] = useState('GUEST')
     const title = !!useSearchParam('token')
-
+    const { systemRole } = useUserRoles()
     const [t] = useTranslation()
     const history = useHistory()
     const { token, onLogout } = useAuth()
-
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
     const [isShowTokenOpen, setIsShowTokenOpen] = useState(title)
     const handleChangePassword = useCallback(
@@ -277,18 +274,6 @@ export default function Header() {
         },
         [t]
     )
-
-    React.useEffect(() => {
-        if (!currentUserRole) {
-            return
-        }
-        // '0' means the system
-        const role = currentUserRole.find((i) => i.project.id === '0')
-        if (!role) {
-            return
-        }
-        setSysRole(role.role.code)
-    }, [currentUserRole, setSysRole])
 
     return (
         <header className={headerStyles.headerWrapper}>
@@ -322,7 +307,7 @@ export default function Header() {
                         </div>
                         <div className={styles.divider} />
                         <div className={styles.userMenuItems}>
-                            {sysRole === 'OWNER' && (
+                            {systemRole === Role.OWNER && (
                                 <div
                                     role='button'
                                     tabIndex={0}

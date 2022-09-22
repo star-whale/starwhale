@@ -6,10 +6,7 @@ import numpy as np
 import torch
 import torchaudio
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import Audio
+from starwhale import Audio, Context, PipelineHandler, multi_classification
 
 from .model import M5
 

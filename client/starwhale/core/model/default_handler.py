@@ -14,7 +14,7 @@ from starwhale.core.model.model import StandaloneModel
 def _get_cls(src_dir: Path) -> Any:
     _mp = src_dir / DefaultYAMLName.MODEL
     _model_config = StandaloneModel.load_model_config(_mp)
-    _handler = _model_config.run.ppl
+    _handler = _model_config.run.handler
 
     logger.debug(f"try to import {_handler}@{src_dir}...")
     _cls = import_cls(src_dir, _handler, PipelineHandler)

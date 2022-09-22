@@ -4,10 +4,7 @@ import numpy as np
 import torch
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import Text
+from starwhale import Text, Context, PipelineHandler, multi_classification
 
 from .model import TextClassificationModel
 

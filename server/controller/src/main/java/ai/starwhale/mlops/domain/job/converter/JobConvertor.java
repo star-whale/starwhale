@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.node.Device;
@@ -44,19 +43,17 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
 
     private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
-    private final LocalDateTimeConvertor localDateTimeConvertor;
     private final ResourcePoolConverter resourcePoolConverter;
     private final RuntimeService runtimeService;
     private final JobSwdsVersionMapper jobSwdsVersionMapper;
     private final ResourcePoolMapper resourcePoolMapper;
 
     public JobConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
-            LocalDateTimeConvertor localDateTimeConvertor, ResourcePoolConverter resourcePoolConverter,
+            ResourcePoolConverter resourcePoolConverter,
             RuntimeService runtimeService, JobSwdsVersionMapper jobSwdsVersionMapper,
             ResourcePoolMapper resourcePoolMapper) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
         this.resourcePoolConverter = resourcePoolConverter;
         this.runtimeService = runtimeService;
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
@@ -86,13 +83,13 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
                 .owner(userConvertor.convert(jobEntity.getOwner()))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getSwmpVersion().getVersionName())
-                .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
+                .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtimeByVersionIds.get(0))
                 .datasets(idList)
                 .device(getDeviceName(jobEntity.getDeviceType()))
                 .deviceAmount(jobEntity.getDeviceAmount())
                 .jobStatus(jobEntity.getJobStatus())
-                .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
+                .stopTime(jobEntity.getFinishedTime().getTime())
                 .comment(jobEntity.getComment())
                 .resourcePool(resourcePool.getLabel())
                 .build();

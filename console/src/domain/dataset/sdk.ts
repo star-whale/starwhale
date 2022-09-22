@@ -15,6 +15,7 @@ export enum TYPES {
     IMAGE = 'image',
     AUDIO = 'audio',
     TEXT = 'text',
+    LINK = 'link',
 }
 
 export type IDatasetImage = {
@@ -122,7 +123,12 @@ export class DatasetObject {
         })
 
         try {
-            this.data = JSON.parse(data?.data_type, undefined)
+            const json = JSON.parse(data?.data_type, undefined)
+            if (json.type === TYPES.LINK) {
+                this.data = json.data_type
+            } else {
+                this.data = json
+            }
             this.mimeType = (this.data?.mime_type ?? '') as MIMES
             this.type = (this.data?.type ?? '') as MIMES
         } catch (e) {

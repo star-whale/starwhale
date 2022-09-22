@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.ObjectMockHolder;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
@@ -114,7 +113,7 @@ public class JobLoaderTest {
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
-        StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
+        StepConverter stepConverter = new StepConverter();
         WatchableTaskFactory watchableTaskFactory = mock(WatchableTaskFactory.class);
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
@@ -187,7 +186,7 @@ public class JobLoaderTest {
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
-        StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
+        StepConverter stepConverter = new StepConverter();
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
                 new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
@@ -267,7 +266,7 @@ public class JobLoaderTest {
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
-        StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
+        StepConverter stepConverter = new StepConverter();
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
                 new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
@@ -341,7 +340,7 @@ public class JobLoaderTest {
         JobBoConverter jobBoConverter = mock(JobBoConverter.class);
         when(jobBoConverter.fromEntity(any(JobEntity.class))).thenReturn(mockJob);
         HotJobHolder jobHolder = mock(HotJobHolder.class);
-        StepConverter stepConverter = new StepConverter(new LocalDateTimeConvertor());
+        StepConverter stepConverter = new StepConverter();
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(List.of(),
                 new TaskStatusMachine());
         StepTrigger stepTriggerContext = mock(StepTrigger.class);

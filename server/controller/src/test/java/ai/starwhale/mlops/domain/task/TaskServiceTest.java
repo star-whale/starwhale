@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -38,7 +37,7 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageInfo;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,11 +56,9 @@ public class TaskServiceTest {
 
     ResourcePoolMapper resourcePoolMapper;
 
-    LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
-
     @BeforeEach
     public void setup() {
-        taskConvertor = new TaskConvertor(new IdConvertor(), localDateTimeConvertor);
+        taskConvertor = new TaskConvertor(new IdConvertor());
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobManager = mock(JobManager.class);
@@ -75,7 +72,7 @@ public class TaskServiceTest {
         when(jobManager.getJobId(anyString())).thenReturn(1L);
         when(jobManager.findJob(any())).thenReturn(JobEntity.builder().resourcePoolId(1L).build());
         when(resourcePoolMapper.findById(1L)).thenReturn(ResourcePoolEntity.builder().id(1L).label("LABEL").build());
-        LocalDateTime startedTime = LocalDateTime.of(2022, 9, 9, 9, 9);
+        var startedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
                                 .taskStatus(
@@ -89,9 +86,9 @@ public class TaskServiceTest {
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
-                TaskVo.builder().id("1").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid1")
+                TaskVo.builder().id("1").createdTime(startedTime.getTime()).uuid("uuid1")
                         .taskStatus(TaskStatus.RUNNING).resourcePool("LABEL").build(),
-                TaskVo.builder().id("2").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid2")
+                TaskVo.builder().id("2").createdTime(startedTime.getTime()).uuid("uuid2")
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("LABEL").build()));
 
 
@@ -101,7 +98,7 @@ public class TaskServiceTest {
     public void testListTaskWithoutResourcePool() {
         when(jobManager.getJobId(anyString())).thenReturn(1L);
         when(jobManager.findJob(any())).thenReturn(JobEntity.builder().build());
-        LocalDateTime startedTime = LocalDateTime.of(2022, 9, 9, 9, 9);
+        var startedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
                                 .taskStatus(
@@ -115,9 +112,9 @@ public class TaskServiceTest {
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
-                TaskVo.builder().id("1").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid1")
+                TaskVo.builder().id("1").createdTime(startedTime.getTime()).uuid("uuid1")
                         .taskStatus(TaskStatus.RUNNING).resourcePool(ResourcePool.DEFAULT).build(),
-                TaskVo.builder().id("2").createdTime(localDateTimeConvertor.convert(startedTime)).uuid("uuid2")
+                TaskVo.builder().id("2").createdTime(startedTime.getTime()).uuid("uuid2")
                         .taskStatus(TaskStatus.SUCCESS).resourcePool(ResourcePool.DEFAULT).build()));
 
 

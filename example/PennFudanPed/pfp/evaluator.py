@@ -6,9 +6,7 @@ from PIL import Image as PILImage
 from pycocotools.coco import COCO
 from torchvision.transforms import functional
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.dataset import Image
+from starwhale import Image, Context, PipelineHandler
 
 from .model import pretrained_model
 from .utils import get_model_path

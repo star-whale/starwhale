@@ -34,7 +34,6 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -100,9 +99,8 @@ public class ProjectServiceTest {
                 .willReturn(project2);
 
         IdConvertor idConvertor = new IdConvertor();
-        LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
-        UserConvertor userConvertor = new UserConvertor(idConvertor, localDateTimeConvertor);
-        ProjectConvertor projectConvertor = new ProjectConvertor(idConvertor, userConvertor, localDateTimeConvertor);
+        UserConvertor userConvertor = new UserConvertor(idConvertor);
+        ProjectConvertor projectConvertor = new ProjectConvertor(idConvertor, userConvertor);
         RoleConvertor roleConvertor = new RoleConvertor(idConvertor);
         ProjectRoleConvertor projectRoleConvertor = new ProjectRoleConvertor(
                 idConvertor,
@@ -227,7 +225,8 @@ public class ProjectServiceTest {
     public void testModifyProject() {
         given(projectMapper.modifyProject(argThat(p -> p.getId() == 1L)))
                 .willReturn(1);
-
+        given(projectMapper.findProjectByNameForUpdate("p2"))
+                .willReturn(ProjectEntity.builder().id(2L).projectName("p2").build());
         var res = service.modifyProject("1", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(true));
 
@@ -236,6 +235,15 @@ public class ProjectServiceTest {
 
         res = service.modifyProject("2", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(false));
+
+        res = service.modifyProject("1", "pro1", null, 1L, "PUBLIC");
+        assertThat(res, is(true));
+
+        res = service.modifyProject("2", "p2", null, 1L, "PUBLIC");
+        assertThat(res, is(false));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> service.modifyProject("1", "p2", "", 1L, "PUBLIC"));
     }
 
     @Test

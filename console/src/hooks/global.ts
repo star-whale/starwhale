@@ -1,6 +1,6 @@
 import { createGlobalState } from 'react-hooks-global-state'
 import { IUserSchema } from '@user/schemas/user'
-import { IProjectSchema, IProjectRoleSchema } from '@project/schemas/project'
+import { IProjectSchema } from '@project/schemas/project'
 import { IModelDetailSchema } from '@model/schemas/model'
 import { IModelVersionDetailSchema } from '@model/schemas/modelVersion'
 import { IDatasetDetailSchema } from '@/domain/dataset/schemas/dataset'
@@ -16,7 +16,6 @@ const initialState = {
     token: undefined as string | undefined,
     themeType: 'deep' as ThemeType,
     currentUser: undefined as IUserSchema | undefined,
-    currentUserRoles: undefined as IProjectRoleSchema[] | undefined,
     user: undefined as IUserSchema | undefined,
     userLoading: false,
     project: undefined as IProjectSchema | undefined,

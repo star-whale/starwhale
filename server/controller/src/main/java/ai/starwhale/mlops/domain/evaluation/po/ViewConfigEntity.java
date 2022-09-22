@@ -18,14 +18,14 @@ package ai.starwhale.mlops.domain.evaluation.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ViewConfigEntity extends BaseEntity {

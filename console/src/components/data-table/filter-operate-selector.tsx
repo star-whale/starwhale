@@ -108,7 +108,9 @@ export const Operators: Record<string, OperatorT> = {
         op: 'contains',
         buildFilter: ({ value = '' }) => {
             return (data: string) => {
-                return data.trim().includes(value)
+                return String(data ?? '')
+                    .trim()
+                    .includes(value)
             }
         },
     },

@@ -25,8 +25,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +36,7 @@ public class ViewConfigConvertorTest {
 
     @BeforeEach
     public void setUp() {
-        viewConfigConvertor = new ViewConfigConvertor(
-                new LocalDateTimeConvertor()
-        );
+        viewConfigConvertor = new ViewConfigConvertor();
     }
 
     @Test
@@ -52,6 +50,7 @@ public class ViewConfigConvertorTest {
         res = viewConfigConvertor.convert(ViewConfigEntity.builder()
                 .configName("config1")
                 .content("content1")
+                .createdTime(new Date())
                 .build());
         assertThat(res, allOf(
                 notNullValue(),
