@@ -27,10 +27,6 @@ class RuntimeStorage(BaseStorage):
         return self._get_snapshot_workdir_for_bundle()
 
     @property
-    def recover_snapshot_workdir(self) -> Path:
-        return self._get_recover_snapshot_workdir_for_bundle()
-
-    @property
     def export_dir(self) -> Path:
         return self.snapshot_workdir / "export"
 

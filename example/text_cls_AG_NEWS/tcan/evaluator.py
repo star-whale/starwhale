@@ -4,10 +4,7 @@ import numpy as np
 import torch
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import Text
+from starwhale import Text, Context, PipelineHandler, multi_classification
 
 from .model import TextClassificationModel
 
@@ -52,7 +49,7 @@ class TextClassificationHandler(PipelineHandler):
     def _load_model(self, device):
         model_path = _ROOT_DIR + "/models/model.i"
         model = TextClassificationModel(1308713, 32, _NUM_CLASSES).to(device)
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         return model
 

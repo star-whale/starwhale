@@ -13,6 +13,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { toaster } from 'baseui/toast'
 import { ButtonLink, TextLink } from '@/components/Link'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -44,7 +45,7 @@ export default function DatasetVersionListCard() {
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Alias'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
                             return [
@@ -54,17 +55,20 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
+                                datasetVersion.alias,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 i ? (
-                                    <ButtonLink
-                                        key={datasetVersion.id}
-                                        onClick={() => {
-                                            handleAction(datasetVersion.id)
-                                        }}
-                                    >
-                                        {t('Revert')}
-                                    </ButtonLink>
+                                    <WithCurrentAuth id='dataset.version.revert'>
+                                        <ButtonLink
+                                            key={datasetVersion.id}
+                                            onClick={() => {
+                                                handleAction(datasetVersion.id)
+                                            }}
+                                        >
+                                            {t('Revert')}
+                                        </ButtonLink>
+                                    </WithCurrentAuth>
                                 ) : (
                                     ''
                                 ),

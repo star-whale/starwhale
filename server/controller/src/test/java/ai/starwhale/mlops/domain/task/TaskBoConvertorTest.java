@@ -26,7 +26,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ public class TaskBoConvertorTest {
                         "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":"
                                 + "[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],"
                                 + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
-                .startedTime(LocalDateTime.now())
+                .startedTime(new Date())
                 .taskUuid(UUID.randomUUID().toString())
                 .build();
         TaskEntity cmpTask = TaskEntity.builder()

@@ -150,6 +150,6 @@ def get_data_loader(
     from starwhale.core.dataset import model
 
     summary = model.Dataset.get_dataset(dataset_uri).summary()
-    include_user_raw = summary.include_user_raw
+    include_user_raw = summary.include_user_raw if summary else False
     _cls = UserRawDataLoader if include_user_raw else SWDSBinDataLoader
     return _cls(dataset_uri, start, end, logger or _logger)

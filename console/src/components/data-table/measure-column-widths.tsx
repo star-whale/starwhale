@@ -180,7 +180,7 @@ export default function MeasureColumnWidths({
             {columns.map((column, i) => {
                 return (
                     <MeasureColumn
-                        key={column.title + String(i)}
+                        key={`${column.title}-${String(i)}`}
                         column={column}
                         rows={rows}
                         isSelectable={isSelectable && i === 0}

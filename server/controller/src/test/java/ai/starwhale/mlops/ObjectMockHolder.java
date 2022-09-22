@@ -20,7 +20,6 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
@@ -67,15 +66,11 @@ public class ObjectMockHolder {
     }
 
     public static AgentConverter agentConverter() {
-        return new AgentConverter(jsonMapper(), localDateTimeConvertor());
-    }
-
-    public static LocalDateTimeConvertor localDateTimeConvertor() {
-        return new LocalDateTimeConvertor();
+        return new AgentConverter(jsonMapper());
     }
 
     public static TaskBoConverter taskBoConverter() {
-        return new TaskBoConverter(agentConverter(), localDateTimeConvertor());
+        return new TaskBoConverter(agentConverter());
     }
 
     public static StorageAccessService storageAccessService() {

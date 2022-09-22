@@ -45,6 +45,9 @@ const locales0 = {
     'dataset versions': {
         en: 'Dataset Versions',
     },
+    'Alias': {
+        en: 'Alias',
+    },
     'datasets': {
         en: 'Datasets',
     },
@@ -345,6 +348,9 @@ const locales0 = {
     'Change Password': {
         en: 'Change Password',
     },
+    'Get Token': {
+        en: 'Get Token',
+    },
     'Password Not Equal': {
         en: 'The passwords you entered do not match',
     },
@@ -437,6 +443,9 @@ const locales0 = {
     },
     'Files': {
         en: 'Files',
+    },
+    'Version ID': {
+        en: 'Version ID',
     },
     'Version Name': {
         en: 'Version Name',
@@ -636,6 +645,18 @@ const locales0 = {
     },
     'Exit Fullscreen': {
         en: 'Exit Fullscreen',
+    },
+    'Remove Project Success': {
+        en: 'Remove Project Success',
+    },
+    'Confirm Remove Project?': {
+        en: 'Confirm Remove Project? ',
+    },
+    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.': {
+        en: 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.',
+    },
+    'Image': {
+        en: 'Image',
     },
 }
 

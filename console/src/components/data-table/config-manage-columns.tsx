@@ -244,7 +244,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                     onClick={() => setIsOpen(!isOpen)}
                     shape={SHAPE.pill}
                     size={SIZE.compact}
-                    as='link'
+                    as='withIcon'
                     startEnhancer={() => (
                         <IconFont
                             type='setting'

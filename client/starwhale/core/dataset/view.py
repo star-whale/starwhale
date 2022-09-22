@@ -1,3 +1,4 @@
+import sys
 import typing as t
 from pathlib import Path
 
@@ -39,9 +40,7 @@ class DatasetTermView(BaseTermView):
 
     @BaseTermView._pager
     @BaseTermView._header
-    def history(
-        self, fullname: bool = False
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    def history(self, fullname: bool = False) -> t.List[t.Dict[str, t.Any]]:
         fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
         return self._print_history(
             title="Dataset History List",
@@ -54,7 +53,12 @@ class DatasetTermView(BaseTermView):
         self._print_info(self.dataset.info(), fullname=fullname)
 
     def summary(self) -> None:
-        console.print(Pretty(self.dataset.summary().asdict(), expand_all=True))
+        _summary = self.dataset.summary()
+        if _summary:
+            console.print(Pretty(_summary.asdict(), expand_all=True))
+        else:
+            console.print(":tea: not found dataset summary")
+            sys.exit(1)
 
     def _do_diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         r = self.dataset.diff(compare_uri)
@@ -147,6 +151,7 @@ class DatasetTermView(BaseTermView):
         return _data, _pager
 
     @classmethod
+    @BaseTermView._only_standalone
     def build(
         cls,
         workdir: str,

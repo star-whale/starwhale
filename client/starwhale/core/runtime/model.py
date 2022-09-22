@@ -16,7 +16,6 @@ from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale import __version__
 from starwhale.utils import (
     docker,
     console,
@@ -45,6 +44,7 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
 )
+from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
@@ -55,7 +55,7 @@ from starwhale.base.type import (
     RuntimeArtifactType,
     RuntimeLockFileType,
 )
-from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
@@ -406,13 +406,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self.tag.remove(tags, quiet)
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        _ok, _reason = move_dir(self.store.loc, self.store.recover_loc, force)
-        _ok2, _reason2 = True, ""
-        if self.store.snapshot_workdir.exists():
-            _ok2, _reason2 = move_dir(
-                self.store.snapshot_workdir, self.store.recover_snapshot_workdir, force
-            )
-        return _ok and _ok2, _reason + _reason2
+        return self._do_remove(force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support short version to recover, today only support full-version
@@ -431,11 +425,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-
+    ) -> t.List[t.Dict[str, t.Any]]:
         # TODO: time order
         _r = []
         for _bf in self.store.iter_bundle_history():
+            if not _bf.path.is_file():
+                continue
+
             _r.append(
                 dict(
                     version=_bf.version,
@@ -445,7 +441,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     tags=_bf.tags,
                 )
             )
-        return _r, {}
+        return _r
 
     def buildImpl(
         self,
@@ -650,7 +646,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["environment"].update(
             {
                 "lock": {
-                    "starwhale_version": __version__,
+                    "starwhale_version": STARWHALE_VERSION,
                     "system": platform.system(),
                     "shell": {
                         "python_env": sh_py_env,
@@ -731,6 +727,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         for _bf in RuntimeStorage.iter_all_bundles(
             project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
         ):
+            if not _bf.path.is_file():
+                continue
+
             # TODO: add more manifest info
             rs[_bf.name].append(
                 {
@@ -747,12 +746,15 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def quickstart_from_uri(
         cls,
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         uri: URI,
         force: bool = False,
         restore: bool = False,
     ) -> None:
+        workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
+
         if uri.instance_type == InstanceType.CLOUD:
             console.print(f":cloud: copy runtime from {uri} to local")
             _dest_project_uri = f"{STANDALONE_INSTANCE}/project/{DEFAULT_PROJECT}"
@@ -830,11 +832,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         interactive: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
+        ensure_dir(workdir)
         console.print(f":printer: render runtime.yaml @ {workdir}")
         python_version = get_python_version()
 
         sw_pkg = SW_PYPI_PKG_NAME
-        _swcli_version = __version__
+        _swcli_version = STARWHALE_VERSION
         if _swcli_version and _swcli_version != SW_DEV_DUMMY_VERSION:
             sw_pkg = f"{sw_pkg}=={_swcli_version}"
 
@@ -844,7 +847,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.print(
                 f":construction_worker: create {mode} isolated python environment..."
             )
-            ensure_dir(workdir)
             _id = create_python_env(
                 mode=mode,
                 name=name,
@@ -1062,7 +1064,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
         def _build(_manifest: t.Dict[str, t.Any]) -> None:
-            _tags = tags or []
+            _tags = list(tags or [])
             _platforms = platforms or []
             _dc_image = _manifest["configs"].get("docker", {}).get("image")
             if _dc_image:
@@ -1225,7 +1227,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 shutil.copyfile(str(_src), str(_dest))
 
 
-class CloudRuntime(CloudRequestMixed, Runtime):
+class CloudRuntime(CloudBundleModelMixin, Runtime):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
@@ -1241,5 +1243,5 @@ class CloudRuntime(CloudRequestMixed, Runtime):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")

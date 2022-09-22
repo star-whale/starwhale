@@ -61,10 +61,6 @@ export default function ModelLayout({ children }: IModelLayoutProps) {
                 value: model?.versionTag ?? '',
             },
             {
-                label: t('Model ID'),
-                value: model?.id ?? '',
-            },
-            {
                 label: t('Created'),
                 value: model?.createdTime && formatTimestampDateTime(model.createdTime),
             },

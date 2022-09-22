@@ -56,6 +56,7 @@ class JobTermView(BaseTermView):
     def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         return self._action_run_map[action](force)
 
+    @BaseTermView._only_standalone
     @BaseTermView._header
     def compare(self, job_uris: t.List[str]) -> None:
         if self.uri.instance_type != InstanceType.STANDALONE:

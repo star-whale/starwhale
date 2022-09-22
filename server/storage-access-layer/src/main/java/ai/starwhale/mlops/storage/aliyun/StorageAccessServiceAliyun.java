@@ -23,13 +23,19 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.OSSErrorCode;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
+import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.google.common.collect.Streams;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
 public class StorageAccessServiceAliyun implements StorageAccessService {
@@ -45,8 +51,15 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
-        var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
-        return new StorageObjectInfo(true, resp.getContentLength(), MetaHelper.mapToString(resp.getUserMetadata()));
+        try {
+            var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
+            return new StorageObjectInfo(true, resp.getContentLength(), MetaHelper.mapToString(resp.getUserMetadata()));
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                return new StorageObjectInfo(false, 0L, null);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -76,8 +89,22 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) throws IOException {
-        var resp = this.ossClient.listObjects(this.bucket, path);
-        return resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey);
+        Stream<String> files = Stream.empty();
+        try {
+            var req = new ListObjectsRequest(this.bucket).withPrefix(path);
+            ObjectListing resp;
+            do {
+                resp = this.ossClient.listObjects(req);
+                files = Streams.concat(files, resp.getObjectSummaries().stream().map(OSSObjectSummary::getKey));
+                req.setMarker(resp.getNextMarker());
+            } while (resp.isTruncated());
+            return files;
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                return files;
+            }
+            throw e;
+        }
     }
 
     @Override

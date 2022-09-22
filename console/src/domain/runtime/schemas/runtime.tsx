@@ -13,6 +13,7 @@ export interface IRuntimeDetailSchema {
     versionMeta?: string
     versionName?: string
     versionTag?: string
+    versionAlias?: string
     createdTime?: number
     files?: Array<IRuntimeFileSchema>
     id?: string

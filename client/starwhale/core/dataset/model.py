@@ -24,7 +24,7 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, copy_file, ensure_dir
+from starwhale.utils.fs import move_dir, copy_file, empty_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
@@ -44,7 +44,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Dataset: {self.uri}"
 
     @abstractmethod
-    def summary(self) -> DatasetSummary:
+    def summary(self) -> t.Optional[DatasetSummary]:
         raise NotImplementedError
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
@@ -122,8 +122,8 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         base_summary = self.summary()
         compare_summary = compare_ds.summary()
 
-        base_rows = base_summary.rows
-        compare_rows = compare_summary.rows
+        base_rows = base_summary.rows if base_summary else 0
+        compare_rows = compare_summary.rows if compare_summary else 0
         scan_end_rows = min(base_rows, compare_rows)
 
         base_tabular_ds = TabularDataset.from_uri(self.uri)
@@ -152,8 +152,8 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 "compare": compare_uri.object.version,
             },
             "summary": {
-                "base": base_summary.asdict(),
-                "compare": compare_summary.asdict(),
+                "base": base_summary.asdict() if base_summary else {},
+                "compare": compare_summary.asdict() if compare_summary else {},
             },
             "diff": {
                 "updated": diff_updated,
@@ -172,12 +172,15 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         _r = []
 
         for _bf in self.store.iter_bundle_history():
-            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
+            _manifest_path = _bf.path / DEFAULT_MANIFEST_NAME
+            if not _manifest_path.exists():
+                continue
 
+            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
             _r.append(
                 dict(
                     name=_manifest["name"],
@@ -189,11 +192,15 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 )
             )
 
-        return _r, {}
+        return _r
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove by tag
-        return move_dir(self.store.snapshot_workdir, self.store.recover_loc, force)
+        if force:
+            empty_dir(self.store.snapshot_workdir)
+            return True, ""
+        else:
+            return move_dir(self.store.snapshot_workdir, self.store.recover_loc, False)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         dest_path = (
@@ -204,9 +211,10 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
 
-    def summary(self) -> DatasetSummary:
+    def summary(self) -> t.Optional[DatasetSummary]:
         _manifest = self.store.manifest
-        return DatasetSummary(**_manifest.get("dataset_summary", {}))
+        _summary = _manifest.get("dataset_summary", {})
+        return DatasetSummary(**_summary) if _summary else None
 
     @classmethod
     def list(
@@ -348,7 +356,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self._manifest.update(
             {
                 "dataset_attr": swds_config.attr.asdict(),
-                "process": swds_config.process,
+                "handler": swds_config.handler,
                 "from": {
                     "version": append_from_version,
                     "append": append,
@@ -357,9 +365,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
         # TODO: add more import format support, current is module:class
-        logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
+        logger.info(f"[info:swds]try to import {swds_config.handler} @ {workdir}")
         _cls: t.Type[BaseBuildExecutor] = import_cls(
-            workdir, swds_config.process, BaseBuildExecutor
+            workdir, swds_config.handler, BaseBuildExecutor
         )
 
         with _cls(
@@ -375,7 +383,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             data_mime_type=swds_config.attr.data_mime_type,
         ) as _obj:
             console.print(
-                f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
+                f":ghost: import [red]{swds_config.handler}@{workdir.resolve()}[/] to make swds..."
             )
             _summary: DatasetSummary = _obj.make_swds()
             self._manifest["dataset_summary"] = _summary.asdict()
@@ -468,7 +476,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
 
-    def summary(self) -> DatasetSummary:
+    def summary(self) -> t.Optional[DatasetSummary]:
         r = self.do_http_request(
             f"/project/{self.uri.project}/{self.uri.object.typ}/{self.uri.object.name}",
             method=HTTPMethod.GET,
@@ -476,7 +484,8 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
             params={"versionUrl": self.uri.object.version},
         ).json()
         _manifest: t.Dict[str, t.Any] = yaml.safe_load(r["data"].get("versionMeta", {}))
-        return DatasetSummary(**_manifest.get("dataset_summary", {}))
+        _summary = _manifest.get("dataset_summary", {})
+        return DatasetSummary(**_summary) if _summary else None
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
         raise NoSupportError("no support build dataset in the cloud instance")

@@ -10,10 +10,12 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
 import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
-import _ from 'lodash'
 import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
 import { Panel } from 'baseui/accordion'
+import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
+import qs from 'qs'
+import { usePage } from '@/hooks/usePage'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -28,7 +30,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetInfo = useFetchDataset(projectId, datasetId)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
-
+    const { setDatasetVersion } = useDatasetVersion()
+    const [page] = usePage()
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
     const [t] = useTranslation()
@@ -45,21 +48,10 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     }, [dataset?.versionName, datasetInfo, setDataset, setDatasetLoading])
 
     useEffect(() => {
-        setDatasetLoading(datasetVersionInfo.isLoading)
-        if (datasetVersionInfo.isSuccess) {
-            if (datasetVersionInfo.data) {
-                setDataset(datasetVersionInfo.data)
-            }
-        } else if (datasetVersionInfo.isLoading) {
-            setDataset(undefined)
+        if (datasetVersionInfo.data) {
+            setDatasetVersion(datasetVersionInfo.data)
         }
-    }, [
-        datasetVersionInfo.data,
-        datasetVersionInfo.isLoading,
-        datasetVersionInfo.isSuccess,
-        setDataset,
-        setDatasetLoading,
-    ])
+    }, [datasetVersionInfo.data, setDatasetVersion])
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -154,7 +146,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         const item = navItems
             .slice()
             .reverse()
-            .find((item_) => _.startsWith(location.pathname, item_.path))
+            .find((item_) => (location.pathname ?? '').startsWith(item_.path ?? ''))
         const paths = item?.path?.split('/') ?? []
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
@@ -184,19 +176,25 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                     value={datasetVersionId}
                                     onChange={(v) =>
                                         history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}`
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                                page
+                                            )}`
                                         )
                                     }
                                 />
                             </div>
-                            <Button
-                                size='compact'
-                                kind='secondary'
-                                startEnhancer={() => <IconFont type='runtime' />}
-                                onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)}
-                            >
-                                {t('History')}
-                            </Button>
+                            {datasetVersionId && (
+                                <Button
+                                    size='compact'
+                                    as='withIcon'
+                                    startEnhancer={() => <IconFont type='runtime' />}
+                                    onClick={() =>
+                                        history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)
+                                    }
+                                >
+                                    {t('History')}
+                                </Button>
+                            )}
                         </div>
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>

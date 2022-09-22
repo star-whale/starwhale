@@ -25,6 +25,7 @@ import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { parseDecimal } from '@/utils'
+import { WithCurrentAuth } from '@/api/WithAuth'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -74,14 +75,15 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
-                mapDataToValue: (item: any) => item,
+                mapDataToValue: (item: any) => item.id,
                 // @ts-ignore
                 renderCell: (props: any) => {
-                    const item = props.value
+                    const { data } = props ?? {}
+                    if (!data) return <></>
 
                     return (
-                        <TextLink key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
-                            {`${item.modelName}-${item.id}`}
+                        <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
+                            {`${data.modelName}-${data.id}`}
                         </TextLink>
                     )
                 },
@@ -359,16 +361,18 @@ export default function EvaluationListCard() {
                     marginBottom: 0,
                 }}
                 extra={
-                    <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                        size={ButtonSize.compact}
-                        onClick={() => {
-                            history.push('new_job')
-                        }}
-                        isLoading={evaluationsInfo.isLoading}
-                    >
-                        {t('create')}
-                    </Button>
+                    <WithCurrentAuth id='evaluation.create'>
+                        <Button
+                            startEnhancer={<IconFont type='add' kind='white' />}
+                            size={ButtonSize.compact}
+                            onClick={() => {
+                                history.push('new_job')
+                            }}
+                            isLoading={evaluationsInfo.isLoading}
+                        >
+                            {t('create')}
+                        </Button>
+                    </WithCurrentAuth>
                 }
             >
                 <StoreProvider initState={{}}>

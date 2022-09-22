@@ -84,12 +84,16 @@ function ConfigViews(props: PropsT) {
                 onChange={(params) => {
                     const id = params.option?.id as string
                     if (id === ALLRUNS) {
-                        store.onCurrentViewColumnsChange(
-                            props.columns.map((v) => v.key),
-                            [],
-                            []
-                        )
-                        store.onCurrentViewFiltersChange([])
+                        useStore.setState({
+                            currentView: {
+                                filters: [],
+                                selectedIds: props.columns.map((v) => v.key),
+                                pinnedIds: [],
+                                sortedIds: [],
+                                sortBy: '',
+                                id: ALLRUNS,
+                            },
+                        })
                         return
                     }
 

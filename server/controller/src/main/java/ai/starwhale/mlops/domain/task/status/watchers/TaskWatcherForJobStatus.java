@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.task.status.watchers;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
@@ -30,6 +29,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -54,21 +54,17 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     final JobUpdateHelper jobUpdateHelper;
 
-    final LocalDateTimeConvertor localDateTimeConvertor;
-
     public TaskWatcherForJobStatus(
             StepHelper stepHelper,
             StepStatusMachine stepStatusMachine,
             StepMapper stepMapper,
             StepTrigger stepTrigger,
-            JobUpdateHelper jobUpdateHelper,
-            LocalDateTimeConvertor localDateTimeConvertor) {
+            JobUpdateHelper jobUpdateHelper) {
         this.stepHelper = stepHelper;
         this.stepStatusMachine = stepStatusMachine;
         this.stepMapper = stepMapper;
         this.stepTrigger = stepTrigger;
         this.jobUpdateHelper = jobUpdateHelper;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     @Override
@@ -104,14 +100,14 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
                 step.getId());
         step.setStatus(stepNewStatus);
         stepMapper.updateStatus(List.of(step.getId()), stepNewStatus);
-        long now = System.currentTimeMillis();
+        var now = new Date();
         if (stepStatusMachine.isFinal(stepNewStatus)) {
-            step.setFinishTime(now);
-            stepMapper.updateFinishedTime(step.getId(), localDateTimeConvertor.revert(now));
+            step.setFinishTime(now.getTime());
+            stepMapper.updateFinishedTime(step.getId(), now);
         }
         if (StepStatus.RUNNING == stepNewStatus) {
-            step.setStartTime(now);
-            stepMapper.updateStartedTime(step.getId(), localDateTimeConvertor.revert(now));
+            step.setStartTime(now.getTime());
+            stepMapper.updateStartedTime(step.getId(), now);
         }
     }
 

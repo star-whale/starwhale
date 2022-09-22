@@ -36,9 +36,7 @@ class RuntimeTermView(BaseTermView):
 
     @BaseTermView._pager
     @BaseTermView._header
-    def history(
-        self, fullname: bool = False
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    def history(self, fullname: bool = False) -> t.List[t.Dict[str, t.Any]]:
         fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
         return self._print_history(
             title="Runtime History", history=self.runtime.history(), fullname=fullname
@@ -49,9 +47,11 @@ class RuntimeTermView(BaseTermView):
         self._print_info(self.runtime.info(), fullname=fullname)
 
     @classmethod
+    @BaseTermView._only_standalone
     def activate(cls, path: str = "", uri: str = "") -> None:
         Runtime.activate(path, uri)
 
+    @BaseTermView._only_standalone
     def dockerize(
         self,
         tags: t.List[str],
@@ -71,6 +71,7 @@ class RuntimeTermView(BaseTermView):
         )
 
     @classmethod
+    @BaseTermView._only_standalone
     def lock(
         cls,
         target_dir: str,
@@ -94,6 +95,7 @@ class RuntimeTermView(BaseTermView):
         )
 
     @classmethod
+    @BaseTermView._only_standalone
     def build(
         cls,
         workdir: str,
@@ -128,6 +130,7 @@ class RuntimeTermView(BaseTermView):
             env_name=env_name,
         )
 
+    @BaseTermView._only_standalone
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> None:
         console.print(":oncoming_police_car: try to extract ...")
         path = self.runtime.extract(force, target)
@@ -149,9 +152,10 @@ class RuntimeTermView(BaseTermView):
         return _data, _pager
 
     @classmethod
+    @BaseTermView._only_standalone
     def quickstart_from_uri(
         cls,
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         uri: URI,
         force: bool = False,
@@ -167,6 +171,7 @@ class RuntimeTermView(BaseTermView):
         console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
+    @BaseTermView._only_standalone
     def quickstart_from_ishell(
         cls,
         workdir: t.Union[Path, str],
@@ -185,6 +190,7 @@ class RuntimeTermView(BaseTermView):
         console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
+    @BaseTermView._only_standalone
     def restore(cls, target: str) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)

@@ -34,7 +34,6 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
@@ -48,6 +47,7 @@ import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +72,7 @@ public class EvaluationServiceTest {
                 jobMapper = mock(JobMapper.class),
                 viewConfigMapper = mock(ViewConfigMapper.class),
                 new IdConvertor(),
-                new ViewConfigConvertor(new LocalDateTimeConvertor()),
+                new ViewConfigConvertor(),
                 jobConvertor = mock(JobConvertor.class),
                 new JobStatusMachine()
         );
@@ -85,6 +85,7 @@ public class EvaluationServiceTest {
                         .id(1L)
                         .configName("config")
                         .content("content1")
+                        .createdTime(new Date())
                         .build());
         var res = service.getViewConfig(
                 ConfigQuery.builder().projectUrl("1").name("config").build()
@@ -149,6 +150,7 @@ public class EvaluationServiceTest {
                             .createdTime(10L)
                             .stopTime(11L)
                             .owner(UserVo.builder().name("owner" + entity.getId()).build())
+                            .jobStatus(JobStatus.SUCCESS)
                             .build();
                 });
         var res = service.listEvaluationSummary(
@@ -167,7 +169,8 @@ public class EvaluationServiceTest {
                                         hasProperty("device", is("device1")),
                                         hasProperty("datasets", is("1,2,3")),
                                         hasProperty("duration", is(1L)),
-                                        hasProperty("owner", is("owner1"))
+                                        hasProperty("owner", is("owner1")),
+                                        hasProperty("jobStatus", is(JobStatus.SUCCESS))
                                 ))
                         )
                 )))

@@ -11,7 +11,6 @@ from loguru import logger
 from fs.walk import Walker
 from fs.tarfs import TarFS
 
-from starwhale import __version__
 from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
     LATEST_TAG,
@@ -22,8 +21,9 @@ from starwhale.consts import (
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
-from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
+from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file, extract_tar
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
@@ -63,7 +63,7 @@ class BaseBundle(metaclass=ABCMeta):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         raise NotImplementedError
 
     @classmethod
@@ -105,7 +105,6 @@ class BaseBundle(metaclass=ABCMeta):
             yaml_name = yaml_name or self.yaml_name
             self.buildImpl(workdir, yaml_name, **kw)
 
-    @abstractmethod
     def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
         raise NotImplementedError
 
@@ -118,7 +117,7 @@ class LocalStorageBundleMixin:
         self._manifest["name"] = self.name  # type: ignore
         self._manifest["build"] = dict(
             os=platform.system(),
-            sw_version=__version__,
+            sw_version=STARWHALE_VERSION,
         )
 
         # TODO: add signature for import files: model, config
@@ -164,6 +163,9 @@ class LocalStorageBundleMixin:
     def _get_bundle_info(self) -> t.Dict[str, t.Any]:
         _uri = self.uri  # type: ignore
         _store = self.store  # type: ignore
+
+        if not _store.bundle_path.exists():
+            return {}
 
         _manifest: t.Dict[str, t.Any] = {
             "uri": _uri.full_uri,
@@ -240,3 +242,23 @@ class LocalStorageBundleMixin:
         # Notice: if pass [] as exclude_dirs value, walker will failed
         _exclude = _exclude or None  # type: ignore
         return Walker(filter=_filter, exclude_dirs=_exclude)
+
+    def _do_remove(self, force: bool = False) -> t.Tuple[bool, str]:
+        from .store import BaseStorage
+
+        store: BaseStorage = self.store  # type: ignore
+
+        if force:
+            empty_dir(store.loc)
+            empty_dir(store.snapshot_workdir)
+            return True, ""
+        else:
+            _ok, _reason = move_dir(store.loc, store.recover_loc, False)
+            _ok2, _reason2 = True, ""
+            if store.snapshot_workdir.exists():
+                _ok2, _reason2 = move_dir(
+                    store.snapshot_workdir,
+                    store.recover_snapshot_workdir,
+                    False,
+                )
+            return _ok and _ok2, _reason + _reason2

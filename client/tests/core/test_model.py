@@ -106,11 +106,12 @@ class StandaloneModelTestCase(TestCase):
 
         model_uri = URI(name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
+        ensure_dir(sm.store.bundle_dir / f"xx{sm.store.bundle_type}")
         _info = sm.info()
 
-        assert len(_info["history"][0]) == 1
-        assert _info["history"][0][0]["name"] == name
-        assert _info["history"][0][0]["version"] == build_version
+        assert len(_info["history"]) == 1
+        assert _info["history"][0]["name"] == name
+        assert _info["history"][0]["version"] == build_version
 
         _history = sm.history()
         assert _info["history"] == _history
@@ -121,7 +122,7 @@ class StandaloneModelTestCase(TestCase):
 
         model_uri = URI(f"{name}/version/{build_version}", expected_type=URIType.MODEL)
         sd = StandaloneModel(model_uri)
-        _ok, _ = sd.remove(True)
+        _ok, _ = sd.remove(False)
         assert _ok
 
         _list, _ = StandaloneModel.list(URI(""))
@@ -140,6 +141,11 @@ class StandaloneModelTestCase(TestCase):
         ModelTermView(fname).recover()
         ModelTermView.list(show_removed=True)
         ModelTermView.list()
+
+        _ok, _ = sd.remove(True)
+        assert _ok
+        _list, _ = StandaloneModel.list(URI(""))
+        assert len(_list[name]) == 0
 
         ModelTermView.build(workdir, "self")
 
@@ -187,9 +193,12 @@ class StandaloneModelTestCase(TestCase):
         with self.assertRaises(Exception):
             default_handler._get_cls(Path(_model_data_dir))
 
+    @patch("starwhale.api._impl.data_store.atexit")
     @patch("starwhale.core.model.default_handler.StandaloneModel")
     @patch("starwhale.core.model.default_handler.import_cls")
-    def test_default_handler(self, m_import: MagicMock, m_model: MagicMock):
+    def test_default_handler(
+        self, m_import: MagicMock, m_model: MagicMock, m_atexit: MagicMock
+    ):
         from starwhale.core.model import default_handler
 
         class SimpleHandler(PipelineHandler):

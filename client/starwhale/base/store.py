@@ -228,3 +228,7 @@ class BaseStorage(metaclass=ABCMeta):
         with TarFS(str(fpath)) as tar:
             with tar.open(DEFAULT_MANIFEST_NAME) as f:
                 return yaml.safe_load(f)
+
+    @property
+    def recover_snapshot_workdir(self) -> Path:
+        return self._get_recover_snapshot_workdir_for_bundle()

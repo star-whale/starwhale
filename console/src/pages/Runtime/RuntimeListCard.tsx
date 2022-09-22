@@ -21,17 +21,30 @@ export default function RuntimeListCard() {
         <Card title={t('Runtimes')}>
             <Table
                 isLoading={runtimesInfo.isLoading}
-                columns={[t('sth name', [t('Runtime')]), t('Runtime Version'), t('Owner'), t('Created'), t('Action')]}
+                columns={[
+                    t('sth name', [t('Runtime')]),
+                    t('Runtime Version'),
+                    t('Alias'),
+                    t('Image'),
+                    t('Owner'),
+                    t('Created'),
+                    t('Action'),
+                ]}
                 data={
                     runtimesInfo.data?.list.map((runtime) => {
                         return [
-                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
+                            <TextLink
+                                key={runtime.id}
+                                to={`/projects/${projectId}/runtimes/${runtime.id}/versions/${runtime.version?.id}/meta`}
+                            >
                                 {runtime.name}
                             </TextLink>,
                             runtime.version?.name ?? '-',
+                            runtime.version?.alias ?? '-',
+                            runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
-                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}/versions`}>
+                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
                                 {t('Version History')}
                             </TextLink>,
                         ]

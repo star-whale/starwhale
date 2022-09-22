@@ -6,6 +6,6 @@ model:
   - models/vocab.i
 
 run:
-  ppl: tcan.ppl:TextClassificationHandler
+  handler: tcan.evaluator:TextClassificationHandler
 
 desc: TextClassification by pytorch

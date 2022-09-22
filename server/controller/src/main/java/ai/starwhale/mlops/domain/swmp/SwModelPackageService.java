@@ -22,7 +22,6 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageInfoVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
@@ -92,9 +91,6 @@ public class SwModelPackageService {
 
     @Resource
     private IdConvertor idConvertor;
-
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Resource
     private VersionAliasConvertor versionAliasConvertor;
@@ -229,7 +225,7 @@ public class SwModelPackageService {
                     .versionTag(version.getVersionTag())
                     .versionMeta(version.getVersionMeta())
                     .manifest(version.getManifest())
-                    .createdTime(localDateTimeConvertor.convert(version.getCreatedTime()))
+                    .createdTime(version.getCreatedTime().getTime())
                     .files(collect)
                     .build();
 

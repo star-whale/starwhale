@@ -10,21 +10,21 @@ export default function DatasetVersionOverview() {
 
     const items = [
         {
-            label: t('Version Full Name'),
+            label: t('Version ID'),
+            value: dataset?.id ?? '-',
+        },
+        {
+            label: t('sth name', [t('Dataset')]),
             value: dataset?.name ?? '-',
         },
         {
-            label: t('Aliases'),
-            value: dataset?.versionTag ?? '-',
+            label: t('Version Name'),
+            value: dataset?.versionName ?? '-',
         },
-        // {
-        //     label: t('Size'),
-        //     value: dataset?.name ?? '-',
-        // },
-        // {
-        //     label: t('Owner'),
-        //     value: job?.owner?.name ?? '-',
-        // },
+        {
+            label: t('Aliases'),
+            value: dataset?.versionAlias ?? '-',
+        },
         {
             label: t('Created At'),
             value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),

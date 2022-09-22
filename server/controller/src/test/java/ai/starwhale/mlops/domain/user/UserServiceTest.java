@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.user;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -35,6 +36,7 @@ import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
 import ai.starwhale.mlops.domain.project.ProjectManager;
@@ -118,7 +120,7 @@ public class UserServiceTest {
         SaltGenerator saltGenerator = mock(SaltGenerator.class);
         given(saltGenerator.salt()).willReturn("salt");
         service = new UserService(userMapper, roleMapper, projectMapper, projectRoleMapper, projectManager,
-                userConvertor, roleConvertor, userRoleConvertor, systemRoleConvertor, saltGenerator);
+                new IdConvertor(), userConvertor, roleConvertor, userRoleConvertor, systemRoleConvertor, saltGenerator);
 
         User current = User.builder().id(1L).name("current").active(true).build();
         var token = new UsernamePasswordAuthenticationToken(current, null);
@@ -143,12 +145,32 @@ public class UserServiceTest {
 
     @Test
     public void testCurrentUser() {
+        given(projectRoleMapper.listUserRoles(same(1L), isNull()))
+                .willReturn(List.of(
+                        ProjectRoleEntity.builder()
+                                .project(ProjectEntity.builder().id(0L).build())
+                                .role(RoleEntity.builder().roleCode("OWNER").build())
+                                .build(),
+                        ProjectRoleEntity.builder()
+                                .project(ProjectEntity.builder().id(1L).build())
+                                .role(RoleEntity.builder().roleCode("MAINTAINER").build())
+                                .build(),
+                        ProjectRoleEntity.builder()
+                                .project(ProjectEntity.builder().id(2L).build())
+                                .role(RoleEntity.builder().roleCode("GUEST").build())
+                                .build()
+                ));
         var res = service.currentUser();
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("id", is("1")),
                 hasProperty("name", is("current")),
-                hasProperty("isEnabled", is(true))
+                hasProperty("isEnabled", is(true)),
+                hasProperty("systemRole", is("OWNER")),
+                hasProperty("projectRoles", allOf(
+                        hasEntry("1", "MAINTAINER"),
+                        hasEntry("2", "GUEST")
+                ))
         ));
     }
 

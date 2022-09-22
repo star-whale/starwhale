@@ -33,7 +33,7 @@ sw:
       host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:/mnt/data}
       job-template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
   storage:
-    type: ${SW_STORAGE_TYPE:s3}
+    type: ${SW_STORAGE_TYPE:minio}
     path-prefix: ${SW_STORAGE_PREFIX:starwhale}
     fs-root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
     s3-config:
@@ -63,7 +63,8 @@ spring:
   datasource:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true
+    # timezone setting: https://jira.mariadb.org/browse/CONJ-433
+    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
     username: ${SW_METADATA_STORAGE_USER:starwhale}
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
   flyway:

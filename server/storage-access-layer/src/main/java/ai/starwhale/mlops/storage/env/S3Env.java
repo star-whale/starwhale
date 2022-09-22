@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.env;
 
 /**
  * holds s3 env keys
  */
-public class S3Env extends FileStorageEnv {
+public class S3Env extends StorageEnv {
 
     public static final String ENV_BUCKET = "SW_S3_BUCKET";
 
     public static final String ENV_SECRET_KEY = "SW_S3_SECRET";
 
-    public static final String ENV_SECRET_ID = "SW_S3_ACCESS_KEY";
+    public static final String ENV_ACCESS_KEY = "SW_S3_ACCESS_KEY";
 
     public static final String ENV_REGION = "SW_S3_REGION";
 
     public static final String ENV_ENDPOINT = "SW_S3_ENDPOINT";
 
     public S3Env() {
-        super(FileSystemEnvType.S3);
+        super(StorageEnvType.S3);
     }
 
-    public S3Env(FileSystemEnvType t) {
+    public S3Env(StorageEnvType t) {
         super(t);
     }
 
@@ -50,7 +50,7 @@ public class S3Env extends FileStorageEnv {
     }
 
     public S3Env setAccessKey(String accessKey) {
-        this.add(ENV_SECRET_ID, accessKey);
+        this.add(ENV_ACCESS_KEY, accessKey);
         return this;
     }
 

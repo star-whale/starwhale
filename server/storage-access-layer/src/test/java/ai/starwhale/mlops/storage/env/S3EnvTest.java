@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.env;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 public class S3EnvTest {
+
     @Test
     public void testSet() {
         var s3Env = new S3Env();
-        assertThat(s3Env.getEnvType(), is(FileStorageEnv.FileSystemEnvType.S3));
+        assertThat(s3Env.getEnvType(), is(StorageEnvType.S3));
         var envValue = randomString();
         s3Env.setEndPoint(envValue);
         assertThat(mapContains(s3Env.getEnvs(), S3Env.ENV_ENDPOINT, envValue), is(true));
@@ -38,7 +40,7 @@ public class S3EnvTest {
 
         envValue = randomString();
         s3Env.setAccessKey(envValue);
-        assertThat(mapContains(s3Env.getEnvs(), S3Env.ENV_SECRET_ID, envValue), is(true));
+        assertThat(mapContains(s3Env.getEnvs(), S3Env.ENV_ACCESS_KEY, envValue), is(true));
 
         envValue = randomString();
         s3Env.setSecret(envValue);

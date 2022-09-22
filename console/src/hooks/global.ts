@@ -1,6 +1,6 @@
 import { createGlobalState } from 'react-hooks-global-state'
 import { IUserSchema } from '@user/schemas/user'
-import { IProjectSchema, IProjectRoleSchema } from '@project/schemas/project'
+import { IProjectSchema } from '@project/schemas/project'
 import { IModelDetailSchema } from '@model/schemas/model'
 import { IModelVersionDetailSchema } from '@model/schemas/modelVersion'
 import { IDatasetDetailSchema } from '@/domain/dataset/schemas/dataset'
@@ -8,6 +8,7 @@ import { IDatasetVersionDetailSchema } from '@/domain/dataset/schemas/datasetVer
 import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { ThemeType } from '@/theme'
+import { Role } from '@/api/const'
 import { IRuntimeDetailSchema } from '../domain/runtime/schemas/runtime'
 import { IRuntimeVersionDetailSchema } from '../domain/runtime/schemas/runtimeVersion'
 
@@ -15,7 +16,6 @@ const initialState = {
     token: undefined as string | undefined,
     themeType: 'deep' as ThemeType,
     currentUser: undefined as IUserSchema | undefined,
-    currentUserRoles: undefined as IProjectRoleSchema[] | undefined,
     user: undefined as IUserSchema | undefined,
     userLoading: false,
     project: undefined as IProjectSchema | undefined,
@@ -37,6 +37,7 @@ const initialState = {
     task: undefined as ITaskDetailSchema | undefined,
     taskLoading: false,
     drawerExpanded: false,
+    role: Role.NONE as Role,
 }
 
 const { useGlobalState } = createGlobalState(initialState)

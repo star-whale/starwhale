@@ -11,6 +11,7 @@ import Button from '@/components/Button'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -25,6 +26,7 @@ export default function RuntimeVersionListCard() {
         },
         [runtimesInfo, projectId, runtimeId, t]
     )
+
     return (
         <Card title={t('runtime versions')}>
             <Table
@@ -61,9 +63,16 @@ export default function RuntimeVersionListCard() {
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             runtime.owner && <User user={runtime.owner} />,
                             i ? (
-                                <Button size='mini' as='link' key={runtime.id} onClick={() => handleRevert(runtime)}>
-                                    {t('Revert')}
-                                </Button>
+                                <WithCurrentAuth id='runtime.version.revert'>
+                                    <Button
+                                        size='mini'
+                                        as='link'
+                                        key={runtime.id}
+                                        onClick={() => handleRevert(runtime)}
+                                    >
+                                        {t('Revert')}
+                                    </Button>
+                                </WithCurrentAuth>
                             ) : (
                                 ''
                             ),

@@ -1,5 +1,5 @@
 name: speech_commands_validation
-process: sc.dataset:SpeechCommandsBuildExecutor
+handler: sc.dataset:SpeechCommandsBuildExecutor
 desc: SpeechCommands data and label test dataset
 attr:
   alignment_size: 4k

@@ -29,12 +29,15 @@ export default function RuntimeSelector({ projectId, value, onChange, overrides,
 
     useEffect(() => {
         if (runtimesInfo.isSuccess) {
-            setOptions(
+            const ops =
                 runtimesInfo.data?.list.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []
-            )
+            setOptions(ops)
+            // if (!value) {
+            //     onChange?.(ops[0]?.id)
+            // }
         } else {
             setOptions([])
         }

@@ -39,16 +39,19 @@ export default function ModelVersionSelector({
 
     useEffect(() => {
         if (modelVersionsInfo.isSuccess) {
-            setOptions(
+            const ops =
                 modelVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []
-            )
+            setOptions(ops)
+            if (!value) {
+                onChange?.(ops[0]?.id)
+            }
         } else {
             setOptions([])
         }
-    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess])
+    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess, value, onChange])
 
     return (
         <Select

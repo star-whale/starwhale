@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.objectstore;
+package ai.starwhale.mlops.storage.env;
 
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv.FileSystemEnvType;
+import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -27,16 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 @Slf4j
-public class StorageAuths {
+public class UserStorageAuthEnv {
 
-    Map<String, FileStorageEnv> envMap = new HashMap<>();
+    Map<String, StorageEnv> envMap = new HashMap<>();
 
     static final String NAME_DEFAULT = "";
 
     static final Pattern LINE_PATTERN = Pattern.compile(
             "^(USER\\.(S3|ALIYUN|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w*)$");
 
-    public StorageAuths(String authsText) {
+    public UserStorageAuthEnv(String authsText) {
         String[] lines = authsText.split("\n");
         Stream.of(lines).forEach(line -> {
             Matcher matcher = LINE_PATTERN.matcher(line);
@@ -51,21 +50,21 @@ public class StorageAuths {
             if (!StringUtils.hasText(name)) {
                 name = NAME_DEFAULT;
             }
-            FileStorageEnv fileStorageEnv = envMap.computeIfAbsent(name,
-                    k -> new FileStorageEnv(FileSystemEnvType.valueOf(type)));
-            fileStorageEnv.add(envName, envValue);
+            StorageEnv storageEnv = envMap.computeIfAbsent(name,
+                    k -> new StorageEnv(StorageEnvType.valueOf(type)));
+            storageEnv.add(envName, envValue);
         });
 
     }
 
-    public FileStorageEnv getEnv(String authName) {
+    public StorageEnv getEnv(String authName) {
         if (!StringUtils.hasText(authName)) {
             return envMap.get(NAME_DEFAULT);
         }
         return envMap.get(authName);
     }
 
-    public Map<String, FileStorageEnv> allEnvs() {
+    public Map<String, StorageEnv> allEnvs() {
         return envMap;
     }
 

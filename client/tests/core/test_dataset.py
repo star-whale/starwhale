@@ -74,7 +74,7 @@ class StandaloneDatasetTestCase(TestCase):
 
         assert m_import.call_count == 1
         assert m_import.call_args[0][0] == Path(workdir)
-        assert m_import.call_args[0][1] == "mnist.process:DataSetProcessExecutor"
+        assert m_import.call_args[0][1] == "mnist.dataset:DatasetProcessExecutor"
 
         assert m_cls.call_count == 1
         assert m_cls.call_args[1]["alignment_bytes_size"] == 4096
@@ -99,10 +99,11 @@ class StandaloneDatasetTestCase(TestCase):
 
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
+        ensure_dir(sd.store.bundle_dir / sd.store.bundle_type)
         _info = sd.info()
-        assert len(_info["history"][0]) == 1
-        assert _info["history"][0][0]["name"] == name
-        assert _info["history"][0][0]["version"] == build_version
+        assert len(_info["history"]) == 1
+        assert _info["history"][0]["name"] == name
+        assert _info["history"][0]["version"] == build_version
 
         _history = sd.history()
         assert _info["history"] == _history
@@ -115,7 +116,7 @@ class StandaloneDatasetTestCase(TestCase):
             f"mnist/version/{build_version}", expected_type=URIType.DATASET
         )
         sd = StandaloneDataset(dataset_uri)
-        _ok, _ = sd.remove(True)
+        _ok, _ = sd.remove(False)
         assert _ok
 
         _list, _ = StandaloneDataset.list(URI(""))
@@ -133,6 +134,10 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(fname).remove()
         DatasetTermView(fname).recover()
         DatasetTermView.list()
+
+        sd.remove(True)
+        _list, _ = StandaloneDataset.list(URI(""))
+        assert len(_list[name]) == 0
 
         DatasetTermView.build(workdir, "self")
 

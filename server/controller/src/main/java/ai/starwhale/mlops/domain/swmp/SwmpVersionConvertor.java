@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swmp;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -31,14 +30,12 @@ public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEnti
 
     private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
-    private final LocalDateTimeConvertor localDateTimeConvertor;
     private final VersionAliasConvertor versionAliasConvertor;
 
     public SwmpVersionConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
-            LocalDateTimeConvertor localDateTimeConvertor, VersionAliasConvertor versionAliasConvertor) {
+            VersionAliasConvertor versionAliasConvertor) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
@@ -53,7 +50,7 @@ public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEnti
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
                 .manifest(entity.getManifest())
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

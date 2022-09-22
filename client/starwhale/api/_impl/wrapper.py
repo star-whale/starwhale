@@ -1,4 +1,3 @@
-import os
 import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
@@ -6,7 +5,6 @@ from typing import Any, Dict, List, Union, Iterator, Optional
 from loguru import logger
 
 from starwhale.consts import VERSION_PREFIX_CNT
-from starwhale.consts.env import SWEnv
 
 from . import data_store
 
@@ -47,20 +45,18 @@ class Logger:
 
 
 class Evaluation(Logger):
-    def __init__(self, eval_id: str = "", project: str = "", instance: str = ""):
-        eval_id = eval_id or os.getenv(SWEnv.eval_version, "")
+    def __init__(self, eval_id: str, project: str, instance: str = ""):
         if not eval_id:
             raise RuntimeError("eval id should not be None")
         if re.match(r"^[A-Za-z0-9-_]+$", eval_id) is None:
             raise RuntimeError(
                 f"invalid eval id {eval_id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
             )
+        if not project:
+            raise RuntimeError("project is not set")
+
         self.eval_id = eval_id
-
-        self.project = project or os.getenv(SWEnv.project, "")
-        if not self.project:
-            raise RuntimeError(f"{SWEnv.project} is not set")
-
+        self.project = project
         self._results_table_name = self._get_datastore_table_name("results")
         self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])
@@ -117,15 +113,15 @@ class Evaluation(Logger):
 
 
 class Dataset(Logger):
-    def __init__(self, dataset_id: str, project: str = "") -> None:
+    def __init__(self, dataset_id: str, project: str) -> None:
         if not dataset_id:
             raise RuntimeError("id should not be None")
 
-        self.dataset_id = dataset_id
-        self.project = project or os.getenv(SWEnv.project)
-        if not self.project:
+        if not project:
             raise RuntimeError("project is not set")
 
+        self.dataset_id = dataset_id
+        self.project = project
         self._meta_table_name = f"project/{self.project}/dataset/{self.dataset_id}/meta"
         self._data_store = data_store.get_data_store()
         self._init_writers([self._meta_table_name])

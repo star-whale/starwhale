@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage.s3;
 
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.storage.s3.BotoS3Config;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 

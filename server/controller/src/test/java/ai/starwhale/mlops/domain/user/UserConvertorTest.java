@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +36,7 @@ public class UserConvertorTest {
     @BeforeEach
     public void setUp() {
         IdConvertor idConvertor = new IdConvertor();
-        LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
-        userConvertor = new UserConvertor(idConvertor, localDateTimeConvertor);
+        userConvertor = new UserConvertor(idConvertor);
     }
 
     @Test

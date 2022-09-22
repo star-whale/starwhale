@@ -16,16 +16,26 @@
 
 package ai.starwhale.mlops.common;
 
-import java.time.LocalDateTime;
+import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public class BaseEntity {
+    protected static final Date defaultDate = new Date(-1);
 
     private String modifyUser;
     private String createUser;
 
-    private LocalDateTime createdTime;
+    @Builder.Default
+    private Date createdTime = defaultDate;
 
-    private LocalDateTime modifiedTime;
+    @Builder.Default
+    private Date modifiedTime = defaultDate;
 }

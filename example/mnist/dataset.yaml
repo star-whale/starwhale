@@ -3,13 +3,11 @@ name: mnist
 data_dir: data
 data_filter: "t10k-image*"
 label_filter: "t10k-label*"
-process: mnist.process:DataSetProcessExecutor
-#process: mnist.process:RawDataSetProcessExecutor
-#process: mnist.process:LinkRawDataSetProcessExecutor
+handler: mnist.dataset:DatasetProcessExecutor
+#handler: mnist.dataset:RawDatasetProcessExecutor
+#handler: mnist.dataset:LinkRawDatasetProcessExecutor
 
 desc: MNIST data and label test dataset
-tag:
-  - bin
 
 attr:
   alignment_size: 1k

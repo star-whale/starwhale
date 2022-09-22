@@ -1,32 +1,27 @@
 import React, { useEffect, useRef } from 'react'
-import { fetchCurrentUserRoles } from '@user/services/user'
-import { useQuery } from 'react-query'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
 import axios from 'axios'
 import { toaster } from 'baseui/toast'
 import { getErrMsg, setToken } from '@/api'
 import { useLocation } from 'react-router-dom'
 import useTranslation from '@/hooks/useTranslation'
-import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { useFirstRender } from '@/hooks/useFirstRender'
 import { useProject } from '@project/hooks/useProject'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import qs from 'qs'
+import { useUserRoles } from '@/domain/user/hooks/useUserRoles'
+import { useProjectRole } from '../domain/project/hooks/useProjectRole'
 
 export default function ApiHeader() {
     const location = useLocation()
     const errMsgExpireTimeSeconds = 5
     const lastErrMsgRef = useRef<Record<string, number>>({})
     const lastLocationPathRef = useRef(location.pathname)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const { currentUser } = useCurrentUser()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const [, setCurrentUserRoles] = useCurrentUserRoles()
-    const userRoles = useQuery('currentUserRoles', () => fetchCurrentUserRoles(), { enabled: false })
     const [t] = useTranslation()
     const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(\d*)\/?/)?.[1], [location])
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
+    const { projectRole } = useUserRoles(projectId)
+    const { setRole } = useProjectRole()
 
     useFirstRender(() => {
         // @ts-ignore
@@ -103,13 +98,6 @@ export default function ApiHeader() {
     })
 
     useEffect(() => {
-        if (currentUser) {
-            userRoles.refetch()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser])
-
-    useEffect(() => {
         if (lastLocationPathRef.current !== location.pathname) {
             lastErrMsgRef.current = {}
         }
@@ -117,16 +105,16 @@ export default function ApiHeader() {
     }, [location.pathname])
 
     useEffect(() => {
-        if (userRoles.data) {
-            setCurrentUserRoles(userRoles.data)
-        }
-    }, [userRoles.data, setCurrentUserRoles])
-
-    useEffect(() => {
         if (projectInfo.data) {
             setProject(projectInfo.data)
         }
     }, [projectInfo.data, setProject, projectId])
+
+    useEffect(() => {
+        if (projectRole) {
+            setRole(projectRole)
+        }
+    }, [projectRole, setRole])
 
     return <></>
 }

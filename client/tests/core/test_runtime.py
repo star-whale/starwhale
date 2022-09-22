@@ -157,11 +157,11 @@ class StandaloneRuntimeTestCase(TestCase):
         name = "rttest"
         version = "112233"
         cloud_uri = URI(f"http://0.0.0.0:80/project/1/runtime/{name}/version/{version}")
-        ensure_dir(workdir / ".extract")
+        extract_dir = workdir / ".extract"
+        ensure_dir(extract_dir)
 
         runtime_config = self.get_runtime_config()
         runtime_config["name"] = name
-        extract_dir = workdir / ".extract"
         ensure_file(
             extract_dir / DefaultYAMLName.RUNTIME,
             content=yaml.safe_dump(runtime_config),
@@ -319,11 +319,12 @@ class StandaloneRuntimeTestCase(TestCase):
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
+        ensure_dir(sr.store.bundle_dir / f"xx{sr.store.bundle_type}")
         info = sr.info()
         assert info["project"] == "self"
         assert "version" not in info
-        assert len(info["history"][0]) == 1
-        assert info["history"][0][0]["version"] == build_version
+        assert len(info["history"]) == 1
+        assert info["history"][0]["version"] == build_version
 
         uri = URI(f"{name}/version/{build_version[:6]}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -414,6 +415,14 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(swrt_path)
         assert not os.path.exists(recover_snapshot_path)
         assert os.path.exists(swrt_snapshot_path)
+
+        rtv = RuntimeTermView(f"{name}/version/{build_version}")
+        ok, _ = rtv.remove(True)
+        assert ok
+        assert not os.path.exists(recover_path)
+        assert not os.path.exists(swrt_path)
+        assert not os.path.exists(recover_snapshot_path)
+        assert not os.path.exists(swrt_snapshot_path)
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.is_venv")
@@ -872,7 +881,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert f"--file {dockerfile_path}" in build_cmd
 
         RuntimeTermView(f"{name}/version/{version}").dockerize(
-            tags=[],
+            tags=("t1", "t2", "t3"),  # type: ignore
             push=False,
             platforms=[SupportArch.ARM64],
             dry_run=False,

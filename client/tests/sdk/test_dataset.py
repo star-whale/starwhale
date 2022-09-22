@@ -8,8 +8,8 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale import Link, MIMEType, UserRawBuildExecutor
 from starwhale.utils.fs import blake2b_file
-from starwhale.api.dataset import Link, MIMEType, UserRawBuildExecutor
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
     Text,
@@ -317,3 +317,8 @@ class TestDatasetType(TestCase):
 
         with self.assertRaises(NoSupportError):
             BaseArtifact.reflect(b"", data_type={"type": 1})
+
+        link_audio = BaseArtifact.reflect(
+            b"link", data_type={"type": "link", "data_type": {"type": "audio"}}
+        )
+        assert isinstance(link_audio, Audio)

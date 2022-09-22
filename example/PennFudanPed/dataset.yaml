@@ -1,5 +1,5 @@
 name: pfp
-process: pfp.dataset:PFPDatasetBuildExecutor
+handler: pfp.dataset:PFPDatasetBuildExecutor
 
 desc: PennFudanPed data and label test dataset
 attr:

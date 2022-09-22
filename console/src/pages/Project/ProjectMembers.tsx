@@ -17,6 +17,7 @@ import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import MemberAddForm from '@project/components/MemberAddForm'
 import { ConfirmButton } from '@/components/Modal/confirm'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ProjectMembers() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -36,15 +37,17 @@ export default function ProjectMembers() {
         <Card
             title={t('Manage Project Members')}
             extra={
-                <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
-                    size={ButtonSize.compact}
-                    onClick={() => {
-                        setShowAddMember(true)
-                    }}
-                >
-                    {t('Add Project Member')}
-                </Button>
+                <WithCurrentAuth id='member.create'>
+                    <Button
+                        startEnhancer={<IconFont type='add' kind='white' />}
+                        size={ButtonSize.compact}
+                        onClick={() => {
+                            setShowAddMember(true)
+                        }}
+                    >
+                        {t('Add Project Member')}
+                    </Button>
+                </WithCurrentAuth>
             }
         >
             <div className={css({ marginBottom: '20px', width: '280px' })}>
@@ -61,28 +64,40 @@ export default function ProjectMembers() {
                     data.map(({ id, user, role }) => [
                         user.name,
                         <div style={{ maxWidth: '200px', padding: '5px 0 5px 0' }} key={id}>
-                            <RoleSelector
-                                value={role.id}
-                                onChange={async (roleId) => {
-                                    await changeProjectRole(projectId, id, roleId)
-                                    toaster.positive(t('Change project role success'), { autoHideDuration: 1000 })
-                                    await members.refetch()
-                                }}
-                            />
+                            <WithCurrentAuth id='member.update'>
+                                {(bool: boolean) =>
+                                    bool ? (
+                                        <RoleSelector
+                                            value={role.id}
+                                            onChange={async (roleId) => {
+                                                await changeProjectRole(projectId, id, roleId)
+                                                toaster.positive(t('Change project role success'), {
+                                                    autoHideDuration: 1000,
+                                                })
+                                                await members.refetch()
+                                            }}
+                                        />
+                                    ) : (
+                                        role.name
+                                    )
+                                }
+                            </WithCurrentAuth>
                         </div>,
                         user.createdTime && formatTimestampDateTime(user.createdTime),
-                        <ConfirmButton
-                            as='link'
-                            key={id}
-                            title={t('Remove Project Role Confirm')}
-                            onClick={async () => {
-                                await removeProjectRole(projectId, id)
-                                toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
-                                await members.refetch()
-                            }}
-                        >
-                            {t('Remove Project Member')}
-                        </ConfirmButton>,
+                        <WithCurrentAuth id='member.delete' key={id}>
+                            <ConfirmButton
+                                as='link'
+                                key={id}
+                                title={t('Remove Project Role Confirm')}
+                                onClick={async () => {
+                                    await removeProjectRole(projectId, id)
+                                    toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
+                                    await members.refetch()
+                                }}
+                            >
+                                {t('Remove Project Member')}
+                            </ConfirmButton>
+                        </WithCurrentAuth>,
                     ]) ?? []
                 }
             />

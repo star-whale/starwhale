@@ -6,9 +6,7 @@ from PIL import Image as PILImage
 from pycocotools.coco import COCO
 from torchvision.transforms import functional
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.dataset import Image
+from starwhale import Image, Context, PipelineHandler
 
 from .model import pretrained_model
 from .utils import get_model_path
@@ -19,6 +17,7 @@ class MaskRCnn(PipelineHandler):
     def __init__(self, context: Context) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
+        self.iou_types = ["bbox", "segm"]
         super().__init__(context=context)
 
     @torch.no_grad()
@@ -26,7 +25,14 @@ class MaskRCnn(PipelineHandler):
         _img = PILImage.open(io.BytesIO(img.to_bytes())).convert("RGB")
         _tensor = functional.to_tensor(_img).to(self.device)
         output = self.model(torch.stack([_tensor]))
-        return index, output[0]
+        return index, self._post(index, output[0])
+
+    def _post(self, index: int, pred: t.Dict[str, torch.Tensor]) -> t.Dict[str, t.Any]:
+        output = {}
+        pred = {k: v.cpu() for k, v in pred.items()}
+        for typ in self.iou_types:
+            output[typ] = CocoEvaluator.prepare_predictions({index: pred}, typ)
+        return output
 
     def cmp(self, ppl_result):
         pred_results, annotations = [], []
@@ -34,7 +40,7 @@ class MaskRCnn(PipelineHandler):
             annotations.append(_data["annotations"])
             pred_results.append(_data["result"])
 
-        evaluator = make_coco_evaluator(annotations, iou_types=["bbox", "segm"])
+        evaluator = make_coco_evaluator(annotations, iou_types=self.iou_types)
         for index, pred in pred_results:
             evaluator.update({index: pred})
 

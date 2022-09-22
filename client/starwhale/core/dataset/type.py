@@ -165,6 +165,7 @@ class ArtifactType(Enum):
     Video = "video"
     Audio = "audio"
     Text = "text"
+    Link = "link"
 
 
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
@@ -213,6 +214,8 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             return Audio(raw_data, mime_type=mime_type, shape=shape)
         elif not dtype or dtype == ArtifactType.Binary.value:
             return Binary(raw_data)
+        elif dtype == ArtifactType.Link.value:
+            return cls.reflect(raw_data, data_type["data_type"])
         else:
             raise NoSupportError(f"Artifact reflect error: {data_type}")
 
@@ -436,7 +439,7 @@ class Link(ASDictMixin):
         data_type: t.Optional[BaseArtifact] = None,
         with_local_fs_data: bool = False,
     ) -> None:
-        self.type = "link"
+        self.type = ArtifactType.Link
         self.uri = uri.strip()
         self.offset = offset
         self.size = size
@@ -514,13 +517,13 @@ class DatasetAttr(ASDictMixin):
         return super().asdict(ignore_keys=ignore_keys or ["kw"])
 
 
-# TODO: abstract base class from DataSetConfig and ModelConfig
+# TODO: abstract base class from DatasetConfig and ModelConfig
 # TODO: use attr to tune code
 class DatasetConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
-        process: str,
+        handler: str,
         runtime: str = "",
         pkg_data: t.List[str] = [],
         exclude_pkg_data: t.List[str] = [],
@@ -531,7 +534,7 @@ class DatasetConfig(ASDictMixin):
         **kw: t.Any,
     ) -> None:
         self.name = name
-        self.process = process
+        self.handler = handler
         self.tag = tag
         self.desc = desc
         self.version = version
@@ -544,15 +547,15 @@ class DatasetConfig(ASDictMixin):
         self._validator()
 
     def _validator(self) -> None:
-        if ":" not in self.process:
+        if ":" not in self.handler:
             raise Exception(
-                f"please use module:class format, current is: {self.process}"
+                f"please use module:class format, current is: {self.handler}"
             )
 
         # TODO: add more validator
 
     def __str__(self) -> str:
-        return f"DataSet Config {self.name}"
+        return f"Dataset Config {self.name}"
 
     __repr__ = __str__
 

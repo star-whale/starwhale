@@ -102,3 +102,10 @@ export interface TableQueryOperandDesc {
     stringValue?: string
     bytesValue?: string
 }
+
+export interface ListTablesRequest {
+    prefix?: string
+}
+export interface TableNameListVO {
+    tables?: string[]
+}

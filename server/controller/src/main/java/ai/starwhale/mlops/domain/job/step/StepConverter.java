@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.step;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +25,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class StepConverter {
 
-    final LocalDateTimeConvertor localDateTimeConvertor;
-
-    public StepConverter(LocalDateTimeConvertor localDateTimeConvertor) {
-        this.localDateTimeConvertor = localDateTimeConvertor;
+    public StepConverter() {
     }
 
     public Step fromEntity(StepEntity entity) {
@@ -39,8 +35,8 @@ public class StepConverter {
                 .status(entity.getStatus())
                 .name(entity.getName())
                 .build();
-        step.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
-        step.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
+        step.setStartTime(entity.getStartedTime().getTime());
+        step.setFinishTime(entity.getFinishedTime().getTime());
         return step;
     }
 

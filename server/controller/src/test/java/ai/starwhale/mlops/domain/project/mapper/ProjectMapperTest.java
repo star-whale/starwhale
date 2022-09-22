@@ -144,9 +144,12 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testModifyProject() {
-        project2.setId(project.getId());
-        projectMapper.modifyProject(project2);
-        validProject(project2, user, projectMapper.findProject(project.getId()));
+        ProjectEntity project3 = ProjectEntity.builder().projectName("pxn3").ownerId(user.getId()).privacy(0)
+                .isDefault(0)
+                .build();
+        project3.setId(project.getId());
+        projectMapper.modifyProject(project3);
+        validProject(project3, user, projectMapper.findProject(project.getId()));
     }
 
     @Test

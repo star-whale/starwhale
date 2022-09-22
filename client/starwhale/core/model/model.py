@@ -46,7 +46,7 @@ class ModelRunConfig(ASDictMixin):
     # TODO: use attr to tune class
     def __init__(
         self,
-        ppl: str,
+        handler: str,
         type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
         pkg_data: t.Union[t.List[str], None] = None,
@@ -54,7 +54,7 @@ class ModelRunConfig(ASDictMixin):
         envs: t.Union[t.List[str], None] = None,
         **kw: t.Any,
     ):
-        self.ppl = ppl.strip()
+        self.handler = handler.strip()
         self.typ = type
         self.runtime = runtime.strip()
         self.pkg_data = pkg_data or []
@@ -65,14 +65,14 @@ class ModelRunConfig(ASDictMixin):
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if not self.ppl:
+        if not self.handler:
             raise FileFormatError("need ppl field")
 
     def __str__(self) -> str:
-        return f"Model Run Config: ppl -> {self.ppl}"
+        return f"Model Run Config: ppl -> {self.handler}"
 
     def __repr__(self) -> str:
-        return f"Model Run Config: ppl -> {self.ppl}, runtime -> {self.runtime}"
+        return f"Model Run Config: ppl -> {self.handler}, runtime -> {self.runtime}"
 
 
 class ModelConfig(ASDictMixin):
@@ -192,7 +192,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _model_config = cls.load_model_config(_mp)
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             return DEFAULT_EVALUATION_PIPELINE
-        return _model_config.run.ppl
+        return _model_config.run.handler
 
     @classmethod
     def eval_user_handler(
@@ -227,7 +227,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             _module = DEFAULT_EVALUATION_PIPELINE
         else:
-            _module = _model_config.run.ppl
+            _module = _model_config.run.handler
 
         _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
 
@@ -236,7 +236,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if _model_config.run.typ == EvalHandlerType.DEFAULT:
                 _ppl = DEFAULT_EVALUATION_PIPELINE
             else:
-                _ppl = _model_config.run.ppl
+                _ppl = _model_config.run.handler
 
             _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
             Parser.generate_job_yaml(_ppl, workdir, _new_yaml_path)
@@ -281,6 +281,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
+            raise
         finally:
             _manifest.update(
                 {
@@ -310,10 +311,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.List[t.Dict[str, t.Any]]:
 
         _r = []
         for _bf in self.store.iter_bundle_history():
+            if not _bf.path.is_file():
+                continue
+
             _manifest = ModelStorage.get_manifest_by_path(
                 _bf.path, BundleType.MODEL, URIType.MODEL
             )
@@ -328,16 +332,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     size=_bf.path.stat().st_size,
                 )
             )
-        return _r, {}
+        return _r
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        _ok, _reason = move_dir(self.store.loc, self.store.recover_loc, force)
-        _ok2, _reason2 = True, ""
-        if self.store.snapshot_workdir.exists():
-            _ok2, _reason2 = move_dir(
-                self.store.snapshot_workdir, self.store.recover_snapshot_workdir, force
-            )
-        return _ok and _ok2, _reason + _reason2
+        return self._do_remove(force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support short version to recover, today only support full-version
@@ -365,6 +363,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             bundle_type=BundleType.MODEL,
             uri_type=URIType.MODEL,
         ):
+            if not _bf.path.is_file():
+                continue
+
             _manifest = ModelStorage.get_manifest_by_path(
                 _bf.path, BundleType.MODEL, URIType.MODEL
             )
@@ -403,7 +404,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._gen_steps,
                 5,
                 "generate execute steps",
-                dict(typ=_model_config.run.typ, ppl=_model_config.run.ppl),
+                dict(typ=_model_config.run.typ, ppl=_model_config.run.handler),
             ),
             (
                 self._render_manifest,
@@ -508,5 +509,5 @@ class CloudModel(CloudBundleModelMixin, Model):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.MODEL, page, size)
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")

@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
 import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
@@ -55,7 +54,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import ai.starwhale.mlops.storage.env.StorageEnv;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -99,16 +98,10 @@ public class SwDatasetService {
     private IdConvertor idConvertor;
 
     @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
-    @Resource
     private VersionAliasConvertor versionAliasConvertor;
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private StorageProperties storageProperties;
 
     @Resource
     private DsFileGetter dsFileGetter;
@@ -180,9 +173,6 @@ public class SwDatasetService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<StorageFileVo> collect = storageService.listStorageFile(storagePath);
-            Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
-            fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(FileStorageEnv.ENV_KEY_PREFIX,
-                    versionEntity.getStoragePath()));
             return SwDatasetInfoVo.builder()
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
@@ -190,8 +180,7 @@ public class SwDatasetService {
                     .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
-                    .fileStorageEnvs(fileStorageEnvs)
+                    .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
                     .files(collect)
                     .build();

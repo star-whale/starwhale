@@ -35,7 +35,7 @@ runtime_cmd.add_command(quickstart)
 
 @quickstart.command("uri")
 @click.argument("uri", required=True)
-@click.argument("workdir", required=True, type=click.Path(exists=True, file_okay=False))
+@click.argument("workdir", required=True)
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option("-n", "--name", default="", help="Runtime name")
 @click.option(
@@ -63,7 +63,7 @@ def _quickstart_from_uri(
 
 
 @quickstart.command("shell", help="Quickstart from interactive shell")
-@click.argument("workdir", type=click.Path(exists=True, file_okay=False))
+@click.argument("workdir", required=True)
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option(
     "-p",
@@ -165,7 +165,12 @@ def _build(
 
 @runtime_cmd.command("remove")
 @click.argument("runtime")
-@click.option("-f", "--force", is_flag=True, help="Force to remove runtime")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force to remove runtime, the removed runtime cannot recover",
+)
 def _remove(runtime: str, force: bool) -> None:
     """
     Remove runtime
@@ -371,9 +376,9 @@ def _lock(
 )
 def _dockerize(
     uri: str,
-    tag: t.List[str],
+    tag: t.Tuple[str],
     push: bool,
-    platform: t.List[str],
+    platform: t.Tuple[str],
     dry_run: bool,
     use_starwhale_builder: bool,
     reset_qemu_static: bool,
@@ -383,5 +388,10 @@ def _dockerize(
     URI (str): Starwhale Runtime URI in the standalone instance
     """
     RuntimeTermView(uri).dockerize(
-        tag, push, platform, dry_run, use_starwhale_builder, reset_qemu_static
+        list(tag),
+        push,
+        list(platform),
+        dry_run,
+        use_starwhale_builder,
+        reset_qemu_static,
     )

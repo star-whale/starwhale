@@ -1,5 +1,4 @@
 import React from 'react'
-import { useDataset } from '@dataset/hooks/useDataset'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
@@ -16,6 +15,7 @@ import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
 import { DatasetObject } from '@/domain/dataset/sdk'
+import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 
 const useCardStyles = createUseStyles({
@@ -139,10 +139,10 @@ export default function DatasetVersionFiles() {
         fileId: string
     }>()
     const [page, setPage] = usePage()
-    const { dataset: datasetVersion } = useDataset()
     const { token } = useAuth()
     const history = useHistory()
     const styles = useCardStyles()
+    const { datasetVersion } = useDatasetVersion()
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
 
@@ -207,7 +207,9 @@ export default function DatasetVersionFiles() {
                             onClick={() => {
                                 setIsFullscreen(false)
                                 history.push(
-                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
+                                        row.id
+                                    }?${qs.stringify(page)}`
                                 )
                             }}
                         >
@@ -250,7 +252,9 @@ export default function DatasetVersionFiles() {
                                     onClick={() => {
                                         setIsFullscreen(true)
                                         history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${row.id}`
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
+                                                row.id
+                                            }?${qs.stringify(page)}`
                                         )
                                     }}
                                 >
@@ -314,7 +318,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId])
+    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
 
     return (
         <div className={styles.wrapper}>
@@ -323,11 +327,13 @@ export default function DatasetVersionFiles() {
                     value={layoutKey}
                     onChange={(key) => {
                         setLayoutKey(key)
+                        const newSize = key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
+
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
-                                    ...page,
-                                    pageSize: key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE,
+                                    pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
+                                    pageSize: newSize,
                                 }
                             )}`
                         )

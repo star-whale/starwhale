@@ -13,6 +13,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -38,21 +39,26 @@ export default function ModelVersionListCard() {
         },
         [modelsInfo, projectId, modelId, t]
     )
+
     return (
         <Card title={t('model versions')}>
             <Table
                 isLoading={modelsInfo.isLoading}
-                columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
+                columns={[t('sth name', [t('Model')]), t('Alias'), t('Meta'), t('Created'), t('Owner'), t('Action')]}
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
+                            model.name,
+                            model.alias,
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
                             i ? (
-                                <Button as='link' size='mini' key={model.id} onClick={() => handleAction(model.id)}>
-                                    {t('Revert')}
-                                </Button>
+                                <WithCurrentAuth id='model.version.revert'>
+                                    <Button as='link' size='mini' key={model.id} onClick={() => handleAction(model.id)}>
+                                        {t('Revert')}
+                                    </Button>
+                                </WithCurrentAuth>
                             ) : (
                                 ''
                             ),

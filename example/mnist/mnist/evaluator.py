@@ -1,4 +1,3 @@
-import io
 from pathlib import Path
 
 import numpy as np
@@ -6,17 +5,17 @@ import torch
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import Image
+from starwhale import Image, Context, PipelineHandler, multi_classification
 
-from .model import Net
+try:
+    from .model import Net
+except ImportError:
+    from model import Net
 
 ROOTDIR = Path(__file__).parent.parent
 
 
-class CIFAR10Inference(PipelineHandler):
+class MNISTInference(PipelineHandler):
     def __init__(self, context: Context) -> None:
         super().__init__(context=context)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -42,14 +41,14 @@ class CIFAR10Inference(PipelineHandler):
             pr.extend(_data["result"][1])
         return label, result, pr
 
-    def _pre(self, input: Image) -> torch.Tensor:
-        _image = PILImage.open(io.BytesIO(input.to_bytes()))
+    def _pre(self, input: Image):
+        _tensor = torch.tensor(bytearray(input.to_bytes()), dtype=torch.uint8).reshape(
+            input.shape[0], input.shape[1]  # type: ignore
+        )
+        _image_array = PILImage.fromarray(_tensor.numpy())
         _image = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-            ]
-        )(_image)
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        )(_image_array)
         return torch.stack([_image]).to(self.device)
 
     def _post(self, input):
@@ -59,7 +58,20 @@ class CIFAR10Inference(PipelineHandler):
 
     def _load_model(self, device):
         model = Net().to(device)
-        model.load_state_dict(torch.load(str(ROOTDIR / "models" / "cifar_net.pth")))
+        model.load_state_dict(torch.load(str(ROOTDIR / "models/mnist_cnn.pt"), map_location=device))
         model.eval()
-        print("load cifar_net model, start to inference...")
+        print("load mnist model, start to inference...")
         return model
+
+
+if __name__ == "__main__":
+    from starwhale import Context
+
+    context = Context(
+        workdir=Path("."),
+        dataset_uris=["mnist/version/small"],
+        project="self",
+        version="latest",
+    )
+    mnist = MNISTInference(context)
+    mnist._starwhale_internal_run_ppl()

@@ -1083,8 +1083,7 @@ class TestLocalDataStore(BaseTestCase):
 
 class TestRemoteDataStore(unittest.TestCase):
     def setUp(self) -> None:
-        os.environ["SW_TOKEN"] = "tt"
-        self.ds = data_store.RemoteDataStore("http://test")
+        self.ds = data_store.RemoteDataStore("http://test", "tt")
 
     @patch("starwhale.api._impl.data_store.requests.post")
     def test_update_table(self, mock_post: Mock) -> None:
@@ -1500,7 +1499,7 @@ class TestTableWriter(BaseTestCase):
             url="http://1.1.1.1/api/v1/datastore/updateTable",
             status_code=400,
         )
-        remote_store = data_store.RemoteDataStore("http://1.1.1.1")
+        remote_store = data_store.RemoteDataStore("http://1.1.1.1", "tt")
         remote_writer = data_store.TableWriter(
             "p/test", "k", remote_store, run_exceptions_limits=0
         )
@@ -1538,7 +1537,7 @@ class TestTableWriter(BaseTestCase):
             url="http://1.1.1.1/api/v1/datastore/updateTable",
             status_code=400,
         )
-        remote_store = data_store.RemoteDataStore("http://1.1.1.1")
+        remote_store = data_store.RemoteDataStore("http://1.1.1.1", "tt")
         remote_writer = data_store.TableWriter("p/test", "k", remote_store)
 
         assert remote_writer.is_alive()

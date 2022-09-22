@@ -231,7 +231,7 @@ public interface DatasetApi {
     @GetMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     void pullLinkContent(
             @PathVariable(name = "projectUrl") String projectUrl,
             @PathVariable(name = "datasetUrl") String datasetUrl,

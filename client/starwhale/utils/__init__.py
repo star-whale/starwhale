@@ -15,8 +15,8 @@ from functools import cmp_to_key
 import yaml
 from rich.console import Console
 
-from starwhale import __version__
 from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
+from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.error import NoSupportError
 
 console = Console(soft_wrap=True)
@@ -138,7 +138,7 @@ def validate_obj_name(name: str) -> t.Tuple[bool, str]:
 
 
 def get_downloadable_sw_version() -> str:
-    _v = __version__
+    _v = STARWHALE_VERSION
     return "" if _v == SW_DEV_DUMMY_VERSION else _v
 
 

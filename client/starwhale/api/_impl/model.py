@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import sys
 import math
-import base64
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
@@ -77,11 +76,21 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
     ) -> None:
         self.context = context
-        self._init_dir()
 
         # TODO: add args for compare result and label directly
         self.ignore_annotations = ignore_annotations
         self.ignore_error = ignore_error
+
+        _logdir = EvaluationStorage.local_run_dir(
+            self.context.project, self.context.version
+        )
+        _run_dir = (
+            _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
+        )
+        self.status_dir = _run_dir / RunSubDirType.STATUS
+        self.log_dir = _run_dir / RunSubDirType.LOG
+        ensure_dir(self.status_dir)
+        ensure_dir(self.log_dir)
 
         self.logger, self._sw_logger = self._init_logger()
         self._stdout_changed = False
@@ -95,18 +104,6 @@ class PipelineHandler(metaclass=ABCMeta):
             eval_id=self.context.version, project=self.context.project
         )
         self._monkey_patch()
-
-    def _init_dir(self) -> None:
-        _logdir = EvaluationStorage.local_run_dir(
-            self.context.project, self.context.version
-        )
-        _run_dir = (
-            _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
-        )
-        self.status_dir = _run_dir / RunSubDirType.STATUS
-        self.log_dir = _run_dir / RunSubDirType.LOG
-        ensure_dir(self.status_dir)
-        ensure_dir(self.log_dir)
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -183,13 +180,13 @@ class PipelineHandler(metaclass=ABCMeta):
         return self._builtin_serialize(data)
 
     def ppl_result_deserialize(self, data: bytes) -> t.Any:
-        return dill.loads(base64.b64decode(data))
+        return dill.loads(data)
 
     def annotations_serialize(self, data: t.Any) -> bytes:
         return self._builtin_serialize(data)
 
     def annotations_deserialize(self, data: bytes) -> bytes:
-        return dill.loads(base64.b64decode(data))  # type: ignore
+        return dill.loads(data)  # type: ignore
 
     def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
         data["result"] = self.ppl_result_deserialize(data["result"])
@@ -241,8 +238,10 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: support multi dataset uris
         _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
         _dataset = Dataset.get_dataset(_dataset_uri)
+        _dataset_summary = _dataset.summary()
+        _dataset_rows = _dataset_summary.rows if _dataset_summary else 0
         dataset_row_start, dataset_row_end = calculate_index(
-            _dataset.summary().rows, self.context.total, self.context.index
+            _dataset_rows, self.context.total, self.context.index
         )
         self._sw_logger.debug(
             f"step:{self.context.step}, ds start from:{dataset_row_start} to:{dataset_row_end}"
@@ -287,11 +286,10 @@ class PipelineHandler(metaclass=ABCMeta):
         self._timeline_writer.write(_timeline)
 
         annotations = {} if self.ignore_annotations else annotations
-        _b64: t.Callable[[bytes], str] = lambda x: base64.b64encode(x).decode("ascii")
         self.evaluation.log_result(
             data_id=idx,
-            result=_b64(self.ppl_result_serialize(pred)),
-            annotations=_b64(self.annotations_serialize(annotations)),
+            result=self.ppl_result_serialize(pred),
+            annotations=self.annotations_serialize(annotations),
         )
         self._update_status(STATUS.RUNNING)
 
