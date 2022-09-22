@@ -22,22 +22,25 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
-import java.util.Objects;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SwmpConvertor implements Convertor<SwModelPackageEntity, SwModelPackageVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
+    private final IdConvertor idConvertor;
+    private final UserConvertor userConvertor;
 
-    @Resource
-    private UserConvertor userConvertor;
+    public SwmpConvertor(IdConvertor idConvertor, UserConvertor userConvertor) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+    }
 
     @Override
     public SwModelPackageVo convert(SwModelPackageEntity entity)
             throws ConvertException {
+        if (entity == null) {
+            return SwModelPackageVo.empty();
+        }
         return SwModelPackageVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getSwmpName())
@@ -48,11 +51,6 @@ public class SwmpConvertor implements Convertor<SwModelPackageEntity, SwModelPac
 
     @Override
     public SwModelPackageEntity revert(SwModelPackageVo vo) throws ConvertException {
-        Objects.requireNonNull(vo, "SWModelPackageVo");
-        return SwModelPackageEntity.builder()
-                .id(idConvertor.revert(vo.getId()))
-                .swmpName(vo.getName())
-                .projectId(idConvertor.revert(vo.getId()))
-                .build();
+        throw new UnsupportedOperationException();
     }
 }
