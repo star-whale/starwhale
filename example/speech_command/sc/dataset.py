@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.api.dataset import Audio, MIMEType, BuildExecutor
+from starwhale import Audio, MIMEType, BuildExecutor
 
 dataset_dir = (
     Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"

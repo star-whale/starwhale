@@ -2,9 +2,7 @@ import os
 
 import torch
 
-from starwhale.api.job import Context
-from starwhale.api.model import PipelineHandler
-from starwhale.api.dataset import Text
+from starwhale import Text, Context, PipelineHandler
 
 from .bleu import calculate_bleu
 from .model import DecoderRNN, EncoderRNN

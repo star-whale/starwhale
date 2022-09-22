@@ -2,7 +2,7 @@ import struct
 import typing as t
 from pathlib import Path
 
-from starwhale.api.dataset import (
+from starwhale import (
     Link,
     S3LinkAuth,
     GrayscaleImage,

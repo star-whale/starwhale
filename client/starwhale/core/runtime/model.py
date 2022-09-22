@@ -16,7 +16,6 @@ from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale import __version__
 from starwhale.utils import (
     docker,
     console,
@@ -45,6 +44,7 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
 )
+from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
@@ -646,7 +646,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["environment"].update(
             {
                 "lock": {
-                    "starwhale_version": __version__,
+                    "starwhale_version": STARWHALE_VERSION,
                     "system": platform.system(),
                     "shell": {
                         "python_env": sh_py_env,
@@ -837,7 +837,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         python_version = get_python_version()
 
         sw_pkg = SW_PYPI_PKG_NAME
-        _swcli_version = __version__
+        _swcli_version = STARWHALE_VERSION
         if _swcli_version and _swcli_version != SW_DEV_DUMMY_VERSION:
             sw_pkg = f"{sw_pkg}=={_swcli_version}"
 

@@ -3,7 +3,7 @@ import random
 
 import click
 
-from starwhale import __version__
+from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.debug import init_logger
 from starwhale.utils.config import load_swcli_config
 from starwhale.core.eval.cli import eval_job_cmd
@@ -20,7 +20,7 @@ from .completion import completion_cmd
 
 def create_sw_cli() -> click.core.Group:
     @click.group()
-    @click.version_option(version=__version__)
+    @click.version_option(version=STARWHALE_VERSION)
     @click.option(
         "-v",
         "--verbose",
