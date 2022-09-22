@@ -1,10 +1,18 @@
 import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import React from 'react'
+import { IUserSchema } from '@user/schemas/user'
 import { IPrivileges, Privileges, Role, RolePrivilege } from './const'
 
-function hasPrivilege(role: Role, id: string) {
+const hasPrivilege = (role: Role, id: string) => {
     return RolePrivilege[role]?.[id] ?? false
+}
+const isAdmin = (user: IUserSchema) => user.systemRole === Role.OWNER
+const isWrongKey = (id: string) => !(id in Privileges)
+
+function Empty({ str }: any) {
+    return <>{str}</>
 }
 
 export default function WithAuth({
@@ -16,13 +24,20 @@ export default function WithAuth({
     id: keyof IPrivileges
     children: React.ReactElement | any
 }) {
-    if (!(id in Privileges)) return <>wrong key</>
-    const isPrivileged = hasPrivilege(role, id)
+    let isPrivileged = false
+    const { currentUser } = useCurrentUser()
+    if (!currentUser) return <Empty />
+    if (isWrongKey(id)) return <Empty str='wrong key' />
+    if (isAdmin(currentUser)) isPrivileged = true
+    else {
+        isPrivileged = hasPrivilege(role, id)
+    }
+
     if (typeof children === 'function') {
         return children(isPrivileged)
     }
-    if (!isPrivileged) return <></>
-    return <ErrorBoundary>{children ?? <></>}</ErrorBoundary>
+    if (!isPrivileged) return <Empty />
+    return <ErrorBoundary>{children ?? <Empty />}</ErrorBoundary>
 }
 
 export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; children: React.ReactElement | any }) {

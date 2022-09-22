@@ -11,7 +11,6 @@ import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from
 import { LocaleContext } from './locales'
 import { IStore } from './store'
 
-// consider pulling this out to a prop if useful.
 const HEADER_ROW_HEIGHT = 44
 const IS_BROWSER = true
 
@@ -76,14 +75,22 @@ const sum = (ns) => ns.reduce((s, n) => s + n, 0)
 
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = useStyletron()
-    const column = data.columns[columnIndex]
-    const row = data.rows[rowIndex]
-    const rowCount = data.rows.length
 
+    const column = React.useMemo(() => data.columns[columnIndex] ?? null, [data.columns, columnIndex])
+    const { row, rowCount, rowData } = React.useMemo(() => {
+        const rowTmp = data.rows[rowIndex]
+        const rowCountTmp = data.rows.length
+        return {
+            row: rowTmp,
+            rowCount: rowCountTmp,
+            rowData: rowTmp?.data ?? {},
+        }
+    }, [data.rows, rowIndex])
     // eslint-disable-next-line
     const Cell = React.useMemo(() => column.renderCell ?? null, [column])
     // eslint-disable-next-line
-    const value = React.useMemo(() => column.mapDataToValue(row?.data), [column, row])
+    const value = React.useMemo(() => column.mapDataToValue(rowData), [column, rowData])
+    const isSelected = React.useMemo(() => data.isRowSelected(data.rows[rowIndex]?.id), [data, rowIndex])
 
     // console.log('CellPlacement', columnIndex, rowIndex, value)
     return (
@@ -120,12 +127,13 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
         >
             <Cell
                 value={value}
+                data={rowData}
                 onSelect={data.isSelectable && columnIndex === 0 ? () => data.onSelectOne(row) : undefined}
                 onAsyncChange={async (v: any) => {
                     const cellData = data?.columns[columnIndex]
                     await cellData?.onAsyncChange?.(v, columnIndex, rowIndex)
                 }}
-                isSelected={data.isRowSelected(data.rows[rowIndex]?.id)}
+                isSelected={isSelected}
                 textQuery={data.textQuery}
                 x={columnIndex}
                 y={rowIndex}
