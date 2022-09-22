@@ -3,6 +3,6 @@ name: speech_commands_m5
 model:
   - models/m5.pth
 run:
-  ppl: sc.ppl:M5Inference
+  handler: sc.evaluator:M5Inference
 
 desc: m5 by pytorch

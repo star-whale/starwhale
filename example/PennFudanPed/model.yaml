@@ -3,5 +3,5 @@ name: mask_rcnn
 model:
   - models/mcrnn.pth
 run:
-  ppl: pfp.ppl:MaskRCnn
+  handler: pfp.evaluator:MaskRCnn
 desc: mask rcnn resnet50 by pytorch
