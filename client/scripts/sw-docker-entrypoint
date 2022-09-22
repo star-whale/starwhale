@@ -11,6 +11,11 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
+
+pwd ${WORKDIR}
+ls ${WORKDIR}
+cat ${WORKDIR}/_manifest.yaml
+
 _MANIFEST_RUNTIME=$(yq -r .environment.python ${WORKDIR}/_manifest.yaml) || true
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
