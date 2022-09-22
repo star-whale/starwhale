@@ -11,7 +11,7 @@ from starwhale.api.dataset import (
 )
 
 
-class DataSetProcessExecutor(SWDSBinBuildExecutor):
+class DatasetProcessExecutor(SWDSBinBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data"
 
@@ -35,7 +35,7 @@ class DataSetProcessExecutor(SWDSBinBuildExecutor):
                 ), {"label": _label}
 
 
-class RawDataSetProcessExecutor(UserRawBuildExecutor):
+class RawDatasetProcessExecutor(UserRawBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data"
         data_fpath = root_dir / "t10k-images-idx3-ubyte"
@@ -63,7 +63,7 @@ class RawDataSetProcessExecutor(UserRawBuildExecutor):
                 offset += image_size
 
 
-class LinkRawDataSetProcessExecutor(UserRawBuildExecutor):
+class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
     _auth = S3LinkAuth(name="mnist", access_key="minioadmin", secret="minioadmin")
     _endpoint = "10.131.0.1:9000"
     _bucket = "users"

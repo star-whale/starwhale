@@ -356,7 +356,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self._manifest.update(
             {
                 "dataset_attr": swds_config.attr.asdict(),
-                "process": swds_config.process,
+                "handler": swds_config.handler,
                 "from": {
                     "version": append_from_version,
                     "append": append,
@@ -365,9 +365,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
         # TODO: add more import format support, current is module:class
-        logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
+        logger.info(f"[info:swds]try to import {swds_config.handler} @ {workdir}")
         _cls: t.Type[BaseBuildExecutor] = import_cls(
-            workdir, swds_config.process, BaseBuildExecutor
+            workdir, swds_config.handler, BaseBuildExecutor
         )
 
         with _cls(
@@ -383,7 +383,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             data_mime_type=swds_config.attr.data_mime_type,
         ) as _obj:
             console.print(
-                f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
+                f":ghost: import [red]{swds_config.handler}@{workdir.resolve()}[/] to make swds..."
             )
             _summary: DatasetSummary = _obj.make_swds()
             self._manifest["dataset_summary"] = _summary.asdict()

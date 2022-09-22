@@ -7,7 +7,7 @@ dataset_attr:
   volume_size: 2097152
 dataset_byte_size: 9033838
 name: mnist
-process: mnist.process:DataSetProcessExecutor
+handler: mnist.dataset:DatasetProcessExecutor
 signature:
   data_ubyte_0.swds_bin: 2128256:blake2b:607c386be99e033c0227375fac67efe4d5463634352156c503e8d5369d6db7629d0f98bf6df519a979c66ec1a2893b0b6ba68e8d3991606a3d9322c84bd9e58b
   data_ubyte_1.swds_bin: 2128256:blake2b:d532daebac3de383d69e846b141effd8d86ff0351aa7fffeb62606f1836e0e9679c3394cecba0867f6a40d69a8c140142fba2d5025b2c7f72f531f6f144a95c2

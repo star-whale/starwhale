@@ -1,6 +1,6 @@
 name: nmt-test
 
-process: nmt.dataset:NMTDatasetBuildExecutor
+handler: nmt.dataset:NMTDatasetBuildExecutor
 
 desc: nmt data and label test dataset
 
