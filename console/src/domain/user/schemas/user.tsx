@@ -1,3 +1,4 @@
+import { Role } from '@/api/const'
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 
 export interface IUserRoleSchema {
@@ -12,7 +13,8 @@ export interface IUserSchema extends IResourceSchema {
     name: string
     email: string
     isEnabled: string
-    role: IUserRoleSchema
+    systemRole: Role
+    projectRoles: Record<string, Role>
 }
 
 export interface IRegisterUserSchema {

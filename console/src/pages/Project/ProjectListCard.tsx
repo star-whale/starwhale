@@ -22,7 +22,7 @@ import WithAuth from '@/api/WithAuth'
 import { ConfirmButton } from '@/components/Modal/confirm'
 import { toaster } from 'baseui/toast'
 import { LabelMedium } from 'baseui/typography'
-import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { useUserRoles } from '@/domain/user/hooks/useUserRoles'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -128,7 +128,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
     const styles = useCardStyles()
-    const { role } = useFetchProjectRole(project?.id)
+    const { projectRole: role } = useUserRoles(project?.id)
 
     return (
         <div className={styles.card}>
