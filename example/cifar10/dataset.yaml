@@ -1,8 +1,8 @@
 #name: cifar10-train
-#process: cifar.dataset:CIFAR10TrainBuildExecutor
+#handler: cifar.dataset:CIFAR10TrainBuildExecutor
 
 name: cifar10-test
-process: cifar.dataset:CIFAR10TestBuildExecutor
+handler: cifar.dataset:CIFAR10TestBuildExecutor
 desc: CIFAR10 data and label test dataset
 
 attr:

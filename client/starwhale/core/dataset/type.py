@@ -517,13 +517,13 @@ class DatasetAttr(ASDictMixin):
         return super().asdict(ignore_keys=ignore_keys or ["kw"])
 
 
-# TODO: abstract base class from DataSetConfig and ModelConfig
+# TODO: abstract base class from DatasetConfig and ModelConfig
 # TODO: use attr to tune code
 class DatasetConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
-        process: str,
+        handler: str,
         runtime: str = "",
         pkg_data: t.List[str] = [],
         exclude_pkg_data: t.List[str] = [],
@@ -534,7 +534,7 @@ class DatasetConfig(ASDictMixin):
         **kw: t.Any,
     ) -> None:
         self.name = name
-        self.process = process
+        self.handler = handler
         self.tag = tag
         self.desc = desc
         self.version = version
@@ -547,15 +547,15 @@ class DatasetConfig(ASDictMixin):
         self._validator()
 
     def _validator(self) -> None:
-        if ":" not in self.process:
+        if ":" not in self.handler:
             raise Exception(
-                f"please use module:class format, current is: {self.process}"
+                f"please use module:class format, current is: {self.handler}"
             )
 
         # TODO: add more validator
 
     def __str__(self) -> str:
-        return f"DataSet Config {self.name}"
+        return f"Dataset Config {self.name}"
 
     __repr__ = __str__
 

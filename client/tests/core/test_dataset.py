@@ -74,7 +74,7 @@ class StandaloneDatasetTestCase(TestCase):
 
         assert m_import.call_count == 1
         assert m_import.call_args[0][0] == Path(workdir)
-        assert m_import.call_args[0][1] == "mnist.process:DataSetProcessExecutor"
+        assert m_import.call_args[0][1] == "mnist.dataset:DatasetProcessExecutor"
 
         assert m_cls.call_count == 1
         assert m_cls.call_args[1]["alignment_bytes_size"] == 4096
