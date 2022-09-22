@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swmp;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -36,9 +35,6 @@ public class SwmpConvertor implements Convertor<SwModelPackageEntity, SwModelPac
     @Resource
     private UserConvertor userConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
-
     @Override
     public SwModelPackageVo convert(SwModelPackageEntity entity)
             throws ConvertException {
@@ -46,7 +42,7 @@ public class SwmpConvertor implements Convertor<SwModelPackageEntity, SwModelPac
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getSwmpName())
                 .owner(userConvertor.convert(entity.getOwner()))
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

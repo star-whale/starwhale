@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -50,7 +49,6 @@ public class SwmpVersionConvertorTest {
         swmpVersionConvertor = new SwmpVersionConvertor(
                 new IdConvertor(),
                 userConvertor,
-                new LocalDateTimeConvertor(),
                 new VersionAliasConvertor()
         );
     }

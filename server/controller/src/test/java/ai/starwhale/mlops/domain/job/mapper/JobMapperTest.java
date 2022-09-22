@@ -28,7 +28,7 @@ import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -154,10 +154,9 @@ public class JobMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testUpdateFinishedTime() {
-        LocalDateTime now = LocalDateTime.now();
-        jobMapper.updateJobFinishedTime(List.of(jobCreated.getId()), now);
+        jobMapper.updateJobFinishedTime(List.of(jobCreated.getId()), new Date());
         JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
-        jobCreated.setFinishedTime(now);
+        jobCreated.setFinishedTime(new Date());
         validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
     }
 

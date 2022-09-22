@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.user;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
@@ -32,11 +31,8 @@ public class UserConvertor implements Convertor<UserEntity, UserVo> {
 
     private final IdConvertor idConvertor;
 
-    private final LocalDateTimeConvertor localDateTimeConvertor;
-
-    public UserConvertor(IdConvertor idConvertor, LocalDateTimeConvertor localDateTimeConvertor) {
+    public UserConvertor(IdConvertor idConvertor) {
         this.idConvertor = idConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
 
@@ -48,7 +44,7 @@ public class UserConvertor implements Convertor<UserEntity, UserVo> {
         return UserVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getUserName())
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled() == 1)
                 .build();
     }

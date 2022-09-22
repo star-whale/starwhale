@@ -34,7 +34,6 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -100,9 +99,8 @@ public class ProjectServiceTest {
                 .willReturn(project2);
 
         IdConvertor idConvertor = new IdConvertor();
-        LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
-        UserConvertor userConvertor = new UserConvertor(idConvertor, localDateTimeConvertor);
-        ProjectConvertor projectConvertor = new ProjectConvertor(idConvertor, userConvertor, localDateTimeConvertor);
+        UserConvertor userConvertor = new UserConvertor(idConvertor);
+        ProjectConvertor projectConvertor = new ProjectConvertor(idConvertor, userConvertor);
         RoleConvertor roleConvertor = new RoleConvertor(idConvertor);
         ProjectRoleConvertor projectRoleConvertor = new ProjectRoleConvertor(
                 idConvertor,

@@ -18,11 +18,10 @@ package ai.starwhale.mlops.domain.job.step.mapper;
 
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper
 public interface StepMapper {
@@ -35,7 +34,7 @@ public interface StepMapper {
 
     void updateStatus(@Param("stepIds") List<Long> stepIds, @Param("status") StepStatus stepNewStatus);
 
-    void updateFinishedTime(@Param("stepId") Long stepId, @Param("finishedTime") LocalDateTime finishedTime);
+    void updateFinishedTime(@Param("stepId") Long stepId, @Param("finishedTime") Date finishedTime);
 
-    void updateStartedTime(@Param("stepId") Long stepId, @Param("startedTime") LocalDateTime startedTime);
+    void updateStartedTime(@Param("stepId") Long stepId, @Param("startedTime") Date startedTime);
 }

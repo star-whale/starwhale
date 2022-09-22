@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -37,14 +36,10 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVo> {
 
     private final UserConvertor userConvertor;
 
-    private final LocalDateTimeConvertor localDateTimeConvertor;
-
     public ProjectConvertor(IdConvertor idConvertor,
-            UserConvertor userConvertor,
-            LocalDateTimeConvertor localDateTimeConvertor) {
+            UserConvertor userConvertor) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
 
@@ -60,7 +55,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVo> {
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getProjectName())
                 .owner(userConvertor.convert(entity.getOwner()))
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .privacy(Privacy.fromValue(entity.getPrivacy()).name())
                 .description(entity.getDescription())
                 .statistics(StatisticsVo.empty())

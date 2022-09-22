@@ -22,18 +22,19 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import java.time.LocalDateTime;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode
 @Data
-@Builder
-@AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
+@AllArgsConstructor
 public class JobEntity extends BaseEntity {
 
     private Long id;
@@ -54,9 +55,8 @@ public class JobEntity extends BaseEntity {
 
     private UserEntity owner;
 
-    private LocalDateTime createdTime;
-
-    private LocalDateTime finishedTime;
+    @Builder.Default
+    private Date finishedTime = defaultDate;
 
     private Long durationMs;
 

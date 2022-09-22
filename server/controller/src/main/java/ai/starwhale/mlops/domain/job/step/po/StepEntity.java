@@ -18,18 +18,19 @@ package ai.starwhale.mlops.domain.job.step.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import java.time.LocalDateTime;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-@AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
+@AllArgsConstructor
 public class StepEntity extends BaseEntity {
 
     String name;
@@ -50,7 +51,9 @@ public class StepEntity extends BaseEntity {
 
     Integer taskNum = 1;
 
-    LocalDateTime startedTime;
+    @Builder.Default
+    Date startedTime = defaultDate;
 
-    LocalDateTime finishedTime;
+    @Builder.Default
+    Date finishedTime = defaultDate;
 }

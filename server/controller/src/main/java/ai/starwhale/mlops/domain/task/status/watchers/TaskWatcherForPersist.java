@@ -16,12 +16,12 @@
 
 package ai.starwhale.mlops.domain.task.status.watchers;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
@@ -39,29 +39,25 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     final TaskMapper taskMapper;
 
-    final LocalDateTimeConvertor localDateTimeConvertor;
-
     public TaskWatcherForPersist(
             TaskStatusMachine taskStatusMachine,
-            TaskMapper taskMapper,
-            LocalDateTimeConvertor localDateTimeConvertor) {
+            TaskMapper taskMapper) {
         this.taskStatusMachine = taskStatusMachine;
         this.taskMapper = taskMapper;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         log.debug("persisting task for {} ", task.getId());
         TaskStatus status = task.getStatus();
-        long now = System.currentTimeMillis();
+        var now = new Date();
         if (taskStatusMachine.isFinal(status)) {
-            task.setFinishTime(now);
-            taskMapper.updateTaskFinishedTime(task.getId(), localDateTimeConvertor.revert(now));
+            task.setFinishTime(now.getTime());
+            taskMapper.updateTaskFinishedTime(task.getId(), now);
         }
         if (status == TaskStatus.RUNNING) {
-            task.setStartTime(now);
-            taskMapper.updateTaskStartedTime(task.getId(), localDateTimeConvertor.revert(now));
+            task.setStartTime(now.getTime());
+            taskMapper.updateTaskStartedTime(task.getId(), now);
         }
         taskMapper.updateTaskStatus(List.of(task.getId()), status);
         log.debug("task {} status persisted to {} ", task.getId(), status);

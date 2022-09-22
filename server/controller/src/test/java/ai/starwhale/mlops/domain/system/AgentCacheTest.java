@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
@@ -32,7 +31,7 @@ import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +48,7 @@ public class AgentCacheTest {
         AgentMapper agentMapper = mock(AgentMapper.class);
         when(agentMapper.listAgents()).thenReturn(List.of(
                 AgentEntity.builder()
-                        .connectTime(LocalDateTime.now())
+                        .connectTime(new Date())
                         .id(1L)
                         .serialNumber("serialNumber1")
                         .agentIp("10.199.0.1")
@@ -57,7 +56,7 @@ public class AgentCacheTest {
                         .status(AgentStatus.ONLINE)
                         .build(),
                 AgentEntity.builder()
-                        .connectTime(LocalDateTime.now())
+                        .connectTime(new Date())
                         .id(2L)
                         .serialNumber("serialNumber2")
                         .agentIp("10.199.0.2")
@@ -65,8 +64,7 @@ public class AgentCacheTest {
                         .status(AgentStatus.ONLINE)
                         .build()
         ));
-        AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
-                new LocalDateTimeConvertor());
+        AgentConverter agentConverter = new AgentConverter(new ObjectMapper());
         AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();
@@ -114,7 +112,7 @@ public class AgentCacheTest {
         AgentMapper agentMapper = mock(AgentMapper.class);
         when(agentMapper.listAgents()).thenReturn(List.of(
                 AgentEntity.builder()
-                        .connectTime(LocalDateTime.now())
+                        .connectTime(new Date())
                         .id(1L)
                         .serialNumber("serialNumber1")
                         .agentIp("10.199.0.1")
@@ -122,7 +120,7 @@ public class AgentCacheTest {
                         .status(AgentStatus.ONLINE)
                         .build(),
                 AgentEntity.builder()
-                        .connectTime(LocalDateTime.now())
+                        .connectTime(new Date())
                         .id(2L)
                         .serialNumber("serialNumber2")
                         .agentIp("10.199.0.2")
@@ -130,8 +128,7 @@ public class AgentCacheTest {
                         .status(AgentStatus.ONLINE)
                         .build()
         ));
-        AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
-                new LocalDateTimeConvertor());
+        AgentConverter agentConverter = new AgentConverter(new ObjectMapper());
         AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();

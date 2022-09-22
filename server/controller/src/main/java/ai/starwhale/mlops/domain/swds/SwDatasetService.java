@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
 import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
@@ -97,9 +96,6 @@ public class SwDatasetService {
 
     @Resource
     private IdConvertor idConvertor;
-
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Resource
     private VersionAliasConvertor versionAliasConvertor;
@@ -184,7 +180,7 @@ public class SwDatasetService {
                     .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
+                    .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
                     .files(collect)
                     .build();

@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -29,6 +28,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -45,21 +45,18 @@ public class JobUpdateHelper {
     final JobMapper jobMapper;
     final JobStatusMachine jobStatusMachine;
     final SwTaskScheduler swTaskScheduler;
-    final LocalDateTimeConvertor localDateTimeConvertor;
     final TaskStatusMachine taskStatusMachine;
 
     public JobUpdateHelper(HotJobHolder jobHolder,
             JobStatusCalculator jobStatusCalculator,
             JobMapper jobMapper, JobStatusMachine jobStatusMachine,
             SwTaskScheduler swTaskScheduler,
-            LocalDateTimeConvertor localDateTimeConvertor,
             TaskStatusMachine taskStatusMachine) {
         this.jobHolder = jobHolder;
         this.jobStatusCalculator = jobStatusCalculator;
         this.jobMapper = jobMapper;
         this.jobStatusMachine = jobStatusMachine;
         this.swTaskScheduler = swTaskScheduler;
-        this.localDateTimeConvertor = localDateTimeConvertor;
         this.taskStatusMachine = taskStatusMachine;
     }
 
@@ -82,8 +79,7 @@ public class JobUpdateHelper {
         jobMapper.updateJobStatus(List.of(job.getId()), desiredJobStatus);
 
         if (jobStatusMachine.isFinal(desiredJobStatus)) {
-            jobMapper.updateJobFinishedTime(List.of(job.getId()),
-                    localDateTimeConvertor.revert(System.currentTimeMillis()));
+            jobMapper.updateJobFinishedTime(List.of(job.getId()), new Date());
             if (desiredJobStatus == JobStatus.FAIL) {
                 CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
