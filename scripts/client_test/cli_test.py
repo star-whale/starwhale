@@ -21,7 +21,7 @@ def work_dir(request):
     if not _work_dir:
         tmp = tempfile.TemporaryDirectory()
         _work_dir = tmp.name
-        #
+
         os.environ["SW_CLI_CONFIG"] = f"{_work_dir}/config.yaml"
         os.environ["SW_LOCAL_STORAGE"] = f"{_work_dir}/data"
 
@@ -146,6 +146,7 @@ class TestCli:
         _environment_prepare = EnvironmentPrepare(work_dir=work_dir)
         _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
+        print(f"controller url is:{os.environ.get('CONTROLLER_URL')}")
         self.standard_workflow(
             model_name="mnist",
             model_workdir=f"{work_dir}/example/mnist",
