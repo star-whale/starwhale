@@ -41,6 +41,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -148,6 +149,7 @@ public class ProjectService {
      * @param project Object of the project to create.
      * @return ID of the project was created.
      */
+    @Transactional
     public Long createProject(Project project) {
         Assert.notNull(project.getName(), "Project name must not be null");
         if (projectManager.existProject(project.getName())) {
@@ -241,9 +243,17 @@ public class ProjectService {
         return id;
     }
 
+    @Transactional
     public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId,
             String privacy) {
         Long projectId = projectManager.getProjectId(projectUrl);
+        if (StrUtil.isNotEmpty(projectName)) {
+            ProjectEntity existProject = projectMapper.findProjectByNameForUpdate(projectName);
+            if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
+                throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
+                        .tip(String.format("Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
+            }
+        }
         ProjectEntity entity = ProjectEntity.builder()
                 .id(projectId)
                 .projectName(projectName)

@@ -85,7 +85,7 @@ public class ProjectManager implements ProjectAccessor {
     }
 
     public Boolean existProject(String projectName) {
-        ProjectEntity existProject = projectMapper.findProjectByName(projectName);
+        ProjectEntity existProject = projectMapper.findProjectByNameForUpdate(projectName);
         return existProject != null;
     }
 
