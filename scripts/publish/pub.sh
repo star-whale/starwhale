@@ -66,7 +66,7 @@ build() {
     popd
 
   }
-  if test -z $1; then
+  if test -z "$1"; then
     console
   else
     $1
@@ -181,7 +181,7 @@ cli() {
     -v
   }
 
-  if test -z $1; then
+  if test -z "$1"; then
     --help
   else
     load_config
@@ -273,10 +273,10 @@ controller() {
 }
 all() {
   cli -s
-  console -s $1
+  console -s "$1" "$2"
 }
-if test -z $1; then
+if test -z "$1"; then
   --help
 else
-  $1 $2 $3 $4 $5 $6
+  $1 "$2" "$3" "$4" "$5" "$6"
 fi
