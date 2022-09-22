@@ -1,7 +1,14 @@
 import typing as t
 from pathlib import Path
 
-from starwhale import Audio, MIMEType, BuildExecutor
+from starwhale import (
+    Link,
+    Audio,
+    MIMEType,
+    S3LinkAuth,
+    BuildExecutor,
+    UserRawBuildExecutor,
+)
 
 dataset_dir = (
     Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
@@ -10,22 +17,14 @@ validation_ds_paths = [dataset_dir / "validation_list.txt"]
 testing_ds_paths = [dataset_dir / "testing_list.txt"]
 
 
-class SpeechCommandsBuildExecutor(BuildExecutor):
+class SWDSBuildExecutor(BuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-
-        idx = 1
-
         for path in validation_ds_paths:
             with path.open() as f:
                 for item in f.readlines():
                     item = item.strip()
                     if not item:
                         continue
-
-                    if idx > 100:
-                        break
-
-                    idx += 1
 
                     data_path = dataset_dir / item
                     data = Audio(
@@ -39,3 +38,59 @@ class SpeechCommandsBuildExecutor(BuildExecutor):
                         "utterance_num": int(utterance_num),
                     }
                     yield data, annotations
+
+
+class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
+
+    _auth = S3LinkAuth(
+        name="speech", access_key="minioadmin", secret="minioadmin", region="local"
+    )
+    _addr = "10.131.0.1:9000"
+    _bucket = "users"
+
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        import boto3
+        from botocore.client import Config
+
+        s3 = boto3.resource(
+            "s3",
+            endpoint_url=f"http://{self._addr}",
+            aws_access_key_id=self._auth.access_key,
+            aws_secret_access_key=self._auth.secret,
+            config=Config(signature_version="s3v4"),
+            region_name=self._auth.region,
+        )
+
+        objects = s3.Bucket(self._bucket).objects.filter(
+            Prefix="dataset/SpeechCommands/speech_commands_v0.02"
+        )
+
+        for obj in objects:
+            path = Path(obj.key)  # type: ignore
+            command = path.parent.name
+            if (
+                command == "_background_noise_"
+                or "_nohash_" not in path.name
+                or obj.size < 10240
+                or not path.name.endswith(".wav")
+            ):
+                continue
+
+            speaker_id, utterance_num = path.stem.split("_nohash_")
+            uri = f"s3://{self._addr}@{self._bucket}/{obj.key.lstrip('/')}"
+            data = Link(
+                uri,
+                self._auth,
+                size=obj.size,
+                data_type=Audio(
+                    display_name=f"{command}/{path.name}",
+                    mime_type=MIMEType.WAV,
+                    shape=(1,),
+                ),
+            )
+            annotations = {
+                "label": command,
+                "speaker_id": speaker_id,
+                "utterance_num": int(utterance_num),
+            }
+            yield data, annotations
