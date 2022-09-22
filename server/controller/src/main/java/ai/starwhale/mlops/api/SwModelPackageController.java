@@ -40,7 +40,6 @@ import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -55,11 +54,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class SwModelPackageController implements SwModelPackageApi {
 
-    @Resource
-    private SwModelPackageService swmpService;
+    private final SwModelPackageService swmpService;
+    private final IdConvertor idConvertor;
 
-    @Resource
-    private IdConvertor idConvertor;
+    public SwModelPackageController(SwModelPackageService swmpService, IdConvertor idConvertor) {
+        this.swmpService = swmpService;
+        this.idConvertor = idConvertor;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SwModelPackageVo>>> listModel(String projectUrl, String versionId,
