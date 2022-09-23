@@ -216,7 +216,7 @@ class EvalExecutor:
             "-v",
             f"{self._model_dir}/{DefaultYAMLName.MODEL}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DefaultYAMLName.MODEL}",
             "-v",
-            f"{self._runtime_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}",
+            f"{self._runtime_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWRT}",
         ]
 
         if typ == EvalTaskType.SINGLE:

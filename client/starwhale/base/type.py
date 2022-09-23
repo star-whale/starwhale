@@ -33,6 +33,7 @@ class RunSubDirType:
     RUNLOG = "runlog"
     LOG = "log"
     SWMP = "swmp"
+    SWRT = "swrt"
 
 
 class JobOperationType:
