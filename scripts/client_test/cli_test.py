@@ -159,7 +159,6 @@ class TestCli:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
         _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
-        print(f"controller url is:{os.environ.get('CONTROLLER_URL')}")
         self.standard_workflow(
             mode=mode,
             model_name="mnist",
