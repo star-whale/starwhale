@@ -61,8 +61,8 @@ build() {
     popd
     pushd ../../docker
     make build-server
-    docker tag starwhaleai/server:latest $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION
-    docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION
+    if ! docker tag starwhaleai/server:latest $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
+    if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
     popd
 
   }
@@ -169,14 +169,14 @@ cli() {
     pushd ../../client
     python3 -m pip install -r requirements-install.txt
     make build-wheel
-    twine upload --repository nexus dist/*
+    if ! twine upload --repository nexus dist/* ; then echo "[ERROR] Something wrong while uploading pypi version , press CTL+C to interrupt execution if needed"; fi
     popd
     pushd ../../docker
     docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
-    docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-    docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
+    if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
+    if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
     popd
     -v
   }
@@ -197,7 +197,7 @@ console() {
     echo "  --help            Show this message and exit."
     echo "  --uninstall       Uninstall console."
     echo "  -v                Show version to be published."
-    echo "  -s                Start to publish. You could use --app to fix your app name"
+    echo "  -s                Start to publish. You could use --app to fix your app name and --ns to fix your namespace in K8S"
     echo "                    [--app Recommended when in dev use case]"
     echo "                    [--app NOT Recommended when in verify use case]"
   }
@@ -210,9 +210,13 @@ console() {
     --app() {
       export SWNAME=$1
     }
+    --ns() {
+      export SWNS=$1
+    }
     check_git_status
     if test -n "$1"; then
       $1 "$2"
+      if test -n "$3"; then $3 "$4"; fi
     fi
     build console
     deploy
@@ -228,7 +232,7 @@ console() {
     export func=dev
     load_config
     set_up_version
-    $1 "$2" "$3"
+    $1 "$2" "$3"  "$4" "$5"
   fi
 }
 
@@ -240,7 +244,7 @@ controller() {
     echo "Options:"
     echo "  --help       Show this message and exit."
     echo "  -v           Show version to be published."
-    echo "  -s           Start to publish. You could use --app to fix your app name"
+    echo "  -s           Start to publish. You could use --app to fix your app name and --ns to fix your namespace in K8S"
     echo "               [--app Recommended when in dev use case]"
     echo "               [--app NOT Recommended when in verify use case]"
   }
@@ -253,9 +257,13 @@ controller() {
     --app() {
       export SWNAME=$1
     }
+    --ns() {
+      export SWNS=$1
+    }
 
     if test -n "$1"; then
       $1 "$2"
+      if test -n "$3"; then $3 "$4"; fi
     fi
     build b_controller
     deploy
@@ -268,12 +276,12 @@ controller() {
     load_config
     check_git_status
     set_up_version
-    $1 "$2" "$3"
+    $1 "$2" "$3" "$4" "$5"
   fi
 }
 all() {
   cli -s
-  console -s "$1" "$2"
+  console -s "$1" "$2" "$3" "$4"
 }
 if test -z "$1"; then
   --help
