@@ -26,7 +26,8 @@ class TestCli:
     def __init__(self, work_dir: str):
         self._work_dir = work_dir
 
-    def standard_workflow(self, model_name: str, model_workdir: str,
+    def standard_workflow(self, mode: str,
+                          model_name: str, model_workdir: str,
                           ds_name: str, ds_workdir: str,
                           rt_name: str, rt_workdir: str,
                           cloud_uri: str, cloud_project: str):
@@ -69,7 +70,8 @@ class TestCli:
         assert len(_eval_list) == 1
 
         assert self.evaluation.info(_eval_list[0]['manifest']['version'])
-
+        if mode != RunMode.CLOUD:
+            return
         # 5.login to cloud
         print(f"login to cloud {cloud_uri} ...")
         assert self.instance.login(url=cloud_uri)
@@ -129,19 +131,20 @@ class TestCli:
         _remote_job = self.evaluation.info(f'{cloud_uri}/project/{cloud_project}/evaluation/{job_id}')
         return _remote_job["manifest"]["jobStatus"] if _remote_job else ""
 
-    def test_mnist(self) -> None:
+    def test_mnist(self, mode: str) -> None:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
         _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
         print(f"controller url is:{os.environ.get('CONTROLLER_URL')}")
         self.standard_workflow(
+            mode=mode,
             model_name="mnist",
             model_workdir=f"{self._work_dir}/example/mnist",
             ds_name="mnist",
             ds_workdir=f"{self._work_dir}/example/mnist",
             rt_name="pytorch",
             rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
-            cloud_uri=os.environ.get("CONTROLLER_URL") or "http://console.pre.intra.starwhale.ai",
+            cloud_uri=os.environ.get("CONTROLLER_URL") or "http://127.0.0.1:8082",
             cloud_project="starwhale"
         )
     # TODO add more example
@@ -172,10 +175,17 @@ def init_run_environment() -> str:
     return _work_dir
 
 
+class RunMode:
+    STANDALONE = "standalone"
+    CLOUD = "cloud"
+
+
 if __name__ == '__main__':
     # start test
     test_cli = TestCli(work_dir=init_run_environment())
-    if sys.argv[1] == "mnist":
-        test_cli.test_mnist()
+    example = sys.argv[1]
+    _mode = RunMode.CLOUD if os.environ.get("CONTROLLER_URL") else RunMode.STANDALONE
+    if example == "mnist":
+        test_cli.test_mnist(_mode)
     else:
         print("there is nothing to run!")
