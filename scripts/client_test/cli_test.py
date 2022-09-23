@@ -117,7 +117,7 @@ class TestCli:
             if _job_status:
                 print(f"job status is:{_job_status}")
             else:
-                print("api occur error!now will exit")
+                print("job status api occur some error!now will exit")
                 break
 
         assert _job_status == "SUCCESS"
