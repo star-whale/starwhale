@@ -48,7 +48,9 @@ spec:
             - sh
             - -c
             - >-
-              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \;
+              cd /opt/starwhale;
+              find ./ -type f \( -name \*.swmp \) -exec tar -C swmp/ -xf {} \;
+              find ./ -type f \( -name \*.swrt \) -exec tar -C swrt/ -xf {} \;
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'
