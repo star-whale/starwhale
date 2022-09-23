@@ -3,6 +3,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Role } from '@/api/const'
 
 export function useUserRoles(projectId?: string) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     const systemRole = React.useMemo(() => {
         return currentUser?.systemRole ?? Role.NONE

@@ -83,7 +83,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 value: job?.jobStatus ?? '-',
             },
             {
-                label: t('Runtime'),
+                label: t('Elapsed Time'),
                 value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
             },
             {

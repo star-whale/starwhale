@@ -24,6 +24,8 @@ export interface IJobFormProps {
     onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
+const SELELCTORWIDTH = '300px'
+
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
@@ -100,7 +102,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '280px',
+                                    width: SELELCTORWIDTH,
                                 },
                             },
                         }}
@@ -111,10 +113,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <ModelVersionSelector
                             projectId={projectId}
                             modelId={modelId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '280px',
+                                        width: SELELCTORWIDTH,
                                     },
                                 },
                             }}
@@ -130,7 +133,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '280px',
+                                    width: SELELCTORWIDTH,
                                 },
                             },
                         }}
@@ -141,10 +144,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <DatasetVersionSelector
                             projectId={projectId}
                             datasetId={datasetId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '280px',
+                                        width: SELELCTORWIDTH,
                                     },
                                 },
                             }}
@@ -175,7 +179,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '280px',
+                                    width: SELELCTORWIDTH,
                                 },
                             },
                         }}
@@ -186,10 +190,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <RuntimeVersionSelector
                             projectId={projectId}
                             runtimeId={runtimeId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '280px',
+                                        width: SELELCTORWIDTH,
                                     },
                                 },
                             }}
@@ -204,7 +209,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '280px',
+                                    width: SELELCTORWIDTH,
                                 },
                             },
                         }}
@@ -215,7 +220,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '280px',
+                                    width: SELELCTORWIDTH,
                                 },
                             },
                         }}

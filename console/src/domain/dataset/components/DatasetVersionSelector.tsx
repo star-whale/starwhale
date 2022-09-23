@@ -1,3 +1,4 @@
+import { formatTimestampDateTime } from '@/utils/datetime'
 import { Select, SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
@@ -11,6 +12,7 @@ export interface IDatasetVersionSelectorProps {
     onChange?: (newValue: string) => void
     overrides?: SelectProps['overrides']
     disabled?: boolean
+    autoSelected?: boolean
 }
 
 export default function DatasetVersionSelector({
@@ -20,6 +22,7 @@ export default function DatasetVersionSelector({
     onChange,
     overrides,
     disabled,
+    autoSelected,
 }: IDatasetVersionSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
@@ -38,20 +41,35 @@ export default function DatasetVersionSelector({
     })
 
     useEffect(() => {
+        if (autoSelected) {
+            if (value) {
+                const item = datasetVersionsInfo.data?.list.find((v) => v.id === value)
+                if (!item) {
+                    onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+                }
+                return
+            }
+
+            if (datasetVersionsInfo.data) onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+        }
+    }, [value, autoSelected, datasetId, datasetVersionsInfo.data, onChange])
+
+    useEffect(() => {
         if (datasetVersionsInfo.isSuccess) {
             const ops =
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: item.name + (item.tag ? `/${item.tag}` : ''),
+                    label: [
+                        item.alias ?? '',
+                        item.name ? item.name.substring(0, 8) : '',
+                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
+                    ].join(' : '),
                 })) ?? []
             setOptions(ops)
-            if (!value) {
-                onChange?.(ops[0]?.id)
-            }
         } else {
             setOptions([])
         }
-    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess, value, onChange])
+    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess])
 
     return (
         <Select
