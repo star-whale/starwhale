@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Dict, Any, List
+from typing import Any
 
 from . import CLI
 from .base.invoke import invoke
@@ -8,19 +8,21 @@ from .base.invoke import invoke
 class Evaluation:
     _cmd = "eval"
 
-    def run(self,
-            model: str,
-            dataset: str,
-            project: str = "self",
-            version: str = "",
-            runtime: str = "",
-            name: str = "",
-            desc: str = "",
-            resource: str = "",
-            use_docker: bool = False,
-            gencmd: bool = False,
-            step: str = "",
-            task_index: int = 0, ) -> bool:
+    def run(
+        self,
+        model: str,
+        dataset: str,
+        project: str = "self",
+        version: str = "",
+        runtime: str = "",
+        name: str = "",
+        desc: str = "",
+        resource: str = "",
+        use_docker: bool = False,
+        gencmd: bool = False,
+        step: str = "",
+        task_index: int = 0,
+    ) -> bool:
         """
         :param project:
         :param version: Evaluation job version
@@ -55,12 +57,12 @@ class Evaluation:
         if gencmd:
             _args.append("--gencmd")
         if step:
-            _args.extend(["--step", step, "--task-index", task_index])
+            _args.extend(["--step", step, "--task-index", str(task_index)])
         _args.append(project)
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 
-    def info(self, version: str) -> Dict[str, Any]:
+    def info(self, version: str) -> Any:
         """
         :param version:
         :return:
@@ -167,7 +169,7 @@ class Evaluation:
                                 "createdTime": 1663296946000,
                                 "id": "39",
                                 "image": "ghcr.io/star-whale/starwhale:latest-cuda11.4",
-                                "meta": "artifacts:\n  dependencies:\n  - dependencies/requirements-sw-lock.txt\n  files:\n  - _swrt_dest: files/bin/prepare.sh\n    dest: bin/prepare.sh\n    name: prepare\n    post: bash bin/prepare.sh\n    pre: ls bin/prepare.sh\n    src: scripts/prepare.sh\n  runtime_yaml: runtime.yaml\n  wheels:\n  - wheels/dummy-0.0.0-py3-none-any.whl\nbase_image: ghcr.io/star-whale/starwhale:latest-cuda11.4\nbuild:\n  os: Linux\n  sw_version: 0.0.0.dev0\nconfigs:\n  conda:\n    channels:\n    - conda-forge\n  docker:\n    image: ghcr.io/star-whale/runtime/pytorch\n  pip:\n    extra_index_url:\n    - https://mirrors.bfsu.edu.cn/pypi/web/simple/\n    index_url: https://pypi.doubanio.com/simple/\n    trusted_host:\n    - mirrors.bfsu.edu.cn\n    - pypi.doubanio.com\ncreated_at: 2022-09-14 17:58:05 CST\ndependencies:\n  conda_files: []\n  conda_pkgs: []\n  local_packaged_env: false\n  pip_files:\n  - requirements-sw-lock.txt\n  pip_pkgs:\n  - numpy >= 1.23.2\n  - scikit-learn\nenvironment:\n  arch:\n  - noarch\n  auto_lock_dependencies: false\n  lock:\n    env_name: ''\n    env_prefix_path: ''\n    shell:\n      python_env: conda\n      python_version: 3.9.12\n      use_conda: true\n      use_venv: false\n    starwhale_version: 0.0.0.dev0\n    system: Linux\n    use_shell_detection: true\n  mode: venv\n  python: '3.8'\nname: pytorch\nversion: mjqtinbtgjqtezjyg44tkzjwnm2gmny\n",
+                                "meta": "",
                                 "name": "mjqtinbtgjqtezjyg44tkzjwnm2gmny",
                                 "owner": {
                                     "createdTime": 1650970583000,
@@ -217,12 +219,14 @@ class Evaluation:
         _res, _err = invoke([CLI, "-o", "json", self._cmd, "info", version])
         return json.loads(_res) if not _err else {}
 
-    def list(self,
-             project: str = "self",
-             fullname: bool = False,
-             show_removed: bool = False,
-             page: int = 1,
-             size: int = 20, ) -> List[Dict[str, Any]]:
+    def list(
+        self,
+        project: str = "self",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = 1,
+        size: int = 20,
+    ) -> Any:
         """
 
         :param project:
@@ -253,7 +257,17 @@ class Evaluation:
                 ...
             ]
         """
-        _args = [CLI, "-o", "json", self._cmd, "list", "--page", str(page), "--size", str(size)]
+        _args = [
+            CLI,
+            "-o",
+            "json",
+            self._cmd,
+            "list",
+            "--page",
+            str(page),
+            "--size",
+            str(size),
+        ]
         if project:
             _args.extend(["--project", project])
         if fullname:
@@ -267,7 +281,7 @@ class Evaluation:
     def cancel(self, uri: str, force: bool = False) -> bool:
         return self._operate("cancel", uri=uri, force=force)
 
-    def compare(self, base_uri: str, compare_uri: str) -> str:
+    def compare(self, base_uri: str, compare_uri: str) -> Any:
         _res, _err = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
         return _res
 
@@ -283,7 +297,7 @@ class Evaluation:
     def resume(self, uri: str, force: bool = False) -> bool:
         return self._operate("resume", uri=uri, force=force)
 
-    def _operate(self, name: str, uri: str, force: bool = False):
+    def _operate(self, name: str, uri: str, force: bool = False) -> bool:
         """
         :param uri: version or uri(evaluation/{version})
         :param force: bool

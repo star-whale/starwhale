@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Dict, Any, List
+from typing import Any, List
 
 from . import CLI
 from .base.invoke import invoke, invoke_with_react
@@ -9,7 +9,7 @@ class BaseArtifact:
     def __init__(self, name: str):
         self.name = name
 
-    def info(self, uri: str) -> Dict[str, Any]:
+    def info(self, uri: str) -> Any:
         """
         :param uri: mnist/version/latest
         :return:
@@ -38,13 +38,25 @@ class BaseArtifact:
         _res, _err = invoke([CLI, "-o", "json", self.name, "info", uri])
         return json.loads(_res) if not _err else {}
 
-    def list(self,
-             project: str = "self",
-             fullname: bool = False,
-             show_removed: bool = False,
-             page: int = 1,
-             size: int = 20, ) -> List[Dict[str, Any]]:
-        _args = [CLI, "-o", "json", self.name, "list", "--page", str(page), "--size", str(size)]
+    def list(
+        self,
+        project: str = "self",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = 1,
+        size: int = 20,
+    ) -> Any:
+        _args = [
+            CLI,
+            "-o",
+            "json",
+            self.name,
+            "list",
+            "--page",
+            str(page),
+            "--size",
+            str(size),
+        ]
         if project:
             _args.extend(["--project", project])
         if fullname:
@@ -71,7 +83,7 @@ class BaseArtifact:
         _res, _err = invoke_with_react(_args)
         return not _err and _valid_str in _res
 
-    def history(self, name: str, fullname: bool = False) -> List[Dict[str, Any]]:
+    def history(self, name: str, fullname: bool = False) -> Any:
         """
         :param name: mnist
         :param fullname: bool
@@ -112,10 +124,16 @@ class BaseArtifact:
 
 
 class Model(BaseArtifact):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("model")
 
-    def build(self, workdir: str, project: str = "", model_yaml: str = "", runtime_uri: str = "") -> bool:
+    def build(
+        self,
+        workdir: str,
+        project: str = "",
+        model_yaml: str = "",
+        runtime_uri: str = "",
+    ) -> bool:
         _args = _args = [CLI, self.name, "build"]
         if project:
             _args.extend(["--project", project])
@@ -136,18 +154,20 @@ class Model(BaseArtifact):
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 
-    def extract(self) -> Tuple[str, str]:
+    def extract(self) -> Any:
         return invoke([CLI, self.name, "extract"])
 
-    def eval(self,
-             workdir: str,
-             project: str = "",
-             model_yaml: str = "",
-             version: str = "",
-             step: str = "",
-             task_index: int = 0,
-             runtime_uri: str = "",
-             dataset_uri: str = "", ) -> bool:
+    def eval(
+        self,
+        workdir: str,
+        project: str = "",
+        model_yaml: str = "",
+        version: str = "",
+        step: str = "",
+        task_index: int = 0,
+        runtime_uri: str = "",
+        dataset_uri: str = "",
+    ) -> bool:
         _valid_str = "finish run, success"
         _args = [CLI, self.name, "eval"]
         if project:
@@ -157,7 +177,7 @@ class Model(BaseArtifact):
         if version:
             _args.extend(["--version", version])
         if step:
-            _args.extend(["--step", step, "--task-index", task_index])
+            _args.extend(["--step", step, "--task-index", str(task_index)])
         if runtime_uri:
             _args.extend(["--runtime", runtime_uri])
         if dataset_uri:
@@ -168,16 +188,18 @@ class Model(BaseArtifact):
 
 
 class Dataset(BaseArtifact):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("dataset")
 
-    def build(self,
-              workdir: str,
-              project: str = "",
-              dataset_yaml: str = "",
-              append: bool = False,
-              append_from: str = "",
-              runtime_uri: str = "", ) -> bool:
+    def build(
+        self,
+        workdir: str,
+        project: str = "",
+        dataset_yaml: str = "",
+        append: bool = False,
+        append_from: str = "",
+        runtime_uri: str = "",
+    ) -> bool:
         _args = [CLI, self.name, "build"]
 
         if project:
@@ -194,7 +216,7 @@ class Dataset(BaseArtifact):
         # TODO use version match
         return not _err
 
-    def summary(self, uri: str) -> Dict[str, Any]:
+    def summary(self, uri: str) -> Any:
         """
         :param uri: mnist/version/latest
         :return:
@@ -213,7 +235,9 @@ class Dataset(BaseArtifact):
         _res, _err = invoke([CLI, "-o", "json", self.name, "summary", uri])
         return json.loads(_res) if not _err else {}
 
-    def copy(self, src_uri: str, target_project: str, with_auth: bool, force: bool) -> bool:
+    def copy(
+        self, src_uri: str, target_project: str, with_auth: bool, force: bool
+    ) -> bool:
         _valid_str = "copy done"
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
@@ -223,7 +247,7 @@ class Dataset(BaseArtifact):
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 
-    def diff(self, base_uri: str, compare_uri: str) -> Dict[str, Any]:
+    def diff(self, base_uri: str, compare_uri: str) -> Any:
         """
         :param base_uri: mnist/version/meytgyrtgi4d
         :param compare_uri: mnist/version/latest
@@ -270,23 +294,29 @@ class Dataset(BaseArtifact):
                 }
             }
         """
-        _res, _err = invoke([CLI, "-o", "json", self.name, "diff", base_uri, compare_uri])
+        _res, _err = invoke(
+            [CLI, "-o", "json", self.name, "diff", base_uri, compare_uri]
+        )
         return json.loads(_res) if not _err else {}
 
 
 class Runtime(BaseArtifact):
-    def __init__(self, ):
+    def __init__(
+        self,
+    ) -> None:
         super().__init__("runtime")
 
-    def build(self,
-              workdir: str,
-              project: str = "",
-              runtime_yaml: str = "",
-              gen_all_bundles: bool = False,
-              include_editable: bool = False,
-              enable_lock: bool = False,
-              env_prefix_path: str = "",
-              env_name: str = "", ) -> bool:
+    def build(
+        self,
+        workdir: str,
+        project: str = "",
+        runtime_yaml: str = "",
+        gen_all_bundles: bool = False,
+        include_editable: bool = False,
+        enable_lock: bool = False,
+        env_prefix_path: str = "",
+        env_name: str = "",
+    ) -> bool:
         _args = [CLI, self.name, "build"]
 
         if project:
@@ -310,7 +340,7 @@ class Runtime(BaseArtifact):
         # TODO use version match
         return not _err
 
-    def activate(self, uri: str, path: str) -> Tuple[str, str]:
+    def activate(self, uri: str, path: str) -> Any:
         """
         activate
         :param uri: Runtime uri which has already been restored
@@ -327,7 +357,7 @@ class Runtime(BaseArtifact):
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 
-    def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Tuple[str, str]:
+    def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Any:
         """
         extract
         :param uri:
@@ -343,17 +373,17 @@ class Runtime(BaseArtifact):
         return invoke(_args)
 
     # TODO impl valid result logic
-    def lock(self) -> Tuple[str, str]:
+    def lock(self) -> Any:
         return invoke([CLI, self.name, "lock"])
 
-    def restore(self) -> Tuple[str, str]:
+    def restore(self) -> Any:
         return invoke([CLI, self.name, "restore"])
 
-    def quick_start_shell(self) -> Tuple[str, str]:
+    def quick_start_shell(self) -> Any:
         return invoke([CLI, self.name, "quick-start", "shell"])
 
-    def quick_start_uri(self) -> Tuple[str, str]:
+    def quick_start_uri(self) -> Any:
         return invoke([CLI, self.name, "quick-start", "uri"])
 
-    def dockerize(self) -> Tuple[str, str]:
+    def dockerize(self) -> Any:
         return invoke([CLI, self.name, "dockerize"])

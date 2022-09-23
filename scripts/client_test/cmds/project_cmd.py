@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, List, Dict, Any
+from typing import Any
 
 from . import CLI
 from .base.invoke import invoke
@@ -17,7 +17,7 @@ class Project:
         res, err = invoke([CLI, self.project_cmd, "create", name])
         return not err and _valid_str in res
 
-    def info(self, project: str) -> Dict[str, Any]:
+    def info(self, project: str) -> Any:
         """
         :return:
             local:
@@ -38,7 +38,7 @@ class Project:
         res, err = invoke([CLI, "-o", "json", self.project_cmd, "info", project])
         return json.loads(res) if not err else {}
 
-    def list(self, instance: str = "local") -> List[Dict[str, Any]]:
+    def list(self, instance: str = "local") -> Any:
         """
         :param instance:
         :return:

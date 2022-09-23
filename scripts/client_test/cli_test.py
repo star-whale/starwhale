@@ -2,13 +2,14 @@ import os
 import sys
 import tempfile
 from time import sleep
+from typing import Any
 
+from cmds.eval_cmd import Evaluation
+from cmds.base.common import EnvironmentPrepare
 from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
-from cmds.eval_cmd import Evaluation
-from cmds.base.common import EnvironmentPrepare
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -23,14 +24,21 @@ class TestCli:
     runtime = Runtime()
     evaluation = Evaluation()
 
-    def __init__(self, work_dir: str):
+    def __init__(self, work_dir: str) -> None:
         self._work_dir = work_dir
 
-    def standard_workflow(self, mode: str,
-                          model_name: str, model_workdir: str,
-                          ds_name: str, ds_workdir: str,
-                          rt_name: str, rt_workdir: str,
-                          cloud_uri: str, cloud_project: str):
+    def standard_workflow(
+        self,
+        mode: str,
+        model_name: str,
+        model_workdir: str,
+        ds_name: str,
+        ds_workdir: str,
+        rt_name: str,
+        rt_workdir: str,
+        cloud_uri: str,
+        cloud_project: str,
+    ) -> None:
         # use local instance
         self.instance.select("local")
         assert self.project.select("self")
@@ -69,7 +77,7 @@ class TestCli:
         _eval_list = self.evaluation.list()
         assert len(_eval_list) == 1
 
-        assert self.evaluation.info(_eval_list[0]['manifest']['version'])
+        assert self.evaluation.info(_eval_list[0]["manifest"]["version"])
         if mode != RunMode.CLOUD:
             return
         # 5.login to cloud
@@ -78,16 +86,22 @@ class TestCli:
 
         # 6.copy local artifacts to cloud
         print("copy local artifacts to cloud...")
-        assert self.model.copy(src_uri=_model_uri,
-                               target_project=f"cloud://cloud/project/{cloud_project}",
-                               force=True)
-        assert self.dataset.copy(src_uri=_ds_uri,
-                                 target_project=f"cloud://cloud/project/{cloud_project}",
-                                 with_auth=True,
-                                 force=True)
-        assert self.runtime.copy(src_uri=_rt_uri,
-                                 target_project=f"cloud://cloud/project/{cloud_project}",
-                                 force=True)
+        assert self.model.copy(
+            src_uri=_model_uri,
+            target_project=f"cloud://cloud/project/{cloud_project}",
+            force=True,
+        )
+        assert self.dataset.copy(
+            src_uri=_ds_uri,
+            target_project=f"cloud://cloud/project/{cloud_project}",
+            with_auth=True,
+            force=True,
+        )
+        assert self.runtime.copy(
+            src_uri=_rt_uri,
+            target_project=f"cloud://cloud/project/{cloud_project}",
+            force=True,
+        )
 
         # 7.select to cloud instance
         self.instance.select(instance="cloud")
@@ -98,8 +112,12 @@ class TestCli:
         # 8.start an evaluation
 
         print("running evaluation at cloud...")
-        assert self.evaluation.run(model=swmp["version"], dataset=swds["version"], runtime=swrt["version"],
-                                   project=cloud_project)
+        assert self.evaluation.run(
+            model=swmp["version"],
+            dataset=swds["version"],
+            runtime=swrt["version"],
+            project=cloud_project,
+        )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
 
@@ -109,13 +127,17 @@ class TestCli:
         _new_job_id = list(set(_new_job_ids) - set(_origin_job_ids))[0]
 
         # 9.check job's status
-        _job_status = self.get_job_status(cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id)
+        _job_status = self.get_job_status(
+            cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id
+        )
 
         while True:
             if _job_status == "SUCCESS" or _job_status == "FAIL":
                 break
             sleep(10)
-            _job_status = self.get_job_status(cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id)
+            _job_status = self.get_job_status(
+                cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id
+            )
             if _job_status:
                 print(f"job status is:{_job_status}")
             else:
@@ -127,8 +149,10 @@ class TestCli:
         # 10.reset instance to local
         self.instance.select("local")
 
-    def get_job_status(self, cloud_uri: str, cloud_project: str, job_id: str) -> str:
-        _remote_job = self.evaluation.info(f'{cloud_uri}/project/{cloud_project}/evaluation/{job_id}')
+    def get_job_status(self, cloud_uri: str, cloud_project: str, job_id: str) -> Any:
+        _remote_job = self.evaluation.info(
+            f"{cloud_uri}/project/{cloud_project}/evaluation/{job_id}"
+        )
         return _remote_job["manifest"]["jobStatus"] if _remote_job else ""
 
     def test_mnist(self, mode: str) -> None:
@@ -145,8 +169,9 @@ class TestCli:
             rt_name="pytorch",
             rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
             cloud_uri=os.environ.get("CONTROLLER_URL") or "http://127.0.0.1:8082",
-            cloud_project="starwhale"
+            cloud_project="starwhale",
         )
+
     # TODO add more example
 
 
@@ -180,7 +205,7 @@ class RunMode:
     CLOUD = "cloud"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # start test
     test_cli = TestCli(work_dir=init_run_environment())
     example = sys.argv[1]

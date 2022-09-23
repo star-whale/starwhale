@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Dict, Any, List
+from typing import Any
 
 from . import CLI
 from .base.invoke import invoke, invoke_with_react
@@ -8,8 +8,13 @@ from .base.invoke import invoke, invoke_with_react
 class Instance:
     instance_cmd = "instance"
 
-    def login(self, user: str = "starwhale", password: str = "abcd1234",
-              url: str = "http://console.pre.intra.starwhale.ai", alias: str = "cloud") -> bool:
+    def login(
+        self,
+        user: str = "starwhale",
+        password: str = "abcd1234",
+        url: str = "http://console.pre.intra.starwhale.ai",
+        alias: str = "cloud",
+    ) -> bool:
         """
         :param alias:
         :param user:
@@ -20,11 +25,23 @@ class Instance:
                 or: anything else
         """
         _valid_str = "successfully"
-        _res, _err = invoke([CLI, self.instance_cmd, "login", "--username", user, "--password", password, "--alias",
-                             alias, url])
+        _res, _err = invoke(
+            [
+                CLI,
+                self.instance_cmd,
+                "login",
+                "--username",
+                user,
+                "--password",
+                password,
+                "--alias",
+                alias,
+                url,
+            ]
+        )
         return not _err and _valid_str in _res
 
-    def info(self, instance: str = "") -> Dict[str, Any]:
+    def info(self, instance: str = "") -> Any:
         """
         :param instance: instance alias name or uri, if ignore it, swcli will use current selected instance.
         :return:
@@ -50,7 +67,7 @@ class Instance:
         res, err = invoke([CLI, self.instance_cmd, "-o", "json", "info", instance])
         return json.loads(res) if not err else {}
 
-    def list(self) -> List[Dict[str, Any]]:
+    def list(self) -> Any:
         """
         :return:
             [
@@ -87,7 +104,7 @@ class Instance:
         res, err = invoke([CLI, "-o", "json", self.instance_cmd, "list"])
         return json.loads(res) if not err else []
 
-    def logout(self, instance: str = "") -> Tuple[str, str]:
+    def logout(self, instance: str = "") -> bool:
         """
         :param instance: instance alias name or uri, if ignore it, swcli will logout current selected instance.
             then, the instance will remove from list
@@ -97,7 +114,8 @@ class Instance:
                 or:
         """
         _valid_str = "bye"
-        return invoke_with_react([CLI, self.instance_cmd, "logout", instance])
+        _res, _err = invoke_with_react([CLI, self.instance_cmd, "logout", instance])
+        return not _err and _valid_str in _res
 
     def select(self, instance: str) -> bool:
         """
