@@ -11,6 +11,7 @@ export interface IRuntimeVersionSelectorProps {
     onChange?: (newValue: string) => void
     overrides?: SelectProps['overrides']
     disabled?: boolean
+    autoSelected?: boolean
 }
 
 export default function RuntimeVersionSelector({
@@ -20,6 +21,7 @@ export default function RuntimeVersionSelector({
     onChange,
     overrides,
     disabled,
+    autoSelected,
 }: IRuntimeVersionSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
@@ -42,10 +44,10 @@ export default function RuntimeVersionSelector({
             const ops =
                 runtimeVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: item.name,
+                    label: [item.alias, item.name].join(' : '),
                 })) ?? []
             setOptions(ops)
-            if (!value) {
+            if (!value && autoSelected) {
                 onChange?.(ops[0]?.id)
             }
         } else {

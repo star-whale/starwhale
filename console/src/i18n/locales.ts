@@ -658,6 +658,9 @@ const locales0 = {
     'Image': {
         en: 'Image',
     },
+    'Elapsed Time': {
+        en: 'Elapsed Time',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

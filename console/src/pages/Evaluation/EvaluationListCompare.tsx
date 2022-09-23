@@ -158,7 +158,7 @@ export default function EvaluationListCompare({
                 },
                 {
                     key: 'duration',
-                    title: t('Runtime'),
+                    title: t('Elapsed Time'),
                     values: rows.map((data: any) => data.duration),
                     renderValue: (v: any) => (_.isNumber(v) ? durationToStr(v) : '-'),
                     renderCompare: NumberCompareCell,

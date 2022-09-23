@@ -188,9 +188,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                     size='compact'
                                     as='withIcon'
                                     startEnhancer={() => <IconFont type='runtime' />}
-                                    onClick={() =>
-                                        history.push(`/projects/${projectId}/datasets/${datasetId}/versions`)
-                                    }
+                                    onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
                                 >
                                     {t('History')}
                                 </Button>

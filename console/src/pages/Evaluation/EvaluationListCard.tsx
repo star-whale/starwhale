@@ -106,7 +106,7 @@ export default function EvaluationListCard() {
             }),
             CustomColumn({
                 key: 'duration',
-                title: t('Runtime'),
+                title: t('Elapsed Time'),
                 sortable: true,
                 filterType: 'number',
                 sortFn: (a: any, b: any) => {

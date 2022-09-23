@@ -67,7 +67,7 @@ export default function JobListCard() {
                         t('Version'),
                         t('Owner'),
                         t('Created'),
-                        t('Runtime'),
+                        t('Elapsed Time'),
                         t('End Time'),
                         t('Status'),
                         t('Action'),

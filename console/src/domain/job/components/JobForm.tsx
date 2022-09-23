@@ -111,6 +111,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <ModelVersionSelector
                             projectId={projectId}
                             modelId={modelId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
@@ -141,6 +142,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <DatasetVersionSelector
                             projectId={projectId}
                             datasetId={datasetId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
@@ -186,6 +188,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <RuntimeVersionSelector
                             projectId={projectId}
                             runtimeId={runtimeId}
+                            autoSelected
                             overrides={{
                                 Root: {
                                     style: {
