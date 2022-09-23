@@ -114,7 +114,11 @@ class TestCli:
                 break
             sleep(10)
             _job_status = self.get_job_status(cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id)
-            print(f"job status is:{_job_status}")
+            if _job_status:
+                print(f"job status is:{_job_status}")
+            else:
+                print("api occur error!now will exit")
+                break
 
         assert _job_status == "SUCCESS"
 
