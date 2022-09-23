@@ -50,9 +50,9 @@ export default function DatasetVersionSelector({
                 return
             }
 
-            onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+            if (datasetVersionsInfo.data) onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
         }
-    }, [value, autoSelected, datasetId, datasetVersionsInfo.data])
+    }, [value, autoSelected, datasetId, datasetVersionsInfo.data, onChange])
 
     useEffect(() => {
         if (datasetVersionsInfo.isSuccess) {
@@ -66,13 +66,10 @@ export default function DatasetVersionSelector({
                     ].join(' : '),
                 })) ?? []
             setOptions(ops)
-            if (!value && autoSelected) {
-                onChange?.(ops[0]?.id)
-            }
         } else {
             setOptions([])
         }
-    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess, value, onChange])
+    }, [datasetVersionsInfo.data?.list, datasetVersionsInfo.isSuccess])
 
     return (
         <Select

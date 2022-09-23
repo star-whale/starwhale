@@ -50,9 +50,9 @@ export default function RuntimeVersionSelector({
                 return
             }
 
-            onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
+            if (runtimeVersionsInfo.data) onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
         }
-    }, [value, autoSelected, runtimeId, runtimeVersionsInfo.data])
+    }, [value, autoSelected, runtimeId, runtimeVersionsInfo.data, onChange])
 
     useEffect(() => {
         if (runtimeVersionsInfo.isSuccess) {

@@ -49,10 +49,9 @@ export default function ModelVersionSelector({
                 }
                 return
             }
-
-            onChange?.(modelVersionsInfo.data?.list[0]?.id ?? '')
+            if (modelVersionsInfo.data) onChange?.(modelVersionsInfo.data?.list[0]?.id ?? '')
         }
-    }, [value, autoSelected, modelId, modelVersionsInfo.data])
+    }, [value, autoSelected, modelId, modelVersionsInfo.data, onChange])
 
     useEffect(() => {
         if (modelVersionsInfo.isSuccess) {
@@ -66,13 +65,10 @@ export default function ModelVersionSelector({
                     ].join(' : '),
                 })) ?? []
             setOptions(ops)
-            if (!value && autoSelected) {
-                onChange?.(ops[0]?.id)
-            }
         } else {
             setOptions([])
         }
-    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess, value, onChange, autoSelected])
+    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess])
 
     return (
         <Select
