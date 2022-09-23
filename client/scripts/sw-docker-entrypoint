@@ -9,9 +9,9 @@ fi
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
-WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
+SWMP_DIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
+SWRT_DIR=${SW_SWRT_WORKDIR:=/opt/starwhale/swrt}
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
-_MANIFEST_RUNTIME=$(yq -r .environment.python ${WORKDIR}/_manifest.yaml) || true
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
@@ -59,15 +59,25 @@ set_pip_cache() {
 
 pre_check() {
     echo "--> run pre check for swmp model dir ..."
-    cd ${WORKDIR}
+    if [ ! -f "${SWMP_DIR}/model.yaml" ] || [ ! -d "${SWMP_DIR}/src" ]; then
+        echo "${SWMP_DIR} is not starwhale swmp target dir, will exit"
+        exit 1
+    fi
 
-    if [ ! -f "_manifest.yaml" ] || [ ! -f "model.yaml" ]; then
-        echo "${WORKDIR} is not starwhale target dir, will exit"
+    echo "--> run pre check for swrt runtime dir ..."
+    if [ ! -f "${SWRT_DIR}/_manifest.yaml" ] || [ ! -d "${SWRT_DIR}/dependencies" ]; then
+        echo "${SWRT_DIR} is not starwhale swrt target dir, will exit"
+        exit 1
+    fi
+
+    if [ "${SWRT_DIR}" = "${SWMP_DIR}" ]; then
+        echo "swmp and swrt use the same dir, will exit"
         exit 1
     fi
 }
 
 set_python() {
+    _MANIFEST_RUNTIME=$(yq -r .environment.python ${SWRT_DIR}/_manifest.yaml) || exit 1
     _RUNTIME="python${_MANIFEST_RUNTIME}"
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
@@ -78,20 +88,21 @@ set_python() {
         _update_python_alter "python3.8"
     fi
 }
+
 # TODO:restore when processing evaluation(eval run use param: 'runtime URI', and it can be uri or dir path )
 restore_activate_runtime() {
     echo '--> restore python env ...'
     export PYTHONWARNINGS="ignore:Unverified HTTPS request"
-    swcli ${VERBOSE} runtime restore .
+    swcli ${VERBOSE} runtime restore ${SWRT_DIR} || exit 1
     unset PYTHONWARNINGS
 
     echo '--> source activate ...'
-    eval "$(./activate.sw)"
+    eval "$(${SWRT_DIR}/activate.sw)" || exit 1
 }
 
 run() {
-    echo "--> start to run swmp ${STEP}, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval "${WORKDIR}"/src --dataset=${SW_DATASET_URI} --step=${STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
+    echo "--> start to run swmp ${STEP}, use $(which swcli) cli @ ${SWMP_DIR} ..."
+    swcli ${VERBOSE} model eval "${SWMP_DIR}"/src --dataset=${SW_DATASET_URI} --step=${STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION} || exit 1
 }
 
 welcome() {
@@ -100,7 +111,9 @@ welcome() {
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Version: `swcli --version`"
     echo "Run: $1 "
-    echo "Model: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
+    echo "Model Version: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
+    echo "Model Workdir: ${SWMP_DIR}"
+    echo "Runtime Workdir: ${SWRT_DIR}"
     echo "===================================="
 }
 

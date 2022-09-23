@@ -123,7 +123,7 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
-                f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111:/opt/starwhale/swmp",
+                f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111:/opt/starwhale/swrt",
                 "-e SW_PROJECT=self",
                 f"-e SW_EVALUATION_VERSION={build_version}",
                 "-e SW_INSTANCE_URI=local",

@@ -641,6 +641,7 @@ public class DataStoreControllerTest {
         @Test
         public void testTableNotExists() {
             this.req.setTableName("table not exists");
+            this.req.setIgnoreNonExistingTable(false);
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.queryTable(this.req),
                     "");
@@ -649,7 +650,6 @@ public class DataStoreControllerTest {
         @Test
         public void testTableNotExistsIgnore() {
             this.req.setTableName("table not exists");
-            this.req.setIgnoreNonExistingTable(true);
 
             var resp = DataStoreControllerTest.this.controller.queryTable(this.req);
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
@@ -1216,6 +1216,7 @@ public class DataStoreControllerTest {
         @Test
         public void testInvalidTableName() {
             this.req.getTables().get(0).setTableName("invalid");
+            this.req.setIgnoreNonExistingTable(false);
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.scanTable(this.req),
                     "");
@@ -1224,7 +1225,6 @@ public class DataStoreControllerTest {
         @Test
         public void testTableNotExistsIgnore() {
             this.req.getTables().get(0).setTableName("invalid");
-            this.req.setIgnoreNonExistingTable(true);
 
             var resp = DataStoreControllerTest.this.controller.scanTable(this.req);
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
