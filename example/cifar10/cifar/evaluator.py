@@ -6,7 +6,7 @@ import torch
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale import Image, multi_classification, PipelineHandler, Context
+from starwhale import Image, Context, PipelineHandler, multi_classification
 
 from .model import Net
 
@@ -56,7 +56,9 @@ class CIFAR10Inference(PipelineHandler):
 
     def _load_model(self, device):
         model = Net().to(device)
-        model.load_state_dict(torch.load(str(ROOTDIR / "models" / "cifar_net.pth"), map_location=device))
+        model.load_state_dict(
+            torch.load(str(ROOTDIR / "models" / "cifar_net.pth"), map_location=device)
+        )
         model.eval()
         print("load cifar_net model, start to inference...")
         return model

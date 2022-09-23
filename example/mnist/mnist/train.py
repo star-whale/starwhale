@@ -1,14 +1,20 @@
 import torch
-from torch.utils.data import DataLoader
-import torch.nn.functional as F
 import torch.optim as optim
+import torch.nn.functional as F
+from model import Net
 from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 
-from .model import Net
 
-
-def train(model, device, data_loader, optimizer, epoch, log_interval=10):
+def train(
+    model: Net,
+    device: torch.device,
+    data_loader: DataLoader,
+    optimizer: optim.Adadelta,
+    epoch: int,
+    log_interval: int = 10,
+) -> None:
     model.train()
 
     for idx, (data, target) in enumerate(data_loader):
@@ -17,28 +23,36 @@ def train(model, device, data_loader, optimizer, epoch, log_interval=10):
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
-        loss.backward()
+        loss.backward()  # type: ignore
         optimizer.step()
 
         if idx % log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, idx * len(data), len(data_loader.dataset),
-                100. * idx / len(data_loader), loss.item()))
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    idx * len(data),
+                    len(data_loader.dataset.data),  # type: ignore
+                    100.0 * idx / len(data_loader),
+                    loss.item(),
+                )
+            )
 
 
-def main():
+def main() -> None:
     cuda = torch.cuda.is_available()
     device = torch.device("cuda" if cuda else "cpu")
     torch.manual_seed(1)
     dataset = datasets.MNIST(
-        "data", train=True, download=True,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])
+        "data",
+        train=True,
+        download=True,
+        transform=transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        ),
     )
-    gpu_kw = {"num_workers": 1, "pin_memory": True, "shuffle": True} if cuda else {}
-    data_loader = DataLoader(dataset, batch_size=60, **gpu_kw)
+    data_loader = DataLoader(
+        dataset, batch_size=60, num_workers=1, pin_memory=True, shuffle=True
+    )
 
     model = Net().to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=1.0)
