@@ -1,3 +1,3 @@
-from ._impl.model import PipelineHandler
+from ._impl.model import PipelineHandler, PPLResultIterator
 
-__all__ = ["PipelineHandler"]
+__all__ = ["PipelineHandler", "PPLResultIterator"]

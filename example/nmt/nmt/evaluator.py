@@ -69,7 +69,7 @@ class NMTPipeline(PipelineHandler):
 
     def _load_vocab(self):
         # hack for torch load
-        from .helper import Lang, Vocab  # type: ignore
+        from .helper import Lang, Vocab  # noqa
 
         return torch.load(_ROOT_DIR + "/models/vocab_eng-fra.bin")
 
