@@ -46,6 +46,46 @@ function RocAuc({ fetch, name }: { fetch: any; name: string }) {
     )
 }
 
+function Summary({ fetch }: any) {
+    const [t] = useTranslation()
+    const record: Record<string, string> = fetch?.data?.records?.[0] ?? {}
+    return (
+        <Card outTitle={t('Summary')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            <div className='flex-column'>
+                {Object.keys(record)
+                    .sort((a, b) => {
+                        if (a === 'id') return -1
+                        return a > b ? 1 : -1
+                    })
+                    .map((label) => (
+                        <div
+                            key={label}
+                            style={{
+                                display: 'flex',
+                                gap: '20px',
+                                borderBottom: '1px solid #EEF1F6',
+                                lineHeight: '44px',
+                                flexWrap: 'nowrap',
+                                fontSize: '14px',
+                                paddingLeft: '12px',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    flexBasis: '160px',
+                                    color: 'rgba(2,16,43,0.60)',
+                                }}
+                            >
+                                {label}:
+                            </div>
+                            <div> {record[label]}</div>
+                        </div>
+                    ))}
+            </div>
+        </Card>
+    )
+}
+
 function EvaluationViewer({ table, filter }: { table: string; filter?: Record<string, any> }) {
     const query = React.useMemo(
         () => ({
@@ -86,8 +126,9 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
         return <BusyPlaceholder type='notfound' />
     }
     // TODO hard code
-    if (table.includes('confusion_matrix')) return <ConfusionMatrix name={table} fetch={info} />
-    if (table.includes('roc_auc') && !table.includes('summary')) return <RocAuc name={table} fetch={info} />
+    if (table.includes('/confusion_matrix')) return <ConfusionMatrix name={table} fetch={info} />
+    if (table.includes('/roc_auc') && !table.includes('/summary')) return <RocAuc name={table} fetch={info} />
+    if (table.includes('/summary')) return <Summary name={table} fetch={info} />
 
     return (
         <Card outTitle={showTableName(table)} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>

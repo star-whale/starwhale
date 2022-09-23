@@ -1,3 +1,4 @@
+import { formatTimestampDateTime } from '@/utils/datetime'
 import { Select, SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
@@ -40,11 +41,29 @@ export default function DatasetVersionSelector({
     })
 
     useEffect(() => {
+        if (autoSelected) {
+            if (value) {
+                const item = datasetVersionsInfo.data?.list.find((v) => v.id === value)
+                if (!item) {
+                    onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+                }
+                return
+            }
+
+            onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+        }
+    }, [value, autoSelected, datasetId, datasetVersionsInfo.data])
+
+    useEffect(() => {
         if (datasetVersionsInfo.isSuccess) {
             const ops =
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: [item.alias, item.name].join(' : '),
+                    label: [
+                        item.alias ?? '',
+                        item.name ? item.name.substring(0, 8) : '',
+                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
+                    ].join(' : '),
                 })) ?? []
             setOptions(ops)
             if (!value && autoSelected) {

@@ -1,3 +1,4 @@
+import { formatTimestampDateTime } from '@/utils/datetime'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
@@ -40,11 +41,29 @@ export default function ModelVersionSelector({
     })
 
     useEffect(() => {
+        if (autoSelected) {
+            if (value) {
+                const item = modelVersionsInfo.data?.list.find((v) => v.id === value)
+                if (!item) {
+                    onChange?.(modelVersionsInfo.data?.list[0]?.id ?? '')
+                }
+                return
+            }
+
+            onChange?.(modelVersionsInfo.data?.list[0]?.id ?? '')
+        }
+    }, [value, autoSelected, modelId, modelVersionsInfo.data])
+
+    useEffect(() => {
         if (modelVersionsInfo.isSuccess) {
             const ops =
                 modelVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: [item.alias, item.name].join(' : '),
+                    label: [
+                        item.alias ?? '',
+                        item.name ? item.name.substring(0, 8) : '',
+                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
+                    ].join(' : '),
                 })) ?? []
             setOptions(ops)
             if (!value && autoSelected) {

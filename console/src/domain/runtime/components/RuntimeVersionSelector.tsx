@@ -1,3 +1,4 @@
+import { formatTimestampDateTime } from '@/utils/datetime'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
@@ -40,20 +41,35 @@ export default function RuntimeVersionSelector({
     })
 
     useEffect(() => {
+        if (autoSelected) {
+            if (value) {
+                const item = runtimeVersionsInfo.data?.list.find((v) => v.id === value)
+                if (!item) {
+                    onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
+                }
+                return
+            }
+
+            onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
+        }
+    }, [value, autoSelected, runtimeId, runtimeVersionsInfo.data])
+
+    useEffect(() => {
         if (runtimeVersionsInfo.isSuccess) {
             const ops =
                 runtimeVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: [item.alias, item.name].join(' : '),
+                    label: [
+                        item.alias ?? '',
+                        item.name ? item.name.substring(0, 8) : '',
+                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
+                    ].join(' : '),
                 })) ?? []
             setOptions(ops)
-            if (!value && autoSelected) {
-                onChange?.(ops[0]?.id)
-            }
         } else {
             setOptions([])
         }
-    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess, value, onChange, autoSelected])
+    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess])
 
     return (
         <Select
