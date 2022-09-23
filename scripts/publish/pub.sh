@@ -33,7 +33,7 @@ set_up_version() {
   pypi_version="$release""dev""$last_commit_time"
   FMT_VERSION_CODE="import pkg_resources; _v=pkg_resources.parse_version('${pypi_version}'); print(_v.public)"
   export PYPI_RELEASE_VERSION=$(python3 -c "${FMT_VERSION_CODE}")
-  export SERVER_RELEASE_VERSION="$branch""-""$commit_id"
+  export SERVER_RELEASE_VERSION="${branch////-}""-""$commit_id"
   export SWNAME=$SERVER_RELEASE_VERSION
   export SWNS=$(whoami)
 }
