@@ -53,7 +53,7 @@ export default function RuntimeVersionSelector({
         } else {
             setOptions([])
         }
-    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess, value, onChange])
+    }, [runtimeVersionsInfo.data?.list, runtimeVersionsInfo.isSuccess, value, onChange, autoSelected])
 
     return (
         <Select

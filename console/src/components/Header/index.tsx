@@ -260,6 +260,7 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     const title = !!useSearchParam('token')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { systemRole } = useUserRoles()
     const [t] = useTranslation()
     const history = useHistory()

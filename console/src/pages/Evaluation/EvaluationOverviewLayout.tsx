@@ -202,8 +202,6 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         return <WithCurrentAuth id='evaluation.action'>{actions[job.jobStatus]}</WithCurrentAuth>
     }, [job, t, handleAction])
 
-    console.log(job)
-
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
             <div style={{ paddingTop: '12px', flex: '1' }}>{children}</div>

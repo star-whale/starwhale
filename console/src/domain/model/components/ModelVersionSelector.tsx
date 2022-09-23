@@ -53,7 +53,7 @@ export default function ModelVersionSelector({
         } else {
             setOptions([])
         }
-    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess, value, onChange])
+    }, [modelVersionsInfo.data?.list, modelVersionsInfo.isSuccess, value, onChange, autoSelected])
 
     return (
         <Select
