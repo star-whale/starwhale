@@ -75,14 +75,15 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
-                mapDataToValue: (item: any) => item,
+                mapDataToValue: (item: any) => item.id,
                 // @ts-ignore
                 renderCell: (props: any) => {
-                    const item = props.value
+                    const { data } = props ?? {}
+                    if (!data) return <></>
 
                     return (
-                        <TextLink key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
-                            {`${item.modelName}-${item.id}`}
+                        <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
+                            {`${data.modelName}-${data.id}`}
                         </TextLink>
                     )
                 },

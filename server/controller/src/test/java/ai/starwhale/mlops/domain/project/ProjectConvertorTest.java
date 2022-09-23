@@ -29,7 +29,6 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,9 +41,8 @@ public class ProjectConvertorTest {
     @BeforeEach
     public void setUp() {
         IdConvertor idConvertor = new IdConvertor();
-        LocalDateTimeConvertor localDateTimeConvertor = new LocalDateTimeConvertor();
-        UserConvertor userConvertor = new UserConvertor(idConvertor, localDateTimeConvertor);
-        projectConvertor = new ProjectConvertor(idConvertor, userConvertor, localDateTimeConvertor);
+        UserConvertor userConvertor = new UserConvertor(idConvertor);
+        projectConvertor = new ProjectConvertor(idConvertor, userConvertor);
     }
 
     @Test

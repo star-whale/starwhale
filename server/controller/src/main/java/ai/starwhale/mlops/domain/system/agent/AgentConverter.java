@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.system.agent;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.NodeInfo;
@@ -24,7 +23,7 @@ import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -36,12 +35,9 @@ import org.springframework.stereotype.Component;
 public class AgentConverter {
 
     final ObjectMapper objectMapper;
-    final LocalDateTimeConvertor localDateTimeConvertor;
 
-    public AgentConverter(ObjectMapper objectMapper,
-            LocalDateTimeConvertor localDateTimeConvertor) {
+    public AgentConverter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     public Agent fromNode(Node node) {
@@ -74,7 +70,7 @@ public class AgentConverter {
                 .agentVersion(entity.getAgentVersion())
                 .status(entity.getStatus())
                 .nodeInfo(nodeInfo)
-                .connectTime(entity.getConnectTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+                .connectTime(entity.getConnectTime().getTime())
                 .build();
     }
 
@@ -91,7 +87,7 @@ public class AgentConverter {
                 .agentIp(agent.getIp())
                 .agentVersion(agent.getAgentVersion())
                 .status(agent.getStatus())
-                .connectTime(localDateTimeConvertor.revert(agent.getConnectTime()))
+                .connectTime(new Date(agent.getConnectTime()))
                 .deviceInfo(deviceInfo)
                 .build();
     }

@@ -20,16 +20,16 @@ import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-@AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
+@AllArgsConstructor
 public class ProjectRoleEntity extends BaseEntity {
 
     private Long id;

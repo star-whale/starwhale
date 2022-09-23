@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.api.dataset import Text, BuildExecutor
+from starwhale import Text, BuildExecutor
 
 from .helper import normalize_str
 

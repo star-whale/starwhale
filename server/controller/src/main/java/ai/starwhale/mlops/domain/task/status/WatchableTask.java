@@ -111,7 +111,7 @@ public class WatchableTask extends Task implements TaskWrapper {
                     }
                     return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
                 }
-        ).forEach(watcher -> watcher.onTaskStatusChange(this, oldStatus));
+        ).forEach(watcher -> watcher.onTaskStatusChange(originalTask, oldStatus));
     }
 
     public void setResultRootPath(ResultPath resultRootPath) {

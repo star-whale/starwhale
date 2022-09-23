@@ -64,6 +64,8 @@ public class ProjectManagerTest {
         given(projectMapper.findProject(same(2L))).willReturn(project2);
         given(projectMapper.findProjectByName(same("p1"))).willReturn(project1);
         given(projectMapper.findProjectByName(same("p2"))).willReturn(project2);
+        given(projectMapper.findProjectByNameForUpdate(same("p1"))).willReturn(project1);
+        given(projectMapper.findProjectByNameForUpdate(same("p2"))).willReturn(project2);
         given(projectMapper.listProjects(anyString(), any(), any(), any()))
                 .willReturn(List.of(project1, project2));
         given(projectMapper.listProjects(same("p1"), any(), any(), any()))

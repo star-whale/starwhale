@@ -18,25 +18,27 @@ package ai.starwhale.mlops.domain.system.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
-import java.time.LocalDateTime;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class AgentEntity extends BaseEntity {
 
     private Long id;
 
     private String agentIp;
 
-    private LocalDateTime connectTime;
+    @Builder.Default
+    private Date connectTime = defaultDate;
 
     private String agentVersion;
 

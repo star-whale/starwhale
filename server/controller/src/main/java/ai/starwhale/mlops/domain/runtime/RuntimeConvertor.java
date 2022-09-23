@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.runtime;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -33,8 +32,6 @@ public class RuntimeConvertor implements Convertor<RuntimeEntity, RuntimeVo> {
     private IdConvertor idConvertor;
     @Resource
     private UserConvertor userConvertor;
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
     public RuntimeVo convert(RuntimeEntity entity) throws ConvertException {
@@ -42,7 +39,7 @@ public class RuntimeConvertor implements Convertor<RuntimeEntity, RuntimeVo> {
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getRuntimeName())
                 .owner(userConvertor.convert(entity.getOwner()))
-                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

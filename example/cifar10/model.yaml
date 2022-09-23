@@ -4,6 +4,6 @@ model:
   - models/cifar_net.pth
 
 run:
-  ppl: cifar.ppl:CIFAR10Inference
+  handler: cifar.evaluator:CIFAR10Inference
 
 desc: cifar10 by pytorch

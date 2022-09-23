@@ -33,7 +33,6 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -46,7 +45,7 @@ import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,9 +59,6 @@ public class JobConverterTest {
         UserConvertor userConvertor = mock(UserConvertor.class);
         given(userConvertor.convert(any(UserEntity.class)))
                 .willReturn(UserVo.builder().build());
-        LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
-        given(localDateTimeConvertor.convert(any(LocalDateTime.class)))
-                .willReturn(1000L);
         ResourcePoolConverter resourcePoolConverter = mock(ResourcePoolConverter.class);
         given(resourcePoolConverter.toResourcePool(any(ResourcePoolEntity.class)))
                 .willReturn(ResourcePool.empty());
@@ -81,7 +77,6 @@ public class JobConverterTest {
         jobConvertor = new JobConvertor(
                 idConvertor,
                 userConvertor,
-                localDateTimeConvertor,
                 resourcePoolConverter,
                 runtimeService,
                 jobSwdsVersionMapper,
@@ -98,11 +93,11 @@ public class JobConverterTest {
                 .modelName("model")
                 .swmpVersion(SwModelPackageVersionEntity.builder().versionName("v1").build())
                 .runtimeVersionId(1L)
-                .createdTime(LocalDateTime.now())
+                .createdTime(new Date(1000L))
                 .deviceType(1)
                 .deviceAmount(3)
                 .jobStatus(JobStatus.SUCCESS)
-                .finishedTime(LocalDateTime.now())
+                .finishedTime(new Date(1001L))
                 .comment("job-comment")
                 .resourcePoolId(1L)
                 .build();
@@ -121,7 +116,7 @@ public class JobConverterTest {
                 hasProperty("device", is("CPU")),
                 hasProperty("deviceAmount", is(3)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
-                hasProperty("stopTime", is(1000L)),
+                hasProperty("stopTime", is(1001L)),
                 hasProperty("comment", is("job-comment")),
                 hasProperty("resourcePool", is("default"))
         ));

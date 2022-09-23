@@ -46,7 +46,7 @@ class ModelRunConfig(ASDictMixin):
     # TODO: use attr to tune class
     def __init__(
         self,
-        ppl: str,
+        handler: str,
         type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
         pkg_data: t.Union[t.List[str], None] = None,
@@ -54,7 +54,7 @@ class ModelRunConfig(ASDictMixin):
         envs: t.Union[t.List[str], None] = None,
         **kw: t.Any,
     ):
-        self.ppl = ppl.strip()
+        self.handler = handler.strip()
         self.typ = type
         self.runtime = runtime.strip()
         self.pkg_data = pkg_data or []
@@ -65,14 +65,14 @@ class ModelRunConfig(ASDictMixin):
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if not self.ppl:
+        if not self.handler:
             raise FileFormatError("need ppl field")
 
     def __str__(self) -> str:
-        return f"Model Run Config: ppl -> {self.ppl}"
+        return f"Model Run Config: ppl -> {self.handler}"
 
     def __repr__(self) -> str:
-        return f"Model Run Config: ppl -> {self.ppl}, runtime -> {self.runtime}"
+        return f"Model Run Config: ppl -> {self.handler}, runtime -> {self.runtime}"
 
 
 class ModelConfig(ASDictMixin):
@@ -192,7 +192,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _model_config = cls.load_model_config(_mp)
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             return DEFAULT_EVALUATION_PIPELINE
-        return _model_config.run.ppl
+        return _model_config.run.handler
 
     @classmethod
     def eval_user_handler(
@@ -227,7 +227,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             _module = DEFAULT_EVALUATION_PIPELINE
         else:
-            _module = _model_config.run.ppl
+            _module = _model_config.run.handler
 
         _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
 
@@ -236,7 +236,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if _model_config.run.typ == EvalHandlerType.DEFAULT:
                 _ppl = DEFAULT_EVALUATION_PIPELINE
             else:
-                _ppl = _model_config.run.ppl
+                _ppl = _model_config.run.handler
 
             _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
             Parser.generate_job_yaml(_ppl, workdir, _new_yaml_path)
@@ -404,7 +404,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._gen_steps,
                 5,
                 "generate execute steps",
-                dict(typ=_model_config.run.typ, ppl=_model_config.run.ppl),
+                dict(typ=_model_config.run.typ, ppl=_model_config.run.handler),
             ),
             (
                 self._render_manifest,

@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.task.converter;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
@@ -30,12 +29,8 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVo> {
 
     private final IdConvertor idConvertor;
 
-    private final LocalDateTimeConvertor localDateTimeConvertor;
-
-    public TaskConvertor(IdConvertor idConvertor,
-            LocalDateTimeConvertor localDateTimeConvertor) {
+    public TaskConvertor(IdConvertor idConvertor) {
         this.idConvertor = idConvertor;
-        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     @Override
@@ -47,7 +42,7 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVo> {
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
                 .taskStatus(entity.getTaskStatus())
-                .createdTime(localDateTimeConvertor.convert(entity.getStartedTime()))
+                .createdTime(entity.getStartedTime().getTime())
                 .build();
     }
 

@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -50,7 +49,6 @@ public class RuntimeVersionConvertorTest {
         runtimeVersionConvertor = new RuntimeVersionConvertor(
                 new IdConvertor(),
                 userConvertor,
-                new LocalDateTimeConvertor(),
                 new VersionAliasConvertor()
         );
     }
