@@ -30,8 +30,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class DataStore {
 
@@ -253,9 +255,13 @@ public class DataStore {
 
     private MemoryTable getTable(String tableName, boolean allowNull) {
         var table = tables.get(tableName);
-        if (table == null && !allowNull) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+        if (table == null) {
+            if (allowNull) {
+                log.warn("not found table:{}!", tableName);
+            } else {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
                     "invalid table name " + tableName);
+            }
         }
         return table;
     }
