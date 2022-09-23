@@ -986,7 +986,6 @@ class RemoteDataStore:
         if start is not None:
             post_data["start"] = key_type.encode(start)
         post_data["limit"] = 1000
-        post_data["ignoreNonExistingTable"] = True
         if keep_none:
             post_data["keepNone"] = True
         assert self.token is not None
