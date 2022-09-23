@@ -3,11 +3,12 @@ module.exports = {
         {
             "Quickstart": ["quickstart/standalone", "quickstart/on-premises"],
             "Tutorials": [
+                "tutorials/pytorch",
                 "tutorials/mnist",
+                "tutorials/speech",
                 "tutorials/ag_news",
                 "tutorials/cifar10",
                 "tutorials/pfp",
-                "tutorials/speech",
                 "tutorials/nmt"
             ],
             "Fundamentals": ["fundamentals/concepts"],
