@@ -118,7 +118,7 @@ class TestCli:
             dataset=swds["version"],
             runtime=swrt["version"],
             project=cloud_project,
-            resource="cpu:0.2"
+            resource="cpu:0.2",
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
