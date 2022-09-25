@@ -118,7 +118,7 @@ class TestCli:
             dataset=swds["version"],
             runtime=swrt["version"],
             project=cloud_project,
-            resource="cpu:0.4",
+            resource="cpu:0.2",
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
@@ -167,8 +167,8 @@ class TestCli:
             model_workdir=f"{self._work_dir}/example/mnist",
             ds_name="mnist",
             ds_workdir=f"{self._work_dir}/example/mnist",
-            rt_name="pytorch",
-            rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
+            rt_name="pytorch-mnist",
+            rt_workdir=f"{self._work_dir}/example/mnist",
             cloud_uri=os.environ.get("CONTROLLER_URL") or "http://127.0.0.1:8082",
             cloud_project="starwhale",
         )
