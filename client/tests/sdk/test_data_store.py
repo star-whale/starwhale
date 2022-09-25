@@ -1516,7 +1516,7 @@ class TestTableWriter(BaseTestCase):
             if time.time() - start > 10:
                 is_timeout = True
 
-        assert is_timeout
+        assert not is_timeout
         assert not remote_writer.is_alive()
         assert not remote_writer._stopped
 
