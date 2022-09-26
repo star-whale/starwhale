@@ -49,6 +49,11 @@ function RocAuc({ fetch, name }: { fetch: any; name: string }) {
 function Summary({ fetch }: any) {
     const [t] = useTranslation()
     const record: Record<string, string> = fetch?.data?.records?.[0] ?? {}
+
+    if (fetch?.data?.records.length === 0) {
+        return <BusyPlaceholder type='notfound' />
+    }
+
     return (
         <Card outTitle={t('Summary')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
             <div className='flex-column'>

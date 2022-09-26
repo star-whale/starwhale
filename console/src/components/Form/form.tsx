@@ -209,7 +209,7 @@ export function createForm<S extends {} = Store>({
                 return React.createElement(
                     FormControl,
                     {
-                        error: error?.toString(),
+                        error: error ? error.toString() : undefined,
                         label: renderLabel(),
                         caption,
                         children: childNode,
