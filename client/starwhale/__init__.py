@@ -24,6 +24,7 @@ from starwhale.api.dataset import (
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
 )
+from starwhale.api.evaluation import Evaluation
 
 __all__ = [
     "__version__",
@@ -31,6 +32,7 @@ __all__ = [
     "multi_classification",
     "step",
     "Context",
+    "Evaluation",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",
