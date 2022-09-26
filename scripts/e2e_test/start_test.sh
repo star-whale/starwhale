@@ -30,6 +30,7 @@ declare_env() {
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
   export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
+  export CONTROLLER_URL="http://127.0.0.1:$PORT_CONTROLLER"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
   export SW_IMAGE_REPO="${SW_IMAGE_REPO:=host.minikube.internal:8083}"
@@ -146,7 +147,7 @@ upload_pypi_to_nexus() {
   popd
 }
 
-buid_runtime_image() {
+build_runtime_image() {
   pushd ../../docker
   docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
@@ -200,10 +201,10 @@ check_controller_service() {
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
+    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:$PORT_CONTROLLER &
 }
 
-standalone_test() {
+client_test() {
   pushd ../../client
   rm -rf build/*
   rm -rf dist/*
@@ -217,14 +218,6 @@ standalone_test() {
 }
 
 api_test() {
-  pushd ../../
-  export WORK_DIR=`cat WORK_DIR`
-  if ! in_github_action; then
-    export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
-  fi
-  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
-  popd
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
@@ -270,11 +263,11 @@ main() {
   check_nexus_service
   create_repository_in_nexus
   upload_pypi_to_nexus
-  buid_runtime_image
+  build_runtime_image
   push_images_to_nexus
   start_starwhale
-  standalone_test
   check_controller_service
+  client_test
   api_test
 }
 

@@ -34,27 +34,27 @@ isort-format:
 
 .POHNY: format
 format:
-	black --config pyproject.toml . && isort .
+	black --config pyproject.toml . ../scripts/client_test && isort . ../scripts/client_test
 
 .POHNY: ci-format-checker
 ci-format-checker:
 	echo "run black"
-	black --check --config pyproject.toml . ../example
+	black --check --config pyproject.toml . ../example ../scripts/client_test
 
 .POHNY: ci-lint
 ci-lint:
 	echo "run flake8"
-	flake8 . ../example
+	flake8 . ../example ../scripts/client_test
 
 .POHNY: ci-mypy
 ci-mypy:
 	echo "run mypy"
-	mypy . ../example/mnist
+	mypy . ../example/mnist ../scripts/client_test
 
 .POHNY: ci-isort
 ci-isort:
 	echo "run isort"
-	isort --check . ../example
+	isort --check . ../example ../scripts/client_test
 
 .POHNY: ut
 ut:

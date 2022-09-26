@@ -17,6 +17,7 @@ else
   echo "use $(pwd) as source"
 fi
 
+export SW_WORK_DIR=$WORK_DIR
 echo $WORK_DIR > WORK_DIR
 
 finish() {
@@ -33,6 +34,7 @@ trap finish EXIT
 if ! in_github_action; then
   cp -rf ./client "$WORK_DIR"
   cp -rf ./example "$WORK_DIR"
+  cp -rf ./scripts "$WORK_DIR"
   cp -rf ./README.md "$WORK_DIR"
   rm -rf "$WORK_DIR/.venv"
   rm -rf "$WORK_DIR/example/mnist/.venv"
@@ -59,54 +61,9 @@ swcli runtime quickstart shell . --python-env=venv --create-env --name pytorch-m
 # shellcheck source=/dev/null
 . .venv/bin/activate
 
-python3 -m pip install -r requirements-sw-lock.txt
-
-echo "install swcli for mnist venv"
-pushd ../../client
-make install-sw
+echo "execute test for mnist example"
+pushd ../../scripts/client_test
+python3 cli_test.py mnist
 popd
 
-prepare_data() {
-  mkdir -p data && pushd data
-  if [ ! -f train-images-idx3-ubyte ]; then
-    wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
-    wget http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
-    wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
-    wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
-    gzip -d -- *.gz
-  fi
-  popd
-}
-
-prepare_data
-
-must_equal() {
-  if [ "$1" != "$2" ]; then
-    echo "$3: expect $1, get $2"
-    exit 1
-  fi
-}
-
-length_must_equal() {
-  must_equal "$1" "$(swcli -o json "$2" list | jq length)" "$2 list"
-}
-
-build_rc_and_check() {
-  length_must_equal 0 "$1"
-  swcli -vvv "$1" build .
-  length_must_equal 1 "$1"
-}
-
-build_rc_and_check runtime
-build_rc_and_check model
-build_rc_and_check dataset
-
-echo "do ppl and cmp"
-length_must_equal 0 eval "job list"
-swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest
-length_must_equal 1 eval "job list"
-
-#echo "check result"
-#accuracy=$(swcli -o json job info "$(swcli -o json job list | jq -r '. | last | .manifest.version')" | jq '.report.summary.accuracy')
-#must_equal 0.9894 "$accuracy" "mnist accuracy"
 echo "done"

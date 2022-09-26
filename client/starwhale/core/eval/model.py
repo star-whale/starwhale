@@ -296,7 +296,11 @@ class StandaloneEvaluationJob(EvaluationJob):
             ["docker", "ps", "-f", f"label=version={self.store.id}", "-q"]
         )
         _container = out.decode().strip()
-
+        if not _container:
+            return (
+                False,
+                f"failed to {action} container, reason: not found container by label=version={self.store.id}",
+            )
         cmd += [_container]
         try:
             check_call(cmd)
@@ -437,10 +441,10 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         return jobs, crm.parse_pager(r)
 
     @staticmethod
-    def parse_device(device: str) -> t.Tuple[int, int]:
+    def parse_device(device: str) -> t.Tuple[int, float]:
         _t = device.split(":")
         _id = _device_id_map.get(_t[0].lower(), _device_id_map["cpu"])
-        _cnt = int(_t[1]) if len(_t) == 2 else 1
+        _cnt = float(_t[1]) if len(_t) == 2 else 1
         return _id, _cnt
 
     @ignore_error({})
