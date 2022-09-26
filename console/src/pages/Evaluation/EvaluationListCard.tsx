@@ -26,16 +26,18 @@ import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { parseDecimal } from '@/utils'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import classNames from 'classnames'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
     // RIGHT:
-    '0px 10px 1fr',
+    '0px 40px 1fr',
     // MIDDLE:
-    '1fr 10px 1fr',
+    '1fr 40px 1fr',
     // LEFT:
-    '1fr 10px 0px',
+    '1fr 40px 0px',
 ]
+const RESIZEBAR_WIDTH = 40
 const page = { pageNum: 1, pageSize: 1000 }
 export default function EvaluationListCard() {
     const [css] = useStyletron()
@@ -251,7 +253,7 @@ export default function EvaluationListCard() {
                         gridRef.current!.style.gridTemplateColumns = `${Math.max(
                             newWidth,
                             440
-                        )}px 10px minmax(400px, 1fr)`
+                        )}px ${RESIZEBAR_WIDTH}px minmax(400px, 1fr)`
                     }
                 }
             })
@@ -400,20 +402,21 @@ export default function EvaluationListCard() {
                     {/* eslint-disable-next-line jsx-a11y/role-has-required-aria-props */}
                     <div
                         ref={resizeRef}
-                        className={css({
-                            'width': '10px',
-                            'flexBasis': '10px',
-                            'cursor': 'col-resize',
-                            'paddingTop': '112px',
-                            'zIndex': 20,
-                            'overflow': 'visible',
-                            ':hover': {
-                                backgroundColor: '',
-                            },
-                            'position': 'relative',
-                            'right': gridMode === 2 ? '14px' : undefined,
-                            'left': gridMode === 0 ? '0px' : undefined,
-                        })}
+                        className={classNames(
+                            'resize-bar',
+                            css({
+                                width: `${RESIZEBAR_WIDTH}px`,
+                                flexBasis: `${RESIZEBAR_WIDTH}px`,
+                                cursor: 'col-resize',
+                                paddingTop: '70px',
+                                zIndex: 20,
+                                overflow: 'visible',
+                                backgroundColor: '#fff',
+                                position: 'relative',
+                                right: gridMode === 2 ? '14px' : undefined,
+                                left: gridMode === 0 ? '0px' : undefined,
+                            })
+                        )}
                         role='button'
                         tabIndex={0}
                         onMouseDown={handleResizeStart}
