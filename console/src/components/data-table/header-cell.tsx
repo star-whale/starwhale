@@ -73,7 +73,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 props.onSort(props.index, SORT_DIRECTIONS.DESC)
             }
         },
-        [props.onPin, props.onSort, props.index]
+        [props.onPin, props.onSort, props.index, props.isPin]
     )
 
     return (
