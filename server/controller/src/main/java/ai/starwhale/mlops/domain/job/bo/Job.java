@@ -46,7 +46,7 @@ public class Job extends TimeConcern {
 
     Project project;
 
-    String evalJobDdl;
+    String stepSpec;
 
     Step currentStep;
 

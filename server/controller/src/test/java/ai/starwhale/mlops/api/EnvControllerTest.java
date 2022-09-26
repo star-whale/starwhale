@@ -42,7 +42,7 @@ public class EnvControllerTest {
     public void setUp() {
         EnvService envService = mock(EnvService.class);
         given(envService.listDevices())
-                .willReturn(List.of(DeviceVo.builder().id("1").name("device1").build()));
+                .willReturn(List.of(DeviceVo.builder().name("device1").build()));
         controller = new EnvController(envService);
     }
 
@@ -53,7 +53,7 @@ public class EnvControllerTest {
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
-                is(hasItem(hasProperty("id", is("1"))))
+                is(hasItem(hasProperty("name", is("device1"))))
         ));
     }
 }

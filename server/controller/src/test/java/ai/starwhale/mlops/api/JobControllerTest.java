@@ -126,17 +126,14 @@ public class JobControllerTest {
     @Test
     public void testCreatJob() {
         given(jobService.createJob(anyString(), anyString(),
-                anyString(), anyString(), anyString(),
-                anyFloat(), anyString(), anyString()))
+                anyString(), anyString(), anyString(), anyString(), any()))
                 .willReturn(1L);
         JobRequest jobRequest = new JobRequest();
         jobRequest.setComment("");
-        jobRequest.setDevice("");
         jobRequest.setModelVersionUrl("");
         jobRequest.setDatasetVersionUrls("");
         jobRequest.setRuntimeVersionUrl("");
         jobRequest.setResourcePool("");
-        jobRequest.setDeviceAmount(0f);
         var resp = controller.createJob("p1", jobRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(

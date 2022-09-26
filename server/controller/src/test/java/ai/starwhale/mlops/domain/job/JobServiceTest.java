@@ -61,6 +61,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -127,8 +128,8 @@ public class JobServiceTest {
                 jobBoConverter, jobMapper, jobSwdsVersionMapper, taskMapper,
                 jobConvertor, runtimeManager, jobSpliterator, resourcePoolManager,
                 hotJobHolder, projectManager, jobManager, jobLoader, swmpManager,
-                resultQuerier, swdsManager, storagePathCoordinator, userService
-        );
+                resultQuerier, swdsManager, storagePathCoordinator, userService,
+                new ObjectMapper());
     }
 
     @Test
@@ -229,11 +230,11 @@ public class JobServiceTest {
                 .willReturn(1L);
 
         var res = service.createJob("1", "3", "1", "2",
-                "0", 1F, "", "1");
+                 "", "1", null);
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "GPU", 1F, "", "1");
+                "", "1", null);
         assertThat(res, is(1L));
     }
 

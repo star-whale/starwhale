@@ -28,10 +28,11 @@ import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
@@ -45,23 +46,29 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -89,13 +96,14 @@ public class JobService {
     private final SwdsManager swdsManager;
     private final RuntimeManager runtimeManager;
     private final ResourcePoolManager resourcePoolManager;
+    private final ObjectMapper objectMapper;
 
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
             JobSpliterator jobSpliterator, ResourcePoolManager resourcePoolManager, HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
             ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
-            UserService userService) {
+            UserService userService, @Qualifier("yamlMapper") ObjectMapper objectMapper) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
@@ -113,6 +121,7 @@ public class JobService {
         this.swdsManager = swdsManager;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
+        this.objectMapper = objectMapper;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
@@ -173,56 +182,39 @@ public class JobService {
         return res > 0;
     }
 
-    private static Device.Clazz getDeviceClazz(String device) {
-        try {
-            if (StrUtil.isNumeric(device)) {
-                return Device.Clazz.from(Integer.parseInt(device));
-
-            } else {
-                return Enum.valueOf(Device.Clazz.class, device);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-                    .tip(String.format("Unable to find device %s", device)), HttpStatus.BAD_REQUEST);
-        }
-    }
-
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
-            String deviceType, Float deviceCount, String comment, String resourcePool) {
+            String comment, String resourcePool,
+            List<StepSpec> stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
         Long modelVersionId = swmpManager.getSwmpVersionId(modelVersionUrl, null);
-        Integer deviceValue = getDeviceClazz(deviceType).getValue();
         Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
+        String stepSpec;
+        try {
+            stepSpec = objectMapper.writeValueAsString(Map.of(JobSpecParser.DEFAULT_JOB_NAME,stepSpecOverWrites));
+        } catch (JsonProcessingException e) {
+            log.warn("step spec serialization error", e);
+            throw new SwProcessException(ErrorType.SYSTEM);
+        }
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
                 .jobUuid(jobUuid)
                 .runtimeVersionId(runtimeVersionId)
                 .projectId(projectId)
                 .swmpVersionId(modelVersionId)
-                .deviceType(deviceValue)
-                .deviceAmount(Float.valueOf(deviceCount * 1000).intValue())
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePoolId(resourcePoolId)
+                .stepSpec(stepSpec)
                 .build();
 
         jobMapper.addJob(jobEntity);
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
-
-        //        String datasetVersionIds = jobRequest.getDatasetVersionIds();
-        //        if(datasetVersionIds == null) {
-        //            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-        //                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
-        //        }
-        //        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
-        //            .map(idConvertor::revert)
-        //            .collect(Collectors.toList());
 
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
                 .map(url -> swdsManager.getSwdsVersionId(url, null))
@@ -241,12 +233,6 @@ public class JobService {
             //one transaction
             jobSpliterator.split(job);
             jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())), false, true);
-            /*hotJobHolder.adopt(job);
-            List<Task> readyToScheduleTasks = job.getSteps().parallelStream().map(Step::getTasks)
-                .flatMap(Collection::stream)
-                .filter(t -> t.getStatus() == TaskStatus.READY)
-                .collect(Collectors.toList());
-            swTaskScheduler.adopt(readyToScheduleTasks,job.getJobRuntime().getDeviceClass());*/
         });
 
     }

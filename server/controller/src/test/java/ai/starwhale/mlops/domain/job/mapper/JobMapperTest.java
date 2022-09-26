@@ -84,11 +84,13 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
-                .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build();
+                .stepSpec("stepSpec1")
+                .projectId(project.getId()).ownerId(user.getId()).build();
         jobCreated = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
-                .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build();
+                .stepSpec("stepSpec2")
+                .projectId(project.getId()).ownerId(user.getId()).build();
         jobMapper.addJob(jobPaused);
         jobMapper.addJob(jobCreated);
     }
@@ -200,9 +202,7 @@ public class JobMapperTest extends MySqlContainerHolder {
     private void validateJob(JobEntity expectedJob, UserEntity user, ProjectEntity project,
             SwModelPackageVersionEntity swModelPackageVersionEntity, JobEntity jobEntity) {
         Assertions.assertEquals(expectedJob.getId(), jobEntity.getId());
-        Assertions.assertEquals(expectedJob.getDeviceType(), jobEntity.getDeviceType());
         Assertions.assertEquals(expectedJob.getJobStatus(), jobEntity.getJobStatus());
-        Assertions.assertEquals(expectedJob.getDeviceAmount(), jobEntity.getDeviceAmount());
         Assertions.assertEquals(expectedJob.getType(), jobEntity.getType());
         Assertions.assertEquals(expectedJob.getResultOutputPath(), jobEntity.getResultOutputPath());
         Assertions.assertEquals(expectedJob.getProjectId(), jobEntity.getProjectId());
@@ -212,6 +212,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expectedJob.getJobUuid(), jobEntity.getJobUuid());
         Assertions.assertEquals(expectedJob.getDurationMs(), jobEntity.getDurationMs());
         Assertions.assertEquals("swmp", jobEntity.getModelName());
+        Assertions.assertEquals(expectedJob.getStepSpec(), jobEntity.getStepSpec());
         Assertions.assertEquals(expectedJob.getComment(), jobEntity.getComment());
         Assertions.assertNotNull(jobEntity.getCreatedTime());
         final int milli500 = 5;

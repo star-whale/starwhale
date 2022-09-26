@@ -102,10 +102,9 @@ public class JobController implements JobApi {
                 jobRequest.getModelVersionUrl(),
                 jobRequest.getDatasetVersionUrls(),
                 jobRequest.getRuntimeVersionUrl(),
-                jobRequest.getDevice(),
-                jobRequest.getDeviceAmount(),
                 jobRequest.getComment(),
-                jobRequest.getResourcePool());
+                jobRequest.getResourcePool(),
+                jobRequest.getStepSpecOverWrites());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

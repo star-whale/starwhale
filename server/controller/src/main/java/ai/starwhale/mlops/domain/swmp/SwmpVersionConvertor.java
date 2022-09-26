@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -51,6 +52,7 @@ public class SwmpVersionConvertor implements Convertor<SwModelPackageVersionEnti
                 .meta(entity.getVersionMeta())
                 .manifest(entity.getManifest())
                 .createdTime(entity.getCreatedTime().getTime())
+                .stepSpecs(JobSpecParser.parseStepFromYaml(entity.getEvalJobs()))
                 .build();
     }
 

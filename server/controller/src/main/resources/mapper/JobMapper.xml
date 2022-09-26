@@ -22,9 +22,8 @@
     j.job_status,
     j.job_type,
     j.swrt_version_id as swrt_version_id,
-    j.device_type,
-    j.device_amount,
     j.result_output_path as job_result_output_path,
+    j.step_spec,
     j.job_comment,
     j.resource_pool_id,
     j.is_deleted as job_is_deleted,
@@ -154,9 +153,8 @@
     job_status,
     job_type,
     swrt_version_id,
-    device_type,
-    device_amount,
     result_output_path,
+    step_spec,
     resource_pool_id)
     values (#{job.jobUuid},
     #{job.projectId},
@@ -166,9 +164,8 @@
     #{job.jobStatus},
     #{job.type},
     #{job.runtimeVersionId},
-    #{job.deviceType},
-    #{job.deviceAmount},
     #{job.resultOutputPath},
+    #{job.stepSpec},
     #{job.resourcePoolId}
     )
   </insert>
@@ -185,9 +182,8 @@
     <result property="durationMs" column="job_duration_ms"/>
     <result property="jobStatus" column="job_status"/>
     <result property="type" column="job_type"/>
-    <result property="deviceType" column="device_type"/>
-    <result property="deviceAmount" column="device_amount"/>
     <result property="resultOutputPath" column="job_result_output_path"/>
+    <result property="stepSpec" column="step_spec"/>
     <result property="comment" column="job_comment"/>
     <result property="isDeleted" column="job_is_deleted"/>
     <result property="runtimeVersionId" column="swrt_version_id"/>

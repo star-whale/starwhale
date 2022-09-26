@@ -61,8 +61,6 @@ public class JobBoConverterTest {
                 .id(1L)
                 .projectId(1L)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
-                .deviceAmount(1)
-                .deviceType(Clazz.CPU.getValue())
                 .jobStatus(JobStatus.RUNNING)
                 .type(JobType.EVALUATION)
                 .swmpVersionId(1L)
@@ -120,8 +118,6 @@ public class JobBoConverterTest {
         Assertions.assertEquals(runtimeVersionEntity.getVersionName(), swrt.getVersion());
         Assertions.assertEquals(runtimeEntity.getRuntimeName(), swrt.getName());
         Assertions.assertEquals(runtimeVersionEntity.getStoragePath(), swrt.getStoragePath());
-        Assertions.assertEquals(jobEntity.getDeviceAmount(), swrt.getDeviceAmount());
-        Assertions.assertEquals(jobEntity.getDeviceType(), swrt.getDeviceClass().getValue());
 
         SwModelPackage swmp = job.getSwmp();
         Assertions.assertNotNull(swmp);

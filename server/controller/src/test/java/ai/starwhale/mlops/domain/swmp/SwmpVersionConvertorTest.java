@@ -63,6 +63,7 @@ public class SwmpVersionConvertorTest {
                 .versionTag("tag1")
                 .versionMeta("meta1")
                 .manifest("manifest1")
+                .evalJobs("default:")
                 .build());
         assertThat(res, allOf(
                 notNullValue(),

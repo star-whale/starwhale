@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.parser;
+package ai.starwhale.mlops.domain.job.spec;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.databind.util.Converter;
 
-class ResourceConverter implements Converter<String, RuntimeResource> {
+public class ResourceDeserializer implements Converter<String, RuntimeResource> {
 
     @Override
     public RuntimeResource convert(String value) {

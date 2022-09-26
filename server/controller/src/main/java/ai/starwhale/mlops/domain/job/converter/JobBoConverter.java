@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
@@ -104,8 +103,6 @@ public class JobBoConverter {
                         .name(runtimeEntity.getRuntimeName())
                         .version(runtimeVersionEntity.getVersionName())
                         .storagePath(runtimeVersionEntity.getStoragePath())
-                        .deviceAmount(jobEntity.getDeviceAmount())
-                        .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
                         .image(null == runtimeVersionEntity.getImage() ? defaultRuntimeImage
                                 : runtimeVersionEntity.getImage())
                         .build())
@@ -117,7 +114,7 @@ public class JobBoConverter {
                         .name(modelPackageEntity.getSwmpName())
                         .version(jobEntity.getSwmpVersion().getVersionName())
                         .path(jobEntity.getSwmpVersion().getStoragePath()).build())
-                .evalJobDdl(jobEntity.getSwmpVersion().getEvalJobs())
+                .stepSpec(jobEntity.getStepSpec())
                 .swDataSets(swDataSets)
                 .outputDir(jobEntity.getResultOutputPath())
                 .uuid(jobEntity.getJobUuid())

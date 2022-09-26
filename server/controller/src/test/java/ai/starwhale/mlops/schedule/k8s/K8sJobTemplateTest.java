@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -80,7 +80,7 @@ public class K8sJobTemplateTest {
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
         ContainerOverwriteSpec containerOverwriteSpecWorker = ContainerOverwriteSpec.builder()
-                .resourceOverwriteSpec(new ResourceOverwriteSpec(Clazz.CPU, "200m"))
+                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 200))))
                 .cmds(List.of("run"))
                 .name("worker")
                 .envs(List.of(new V1EnvVar().name("env1").value("env1value"),

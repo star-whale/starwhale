@@ -21,7 +21,6 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -98,8 +97,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @Override
-    public void schedule(Collection<Task> tasks,
-            Clazz deviceClass) {
+    public void schedule(Collection<Task> tasks) {
         tasks.parallelStream().forEach(this::deployTaskToK8s);
     }
 
@@ -161,12 +159,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
-        JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-        if (null != jobRuntime.getDeviceClass() && null != jobRuntime.getDeviceAmount()) {
-            return new ResourceOverwriteSpec(
-                    jobRuntime.getDeviceClass(),
-                    jobRuntime.getDeviceAmount());
-        }
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
         runtimeResources.forEach(runtimeResource -> runtimeResource.setNum(runtimeResource.getNum() * 1000));
         if (!CollectionUtils.isEmpty(runtimeResources)) {

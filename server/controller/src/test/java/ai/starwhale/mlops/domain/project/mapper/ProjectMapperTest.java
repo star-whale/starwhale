@@ -163,15 +163,15 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
-                .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build());
+                .projectId(project.getId()).ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
-                .deviceType(0).deviceAmount(1).projectId(project.getId()).ownerId(user.getId()).build());
+                .projectId(project.getId()).ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
-                .deviceType(0).deviceAmount(1).projectId(project2.getId()).ownerId(user.getId()).build());
+                .projectId(project2.getId()).ownerId(user.getId()).build());
         swDatasetMapper.addDataset(
                 SwDatasetEntity.builder().datasetName("dsn").projectId(project.getId()).ownerId(1L).build());
         swDatasetMapper.addDataset(
