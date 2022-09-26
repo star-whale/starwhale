@@ -31,6 +31,9 @@ export default function BaseSubLayout({
                         style={{
                             paddingTop: 15,
                             paddingBottom: 15,
+                            flex: '1',
+                            display: 'flex',
+                            flexDirection: 'column',
                         }}
                     >
                         {children}

@@ -126,10 +126,11 @@ export default function DAG({ nodes = [], edges = [] }: any) {
         <div
             className='flowContainer'
             style={{
-                width: '100%',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-                gridGap: '16px',
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
             }}
         >
             <TransformWrapper wheel={{ disabled: true }} limitToBounds={false} maxScale={1.2} minScale={0.8}>
@@ -148,13 +149,13 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                         </div>
                         <TransformComponent>
                             <Canvas
-                                // fit={true}
+                                fit
                                 ref={ref}
-                                maxHeight={300}
+                                maxHeight={1000}
                                 nodes={$nodes}
                                 edges={$edges}
                                 direction='RIGHT'
-                                defaultPosition={CanvasPosition.LEFT}
+                                defaultPosition={CanvasPosition.TOP}
                                 node={
                                     <Node
                                         className='node'
@@ -212,8 +213,8 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                                         </div>
                                                     </Link>
                                                     {/* <div className='flow-card'>
-                                                        <div className='flow-title'>{data?.type}</div>
-                                                    </div> */}
+                                                            <div className='flow-title'>{data?.type}</div>
+                                                        </div> */}
                                                 </foreignObject>
                                             )
                                         }}

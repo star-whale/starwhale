@@ -45,7 +45,7 @@ function JobDAG() {
     }
 
     return (
-        <Card style={{ width: '100%', height: 'auto' }}>
+        <Card style={{ width: '100%', height: 'auto', flex: 1, position: 'relative' }}>
             <DAG nodes={nodes} edges={edges} />
         </Card>
     )
