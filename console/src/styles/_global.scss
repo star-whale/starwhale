@@ -177,9 +177,22 @@ table { border-collapse: separate; }
   gap: 20px;
 }
 
+.resize-bar {
+  &::before {
+    content: ' ';
+    width: 1px;
+    height: 100%;
+    background: #E2E7F0;
+    left: 20px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+  }
+}
+
 .resize-left {
-  width: 18px;
-  height: 40px;
+  width: 20px;
+  height: 44px;
   background-image: url(../assets/left.svg);
   background-size: 100% auto;
   background-repeat: no-repeat;
@@ -191,13 +204,13 @@ table { border-collapse: separate; }
     background-image: url(../assets/left-shadow.png);
   }
   position: relative;
-  left: -3px;
+  left: 10px;
 }
 
 
 .resize-right {
-  width: 18px;
-  height: 40px;
+  width: 20px;
+  height: 44px;
   background-image: url(../assets/right.svg);
   background-size: 100% auto;
   background-repeat: no-repeat;
@@ -211,7 +224,7 @@ table { border-collapse: separate; }
   }
   position: relative;
   top: -14px;
-  right: 5px;
+  right: -10px;
 
 }
 

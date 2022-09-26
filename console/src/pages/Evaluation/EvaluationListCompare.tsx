@@ -11,7 +11,8 @@ import IconFont from '@/components/IconFont'
 import { useEvaluationCompareStore } from '@/components/data-table/store'
 import { Checkbox } from 'baseui/checkbox'
 import { longestCommonSubstring } from '@/utils'
-import { RecordListVO } from '../../domain/datastore/schemas/datastore'
+import { RecordListVO } from '@/domain/datastore/schemas/datastore'
+import { LabelSmall } from 'baseui/typography'
 
 type RowT = {
     key: string
@@ -74,7 +75,9 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
 export default function EvaluationListCompare({
     rows = [],
     attrs,
+    title = '',
 }: {
+    title?: string
     rows: any[]
     attrs: RecordListVO['columnTypes']
 }) {
@@ -214,7 +217,7 @@ export default function EvaluationListCompare({
                         const rowLength = $rowsWithDiffOnly.length
                         const data = props.value || {}
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        const { key, title, value, renderValue, renderCompare } = data
+                        const { value, renderValue, renderCompare } = data
                         const renderedValue = renderValue ? renderValue(value) : value
                         const newProps = {
                             value,
@@ -224,7 +227,6 @@ export default function EvaluationListCompare({
                         }
 
                         if (comparePinnedKey && conmparePinnedRowIndex === index) {
-                            // console.log(props.y, rows.length, value)
                             return (
                                 <div
                                     style={{
@@ -286,6 +288,25 @@ export default function EvaluationListCompare({
     return (
         <>
             <div style={{ display: 'flex', alignItems: 'center', height: '36px', gap: 20 }}>
+                <LabelSmall $style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                    {title}{' '}
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            borderRadius: '12px',
+                            background: '#F0F5FF',
+                            width: '26px',
+                            height: '18px',
+                            lineHeight: '18px',
+                            textAlign: 'center',
+                            color: 'rgba(2,16,43,0.60)',
+                            fontSize: '12px',
+                            marginLeft: '8px',
+                        }}
+                    >
+                        {$columns.length}
+                    </span>
+                </LabelSmall>
                 <Checkbox
                     checked={store.compare?.compareShowCellChanges}
                     onChange={(e) => {
