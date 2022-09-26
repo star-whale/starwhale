@@ -155,7 +155,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                 nodes={$nodes}
                                 edges={$edges}
                                 direction='RIGHT'
-                                defaultPosition={CanvasPosition.TOP}
+                                defaultPosition={CanvasPosition.LEFT}
                                 node={
                                     <Node
                                         className='node'
