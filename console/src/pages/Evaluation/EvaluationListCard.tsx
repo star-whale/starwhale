@@ -341,126 +341,135 @@ export default function EvaluationListCard() {
     }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data])
 
     return (
-        <div
-            ref={gridRef}
+        <Card
+            title={t('Evaluations')}
             style={{
-                display: 'grid',
-                gridTemplateColumns: compareRows.length === 0 ? '1fr' : gridLayout[gridMode],
-                overflow: 'hidden',
+                marginRight: expanded ? expandedWidth : '0',
+                flexShrink: 1,
+                marginBottom: 0,
                 width: '100%',
                 flex: 1,
             }}
-        >
-            <Card
-                onMountCard={(ref) => {
-                    leftRef.current = ref
-                }}
-                title={t('Evaluations')}
-                style={{
-                    marginRight: expanded ? expandedWidth : '0',
-                    flexShrink: 1,
-                    minWidth: '440px',
-                    marginBottom: 0,
-                }}
-                extra={
-                    <WithCurrentAuth id='evaluation.create'>
-                        <Button
-                            startEnhancer={<IconFont type='add' kind='white' />}
-                            size={ButtonSize.compact}
-                            onClick={() => {
-                                history.push('new_job')
-                            }}
-                            isLoading={evaluationsInfo.isLoading}
-                        >
-                            {t('create')}
-                        </Button>
-                    </WithCurrentAuth>
-                }
-            >
-                <StoreProvider initState={{}}>
-                    <Table
-                        useStore={useEvaluationStore}
-                        searchable
-                        filterable
-                        columnable
-                        viewable
-                        batchActions={batchAction}
+            extra={
+                <WithCurrentAuth id='evaluation.create'>
+                    <Button
+                        startEnhancer={<IconFont type='add' kind='white' />}
+                        size={ButtonSize.compact}
+                        onClick={() => {
+                            history.push('new_job')
+                        }}
                         isLoading={evaluationsInfo.isLoading}
-                        columns={$columnsWithAttrs}
-                        data={$data}
-                    />
-                </StoreProvider>
-                <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
-                    <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
-                    <ModalBody>
-                        <JobForm onSubmit={handleCreateJob} />
-                    </ModalBody>
-                </Modal>
-            </Card>
-            {compareRows.length > 0 && (
-                <>
-                    {/* eslint-disable-next-line jsx-a11y/role-has-required-aria-props */}
-                    <div
-                        ref={resizeRef}
-                        className={classNames(
-                            'resize-bar',
-                            css({
-                                width: `${RESIZEBAR_WIDTH}px`,
-                                flexBasis: `${RESIZEBAR_WIDTH}px`,
-                                cursor: 'col-resize',
-                                paddingTop: '70px',
-                                zIndex: 20,
-                                overflow: 'visible',
-                                backgroundColor: '#fff',
-                                position: 'relative',
-                                right: gridMode === 2 ? '14px' : undefined,
-                                left: gridMode === 0 ? '0px' : undefined,
-                            })
-                        )}
-                        role='button'
-                        tabIndex={0}
-                        onMouseDown={handleResizeStart}
                     >
-                        <i
+                        {t('create')}
+                    </Button>
+                </WithCurrentAuth>
+            }
+        >
+            <div
+                ref={gridRef}
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: compareRows.length === 0 ? '1fr' : gridLayout[gridMode],
+                    overflow: 'hidden',
+                    width: '100%',
+                    flex: 1,
+                }}
+            >
+                <div
+                    ref={leftRef}
+                    style={{
+                        display: 'flex',
+                        overflow: 'hidden',
+                        width: '100%',
+                        flex: 1,
+                    }}
+                >
+                    <StoreProvider initState={{}}>
+                        <Table
+                            useStore={useEvaluationStore}
+                            searchable
+                            filterable
+                            columnable
+                            viewable
+                            batchActions={batchAction}
+                            isLoading={evaluationsInfo.isLoading}
+                            columns={$columnsWithAttrs}
+                            data={$data}
+                        />
+                    </StoreProvider>
+                </div>
+                {compareRows.length > 0 && (
+                    <>
+                        {/* eslint-disable-next-line jsx-a11y/role-has-required-aria-props */}
+                        <div
+                            ref={resizeRef}
+                            className={classNames(
+                                'resize-bar',
+                                css({
+                                    width: `${RESIZEBAR_WIDTH}px`,
+                                    flexBasis: `${RESIZEBAR_WIDTH}px`,
+                                    cursor: 'col-resize',
+                                    paddingTop: '25px',
+                                    zIndex: 20,
+                                    overflow: 'visible',
+                                    backgroundColor: '#fff',
+                                    position: 'relative',
+                                    right: gridMode === 2 ? '14px' : undefined,
+                                    left: gridMode === 0 ? '0px' : undefined,
+                                })
+                            )}
                             role='button'
                             tabIndex={0}
-                            className='resize-left resize-left--hover'
-                            onClick={() => handleResize(1)}
+                            onMouseDown={handleResizeStart}
                         >
-                            <IconFont
-                                type='fold2'
-                                size={12}
-                                style={{
-                                    color: gridMode !== 2 ? undefined : '#ccc',
-                                    transform: 'rotate(-90deg) translateY(-2px)',
-                                    marginBottom: '2px',
-                                }}
+                            <i
+                                role='button'
+                                tabIndex={0}
+                                className='resize-left resize-left--hover'
+                                onClick={() => handleResize(1)}
+                            >
+                                <IconFont
+                                    type='fold2'
+                                    size={12}
+                                    style={{
+                                        color: gridMode !== 2 ? undefined : '#ccc',
+                                        transform: 'rotate(-90deg) translateY(-2px)',
+                                        marginBottom: '2px',
+                                    }}
+                                />
+                            </i>
+                            <i
+                                role='button'
+                                tabIndex={0}
+                                className='resize-right resize-right--hover'
+                                onClick={() => handleResize(-1)}
+                            >
+                                <IconFont
+                                    type='unfold2'
+                                    size={12}
+                                    style={{
+                                        color: gridMode !== 0 ? undefined : '#ccc',
+                                        transform: 'rotate(-90deg) translateY(2px)',
+                                    }}
+                                />
+                            </i>
+                        </div>
+                        <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
+                            <EvaluationListCompare
+                                title={t('Compare Evaluations')}
+                                rows={compareRows}
+                                attrs={summaryTable?.data?.columnTypes}
                             />
-                        </i>
-                        <i
-                            role='button'
-                            tabIndex={0}
-                            className='resize-right resize-right--hover'
-                            onClick={() => handleResize(-1)}
-                        >
-                            <IconFont
-                                type='unfold2'
-                                size={12}
-                                style={{
-                                    color: gridMode !== 0 ? undefined : '#ccc',
-                                    transform: 'rotate(-90deg) translateY(2px)',
-                                }}
-                            />
-                        </i>
-                    </div>
-                    <Card
-                        title={t('Compare Evaluations')}
-                        style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}
-                    >
-                        <EvaluationListCompare rows={compareRows} attrs={summaryTable?.data?.columnTypes} />
-                    </Card>
-                </>
-            )}
-        </div>
+                        </Card>
+                    </>
+                )}
+            </div>
+            <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
+                <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
+                <ModalBody>
+                    <JobForm onSubmit={handleCreateJob} />
+                </ModalBody>
+            </Modal>
+        </Card>
     )
 }
