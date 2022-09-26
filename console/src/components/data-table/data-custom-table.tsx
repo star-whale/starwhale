@@ -511,10 +511,14 @@ function Headers({ width }: { width: number }) {
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
 
-    const $columns = ctx.columns.map((v, index) => ({
-        ...v,
-        index,
-    }))
+    const $columns = React.useMemo(
+        () =>
+            ctx.columns.map((v, index) => ({
+                ...v,
+                index,
+            })),
+        [ctx.columns]
+    )
 
     const store = ctx.useStore()
 
@@ -708,20 +712,15 @@ function LoadingOrEmptyMessage(props) {
         </div>
     )
 }
+const RENDERING = 0
+const LOADING = 1
+const EMPTY = 2
 // replaces the content of the virtualized window with contents. in this case,
 // we are prepending a table header row before the table rows (children to the fn).
 const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: Record<string, any> }, HTMLDivElement>(
     (props, ref) => {
         const ctx = React.useContext(HeaderContext)
 
-        // no need to render the cells until the columns have been measured
-        if (!ctx.widths.filter(Boolean).length) {
-            return null
-        }
-
-        const RENDERING = 0
-        const LOADING = 1
-        const EMPTY = 2
         let viewState = RENDERING
         if (ctx.loading) {
             viewState = LOADING
@@ -731,18 +730,29 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
 
         // const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
 
-        // @ts-ignore
-        const $children = props.children.map((o) => {
-            return {
-                ...o,
-                props: {
-                    ...o.props,
-                    pinned: true,
-                },
-            }
-        })
+        const $children = React.useMemo(
+            () =>
+                // @ts-ignore
+                props.children.map((o) => {
+                    return {
+                        ...o,
+                        props: {
+                            ...o.props,
+                            pinned: true,
+                        },
+                    }
+                }),
+            [props.children]
+        )
 
-        const pinnedWidth = sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0)))
+        const pinnedWidth = React.useMemo(
+            () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
+            [ctx.columns, ctx.widths]
+        )
+
+        if (!ctx.widths.filter(Boolean).length) {
+            return null
+        }
 
         return (
             <>

@@ -1,17 +1,12 @@
 // @ts-nocheck
-
-import React, { useRef, useEffect } from 'react'
-
+import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
-
-import _ from 'lodash'
 import HeaderCell from './header-cell'
 import type { ColumnT, RowT } from './types'
-import usePrevious from '../../hooks/usePrevious'
 
 const IS_BROWSER = true
+const emptyFunction = () => {}
 
-// Measures the column header + sampled data
 function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout }) {
     const [css] = useStyletron()
 
@@ -41,11 +36,11 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 isMeasured
                 isSelectedAll={false}
                 isSelectedIndeterminate={false}
-                onMouseEnter={() => {}}
-                onMouseLeave={() => {}}
-                onSelectAll={() => {}}
-                onSelectNone={() => {}}
-                onSort={() => {}}
+                onMouseEnter={emptyFunction}
+                onMouseLeave={emptyFunction}
+                onSelectAll={emptyFunction}
+                onSelectNone={emptyFunction}
+                onSort={emptyFunction}
                 sortable={column.sortable}
                 sortDirection={null}
                 title={column.title}
@@ -74,7 +69,6 @@ type MeasureColumnWidthsPropsT = {
     isSelectable: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
-    widths: number[]
 }
 
 const MAX_SAMPLE_SIZE = 50
@@ -107,32 +101,16 @@ export default function MeasureColumnWidths({
     rows,
     isSelectable,
     onWidthsChange,
-    widths,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
-    // const widthMap = React.useMemo(() => {
-    //     return new Map()
-    // }, [])
-
     const [widthMap, setWidthMap] = React.useState(new Map())
 
-    const sampleSize = rows.length < MAX_SAMPLE_SIZE ? rows.length : MAX_SAMPLE_SIZE
-    // const finishedMeasurementCount = (sampleSize + 1) * columns.length
-
     const sampleIndexes = React.useMemo<number[]>(() => {
+        const sampleSize = rows.length < MAX_SAMPLE_SIZE ? rows.length : MAX_SAMPLE_SIZE
+        // const finishedMeasurementCount = (sampleSize + 1) * columns.length
         return generateSampleIndices(0, rows.length - 1, sampleSize)
-    }, [rows, sampleSize])
-
-    const oldColumns = usePrevious(columns)
-
-    useEffect(() => {
-        const changed = columns.filter((c, index) => c.key !== oldColumns?.[index]?.key)
-        if (changed.length > 0) {
-            // console.log('changed', oldColumns, columns, changed)
-            setWidthMap(new Map())
-        }
-    }, [oldColumns, columns, widthMap])
+    }, [rows])
 
     const handleDimensionsChange = React.useCallback(
         (columnIndex, dimensions) => {
@@ -143,8 +121,6 @@ export default function MeasureColumnWidths({
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
             if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 2) {
-                // console.log(columnIndex, dimensions.width, columns[columnIndex].minWidth, columns[columnIndex].maxWidth)
-
                 widthMap.set(columnIndex, nextWidth)
 
                 // 1.Refresh at 100% of done
@@ -158,38 +134,35 @@ export default function MeasureColumnWidths({
         [columns, onWidthsChange, widthMap]
     )
 
-    const hiddenStyle = css({
-        position: 'absolute',
-        overflow: 'hidden',
-        height: 0,
-    })
-
-    const isEqual = React.useMemo(() => {
-        return _.isEqual(Array.from(widthMap.values()), widths)
-    }, [widthMap, widths])
-
-    // TODO fixme
-    // Remove the measurement nodes after we are done updating our column width
-    if (isEqual && widthMap.size === columns.length) {
-        // return null
-    }
+    const $columns = React.useMemo(() => {
+        return columns.map((column, i) => {
+            return (
+                <MeasureColumn
+                    key={`${column.title}-${String(i)}`}
+                    column={column}
+                    rows={rows}
+                    isSelectable={isSelectable && i === 0}
+                    onLayout={handleDimensionsChange}
+                    columnIndex={i}
+                    sampleIndexes={sampleIndexes}
+                />
+            )
+        })
+    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes])
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props
-        <div data-type='table-measure-column' className={hiddenStyle} aria-hidden role='none'>
-            {columns.map((column, i) => {
-                return (
-                    <MeasureColumn
-                        key={`${column.title}-${String(i)}`}
-                        column={column}
-                        rows={rows}
-                        isSelectable={isSelectable && i === 0}
-                        onLayout={handleDimensionsChange}
-                        columnIndex={i}
-                        sampleIndexes={sampleIndexes}
-                    />
-                )
+        <div
+            data-type='table-measure-column'
+            className={css({
+                position: 'absolute',
+                overflow: 'hidden',
+                height: 0,
             })}
+            aria-hidden
+            role='none'
+        >
+            {$columns}
         </div>
     )
 }
