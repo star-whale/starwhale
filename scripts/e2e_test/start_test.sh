@@ -218,14 +218,6 @@ client_test() {
 }
 
 api_test() {
-#  pushd ../../
-#  export WORK_DIR=`cat WORK_DIR`
-#  if ! in_github_action; then
-#    export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
-#  fi
-#  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-#  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
-#  popd
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
