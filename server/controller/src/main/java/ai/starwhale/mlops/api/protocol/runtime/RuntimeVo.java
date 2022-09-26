@@ -43,4 +43,8 @@ public class RuntimeVo {
 
     @JsonProperty("version")
     private RuntimeVersionVo version;
+
+    public static RuntimeVo empty() {
+        return new RuntimeVo("", "", -1L, UserVo.empty(), null);
+    }
 }

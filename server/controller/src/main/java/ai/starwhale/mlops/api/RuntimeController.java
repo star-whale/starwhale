@@ -36,7 +36,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -50,8 +49,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class RuntimeController implements RuntimeApi {
 
-    @Resource
-    private RuntimeService runtimeService;
+    private final RuntimeService runtimeService;
+
+    public RuntimeController(RuntimeService runtimeService) {
+        this.runtimeService = runtimeService;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(String projectUrl,
