@@ -22,7 +22,7 @@ export default function AdminSidebar({ style }: IComposedSidebarProps) {
             style={style}
             title={t('Admin Settings')}
             titleLink='/admin'
-            icon={<IconFont type='setting' style={{ color: 'white' }} />}
+            icon={<IconFont type='setting2' style={{ color: 'white' }} />}
         />
     )
 }
