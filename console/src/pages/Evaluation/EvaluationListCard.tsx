@@ -97,6 +97,12 @@ export default function EvaluationListCard() {
                 mapDataToValue: (data: any) => data.modelName,
             }),
             StringColumn({
+                key: 'jobStatus',
+                title: t('Status'),
+                filterable: true,
+                mapDataToValue: (data: any) => data.jobStatus,
+            }),
+            StringColumn({
                 key: 'modelVersion',
                 title: t('Model Version'),
                 mapDataToValue: (data: any) => data.modelVersion,

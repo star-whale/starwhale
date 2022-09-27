@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://console.pre.intra.starwhale.ai",
+            "url": "http://stepcfg.pre.intra.starwhale.ai",
             "description": "Generated server url"
         }
     ],
@@ -4138,8 +4138,6 @@
             "JobRequest": {
                 "required": [
                     "datasetVersionUrls",
-                    "device",
-                    "deviceAmount",
                     "modelVersionUrl",
                     "runtimeVersionUrl"
                 ],
@@ -4154,18 +4152,63 @@
                     "runtimeVersionUrl": {
                         "type": "string"
                     },
-                    "device": {
-                        "type": "string"
-                    },
-                    "deviceAmount": {
-                        "type": "number",
-                        "format": "float"
-                    },
                     "comment": {
                         "type": "string"
                     },
                     "resourcePool": {
                         "type": "string"
+                    },
+                    "stepSpecOverWrites": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StepSpec"
+                        }
+                    }
+                }
+            },
+            "RuntimeResource": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "num": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "StepSpec": {
+                "type": "object",
+                "properties": {
+                    "concurrency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "needs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeResource"
+                        }
+                    },
+                    "overwriteable": {
+                        "type": "boolean"
+                    },
+                    "job_name": {
+                        "type": "string"
+                    },
+                    "step_name": {
+                        "type": "string"
+                    },
+                    "task_num": {
+                        "type": "integer",
+                        "format": "int32"
                     }
                 }
             },
@@ -4640,6 +4683,15 @@
                     },
                     "isEnabled": {
                         "type": "boolean"
+                    },
+                    "systemRole": {
+                        "type": "string"
+                    },
+                    "projectRoles": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     }
                 },
                 "description": "User object"
@@ -5402,6 +5454,21 @@
                         "type": "integer",
                         "format": "int64"
                     },
+                    "jobStatus": {
+                        "type": "string",
+                        "enum": [
+                            "CREATED",
+                            "READY",
+                            "PAUSED",
+                            "RUNNING",
+                            "TO_CANCEL",
+                            "CANCELLING",
+                            "CANCELED",
+                            "SUCCESS",
+                            "FAIL",
+                            "UNKNOWN"
+                        ]
+                    },
                     "attributes": {
                         "type": "array",
                         "items": {
@@ -5472,45 +5539,12 @@
                     }
                 }
             },
-            "FileStorageEnv": {
-                "type": "object",
-                "properties": {
-                    "envs": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "string"
-                        }
-                    },
-                    "envType": {
-                        "type": "string",
-                        "enum": [
-                            "S3",
-                            "ALIYUN",
-                            "HDFS",
-                            "NFS",
-                            "LOCAL_FS",
-                            "REST_RESOURCE",
-                            "FTP"
-                        ]
-                    },
-                    "keyPrefix": {
-                        "type": "string",
-                        "writeOnly": true
-                    }
-                }
-            },
             "SwDatasetInfoVo": {
                 "title": "DatasetInfo",
                 "type": "object",
                 "properties": {
                     "indexTable": {
                         "type": "string"
-                    },
-                    "fileStorageEnvs": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "$ref": "#/components/schemas/FileStorageEnv"
-                        }
                     },
                     "id": {
                         "type": "string"

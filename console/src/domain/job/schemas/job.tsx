@@ -2,6 +2,7 @@ import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IDeviceSchema } from '@/domain/setting/schemas/system'
 import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
+import { StepSpec } from '../../model/schemas/modelVersion'
 
 export enum JobActionType {
     CANCEL = 'cancel',
@@ -65,6 +66,8 @@ export interface ICreateJobFormSchema extends ICreateJobSchema {
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>
     resourcePool: string
+    stepSpecOverWrites: StepSpec[]
+    rawType: boolean
 }
 
 export type IJobResultSchema = any
