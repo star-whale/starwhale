@@ -1,5 +1,5 @@
 ---
-title: Starwhale Dataset
+title: Dataset
 ---
 
 ## dataset.yaml Definition

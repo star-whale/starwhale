@@ -1,5 +1,5 @@
 ---
-title: Starwhale Model
+title: Model
 ---
 ## model.yaml Definition
 

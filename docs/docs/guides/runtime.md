@@ -1,5 +1,5 @@
 ---
-title: Starwhale Runtime
+title: Runtime
 ---
 
 ## What is Starwhale Runtime?
