@@ -192,6 +192,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
+        coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
+        coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
+        coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
         return coreContainerEnvs;
     }
 
