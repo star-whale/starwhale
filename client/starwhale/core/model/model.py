@@ -205,6 +205,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         job_name: str = "default",
         step_name: str = "",
         task_index: int = 0,
+        task_num: int = 0,
         base_info: t.Dict[str, t.Any] = {},
     ) -> None:
         # init manifest
@@ -213,6 +214,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             "status": STATUS.START,
             "step": step_name,
             "task_index": task_index,
+            "task_num": task_num,
         }
         # load model config by yaml
         _model_config = cls.load_model_config(workdir / model_yaml_name)
@@ -265,7 +267,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not step_name:
                 _step_results = _scheduler.schedule()
             else:
-                _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
+                _step_results = [_scheduler.schedule_single_task(
+                    step_name,
+                    task_index,
+                    task_num
+                )]
 
             logger.debug(f"job execute info:{_step_results}")
             _status = STATUS.SUCCESS

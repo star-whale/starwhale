@@ -82,7 +82,7 @@ class Scheduler:
 
         return _results
 
-    def schedule_single_task(self, step_name: str, task_index: int) -> StepResult:
+    def schedule_single_task(self, step_name: str, task_index: int, task_num: int = 0) -> StepResult:
         _step = self._steps[step_name]
         if not _step:
             raise RuntimeError(f"step:{step_name} not found")
@@ -97,7 +97,7 @@ class Scheduler:
                 project=self.project,
                 version=self.version,
                 step=_step.step_name,
-                total=_step.task_num,
+                total=task_num or _step.task_num,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,

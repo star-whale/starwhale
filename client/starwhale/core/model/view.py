@@ -58,6 +58,7 @@ class ModelTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.MODEL,
         step: str = "",
         task_index: int = 0,
+        task_num: int = 0,
         runtime_uri: str = "",
     ) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
@@ -80,6 +81,7 @@ class ModelTermView(BaseTermView):
                     "default",
                     step,
                     task_index,
+                    task_num,
                 ),
             ).run()
         else:
@@ -90,6 +92,7 @@ class ModelTermView(BaseTermView):
                 dataset_uris=dataset_uris,
                 step_name=step,
                 task_index=task_index,
+                task_num=task_num,
                 model_yaml_name=yaml_name,
             )
 
