@@ -87,7 +87,7 @@ class Scheduler:
         if not _step:
             raise RuntimeError(f"step:{step_name} not found")
 
-        total=task_num or _step.task_num,
+        total=task_num or _step.task_num
         if task_index >= total:
             raise RuntimeError(
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"
