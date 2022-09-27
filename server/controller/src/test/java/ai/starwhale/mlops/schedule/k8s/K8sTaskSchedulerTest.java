@@ -29,7 +29,6 @@ import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
@@ -48,6 +47,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,8 +117,10 @@ public class K8sTaskSchedulerTest {
                 .resultRootPath(new ResultPath("task"))
                 .uuid("uuid")
                 .status(TaskStatus.READY)
-                .taskRequest(
-                        TaskRequest.builder().index(1).runtimeResources(List.of(new RuntimeResource("cpu", 1))).build())
+                .taskRequest(TaskRequest.builder()
+                        .index(1)
+                        .total(1)
+                        .runtimeResources(List.of(new RuntimeResource("cpu", 1))).build())
                 .build();
         return task;
     }
@@ -141,17 +143,22 @@ public class K8sTaskSchedulerTest {
             Assertions.assertEquals("imageRT", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
-            Map<String, String> expectedEnvs = Map.of("SW_PROJECT", "project",
-                    "SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV",
-                    "SW_TASK_INDEX", "1",
-                    "SW_EVALUATION_VERSION", "juuid",
-                    "SW_TOKEN", "tt",
-                    "SW_INSTANCE_URI", "http://instanceUri",
-                    "SW_TASK_STEP", "cmp",
-                    "ENVS4", "envS4V",
-                    StorageEnv.ENV_KEY_PREFIX, "swds_path",
-                    StorageEnv.ENV_TYPE, "S3"
-            );
+            Map<String, String> expectedEnvs = new HashMap<>() {
+            };
+            expectedEnvs.put("SW_PROJECT", "project");
+            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
+            expectedEnvs.put("SW_TASK_INDEX", "1");
+            expectedEnvs.put("SW_TASK_NUM", "1");
+            expectedEnvs.put("SW_PYPI_INDEX_URL", "indexU");
+            expectedEnvs.put("SW_PYPI_EXTRA_INDEX_URL", "extraU");
+            expectedEnvs.put("SW_PYPI_TRUSTED_HOST", "trustedH");
+            expectedEnvs.put("SW_EVALUATION_VERSION", "juuid");
+            expectedEnvs.put("SW_TOKEN", "tt");
+            expectedEnvs.put("SW_INSTANCE_URI", "http://instanceUri");
+            expectedEnvs.put("SW_TASK_STEP", "cmp");
+            expectedEnvs.put("ENVS4", "envS4V");
+            expectedEnvs.put(StorageEnv.ENV_KEY_PREFIX, "swds_path");
+            expectedEnvs.put(StorageEnv.ENV_TYPE, "S3");
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(expectedEnvs, actualEnv);

@@ -230,11 +230,11 @@ public class JobServiceTest {
                 .willReturn(1L);
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", null);
+                 "", "1", List.of());
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", null);
+                "", "1", List.of());
         assertThat(res, is(1L));
     }
 
