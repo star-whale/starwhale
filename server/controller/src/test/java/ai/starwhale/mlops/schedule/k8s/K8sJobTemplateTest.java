@@ -16,6 +16,10 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -23,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,15 +107,37 @@ public class K8sJobTemplateTest {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         var job = k8sJobTemplate.renderJob("foo", containerSpecMap, Map.of());
         var volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
-                .filter(v -> v.getName().equals(K8sJobTemplate.pipCacheVolumeName)).findFirst().orElse(null);
+                .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
 
         // empty host path
         var template = new K8sJobTemplate("", "");
         job = template.renderJob("foo", containerSpecMap, Map.of());
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
-                .filter(v -> v.getName().equals(K8sJobTemplate.pipCacheVolumeName)).findFirst().orElse(null);
+                .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertNull(volume.getHostPath());
         Assertions.assertNotNull(volume.getEmptyDir());
+    }
+
+    @Test
+    public void testDevInfoLabel() {
+        Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
+        var job = k8sJobTemplate.renderJob("foo", containerSpecMap, Map.of());
+        var labels = job.getSpec().getTemplate().getMetadata().getLabels();
+        assertThat(labels, hasEntry(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true"));
+
+        var specs = new HashMap<String, ContainerOverwriteSpec>();
+        var cpuSpec = new ContainerOverwriteSpec();
+        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(Clazz.CPU, 1));
+        specs.put("foo", cpuSpec);
+        var gpuSpec = new ContainerOverwriteSpec();
+        gpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(Clazz.GPU, 1));
+        specs.put("bar", gpuSpec);
+        specs.put("baz", cpuSpec);
+
+        job = k8sJobTemplate.renderJob("foo", specs, Map.of());
+        labels = job.getSpec().getTemplate().getMetadata().getLabels();
+        assertThat(labels, is(Map.of(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
+                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true")));
     }
 }
