@@ -67,6 +67,7 @@ public class JobSpecTest {
             + "  job_name: \"default\"\n"
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
+
     @Test
     public void testReadFromYaml1() {
         List<ai.starwhale.mlops.domain.job.spec.StepSpec> steps = JobSpecParser.parseStepFromYaml(YAML);
@@ -121,7 +122,7 @@ public class JobSpecTest {
 
     @Test
     public void testWriteToYaml() throws JsonProcessingException {
-        Map<String, List<StepSpec>> map = Map.of("default",List.of(StepSpec.builder()
+        Map<String, List<StepSpec>> map = Map.of("default", List.of(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of())
                 .resources(List.of(new RuntimeResource("cpu", 1)))
@@ -129,17 +130,17 @@ public class JobSpecTest {
                 .taskNum(1)
                 .concurrency(1)
                 .overwriteable(true)
-                .build(),StepSpec.builder()
-                        .jobName("default")
-                        .needs(List.of("ppl"))
-                        .resources(List.of(new RuntimeResource("cpu", 1)))
-                        .stepName("cmp")
-                        .taskNum(1)
-                        .concurrency(1)
-                        .overwriteable(false)
-                        .build()
-                ));
-        Assertions.assertEquals(YAML2,new YAMLMapper().writeValueAsString(map));
+                .build(), StepSpec.builder()
+                .jobName("default")
+                .needs(List.of("ppl"))
+                .resources(List.of(new RuntimeResource("cpu", 1)))
+                .stepName("cmp")
+                .taskNum(1)
+                .concurrency(1)
+                .overwriteable(false)
+                .build()
+        ));
+        Assertions.assertEquals(YAML2, new YAMLMapper().writeValueAsString(map));
     }
 
 }

@@ -194,7 +194,7 @@ public class JobService {
         Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
         String stepSpec;
         try {
-            stepSpec = objectMapper.writeValueAsString(Map.of(JobSpecParser.DEFAULT_JOB_NAME,stepSpecOverWrites));
+            stepSpec = objectMapper.writeValueAsString(Map.of(JobSpecParser.DEFAULT_JOB_NAME, stepSpecOverWrites));
         } catch (JsonProcessingException e) {
             log.warn("step spec serialization error", e);
             throw new SwProcessException(ErrorType.SYSTEM);

@@ -31,7 +31,7 @@ public class RuntimeResource {
     String type;
     Integer num;
 
-    public RuntimeResource(String str){
+    public RuntimeResource(String str) {
         String[] res = str.split("=");
         this.type = res[0];
         this.num = Integer.valueOf(res[1]);
