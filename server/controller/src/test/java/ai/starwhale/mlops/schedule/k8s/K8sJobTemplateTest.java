@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 public class K8sJobTemplateTest {
 
-    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("");
+    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "/path");
 
     public K8sJobTemplateTest() throws IOException {
     }
@@ -97,4 +97,20 @@ public class K8sJobTemplateTest {
         return Map.of("worker", containerOverwriteSpecWorker, "data-provider", containerOverwriteSpecDp);
     }
 
+    @Test
+    public void testPipCache() throws IOException {
+        Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
+        var job = k8sJobTemplate.renderJob("foo", containerSpecMap, Map.of());
+        var volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
+                .filter(v -> v.getName().equals(K8sJobTemplate.pipCacheVolumeName)).findFirst().orElse(null);
+        Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
+
+        // empty host path
+        var template = new K8sJobTemplate("", "");
+        job = template.renderJob("foo", containerSpecMap, Map.of());
+        volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
+                .filter(v -> v.getName().equals(K8sJobTemplate.pipCacheVolumeName)).findFirst().orElse(null);
+        Assertions.assertNull(volume.getHostPath());
+        Assertions.assertNotNull(volume.getEmptyDir());
+    }
 }

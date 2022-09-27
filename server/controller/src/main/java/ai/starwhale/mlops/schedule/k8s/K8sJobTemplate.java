@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -46,13 +47,15 @@ public class K8sJobTemplate {
 
     public static final String pipCacheVolumeName = "pip-cache";
 
-    @Value("${sw.infra.k8s.host-path-for-cache}")
-    private String pipCacheHostPath;
+    private final String pipCacheHostPath;
 
     final String template;
     final V1Job v1Job;
 
-    public K8sJobTemplate(@Value("${sw.infra.k8s.job-template-path}") String templatePath)
+    public K8sJobTemplate(
+            @Value("${sw.infra.k8s.job-template-path}") String templatePath,
+            @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
+    )
             throws IOException {
         if (!StringUtils.hasText(templatePath)) {
             this.template = getJobDefaultTemplate();
@@ -60,6 +63,7 @@ public class K8sJobTemplate {
             this.template = Files.readString(Paths.get(templatePath));
         }
         v1Job = Yaml.loadAs(template, V1Job.class);
+        this.pipCacheHostPath = pipCacheHostPath;
     }
 
     public List<V1Container> getInitContainerTemplates() {
@@ -110,10 +114,19 @@ public class K8sJobTemplate {
 
         });
 
-        // replace host path
+        // patch pip cache volume
         List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
-        volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))
-                .findFirst().ifPresent(volume -> volume.getHostPath().path(pipCacheHostPath));
+        var volume = volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))
+                .findFirst().orElse(null);
+        if (volume != null) {
+            if (pipCacheHostPath.isEmpty()) {
+                // make volume emptyDir
+                volume.setHostPath(null);
+                volume.emptyDir(new V1EmptyDirVolumeSource());
+            } else {
+                volume.getHostPath().path(pipCacheHostPath);
+            }
+        }
 
         return job;
     }
