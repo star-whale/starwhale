@@ -123,7 +123,7 @@ public class K8sTaskSchedulerTest {
     public static class K8sJobTemplateMock extends K8sJobTemplate {
 
         public K8sJobTemplateMock(String templatePath) throws IOException {
-            super("");
+            super("", "/path");
         }
 
         @Override
