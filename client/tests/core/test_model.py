@@ -10,6 +10,7 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     HTTPMethod,
+    thread_local,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -281,12 +282,10 @@ class StandaloneModelTestCase(TestCase):
 
         m_model.load_model_config().return_value = {"run": {"ppl": "test"}}
         m_import.return_value = SimpleHandler
-
-        default_handler._invoke(
-            Context(
-                workdir=Path(_model_data_dir),
-                version="rwerwe9",
-                project="self",
-            ),
-            "some",
+        context = Context(
+            workdir=Path(_model_data_dir),
+            version="rwerwe9",
+            project="self",
         )
+        thread_local.context = context
+        default_handler._invoke(context, "some")

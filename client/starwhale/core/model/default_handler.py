@@ -25,7 +25,7 @@ def _invoke(context: Context, func: str) -> None:
     logger.debug(f"workdir : {context.workdir}")
     _cls = _get_cls(context.workdir)
     console.print(f":zap: start run {context.step}-{context.index}...")
-    with _cls(context=context) as _obj:
+    with _cls() as _obj:
         _func = get_func_from_object(_obj, func)
         _func()
 

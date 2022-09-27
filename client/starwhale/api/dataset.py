@@ -9,6 +9,7 @@ from ._impl.dataset import (
     ClassLabel,
     S3LinkAuth,
     BoundingBox,
+    data_loader,
     BuildExecutor,
     GrayscaleImage,
     get_data_loader,
@@ -25,6 +26,7 @@ from ._impl.dataset import (
 
 
 __all__ = [
+    "data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",

@@ -6,7 +6,7 @@ from PIL import Image as PILImage
 from pycocotools.coco import COCO
 from torchvision.transforms import functional
 
-from starwhale import Image, Context, PipelineHandler
+from starwhale import Image, PipelineHandler
 
 from .model import pretrained_model
 from .utils import get_model_path
@@ -14,11 +14,11 @@ from .utils.coco_eval import CocoEvaluator
 
 
 class MaskRCnn(PipelineHandler):
-    def __init__(self, context: Context) -> None:
+    def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
         self.iou_types = ["bbox", "segm"]
-        super().__init__(context=context)
+        super().__init__()
 
     @torch.no_grad()
     def ppl(self, img: Image, index: int, **kw):
