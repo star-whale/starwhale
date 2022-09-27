@@ -25,10 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.ObjectStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
@@ -110,8 +112,8 @@ public class MemoryTableImplTest {
         public void testUpdateCommon() {
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(
-                            new ColumnSchemaDesc("k", "STRING"),
-                            new ColumnSchemaDesc("a", "INT32"))),
+                            ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                            ColumnSchemaDesc.builder().name("a").type("INT32").build())),
                     List.of(Map.of("k", "0", "a", "a")));
             assertThat("init",
                     scanAll(this.memoryTable, List.of("k", "a"), false),
@@ -146,7 +148,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("3", Map.of("k", "3", "a", 13))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("b", "INT32"))),
+                    new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("b").type("INT32").build())),
                     List.of(Map.of("k", "1", "b", "0")));
             assertThat("new column", scanAll(this.memoryTable, List.of("k", "a", "b"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a", 10)),
@@ -180,7 +182,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("3", Map.of("k", "3", "a", 13))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("c", "INT32"))),
+                    new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("c").type("INT32").build())),
                     List.of(Map.of("k", "3", "-", "1"),
                             Map.of("k", "2", "a", "0"),
                             Map.of("k", "3", "a", "0"),
@@ -200,7 +202,8 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("4", Map.of("k", "4", "c", 0))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("a-b/c/d:e_f", "INT32"))),
+                    new TableSchemaDesc(null,
+                            List.of(ColumnSchemaDesc.builder().name("a-b/c/d:e_f").type("INT32").build())),
                     List.of(Map.of("k", "0", "a-b/c/d:e_f", "0")));
             assertThat("complex name", scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a-b/c/d:e_f", 0)),
@@ -209,7 +212,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("4", Map.of("k", "4", "c", 0))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))),
+                    new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())),
                     List.of(new HashMap<>() {
                         {
                             put("k", "0");
@@ -218,7 +221,7 @@ public class MemoryTableImplTest {
                     }));
             assertThat("unknown",
                     this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
-                    is(ColumnType.UNKNOWN));
+                    is(ColumnTypeScalar.UNKNOWN));
             assertThat("unknown", scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a-b/c/d:e_f", 0)),
                             new MemoryTable.RecordResult("1", Map.of("k", "1", "c", 1)),
@@ -226,11 +229,11 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("4", Map.of("k", "4", "c", 0))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "INT32"))),
+                    new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("INT32").build())),
                     List.of(Map.of("k", "1", "x", "1")));
             assertThat("update unknown",
                     this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
-                    is(ColumnType.INT32));
+                    is(ColumnTypeScalar.INT32));
             assertThat("update unknown",
                     scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f", "x"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a-b/c/d:e_f", 0)),
@@ -239,7 +242,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult("4", Map.of("k", "4", "c", 0))));
 
             this.memoryTable.update(
-                    new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))),
+                    new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())),
                     List.of(new HashMap<>() {
                         {
                             put("k", "1");
@@ -248,7 +251,7 @@ public class MemoryTableImplTest {
                     }));
             assertThat("unknown again",
                     this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
-                    is(ColumnType.INT32));
+                    is(ColumnTypeScalar.INT32));
             assertThat("unknown again",
                     scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f", "x"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a-b/c/d:e_f", 0)),
@@ -261,16 +264,26 @@ public class MemoryTableImplTest {
         public void testUpdateAllColumnTypes() {
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
-                            new ColumnSchemaDesc("key", "STRING"),
-                            new ColumnSchemaDesc("a", "BOOL"),
-                            new ColumnSchemaDesc("b", "INT8"),
-                            new ColumnSchemaDesc("c", "INT16"),
-                            new ColumnSchemaDesc("d", "INT32"),
-                            new ColumnSchemaDesc("e", "INT64"),
-                            new ColumnSchemaDesc("f", "FLOAT32"),
-                            new ColumnSchemaDesc("g", "FLOAT64"),
-                            new ColumnSchemaDesc("h", "BYTES"),
-                            new ColumnSchemaDesc("i", "UNKNOWN"))),
+                            ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                            ColumnSchemaDesc.builder().name("a").type("BOOL").build(),
+                            ColumnSchemaDesc.builder().name("b").type("INT8").build(),
+                            ColumnSchemaDesc.builder().name("c").type("INT16").build(),
+                            ColumnSchemaDesc.builder().name("d").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("e").type("INT64").build(),
+                            ColumnSchemaDesc.builder().name("f").type("FLOAT32").build(),
+                            ColumnSchemaDesc.builder().name("g").type("FLOAT64").build(),
+                            ColumnSchemaDesc.builder().name("h").type("BYTES").build(),
+                            ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build(),
+                            ColumnSchemaDesc.builder().name("j")
+                                    .type("LIST")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build(),
+                            ColumnSchemaDesc.builder().name("k")
+                                    .type("OBJECT")
+                                    .pythonType("t")
+                                    .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                            ColumnSchemaDesc.builder().name("b").type("INT32").build()))
+                                    .build())),
                     List.of(new HashMap<>() {
                         {
                             put("key", "x");
@@ -283,10 +296,13 @@ public class MemoryTableImplTest {
                             put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
                             put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
                             put("i", null);
+                            put("j", List.of("a"));
+                            put("k", Map.of("a", "b", "b", "c"));
                         }
                     }));
             assertThat("all types",
-                    scanAll(this.memoryTable, List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i"), false),
+                    scanAll(this.memoryTable, List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"),
+                            false),
                     contains(new MemoryTable.RecordResult("x",
                             new HashMap<>() {
                                 {
@@ -299,6 +315,8 @@ public class MemoryTableImplTest {
                                     put("f", 1.1f);
                                     put("g", 1.1);
                                     put("h", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
+                                    put("j", List.of(10));
+                                    put("k", Map.of("a", 11, "b", 12));
                                 }
                             })));
         }
@@ -307,7 +325,7 @@ public class MemoryTableImplTest {
         public void testUpdateAllKeyColumnTypes() {
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "BOOL"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("BOOL").build())),
                     List.of(Map.of("k", "1")));
             assertThat("bool",
                     scanAll(this.memoryTable, List.of("k"), false),
@@ -315,7 +333,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT8"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT8").build())),
                     List.of(Map.of("k", "10")));
             assertThat("int8",
                     scanAll(this.memoryTable, List.of("k"), false),
@@ -323,7 +341,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT16"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT16").build())),
                     List.of(Map.of("k", "1000")));
             assertThat("int16",
                     scanAll(this.memoryTable, List.of("k"), false),
@@ -332,7 +350,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT32"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build())),
                     List.of(Map.of("k", "100000")));
             assertThat("int32",
                     scanAll(this.memoryTable, List.of("k"), false),
@@ -341,7 +359,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT64"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT64").build())),
                     List.of(Map.of("k", "10000000")));
             assertThat("int64",
                     scanAll(this.memoryTable, List.of("k"), false),
@@ -350,7 +368,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "FLOAT32"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("FLOAT32").build())),
                     List.of(Map.of("k", Integer.toHexString(Float.floatToIntBits(1.1f)))));
             assertThat("float32", scanAll(this.memoryTable, List.of("k"), false),
                     contains(new MemoryTable.RecordResult(1.1f,
@@ -358,7 +376,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "FLOAT64"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("FLOAT64").build())),
                     List.of(Map.of("k", Long.toHexString(Double.doubleToLongBits(1.1)))));
             assertThat("float64", scanAll(this.memoryTable, List.of("k"), false),
                     contains(new MemoryTable.RecordResult(1.1,
@@ -366,7 +384,7 @@ public class MemoryTableImplTest {
 
             this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(
-                    new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "BYTES"))),
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("BYTES").build())),
                     List.of(Map.of("k", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)))));
             assertThat("bytes", scanAll(this.memoryTable, List.of("k"), false),
                     contains(new MemoryTable.RecordResult(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)),
@@ -381,14 +399,16 @@ public class MemoryTableImplTest {
 
             assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
-                            new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("a", "INT32"))),
+                            new TableSchemaDesc("k",
+                                    List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build())),
                             List.of(Map.of("k", "0"), Map.of("k", "1"))),
                     "no key column schema");
             assertThat("no key column schema", scanAll(this.memoryTable, List.of("k", "a"), false), empty());
 
             assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
-                            new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
+                            new TableSchemaDesc("k",
+                                    List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                             List.of(Map.of("k", "0"), Map.of("k", "1", "a", "1"))),
                     "extra column data");
             assertThat("extra column data", scanAll(this.memoryTable, List.of("k", "a"), false), empty());
@@ -396,8 +416,8 @@ public class MemoryTableImplTest {
             assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             new TableSchemaDesc("k", List.of(
-                                    new ColumnSchemaDesc("k", "STRING"),
-                                    new ColumnSchemaDesc("a", "INT32"))),
+                                    ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                                    ColumnSchemaDesc.builder().name("a").type("INT32").build())),
                             List.of(Map.of("k", "0"), Map.of("k", "1", "a", "h"))),
                     "fail to decode");
             assertThat("fail to decode", scanAll(this.memoryTable, List.of("k", "a"), false), empty());
@@ -405,7 +425,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testUpdateWalError() {
-            var schema = new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING")));
+            var schema = new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build()));
             assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             schema,
@@ -426,18 +446,18 @@ public class MemoryTableImplTest {
         public void testUpdateFromWal() throws IOException {
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
-                            new ColumnSchemaDesc("key", "STRING"),
-                            new ColumnSchemaDesc("a", "BOOL"),
-                            new ColumnSchemaDesc("b", "INT8"),
-                            new ColumnSchemaDesc("c", "INT16"),
-                            new ColumnSchemaDesc("d", "INT32"),
-                            new ColumnSchemaDesc("e", "INT64"),
-                            new ColumnSchemaDesc("f", "FLOAT32"),
-                            new ColumnSchemaDesc("g", "FLOAT64"),
-                            new ColumnSchemaDesc("h", "BYTES"),
-                            new ColumnSchemaDesc("i", "UNKNOWN"))),
+                            ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                            ColumnSchemaDesc.builder().name("a").type("BOOL").build(),
+                            ColumnSchemaDesc.builder().name("b").type("INT8").build(),
+                            ColumnSchemaDesc.builder().name("c").type("INT16").build(),
+                            ColumnSchemaDesc.builder().name("d").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("e").type("INT64").build(),
+                            ColumnSchemaDesc.builder().name("f").type("FLOAT32").build(),
+                            ColumnSchemaDesc.builder().name("g").type("FLOAT64").build(),
+                            ColumnSchemaDesc.builder().name("h").type("BYTES").build(),
+                            ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build())),
                     null);
-            List<Map<String, String>> records = new ArrayList<>();
+            List<Map<String, Object>> records = new ArrayList<>();
             for (int i = 0; i < 100; ++i) {
                 final int index = i;
                 records.add(new HashMap<>() {
@@ -543,22 +563,22 @@ public class MemoryTableImplTest {
                             })
                     .collect(Collectors.toList());
             var schema = new TableSchemaDesc("key", List.of(
-                    new ColumnSchemaDesc("key", "INT32"),
-                    new ColumnSchemaDesc("a", "BOOL"),
-                    new ColumnSchemaDesc("b", "INT8"),
-                    new ColumnSchemaDesc("c", "INT16"),
-                    new ColumnSchemaDesc("d", "INT32"),
-                    new ColumnSchemaDesc("e", "INT64"),
-                    new ColumnSchemaDesc("f", "FLOAT32"),
-                    new ColumnSchemaDesc("g", "FLOAT64"),
-                    new ColumnSchemaDesc("h", "STRING"),
-                    new ColumnSchemaDesc("i", "BYTES"),
-                    new ColumnSchemaDesc("z", "UNKNOWN")));
+                    ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                    ColumnSchemaDesc.builder().name("a").type("BOOL").build(),
+                    ColumnSchemaDesc.builder().name("b").type("INT8").build(),
+                    ColumnSchemaDesc.builder().name("c").type("INT16").build(),
+                    ColumnSchemaDesc.builder().name("d").type("INT32").build(),
+                    ColumnSchemaDesc.builder().name("e").type("INT64").build(),
+                    ColumnSchemaDesc.builder().name("f").type("FLOAT32").build(),
+                    ColumnSchemaDesc.builder().name("g").type("FLOAT64").build(),
+                    ColumnSchemaDesc.builder().name("h").type("STRING").build(),
+                    ColumnSchemaDesc.builder().name("i").type("BYTES").build(),
+                    ColumnSchemaDesc.builder().name("z").type("UNKNOWN").build()));
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(schema,
                     records.stream()
                             .map(r -> r.getValues().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                                    entry -> ColumnType.getColumnTypeByName(
+                                    entry -> ColumnTypeScalar.getColumnTypeByName(
                                                     schema.getColumnSchemaList().stream()
                                                             .filter(col -> col.getName().equals(entry.getKey()))
                                                             .findFirst()
@@ -569,23 +589,23 @@ public class MemoryTableImplTest {
         }
 
         private final Map<Class<?>, ColumnType> typeMap = Map.of(
-                Boolean.class, ColumnType.BOOL,
-                Byte.class, ColumnType.INT8,
-                Short.class, ColumnType.INT16,
-                Integer.class, ColumnType.INT32,
-                Long.class, ColumnType.INT64,
-                Float.class, ColumnType.FLOAT32,
-                Double.class, ColumnType.FLOAT64,
-                String.class, ColumnType.STRING);
+                Boolean.class, ColumnTypeScalar.BOOL,
+                Byte.class, ColumnTypeScalar.INT8,
+                Short.class, ColumnTypeScalar.INT16,
+                Integer.class, ColumnTypeScalar.INT32,
+                Long.class, ColumnTypeScalar.INT64,
+                Float.class, ColumnTypeScalar.FLOAT32,
+                Double.class, ColumnTypeScalar.FLOAT64,
+                String.class, ColumnTypeScalar.STRING);
 
         private ColumnType getColumnType(Object value) {
             if (value == null) {
-                return ColumnType.UNKNOWN;
+                return ColumnTypeScalar.UNKNOWN;
             }
             var ret = typeMap.get(value.getClass());
             if (ret == null) {
                 if (value instanceof ByteBuffer) {
-                    return ColumnType.BYTES;
+                    return ColumnTypeScalar.BYTES;
                 }
                 throw new IllegalArgumentException("unsupported column type " + value.getClass());
             }
@@ -606,7 +626,8 @@ public class MemoryTableImplTest {
         @Test
         public void testQueryEmptyTableWithSchema() {
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
-            this.memoryTable.update(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
+            this.memoryTable.update(
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));
             var results = this.memoryTable.query(Map.of("k", "k"), null, null, -1, -1, false, false);
             assertThat(results, empty());
@@ -633,6 +654,30 @@ public class MemoryTableImplTest {
             assertThrows(SwValidationException.class,
                     () -> this.memoryTable.query(Map.of("x", "x"), null, null, -1, -1, false, false),
                     "invalid column");
+        }
+
+        @Test
+        public void testQueryNonScalar() {
+            this.memoryTable.update(
+                    new TableSchemaDesc(null,
+                            List.of(ColumnSchemaDesc.builder()
+                                    .name("x")
+                                    .type("LIST")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build())),
+                    List.of(Map.of("key", "1", "x", List.of("a"))));
+            var results = this.memoryTable.query(
+                    Map.of("key", "key", "x", "x"),
+                    null,
+                    TableQueryFilter.builder()
+                            .operator(Operator.EQUAL)
+                            .operands(List.of(new TableQueryFilter.Column("key"), this.createConstant(1)))
+                            .build(),
+                    -1,
+                    -1,
+                    false,
+                    false);
+            assertThat(results, is(List.of(new MemoryTable.RecordResult(1, Map.of("key", 1, "x", List.of(10))))));
         }
 
         @Test
@@ -908,6 +953,15 @@ public class MemoryTableImplTest {
                             false,
                             false),
                     "invalid order by column");
+
+            this.memoryTable.update(
+                    new TableSchemaDesc(null,
+                            List.of(ColumnSchemaDesc.builder()
+                                    .name("x")
+                                    .type("LIST")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build())),
+                    List.of(Map.of("key", "1", "x", List.of("a"))));
         }
 
         @Test
@@ -1112,6 +1166,7 @@ public class MemoryTableImplTest {
                     is(List.of(
                             new MemoryTable.RecordResult(7, Map.of("a", false)),
                             new MemoryTable.RecordResult(9, Map.of("a", false, "d", 1)),
+                            new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("a", false, "d", 3)),
                             new MemoryTable.RecordResult(3, Map.of("a", false, "d", 5)),
                             new MemoryTable.RecordResult(5, Map.of("a", false, "d", 7)))));
@@ -1132,7 +1187,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(0, Map.of("b", (byte) 0)),
+                    is(List.of(new MemoryTable.RecordResult(9, Map.of()),
+                            new MemoryTable.RecordResult(0, Map.of("b", (byte) 0)),
                             new MemoryTable.RecordResult(1, Map.of("b", (byte) 1)),
                             new MemoryTable.RecordResult(2, Map.of("b", (byte) 2)),
                             new MemoryTable.RecordResult(3, Map.of("b", (byte) 3)),
@@ -1154,7 +1210,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(9, Map.of("c", (short) 0)),
+                    is(List.of(new MemoryTable.RecordResult(8, Map.of()),
+                            new MemoryTable.RecordResult(9, Map.of("c", (short) 0)),
                             new MemoryTable.RecordResult(0, Map.of("c", (short) 1)),
                             new MemoryTable.RecordResult(1, Map.of("c", (short) 2)),
                             new MemoryTable.RecordResult(2, Map.of("c", (short) 3)),
@@ -1176,7 +1233,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(8, Map.of("d", 0)),
+                    is(List.of(new MemoryTable.RecordResult(7, Map.of()),
+                            new MemoryTable.RecordResult(8, Map.of("d", 0)),
                             new MemoryTable.RecordResult(9, Map.of("d", 1)),
                             new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("d", 3)),
@@ -1198,7 +1256,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(7, Map.of("e", 0L)),
+                    is(List.of(new MemoryTable.RecordResult(6, Map.of()),
+                            new MemoryTable.RecordResult(7, Map.of("e", 0L)),
                             new MemoryTable.RecordResult(8, Map.of("e", 1L)),
                             new MemoryTable.RecordResult(9, Map.of("e", 2L)),
                             new MemoryTable.RecordResult(0, Map.of("e", 3L)),
@@ -1220,7 +1279,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(6, Map.of("f", 0.f)),
+                    is(List.of(new MemoryTable.RecordResult(5, Map.of()),
+                            new MemoryTable.RecordResult(6, Map.of("f", 0.f)),
                             new MemoryTable.RecordResult(7, Map.of("f", 1.f)),
                             new MemoryTable.RecordResult(8, Map.of("f", 2.f)),
                             new MemoryTable.RecordResult(9, Map.of("f", 3.f)),
@@ -1242,7 +1302,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(5, Map.of("g", 0.)),
+                    is(List.of(new MemoryTable.RecordResult(4, Map.of()),
+                            new MemoryTable.RecordResult(5, Map.of("g", 0.)),
                             new MemoryTable.RecordResult(6, Map.of("g", 1.)),
                             new MemoryTable.RecordResult(7, Map.of("g", 2.)),
                             new MemoryTable.RecordResult(8, Map.of("g", 3.)),
@@ -1254,7 +1315,7 @@ public class MemoryTableImplTest {
             var columns = Map.of("h", "h");
             var results = this.memoryTable.query(
                     columns,
-                    List.of(new OrderByDesc("g")),
+                    List.of(new OrderByDesc("h")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS)
                             .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
@@ -1264,7 +1325,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(4, Map.of("h", "0")),
+                    is(List.of(new MemoryTable.RecordResult(3, Map.of()),
+                            new MemoryTable.RecordResult(4, Map.of("h", "0")),
                             new MemoryTable.RecordResult(5, Map.of("h", "1")),
                             new MemoryTable.RecordResult(6, Map.of("h", "2")),
                             new MemoryTable.RecordResult(7, Map.of("h", "3")),
@@ -1288,7 +1350,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(3,
+                    is(List.of(new MemoryTable.RecordResult(2, Map.of()),
+                            new MemoryTable.RecordResult(3,
                                     Map.of("i", ByteBuffer.wrap("0".getBytes(StandardCharsets.UTF_8)))),
                             new MemoryTable.RecordResult(4,
                                     Map.of("i", ByteBuffer.wrap("1".getBytes(StandardCharsets.UTF_8)))),
@@ -1319,6 +1382,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(7, Map.of("a", false)),
                             new MemoryTable.RecordResult(8, Map.of("a", true, "d", 0)),
                             new MemoryTable.RecordResult(9, Map.of("a", false, "d", 1)),
+                            new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("a", false, "d", 3)),
                             new MemoryTable.RecordResult(2, Map.of("a", true, "d", 4)),
                             new MemoryTable.RecordResult(3, Map.of("a", false, "d", 5)),
@@ -1342,7 +1406,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(0, Map.of("b", (byte) 0)),
+                    is(List.of(new MemoryTable.RecordResult(9, Map.of()),
+                            new MemoryTable.RecordResult(0, Map.of("b", (byte) 0)),
                             new MemoryTable.RecordResult(1, Map.of("b", (byte) 1)),
                             new MemoryTable.RecordResult(2, Map.of("b", (byte) 2)),
                             new MemoryTable.RecordResult(3, Map.of("b", (byte) 3)),
@@ -1365,7 +1430,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(9, Map.of("c", (short) 0)),
+                    is(List.of(new MemoryTable.RecordResult(8, Map.of()),
+                            new MemoryTable.RecordResult(9, Map.of("c", (short) 0)),
                             new MemoryTable.RecordResult(0, Map.of("c", (short) 1)),
                             new MemoryTable.RecordResult(1, Map.of("c", (short) 2)),
                             new MemoryTable.RecordResult(2, Map.of("c", (short) 3)),
@@ -1388,7 +1454,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(8, Map.of("d", 0)),
+                    is(List.of(new MemoryTable.RecordResult(7, Map.of()),
+                            new MemoryTable.RecordResult(8, Map.of("d", 0)),
                             new MemoryTable.RecordResult(9, Map.of("d", 1)),
                             new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("d", 3)),
@@ -1411,7 +1478,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(7, Map.of("e", 0L)),
+                    is(List.of(new MemoryTable.RecordResult(6, Map.of()),
+                            new MemoryTable.RecordResult(7, Map.of("e", 0L)),
                             new MemoryTable.RecordResult(8, Map.of("e", 1L)),
                             new MemoryTable.RecordResult(9, Map.of("e", 2L)),
                             new MemoryTable.RecordResult(0, Map.of("e", 3L)),
@@ -1434,7 +1502,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(6, Map.of("f", 0.f)),
+                    is(List.of(new MemoryTable.RecordResult(5, Map.of()),
+                            new MemoryTable.RecordResult(6, Map.of("f", 0.f)),
                             new MemoryTable.RecordResult(7, Map.of("f", 1.f)),
                             new MemoryTable.RecordResult(8, Map.of("f", 2.f)),
                             new MemoryTable.RecordResult(9, Map.of("f", 3.f)),
@@ -1457,7 +1526,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(5, Map.of("g", 0.)),
+                    is(List.of(new MemoryTable.RecordResult(4, Map.of()),
+                            new MemoryTable.RecordResult(5, Map.of("g", 0.)),
                             new MemoryTable.RecordResult(6, Map.of("g", 1.)),
                             new MemoryTable.RecordResult(7, Map.of("g", 2.)),
                             new MemoryTable.RecordResult(8, Map.of("g", 3.)),
@@ -1470,7 +1540,7 @@ public class MemoryTableImplTest {
             var columns = Map.of("h", "h");
             var results = this.memoryTable.query(
                     columns,
-                    List.of(new OrderByDesc("g")),
+                    List.of(new OrderByDesc("h")),
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.LESS_EQUAL)
                             .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
@@ -1480,7 +1550,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(4, Map.of("h", "0")),
+                    is(List.of(new MemoryTable.RecordResult(3, Map.of()),
+                            new MemoryTable.RecordResult(4, Map.of("h", "0")),
                             new MemoryTable.RecordResult(5, Map.of("h", "1")),
                             new MemoryTable.RecordResult(6, Map.of("h", "2")),
                             new MemoryTable.RecordResult(7, Map.of("h", "3")),
@@ -1505,7 +1576,8 @@ public class MemoryTableImplTest {
                     false,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(3,
+                    is(List.of(new MemoryTable.RecordResult(2, Map.of()),
+                            new MemoryTable.RecordResult(3,
                                     Map.of("i", ByteBuffer.wrap("0".getBytes(StandardCharsets.UTF_8)))),
                             new MemoryTable.RecordResult(4,
                                     Map.of("i", ByteBuffer.wrap("1".getBytes(StandardCharsets.UTF_8)))),
@@ -1920,7 +1992,7 @@ public class MemoryTableImplTest {
                                             .operator(TableQueryFilter.Operator.EQUAL)
                                             .operands(List.of(
                                                     new TableQueryFilter.Column("d"),
-                                                            createConstant(5)))
+                                                    createConstant(5)))
                                             .build()))
                             .build(),
                     -1,
@@ -1998,6 +2070,7 @@ public class MemoryTableImplTest {
                     false);
             assertThat(results,
                     is(List.of(new MemoryTable.RecordResult(0, Map.of("d", 2)),
+                            new MemoryTable.RecordResult(7, Map.of("a", false)),
                             new MemoryTable.RecordResult(9, Map.of("a", false, "d", 1)),
                             new MemoryTable.RecordResult(1, Map.of("a", false, "d", 3)),
                             new MemoryTable.RecordResult(8, Map.of("a", true, "d", 0)),
@@ -2070,7 +2143,8 @@ public class MemoryTableImplTest {
         @Test
         public void testScanEmptyTableWithSchema() {
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
-            this.memoryTable.update(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
+            this.memoryTable.update(
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));
             var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, 1000, false);
             assertThat("empty", results, empty());
@@ -2091,6 +2165,28 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(8, Map.of("x", true, "y", 0)),
                             new MemoryTable.RecordResult(9, Map.of("x", false, "y", 1)))));
         }
+
+        @Test
+        public void testScanNonScalar() {
+            this.memoryTable.update(
+                    new TableSchemaDesc(null,
+                            List.of(ColumnSchemaDesc.builder()
+                                    .name("x")
+                                    .type("LIST")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build())),
+                    List.of(Map.of("key", "1", "x", List.of("a"))));
+            var results = this.memoryTable.scan(
+                    Map.of("key", "key", "x", "x"),
+                    "1",
+                    true,
+                    "1",
+                    true,
+                    -1,
+                    false);
+            assertThat(results, is(List.of(new MemoryTable.RecordResult(1, Map.of("key", 1, "x", List.of(10))))));
+        }
+
 
         @Test
         public void testScanStartEnd() {

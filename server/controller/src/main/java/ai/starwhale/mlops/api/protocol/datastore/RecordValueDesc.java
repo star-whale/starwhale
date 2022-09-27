@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api.protocol.datastore;
 
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,5 +29,12 @@ public class RecordValueDesc {
 
     @NotNull
     private String key;
-    private String value;
+    /**
+     * The column/attribute value.
+     * <p>
+     * If the column/attribute type is SCALAR, the value type should be String.
+     * If the column/attribute type is LIST, the value type should be List&lt;Object&gt;.
+     * If the column/attribute type is OBJECT, the value type should be Map&lt;String, Object&gt;.
+     */
+    private Object value;
 }

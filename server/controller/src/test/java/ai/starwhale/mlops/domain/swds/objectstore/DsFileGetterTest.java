@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.domain.swds.mapper.SwDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
@@ -50,8 +50,8 @@ public class DsFileGetterTest {
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 SwDatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "", ColumnType.INT64.encode(1, false),
-                ColumnType.INT64.encode(1, false));
+        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "", (String) ColumnTypeScalar.INT64.encode(1, false),
+                (String) ColumnTypeScalar.INT64.encode(1, false));
         Assertions.assertEquals("abc", new String(bytes));
 
     }

@@ -16,15 +16,63 @@
 
 package ai.starwhale.mlops.datastore;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * This class describes the schema of a column or an attribute of an object, including its name and type.
+ */
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(Include.NON_NULL)
 public class ColumnSchemaDesc {
 
+    /**
+     * The name of the column or the attribute.
+     */
     private String name;
+
+    /**
+     * The type of the column or the attribute.
+     * <p>
+     * It can be one of the following values:
+     * <ul>
+     * <li>BOOL</li>
+     * <li>INT8</li>
+     * <li>INT16</li>
+     * <li>INT32</li>
+     * <li>INT64</li>
+     * <li>FLOAT32</li>
+     * <li>FLOAT64</li>
+     * <li>STRING</li>
+     * <li>BYTES</li>
+     * <li>LIST</li>
+     * <li>OBJECT</li>
+     * </ul>
+     */
     private String type;
+
+    /**
+     * The original python type. It is used by the python sdk to create objects from values. Only used when type is
+     * OBJECT
+     */
+    private String pythonType;
+
+    /**
+     * This field represents the type of elements in array. It is only used when type is ARRAY. The name field of
+     * elementType is never used.
+     */
+    private ColumnSchemaDesc elementType;
+
+    /**
+     * This field describes the attributes of object type.
+     */
+    private List<ColumnSchemaDesc> attributes;
 }

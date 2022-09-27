@@ -160,17 +160,13 @@ export default function DatasetVersionFiles() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])
 
-    const columnTypes = React.useMemo(() => {
-        return tables.data?.columnTypes ?? {}
-    }, [tables.data])
-
     const [layoutKey, setLayoutKey] = React.useState('1')
     const [isFullscreen, setIsFullscreen] = React.useState(false)
 
     const datasets = React.useMemo(
         () =>
             tables?.data?.records?.map((record) => {
-                const dObj = new DatasetObject(record, columnTypes)
+                const dObj = new DatasetObject(record)
                 dObj.setDataSrc(
                     projectId,
                     datasetVersion?.name as string,
@@ -179,7 +175,7 @@ export default function DatasetVersionFiles() {
                 )
                 return dObj ?? []
             }) ?? [],
-        [tables?.data, columnTypes, projectId, datasetVersion, token]
+        [tables?.data, projectId, datasetVersion, token]
     )
 
     const Records = React.useMemo(() => {

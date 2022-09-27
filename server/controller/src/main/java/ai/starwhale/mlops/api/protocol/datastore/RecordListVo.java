@@ -16,6 +16,9 @@
 
 package ai.starwhale.mlops.api.protocol.datastore;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -27,9 +30,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(Include.NON_NULL)
 public class RecordListVo {
 
-    private Map<String, String> columnTypes;
-    private List<Map<String, String>> records;
+    private List<ColumnSchemaDesc> columnTypes;
+    private List<Map<String, Object>> records;
     private String lastKey;
 }

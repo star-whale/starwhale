@@ -1,5 +1,4 @@
 import isObject from 'lodash/isObject'
-import Typer, { IDataType } from '../datastore/sdk'
 import { tableDataLink } from '../datastore/utils'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
@@ -74,8 +73,6 @@ export class DatasetObject {
 
     public data: IObjectImage
 
-    public columnTypes: Record<string, IDataType>
-
     // annotations
     public cocos: IAnnotationCOCOObject[]
 
@@ -85,14 +82,13 @@ export class DatasetObject {
 
     public objects: any[]
 
-    constructor(data: any, columnTypes: any) {
+    constructor(data: any) {
         this.src = data?.src ?? 0
-        this.size = data?.data_size ?? 0
-        this.offset = data?.data_offset ?? 0
+        this.size = Number(data?.data_size ?? 0)
+        this.offset = Number(data?.data_offset ?? 0)
         this.uri = data?.data_uri ?? ''
         this.authName = data?.auth_name ?? ''
         this.id = data?.id ?? ''
-        this.columnTypes = columnTypes
         this.mimeType = ''
         this.type = ''
         this.data = {} as any
@@ -156,8 +152,8 @@ export class DatasetObject {
         const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
             uri: this.uri,
             authName: this.authName,
-            offset: Typer?.[this.columnTypes.data_offset]?.encode(this.offset),
-            size: Typer?.[this.columnTypes.data_size]?.encode(this.size),
+            offset: this.offset.toString(16),
+            size: this.size.toString(16),
             Authorization: token as string,
         })
         this.src = src

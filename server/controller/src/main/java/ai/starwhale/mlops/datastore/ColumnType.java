@@ -16,142 +16,162 @@
 
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SwValidationException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
-import lombok.SneakyThrows;
 
 @Getter
-public class ColumnType {
+public abstract class ColumnType {
 
-    // if the column type is UNKNOWN, all values in the column are null. It is used for those columns whose type is
-    // unknown. A UNKNOWN column will be changed to other types when a value other than null is written into the column.
-    public static final ColumnType UNKNOWN = new ColumnType("unknown", 1);
-    public static final ColumnType BOOL = new ColumnType("bool", 1);
-    public static final ColumnType INT8 = new ColumnType("int", 8);
-    public static final ColumnType INT16 = new ColumnType("int", 16);
-    public static final ColumnType INT32 = new ColumnType("int", 32);
-    public static final ColumnType INT64 = new ColumnType("int", 64);
-    public static final ColumnType FLOAT32 = new ColumnType("float", 32);
-    public static final ColumnType FLOAT64 = new ColumnType("float", 64);
-    public static final ColumnType STRING = new ColumnType("string", 8);
-    public static final ColumnType BYTES = new ColumnType("bytes", 8);
-
-    private static final Map<String, ColumnType> typeMapByName = Map.of(
-            UNKNOWN.toString(), UNKNOWN,
-            BOOL.toString(), BOOL,
-            INT8.toString(), INT8,
-            INT16.toString(), INT16,
-            INT32.toString(), INT32,
-            INT64.toString(), INT64,
-            FLOAT32.toString(), FLOAT32,
-            FLOAT64.toString(), FLOAT64,
-            STRING.toString(), STRING,
-            BYTES.toString(), BYTES);
-
-    private final String category;
-    private final int nbits;
-
-    ColumnType(String category, int nbits) {
-        this.category = category;
-        this.nbits = nbits;
-    }
-
-    public static ColumnType getColumnTypeByName(String typeName) {
-        var ret = typeMapByName.get(typeName.toUpperCase());
-        if (ret == null) {
-            throw new IllegalArgumentException("invalid column type " + typeName);
-        }
-        return ret;
-    }
-
-    @Override
-    public String toString() {
-        if (this.category.equals(ColumnType.INT32.category) || this.category.equals(ColumnType.FLOAT32.category)) {
-            return this.category.toUpperCase() + this.nbits;
-        } else {
-            return this.category.toUpperCase();
-        }
-    }
-
-    @SneakyThrows
-    public String encode(Object value, boolean rawResult) {
-        if (value == null) {
-            return null;
-        }
-        if (rawResult) {
-            if (this == ColumnType.BOOL
-                    || this == ColumnType.INT8
-                    || this == ColumnType.INT16
-                    || this == ColumnType.INT32
-                    || this == ColumnType.INT64
-                    || this == ColumnType.FLOAT32
-                    || this == ColumnType.FLOAT64
-                    || this == ColumnType.STRING) {
-                return value.toString();
-            } else if (this == ColumnType.BYTES) {
-                return StandardCharsets.UTF_8.decode((ByteBuffer) value).toString();
+    public static ColumnType fromColumnSchemaDesc(ColumnSchemaDesc schema) {
+        var typeName = schema.getType().toUpperCase();
+        if (typeName.equals(ColumnTypeList.TYPE_NAME)) {
+            var elementType = schema.getElementType();
+            if (elementType == null) {
+                throw new IllegalArgumentException("elementType should not be null for LIST");
             }
-        } else {
-            if (this == ColumnType.BOOL) {
-                return (Boolean) value ? "1" : "0";
-            } else if (this == ColumnType.INT8
-                    || this == ColumnType.INT16
-                    || this == ColumnType.INT32
-                    || this == ColumnType.INT64) {
-                return Long.toHexString(((Number) value).longValue());
-            } else if (this == ColumnType.FLOAT32) {
-                return Integer.toHexString(Float.floatToIntBits((Float) value));
-            } else if (this == ColumnType.FLOAT64) {
-                return Long.toHexString(Double.doubleToLongBits((Double) value));
-            } else if (this == ColumnType.STRING) {
-                return (String) value;
-            } else if (this == ColumnType.BYTES) {
-                return Base64.getEncoder().encodeToString(((ByteBuffer) value).array());
+            return new ColumnTypeList(ColumnType.fromColumnSchemaDesc(elementType));
+        } else if (typeName.equals(ColumnTypeObject.TYPE_NAME)) {
+            var attributes = schema.getAttributes();
+            if (attributes == null || attributes.isEmpty()) {
+                throw new IllegalArgumentException("attributes should not be null or empty for OBJECT");
             }
-        }
-        throw new IllegalArgumentException("invalid type " + this);
-    }
-
-    public Object decode(String value) {
-        if (value == null) {
-            return null;
-        }
-        try {
-            if (this == ColumnType.UNKNOWN) {
-                throw new IllegalArgumentException("invalid unknown value " + value);
-            } else if (this == ColumnType.BOOL) {
-                if (value.equals("1")) {
-                    return true;
-                } else if (value.equals("0")) {
-                    return false;
+            var pythonType = schema.getPythonType();
+            if (pythonType == null || pythonType.isEmpty()) {
+                throw new IllegalArgumentException("pythonType should not be null or empty for OBJECT");
+            }
+            var attributeMap = new HashMap<String, ColumnType>();
+            for (var attr : attributes) {
+                if (attributeMap.putIfAbsent(attr.getName(), ColumnType.fromColumnSchemaDesc(attr)) != null) {
+                    throw new IllegalArgumentException("duplicate attribute name " + attr.getName());
                 }
-                throw new IllegalArgumentException("invalid bool value " + value);
-            } else if (this == ColumnType.INT8) {
-                return Byte.parseByte(value, 16);
-            } else if (this == ColumnType.INT16) {
-                return Short.parseShort(value, 16);
-            } else if (this == ColumnType.INT32) {
-                return Integer.parseInt(value, 16);
-            } else if (this == ColumnType.INT64) {
-                return Long.parseLong(value, 16);
-            } else if (this == ColumnType.FLOAT32) {
-                return Float.intBitsToFloat(Integer.parseInt(value, 16));
-            } else if (this == ColumnType.FLOAT64) {
-                return Double.longBitsToDouble(Long.parseLong(value, 16));
-            } else if (this == ColumnType.STRING) {
-                return value;
-            } else if (this == ColumnType.BYTES) {
-                return ByteBuffer.wrap(Base64.getDecoder().decode(value));
             }
-            throw new IllegalArgumentException("invalid type " + this);
-        } catch (Exception e) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                    MessageFormat.format("can not decode value {0} for type {1}: {2}", value, this, e.getMessage()));
+            return new ColumnTypeObject(schema.getPythonType(), attributeMap);
         }
+        var columnType = ColumnTypeScalar.getColumnTypeByName(typeName);
+        if (columnType == null) {
+            throw new IllegalArgumentException("invalid type " + typeName);
+        }
+        return columnType;
     }
+
+    public abstract String getTypeName();
+
+    public abstract ColumnSchemaDesc toColumnSchemaDesc(String name);
+
+    public abstract boolean isComparableWith(ColumnType other);
+
+    public static int compare(ColumnType type1, Object value1, ColumnType type2, Object value2) {
+        if (value1 == null && value2 == null) {
+            return 0;
+        }
+        if (value1 == null) {
+            return -1;
+        }
+        if (value2 == null) {
+            return 1;
+        }
+        if (type1 instanceof ColumnTypeScalar && type2 instanceof ColumnTypeScalar) {
+            if (type1 == type2) {
+                if (type1 == ColumnTypeScalar.BOOL) {
+                    return ((Boolean) value1).compareTo((Boolean) value2);
+                } else if (type1 == ColumnTypeScalar.INT8) {
+                    return ((Byte) value1).compareTo((Byte) value2);
+                } else if (type1 == ColumnTypeScalar.INT16) {
+                    return ((Short) value1).compareTo((Short) value2);
+                } else if (type1 == ColumnTypeScalar.INT32) {
+                    return ((Integer) value1).compareTo((Integer) value2);
+                } else if (type1 == ColumnTypeScalar.INT64) {
+                    return ((Long) value1).compareTo((Long) value2);
+                } else if (type1 == ColumnTypeScalar.FLOAT32) {
+                    return ((Float) value1).compareTo((Float) value2);
+                } else if (type1 == ColumnTypeScalar.FLOAT64) {
+                    return ((Double) value1).compareTo((Double) value2);
+                } else if (type1 == ColumnTypeScalar.STRING) {
+                    return ((String) value1).compareTo((String) value2);
+                } else if (type1 == ColumnTypeScalar.BYTES) {
+                    return ((ByteBuffer) value1).compareTo((ByteBuffer) value2);
+                }
+            } else {
+                var category1 = ((ColumnTypeScalar) type1).getCategory();
+                var category2 = ((ColumnTypeScalar) type2).getCategory();
+                if (category1.equals(category2)) {
+                    if (category1.equals(ColumnTypeScalar.INT32.getCategory())) {
+                        return Long.compare(((Number) value1).longValue(), ((Number) value2).longValue());
+                    } else if (category1.equals(ColumnTypeScalar.FLOAT32.getCategory())) {
+                        return Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
+                    }
+                } else {
+                    if (category1.equals(ColumnTypeScalar.INT32.getCategory())
+                            && category2.equals(ColumnTypeScalar.FLOAT32.getCategory())) {
+                        if (type1 == ColumnTypeScalar.INT64) {
+                            long v1 = (Long) value1;
+                            if (v1 > (1L << 53)) {
+                                return BigDecimal.valueOf(v1)
+                                        .compareTo(BigDecimal.valueOf(((Number) value2).doubleValue()));
+                            }
+                        }
+                        return Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
+                    } else if (category1.equals(ColumnTypeScalar.FLOAT32.getCategory())
+                            && category2.equals(ColumnTypeScalar.INT32.getCategory())) {
+                        return -ColumnType.compare(type2, value2, type1, value1);
+                    }
+                }
+            }
+        } else if (type1 instanceof ColumnTypeList && type2 instanceof ColumnTypeList) {
+            var iter1 = ((List<?>) value1).iterator();
+            var iter2 = ((List<?>) value2).iterator();
+            for (; ; ) {
+                if (iter1.hasNext() && iter2.hasNext()) {
+                    var result = ColumnType.compare(((ColumnTypeList) type1).getElementType(), iter1.next(),
+                            ((ColumnTypeList) type2).getElementType(), iter2.next());
+                    if (result != 0) {
+                        return result;
+                    }
+                } else if (iter1.hasNext()) {
+                    return 1;
+                } else if (iter2.hasNext()) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        } else if (type1 instanceof ColumnTypeObject && type2 instanceof ColumnTypeObject) {
+            var attr1 = ((ColumnTypeObject) type1).getAttributes();
+            var attr2 = ((ColumnTypeObject) type2).getAttributes();
+            var map1 = (Map<String, ?>) value1;
+            var map2 = (Map<String, ?>) value2;
+            int result = 0;
+            String lastDiffKey = null;
+            for (var entry : map1.entrySet()) {
+                var key = entry.getKey();
+                var v1 = entry.getValue();
+                if (lastDiffKey == null || key.compareTo(lastDiffKey) < 0) {
+                    var v2 = map2.get(key);
+                    if (v2 == null) {
+                        throw new IllegalArgumentException(
+                                "can not compare " + type1 + " with " + type2 + ". " + key + " not found");
+                    }
+                    var t = ColumnType.compare(attr1.get(key), v1, attr2.get(key), v2);
+                    if (t != 0) {
+                        lastDiffKey = key;
+                        result = t;
+                    }
+                }
+            }
+            return result;
+        }
+        throw new IllegalArgumentException("can not compare " + type1 + " with " + type2);
+    }
+
+    public abstract Object encode(Object value, boolean rawResult);
+
+    public abstract Object decode(Object value);
+
+    public abstract Object fromWal(Wal.Column col);
+
+    public abstract Wal.Column.Builder toWal(int columnIndex, Object value);
 }

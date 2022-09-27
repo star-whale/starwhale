@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.swds.index.datastore.IndexWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,22 +63,22 @@ public class IndexWriterTest {
         List<ColumnSchemaDesc> columnSchemaList = tableSchemaDesc.getColumnSchemaList();
         columnSchemaList.forEach(columnSchemaDesc -> {
             if ("id".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("INT64", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_offset".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("INT64", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_size".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("INT64", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_format".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("STRING", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.STRING.toString(), columnSchemaDesc.getType());
             }
             if ("object_store_type".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("STRING", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.STRING.toString(), columnSchemaDesc.getType());
             }
             if ("score".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals("FLOAT64", columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnTypeScalar.FLOAT64.toString(), columnSchemaDesc.getType());
             }
         });
         Assertions.assertEquals("table-x", request.getTableName());

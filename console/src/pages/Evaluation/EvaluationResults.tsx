@@ -106,13 +106,9 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 
     const info = useQueryDatastore(query, true)
 
-    const columnTypes = React.useMemo(() => {
-        if (!info.data) return {}
-        return info.data?.columnTypes ?? {}
-    }, [info])
     const columns = React.useMemo(() => {
-        return Object.keys(columnTypes).sort((a) => (a === 'id' ? -1 : 1)) ?? []
-    }, [columnTypes])
+        return info.data?.columnTypes?.map((column) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []
+    }, [info])
     const data = React.useMemo(() => {
         if (!info.data) return []
 
