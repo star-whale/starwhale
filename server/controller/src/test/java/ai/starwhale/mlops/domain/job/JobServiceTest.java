@@ -128,8 +128,7 @@ public class JobServiceTest {
                 jobBoConverter, jobMapper, jobSwdsVersionMapper, taskMapper,
                 jobConvertor, runtimeManager, jobSpliterator, resourcePoolManager,
                 hotJobHolder, projectManager, jobManager, jobLoader, swmpManager,
-                resultQuerier, swdsManager, storagePathCoordinator, userService,
-                new ObjectMapper());
+                resultQuerier, swdsManager, storagePathCoordinator, userService);
     }
 
     @Test
@@ -230,11 +229,11 @@ public class JobServiceTest {
                 .willReturn(1L);
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", List.of());
+                 "", "1", "stepSpec1");
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", List.of());
+                "", "1", "stepSpec2");
         assertThat(res, is(1L));
     }
 

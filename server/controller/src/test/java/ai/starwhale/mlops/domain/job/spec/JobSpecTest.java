@@ -22,12 +22,32 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class JobSpecTest {
 
     static final String YAML = "default:\n"
             + "- cls_name: ''\n"
+            + "  concurrency: 1\n"
+            + "  job_name: default\n"
+            + "  needs: []\n"
+            + "  resources:\n"
+            + "  - cpu=1\n"
+            + "  step_name: ppl\n"
+            + "  task_num: 1\n"
+            + "- cls_name: ''\n"
+            + "  concurrency: 1\n"
+            + "  job_name: default\n"
+            + "  overwriteable: false\n"
+            + "  needs:\n"
+            + "  - ppl\n"
+            + "  resources:\n"
+            + "  - cpu=1\n"
+            + "  step_name: cmp\n"
+            + "  task_num: 1\n";
+
+    static final String YAML1 = "- cls_name: ''\n"
             + "  concurrency: 1\n"
             + "  job_name: default\n"
             + "  needs: []\n"
@@ -68,35 +88,43 @@ public class JobSpecTest {
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
 
-    @Test
-    public void testReadFromYaml1() {
-        List<ai.starwhale.mlops.domain.job.spec.StepSpec> steps = JobSpecParser.parseStepFromYaml(YAML);
-        Assertions.assertEquals(2, steps.size());
-        StepSpec pplStep = steps.get(0);
-        Assertions.assertEquals(StepSpec.builder()
-                .jobName("default")
-                .needs(List.of())
-                .resources(List.of(new RuntimeResource("cpu", 1)))
-                .stepName("ppl")
-                .taskNum(1)
-                .concurrency(1)
-                .overwriteable(true)
-                .build(), pplStep);
-        StepSpec cmpStep = steps.get(1);
-        Assertions.assertEquals(StepSpec.builder()
-                .jobName("default")
-                .needs(List.of("ppl"))
-                .resources(List.of(new RuntimeResource("cpu", 1)))
-                .stepName("cmp")
-                .taskNum(1)
-                .concurrency(1)
-                .overwriteable(false)
-                .build(), cmpStep);
+    static final String YAML3 = "---\n"
+            + "- concurrency: 1\n"
+            + "  needs: []\n"
+            + "  resources:\n"
+            + "  - type: \"cpu\"\n"
+            + "    num: 1\n"
+            + "  overwriteable: true\n"
+            + "  job_name: \"default\"\n"
+            + "  step_name: \"ppl\"\n"
+            + "  task_num: 1\n"
+            + "- concurrency: 1\n"
+            + "  needs:\n"
+            + "  - \"ppl\"\n"
+            + "  resources:\n"
+            + "  - type: \"cpu\"\n"
+            + "    num: 1\n"
+            + "  overwriteable: false\n"
+            + "  job_name: \"default\"\n"
+            + "  step_name: \"cmp\"\n"
+            + "  task_num: 1\n";
+
+    private JobSpecParser jobSpecParser;
+
+    @BeforeEach
+    public void setUp() {
+        jobSpecParser = new JobSpecParser(new YAMLMapper());
     }
 
     @Test
-    public void testReadFromYaml2() {
-        List<ai.starwhale.mlops.domain.job.spec.StepSpec> steps = JobSpecParser.parseStepFromYaml(YAML2);
+    public void testReadFromYaml1() throws JsonProcessingException {
+        validSteps(jobSpecParser.parseStepFromYaml(YAML));
+        validSteps(jobSpecParser.parseStepFromYaml(YAML1));
+        validSteps(jobSpecParser.parseStepFromYaml(YAML2));
+        validSteps(jobSpecParser.parseStepFromYaml(YAML3));
+    }
+
+    private void validSteps(List<StepSpec> steps) {
         Assertions.assertEquals(2, steps.size());
         StepSpec pplStep = steps.get(0);
         Assertions.assertEquals(StepSpec.builder()
@@ -141,6 +169,7 @@ public class JobSpecTest {
                 .build()
         ));
         Assertions.assertEquals(YAML2, new YAMLMapper().writeValueAsString(map));
+        Assertions.assertEquals(YAML3, new YAMLMapper().writeValueAsString(map.get("default")));
     }
 
 }

@@ -28,8 +28,6 @@ import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -46,29 +44,24 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SwProcessException;
-import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -96,14 +89,13 @@ public class JobService {
     private final SwdsManager swdsManager;
     private final RuntimeManager runtimeManager;
     private final ResourcePoolManager resourcePoolManager;
-    private final ObjectMapper objectMapper;
 
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
             JobSpliterator jobSpliterator, ResourcePoolManager resourcePoolManager, HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
             ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
-            UserService userService, @Qualifier("yamlMapper") ObjectMapper objectMapper) {
+            UserService userService) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
@@ -121,7 +113,6 @@ public class JobService {
         this.swdsManager = swdsManager;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
-        this.objectMapper = objectMapper;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
@@ -185,20 +176,13 @@ public class JobService {
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
-            List<StepSpec> stepSpecOverWrites) {
+            String stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
         Long modelVersionId = swmpManager.getSwmpVersionId(modelVersionUrl, null);
         Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
-        String stepSpec;
-        try {
-            stepSpec = objectMapper.writeValueAsString(Map.of(JobSpecParser.DEFAULT_JOB_NAME, stepSpecOverWrites));
-        } catch (JsonProcessingException e) {
-            log.warn("step spec serialization error", e);
-            throw new SwProcessException(ErrorType.SYSTEM);
-        }
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
                 .jobUuid(jobUuid)
@@ -210,7 +194,7 @@ public class JobService {
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePoolId(resourcePoolId)
-                .stepSpec(stepSpec)
+                .stepSpec(stepSpecOverWrites)
                 .build();
 
         jobMapper.addJob(jobEntity);
@@ -231,7 +215,14 @@ public class JobService {
         final Stream<Job> allNewJobs = findAllNewJobs();
         allNewJobs.parallel().forEach(job -> {
             //one transaction
-            jobSpliterator.split(job);
+            try {
+                jobSpliterator.split(job);
+            } catch (StarwhaleException e) {
+                log.error("parsing step specification error", e);
+                jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.FAIL);
+                return;
+            }
+
             jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())), false, true);
         });
 

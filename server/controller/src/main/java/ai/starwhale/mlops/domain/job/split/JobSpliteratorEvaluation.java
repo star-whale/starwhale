@@ -30,7 +30,10 @@ import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,14 +64,17 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     private final StepMapper stepMapper;
 
+    private final JobSpecParser jobSpecParser;
+
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
             JobMapper jobMapper,
-            StepMapper stepMapper) {
+            StepMapper stepMapper, JobSpecParser jobSpecParser) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.stepMapper = stepMapper;
+        this.jobSpecParser = jobSpecParser;
     }
 
     /**
@@ -90,7 +96,13 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     @Transactional
     public List<StepEntity> split(Job job) {
         // read swmp yaml
-        List<StepSpec> stepSpecs = JobSpecParser.parseStepFromYaml(job.getStepSpec());
+        List<StepSpec> stepSpecs = null;
+        try {
+            stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
+        } catch (JsonProcessingException e) {
+            log.error("parsing step specification error", e);
+            throw new SwValidationException(ValidSubject.SWMP);
+        }
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
         Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();

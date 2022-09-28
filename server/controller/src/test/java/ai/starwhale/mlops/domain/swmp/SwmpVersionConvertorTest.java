@@ -31,9 +31,11 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,8 +51,8 @@ public class SwmpVersionConvertorTest {
         swmpVersionConvertor = new SwmpVersionConvertor(
                 new IdConvertor(),
                 userConvertor,
-                new VersionAliasConvertor()
-        );
+                new VersionAliasConvertor(),
+                new JobSpecParser(new YAMLMapper()));
     }
 
     @Test
