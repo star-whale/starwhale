@@ -58,7 +58,8 @@ class Evaluation:
             _args.append("--gencmd")
         if step:
             _args.extend(["--step", step, "--task-index", str(task_index)])
-        _args.append(project)
+
+        _args.extend(["--project", project])
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 

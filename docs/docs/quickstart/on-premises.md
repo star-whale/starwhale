@@ -14,7 +14,7 @@ Starwhale provides two ways to install an On-Premises instance in your private c
 
   - Standard Kubernetes Cluster: A pre-deployed Kubernetes cluster is required.
   - Minikube: You should have minikube and docker installed on your machine.
-  - For more deployment details of Kubernetes, you can refer to this [doc](../cloud/helm-charts.md).
+  - For more deployment details of Kubernetes, you can refer to this [doc](../guides/install/helm-charts.md).
 
 :::notes
 In this tutorial, minikube is used instead of the standard Kubernetes cluster

@@ -32,6 +32,7 @@ module.exports = {
                     collapsed: true,
                     items: [
                         "guides/standalone/overview",
+                        "guides/standalone/swignore",
                     ]
                 },
                 {
@@ -46,8 +47,13 @@ module.exports = {
             ],
             "Reference": {
                 "Command Line Interface": [
-                    "reference/cli/main", "reference/cli/dataset", "reference/cli/model",
-                    "reference/cli/runtime", "reference/cli/project", "reference/cli/instance", "reference/cli/job",
+                    "reference/cli/basic",
+                    "reference/cli/instance",
+                    "reference/cli/project",
+                    "reference/cli/dataset",
+                    "reference/cli/model",
+                    "reference/cli/runtime",
+                    "reference/cli/eval",
                     "reference/cli/utilities"],
                 "Python SDK": [
                     "reference/sdk/dataset",
