@@ -14,11 +14,10 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
+from starwhale.consts import thread_local
 from starwhale.utils.flatten import do_flatten_dict
 
-from .model import PipelineHandler
 from .wrapper import Evaluation
-from starwhale.consts import thread_local
 
 
 @unique
@@ -37,7 +36,6 @@ def multi_classification(
         @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Dict[str, t.Any]:
             y_pr: t.Any = None
-            handler: PipelineHandler = args[0]
 
             context = thread_local.context
             evaluation = Evaluation(eval_id=context.version, project=context.project)
@@ -123,9 +121,7 @@ def multi_classification(
                             threshold=_threshold,
                         )
 
-                        evaluation.log(
-                            "labels", id=str(_label), auc=_ra_value["auc"]
-                        )
+                        evaluation.log("labels", id=str(_label), auc=_ra_value["auc"])
             return _r
 
         return _wrapper
