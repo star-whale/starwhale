@@ -2,9 +2,11 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
-import { useQuery } from 'react-query'
+import { useQuery, UseQueryResult } from 'react-query'
+import { IListSchema } from '@/domain/base/schemas/list'
 import { listModelVersions } from '../services/modelVersion'
 import { IModelVersionSchema } from '../schemas/modelVersion'
+/* eslint-disable react/require-default-props */
 
 export interface IModelVersionSelectorProps {
     projectId: string
@@ -17,27 +19,40 @@ export interface IModelVersionSelectorProps {
 }
 
 export interface IDataSelectorRef<T> {
-    getDataList: () => T[]
+    getData: () => UseQueryResult<IListSchema<T>>
 }
 
 const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersionSelectorProps>(
-    ({ projectId, modelId, value, onChange, overrides, disabled, autoSelected }, ref) => {
+    (
+        {
+            projectId,
+            modelId = '',
+            value = '',
+            onChange = () => {},
+            overrides = undefined,
+            disabled = false,
+            autoSelected = false,
+        },
+        ref
+    ) => {
         const [keyword, setKeyword] = useState<string>()
         const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-        const { data, isSuccess, isFetching } = useQuery(
+        const api = useQuery(
             `listModelVersions:${projectId}:${modelId}:${keyword}`,
             () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
             { enabled: !!modelId }
         )
+        const { data, isSuccess, isFetching } = api
 
         useImperativeHandle(
             ref,
             () => ({
-                getDataList: () => data?.list ?? [],
+                getData: () => api,
             }),
-            [data]
+            [api]
         )
 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         const handleSearchInputChange = React.useCallback(
             _.debounce((term: string) => {
                 if (!term) {

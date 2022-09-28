@@ -45,8 +45,8 @@ export interface ICreateJobSchema {
     modelVersionUrl: string
     datasetVersionUrls?: string
     runtimeVersionUrl?: string
-    device?: string
-    deviceAmount?: number
+    resourcePool?: string
+    stepSpecOverWrites?: string
 }
 
 export interface IJobFormSchema extends IJobSchema {
@@ -58,7 +58,7 @@ export interface IJobFormSchema extends IJobSchema {
     datasetVersionIdsArr?: Array<string>
 }
 
-export interface ICreateJobFormSchema extends ICreateJobSchema {
+export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOverWrites'> {
     modelId: string
     runtimeId: string
     runtimeVersionUrl: string

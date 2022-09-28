@@ -24,7 +24,6 @@ import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
-import { parseDecimal } from '@/utils'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import classNames from 'classnames'
 import EvaluationListCompare from './EvaluationListCompare'
@@ -150,49 +149,49 @@ export default function EvaluationListCard() {
 
         if (!summaryTable?.data) return columnsWithAttrs
 
-        summaryTable?.data?.columnTypes?.forEach((column) => {
-            if (column.name === 'id') return
-            switch (column.type) {
-                case 'UNKNOWN':
-                case 'BYTES':
-                    break
-                case 'STRING':
-                    columnsWithAttrs.push(
-                        StringColumn({
-                            key: column.name,
-                            title: column.name,
-                            filterType: 'string',
-                            mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? '-',
-                        })
-                    )
-                    break
-                default:
-                    columnsWithAttrs.push(
-                        CustomColumn({
-                            key: column.name,
-                            title: column.name,
-                            sortable: true,
-                            filterType: 'number',
-                            sortFn: (a: any, b: any) => {
-                                // eslint-disable-next-line
-                                const aNum = Number(a)
-                                const bNum = Number(b)
-                                if (Number.isNaN(aNum)) {
-                                    return -1
-                                }
-                                return aNum - bNum
-                            },
-                            // @ts-ignore
-                            renderCell: (props: any) => {
-                                if (props?.value === undefined) return '-'
-                                return <p title={props?.value}>{parseDecimal(props?.value, 4)}</p>
-                            },
-                            mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? undefined,
-                        })
-                    )
-                    break
-            }
-        })
+        // summaryTable?.data?.columnTypes?.forEach((column) => {
+        //     if (column.name === 'id') return
+        //     switch (column.type) {
+        //         case 'UNKNOWN':
+        //         case 'BYTES':
+        //             break
+        //         case 'STRING':
+        //             columnsWithAttrs.push(
+        //                 StringColumn({
+        //                     key: column.name,
+        //                     title: column.name,
+        //                     filterType: 'string',
+        //                     mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? '-',
+        //                 })
+        //             )
+        //             break
+        //         default:
+        //             columnsWithAttrs.push(
+        //                 CustomColumn({
+        //                     key: column.name,
+        //                     title: column.name,
+        //                     sortable: true,
+        //                     filterType: 'number',
+        //                     sortFn: (a: any, b: any) => {
+        //                         // eslint-disable-next-line
+        //                         const aNum = Number(a)
+        //                         const bNum = Number(b)
+        //                         if (Number.isNaN(aNum)) {
+        //                             return -1
+        //                         }
+        //                         return aNum - bNum
+        //                     },
+        //                     // @ts-ignore
+        //                     renderCell: (props: any) => {
+        //                         if (props?.value === undefined) return '-'
+        //                         return <p title={props?.value}>{parseDecimal(props?.value, 4)}</p>
+        //                     },
+        //                     mapDataToValue: (data: any): string => data.attributes?.[column.name] ?? undefined,
+        //                 })
+        //             )
+        //             break
+        //     }
+        // })
 
         return columnsWithAttrs
     }, [summaryTable.data, columns])

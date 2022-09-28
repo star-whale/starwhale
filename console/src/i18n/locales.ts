@@ -667,6 +667,12 @@ const locales0 = {
     'Task Amount': {
         en: 'Task Amount',
     },
+    'Raw Type': {
+        en: 'Raw Type',
+    },
+    'wrong yaml syntax': {
+        en: 'wrong yaml syntax',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
