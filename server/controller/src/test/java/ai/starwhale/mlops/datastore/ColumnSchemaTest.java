@@ -27,7 +27,13 @@ public class ColumnSchemaTest {
 
     @Test
     public void testConstructor() {
-        new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0);
+        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0);
+        new ColumnSchema(ColumnSchemaDesc.builder()
+                .name("k")
+                .type("LIST")
+                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                .build(),
+                0);
     }
 
     @Test
@@ -35,15 +41,15 @@ public class ColumnSchemaTest {
         assertThrows(NullPointerException.class, () -> new ColumnSchema(null, 0), "null schema");
 
         assertThrows(SwValidationException.class,
-                () -> new ColumnSchema(new ColumnSchemaDesc(null, "STRING"), 0),
+                () -> new ColumnSchema(ColumnSchemaDesc.builder().type("STRING").build(), 0),
                 "null column name");
 
         assertThrows(SwValidationException.class,
-                () -> new ColumnSchema(new ColumnSchemaDesc("k", null), 0),
+                () -> new ColumnSchema(ColumnSchemaDesc.builder().name("k").build(), 0),
                 "null type");
 
         assertThrows(SwValidationException.class,
-                () -> new ColumnSchema(new ColumnSchemaDesc("k", "invalid"), 0),
+                () -> new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("invalid").build(), 0),
                 "invalid type");
     }
 }

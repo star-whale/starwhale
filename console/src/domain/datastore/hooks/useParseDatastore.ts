@@ -1,4 +1,3 @@
-import omit from 'lodash/omit'
 import keyBy from 'lodash/keyBy'
 import React from 'react'
 import { RecordListVO } from '../schemas/datastore'
@@ -6,7 +5,7 @@ import { RecordListVO } from '../schemas/datastore'
 export function useParseConfusionMatrix(data: RecordListVO = {}) {
     const labels = React.useMemo(() => {
         const { columnTypes } = data
-        return Object.keys(omit(columnTypes, 'id')).sort()
+        return (columnTypes?.map((column) => column.name)?.filter((name) => name !== 'id') ?? []).sort()
     }, [data])
 
     const binarylabel = React.useMemo(() => {

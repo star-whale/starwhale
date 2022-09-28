@@ -45,7 +45,10 @@ const useCardStyles = createUseStyles({
         'textDecoration': 'none',
         'color': ' rgba(2,16,43,0.60)',
         '&:hover': {
-            boxShadow: '0 2px 8px 0 rgba(0,0,0,0.20)',
+            'boxShadow': '0 2px 8px 0 rgba(0,0,0,0.20)',
+            '& $actions': {
+                display: 'flex',
+            },
         },
     },
     row: {
@@ -121,6 +124,10 @@ const useCardStyles = createUseStyles({
         '&:visited': {
             color: '#1C4CAD ',
         },
+    },
+    actions: {
+        display: 'none',
+        gap: '12px',
     },
 })
 
@@ -240,12 +247,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         </IconLink>
                     </div>
                 </div>
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: '12px',
-                    }}
-                >
+                <div className={styles.actions}>
                     <IconLink
                         to={`/projects/${project.id}/members`}
                         tooltip={{

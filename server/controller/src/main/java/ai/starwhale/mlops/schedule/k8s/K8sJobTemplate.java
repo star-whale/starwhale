@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
@@ -42,17 +44,21 @@ public class K8sJobTemplate {
 
     public static final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
 
-    public static final String jobIdentityLabel = "job-name";
+    public static final String JOB_IDENTITY_LABEL = "job-name";
 
-    public static final String pipCacheVolumeName = "pip-cache";
+    public static final String PIP_CACHE_VOLUME_NAME = "pip-cache";
 
-    @Value("${sw.infra.k8s.host-path-for-cache}")
-    private String pipCacheHostPath;
+    private final String pipCacheHostPath;
+
+    public static final String DEVICE_LABEL_NAME_PREFIX = "device.starwhale.ai-";
 
     final String template;
     final V1Job v1Job;
 
-    public K8sJobTemplate(@Value("${sw.infra.k8s.job-template-path}") String templatePath)
+    public K8sJobTemplate(
+            @Value("${sw.infra.k8s.job-template-path}") String templatePath,
+            @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
+    )
             throws IOException {
         if (!StringUtils.hasText(templatePath)) {
             this.template = getJobDefaultTemplate();
@@ -60,6 +66,7 @@ public class K8sJobTemplate {
             this.template = Files.readString(Paths.get(templatePath));
         }
         v1Job = Yaml.loadAs(template, V1Job.class);
+        this.pipCacheHostPath = pipCacheHostPath;
     }
 
     public List<V1Container> getInitContainerTemplates() {
@@ -76,7 +83,7 @@ public class K8sJobTemplate {
         job.getMetadata().name(jobName);
         HashMap<String, String> labels = new HashMap<>();
         labels.putAll(starwhaleJobLabel);
-        labels.put(jobIdentityLabel, jobName);
+        labels.put(JOB_IDENTITY_LABEL, jobName);
         job.getMetadata().labels(labels);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
@@ -110,10 +117,25 @@ public class K8sJobTemplate {
 
         });
 
-        // replace host path
+        // patch pip cache volume
         List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
-        volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))
-                .findFirst().ifPresent(volume -> volume.getHostPath().path(pipCacheHostPath));
+        var volume = volumes.stream().filter(v -> v.getName().equals(PIP_CACHE_VOLUME_NAME))
+                .findFirst().orElse(null);
+        if (volume != null) {
+            if (pipCacheHostPath.isEmpty()) {
+                // make volume emptyDir
+                volume.setHostPath(null);
+                volume.emptyDir(new V1EmptyDirVolumeSource());
+            } else {
+                volume.getHostPath().path(pipCacheHostPath);
+            }
+        }
+
+        if (jobSpec.getTemplate().getMetadata() == null) {
+            jobSpec.getTemplate().metadata(new V1ObjectMeta());
+        }
+        var meta = jobSpec.getTemplate().getMetadata();
+        addDeviceInfoLabel(meta, containerSpecMap);
 
         return job;
     }
@@ -123,5 +145,24 @@ public class K8sJobTemplate {
         InputStream is = this.getClass().getClassLoader()
                 .getResourceAsStream(file);
         return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    private void addDeviceInfoLabel(V1ObjectMeta meta, Map<String, ContainerOverwriteSpec> specs) {
+        if (meta == null) {
+            return;
+        }
+        if (meta.getLabels() == null) {
+            meta.labels(new HashMap<>());
+        }
+        specs.values().forEach(spec -> {
+            if (spec.resourceOverwriteSpec == null) {
+                return;
+            }
+            var request = spec.resourceOverwriteSpec.getResourceSelector().getRequests();
+            if (request == null) {
+                return;
+            }
+            request.keySet().forEach(rc -> meta.getLabels().put(DEVICE_LABEL_NAME_PREFIX + rc, "true"));
+        });
     }
 }

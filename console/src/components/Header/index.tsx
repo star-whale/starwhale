@@ -259,13 +259,14 @@ export default function Header() {
     const ctx = useContext(SidebarContext)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
-    const title = !!useSearchParam('token')
+    const cliToken = !!useSearchParam('cli-token')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { systemRole } = useUserRoles()
     const [t] = useTranslation()
     const history = useHistory()
     const { token, onLogout } = useAuth()
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
-    const [isShowTokenOpen, setIsShowTokenOpen] = useState(title)
+    const [isShowTokenOpen, setIsShowTokenOpen] = useState(cliToken)
     const handleChangePassword = useCallback(
         async (data: IChangePasswordSchema) => {
             await changePassword(data)

@@ -22,19 +22,24 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RuntimeConvertor implements Convertor<RuntimeEntity, RuntimeVo> {
 
-    @Resource
-    private IdConvertor idConvertor;
-    @Resource
-    private UserConvertor userConvertor;
+    private final IdConvertor idConvertor;
+    private final UserConvertor userConvertor;
+
+    public RuntimeConvertor(IdConvertor idConvertor, UserConvertor userConvertor) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+    }
 
     @Override
     public RuntimeVo convert(RuntimeEntity entity) throws ConvertException {
+        if (entity == null) {
+            return RuntimeVo.empty();
+        }
         return RuntimeVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getRuntimeName())

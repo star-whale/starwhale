@@ -60,7 +60,7 @@
     "plyr-react": "^5.1.0",
     "pretty-bytes": "^5.6.0",
     "qs": "^6.10.1",
-    "rc-field-form": "^1.21.1",
+    "rc-field-form": "^1.27.1",
     "rc-image": "^5.2.5",
     "react": "^17.0.2",
     "react-code-blocks": "^0.0.9-0",
@@ -97,6 +97,7 @@
     "styletron-engine-atomic": "^1.4.8",
     "styletron-react": "^6.0.1",
     "ts-auto-mock": "^3.5.0",
+    "tsc": "^2.0.4",
     "tsconfig-paths-webpack-plugin": "^3.5.2",
     "typescript": "^4.6.4",
     "uuid": "^8.3.2",
@@ -108,6 +109,7 @@
     "xterm": "^4.14.1",
     "xterm-addon-fit": "^0.5.0",
     "xterm-addon-web-links": "^0.4.0",
+    "yarn": "^1.22.19",
     "zustand": "v4.1.1"
   },
   "scripts": {
@@ -120,7 +122,8 @@
     "cy:open": "cypress open",
     "start": "vite --host 0.0.0.0",
     "build": "NODE_OPTIONS='--max-old-space-size=5120' vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "jest"
   },
   "eslintConfig": {
     "extends": [

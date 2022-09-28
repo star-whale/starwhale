@@ -34,13 +34,11 @@ import ai.starwhale.mlops.domain.swds.bo.SwdsVersion;
 import ai.starwhale.mlops.domain.swds.bo.SwdsVersionQuery;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
-import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import cn.hutool.core.lang.Assert;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,10 +46,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -67,14 +63,15 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class DatasetController implements DatasetApi {
 
-    @Resource
-    private SwDatasetService swDatasetService;
+    private final SwDatasetService swDatasetService;
+    private final IdConvertor idConvertor;
+    private final SwdsUploader swdsUploader;
 
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private SwdsUploader swdsUploader;
+    public DatasetController(SwDatasetService swDatasetService, IdConvertor idConvertor, SwdsUploader swdsUploader) {
+        this.swDatasetService = swDatasetService;
+        this.idConvertor = idConvertor;
+        this.swdsUploader = swdsUploader;
+    }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectUrl,
@@ -215,7 +212,10 @@ public class DatasetController implements DatasetApi {
             String projectUrl, String datasetUrl, String versionUrl, SwdsTagRequest swdsTagRequest) {
         Boolean res = swDatasetService.modifySwdsVersion(projectUrl, datasetUrl, versionUrl,
                 SwdsVersion.builder().tag(swdsTagRequest.getTag()).build());
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if (!res) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWDS).tip("Modify dataset failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

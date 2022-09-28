@@ -1,6 +1,9 @@
 export interface ColumnSchemaDesc {
-    name?: string
-    type?: string
+    name: string
+    type: string
+    pythonType?: string
+    elementType?: ColumnSchemaDesc
+    attributes?: ColumnSchemaDesc[]
 }
 
 export interface RecordDesc {
@@ -49,11 +52,8 @@ export interface TableDesc {
 }
 
 export interface RecordListVO {
-    columnTypes?: Record<
-        string,
-        'UNKNOWN' | 'BOOL' | 'INT8' | 'INT16' | 'INT32' | 'INT64' | 'FLOAT32' | 'FLOAT64' | 'STRING' | 'BYTES'
-    >
-    records?: Record<string, string>[]
+    columnTypes?: ColumnSchemaDesc[]
+    records?: Record<string, any>[]
     lastKey?: string
 }
 

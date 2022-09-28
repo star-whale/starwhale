@@ -27,7 +27,7 @@ public interface MemoryTable {
 
     void updateFromWal(Wal.WalEntry entry);
 
-    void update(TableSchemaDesc schema, List<Map<String, String>> records);
+    void update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
     @Data
     @AllArgsConstructor

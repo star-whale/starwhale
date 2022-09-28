@@ -25,6 +25,7 @@ export default function WithAuth({
     children: React.ReactElement | any
 }) {
     let isPrivileged = false
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     if (!currentUser) return <Empty />
     if (isWrongKey(id)) return <Empty str='wrong key' />

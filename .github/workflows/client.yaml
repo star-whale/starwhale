@@ -36,7 +36,7 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
-          - "3.10"
+          - "3.10.6" # https://github.com/python/mypy/issues/13627
 
     needs:
       - filter
@@ -89,7 +89,7 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
-          - "3.10"
+          - "3.10.6" # https://github.com/python/mypy/issues/13627
     defaults:
       run:
         shell: bash
@@ -145,7 +145,7 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
-          - "3.10"
+          - "3.10.6" # https://github.com/python/mypy/issues/13627
     defaults:
       run:
         shell: bash

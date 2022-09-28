@@ -54,21 +54,27 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
         }
     }
 
-    const COLUMN_OPTIONS = [
-        { label: props.isPin ? locale.datatable.columnUnPinColumn : locale.datatable.columnPinColumn, type: 'pin' },
-        { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
-        { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
-    ]
+    const COLUMN_OPTIONS = React.useMemo(
+        () => [
+            { label: props.isPin ? locale.datatable.columnUnPinColumn : locale.datatable.columnPinColumn, type: 'pin' },
+            { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
+            { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
+        ],
+        [props.isPin, locale]
+    )
 
-    const handleColumnOptionSelect = (option: any) => {
-        if (option.type === 'pin') {
-            props.onPin?.(props.index, !props.isPin)
-        } else if (option.type === 'sortAsc') {
-            props.onSort(props.index, SORT_DIRECTIONS.ASC)
-        } else if (option.type === 'sortDesc') {
-            props.onSort(props.index, SORT_DIRECTIONS.DESC)
-        }
-    }
+    const handleColumnOptionSelect = React.useCallback(
+        (option: any) => {
+            if (option.type === 'pin') {
+                props.onPin?.(props.index, !props.isPin)
+            } else if (option.type === 'sortAsc') {
+                props.onSort(props.index, SORT_DIRECTIONS.ASC)
+            } else if (option.type === 'sortDesc') {
+                props.onSort(props.index, SORT_DIRECTIONS.DESC)
+            }
+        },
+        [props.onPin, props.onSort, props.index, props.isPin]
+    )
 
     return (
         <div
