@@ -2,7 +2,6 @@ import typing as t
 from types import TracebackType
 from pathlib import Path
 
-import dill
 import numpy as np
 import torch
 from PIL import Image as PILImage
@@ -13,22 +12,15 @@ from starwhale import (
     step,
     Image,
     Context,
-    Evaluation,
     data_loader,
+    PPLResultStorage,
+    PPLResultIterator,
     multi_classification,
 )
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
-
-
-def _serialize(data: t.Any) -> t.Any:
-    return dill.dumps(data)
-
-
-def _deserialize(data: bytes) -> t.Any:
-    return dill.loads(data)
 
 
 class CustomPipelineHandler:
@@ -54,7 +46,7 @@ class CustomPipelineHandler:
     @step(concurrency=2, task_num=2)
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
-        self.evaluation = Evaluation(eval_id=context.version, project=context.project)
+        ppl_result_storage = PPLResultStorage(context)
 
         _data_loader = data_loader(
             dataset_uri=context.dataset_uris[0],
@@ -70,11 +62,11 @@ class CustomPipelineHandler:
                 pred_value = output.argmax(1).flatten().tolist()
                 probability_matrix = np.exp(output.tolist()).tolist()
 
-                self.evaluation.log_result(
+                ppl_result_storage.save(
                     data_id=_idx,
-                    result=_serialize(pred_value),
-                    probability_matrix=_serialize(probability_matrix),
-                    annotations=_serialize(_annotations),
+                    result=pred_value,
+                    probability_matrix=probability_matrix,
+                    annotations=_annotations,
                 )
             except Exception:
                 logger.error(f"[{_idx}] data handle -> failed")
@@ -92,14 +84,12 @@ class CustomPipelineHandler:
         self, context: Context
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
         print(f"start to run cmp@{context.version}...")
-        self.evaluation = Evaluation(eval_id=context.version, project=context.project)
-
+        result_loader = PPLResultIterator(context)
         result, label, pr = [], [], []
-        for data in self.evaluation.get_results():
-            annotations = _deserialize(data["annotations"])
-            label.append(annotations["label"])
-            result.extend(_deserialize(data["result"]))
-            pr.extend(_deserialize(data["probability_matrix"]))
+        for data in result_loader:
+            result.extend(data["result"])
+            label.append(data["annotations"]["label"])
+            pr.extend(data["probability_matrix"])
         return label, result, pr
 
     def _load_model(self, device: torch.device) -> Net:

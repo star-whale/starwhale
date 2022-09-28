@@ -9,7 +9,6 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
-import dill
 import loguru
 import jsonlines
 
@@ -36,22 +35,33 @@ _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
 )
 
 
+class PPLResultStorage:
+    def __init__(self, context: Context) -> None:
+        self.evaluation = wrapper.Evaluation(
+            eval_id=context.version, project=context.project
+        )
+
+    def save(self, data_id: t.Union[int, str], result: t.Any, **kwargs: t.Any) -> None:
+        self.evaluation.log_result(
+            data_id=data_id, result=result, **kwargs, to_bytes=True
+        )
+
+    def __exit__(self) -> None:
+        self.evaluation.close()
+
+
 class PPLResultIterator:
-    def __init__(
-        self,
-        data: t.Iterator[t.Dict[str, t.Any]],
-        deserializer: t.Optional[t.Callable] = None,
-    ) -> None:
-        self.data = data
-        self.deserializer = deserializer
+    def __init__(self, context: Context) -> None:
+        self.evaluation = wrapper.Evaluation(
+            eval_id=context.version, project=context.project
+        )
 
     def __iter__(self) -> t.Iterator[t.Dict[str, t.Any]]:
         # TODO: use class to refactor data
-        for d in self.data:
-            if self.deserializer:
-                yield self.deserializer(d)
-            else:
-                yield d
+        return self.evaluation.get_results(from_bytes=True)
+
+    def __exit__(self) -> None:
+        self.evaluation.close()
 
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -146,7 +156,6 @@ class PipelineHandler(metaclass=ABCMeta):
             sys.stdout = self._orig_stdout
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
-        self.evaluation.close()
         self._timeline_writer.close()
 
     @abstractmethod
@@ -157,17 +166,6 @@ class PipelineHandler(metaclass=ABCMeta):
     @abstractmethod
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         raise NotImplementedError
-
-    def _builtin_serialize(self, data: t.Any) -> bytes:
-        return dill.dumps(data)  # type: ignore
-
-    def _builtin_deserialize(self, data: bytes) -> t.Any:
-        return dill.loads(data)
-
-    def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
-        data["result"] = self._builtin_deserialize(data["result"])
-        data["annotations"] = self._builtin_deserialize(data["annotations"])
-        return data
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
@@ -192,10 +190,8 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(STATUS.START)
         now = now_str()
         try:
-            _iter = PPLResultIterator(
-                data=self.evaluation.get_results(), deserializer=self.deserialize
-            )
-            self.cmp(_iter)
+            ppl_result_loader = PPLResultIterator(self.context)
+            self.cmp(ppl_result_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             self._timeline_writer.write(
@@ -209,6 +205,8 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(STATUS.START)
 
+        self.result_storage = PPLResultStorage(self.context)
+
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
         # TODO: support multi dataset uris
@@ -218,11 +216,11 @@ class PipelineHandler(metaclass=ABCMeta):
             sharding_index=self.context.index,
         )
         for _idx, _data, _annotations in _data_loader:
-            pred: t.Any = b""
+            result: t.Any = b""
             exception = None
             try:
                 # TODO: inspect profiling
-                pred = self.ppl(_data, annotations=_annotations, index=_idx)
+                result = self.ppl(_data, annotations=_annotations, index=_idx)
             except Exception as e:
                 exception = e
                 self._sw_logger.exception(f"[{_idx}] data handle -> failed")
@@ -232,30 +230,20 @@ class PipelineHandler(metaclass=ABCMeta):
             else:
                 exception = None
 
-            self._do_record(_idx, _annotations, exception, pred)
+            _timeline = {
+                "time": now_str(),
+                "status": exception is None,
+                "exception": str(exception),
+                "index": _idx,
+            }
+            self._timeline_writer.write(_timeline)
 
-    def _do_record(
-        self,
-        idx: int,
-        annotations: t.Dict,
-        exception: t.Optional[Exception],
-        pred: t.Any,
-    ) -> None:
-        _timeline = {
-            "time": now_str(),
-            "status": exception is None,
-            "exception": str(exception),
-            "index": idx,
-        }
-        self._timeline_writer.write(_timeline)
-
-        annotations = {} if self.ignore_annotations else annotations
-        self.evaluation.log_result(
-            data_id=idx,
-            result=self._builtin_serialize(pred),
-            annotations=self._builtin_serialize(annotations),
-        )
-        self._update_status(STATUS.RUNNING)
+            self.result_storage.save(
+                data_id=_idx,
+                result=result,
+                annotations={} if self.ignore_annotations else _annotations,
+            )
+            self._update_status(STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME

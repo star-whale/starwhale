@@ -2,6 +2,7 @@ import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
+import dill
 from loguru import logger
 
 from starwhale.consts import VERSION_PREFIX_CNT
@@ -44,6 +45,14 @@ class Logger:
         writer.insert(record)
 
 
+def _serialize(data: Any) -> Any:
+    return dill.dumps(data)
+
+
+def _deserialize(data: bytes) -> Any:
+    return dill.loads(data)
+
+
 class Evaluation(Logger):
     def __init__(self, eval_id: str, project: str, instance: str = ""):
         if not eval_id:
@@ -65,10 +74,16 @@ class Evaluation(Logger):
     def _get_datastore_table_name(self, table_name: str) -> str:
         return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
 
-    def log_result(self, data_id: Union[int, str], result: Any, **kwargs: Any) -> None:
-        record = {"id": data_id, "result": result}
+    def log_result(
+        self,
+        data_id: Union[int, str],
+        result: Any,
+        to_bytes: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        record = {"id": data_id, "result": _serialize(result) if to_bytes else result}
         for k, v in kwargs.items():
-            record[k.lower()] = v
+            record[k.lower()] = _serialize(v) if to_bytes else v
         self._log(self._results_table_name, record)
 
     def log_metrics(
@@ -92,10 +107,16 @@ class Evaluation(Logger):
             record[k.lower()] = v
         self._log(self._get_datastore_table_name(table_name), record)
 
-    def get_results(self) -> Iterator[Dict[str, Any]]:
-        return self._data_store.scan_tables(
+    def get_results(self, from_bytes: bool = False) -> Iterator[Dict[str, Any]]:
+        for data in self._data_store.scan_tables(
             [data_store.TableDesc(self._results_table_name)]
-        )
+        ):
+            if from_bytes:
+                for _k, _v in data.items():
+                    if _k == "id":
+                        continue
+                    data[_k] = _deserialize(_v)
+            yield data
 
     def get_metrics(self) -> Dict[str, Any]:
         for metrics in self._data_store.scan_tables(

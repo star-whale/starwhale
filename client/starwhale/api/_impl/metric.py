@@ -17,6 +17,8 @@ from sklearn.metrics import (  # type: ignore
 from starwhale.utils.flatten import do_flatten_dict
 
 from .model import PipelineHandler
+from .wrapper import Evaluation
+from starwhale.consts import thread_local
 
 
 @unique
@@ -37,6 +39,8 @@ def multi_classification(
             y_pr: t.Any = None
             handler: PipelineHandler = args[0]
 
+            context = thread_local.context
+            evaluation = Evaluation(eval_id=context.version, project=context.project)
             _rt = func(*args, **kwargs)
             if show_roc_auc:
                 y_true, y_pred, y_pr = _rt
@@ -62,7 +66,7 @@ def multi_classification(
 
             _record_summary = do_flatten_dict(_r["summary"])
             _record_summary["kind"] = _r["kind"]
-            handler.evaluation.log_metrics(_record_summary)
+            evaluation.log_metrics(_record_summary)
 
             _r["labels"] = {}
             mcm = multilabel_confusion_matrix(
@@ -86,7 +90,7 @@ def multi_classification(
                 )
 
                 _r["labels"][_label] = _report
-                handler.evaluation.log("labels", id=_label, **_report)
+                evaluation.log("labels", id=_label, **_report)
 
             # TODO: tune performance, use intermediated result
             cm = confusion_matrix(
@@ -96,7 +100,7 @@ def multi_classification(
             _r["confusion_matrix"] = {"binarylabel": _cm_list}
 
             for _idx, _pa in enumerate(_cm_list):
-                handler.evaluation.log(
+                evaluation.log(
                     "confusion_matrix/binarylabel",
                     id=_idx,
                     **{str(_id): _v for _id, _v in enumerate(_pa)},
@@ -111,7 +115,7 @@ def multi_classification(
                     for _fpr, _tpr, _threshold in zip(
                         _ra_value["fpr"], _ra_value["tpr"], _ra_value["thresholds"]
                     ):
-                        handler.evaluation.log(
+                        evaluation.log(
                             f"roc_auc/{_label}",
                             id=_idx,
                             fpr=_fpr,
@@ -119,7 +123,7 @@ def multi_classification(
                             threshold=_threshold,
                         )
 
-                        handler.evaluation.log(
+                        evaluation.log(
                             "labels", id=str(_label), auc=_ra_value["auc"]
                         )
             return _r

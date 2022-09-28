@@ -99,7 +99,7 @@ class TestModelPipelineHandler(TestCase):
         assert isinstance(_loader, UserRawDataLoader)
         assert not _loader._stores
 
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.api._impl.model.PPLResultIterator")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp(
