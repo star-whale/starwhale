@@ -26,6 +26,7 @@ import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import classNames from 'classnames'
+import { parseDecimal } from '@/utils'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
