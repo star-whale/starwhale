@@ -6,7 +6,7 @@ if [[ -n ${DEBUG} ]]; then
     set -x
 fi
 
-if [[ -x ${GH_TOKEN} ]]; then
+if [[ -z ${GH_TOKEN} ]]; then
   echo "GH_TOKEN not set"
   exit 1
 fi
