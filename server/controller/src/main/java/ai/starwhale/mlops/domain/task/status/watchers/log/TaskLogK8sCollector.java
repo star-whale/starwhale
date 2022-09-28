@@ -58,7 +58,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
         log.debug("logging for task {} begins...", task.getId());
         try {
             taskLog = k8sClient.logOfJob(K8sClient.toV1LabelSelector(Map.of(
-                            K8sJobTemplate.jobIdentityLabel, task.getId().toString())),
+                            K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())),
                     Stream.concat(k8sJobTemplate.getInitContainerTemplates().stream(),
                                     k8sJobTemplate.getContainersTemplates().stream())
                             .map(V1Container::getName)
