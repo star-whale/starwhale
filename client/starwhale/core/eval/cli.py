@@ -52,7 +52,7 @@ def _list(
 @click.option("--name", default="default", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
-    "--step_spec",
+    "--step-spec",
     default="",
     type=str,
     help="[Cloud_ONLY] A file contains the specification for steps of the job",

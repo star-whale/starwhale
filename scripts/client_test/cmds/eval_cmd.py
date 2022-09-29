@@ -17,7 +17,7 @@ class Evaluation:
         runtime: str = "",
         name: str = "",
         desc: str = "",
-        resource: str = "",
+        step_spec: str = "",
         use_docker: bool = False,
         gencmd: bool = False,
         step: str = "",
@@ -31,7 +31,7 @@ class Evaluation:
         :param runtime: runtime uri
         :param name: job name
         :param desc: job description
-        :param resource: [ONLY Cloud]resource, fmt is resource [name]:[cnt],
+        :param step_spec: [ONLY Cloud]resource, fmt is resource [name]:[cnt],
                          such as cpu:1, gpu:2
         :param use_docker: [ONLY Standalone]use docker to run evaluation job
         :param gencmd: [ONLY Standalone]gen docker run command
@@ -49,8 +49,8 @@ class Evaluation:
             _args.extend(["--name", name])
         if desc:
             _args.extend(["--desc", desc])
-        if resource:
-            _args.extend(["--resource", resource])
+        if step_spec:
+            _args.extend(["--step-spec", step_spec])
         if use_docker:
             _args.append("--use-docker")
         # TODO: return value is str

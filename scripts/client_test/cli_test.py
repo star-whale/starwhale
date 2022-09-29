@@ -118,7 +118,7 @@ class TestCli:
             dataset=swds["version"],
             runtime=swrt["version"],
             project=cloud_project,
-            resource="cpu:0.2",
+            step_spec=f"{CURRENT_DIR}/step_spec.yaml",
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
@@ -159,7 +159,7 @@ class TestCli:
 
     def test_mnist(self, mode: str) -> None:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
-        _environment_prepare.prepare_mnist_data()
+        # _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
         self.standard_workflow(
             mode=mode,
