@@ -159,7 +159,7 @@ class TestCli:
 
     def test_mnist(self, mode: str) -> None:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
-        # _environment_prepare.prepare_mnist_data()
+        _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
         self.standard_workflow(
             mode=mode,
