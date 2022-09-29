@@ -370,7 +370,7 @@ export default function Header() {
             <Modal animate closeable onClose={() => setIsShowTokenOpen(false)} isOpen={isShowTokenOpen}>
                 <ModalHeader>{t('Get Token')}</ModalHeader>
                 <ModalBody>
-                    <div className={css({ display: 'flex', marginTop: '10px' })}>
+                    <div className={css({ display: 'flex', marginTop: '10px', gap: '10px' })}>
                         <Input value={token ?? ''} />
                         <CopyToClipboard
                             text={token ?? ''}
@@ -378,7 +378,7 @@ export default function Header() {
                                 toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                             }}
                         >
-                            <Button>copy</Button>
+                            <Button>{t('Copy')}</Button>
                         </CopyToClipboard>
                     </div>
                 </ModalBody>

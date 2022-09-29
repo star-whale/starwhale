@@ -30,6 +30,8 @@ type CellT<T> = {
     data: any
 }
 
+const isValidValue = (str: string) => str !== '-'
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<any>) => {
     return (
@@ -46,8 +48,13 @@ const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
     comparedValue = Number(comparedValue)
     return (
         <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {renderedValue} {value > comparedValue && <IconFont type='rise' style={{ color: '#00B368' }} />}{' '}
-            {value < comparedValue && <IconFont type='decline' style={{ color: '#CC3D3D' }} />}
+            {renderedValue}{' '}
+            {isValidValue(renderedValue) && value > comparedValue && (
+                <IconFont type='rise' style={{ color: '#00B368' }} />
+            )}
+            {isValidValue(renderedValue) && value < comparedValue && (
+                <IconFont type='decline' style={{ color: '#CC3D3D' }} />
+            )}
         </div>
     )
 }
