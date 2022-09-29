@@ -323,7 +323,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             history.goBack()
                         }}
                     >
-                        {t('cancel')}
+                        {t('Cancel')}
                     </Button>
                     <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(job, values)}>
                         {t('submit')}

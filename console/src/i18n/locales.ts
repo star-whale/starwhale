@@ -355,7 +355,7 @@ const locales0 = {
         en: 'The passwords you entered do not match',
     },
     'submit': {
-        en: 'submit',
+        en: 'Submit',
     },
     'create': {
         en: 'Create',
