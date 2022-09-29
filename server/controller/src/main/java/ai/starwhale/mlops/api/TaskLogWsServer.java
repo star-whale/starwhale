@@ -41,9 +41,9 @@ public class TaskLogWsServer {
 
     private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    private IdConvertor idConvertor;
+    private static IdConvertor idConvertor;
 
-    private CancellableTaskLogK8sCollectorFactory logCollectorFactory;
+    private static CancellableTaskLogK8sCollectorFactory logCollectorFactory;
 
     private Session session;
 
@@ -56,12 +56,12 @@ public class TaskLogWsServer {
 
     @Autowired
     public void setIdConvertor(IdConvertor idConvertor) {
-        this.idConvertor = idConvertor;
+        TaskLogWsServer.idConvertor = idConvertor;
     }
 
     @Autowired
     public void setLogCollectorFactory(CancellableTaskLogK8sCollectorFactory factory) {
-        logCollectorFactory = factory;
+        TaskLogWsServer.logCollectorFactory = factory;
     }
 
     @OnOpen
