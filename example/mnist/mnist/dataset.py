@@ -15,9 +15,9 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data"
 
-        with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
-            root_dir / "t10k-labels-idx1-ubyte"
-        ).open("rb") as label_file:
+        with (root_dir / "data").open("rb") as data_file, (root_dir / "label").open(
+            "rb"
+        ) as label_file:
             _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
             _, label_number = struct.unpack(">II", label_file.read(8))
             print(
@@ -38,8 +38,8 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
 class RawDatasetProcessExecutor(UserRawBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data"
-        data_fpath = root_dir / "t10k-images-idx3-ubyte"
-        label_fpath = root_dir / "t10k-labels-idx1-ubyte"
+        data_fpath = root_dir / "data"
+        label_fpath = root_dir / "label"
 
         with data_fpath.open("rb") as data_file, label_fpath.open("rb") as label_file:
             _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
