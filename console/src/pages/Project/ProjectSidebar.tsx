@@ -33,7 +33,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
             {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
-                icon: <IconFont type='model' size={16} />,
+                icon: <IconFont type='Model' size={16} />,
                 activePathPattern: /\/(models)\/?/,
             },
             {
