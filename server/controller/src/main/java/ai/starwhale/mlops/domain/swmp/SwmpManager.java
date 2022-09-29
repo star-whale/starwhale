@@ -115,7 +115,7 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
 
     @Override
     public Boolean revertTo(Long bundleId, Long bundleVersionId) {
-        return versionMapper.revertTo(bundleVersionId, bundleVersionId) > 0;
+        return versionMapper.revertTo(bundleId, bundleVersionId) > 0;
     }
 
     @Override

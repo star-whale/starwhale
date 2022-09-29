@@ -70,10 +70,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -87,52 +87,51 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class RuntimeService {
 
-    @Resource
-    private RuntimeMapper runtimeMapper;
+    private final RuntimeMapper runtimeMapper;
+    private final RuntimeVersionMapper runtimeVersionMapper;
+    private final StorageService storageService;
+    private final ProjectManager projectManager;
+    private final RuntimeConvertor runtimeConvertor;
+    private final RuntimeVersionConvertor versionConvertor;
+    private final RuntimeManager runtimeManager;
+    private final StoragePathCoordinator storagePathCoordinator;
+    private final StorageAccessService storageAccessService;
+    private final UserService userService;
+    private final IdConvertor idConvertor;
+    private final HotJobHolder jobHolder;
+    private final VersionAliasConvertor versionAliasConvertor;
+    private final ObjectMapper yamlMapper;
+    @Setter
+    private BundleManager bundleManager;
 
-    @Resource
-    private RuntimeVersionMapper runtimeVersionMapper;
-
-    @Resource
-    private StorageService storageService;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    @Resource
-    private RuntimeConvertor runtimeConvertor;
-
-    @Resource
-    private RuntimeVersionConvertor versionConvertor;
-
-    @Resource
-    private RuntimeManager runtimeManager;
-
-    @Resource
-    private StoragePathCoordinator storagePathCoordinator;
-
-    @Resource
-    private StorageAccessService storageAccessService;
-
-    @Resource
-    private UserService userService;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private HotJobHolder jobHolder;
-
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
-
-    @Resource
-    @Qualifier("yamlMapper")
-    private ObjectMapper yamlMapper;
-
-    private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, runtimeManager, runtimeManager,
-                ValidSubject.RUNTIME);
+    public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
+            StorageService storageService, ProjectManager projectManager,
+            @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConvertor runtimeConvertor,
+            RuntimeVersionConvertor versionConvertor, RuntimeManager runtimeManager,
+            StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
+            HotJobHolder jobHolder, UserService userService, IdConvertor idConvertor,
+            VersionAliasConvertor versionAliasConvertor) {
+        this.runtimeMapper = runtimeMapper;
+        this.runtimeVersionMapper = runtimeVersionMapper;
+        this.storageService = storageService;
+        this.projectManager = projectManager;
+        this.yamlMapper = yamlMapper;
+        this.runtimeConvertor = runtimeConvertor;
+        this.versionConvertor = versionConvertor;
+        this.runtimeManager = runtimeManager;
+        this.storagePathCoordinator = storagePathCoordinator;
+        this.storageAccessService = storageAccessService;
+        this.jobHolder = jobHolder;
+        this.userService = userService;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+        this.bundleManager = new BundleManager(
+                idConvertor,
+                versionAliasConvertor,
+                projectManager,
+                runtimeManager,
+                runtimeManager
+        );
     }
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
@@ -151,12 +150,11 @@ public class RuntimeService {
     }
 
     public Boolean deleteRuntime(RuntimeQuery runtimeQuery) {
-        return RemoveManager.create(bundleManager(), runtimeManager)
+        return RemoveManager.create(bundleManager, runtimeManager)
                 .removeBundle(BundleUrl.create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl()));
     }
 
     public RuntimeInfoVo getRuntimeInfo(RuntimeQuery runtimeQuery) {
-        BundleManager bundleManager = bundleManager();
         BundleUrl bundleUrl = BundleUrl.create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl());
         Long runtimeId = bundleManager.getBundleId(bundleUrl);
         RuntimeEntity rt = runtimeMapper.findRuntimeById(runtimeId);
@@ -208,7 +206,7 @@ public class RuntimeService {
 
     public Boolean modifyRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl,
             RuntimeVersion version) {
-        Long versionId = bundleManager().getBundleVersionId(BundleVersionUrl
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, runtimeUrl, runtimeVersionUrl));
         String tag = version.getVersionTag();
         RuntimeVersionEntity entity = RuntimeVersionEntity.builder()
@@ -224,7 +222,7 @@ public class RuntimeService {
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
             TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager(), runtimeManager)
+            return TagManager.create(bundleManager, runtimeManager)
                     .updateTag(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl), tagAction);
         } catch (TagException e) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),
@@ -234,12 +232,12 @@ public class RuntimeService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
-        return RevertManager.create(bundleManager(), runtimeManager)
+        return RevertManager.create(bundleManager, runtimeManager)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, runtimeUrl, runtimeVersionUrl));
     }
 
     public PageInfo<RuntimeVersionVo> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
-        Long runtimeId = bundleManager().getBundleId(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
+        Long runtimeId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeVersionEntity> entities = runtimeVersionMapper.listVersions(
                 runtimeId, query.getVersionName(), query.getVersionTag());
