@@ -168,6 +168,9 @@ const locales0 = {
     'Copied': {
         en: 'Copied !',
     },
+    'Copy': {
+        en: 'Copy',
+    },
     'User List': {
         en: 'User List',
     },
@@ -288,9 +291,6 @@ const locales0 = {
     'Cancel': {
         en: 'Cancel',
     },
-    'cancel': {
-        en: 'cancel',
-    },
     'Suspend': {
         en: 'Suspend',
     },
@@ -364,7 +364,7 @@ const locales0 = {
         en: 'Log in',
     },
     'overview': {
-        en: 'overview',
+        en: 'Overview',
     },
     'Overview': {
         en: 'Overview',

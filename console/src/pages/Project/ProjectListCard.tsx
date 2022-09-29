@@ -372,7 +372,12 @@ export default function ProjectListCard() {
 
     useEffect(() => {
         const items = projectsInfo.data?.list ?? []
-        setData(items.filter((i) => (filter && i.name.includes(filter)) || filter === ''))
+        setData(
+            items.filter((i) => {
+                if (filter) return [i.name, i.owner?.name].join('/').includes(filter)
+                return filter === ''
+            })
+        )
     }, [filter, projectsInfo.data])
 
     const projectCards = useMemo(() => {
