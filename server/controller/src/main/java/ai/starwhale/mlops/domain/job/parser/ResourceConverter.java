@@ -25,7 +25,7 @@ class ResourceConverter implements Converter<String, RuntimeResource> {
 
     @Override
     public RuntimeResource convert(String value) {
-        String[] res = value.split("=");
+        String[] res = value.split(":");
         return RuntimeResource.builder().type(res[0]).num(Integer.valueOf(res[1])).build();
     }
 
