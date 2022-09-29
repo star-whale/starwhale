@@ -68,7 +68,8 @@ public class ResourceOverwriteSpec {
         return Collectors.toMap(RuntimeResource::getType,
                 runtimeResource -> new Quantity(
                         k8sResource(runtimeResource.getType()) ? runtimeResource.getNum().toString() + MILLI_UNIT
-                                : normalizeNonK8sResources(runtimeResource.getNum()).toString() + MILLI_UNIT));
+                                : normalizeNonK8sResources(runtimeResource.getNum().intValue()).toString()
+                                        + MILLI_UNIT));
     }
 
     boolean k8sResource(String resource) {

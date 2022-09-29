@@ -85,7 +85,7 @@ public class K8sJobTemplateTest {
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
         ContainerOverwriteSpec containerOverwriteSpecWorker = ContainerOverwriteSpec.builder()
-                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 200))))
+                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 200f))))
                 .cmds(List.of("run"))
                 .name("worker")
                 .envs(List.of(new V1EnvVar().name("env1").value("env1value"),
@@ -128,10 +128,10 @@ public class K8sJobTemplateTest {
 
         var specs = new HashMap<String, ContainerOverwriteSpec>();
         var cpuSpec = new ContainerOverwriteSpec();
-        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 1))));
+        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 1f))));
         specs.put("foo", cpuSpec);
         var gpuSpec = new ContainerOverwriteSpec();
-        gpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("nvidia.com/gpu", 1))));
+        gpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("nvidia.com/gpu", 1f))));
         specs.put("bar", gpuSpec);
         specs.put("baz", cpuSpec);
 

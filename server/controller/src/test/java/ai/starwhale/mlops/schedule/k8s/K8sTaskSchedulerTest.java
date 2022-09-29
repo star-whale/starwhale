@@ -120,7 +120,7 @@ public class K8sTaskSchedulerTest {
                 .taskRequest(TaskRequest.builder()
                         .index(1)
                         .total(1)
-                        .runtimeResources(List.of(new RuntimeResource("cpu", 1))).build())
+                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f))).build())
                 .build();
         return task;
     }
