@@ -29,7 +29,7 @@ const iconTypes = [
     'dataset',
     'close',
     'results',
-    'model',
+    'Model',
     'project',
     'show',
     'revert',

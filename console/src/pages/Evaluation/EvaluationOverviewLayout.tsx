@@ -14,6 +14,7 @@ import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { StatefulTooltip } from 'baseui/tooltip'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -99,7 +100,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 style: {
                     gridColumnStart: 'span 2',
                 },
-                value: `${job?.modelName ?? '-'}:${job?.modelVersion ?? '-'}`,
+                value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
             },
             {
                 label: t('Datasets'),
@@ -113,7 +114,22 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 style: {
                     gridColumnStart: 'span 2',
                 },
-                value: [job?.runtime?.name ?? '-', job?.runtime?.version?.name ?? '-'].join(':'),
+                value: (
+                    <StatefulTooltip content={() => <pre>{job?.runtime?.version?.meta}</pre>} placement='bottomRight'>
+                        {[
+                            job?.runtime?.name ?? '-',
+                            job?.runtime?.version?.alias,
+                            job?.runtime?.version?.name ?? '-',
+                        ].join(' : ')}
+                    </StatefulTooltip>
+                ),
+            },
+            {
+                label: t('Image'),
+                style: {
+                    gridColumnStart: 'span 2',
+                },
+                value: job?.runtime?.version?.image ?? '-',
             },
         ]
 
