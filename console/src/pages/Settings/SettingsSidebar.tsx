@@ -25,7 +25,7 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
             style={style}
             title={name}
             titleLink='/settings'
-            icon={<IconFont type='setting' style={{ color: 'white' }} />}
+            icon={<IconFont type='setting2' style={{ color: 'white' }} />}
         />
     )
 }
