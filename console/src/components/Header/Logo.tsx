@@ -31,6 +31,7 @@ const normals = {
 const smalls = {
     white: smallLogoImg,
     gray: smallLogoImg,
+    blue: smallLogoImg,
 }
 
 export interface ILogoProps extends IComposedComponentProps {
