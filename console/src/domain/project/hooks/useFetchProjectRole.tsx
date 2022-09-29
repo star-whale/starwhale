@@ -10,9 +10,11 @@ export function useFetchProjectRole(projectId: string) {
     const members = useQuery(
         ['fetchProjectMembers', projectId],
         () => {
+            if (!projectId) return
+            // eslint-disable-next-line consistent-return
             return listProjectRole(projectId)
         },
-        { refetchOnWindowFocus: false, enabled: false }
+        { refetchOnWindowFocus: true, enabled: true }
     )
 
     React.useEffect(() => {
