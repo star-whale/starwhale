@@ -205,7 +205,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(STATUS.START)
 
-        self.result_storage = PPLResultStorage(self.context)
+        result_storage = PPLResultStorage(self.context)
 
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
@@ -230,15 +230,16 @@ class PipelineHandler(metaclass=ABCMeta):
             else:
                 exception = None
 
-            _timeline = {
-                "time": now_str(),
-                "status": exception is None,
-                "exception": str(exception),
-                "index": _idx,
-            }
-            self._timeline_writer.write(_timeline)
+            self._timeline_writer.write(
+                {
+                    "time": now_str(),
+                    "status": exception is None,
+                    "exception": str(exception),
+                    "index": _idx,
+                }
+            )
 
-            self.result_storage.save(
+            result_storage.save(
                 data_id=_idx,
                 result=result,
                 annotations={} if self.ignore_annotations else _annotations,
