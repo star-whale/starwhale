@@ -53,17 +53,14 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.env.StorageEnv;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -73,43 +70,45 @@ import org.springframework.util.StringUtils;
 @Service
 public class SwDatasetService {
 
-    @Resource
-    private SwDatasetMapper swdsMapper;
+    private final SwDatasetMapper swdsMapper;
+    private final SwDatasetVersionMapper swdsVersionMapper;
+    private final SwdsVoConvertor swdsVoConvertor;
+    private final SwdsVersionConvertor versionConvertor;
+    private final StorageService storageService;
+    private final ProjectManager projectManager;
+    private final SwdsManager swdsManager;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
+    private final UserService userService;
+    private final DsFileGetter dsFileGetter;
+    @Setter
+    private BundleManager bundleManager;
 
-    @Resource
-    private SwDatasetVersionMapper swdsVersionMapper;
-
-    @Resource
-    private SwdsVoConvertor swdsVoConvertor;
-
-    @Resource
-    private SwdsVersionConvertor versionConvertor;
-
-    @Resource
-    private StorageService storageService;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    @Resource
-    private SwdsManager swdsManager;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
-
-    @Resource
-    private UserService userService;
-
-    @Resource
-    private DsFileGetter dsFileGetter;
-
-    private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, swdsManager, swdsManager,
-                ValidSubject.SWDS);
+    public SwDatasetService(ProjectManager projectManager, SwDatasetMapper swdsMapper,
+            SwDatasetVersionMapper swdsVersionMapper, SwdsVoConvertor swdsVoConvertor,
+            SwdsVersionConvertor versionConvertor, StorageService storageService, SwdsManager swdsManager,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, UserService userService,
+            DsFileGetter dsFileGetter) {
+        this.projectManager = projectManager;
+        this.swdsMapper = swdsMapper;
+        this.swdsVersionMapper = swdsVersionMapper;
+        this.swdsVoConvertor = swdsVoConvertor;
+        this.versionConvertor = versionConvertor;
+        this.storageService = storageService;
+        this.swdsManager = swdsManager;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+        this.userService = userService;
+        this.dsFileGetter = dsFileGetter;
+        this.bundleManager = new BundleManager(
+                idConvertor,
+                versionAliasConvertor,
+                projectManager,
+                swdsManager,
+                swdsManager
+        );
     }
+
 
     public PageInfo<DatasetVo> listSwDataset(SwdsQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -126,7 +125,7 @@ public class SwDatasetService {
     }
 
     public Boolean deleteSwds(SwdsQuery query) {
-        return RemoveManager.create(bundleManager(), swdsManager)
+        return RemoveManager.create(bundleManager, swdsManager)
                 .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getSwdsUrl()));
     }
 
@@ -141,7 +140,6 @@ public class SwDatasetService {
     }
 
     public SwDatasetInfoVo getSwdsInfo(SwdsQuery query) {
-        BundleManager bundleManager = bundleManager();
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getSwdsUrl());
         Long datasetId = bundleManager.getBundleId(bundleUrl);
         SwDatasetEntity ds = swdsMapper.findDatasetById(datasetId);
@@ -194,7 +192,7 @@ public class SwDatasetService {
 
 
     public Boolean modifySwdsVersion(String projectUrl, String swdsUrl, String versionUrl, SwdsVersion version) {
-        Long versionId = bundleManager().getBundleVersionId(BundleVersionUrl
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, swdsUrl, versionUrl));
         SwDatasetVersionEntity entity = SwDatasetVersionEntity.builder()
                 .id(versionId)
@@ -209,7 +207,7 @@ public class SwDatasetService {
             TagAction tagAction) {
 
         try {
-            return TagManager.create(bundleManager(), swdsManager)
+            return TagManager.create(bundleManager, swdsManager)
                     .updateTag(
                             BundleVersionUrl.create(projectUrl, datasetUrl, versionUrl),
                             tagAction);
@@ -220,12 +218,12 @@ public class SwDatasetService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String swdsUrl, String versionUrl) {
-        return RevertManager.create(bundleManager(), swdsManager)
+        return RevertManager.create(bundleManager, swdsManager)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, swdsUrl, versionUrl));
     }
 
     public PageInfo<DatasetVersionVo> listDatasetVersionHistory(SwdsVersionQuery query, PageParams pageParams) {
-        Long swdsId = bundleManager().getBundleId(BundleUrl.create(query.getProjectUrl(), query.getSwdsUrl()));
+        Long swdsId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getSwdsUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SwDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
                 swdsId, query.getVersionName(), query.getVersionTag());
