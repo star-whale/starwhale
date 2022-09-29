@@ -30,8 +30,7 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import lombok.Builder;
 import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,8 +61,7 @@ public class BundleManagerTest {
                 new VersionAliasConvertor(),
                 projectAccessor,
                 bundleAccessor,
-                bundleVersionAccessor,
-                ValidSubject.PROJECT
+                bundleVersionAccessor
         );
     }
 
@@ -75,7 +73,7 @@ public class BundleManagerTest {
         res = bundleManager.getBundleId(BundleUrl.create("1", "bundle1"));
         assertThat(res, is(2L));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(StarwhaleException.class,
                 () -> bundleManager.getBundleId(BundleUrl.create("1", "bundle2")));
 
     }
@@ -105,7 +103,7 @@ public class BundleManagerTest {
                 BundleVersionUrl.create("", "", "vName"), 1L);
         assertThat(res, is(3L));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(StarwhaleException.class,
                 () -> bundleManager.getBundleVersionId(BundleVersionUrl.create("", "", "2"), 1L));
 
 
