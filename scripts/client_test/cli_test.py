@@ -78,7 +78,10 @@ class TestCli:
         _eval_list = self.evaluation.list()
         assert len(_eval_list) == 1
 
-        assert self.evaluation.info(_eval_list[0]["manifest"]["version"])
+        eval_info = self.evaluation.info(_eval_list[0]["manifest"]["version"])
+        assert eval_info
+        assert eval_info["manifest"]["status"] == "success"
+
         if mode != RunMode.CLOUD:
             return
         # 5.login to cloud

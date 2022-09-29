@@ -61,7 +61,7 @@ class Evaluation:
 
         _args.extend(["--project", project])
         _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        return _valid_str in _res
 
     def info(self, version: str) -> Any:
         """
