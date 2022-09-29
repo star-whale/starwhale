@@ -125,20 +125,7 @@ public class K8sClient {
         InputStream is = null;
         Response response = null;
         try {
-            Call call =
-                    coreV1Api.readNamespacedPodLogCall(
-                            pod.getMetadata().getName(),
-                            ns,
-                            containerName,
-                            true,
-                            null,
-                            null,
-                            "false",
-                            false,
-                            null,
-                            null,
-                            null,
-                            null);
+            Call call = readLog(pod.getMetadata().getName(), containerName);
             response = call.execute();
             if (!response.isSuccessful()) {
                 throw new ApiException(response.code(), "Logs request failed: " + response.code());
@@ -164,6 +151,22 @@ public class K8sClient {
         log.debug("log for container {} collected", containerName);
     }
 
+    public Call readLog(String pod, String container) throws IOException, ApiException {
+        return coreV1Api.readNamespacedPodLogCall(
+                pod,
+                ns,
+                container,
+                true,
+                null,
+                null,
+                "false",
+                false,
+                null,
+                null,
+                null,
+                null);
+    }
+
     public void watchNode(ResourceEventHandler<V1Node> eventHandlerNode) {
         SharedIndexInformer<V1Node> nodeInformer = informerFactory.sharedIndexInformerFor(
                 (CallGeneratorParams params) -> coreV1Api.listNodeCall(null, null, null, null, null,
@@ -173,6 +176,11 @@ public class K8sClient {
                 V1NodeList.class);
         nodeInformer.addEventHandler(eventHandlerNode);
         informerFactory.startAllRegisteredInformers();
+    }
+
+    public V1PodList getPodsByJobName(String job) throws ApiException {
+        var selector = toV1LabelSelector(Map.of(K8sJobTemplate.JOB_IDENTITY_LABEL, job));
+        return coreV1Api.listNamespacedPod(ns, null, null, null, null, selector, null, null, null, 30, null);
     }
 
     public static String toV1LabelSelector(Map<String, String> labels) {
