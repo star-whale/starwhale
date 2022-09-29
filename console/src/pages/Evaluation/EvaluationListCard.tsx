@@ -85,7 +85,7 @@ export default function EvaluationListCard() {
 
                     return (
                         <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-                            {`${data.modelName}-${data.id}`}
+                            {`${data.id}`}
                         </TextLink>
                     )
                 },

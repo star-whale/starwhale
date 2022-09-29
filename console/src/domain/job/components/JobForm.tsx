@@ -92,6 +92,15 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [stepSpecOverWrites, form, t]
     )
 
+    const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
+    const modelVersionApi = modelVersionRef.current?.getData()
+
+    const stepSource = React.useMemo(() => {
+        if (!modelVersionApi) return []
+        const list = modelVersionApi?.data?.list ?? []
+        return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
+    }, [modelVersionApi, modelVersionId])
+
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
             setLoading(true)
@@ -114,24 +123,17 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     ]),
                     // datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                     datasetVersionUrls: values_.datasetVersionId,
-                    stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(values_.stepSpecOverWrites),
+                    stepSpecOverWrites: values_.rawType
+                        ? stepSpecOverWrites
+                        : yaml.dump(_.merge([], stepSource, values_?.stepSpecOverWrites)),
                 })
                 history.goBack()
             } finally {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, t]
+        [onSubmit, history, stepSpecOverWrites, t, stepSource]
     )
-    const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
-    const modelVersionApi = modelVersionRef.current?.getData()
-
-    const stepSource = React.useMemo(() => {
-        if (!modelVersionApi) return []
-        const list = modelVersionApi?.data?.list ?? []
-        return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
-    }, [modelVersionApi, modelVersionId])
-
     const rawRef = React.useRef(false)
     React.useEffect(() => {
         if (rawRef.current === rawType) return

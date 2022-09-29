@@ -6,6 +6,55 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "32097292",
+      "name": "dataset",
+      "font_class": "dataset",
+      "unicode": "e62a",
+      "unicode_decimal": 58922
+    },
+    {
+      "icon_id": "32097293",
+      "name": "evaluation",
+      "font_class": "evaluation",
+      "unicode": "e633",
+      "unicode_decimal": 58931
+    },
+    {
+      "icon_id": "32097294",
+      "name": "runtime",
+      "font_class": "runtime",
+      "unicode": "e651",
+      "unicode_decimal": 58961
+    },
+    {
+      "icon_id": "32097295",
+      "name": "Model",
+      "font_class": "Model",
+      "unicode": "e652",
+      "unicode_decimal": 58962
+    },
+    {
+      "icon_id": "32065270",
+      "name": "reset",
+      "font_class": "reset",
+      "unicode": "e650",
+      "unicode_decimal": 58960
+    },
+    {
+      "icon_id": "32060704",
+      "name": "docker",
+      "font_class": "docker",
+      "unicode": "e64f",
+      "unicode_decimal": 58959
+    },
+    {
+      "icon_id": "31976724",
+      "name": "setting2",
+      "font_class": "setting2",
+      "unicode": "e64e",
+      "unicode_decimal": 58958
+    },
+    {
       "icon_id": "31904242",
       "name": "token",
       "font_class": "token",
@@ -230,13 +279,6 @@
       "unicode_decimal": 58930
     },
     {
-      "icon_id": "30266526",
-      "name": "evaluation",
-      "font_class": "evaluation",
-      "unicode": "e633",
-      "unicode_decimal": 58931
-    },
-    {
       "icon_id": "30266527",
       "name": "pin",
       "font_class": "pin",
@@ -277,13 +319,6 @@
       "font_class": "view",
       "unicode": "e639",
       "unicode_decimal": 58937
-    },
-    {
-      "icon_id": "30198732",
-      "name": "runtime",
-      "font_class": "runtime",
-      "unicode": "e62a",
-      "unicode_decimal": 58922
     },
     {
       "icon_id": "30089362",
@@ -447,13 +482,6 @@
       "unicode_decimal": 58894
     },
     {
-      "icon_id": "29795153",
-      "name": "dataset",
-      "font_class": "dataset",
-      "unicode": "e60f",
-      "unicode_decimal": 58895
-    },
-    {
       "icon_id": "29795154",
       "name": "close",
       "font_class": "close",
@@ -466,13 +494,6 @@
       "font_class": "results",
       "unicode": "e611",
       "unicode_decimal": 58897
-    },
-    {
-      "icon_id": "29795156",
-      "name": "model",
-      "font_class": "model",
-      "unicode": "e612",
-      "unicode_decimal": 58898
     },
     {
       "icon_id": "29795157",

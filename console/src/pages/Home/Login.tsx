@@ -88,7 +88,18 @@ export default function Login() {
                             </FormItem>
                             <FormItem>
                                 <div style={{ display: 'flex', marginTop: '40px' }}>
-                                    <Button isFull isLoading={isLoading}>
+                                    <Button
+                                        isFull
+                                        isLoading={isLoading}
+                                        overrides={{
+                                            BaseButton: {
+                                                style: {
+                                                    height: '40px',
+                                                    fontSize: '16px',
+                                                },
+                                            },
+                                        }}
+                                    >
                                         {t('login')}
                                     </Button>
                                 </div>
