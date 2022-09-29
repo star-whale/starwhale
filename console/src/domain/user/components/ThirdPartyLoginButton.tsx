@@ -33,7 +33,7 @@ export default function ThirdPartyLoginButton({ isLogin, vendorName, vendor, ico
             endEnhancer={<IconFont type='arrow_right' />}
             overrides={{
                 BaseButton: {
-                    style: { justifyContent: 'space-between', paddingLeft: '20px' },
+                    style: { justifyContent: 'space-between', paddingLeft: '20px', fontSize: '16px' },
                     // make a button type, prevent triggering click event when we press enter in from
                     // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#implicit-submission
                     props: { type: 'button' },
