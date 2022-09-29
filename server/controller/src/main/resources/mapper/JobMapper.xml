@@ -47,6 +47,7 @@
     mv.modified_time as mv_modified_time,
     mv.storage_path as mv_storage_path,
     mv.manifest as mv_manifest,
+    mv.version_order as mv_version_order,
     m.swmp_name as swmp_name
     from job_info as j,
     user_info as u,

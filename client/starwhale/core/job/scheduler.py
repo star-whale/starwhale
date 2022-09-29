@@ -82,12 +82,14 @@ class Scheduler:
 
         return _results
 
-    def schedule_single_task(self, step_name: str, task_index: int, task_num: int = 0) -> StepResult:
+    def schedule_single_task(
+        self, step_name: str, task_index: int, task_num: int = 0
+    ) -> StepResult:
         _step = self._steps[step_name]
         if not _step:
             raise RuntimeError(f"step:{step_name} not found")
 
-        total=task_num or _step.task_num
+        total = task_num or _step.task_num
         if task_index >= total:
             raise RuntimeError(
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"

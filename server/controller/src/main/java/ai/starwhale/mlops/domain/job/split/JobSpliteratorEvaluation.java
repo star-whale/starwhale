@@ -47,6 +47,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * split job by swds index
@@ -95,14 +96,18 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     @Override
     @Transactional
     public List<StepEntity> split(Job job) {
-        // read swmp yaml
-        List<StepSpec> stepSpecs = null;
-        try {
-            stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
-        } catch (JsonProcessingException e) {
-            log.error("parsing step specification error", e);
-            throw new SwValidationException(ValidSubject.SWMP);
+        List<StepSpec> stepSpecs;
+        if (!StringUtils.hasText(job.getStepSpec())) {
+            stepSpecs = job.getSwmp().getStepSpecs();
+        } else {
+            try {
+                stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
+            } catch (JsonProcessingException e) {
+                log.error("parsing step specification error", e);
+                throw new SwValidationException(ValidSubject.SWMP);
+            }
         }
+
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
         Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();
@@ -120,7 +125,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
-            allDependencies.put(stepSpec.getStepName(), stepSpec.getNeeds());
+            allDependencies.put(stepSpec.getStepName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
             nameMapping.put(stepSpec.getStepName(), new Tuple2<>(stepEntity, stepSpec));
         }
 

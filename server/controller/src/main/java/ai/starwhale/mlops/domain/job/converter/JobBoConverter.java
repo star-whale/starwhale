@@ -28,6 +28,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
 import ai.starwhale.mlops.domain.swmp.SwModelPackage;
+import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
 import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
@@ -61,6 +62,8 @@ public class JobBoConverter {
 
     final String defaultRuntimeImage;
 
+    final SwmpVersionConvertor swmpVersionConvertor;
+
     public JobBoConverter(
             JobSwdsVersionMapper jobSwdsVersionMapper,
             SwModelPackageMapper swModelPackageMapper,
@@ -69,8 +72,8 @@ public class JobBoConverter {
             SwdsBoConverter swdsBoConverter,
             @Value("${sw.runtime.image-default}") String defaultImage,
             ResourcePoolMapper resourcePoolMapper,
-            ResourcePoolConverter resourcePoolConverter
-    ) {
+            ResourcePoolConverter resourcePoolConverter,
+            SwmpVersionConvertor swmpVersionConvertor) {
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
@@ -79,6 +82,7 @@ public class JobBoConverter {
         this.defaultRuntimeImage = defaultImage;
         this.resourcePoolMapper = resourcePoolMapper;
         this.resourcePoolConverter = resourcePoolConverter;
+        this.swmpVersionConvertor = swmpVersionConvertor;
     }
 
     public Job fromEntity(JobEntity jobEntity) {
@@ -113,7 +117,10 @@ public class JobBoConverter {
                         .id(jobEntity.getSwmpVersionId())
                         .name(modelPackageEntity.getSwmpName())
                         .version(jobEntity.getSwmpVersion().getVersionName())
-                        .path(jobEntity.getSwmpVersion().getStoragePath()).build())
+                        .path(jobEntity.getSwmpVersion().getStoragePath())
+                        .stepSpecs(swmpVersionConvertor.convert(jobEntity.getSwmpVersion()).getStepSpecs())
+                        .build()
+                )
                 .stepSpec(jobEntity.getStepSpec())
                 .swDataSets(swDataSets)
                 .outputDir(jobEntity.getResultOutputPath())

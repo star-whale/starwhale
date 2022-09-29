@@ -21,11 +21,17 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.exception.SwValidationException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
+import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 
@@ -37,38 +43,26 @@ public class JobSpliteratorEvaluationTest {
     @Test
     public void testJobSpliteratorEvaluation() throws IOException {
 
-        TaskMapper taskMapper = mock(TaskMapper.class);
-        JobMapper jobMapper = mock(JobMapper.class);
-        StepMapper stepMapper = mock(StepMapper.class);
-        JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
-                new StoragePathCoordinator("/test"), taskMapper, jobMapper, stepMapper, null);
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
         mockJob.setCurrentStep(null);
         mockJob.setSteps(null);
-        // TODO
-        /*
-        List<StepEntity> steps = jobSpliteratorEvaluation.split(mockJob);
-        Assertions.assertEquals(2,steps.size());
-        Step currentStep = mockJob.getCurrentStep();
-        Assertions.assertNotNull(currentStep);
-        Assertions.assertEquals("PPL",currentStep.getName());
-        Assertions.assertTrue(currentStep.getTasks().size()<=3);;
-        Step nextStep = currentStep.getNextStep();
-        Assertions.assertNotNull(nextStep);
-        Assertions.assertEquals("CMP",nextStep.getName());
-        Assertions.assertTrue(nextStep.getTasks().size()==1);;
-        mockJob.getSteps().parallelStream().map(Step::getTasks).flatMap(Collection::parallelStream).forEach(task -> {
-            Assertions.assertTrue(task instanceof WatchableTask);
-        });
-
-        verify(stepMapper,times(2)).save(any(StepEntity.class));
-        verify(taskMapper,times(1)).addAll(anyList());
-        verify(taskMapper,times(1)).addTask(any(TaskEntity.class));
-        Assertions.assertEquals(JobStatus.READY,mockJob.getStatus());
-        verify(jobMapper).updateJobStatus(List.of(mockJob.getId()), JobStatus.READY);
-        */
+        mockJob.getSwmp().setStepSpecs(List.of(
+                        StepSpec.builder().stepName("a").taskNum(1).resources(List.of()).build(),
+                        StepSpec.builder().stepName("b").taskNum(1).resources(List.of()).needs(List.of("a")).build()
+                )
+        );
+        mockJob.setStepSpec("");
+        TaskMapper taskMapper = mock(TaskMapper.class);
+        JobMapper jobMapper = mock(JobMapper.class);
+        StepMapper stepMapper = mock(StepMapper.class);
+        JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
+                new StoragePathCoordinator("/test"), taskMapper, jobMapper, stepMapper,
+                new JobSpecParser(new YAMLMapper()));
+        jobSpliteratorEvaluation.split(mockJob);
+        mockJob.setStepSpec("xxx");
+        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(mockJob));
 
     }
 }

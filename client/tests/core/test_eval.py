@@ -178,7 +178,7 @@ class CloudJobTestCase(TestCase):
             model_uri="1",
             dataset_uris=["1", "2"],
             runtime_uri="2",
-            resource="gpu:1",
+            step_spec="",
         )
 
         assert ok

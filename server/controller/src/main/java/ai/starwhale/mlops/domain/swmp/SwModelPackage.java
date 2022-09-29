@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,8 +43,6 @@ public class SwModelPackage {
      */
     String path;
 
-    public SwModelPackage copy() {
-        return new SwModelPackage(this.id, this.name, this.version, this.path);
-    }
+    List<StepSpec> stepSpecs;
 
 }

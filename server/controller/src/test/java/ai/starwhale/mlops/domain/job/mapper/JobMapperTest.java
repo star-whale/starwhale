@@ -78,8 +78,13 @@ public class JobMapperTest extends MySqlContainerHolder {
         swModelPackageVersionEntity = SwModelPackageVersionEntity.builder()
                 .swmpId(swmp.getId())
                 .versionName("vn")
-                .ownerId(user.getId()).evalJobs("")
-                .manifest("mf").versionMeta("mt").storagePath("s").build();
+                .ownerId(user.getId())
+                .evalJobs("stepSpec")
+                .manifest("mf")
+                .versionMeta("mt")
+                .storagePath("s")
+                .versionOrder(1L)
+                .build();
         swModelPackageVersionMapper.addNewVersion(swModelPackageVersionEntity);
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
@@ -240,6 +245,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getVersionTag(), target.getVersionTag());
         Assertions.assertEquals(expected.getManifest(), target.getManifest());
         Assertions.assertEquals(expected.getEvalJobs(), target.getEvalJobs());
+        Assertions.assertNotNull(target.getVersionOrder());
         Assertions.assertEquals("swmp", target.getSwmpName());
         Assertions.assertEquals(expected.getName(), target.getName());
         validUser(user, target.getOwner());

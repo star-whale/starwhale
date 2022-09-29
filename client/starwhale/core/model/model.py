@@ -10,6 +10,7 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from fs.tarfs import TarFS
 
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
@@ -267,11 +268,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not step_name:
                 _step_results = _scheduler.schedule()
             else:
-                _step_results = [_scheduler.schedule_single_task(
-                    step_name,
-                    task_index,
-                    task_num
-                )]
+                _step_results = [
+                    _scheduler.schedule_single_task(step_name, task_index, task_num)
+                ]
 
             logger.debug(f"job execute info:{_step_results}")
             _status = STATUS.SUCCESS
@@ -311,7 +310,30 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
 
     def info(self) -> t.Dict[str, t.Any]:
-        return self._get_bundle_info()
+        _manifest = self._get_bundle_info()
+        _manifest["step_spec"] = {}
+        _store = self.store
+        _om = {}
+        if _store.bundle_path.is_dir():
+            with open(
+                _store.bundle_path / "src" / DEFAULT_EVALUATION_JOBS_FNAME, "rb"
+            ) as f:
+                _om = yaml.safe_load(f)
+        else:
+            if _store.snapshot_workdir.exists():
+                with open(
+                    _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME,
+                    "rb",
+                ) as f:
+                    _om = yaml.safe_load(f)
+            elif _store.bundle_path.exists():
+                with TarFS(str(_store.bundle_path)) as tar:
+                    with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
+                        _om = yaml.safe_load(f)
+            else:
+                pass
+        _manifest["step_spec"].update(_om)
+        return _manifest
 
     def history(
         self,
