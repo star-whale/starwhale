@@ -15,6 +15,7 @@ import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSe
 import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
+import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -46,6 +47,17 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         setRuntime,
         setRuntimeLoading,
     ])
+
+    const runtimeVersionInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
+        fetchRuntime(projectId, runtimeId, runtimeVersionId)
+    )
+    const { setRuntimeVersion } = useRuntimeVersion()
+    const { setRuntimeVersionLoading } = useRuntimeVersionLoading()
+    useEffect(() => {
+        setRuntimeVersionLoading(runtimeVersionInfo.isLoading)
+        setRuntimeVersion(runtimeVersionInfo.data)
+    }, [setRuntimeVersionLoading, runtimeVersionInfo, setRuntimeVersion])
+
     const history = useHistory()
     const [page] = usePage()
     const [t] = useTranslation()
