@@ -40,9 +40,7 @@ public class SystemSettingService implements CommandLineRunner {
 
     private final ObjectMapper yamlMapper;
 
-    private final StoragePathCoordinator storagePathCoordinator;
-
-    private final String path;
+    protected final String path;
 
     @Getter
     protected SystemSetting systemSetting;
@@ -55,7 +53,6 @@ public class SystemSettingService implements CommandLineRunner {
             StoragePathCoordinator storagePathCoordinator,
             StorageAccessService storageAccessService) {
         this.yamlMapper = yamlMapper;
-        this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.path = storagePathCoordinator.allocateSystemSettingPath(PATH_SETTING);
     }
