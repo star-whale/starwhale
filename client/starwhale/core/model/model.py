@@ -311,28 +311,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
-        _manifest["step_spec"] = {}
         _store = self.store
         _om = {}
-        if _store.bundle_path.is_dir():
-            with open(
-                _store.bundle_path / "src" / DEFAULT_EVALUATION_JOBS_FNAME, "rb"
-            ) as f:
-                _om = yaml.safe_load(f)
-        else:
-            if _store.snapshot_workdir.exists():
-                with open(
-                    _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME,
-                    "rb",
-                ) as f:
+        if _store.snapshot_workdir.exists():
+            _om = load_yaml(
+                _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+            )
+        elif _store.bundle_path.exists():
+            with TarFS(str(_store.bundle_path)) as tar:
+                with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
                     _om = yaml.safe_load(f)
-            elif _store.bundle_path.exists():
-                with TarFS(str(_store.bundle_path)) as tar:
-                    with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
-                        _om = yaml.safe_load(f)
-            else:
-                pass
-        _manifest["step_spec"].update(_om)
+        else:
+            ignore_error("step_spec not found in model")
+        _manifest["step_spec"] = _om
         return _manifest
 
     def history(

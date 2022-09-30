@@ -39,7 +39,6 @@ public class JobSpecTest {
             + "- cls_name: ''\n"
             + "  concurrency: 1\n"
             + "  job_name: default\n"
-            + "  overwriteable: false\n"
             + "  needs:\n"
             + "  - ppl\n"
             + "  resources:\n"
@@ -58,7 +57,6 @@ public class JobSpecTest {
             + "- cls_name: ''\n"
             + "  concurrency: 1\n"
             + "  job_name: default\n"
-            + "  overwriteable: false\n"
             + "  needs:\n"
             + "  - ppl\n"
             + "  resources:\n"
@@ -73,7 +71,6 @@ public class JobSpecTest {
             + "  resources:\n"
             + "  - type: \"cpu\"\n"
             + "    num: 1.0\n"
-            + "  overwriteable: true\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"ppl\"\n"
             + "  task_num: 1\n"
@@ -83,7 +80,6 @@ public class JobSpecTest {
             + "  resources:\n"
             + "  - type: \"cpu\"\n"
             + "    num: 1.0\n"
-            + "  overwriteable: false\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
@@ -94,7 +90,6 @@ public class JobSpecTest {
             + "  resources:\n"
             + "  - type: \"cpu\"\n"
             + "    num: 1.0\n"
-            + "  overwriteable: true\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"ppl\"\n"
             + "  task_num: 1\n"
@@ -104,7 +99,6 @@ public class JobSpecTest {
             + "  resources:\n"
             + "  - type: \"cpu\"\n"
             + "    num: 1.0\n"
-            + "  overwriteable: false\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
@@ -134,7 +128,6 @@ public class JobSpecTest {
                 .stepName("ppl")
                 .taskNum(1)
                 .concurrency(1)
-                .overwriteable(true)
                 .build(), pplStep);
         StepSpec cmpStep = steps.get(1);
         Assertions.assertEquals(StepSpec.builder()
@@ -144,7 +137,6 @@ public class JobSpecTest {
                 .stepName("cmp")
                 .taskNum(1)
                 .concurrency(1)
-                .overwriteable(false)
                 .build(), cmpStep);
     }
 
@@ -157,7 +149,6 @@ public class JobSpecTest {
                 .stepName("ppl")
                 .taskNum(1)
                 .concurrency(1)
-                .overwriteable(true)
                 .build(), StepSpec.builder()
                 .jobName("default")
                 .needs(List.of("ppl"))
@@ -165,7 +156,6 @@ public class JobSpecTest {
                 .stepName("cmp")
                 .taskNum(1)
                 .concurrency(1)
-                .overwriteable(false)
                 .build()
         ));
         Assertions.assertEquals(YAML2, new YAMLMapper().writeValueAsString(map));

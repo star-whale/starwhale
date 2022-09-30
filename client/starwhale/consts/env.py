@@ -2,6 +2,7 @@ class SWEnv:
     instance_uri = "SW_INSTANCE_URI"
     project = "SW_PROJECT"
     task_id = "SW_TASK_ID"
+    total_task_num = "SW_TASK_NUM"
     eval_version = "SW_EVALUATION_VERSION"
     status_dir = "SW_TASK_STATUS_DIR"
     log_dir = "SW_TASK_LOG_DIR"

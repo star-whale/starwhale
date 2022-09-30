@@ -51,7 +51,6 @@ public class StepSpec {
     private List<RuntimeResource> resources;
     @JsonProperty("task_num")
     private Integer taskNum = 1;
-    private Boolean overwriteable = true;
 }
 
 

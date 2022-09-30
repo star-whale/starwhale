@@ -39,6 +39,6 @@ def ppl(context: Context) -> None:
     _invoke(context=context, func="_starwhale_internal_run_ppl")
 
 
-@step(needs=["ppl"], overwriteable=False)
+@step(needs=["ppl"])
 def cmp(context: Context) -> None:
     _invoke(context=context, func="_starwhale_internal_run_cmp")

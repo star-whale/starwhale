@@ -15,7 +15,6 @@ def step(
     resources: t.Optional[t.List[str]] = None,
     concurrency: int = 1,
     task_num: int = 1,
-    overwriteable: bool = True,
     needs: t.Optional[t.List[str]] = None,
 ) -> t.Any:
     _resources = resources or [
@@ -33,7 +32,6 @@ def step(
                 resources=_resources,
                 concurrency=concurrency,
                 task_num=task_num,
-                overwriteable=overwriteable,
                 needs=_needs,
             )
             Parser.add_job(job_name, _step)
