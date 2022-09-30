@@ -78,7 +78,7 @@ public class SwmpVersionConvertorTest {
                 hasProperty("meta", is("meta1")),
                 hasProperty("manifest", is("manifest1")),
                 hasProperty("stepSpecs",
-                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).overwriteable(true).build())))
+                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
         ));
     }
 

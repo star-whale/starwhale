@@ -142,7 +142,7 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 @click.option(
     "--override-task-num",
-    envvar=SWEnv.total_task_num,
+    default=0,
     help="Total num of tasks in the current step",
 )
 @click.option("--runtime", default="", help="runtime uri")

@@ -43,15 +43,8 @@ public class ResourceOverwriteSpec {
 
     public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, "nvidia.com/gpu");
 
-    static final String MILLI_UNIT = "m";
-
-    private Integer normalizeNonK8sResources(Integer amount) {
-        if (amount % 1000 != 0) {
-            Integer amountOld = amount;
-            amount = amount - amount % 1000 + 1000;
-            log.warn("non k8s resources adjusted from {} to {}", amountOld, amount);
-        }
-        return amount;
+    private Float normalizeNonK8sResources(Float amount) {
+        return (float) Math.ceil(amount);
     }
 
     public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
@@ -67,9 +60,8 @@ public class ResourceOverwriteSpec {
     private Collector<RuntimeResource, ?, Map<String, Quantity>> convertToMap() {
         return Collectors.toMap(RuntimeResource::getType,
                 runtimeResource -> new Quantity(
-                        k8sResource(runtimeResource.getType()) ? runtimeResource.getNum().toString() + MILLI_UNIT
-                                : normalizeNonK8sResources(runtimeResource.getNum().intValue()).toString()
-                                        + MILLI_UNIT));
+                        k8sResource(runtimeResource.getType()) ? runtimeResource.getNum().toString()
+                                : normalizeNonK8sResources(runtimeResource.getNum()).toString()));
     }
 
     boolean k8sResource(String resource) {
