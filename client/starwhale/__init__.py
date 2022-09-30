@@ -1,4 +1,4 @@
-from starwhale.api.job import step, Context
+from starwhale.api.job import step, Context, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.api.model import PipelineHandler, PPLResultStorage, PPLResultIterator
 from starwhale.api.metric import multi_classification
@@ -32,6 +32,7 @@ __all__ = [
     "PipelineHandler",
     "multi_classification",
     "step",
+    "pass_context",
     "Context",
     "Evaluation",
     "data_loader",

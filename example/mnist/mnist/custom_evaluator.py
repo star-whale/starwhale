@@ -13,6 +13,7 @@ from starwhale import (
     Image,
     Context,
     data_loader,
+    pass_context,
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
@@ -44,6 +45,7 @@ class CustomPipelineHandler:
         print("exit custom handler!")
 
     @step(concurrency=2, task_num=2)
+    @pass_context
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
         ppl_result_storage = PPLResultStorage(context)
@@ -80,6 +82,7 @@ class CustomPipelineHandler:
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
+    @pass_context
     def run_cmp(
         self, context: Context
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
