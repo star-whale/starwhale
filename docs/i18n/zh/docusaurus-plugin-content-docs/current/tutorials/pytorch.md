@@ -1,5 +1,5 @@
 ---
-title: Pytorch Runtime的构建
+title: PyTorch Runtime的构建
 ---
 
 本文提供一个Starwhale Runtime的构建和使用示例，预装了Pytorch的相关库，能满足Starwhale中mnist、speech commands、nmt、cifar10、ag_news和PennFudan这六个例子的依赖需求。相关代码的链接：[example/runtime/pytorch](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)。

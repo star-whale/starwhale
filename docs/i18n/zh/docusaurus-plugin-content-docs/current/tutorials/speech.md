@@ -2,7 +2,7 @@
 title: Speech Commands 数据集的多分类任务模型评测
 ---
 
-本例子[参考TorchAudio](https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html)对Speech Commands数据集进行分类识别和模型评测，相关代码的链接：[example/speech_command](https://github.com/star-whale/starwhale/tree/main/example/speech_command)。
+本例子[参考TorchAudio](https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html)对[Speech Commands数据集](https://arxiv.org/abs/1804.03209)进行分类识别和模型评测，相关代码的链接：[example/speech_command](https://github.com/star-whale/starwhale/tree/main/example/speech_command)。
 
 从该例中，我们能实践如下Starwhale功能：
 
@@ -66,7 +66,7 @@ make train
 
 ### 步骤1：构建Starwhale Dataset
 
-```shell
+```bash
 # 根据dataset.yaml构建swds格式的数据集
 swcli dataset build . --runtime pytorch/version/latest
 # 查看最新构建的数据集详情
@@ -82,7 +82,7 @@ swcli dataset info speech_commands_validation/version/latest
 
 ### 步骤2：Standalone Instance中评测模型
 
-```shell
+```bash
 #如果已经激活该runtime环境，则忽略本行命令
 swcli runtime activate --uri pytorch/version/latest
 # 根据model.yaml运行评测任务
@@ -91,8 +91,7 @@ swcli model eval . --dataset  speech_commands_validation/version/latest --runtim
 swcli model info ${version}
 ```
 
-- 上面的`build`命令在`starwhale/example/speech_command`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。
-- 如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
+上面的`build`命令在`starwhale/example/speech_command`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
 
 ![eval.png](../img/examples/sc_eval.png)
 
@@ -100,7 +99,7 @@ swcli model info ${version}
 
 一般情况下，用户经过多次运行模型评测命令(步骤2)进行调试，得到一个可以在大数据量下运行评测或可发布的模型，就需要执行步骤3，构建一个可分发的Starwhale Model。
 
-```shell
+```bash
 #如果已经激活该runtime环境，则忽略本行命令
 swcli runtime activate --uri pytorch/version/latest
 #根据model.yaml构建Starwhale Model
@@ -357,3 +356,4 @@ Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自�
 ## 4.参考资料
 
 - [Speech command classification with TorchAudio](https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html)
+- [Speech Commands数据集](https://arxiv.org/abs/1804.03209)
