@@ -15,7 +15,6 @@ class JobTestCase(TestCase):
     def test_scheduler(self):
         @pass_context
         def my_step(context: Context):
-            print(context)
             assert context
             self.assertEqual(context.step, "self_test")
 
