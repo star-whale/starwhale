@@ -673,6 +673,15 @@ const locales0 = {
     'wrong yaml syntax': {
         en: 'wrong yaml syntax',
     },
+    'System Settings': {
+        en: 'System Settings',
+    },
+    'Update': {
+        en: 'Update',
+    },
+    'Reset': {
+        en: 'Reset',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
