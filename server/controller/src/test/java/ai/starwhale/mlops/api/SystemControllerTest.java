@@ -34,6 +34,7 @@ import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import com.github.pagehelper.Page;
 import java.util.List;
 import java.util.Objects;
@@ -50,29 +51,7 @@ public class SystemControllerTest {
     @BeforeEach
     public void setUp() {
         systemService = mock(SystemService.class);
-        controller = new SystemController(systemService);
-    }
-
-    @Test
-    public void testListAgent() {
-        given(systemService.listAgents(anyString(), any(PageParams.class)))
-                .willAnswer(invocation -> {
-                    PageParams pageParams = invocation.getArgument(1);
-                    try (Page<AgentVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
-                        page.add(AgentVo.builder().build());
-                        return page.toPageInfo();
-                    }
-                });
-
-        var resp = controller.listAgent("", 2, 5);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(hasProperty("pageNum", is(2))),
-                is(hasProperty("pageSize", is(5))),
-                is(hasProperty("list", isA(List.class)))
-        ));
-
+        controller = new SystemController(systemService, mock(SystemSettingService.class));
     }
 
     @Test

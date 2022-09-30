@@ -206,7 +206,7 @@ public class JobService {
                 .deviceType(deviceValue)
                 .deviceAmount(Float.valueOf(deviceCount * 1000).intValue())
                 .comment(comment)
-                .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
+                .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePoolId(resourcePoolId)
@@ -214,15 +214,6 @@ public class JobService {
 
         jobMapper.addJob(jobEntity);
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
-
-        //        String datasetVersionIds = jobRequest.getDatasetVersionIds();
-        //        if(datasetVersionIds == null) {
-        //            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-        //                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
-        //        }
-        //        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
-        //            .map(idConvertor::revert)
-        //            .collect(Collectors.toList());
 
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
                 .map(url -> swdsManager.getSwdsVersionId(url, null))

@@ -217,7 +217,7 @@ public class JobServiceTest {
                 .willReturn(3L);
         given(resourcePoolManager.getResourcePoolId("4"))
                 .willReturn(4L);
-        given(storagePathCoordinator.generateResultMetricsPath("uuid1"))
+        given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
         given(jobMapper.addJob(any(JobEntity.class)))
                 .willAnswer(invocation -> {
