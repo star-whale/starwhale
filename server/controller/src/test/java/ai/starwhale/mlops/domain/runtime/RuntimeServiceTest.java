@@ -204,14 +204,15 @@ public class RuntimeServiceTest {
         given(removeManager.removeBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
         ))).willReturn(true);
-        mockStatic(RemoveManager.class)
-                .when(() -> RemoveManager.create(any(), any()))
-                .thenReturn(removeManager);
-        var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("r1").build());
-        assertThat(res, is(true));
+        try (var mock = mockStatic(RemoveManager.class)) {
+            mock.when(() -> RemoveManager.create(any(), any()))
+                    .thenReturn(removeManager);
+            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("r1").build());
+            assertThat(res, is(true));
 
-        res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("r2").build());
-        assertThat(res, is(false));
+            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("r2").build());
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -220,15 +221,16 @@ public class RuntimeServiceTest {
         given(recoverManager.recoverBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
         ))).willReturn(true);
-        mockStatic(RecoverManager.class)
-                .when(() -> RecoverManager.create(any(), any(), any()))
-                .thenReturn(recoverManager);
+        try (var mock = mockStatic(RecoverManager.class)) {
+            mock.when(() -> RecoverManager.create(any(), any(), any()))
+                    .thenReturn(recoverManager);
 
-        var res = service.recoverRuntime("p1", "r1");
-        assertThat(res, is(true));
+            var res = service.recoverRuntime("p1", "r1");
+            assertThat(res, is(true));
 
-        res = service.recoverRuntime("p1", "r2");
-        assertThat(res, is(false));
+            res = service.recoverRuntime("p1", "r2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -240,15 +242,16 @@ public class RuntimeServiceTest {
                                 && Objects.equals(url.getBundleUrl().getBundleUrl(), "r1")
                                 && Objects.equals(url.getVersionUrl(), "v1")
         ))).willReturn(true);
-        mockStatic(RevertManager.class)
-                .when(() -> RevertManager.create(any(), any()))
-                .thenReturn(revertManager);
+        try (var mock = mockStatic(RevertManager.class)) {
+            mock.when(() -> RevertManager.create(any(), any()))
+                    .thenReturn(revertManager);
 
-        var res = service.revertVersionTo("p1", "r1", "v1");
-        assertThat(res, is(true));
+            var res = service.revertVersionTo("p1", "r1", "v1");
+            assertThat(res, is(true));
 
-        res = service.revertVersionTo("p1", "r1", "v2");
-        assertThat(res, is(false));
+            res = service.revertVersionTo("p1", "r1", "v2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -387,24 +390,26 @@ public class RuntimeServiceTest {
         given(storagePathCoordinator.generateRuntimePath(any(), any(), any()))
                 .willReturn("path2");
 
-        mockStatic(TarFileUtil.class).when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                .thenReturn(new byte[]{1});
+        try (var mock = mockStatic(TarFileUtil.class)) {
+            mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
+                    .thenReturn(new byte[]{1});
 
-        ClientRuntimeRequest request = new ClientRuntimeRequest();
-        request.setProject("1");
-        request.setRuntime("r1:v1");
+            ClientRuntimeRequest request = new ClientRuntimeRequest();
+            request.setProject("1");
+            request.setRuntime("r1:v1");
 
-        MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
-        assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
+            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
 
-        request.setForce("1");
-        assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            request.setForce("1");
+            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
 
-        request.setRuntime("r3:v3");
-        service.upload(dsFile, request);
+            request.setRuntime("r3:v3");
+            service.upload(dsFile, request);
 
-        request.setProject("2");
-        service.upload(dsFile, request);
+            request.setProject("2");
+            service.upload(dsFile, request);
+        }
     }
 
     @Test

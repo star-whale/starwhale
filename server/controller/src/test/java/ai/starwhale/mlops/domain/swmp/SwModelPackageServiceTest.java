@@ -198,14 +198,15 @@ public class SwModelPackageServiceTest {
         given(removeManager.removeBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
         ))).willReturn(true);
-        mockStatic(RemoveManager.class)
-                .when(() -> RemoveManager.create(any(), any()))
-                .thenReturn(removeManager);
-        var res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p1").swmpUrl("m1").build());
-        assertThat(res, is(true));
+        try (var mock = mockStatic(RemoveManager.class)) {
+            mock.when(() -> RemoveManager.create(any(), any()))
+                    .thenReturn(removeManager);
+            var res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p1").swmpUrl("m1").build());
+            assertThat(res, is(true));
 
-        res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p2").swmpUrl("m2").build());
-        assertThat(res, is(false));
+            res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p2").swmpUrl("m2").build());
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -214,15 +215,16 @@ public class SwModelPackageServiceTest {
         given(recoverManager.recoverBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
         ))).willReturn(true);
-        mockStatic(RecoverManager.class)
-                .when(() -> RecoverManager.create(any(), any(), any()))
-                .thenReturn(recoverManager);
+        try (var mock = mockStatic(RecoverManager.class)) {
+            mock.when(() -> RecoverManager.create(any(), any(), any()))
+                    .thenReturn(recoverManager);
 
-        var res = service.recoverSwmp("p1", "m1");
-        assertThat(res, is(true));
+            var res = service.recoverSwmp("p1", "m1");
+            assertThat(res, is(true));
 
-        res = service.recoverSwmp("p1", "m2");
-        assertThat(res, is(false));
+            res = service.recoverSwmp("p1", "m2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -234,15 +236,16 @@ public class SwModelPackageServiceTest {
                                 && Objects.equals(url.getBundleUrl().getBundleUrl(), "m1")
                                 && Objects.equals(url.getVersionUrl(), "v1")
         ))).willReturn(true);
-        mockStatic(RevertManager.class)
-                .when(() -> RevertManager.create(any(), any()))
-                .thenReturn(revertManager);
+        try (var mock = mockStatic(RevertManager.class)) {
+            mock.when(() -> RevertManager.create(any(), any()))
+                    .thenReturn(revertManager);
 
-        var res = service.revertVersionTo("p1", "m1", "v1");
-        assertThat(res, is(true));
+            var res = service.revertVersionTo("p1", "m1", "v1");
+            assertThat(res, is(true));
 
-        res = service.revertVersionTo("p1", "m1", "v2");
-        assertThat(res, is(false));
+            res = service.revertVersionTo("p1", "m1", "v2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -389,24 +392,26 @@ public class SwModelPackageServiceTest {
         given(storagePathCoordinator.generateSwmpPath(any(), any(), any()))
                 .willReturn("path2");
 
-        mockStatic(TarFileUtil.class).when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                .thenReturn(new byte[]{1});
+        try (var mock = mockStatic(TarFileUtil.class)) {
+            mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
+                    .thenReturn(new byte[]{1});
 
-        ClientSwmpRequest request = new ClientSwmpRequest();
-        request.setProject("1");
-        request.setSwmp("m1:v1");
+            ClientSwmpRequest request = new ClientSwmpRequest();
+            request.setProject("1");
+            request.setSwmp("m1:v1");
 
-        MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
-        assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
+            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
 
-        request.setForce("1");
-        assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            request.setForce("1");
+            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
 
-        request.setSwmp("m3:v3");
-        service.upload(dsFile, request);
+            request.setSwmp("m3:v3");
+            service.upload(dsFile, request);
 
-        request.setProject("2");
-        service.upload(dsFile, request);
+            request.setProject("2");
+            service.upload(dsFile, request);
+        }
     }
 
     @Test

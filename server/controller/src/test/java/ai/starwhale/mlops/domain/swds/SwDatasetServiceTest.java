@@ -185,14 +185,15 @@ public class SwDatasetServiceTest {
         given(removeManager.removeBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "d1")
         ))).willReturn(true);
-        mockStatic(RemoveManager.class)
-                .when(() -> RemoveManager.create(any(), any()))
-                .thenReturn(removeManager);
-        var res = service.deleteSwds(SwdsQuery.builder().projectUrl("p1").swdsUrl("d1").build());
-        assertThat(res, is(true));
+        try (var mock = mockStatic(RemoveManager.class)) {
+            mock.when(() -> RemoveManager.create(any(), any()))
+                    .thenReturn(removeManager);
+            var res = service.deleteSwds(SwdsQuery.builder().projectUrl("p1").swdsUrl("d1").build());
+            assertThat(res, is(true));
 
-        res = service.deleteSwds(SwdsQuery.builder().projectUrl("p2").swdsUrl("d2").build());
-        assertThat(res, is(false));
+            res = service.deleteSwds(SwdsQuery.builder().projectUrl("p2").swdsUrl("d2").build());
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -201,15 +202,16 @@ public class SwDatasetServiceTest {
         given(recoverManager.recoverBundle(argThat(
                 url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "d1")
         ))).willReturn(true);
-        mockStatic(RecoverManager.class)
-                .when(() -> RecoverManager.create(any(), any(), any()))
-                .thenReturn(recoverManager);
+        try (var mock = mockStatic(RecoverManager.class)) {
+            mock.when(() -> RecoverManager.create(any(), any(), any()))
+                    .thenReturn(recoverManager);
 
-        var res = service.recoverSwds("p1", "d1");
-        assertThat(res, is(true));
+            var res = service.recoverSwds("p1", "d1");
+            assertThat(res, is(true));
 
-        res = service.recoverSwds("p1", "d2");
-        assertThat(res, is(false));
+            res = service.recoverSwds("p1", "d2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
@@ -275,15 +277,16 @@ public class SwDatasetServiceTest {
                                 && Objects.equals(url.getBundleUrl().getBundleUrl(), "m1")
                                 && Objects.equals(url.getVersionUrl(), "v1")
         ))).willReturn(true);
-        mockStatic(RevertManager.class)
-                .when(() -> RevertManager.create(any(), any()))
-                .thenReturn(revertManager);
+        try (var mock = mockStatic(RevertManager.class)) {
+            mock.when(() -> RevertManager.create(any(), any()))
+                    .thenReturn(revertManager);
 
-        var res = service.revertVersionTo("p1", "m1", "v1");
-        assertThat(res, is(true));
+            var res = service.revertVersionTo("p1", "m1", "v1");
+            assertThat(res, is(true));
 
-        res = service.revertVersionTo("p1", "m1", "v2");
-        assertThat(res, is(false));
+            res = service.revertVersionTo("p1", "m1", "v2");
+            assertThat(res, is(false));
+        }
     }
 
     @Test
