@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 public class CancellableTaskLogK8sCollectorFactory {
     private final K8sClient k8sClient;
 
-    CancellableTaskLogK8sCollectorFactory(K8sClient k8sClient) {
+    public CancellableTaskLogK8sCollectorFactory(K8sClient k8sClient) {
         this.k8sClient = k8sClient;
     }
 
