@@ -64,7 +64,7 @@ def _list(
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=0, help="Index of tasks in the current step")
+@click.option("--task-index", default=-1, help="Index of tasks in the current step")
 def _run(
     project: str,
     version: str,
