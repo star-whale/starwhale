@@ -48,7 +48,6 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okio.BufferedSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,14 +95,23 @@ public class K8sClientTest {
     @Test
     public void testLogOfJob() throws ApiException, IOException {
 
-        when(coreV1Api.listNamespacedPod(nameSpace, null, null, null, null, "selector", null, null, null, 30,
-                null)).thenReturn(new V1PodList().addItemsItem(new V1Pod().metadata(new V1ObjectMeta().name("pdn"))));
+        when(coreV1Api.listNamespacedPod(
+                eq(nameSpace),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq("selector"),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(30),
+                eq(null))).thenReturn(
+                new V1PodList().addItemsItem(new V1Pod().metadata(new V1ObjectMeta().name("pdn"))));
 
         Call callA = mock(Call.class);
         ResponseBody respb = mock(ResponseBody.class);
-        BufferedSource bf = mock(BufferedSource.class);
-        when(bf.inputStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
-        when(respb.source()).thenReturn(bf);
+        when(respb.byteStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
         Response resp = new Response(new Request(new HttpUrl("", "", "", "", 89, List.of(), null, null, ""), "post",
                 new Headers.Builder().build(), null,
                 Map.of()), Protocol.HTTP_1_0, "null", 200, null, new Headers.Builder().build(), respb, null, null, null,
@@ -126,9 +134,7 @@ public class K8sClientTest {
 
         Call callB = mock(Call.class);
         ResponseBody respbB = mock(ResponseBody.class);
-        BufferedSource bfB = mock(BufferedSource.class);
-        when(bfB.inputStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
-        when(respbB.source()).thenReturn(bfB);
+        when(respbB.byteStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
         Response respB = new Response(new Request(new HttpUrl("", "", "", "", 89, List.of(), null, null, ""), "post",
                 new Headers.Builder().build(), null,
                 Map.of()), Protocol.HTTP_1_0, "null", 200, null, new Headers.Builder().build(), respbB, null, null,
