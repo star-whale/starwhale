@@ -410,7 +410,7 @@ public class SwModelPackageServiceTest {
     }
 
     @Test
-    public void testPull() {
+    public void testPull() throws IOException {
         HttpServletResponse response = mock(HttpServletResponse.class);
         given(swmpMapper.findByName(same("m1"), same(1L)))
                 .willReturn(SwModelPackageEntity.builder().id(1L).build());
@@ -427,16 +427,14 @@ public class SwModelPackageServiceTest {
 
         given(swmpVersionMapper.findByNameAndSwmpId(same("v3"), same(1L)))
                 .willReturn(SwModelPackageVersionEntity.builder().storagePath("path3").build());
-        try {
-            given(storageAccessService.list(anyString())).willThrow(IOException.class);
-            given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
-            given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
-            assertThrows(SwValidationException.class,
-                    () -> service.pull("1", "m1", "v2", response));
-            assertThrows(SwProcessException.class,
-                    () -> service.pull("1", "m1", "v3", response));
-        } catch (IOException ignored) {
-        }
+
+        given(storageAccessService.list(anyString())).willThrow(IOException.class);
+        given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
+        given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
+        assertThrows(SwValidationException.class,
+                () -> service.pull("1", "m1", "v2", response));
+        assertThrows(SwProcessException.class,
+                () -> service.pull("1", "m1", "v3", response));
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
@@ -445,9 +443,7 @@ public class SwModelPackageServiceTest {
             given(response.getOutputStream()).willReturn(outputStream);
 
             service.pull("1", "m1", "v1", response);
-        } catch (IOException ignored) {
         }
-
     }
 
     @Test

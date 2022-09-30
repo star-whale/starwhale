@@ -408,7 +408,7 @@ public class RuntimeServiceTest {
     }
 
     @Test
-    public void testPull() {
+    public void testPull() throws IOException {
         HttpServletResponse response = mock(HttpServletResponse.class);
         given(runtimeMapper.findByName(same("r1"), same(1L)))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
@@ -425,16 +425,14 @@ public class RuntimeServiceTest {
 
         given(runtimeVersionMapper.findByNameAndRuntimeId(same("v3"), same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().storagePath("path3").build());
-        try {
-            given(storageAccessService.list(anyString())).willThrow(IOException.class);
-            given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
-            given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
-            assertThrows(SwValidationException.class,
-                    () -> service.pull("1", "r1", "v2", response));
-            assertThrows(SwProcessException.class,
-                    () -> service.pull("1", "r1", "v3", response));
-        } catch (IOException ignored) {
-        }
+
+        given(storageAccessService.list(anyString())).willThrow(IOException.class);
+        given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
+        given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
+        assertThrows(SwValidationException.class,
+                () -> service.pull("1", "r1", "v2", response));
+        assertThrows(SwProcessException.class,
+                () -> service.pull("1", "r1", "v3", response));
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
@@ -443,7 +441,6 @@ public class RuntimeServiceTest {
             given(response.getOutputStream()).willReturn(outputStream);
 
             service.pull("1", "r1", "v1", response);
-        } catch (IOException ignored) {
         }
 
     }
