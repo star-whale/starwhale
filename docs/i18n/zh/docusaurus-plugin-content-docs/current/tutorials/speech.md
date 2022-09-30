@@ -155,7 +155,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
    |-- train.py             # 描述训练过程，便于进行例子复现。目前Starwhale没有提供Model Training的相关支持，此文件也不是Starwhale Model Evaluation所必须的。
 ```
 
-`sc/dataset.py`、`sc/evaluator.py`、`dataset.yaml`和`model.yaml` 这四个文件是关键代码和配置。
+`sc/dataset.py`、`sc/evaluator.py`、`dataset.yaml` 和 `model.yaml` 这四个文件是关键代码和配置。
 
 ### 3.2 Dataset的构建
 
