@@ -3,11 +3,10 @@ from pathlib import Path
 
 from loguru import logger
 
+from starwhale import step, Context, pass_context, PipelineHandler
 from starwhale.utils import console
 from starwhale.consts import DefaultYAMLName
 from starwhale.utils.load import import_cls, get_func_from_object
-from starwhale.api._impl.job import step, Context
-from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
 
 
@@ -35,10 +34,12 @@ def _invoke(context: Context, func: str) -> None:
 
 
 @step()
+@pass_context
 def ppl(context: Context) -> None:
     _invoke(context=context, func="_starwhale_internal_run_ppl")
 
 
 @step(needs=["ppl"])
+@pass_context
 def cmp(context: Context) -> None:
     _invoke(context=context, func="_starwhale_internal_run_cmp")
