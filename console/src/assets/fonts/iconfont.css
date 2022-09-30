@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('iconfont.woff2?t=1664178541024') format('woff2'),
-       url('iconfont.woff?t=1664178541024') format('woff'),
-       url('iconfont.ttf?t=1664178541024') format('truetype');
+  src: url('iconfont.woff2?t=1664419026412') format('woff2'),
+       url('iconfont.woff?t=1664419026412') format('woff'),
+       url('iconfont.ttf?t=1664419026412') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,30 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-dataset:before {
+  content: "\e62a";
+}
+
+.icon-evaluation:before {
+  content: "\e633";
+}
+
+.icon-runtime:before {
+  content: "\e651";
+}
+
+.icon-Model:before {
+  content: "\e652";
+}
+
+.icon-reset:before {
+  content: "\e650";
+}
+
+.icon-docker:before {
+  content: "\e64f";
 }
 
 .icon-setting2:before {
@@ -145,10 +169,6 @@
   content: "\e632";
 }
 
-.icon-evaluation:before {
-  content: "\e633";
-}
-
 .icon-pin:before {
   content: "\e634";
 }
@@ -171,10 +191,6 @@
 
 .icon-view:before {
   content: "\e639";
-}
-
-.icon-runtime:before {
-  content: "\e62a";
 }
 
 .icon-success:before {
@@ -269,20 +285,12 @@
   content: "\e60e";
 }
 
-.icon-dataset:before {
-  content: "\e60f";
-}
-
 .icon-close:before {
   content: "\e610";
 }
 
 .icon-results:before {
   content: "\e611";
-}
-
-.icon-model:before {
-  content: "\e612";
 }
 
 .icon-project:before {

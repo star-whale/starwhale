@@ -56,35 +56,39 @@ function Summary({ fetch }: any) {
 
     return (
         <Card outTitle={t('Summary')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
-            <div className='flex-column'>
+            <div
+                style={{
+                    lineHeight: '44px',
+                    fontSize: '14px',
+                    paddingLeft: '12px',
+                    gridTemplateColumns: 'minmax(160px, max-content) 1fr',
+                    display: 'grid',
+                }}
+            >
                 {Object.keys(record)
                     .sort((a, b) => {
                         if (a === 'id') return -1
                         return a > b ? 1 : -1
                     })
                     .map((label) => (
-                        <div
-                            key={label}
-                            style={{
-                                display: 'flex',
-                                gap: '20px',
-                                borderBottom: '1px solid #EEF1F6',
-                                lineHeight: '44px',
-                                flexWrap: 'nowrap',
-                                fontSize: '14px',
-                                paddingLeft: '12px',
-                            }}
-                        >
+                        <React.Fragment key={label}>
                             <div
                                 style={{
-                                    flexBasis: '160px',
                                     color: 'rgba(2,16,43,0.60)',
+                                    borderBottom: '1px solid #EEF1F6',
                                 }}
                             >
-                                {label}:
+                                {label}
                             </div>
-                            <div> {record[label]}</div>
-                        </div>
+                            <div
+                                style={{
+                                    borderBottom: '1px solid #EEF1F6',
+                                    paddingLeft: '20px',
+                                }}
+                            >
+                                {record[label]}
+                            </div>
+                        </React.Fragment>
                     ))}
             </div>
         </Card>

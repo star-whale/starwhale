@@ -20,6 +20,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context
+from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel
@@ -36,55 +37,54 @@ class StandaloneModelTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+        self.sw = SWCliConfigMixed()
+
+        self.workdir = "/home/starwhale/myproject"
+        os.environ["ENV_SW_LOCAL_STORAGE"] = self.workdir
+        self.name = "mnist"
+
+        self.fs.create_file(
+            os.path.join(self.workdir, DefaultYAMLName.MODEL), contents=_model_yaml
+        )
+
+        ensure_dir(os.path.join(self.workdir, "models"))
+        ensure_dir(os.path.join(self.workdir, "config"))
+        ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
+        ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
+
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
     def test_build_workflow(self, m_copy_fs: MagicMock, m_copy_file: MagicMock) -> None:
-        sw = SWCliConfigMixed()
-
-        workdir = "/home/starwhale/myproject"
-        os.environ["ENV_SW_LOCAL_STORAGE"] = workdir
-        name = "mnist"
-
-        self.fs.create_file(
-            os.path.join(workdir, DefaultYAMLName.MODEL), contents=_model_yaml
-        )
-
-        ensure_dir(os.path.join(workdir, "models"))
-        ensure_dir(os.path.join(workdir, "config"))
-        ensure_file(os.path.join(workdir, "models", "mnist_cnn.pt"), " ")
-        ensure_file(os.path.join(workdir, "config", "hyperparam.json"), " ")
-
-        model_uri = URI(name, expected_type=URIType.MODEL)
+        model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
-        sm.build(Path(workdir))
+        sm.build(Path(self.workdir))
 
         build_version = sm.uri.object.version
 
         bundle_path = (
-            sw.rootdir
+            self.sw.rootdir
             / "self"
             / URIType.MODEL
-            / name
+            / self.name
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.MODEL}"
         )
 
         snapshot_workdir = (
-            sw.rootdir
+            self.sw.rootdir
             / "self"
             / "workdir"
             / URIType.MODEL
-            / name
+            / self.name
             / build_version[:VERSION_PREFIX_CNT]
             / build_version
         )
-
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "src").exists()
         assert (snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
-        assert _manifest["name"] == name
+        assert _manifest["name"] == self.name
         assert _manifest["version"] == build_version
 
         assert m_copy_file.call_count == 3
@@ -101,17 +101,17 @@ class StandaloneModelTestCase(TestCase):
         _info = sm.info()
 
         assert _info["version"] == build_version
-        assert _info["name"] == name
+        assert _info["name"] == self.name
         assert _info["config"]["build"]["os"] in ["Linux", "Darwin"]
         assert "history" not in _info
 
-        model_uri = URI(name, expected_type=URIType.MODEL)
+        model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
         ensure_dir(sm.store.bundle_dir / f"xx{sm.store.bundle_type}")
         _info = sm.info()
 
         assert len(_info["history"]) == 1
-        assert _info["history"][0]["name"] == name
+        assert _info["history"][0]["name"] == self.name
         assert _info["history"][0]["version"] == build_version
 
         _history = sm.history()
@@ -119,23 +119,25 @@ class StandaloneModelTestCase(TestCase):
 
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list) == 1
-        assert not _list[name][0]["is_removed"]
+        assert not _list[self.name][0]["is_removed"]
 
-        model_uri = URI(f"{name}/version/{build_version}", expected_type=URIType.MODEL)
+        model_uri = URI(
+            f"{self.name}/version/{build_version}", expected_type=URIType.MODEL
+        )
         sd = StandaloneModel(model_uri)
         _ok, _ = sd.remove(False)
         assert _ok
 
         _list, _ = StandaloneModel.list(URI(""))
-        assert _list[name][0]["is_removed"]
+        assert _list[self.name][0]["is_removed"]
 
         _ok, _ = sd.recover(True)
         _list, _ = StandaloneModel.list(URI(""))
-        assert not _list[name][0]["is_removed"]
+        assert not _list[self.name][0]["is_removed"]
 
-        ModelTermView(name).info()
-        ModelTermView(name).history()
-        fname = f"{name}/version/{build_version}"
+        ModelTermView(self.name).info()
+        ModelTermView(self.name).history()
+        fname = f"{self.name}/version/{build_version}"
         ModelTermView(fname).info()
         ModelTermView(fname).history()
         ModelTermView(fname).remove()
@@ -146,9 +148,74 @@ class StandaloneModelTestCase(TestCase):
         _ok, _ = sd.remove(True)
         assert _ok
         _list, _ = StandaloneModel.list(URI(""))
-        assert len(_list[name]) == 0
+        assert len(_list[self.name]) == 0
 
-        ModelTermView.build(workdir, "self")
+        ModelTermView.build(self.workdir, "self")
+
+    @patch("starwhale.core.job.model.Generator.generate_job_from_yaml")
+    @patch("starwhale.api._impl.job.Parser.generate_job_yaml")
+    @patch("starwhale.core.job.scheduler.Scheduler.schedule_single_task")
+    @patch("starwhale.core.job.scheduler.Scheduler.schedule_single_step")
+    @patch("starwhale.core.job.scheduler.Scheduler.schedule")
+    def test_eval(
+        self,
+        schedule_mock: MagicMock,
+        single_step_mock: MagicMock,
+        single_task_mock: MagicMock,
+        gen_yaml_mock: MagicMock,
+        gen_job_mock: MagicMock,
+    ):
+        gen_job_mock.return_value = {
+            "default": [
+                Step(
+                    job_name="default",
+                    step_name="ppl",
+                    cls_name="",
+                    resources=["cpu=1"],
+                    concurrency=1,
+                    task_num=1,
+                    needs=[],
+                ),
+                Step(
+                    job_name="default",
+                    step_name="cmp",
+                    cls_name="",
+                    resources=["cpu=1"],
+                    concurrency=1,
+                    task_num=1,
+                    needs=["ppl"],
+                ),
+            ]
+        }
+        StandaloneModel.eval_user_handler(
+            project="test",
+            version="qwertyuiop",
+            workdir=Path(self.workdir),
+            dataset_uris=["mnist/version/latest"],
+            step_name="ppl",
+            task_index=0,
+        )
+        schedule_mock.assert_not_called()
+        single_step_mock.assert_not_called()
+        single_task_mock.assert_called_once()
+
+        StandaloneModel.eval_user_handler(
+            project="test",
+            version="qwertyuiop",
+            workdir=Path(self.workdir),
+            dataset_uris=["mnist/version/latest"],
+            step_name="ppl",
+            task_index=-1,
+        )
+        single_step_mock.assert_called_once()
+
+        StandaloneModel.eval_user_handler(
+            project="test",
+            version="qwertyuiop",
+            workdir=Path(self.workdir),
+            dataset_uris=["mnist/version/latest"],
+        )
+        schedule_mock.assert_called_once()
 
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")

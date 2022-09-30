@@ -22,6 +22,7 @@ import { Role } from '@/api/const'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
+import { useFetchSystemVersion } from '@/domain/setting/hooks/useSettings'
 import IconFont from '../IconFont'
 import Logo from './Logo'
 import Avatar from '../Avatar'
@@ -249,6 +250,15 @@ const useStyles = createUseStyles({
         width: '100%',
         backgroundColor: '#EEF1F6',
     },
+    version: {
+        color: 'rgba(2,16,43,0.60)',
+        fontWeight: 600,
+        fontSize: '14px',
+        paddingLeft: '20px',
+        marginTop: '12px',
+        textAlign: 'left',
+        width: '100%',
+    },
 })
 
 export default function Header() {
@@ -275,6 +285,11 @@ export default function Header() {
         },
         [t]
     )
+    const versionInfo = useFetchSystemVersion()
+    const [version, repo] = React.useMemo(() => {
+        const [v, ...rest] = versionInfo?.data?.version.split(':') ?? []
+        return [v, rest.join('')]
+    }, [versionInfo])
 
     return (
         <header className={headerStyles.headerWrapper}>
@@ -307,6 +322,9 @@ export default function Header() {
                             </div>
                         </div>
                         <div className={styles.divider} />
+                        <div className={styles.version} title={repo}>
+                            {version}
+                        </div>
                         <div className={styles.userMenuItems}>
                             {systemRole === Role.OWNER && (
                                 <div
@@ -370,7 +388,7 @@ export default function Header() {
             <Modal animate closeable onClose={() => setIsShowTokenOpen(false)} isOpen={isShowTokenOpen}>
                 <ModalHeader>{t('Get Token')}</ModalHeader>
                 <ModalBody>
-                    <div className={css({ display: 'flex', marginTop: '10px' })}>
+                    <div className={css({ display: 'flex', marginTop: '10px', gap: '10px' })}>
                         <Input value={token ?? ''} />
                         <CopyToClipboard
                             text={token ?? ''}
@@ -378,7 +396,7 @@ export default function Header() {
                                 toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                             }}
                         >
-                            <Button>copy</Button>
+                            <Button>{t('Copy')}</Button>
                         </CopyToClipboard>
                     </div>
                 </ModalBody>
