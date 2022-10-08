@@ -87,7 +87,7 @@ swcli model eval [OPTIONS] TARGET
 swcli model extract [OPTIONS] MODEL
 ```
 
-`model extract` 命令可以解压Starwhale Model的 `swmp` 格式文件，查看原始模型包内容，目前**该命令只能在standalone instance下执行**。`MODEL` 参数为Runtime URI，其他参数如下：
+`model extract` 命令可以解压Starwhale Model的 `swmp` 格式文件，查看原始模型包内容，目前**该命令只能在standalone instance下执行**。`MODEL` 参数为Model URI，其他参数如下：
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
