@@ -311,6 +311,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
+        _history = _manifest.get("history", [])
+        if _history:
+            return _manifest
         _store = self.store
         _om = {}
         if _store.snapshot_workdir.exists():

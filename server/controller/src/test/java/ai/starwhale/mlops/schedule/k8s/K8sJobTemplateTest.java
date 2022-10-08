@@ -68,7 +68,7 @@ public class K8sJobTemplateTest {
         V1Container workerC = v1PodSpec.getContainers().get(0);
         Assertions.assertIterableEquals(List.of("run"), workerC.getArgs());
         Assertions.assertEquals("image123", workerC.getImage());
-        Assertions.assertEquals(new Quantity("200m"), workerC.getResources().getRequests().get("cpu"));
+        Assertions.assertEquals(new Quantity("0.2"), workerC.getResources().getRequests().get("cpu"));
         Assertions.assertIterableEquals(
                 List.of(new V1EnvVar().name("env1").value("env1value"),
                         new V1EnvVar().name("env2").value("env2value")),
@@ -85,7 +85,7 @@ public class K8sJobTemplateTest {
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
         ContainerOverwriteSpec containerOverwriteSpecWorker = ContainerOverwriteSpec.builder()
-                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 200f))))
+                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 0.2f))))
                 .cmds(List.of("run"))
                 .name("worker")
                 .envs(List.of(new V1EnvVar().name("env1").value("env1value"),

@@ -345,9 +345,9 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        _step_spec = ""
-        if kw.get("step_spec"):
-            with open(kw.get("step_spec")) as f:
+        _step_spec = kw.get("step_spec")
+        if _step_spec:
+            with open(_step_spec) as f:
                 _step_spec = f.read()
         crm = CloudRequestMixed()
         # TODO: use argument for uri

@@ -42,7 +42,6 @@ class StandaloneModelTestCase(TestCase):
         sw = SWCliConfigMixed()
 
         workdir = "/home/starwhale/myproject"
-        os.environ["ENV_SW_LOCAL_STORAGE"] = workdir
         name = "mnist"
 
         self.fs.create_file(
