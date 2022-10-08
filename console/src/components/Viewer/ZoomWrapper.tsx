@@ -8,11 +8,13 @@ export default function ZoomWrapper({ children, isTools }: any) {
             wheel={{ disabled: false }}
             centerOnInit
             centerZoomedOut
-            limitToBounds={false}
+            // limitToBounds={false}
             maxScale={10}
             minScale={0.5}
-            // initialPositionX={200}
-            // initialPositionY={100}
+            onInit={(args) => {
+                console.log(args, args.instance.contentComponent?.clientWidth)
+                // args.zoomOut(0.1)
+            }}
         >
             {({ zoomIn, zoomOut, resetTransform, centerView }) => (
                 <>

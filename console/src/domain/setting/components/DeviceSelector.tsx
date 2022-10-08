@@ -46,6 +46,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
             overrides={overrides}
             isLoading={devicesInfo.isFetching}
             options={options}
+            clearable={false}
             onChange={(params) => {
                 if (!params.option) {
                     return

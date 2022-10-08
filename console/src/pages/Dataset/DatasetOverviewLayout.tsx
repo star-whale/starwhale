@@ -169,20 +169,22 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <div style={{ width: '300px' }}>
-                                <DatasetVersionSelector
-                                    projectId={projectId}
-                                    datasetId={datasetId}
-                                    value={datasetVersionId}
-                                    onChange={(v) =>
-                                        history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                page
-                                            )}`
-                                        )
-                                    }
-                                />
-                            </div>
+                            {datasetVersionId && (
+                                <div style={{ width: '300px' }}>
+                                    <DatasetVersionSelector
+                                        projectId={projectId}
+                                        datasetId={datasetId}
+                                        value={datasetVersionId}
+                                        onChange={(v) =>
+                                            history.push(
+                                                `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                                    page
+                                                )}`
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
                             {datasetVersionId && (
                                 <Button
                                     size='compact'

@@ -17,6 +17,7 @@ import qs from 'qs'
 import { DatasetObject } from '@/domain/dataset/sdk'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { useSearchParam } from 'react-use'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -79,6 +80,11 @@ const useCardStyles = createUseStyles({
 const PAGE_TABLE_SIZE = 10
 const PAGE_CARD_SIZE = 50
 
+enum LAYOUT {
+    GRID = '0',
+    LIST = '1',
+}
+
 function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
     return (
         <div
@@ -132,17 +138,19 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
 }
 
 export default function DatasetVersionFiles() {
-    const { projectId, fileId, datasetId, datasetVersionId } = useParams<{
+    const { projectId, datasetId, datasetVersionId } = useParams<{
         projectId: string
         datasetId: string
         datasetVersionId: string
-        fileId: string
     }>()
     const [page, setPage] = usePage()
     const { token } = useAuth()
     const history = useHistory()
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
+    const layoutKey = useSearchParam('layout') as string
+
+    const [preview, setPreview] = React.useState('')
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
 
@@ -160,8 +168,7 @@ export default function DatasetVersionFiles() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])
 
-    const [layoutKey, setLayoutKey] = React.useState('1')
-    const [isFullscreen, setIsFullscreen] = React.useState(false)
+    const [isFullscreen, setIsFullscreen] = React.useState(true)
 
     const datasets = React.useMemo(
         () =>
@@ -179,13 +186,23 @@ export default function DatasetVersionFiles() {
     )
 
     const Records = React.useMemo(() => {
-        if (fileId || !tables.data) return <></>
+        // if (fileId || !tables.data) return <></>
         const { summary = {} } = datasets?.[0] ?? {}
 
         const rowAction = [
             {
                 label: 'data',
                 overrides: {
+                    TableHeadCell: {
+                        style: {
+                            textAlign: 'center',
+                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            borderBottom: '0',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            lineHeight: '14px',
+                        },
+                    },
                     TableBodyCell: {
                         style: {
                             verticalAlign: 'middle',
@@ -201,11 +218,15 @@ export default function DatasetVersionFiles() {
                         <Button
                             as='link'
                             onClick={() => {
-                                setIsFullscreen(false)
+                                setIsFullscreen(true)
+                                setPreview(row.id)
                                 history.push(
-                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
-                                        row.id
-                                    }?${qs.stringify(page)}`
+                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
+                                        {
+                                            ...page,
+                                            layout: layoutKey,
+                                        }
+                                    )}`
                                 )
                             }}
                         >
@@ -225,7 +246,7 @@ export default function DatasetVersionFiles() {
             })),
         ]
 
-        if (layoutKey === '0') {
+        if (layoutKey === LAYOUT.GRID) {
             return (
                 <div
                     style={{
@@ -239,7 +260,6 @@ export default function DatasetVersionFiles() {
                         return (
                             <div className={styles.card} key={index}>
                                 <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
-                                {/* <div className={styles.cardLabel}>label: {rowAction.label(row)}</div> */}
                                 <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
                                 <div
                                     className={styles.cardFullscreen}
@@ -247,10 +267,14 @@ export default function DatasetVersionFiles() {
                                     tabIndex={0}
                                     onClick={() => {
                                         setIsFullscreen(true)
+                                        setPreview(row.id)
                                         history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/${
-                                                row.id
-                                            }?${qs.stringify(page)}`
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                                                {
+                                                    ...page,
+                                                    layout: layoutKey,
+                                                }
+                                            )}`
                                         )
                                     }}
                                 >
@@ -314,7 +338,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, fileId, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
+    }, [layoutKey, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
 
     return (
         <div className={styles.wrapper}>
@@ -322,14 +346,13 @@ export default function DatasetVersionFiles() {
                 <LayoutControl
                     value={layoutKey}
                     onChange={(key) => {
-                        setLayoutKey(key)
-                        const newSize = key === '1' ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
-
+                        const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
                                     pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
                                     pageSize: newSize,
+                                    layout: key,
                                 }
                             )}`
                         )
@@ -337,7 +360,7 @@ export default function DatasetVersionFiles() {
                 />
             </div>
             {Records}
-            {!fileId && paginationProps && (
+            {paginationProps && (
                 <div
                     style={{
                         display: 'flex',
@@ -374,7 +397,14 @@ export default function DatasetVersionFiles() {
                     />
                 </div>
             )}
-            {fileId && <DatasetVersionFilePreview datasets={datasets} fileId={fileId} fullscreen={isFullscreen} />}
+            {preview && (
+                <DatasetVersionFilePreview
+                    datasets={datasets}
+                    fileId={preview}
+                    isFullscreen={isFullscreen}
+                    setIsFullscreen={setIsFullscreen}
+                />
+            )}
         </div>
     )
 }
