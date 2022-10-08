@@ -139,7 +139,7 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
 )
 @click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=0, help="Index of tasks in the current step")
+@click.option("--task-index", default=-1, help="Index of tasks in the current step")
 @click.option(
     "--override-task-num",
     default=0,

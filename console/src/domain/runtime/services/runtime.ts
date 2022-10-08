@@ -9,7 +9,8 @@ export async function listRuntimes(projectId: string, query: IListQuerySchema): 
     return resp.data
 }
 
-export async function fetchRuntime(projectId: string, runtimeId: string): Promise<any> {
-    const resp = await axios.get<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`)
+export async function fetchRuntime(projectId: string, runtimeId: string, runtimeVersionUrl?: string): Promise<any> {
+    const config = { params: runtimeVersionUrl ? { runtimeVersionUrl } : {} }
+    const resp = await axios.get<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`, config)
     return resp.data
 }

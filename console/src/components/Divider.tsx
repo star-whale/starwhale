@@ -6,7 +6,7 @@ import React from 'react'
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles({
-    wrapper: (props: IThemedStyleProps) => {
+    divider: (props: IThemedStyleProps) => {
         return {
             'fontSize': '14px',
             'display': 'flex',
@@ -100,7 +100,7 @@ export default function Divider({ children, orientation = 'center' }: IDividerPr
     const [, theme] = useStyletron()
     const styles = useStyles({ themeType, theme })
     return (
-        <div className={classNames(styles.wrapper, styles[orientation])}>
+        <div className={classNames(styles.divider, styles[orientation])}>
             <div className={styles.innerText}>{children}</div>
         </div>
     )

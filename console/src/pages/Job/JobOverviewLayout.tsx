@@ -96,10 +96,6 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             value: job?.stopTime && formatTimestampDateTime(job.stopTime),
         },
         {
-            label: t('Device'),
-            value: `${job?.device ?? '-'}, ${job?.deviceAmount ?? '-'}`,
-        },
-        {
             label: t('Model'),
             style: {
                 gridColumnStart: 'span 2',

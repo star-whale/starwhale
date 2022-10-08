@@ -30,7 +30,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
         if (devicesInfo.isSuccess) {
             setOptions(
                 devicesInfo.data?.map((item) => ({
-                    id: item.id,
+                    id: item.name,
                     label: item.name,
                 })) ?? []
             )

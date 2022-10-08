@@ -155,7 +155,7 @@ class TestCli:
         _remote_job = self.evaluation.info(
             f"{cloud_uri}/project/{cloud_project}/evaluation/{job_id}"
         )
-        return _remote_job["manifest"]["jobStatus"] if _remote_job else ""
+        return _remote_job["manifest"]["jobStatus"] if _remote_job else "API ERROR"
 
     def test_mnist(self, mode: str) -> None:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)

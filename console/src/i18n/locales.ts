@@ -168,6 +168,9 @@ const locales0 = {
     'Copied': {
         en: 'Copied !',
     },
+    'Copy': {
+        en: 'Copy',
+    },
     'User List': {
         en: 'User List',
     },
@@ -258,8 +261,8 @@ const locales0 = {
     'BaseImage': {
         en: 'Base Image',
     },
-    'Device': {
-        en: 'Device',
+    'Resource': {
+        en: 'Resource',
     },
     'Selected Dataset': {
         en: 'Selected Dataset',
@@ -267,8 +270,8 @@ const locales0 = {
     'Result Output Path': {
         en: 'Result Output Path',
     },
-    'Device Amount': {
-        en: 'Device Amount',
+    'Resource Amount': {
+        en: 'Resource Amount',
     },
     'Resource Pool': {
         en: 'Resource Pool',
@@ -287,9 +290,6 @@ const locales0 = {
     },
     'Cancel': {
         en: 'Cancel',
-    },
-    'cancel': {
-        en: 'cancel',
     },
     'Suspend': {
         en: 'Suspend',
@@ -355,7 +355,7 @@ const locales0 = {
         en: 'The passwords you entered do not match',
     },
     'submit': {
-        en: 'submit',
+        en: 'Submit',
     },
     'create': {
         en: 'Create',
@@ -364,7 +364,7 @@ const locales0 = {
         en: 'Log in',
     },
     'overview': {
-        en: 'overview',
+        en: 'Overview',
     },
     'Overview': {
         en: 'Overview',
@@ -660,6 +660,18 @@ const locales0 = {
     },
     'Elapsed Time': {
         en: 'Elapsed Time',
+    },
+    'Step': {
+        en: 'Step',
+    },
+    'Task Amount': {
+        en: 'Task Amount',
+    },
+    'Raw Type': {
+        en: 'Raw Type',
+    },
+    'wrong yaml syntax': {
+        en: 'wrong yaml syntax',
     },
 }
 

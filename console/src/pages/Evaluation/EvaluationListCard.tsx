@@ -24,9 +24,9 @@ import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
-import { parseDecimal } from '@/utils'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import classNames from 'classnames'
+import { parseDecimal } from '@/utils'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -85,7 +85,7 @@ export default function EvaluationListCard() {
 
                     return (
                         <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-                            {`${data.modelName}-${data.id}`}
+                            {`${data.id}`}
                         </TextLink>
                     )
                 },
@@ -95,6 +95,12 @@ export default function EvaluationListCard() {
                 title: t('sth name', [t('Model')]),
                 filterable: true,
                 mapDataToValue: (data: any) => data.modelName,
+            }),
+            StringColumn({
+                key: 'jobStatus',
+                title: t('Status'),
+                filterable: true,
+                mapDataToValue: (data: any) => data.jobStatus,
             }),
             StringColumn({
                 key: 'modelVersion',

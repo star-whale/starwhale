@@ -44,7 +44,7 @@ declare_env() {
 }
 
 start_minikube() {
-    minikube start -p sw-e2e-test --memory=4G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    minikube start -p sw-e2e-test --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
     minikube addons enable ingress -p sw-e2e-test
     minikube addons enable ingress-dns -p sw-e2e-test
     kubectl describe node

@@ -16,17 +16,13 @@
 
 package ai.starwhale.mlops.api;
 
-import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
-import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
-import ai.starwhale.mlops.api.protocol.report.resp.LogReader;
 import ai.starwhale.mlops.common.IdConvertor;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
-import com.google.common.collect.Lists;
+import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogCollector;
+import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
+import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -41,12 +37,13 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @ServerEndpoint("/api/v1/log/online/{taskId}")
-//@ServerEndpoint("${sw.controller.apiPrefix}/log/online/{taskId}")
 public class TaskLogWsServer {
 
-    private static final ConcurrentHashMap<String, TaskLogWsServer> sockets = new ConcurrentHashMap<>();
+    private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private static IdConvertor idConvertor;
+
+    private static CancellableTaskLogK8sCollectorFactory logCollectorFactory;
 
     private Session session;
 
@@ -54,9 +51,17 @@ public class TaskLogWsServer {
 
     private Long id;
 
+    private CancellableTaskLogCollector logCollector;
+
+
     @Autowired
     public void setIdConvertor(IdConvertor idConvertor) {
         TaskLogWsServer.idConvertor = idConvertor;
+    }
+
+    @Autowired
+    public void setLogCollectorFactory(CancellableTaskLogK8sCollectorFactory factory) {
+        TaskLogWsServer.logCollectorFactory = factory;
     }
 
     @OnOpen
@@ -64,16 +69,32 @@ public class TaskLogWsServer {
         this.session = session;
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
-        sockets.put(readerId, this);
+        try {
+            logCollector = logCollectorFactory.make(this.id);
+        } catch (IOException | ApiException e) {
+            log.error("make k8s log collector failed", e);
+        }
         log.info("Task log ws opened. reader={}, task={}", readerId, id);
+        executorService.submit(() -> {
+            String line;
+            while (true) {
+                try {
+                    if ((line = logCollector.readLine()) == null) {
+                        break;
+                    }
+                    sendMessage(line);
+                } catch (IOException e) {
+                    log.error("read k8s log failed", e);
+                    break;
+                }
+            }
+        });
     }
 
     @OnClose
     public void onClose() {
-        if (sockets.containsKey(readerId)) {
-            sockets.remove(readerId);
-            log.info("Task log ws closed. reader={}, task={}", readerId, id);
-        }
+        cancelLogCollector();
+        log.info("Task log ws closed. reader={}, task={}", readerId, id);
     }
 
     @OnMessage
@@ -83,8 +104,8 @@ public class TaskLogWsServer {
 
     @OnError
     public void onError(Session session, Throwable error) {
+        cancelLogCollector();
         log.error("Task log ws error: reader={}, task={}, message={}", readerId, id, error.getMessage());
-        log.error("", error);
     }
 
     public void sendMessage(String message) {
@@ -95,50 +116,10 @@ public class TaskLogWsServer {
         }
     }
 
-    public static void sendMessage(String message, String readerId) {
-        if (sockets.containsKey(readerId)) {
-            sockets.get(readerId).sendMessage(message);
-        } else {
-            log.error("ws send message failed. Reader cannot be found! {}", readerId);
-        }
-    }
-
-    public List<LogReader> getLogReaders() {
-        List<LogReader> readers = Lists.newArrayList();
-        for (TaskLogWsServer ws : sockets.values()) {
-            readers.add(LogReader.builder().readerId(ws.readerId).taskId(ws.id).build());
-        }
-
-        return readers;
-    }
-
-    private String getLogStatus(TaskStatusInterface taskStatus) {
-        String status;
-        switch (taskStatus) {
-            case SUCCESS:
-            case CANCELED:
-            case FAIL:
-                status = "FINISHED";
-                break;
-            default:
-                status = "RUNNING";
-        }
-        return status;
-    }
-
-    private void report(TaskLog taskLog, String status) {
-        if (StrUtil.isEmpty(taskLog.getLog())) {
-            return;
-        }
-        String readerId = taskLog.getReaderId();
-        if (sockets.containsKey(readerId)) {
-            JSONObject json = JSONUtil.createObj();
-            json.append("logIncrement", taskLog.getLog());
-            json.append("status", status);
-            //send log
-            sendMessage(json.toString(), readerId);
-        } else {
-            log.error("ws send message failed. Reader cannot be found! {}", readerId);
+    private void cancelLogCollector() {
+        if (logCollector != null) {
+            logCollector.cancel();
+            logCollector = null;
         }
     }
 }

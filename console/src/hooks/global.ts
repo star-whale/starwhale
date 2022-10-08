@@ -9,8 +9,7 @@ import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { ThemeType } from '@/theme'
 import { Role } from '@/api/const'
-import { IRuntimeDetailSchema } from '../domain/runtime/schemas/runtime'
-import { IRuntimeVersionDetailSchema } from '../domain/runtime/schemas/runtimeVersion'
+import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 
 const initialState = {
     token: undefined as string | undefined,
@@ -30,7 +29,7 @@ const initialState = {
     datasetVersionLoading: false,
     runtime: undefined as IRuntimeDetailSchema | undefined,
     runtimeLoading: false,
-    runtimeVersion: undefined as IRuntimeVersionDetailSchema | undefined,
+    runtimeVersion: undefined as IRuntimeDetailSchema | undefined,
     runtimeVersionLoading: false,
     job: undefined as IJobSchema | undefined,
     jobLoading: false,

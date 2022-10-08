@@ -321,3 +321,9 @@ class JobTestCase(TestCase):
         # total task num is 3 + 1 = 4
         assert m_task_execute.call_count == 4
         self.assertEqual(_single_result.status, STATUS.SUCCESS)
+
+        _single_result = _scheduler.schedule_single_step("ppl")
+
+        # total task num is 3 + 1 + 2 = 6
+        assert m_task_execute.call_count == 6
+        self.assertEqual(_single_result.status, STATUS.SUCCESS)

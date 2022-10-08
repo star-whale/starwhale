@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import smallLogoImg from '@/assets/logo_small_en_white.svg'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 import normalLogoGrayImg from '@/assets/logo_normal_en_gray.svg'
+import normalLogoBlueImg from '@/assets/logo_normal_en_blue.png'
 import { IComposedComponentProps } from '@/theme'
 import { createUseStyles } from 'react-jss'
 import classNames from 'classnames'
@@ -24,16 +25,18 @@ const useLogoStyles = createUseStyles({
 const normals = {
     white: normalLogoImg,
     gray: normalLogoGrayImg,
+    blue: normalLogoBlueImg,
 }
 
 const smalls = {
     white: smallLogoImg,
     gray: smallLogoImg,
+    blue: smallLogoImg,
 }
 
 export interface ILogoProps extends IComposedComponentProps {
     expanded?: boolean
-    kind?: 'gray' | 'white'
+    kind?: 'gray' | 'white' | 'blue'
 }
 
 export default function Logo({ expanded = true, className, kind = 'white', style }: ILogoProps) {
