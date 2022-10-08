@@ -196,7 +196,7 @@ def init_run_environment() -> str:
     # install sw at current session
     print(f"env PYPI_RELEASE_VERSION is:{os.environ.get('PYPI_RELEASE_VERSION')}")
     # TODO: test
-    invoke(["pip", "install", "-e", f"{_work_dir}/client"])
+    invoke(["python3", "-m", "pip", "install", "-e", f"{_work_dir}/client"])
     _res, _err = invoke(["swcli", "--version"])
     print(f"pytest use swcli version is:{_res}")
     return _work_dir
