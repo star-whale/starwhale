@@ -36,7 +36,6 @@ export default function SystemSettings() {
     }, [systemSetting.data, form])
 
     const handleValuesChange = useCallback((_changes, values_) => {
-        // console.log(_changes, values_)
         setValues(values_)
     }, [])
 
@@ -63,7 +62,6 @@ export default function SystemSettings() {
             <FormItem label='' name='setting' required>
                 <Editor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
             </FormItem>
-            {/* <Divider orientation='top'>{t('Datasets')}</Divider> */}
             <FormItem>
                 <div className={styles.buttonGroup}>
                     <Button
