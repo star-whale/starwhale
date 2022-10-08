@@ -1,5 +1,5 @@
 ---
-title: NMT for french and engish
+title: NMT for french and english
 ---
 
 This example will illustrate how to evaluate a pre-trained nmt model on StarWhale(`version:0.2.0`) under 7 steps:

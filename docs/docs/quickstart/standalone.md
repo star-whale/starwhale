@@ -18,7 +18,7 @@ The Starwhale client version is currently under alpha preview. Thus `--pre` is r
 Starwhale standalone requires Python 3.7 or above. Currently, Starwhale only supports Linux and macOS X. Windows is coming soon.
 :::
 
-At the installation stage, we strongly recommend you follow the [doc](../standalone/installation.md).
+At the installation stage, we strongly recommend you follow the [doc](../guides/install/standalone.md).
 
 ## Downloading Examples
 

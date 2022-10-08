@@ -9,6 +9,7 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale import Link, MIMEType, UserRawBuildExecutor
+from starwhale.consts import OBJECT_STORE_DIRNAME
 from starwhale.utils.fs import blake2b_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
@@ -94,7 +95,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         super().setUp()
 
         self.object_store_dir = os.path.join(
-            self.local_storage, ".objectstore", DatasetStorage.object_hash_algo
+            self.local_storage, OBJECT_STORE_DIRNAME, DatasetStorage.object_hash_algo
         )
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
