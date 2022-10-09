@@ -338,7 +338,7 @@ export function expandBorder(width?: string, weight?: string, color?: string) {
                   borderBottomColor: color,
               }
             : {}),
-    }
+    } as Record<string, string>
 }
 
 export function expandBorderRadius(radius: string) {

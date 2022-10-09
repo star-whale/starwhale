@@ -288,11 +288,11 @@ function FilterOperateMenu(props: PropsT) {
                     overrides={{
                         BaseButton: {
                             style: {
+                                ...expandBorder('1px', 'solid', '#CFD7E6'),
                                 backgroundColor: 'transparent',
                                 paddingTop: '6px',
                                 paddingBottom: '6px',
                                 lineHeight: '20px',
-                                ...expandBorder('1px', 'solid', '#CFD7E6'),
                             },
                         },
                     }}
@@ -305,10 +305,10 @@ function FilterOperateMenu(props: PropsT) {
                                 overrides={{
                                     Root: {
                                         style: {
-                                            marginTop: 0,
-                                            marginBottom: 0,
-                                            marginLeft: 0,
-                                            marginRight: 0,
+                                            marginTop: '0px',
+                                            marginBottom: '0px',
+                                            marginLeft: '0px',
+                                            marginRight: '0px',
                                             height: '20px',
                                             backgroundColor: ' #EEF1F6',
                                             color: '#2B65D9',
