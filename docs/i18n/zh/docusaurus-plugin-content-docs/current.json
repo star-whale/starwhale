@@ -1,26 +1,29 @@
 {
   "version.label": {
-    "message": "下一步",
-    "description": "The label for version current"
+    "message": "下一步"
   },
   "sidebar.mainSidebar.category.Quickstart": {
-    "message": "快速上手",
-    "description": "The label for category Quickstart in sidebar mainSidebar"
+    "message": "快速上手"
   },
   "sidebar.mainSidebar.category.Tutorials": {
-    "message": "示例",
-    "description": "The label for category Tutorials in sidebar mainSidebar"
+    "message": "使用示例"
   },
   "sidebar.mainSidebar.category.Fundamentals": {
-    "message": "设计",
-    "description": "The label for category Fundamentals in sidebar mainSidebar"
+    "message": "核心设计"
   },
   "sidebar.mainSidebar.category.Reference": {
-    "message": "参考指南",
-    "description": "The label for category Reference in sidebar mainSidebar"
+    "message": "参考指南"
+  },
+  "sidebar.mainSidebar.category.Guides": {
+    "message": "高级教程"
   },
   "sidebar.mainSidebar.category.Command Line Interface": {
-    "message": "Starwhale命令行",
-    "description": "The label for category Command Line Interface in sidebar mainSidebar"
+    "message": "Starwhale命令行"
+  },
+  "sidebar.mainSidebar.category.Community": {
+    "message": "社区"
+  },
+  "sidebar.mainSidebar.category.Installation": {
+    "message": "安装"
   }
 }
