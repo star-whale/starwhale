@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
+from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
@@ -12,19 +12,17 @@ from starwhale.utils.load import load_module
 
 def step(
     job_name: str = DEFAULT_EVALUATION_JOB_NAME,
-    resources: t.Optional[t.List[str]] = None,
+    resources: t.Optional[t.Dict[str, t.Any]] = None,
     concurrency: int = 1,
     task_num: int = 1,
     needs: t.Optional[t.List[str]] = None,
 ) -> t.Any:
-    _resources = resources or [
-        DEFAULT_EVALUATION_RESOURCE,
-    ]
+    _resources = resources or {}
     _needs = needs or []
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
-            cls, delim, func_name = func.__qualname__.rpartition(".")
+            cls, _, func_name = func.__qualname__.rpartition(".")
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,

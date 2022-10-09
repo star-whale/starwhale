@@ -43,16 +43,14 @@ class JobTestCase(TestCase):
         - concurrency: 1
           job_name: default
           needs: []
-          resources:
-          - cpu=1
+          resources: {}
           step_name: ppl
           task_num: 1
         - concurrency: 1
           job_name: default
           needs:
           - ppl
-          resources:
-          - cpu=1
+          resources: {}
           step_name: cmp
           task_num: 1
         """
@@ -78,7 +76,7 @@ class JobTestCase(TestCase):
           job_name: default
           needs: []
           resources:
-          - cpu=1
+            cpu: 1
           step_name: custom_ppl
           task_num: 1
         - concurrency: 1
@@ -86,7 +84,7 @@ class JobTestCase(TestCase):
           needs:
           - custom_ppl
           resources:
-          - cpu=1
+            cpu: 1
           step_name: custom_cmp
           task_num: 1
         """
@@ -97,6 +95,8 @@ class JobTestCase(TestCase):
         self.assertEqual(_steps[0].step_name, "custom_ppl")
         self.assertEqual(_steps[0].cls_name, "CustomPipeline")
         self.assertEqual(_steps[1].step_name, "custom_cmp")
+        self.assertEqual(_steps[0].resources["cpu"], 1)
+        self.assertEqual(_steps[1].resources["cpu"], 1)
 
     def test_job_check(self):
         self.assertEqual(
@@ -131,19 +131,19 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl-1",
-                        resources=[],
+                        resources={},
                         needs=["cmp"],
                     ),
                     Step(
                         job_name="default",
                         step_name="ppl-2",
-                        resources=[],
+                        resources={},
                         needs=["ppl-1"],
                     ),
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources=[],
+                        resources={},
                         needs=["ppl-2"],
                     ),
                 ]
@@ -154,19 +154,19 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl-1",
-                    resources=[],
+                    resources={},
                     needs=[],
                 ),
                 Step(
                     job_name="default",
                     step_name="ppl-2",
-                    resources=[],
+                    resources={},
                     needs=["ppl-1"],
                 ),
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources=[],
+                    resources={},
                     needs=["ppl-2"],
                 ),
             ]
@@ -262,7 +262,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl",
-                        resources=["cpu=1"],
+                        resources={"cpu": 1},
                         concurrency=1,
                         task_num=2,
                         # cycle point
@@ -271,7 +271,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources=["cpu=1"],
+                        resources={"cpu": 1},
                         concurrency=1,
                         task_num=2,
                         needs=["ppl"],
@@ -295,7 +295,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl",
-                    resources=["cpu=1"],
+                    resources={"cpu": 1},
                     concurrency=1,
                     task_num=2,
                     needs=[],
@@ -303,7 +303,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources=["cpu=1"],
+                    resources={"cpu": 1},
                     concurrency=1,
                     task_num=1,
                     needs=["ppl"],
