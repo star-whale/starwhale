@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+import tarfile
 from abc import ABCMeta
 from pathlib import Path
 from collections import defaultdict
@@ -313,22 +314,27 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
-        _history = _manifest.get("history", [])
-        if _history:
-            return _manifest
         _store = self.store
         _om = {}
         if _store.snapshot_workdir.exists():
-            _om = load_yaml(
-                _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
-            )
+            pth = _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+            if pth.exists():
+                _om = load_yaml(pth)
+            else:
+                ignore_error("step_spec not found in model snapshot_workdir")
         elif _store.bundle_path.exists():
-            with TarFS(str(_store.bundle_path)) as tar:
-                with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
-                    _om = yaml.safe_load(f)
+            if tarfile.is_tarfile(_store.bundle_path):
+                with TarFS(str(_store.bundle_path)) as tar:
+                    with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
+                        _om = yaml.safe_load(f)
+            else:
+                ignore_error(
+                    "model bundle_path is not tarfile, step_spec not extracted"
+                )
         else:
             ignore_error("step_spec not found in model")
-        _manifest["step_spec"] = _om
+        if _om:
+            _manifest["step_spec"] = _om
         return _manifest
 
     def history(
