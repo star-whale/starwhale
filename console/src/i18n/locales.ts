@@ -9,6 +9,9 @@ const locales0 = {
     'edit sth': {
         en: 'Edit {{0}}',
     },
+    'delete sth': {
+        en: 'Delete {{0}}',
+    },
     'select sth': {
         en: 'Select {{0}}',
     },

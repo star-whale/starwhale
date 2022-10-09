@@ -98,7 +98,7 @@
     "styletron-react": "^6.0.1",
     "ts-auto-mock": "^3.5.0",
     "tsconfig-paths-webpack-plugin": "^3.5.2",
-    "typescript": "^4.6.4",
+    "typescript": "4.6.4",
     "uuid": "^8.3.2",
     "vite": "^3.0.4",
     "vite-plugin-multi-pages": "^0.0.8",

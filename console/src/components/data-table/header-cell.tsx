@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
@@ -12,6 +11,7 @@ import { SortDirectionsT } from './types'
 import { SORT_DIRECTIONS } from './constants'
 import Button from '../Button'
 import { LocaleContext } from './locales'
+import Checkbox from '../Checkbox'
 
 type HeaderCellPropsT = {
     index: number
