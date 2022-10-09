@@ -107,11 +107,13 @@ const useStyles = createUseStyles({
 export default function DatasetVersionFilePreview({
     datasets,
     fileId,
-    fullscreen = false,
+    isFullscreen = false,
+    setIsFullscreen = () => {},
 }: {
     datasets: DatasetObject[]
     fileId: string
-    fullscreen?: boolean
+    isFullscreen?: boolean
+    setIsFullscreen?: any
 }) {
     const data: any = React.useMemo(() => {
         const row = datasets?.find((v) => v.id === fileId)
@@ -121,7 +123,6 @@ export default function DatasetVersionFilePreview({
 
     const styles = useStyles()
     const [t] = useTranslation()
-    const [isFullscreen, setIsFullscreen] = React.useState(fullscreen)
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
@@ -143,6 +144,8 @@ export default function DatasetVersionFilePreview({
         return <Summary data={data?.summary ?? {}} />
     }, [data, activeKey, setHiddenLabels, hiddenLabels])
 
+    if (!isFullscreen) return <></>
+
     return (
         <div className={isFullscreen ? styles.layoutFullscreen : styles.layoutNormal}>
             {isFullscreen && (
@@ -163,7 +166,7 @@ export default function DatasetVersionFilePreview({
                         role='button'
                         tabIndex={0}
                         className={styles.cardFullscreen}
-                        onClick={() => setIsFullscreen((v) => !v)}
+                        onClick={() => setIsFullscreen((v: boolean) => !v)}
                     >
                         <IconFont type='fullscreen' />
                     </div>
