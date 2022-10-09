@@ -78,6 +78,7 @@ export default function RuntimeVersionSelector({
             overrides={overrides}
             isLoading={runtimeVersionsInfo.isFetching}
             options={options}
+            clearable={false}
             onChange={(params) => {
                 if (!params.option) {
                     return

@@ -12,6 +12,7 @@ import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { TextLink } from '@/components/Link'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -59,7 +60,12 @@ export default function RuntimeVersionListCard() {
                 data={
                     runtimesInfo.data?.list.map((runtime, i) => {
                         return [
-                            runtime.name,
+                            <TextLink
+                                key={runtime.id}
+                                to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
+                            >
+                                {runtime.name}
+                            </TextLink>,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             runtime.owner && <User user={runtime.owner} />,
                             i ? (

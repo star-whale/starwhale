@@ -7,9 +7,10 @@ export interface IFormItemProps extends FieldProps {
     label?: React.ReactNode
     required?: boolean
     style?: React.CSSProperties
+    positive?: ''
 }
 
-export const FormItem = ({ label: label_, required, style, children, ...restProps }: IFormItemProps) => {
+export const FormItem = ({ label: label_, required, style, children, positive, ...restProps }: IFormItemProps) => {
     let label = label_
     if (required) {
         label = <span>{label} *</span>

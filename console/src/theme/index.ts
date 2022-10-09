@@ -1,4 +1,4 @@
-import { Theme } from 'baseui/theme'
+import { Theme, ThemePrimitives } from 'baseui/theme'
 import color from 'color'
 import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
 
@@ -41,7 +41,7 @@ const customPrimaryColors = {
     shadow2: BaseLightTheme.lighting.shadow600,
 }
 
-const primitives = {
+const primitives: Partial<ThemePrimitives> = {
     primaryFontFamily: 'Source Sans Pro',
 }
 

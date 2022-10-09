@@ -179,20 +179,22 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <div style={{ width: '280px' }}>
-                                <RuntimeVersionSelector
-                                    projectId={projectId}
-                                    runtimeId={runtimeId}
-                                    value={runtimeVersionId}
-                                    onChange={(v: string) =>
-                                        history.push(
-                                            `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                page
-                                            )}`
-                                        )
-                                    }
-                                />
-                            </div>
+                            {runtimeVersionId && (
+                                <div style={{ width: '280px' }}>
+                                    <RuntimeVersionSelector
+                                        projectId={projectId}
+                                        runtimeId={runtimeId}
+                                        value={runtimeVersionId}
+                                        onChange={(v: string) =>
+                                            history.push(
+                                                `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                                    page
+                                                )}`
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
                             {runtimeVersionId && (
                                 <Button
                                     size='compact'
