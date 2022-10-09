@@ -4,7 +4,6 @@ import Button from '@/components/Button'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { FiFilter } from 'react-icons/fi'
-import { Checkbox } from 'baseui/checkbox'
 import { Tag } from 'baseui/tag'
 import { MdAddCircle, MdRemoveCircle } from 'react-icons/md'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
@@ -12,6 +11,7 @@ import useEventCallback from '../../hooks/useEventCallback'
 import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
+import Checkbox from '../Checkbox'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 
@@ -62,7 +62,7 @@ export const CategoricalFilter = React.forwardRef<
         (e) => {
             const $categories = categories.map((v) => ({
                 ...v,
-                disable: !e.target.checked,
+                disable: !e.target?.checked,
             }))
             setCategories([...$categories])
         },
@@ -120,20 +120,6 @@ export const CategoricalFilter = React.forwardRef<
                 <Checkbox
                     checked={selectedCategories.length > 0 && selectedCategories.length === categories.length}
                     onChange={handleSelectAll}
-                    overrides={{
-                        Root: {
-                            style: {
-                                alignItems: 'center',
-                            },
-                        },
-                        Checkmark: {
-                            style: {
-                                width: '16px',
-                                height: '16px',
-                            },
-                        },
-                        // Label: { component: HighlightCheckboxLabel, props: { query } },
-                    }}
                 />
                 Filter ({selectedCategories.length})
             </div>
@@ -148,24 +134,7 @@ export const CategoricalFilter = React.forwardRef<
                 {Boolean(categories.length) &&
                     categories.map((category, i) => (
                         <div className={checkboxStyles} key={i}>
-                            <Checkbox
-                                checked={!category.disable}
-                                onChange={() => handleSelectOne(i)}
-                                overrides={{
-                                    Root: {
-                                        style: {
-                                            alignItems: 'center',
-                                        },
-                                    },
-                                    Checkmark: {
-                                        style: {
-                                            width: '16px',
-                                            height: '16px',
-                                        },
-                                    },
-                                    // Label: { component: HighlightCheckboxLabel, props: { query } },
-                                }}
-                            />
+                            <Checkbox checked={!category.disable} onChange={() => handleSelectOne(i)} />
                             <FilterOperateSelector
                                 // @ts-ignore
                                 columns={props.columns}

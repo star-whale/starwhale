@@ -311,3 +311,42 @@ export function parseDecimal(v: number, decimal: number): string {
     if (v.toString().indexOf('.') === -1) return String(v)
     return Number(v).toFixed(decimal)
 }
+
+export function expandBorder(width: string, weight: string, color: string) {
+    return {
+        ...(width
+            ? {
+                  borderTopWidth: width,
+                  borderBottomWidth: width,
+                  borderRightWidth: width,
+                  borderLeftWidth: width,
+              }
+            : {}),
+        ...(color
+            ? {
+                  borderLeftColor: color,
+                  borderRightColor: color,
+                  borderTopColor: color,
+                  borderBottomColor: color,
+              }
+            : {}),
+    }
+}
+
+export function expandBorderRadius(radius: string) {
+    return {
+        borderTopLeftRadius: radius,
+        borderTopRightRadius: radius,
+        borderBottomRightRadius: radius,
+        borderBottomLeftRadius: radius,
+    }
+}
+
+export function expandPadding(top: string, right: string, bottom: string, left: string) {
+    return {
+        paddingTop: top ?? undefined,
+        paddingBottom: top ?? undefined,
+        paddingLeft: top ?? undefined,
+        paddingRight: top ?? undefined,
+    }
+}

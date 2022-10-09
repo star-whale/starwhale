@@ -4,7 +4,6 @@ import { Search } from 'baseui/icon'
 import { useStyletron } from 'baseui'
 import { useHover } from 'react-use'
 import { Drawer } from 'baseui/drawer'
-import { Checkbox } from 'baseui/checkbox'
 import { LabelSmall } from 'baseui/typography'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
@@ -16,7 +15,7 @@ import IconFont from '@/components/IconFont'
 import { DnDContainer } from '../DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
-// import { LocaleContext } from './locales'
+import Checkbox from '../Checkbox'
 
 type PropsT = {
     isInline?: boolean
