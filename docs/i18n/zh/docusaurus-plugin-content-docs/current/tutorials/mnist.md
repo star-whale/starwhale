@@ -66,7 +66,7 @@ make train
 ### 步骤1：构建Starwhale Dataset
 
 ```bash
-# 根据dataset.yaml构建swds格式的数据集
+# 根据dataset.yaml构建swds-bin格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
 swcli dataset info mnist/version/latest
@@ -147,7 +147,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
 
 `mnist/dataset.py`、`mnist/evaluator.py`、`dataset.yaml` 和 `model.yaml` 这四个文件是关键代码和配置。
 
-### 3.2 swds格式的数据集构建
+### 3.2 swds-bin格式的数据集构建
 
 ```python
 from starwhale import GrayscaleImage, SWDSBinBuildExecutor
@@ -176,7 +176,7 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
                 ), {"label": _label}
 ```
 
-dataset.yaml中handler指向 `mnist.dataset:DatasetProcessExecutor`，执行 `swcli dataset build` 命令后会构建swds格式的数据集，该格式是Starwhale提供的一种二进制数据集格式。上例中对原始MNIST文件进行读取然后通过yield方式输出data和annotations字段。data使用了 `starwhale.GrayscaleImage` 类型，是专门针对灰度图提供的一种数据类型，Cloud Instance的Web Dataset Viewer能自动展示该类型数据。
+dataset.yaml中handler指向 `mnist.dataset:DatasetProcessExecutor`，执行 `swcli dataset build` 命令后会构建swds-bin格式的数据集，该格式是Starwhale提供的一种二进制数据集格式。上例中对原始MNIST文件进行读取然后通过yield方式输出data和annotations字段。data使用了 `starwhale.GrayscaleImage` 类型，是专门针对灰度图提供的一种数据类型，Cloud Instance的Web Dataset Viewer能自动展示该类型数据。
 
 ![mnist-viewer.gif](../img/examples/mnist-viewer.gif)
 

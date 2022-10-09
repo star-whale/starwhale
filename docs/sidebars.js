@@ -11,7 +11,10 @@ module.exports = {
                 "tutorials/pfp",
                 "tutorials/nmt"
             ],
-            "Fundamentals": ["fundamentals/concepts"],
+            "Fundamentals": [
+                "fundamentals/concepts",
+                "fundamentals/arch"
+            ],
             "Guides": [
                 "guides/dataset",
                 "guides/runtime",

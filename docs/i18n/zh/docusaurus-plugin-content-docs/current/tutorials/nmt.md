@@ -70,7 +70,7 @@ make train
 ### 步骤1：构建Starwhale Dataset
 
 ```bash
-# 根据dataset.yaml构建swds格式的数据集
+# 根据dataset.yaml构建swds-bin格式in格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
 swcli dataset info nmt-test/version/latest

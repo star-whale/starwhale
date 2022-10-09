@@ -68,7 +68,7 @@ make train
 ```bash
 # 如果已经激活该runtime环境，则忽略本行命令
 swcli runtime activate --uri pytorch/version/latest
-# 根据dataset.yaml构建swds格式的数据集
+# 根据dataset.yaml构建swds-bin格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
 swcli dataset info pfp/version/latest

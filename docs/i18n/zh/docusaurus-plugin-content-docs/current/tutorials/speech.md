@@ -6,7 +6,7 @@ title: Speech Commands 数据集的多分类任务模型评测
 
 从该例中，我们能实践如下Starwhale功能：
 
-- 如何构建swds格式的Starwhale Dataset。
+- 如何构建swds-bin格式in格式的Starwhale Dataset。
 - 如何构建存储在第三方Minio存储上的remote-link格式的Starwhale Dataset。
 - 如何使用TorchAudio完成音频数据的多分类任务。
 - 如何使用已经构建好的Starwhale Runtime作为Python运行环境。
@@ -67,14 +67,14 @@ make train
 ### 步骤1：构建Starwhale Dataset
 
 ```bash
-# 根据dataset.yaml构建swds格式的数据集
+# 根据dataset.yaml构建swds-bin格式的数据集
 swcli dataset build . --runtime pytorch/version/latest
 # 查看最新构建的数据集详情
 swcli dataset info speech_commands_validation/version/latest
 ```
 
 - 上面的`build`命令在`starwhale/example/speech_command`中执行，也可以在其他目录中执行，但要合理设置 `swcli dataset build`命令的`WORKDIR`参数。
-- 示例中dataset.yaml中`handler`是swds格式数据集的构建，如果想构建remote-link的数据集，可以修改`handler:LinkRawDatasetBuildExecutor`。目前可以简单的在dataset.yaml中调整注释，后续Starwhale会支持多handler数据集的同时构建。
+- 示例中dataset.yaml中`handler`是swds-bin格式数据集的构建，如果想构建remote-link的数据集，可以修改`handler:LinkRawDatasetBuildExecutor`。目前可以简单的在dataset.yaml中调整注释，后续Starwhale会支持多handler数据集的同时构建。
 - 如果执行`swcli dataset build`命令时，是在已经激活Pytorch Runtime的Shell环境中进行的，则可以忽略 `--runtime pytorch/version/latest` 参数。
 
 ![dataset-build.png](../img/examples/sc_dataset_build.png)
@@ -178,7 +178,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
   - `attr.volume_size`：当构建swds和user raw格式的数据集时，单个数据文件的最大尺寸，超过该尺寸就会被分割，能够避免单个数据文件过大。
   - 目前dataset.yaml对于数据集构建是必须的。最简单的dataset.yaml只需要包含name和handler两个字段，后续Starwhale也会考虑进一步优化dataset.yaml表示，甚至在某些场景下省略dataset.yaml。
 
-- swds格式的数据集构建代码
+- swds-bin格式的数据集构建代码
 
     ```python
     import typing as t
@@ -190,7 +190,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
     )
     validation_ds_paths = [dataset_dir / "validation_list.txt"]
 
-    class SWDSBuildExecutor(BuildExecutor):      #继承BuildExecutor类，构建swds格式的数据集。
+    class SWDSBuildExecutor(BuildExecutor):      #继承BuildExecutor类，构建swds-bin格式的数据集。
         def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:  # 实现iter_item方法，返回一个可迭代对象。
             for path in validation_ds_paths:
                 with path.open() as f:
@@ -213,7 +213,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
                         yield data, annotations
     ```
 
-  - 继承`BuildExecutor`类可以构建swds格式的Dataset。swds格式是Starwhale Dataset提供的一种二进制格式，会将原始数据变换后生成，包含元数据、类型信息等，能够支持分片、索引和高效加载。
+  - 继承`BuildExecutor`类可以构建swds-bin格式的Dataset。swds-bin格式是Starwhale Dataset提供的一种二进制格式，会将原始数据变换后生成，包含元数据、类型信息等，能够支持分片、索引和高效加载。
   - 构建数据需要实现`iter_item`方法，该方法返回可迭代的数据，包括data和annotations。
     - data是原始数据，可以使用Starwhale预置的类型来表示，这样便于做Dataset Viewer等。本例子中定义data为Audio类型，当dataset copy到cloud instance后，就能在web ui中可视化整个dataset，包括声音片段的播放等。 ![dataset_viewer.png](../img/examples/sc_dataset_viewer.png)
     - annotations是若干label的描述，用字典表示。

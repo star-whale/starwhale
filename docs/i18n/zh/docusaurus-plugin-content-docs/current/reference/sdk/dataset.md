@@ -4,7 +4,7 @@ title: 数据集构建和加载
 
 ## starwhale.SWDSBinBuildExecutor
 
-提供swds格式的数据集构建类，需要用户实现 `iter_item` 函数，返回一个可迭代的对象，包含data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/builder.py#L138)。
+提供swds-bin格式的数据集构建类，需要用户实现 `iter_item` 函数，返回一个可迭代的对象，包含data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/builder.py#L138)。
 
 ```python
 class DatasetProcessExecutor(SWDSBinBuildExecutor):
@@ -12,7 +12,7 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
         ...
 ```
 
-`iter_item` 返回一个可迭代的对象，通常写法是for循环中，yield data和annotations。对于swds格式的数据集，data一般为 `Audio`，`Image`，`Text`、`GrayscaleImage`和`Binary`。也接受用户yield bytes类型的data，会自动转化成 `Binary` 类型。以[MNIST](https://github.com/star-whale/starwhale/tree/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/example/mnist)为例，构建swds的数据集基本代码如下：
+`iter_item` 返回一个可迭代的对象，通常写法是for循环中，yield data和annotations。对于swds-bin格式的数据集，data一般为 `Audio`，`Image`，`Text`、`GrayscaleImage`和`Binary`。也接受用户yield bytes类型的data，会自动转化成 `Binary` 类型。以[MNIST](https://github.com/star-whale/starwhale/tree/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/example/mnist)为例，构建swds的数据集基本代码如下：
 
 ```python
 import struct
@@ -130,11 +130,11 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
 
 ## starwhale.BuildExecutor
 
-`SWDSBinBuildExecutor` 类的别称，同为swds格式的数据集构建类。
+`SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
 
 ## starwhale.get_data_loader
 
-获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/loader.py)。该函数返回的loader有两种:一种是表示swds格式的 `SWDSBinDataLoader`, 另一种是表示remote-link或user-raw格式的 `UserRawDataLoader`。两种loader类型目前都能处理在LocalFS和S3协议的对象存储上数据。
+获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/loader.py)。该函数返回的loader有两种:一种是表示swds-bin格式的 `SWDSBinDataLoader`, 另一种是表示remote-link或user-raw格式的 `UserRawDataLoader`。两种loader类型目前都能处理在LocalFS和S3协议的对象存储上数据。
 
 ```python
 def get_data_loader(
