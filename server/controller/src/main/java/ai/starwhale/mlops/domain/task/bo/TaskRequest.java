@@ -18,6 +18,8 @@ package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import java.util.List;
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,5 +33,5 @@ public class TaskRequest {
 
     Integer index;
     Integer total;
-    List<RuntimeResource> runtimeResources;
+    Map<String, Float> runtimeResources;
 }
