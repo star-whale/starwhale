@@ -6,21 +6,33 @@ if [[ -n ${DEBUG} ]]; then
     set -x
 fi
 
+work_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+lock_file="$work_dir/lock"
+function rm_lock() {
+    rm "$lock_file"
+}
+if test -f "$lock_file"; then
+    echo "lock exists. exit"
+    exit 0
+else
+  touch "$lock_file"
+  trap rm_lock EXIT
+fi
+
 if [[ -z ${GH_TOKEN} ]]; then
   echo "GH_TOKEN not set"
   exit 1
 fi
 
-#export remote_registry="ghcr.io"
-export remote_registry=${remote_registry:="docker.io"}
-#export source_repo_name="star-whale"
+
+export source_registry=${source_registry:="docker.io"}
 export source_repo_name=${source_repo_name:="starwhaleai"}
-#export local_registry="homepage-ca.intra.starwhale.ai:5000"
-export local_registry=${local_registry:="homepage-bj.intra.starwhale.ai:5000"}
-local_repo_name1=star-whale
-local_repo_name2=starwhaleai
+export target_registry=${target_registry:="homepage-bj.intra.starwhale.ai:5000"}
+target_repo_name1=star-whale
+target_repo_name2=starwhaleai
 
 declare -i page=1
+declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
 
 while true
 do
@@ -35,74 +47,30 @@ do
     export release_version=$(echo "$release" | jq -r '.[0].tag_name')
     #trip v
     release_version=${release_version:1}
-    echo "real release $release_version";
+    echo "real release found $release_version";
     break
   fi
 done
-if last_version=$(cat last_version) ; then last_version=""; fi
+last_version_file="$work_dir/last_version"
+if last_version=$(cat last_version_file) ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
 else
-  sudo docker pull "$remote_registry"/"$source_repo_name"/server:"$release_version"
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3-cudnn8
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4-cudnn8
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5-cudnn8
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6-cudnn8
-  sudo docker pull "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.7
+  sudo docker pull "$source_registry"/"$source_repo_name"/server:"$release_version"
+  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:"$release_version"
+  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
+  sudo docker push "$target_registry"/"$target_repo_name1"/server:"$release_version"
+  sudo docker push "$target_registry"/"$target_repo_name2"/server:"$release_version"
 
-  sudo docker tag "$remote_registry"/"$source_repo_name"/server:"$release_version" "$local_registry"/"$local_repo_name1"/server:"$release_version"
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version" "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.3
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3-cudnn8 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.3-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.4
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4-cudnn8 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.4-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.5
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5-cudnn8 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.5-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.6
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6-cudnn8 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.6-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.7 "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.7
+  for suf in "${starwhale_image_suffix[@]}"
+    do
+      sudo docker pull "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf"
+      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
+      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+      sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
+      sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+    done
 
-  sudo docker tag "$remote_registry"/"$source_repo_name"/server:"$release_version" "$local_registry"/"$local_repo_name2"/server:"$release_version"
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version" "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.3
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.3-cudnn8 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.3-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.4
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.4-cudnn8 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.4-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.5
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.5-cudnn8 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.5-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.6
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.6-cudnn8 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.6-cudnn8
-  sudo docker tag "$remote_registry"/"$source_repo_name"/starwhale:"$release_version"-cuda11.7 "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.7
-
-  sudo docker push "$local_registry"/"$local_repo_name1"/server:"$release_version"
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.3
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.3-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.4
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.4-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.5
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.5-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.6
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.6-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name1"/starwhale:"$release_version"-cuda11.7
-
-  sudo docker push "$local_registry"/"$local_repo_name2"/server:"$release_version"
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.3
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.3-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.4
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.4-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.5
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.5-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.6
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.6-cudnn8
-  sudo docker push "$local_registry"/"$local_repo_name2"/starwhale:"$release_version"-cuda11.7
-
-  echo "$release_version" > last_version
+  echo "$release_version" > "$last_version_file"
 
 fi
