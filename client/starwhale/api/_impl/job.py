@@ -6,7 +6,7 @@ import yaml
 from loguru import logger
 
 from starwhale.consts import (
-    thread_local,
+    context_holder,
     DEFAULT_EVALUATION_JOB_NAME,
     DEFAULT_EVALUATION_RESOURCE,
 )
@@ -49,7 +49,7 @@ def step(
 def pass_context(func: t.Any) -> t.Any:
     @wraps(func)
     def wrap_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
-        kwargs["context"] = thread_local.context
+        kwargs["context"] = context_holder.context
         return func(*args, **kwargs)
 
     return wrap_func

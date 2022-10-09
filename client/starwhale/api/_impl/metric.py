@@ -14,7 +14,7 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
-from starwhale.consts import thread_local
+from starwhale.consts import context_holder
 from starwhale.utils.flatten import do_flatten_dict
 
 from .wrapper import Evaluation
@@ -37,7 +37,7 @@ def multi_classification(
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Dict[str, t.Any]:
             y_pr: t.Any = None
 
-            context = thread_local.context
+            context = context_holder.context
             evaluation = Evaluation(eval_id=context.version, project=context.project)
             _rt = func(*args, **kwargs)
             if show_roc_auc:

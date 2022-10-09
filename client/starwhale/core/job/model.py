@@ -10,7 +10,7 @@ from typing_extensions import Protocol
 
 from starwhale import Context
 from starwhale.utils import load_yaml
-from starwhale.consts import thread_local
+from starwhale.consts import context_holder
 from starwhale.core.job import dag
 from starwhale.utils.load import (
     load_cls,
@@ -155,7 +155,7 @@ class TaskExecutor:
 
         try:
             self.status = STATUS.RUNNING
-            thread_local.context = self.context
+            context_holder.context = self.context
             # instance method
             if not self.cls_name:
                 func = get_func_from_module(_module, self.func)

@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale import Context, get_data_loader, PipelineHandler, UserRawDataLoader
-from starwhale.consts import thread_local, DEFAULT_PROJECT
+from starwhale.consts import context_holder, DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import (
@@ -136,7 +136,7 @@ class TestModelPipelineHandler(TestCase):
             step="cmp",
             index=0,
         )
-        thread_local.context = context
+        context_holder.context = context
         with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_cmp()
 
@@ -200,7 +200,7 @@ class TestModelPipelineHandler(TestCase):
             step="ppl",
             index=0,
         )
-        thread_local.context = context
+        context_holder.context = context
         # mock
         with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_ppl()
@@ -279,7 +279,7 @@ class TestModelPipelineHandler(TestCase):
             step="ppl",
             index=0,
         )
-        thread_local.context = context
+        context_holder.context = context
         # mock
         with Dummy() as _handler:
             _handler._starwhale_internal_run_ppl()
@@ -292,6 +292,6 @@ class TestModelPipelineHandler(TestCase):
             step="cmp",
             index=0,
         )
-        thread_local.context = context
+        context_holder.context = context
         with Dummy() as _handler:
             _handler._starwhale_internal_run_cmp()

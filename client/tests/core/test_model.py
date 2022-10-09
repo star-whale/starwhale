@@ -10,7 +10,7 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     HTTPMethod,
-    thread_local,
+    context_holder,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -287,5 +287,5 @@ class StandaloneModelTestCase(TestCase):
             version="rwerwe9",
             project="self",
         )
-        thread_local.context = context
+        context_holder.context = context
         default_handler._invoke(context, "some")

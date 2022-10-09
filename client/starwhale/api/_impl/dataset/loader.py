@@ -157,7 +157,7 @@ def get_data_loader(
     return _cls(dataset_uri, start, end, logger or _logger)
 
 
-def data_loader(
+def get_data_loader_by_sharding(
     dataset_uri: str = "",
     sharding_index: int = 0,
     sharding_num: int = 1,

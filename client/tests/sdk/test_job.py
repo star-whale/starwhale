@@ -3,12 +3,12 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale import Context, pass_context
-from starwhale.consts import thread_local
+from starwhale.consts import context_holder
 
 
 class JobTestCase(TestCase):
     def setUp(self) -> None:
-        thread_local.context = Context(
+        context_holder.context = Context(
             workdir=Path(), step="self_test", version="qwertyui", project="self"
         )
 
