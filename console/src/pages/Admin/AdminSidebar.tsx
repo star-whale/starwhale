@@ -13,6 +13,11 @@ export default function AdminSidebar({ style }: IComposedSidebarProps) {
                 path: '/admin/users',
                 icon: <IconFont type='user' />,
             },
+            {
+                title: t('System Settings'),
+                path: '/admin/settings',
+                icon: <IconFont type='setting' />,
+            },
         ]
     }, [t])
 

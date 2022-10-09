@@ -50,11 +50,10 @@ public class TaskWatcherForScheduleTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.READY)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
-        verify(taskScheduler).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler).schedule(List.of(task));
         verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
     }
 
@@ -68,13 +67,13 @@ public class TaskWatcherForScheduleTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.PAUSED)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskScheduler, times(0)).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler, times(0)).schedule(List.of(task));
         verify(taskScheduler, times(2)).stopSchedule(List.of(task.getId()));
     }
 
@@ -88,13 +87,13 @@ public class TaskWatcherForScheduleTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.RUNNING)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.SUCCESS);
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
-        verify(taskScheduler, times(0)).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler, times(0)).schedule(List.of(task));
         verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
     }
 }

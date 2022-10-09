@@ -8,11 +8,9 @@ export default function ZoomWrapper({ children, isTools }: any) {
             wheel={{ disabled: false }}
             centerOnInit
             centerZoomedOut
-            limitToBounds={false}
+            limitToBounds
             maxScale={10}
             minScale={0.5}
-            // initialPositionX={200}
-            // initialPositionY={100}
         >
             {({ zoomIn, zoomOut, resetTransform, centerView }) => (
                 <>

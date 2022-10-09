@@ -345,8 +345,10 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        _did, _dcnt = cls.parse_device(kw["resource"])
-
+        _step_spec = kw.get("step_spec")
+        if _step_spec:
+            with open(_step_spec) as f:
+                _step_spec = f.read()
         crm = CloudRequestMixed()
         # TODO: use argument for uri
         r = crm.do_http_request(
@@ -358,8 +360,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
                     "modelVersionUrl": model_uri,
                     "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
                     "runtimeVersionUrl": runtime_uri,
-                    "device": _did,
-                    "deviceAmount": _dcnt,
+                    "stepSpecOverWrites": _step_spec,
                 }
             ),
         )

@@ -61,6 +61,7 @@ import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -127,8 +128,7 @@ public class RuntimeService {
     private VersionAliasConvertor versionAliasConvertor;
 
     @Resource
-    @Qualifier("yamlMapper")
-    private ObjectMapper yamlMapper;
+    private YAMLMapper yamlMapper;
 
     private BundleManager bundleManager() {
         return new BundleManager(idConvertor, versionAliasConvertor, projectManager, runtimeManager, runtimeManager,

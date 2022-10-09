@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+import tarfile
 from abc import ABCMeta
 from pathlib import Path
 from collections import defaultdict
@@ -10,6 +11,7 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from fs.tarfs import TarFS
 
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
@@ -205,6 +207,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         job_name: str = "default",
         step_name: str = "",
         task_index: int = 0,
+        task_num: int = 0,
         base_info: t.Dict[str, t.Any] = {},
     ) -> None:
         # init manifest
@@ -213,6 +216,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             "status": STATUS.START,
             "step": step_name,
             "task_index": task_index,
+            "task_num": task_num,
         }
         # load model config by yaml
         _model_config = cls.load_model_config(workdir / model_yaml_name)
@@ -267,7 +271,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             elif task_index < 0:
                 _step_results = [_scheduler.schedule_single_step(step_name)]
             else:
-                _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
+                _step_results = [
+                    _scheduler.schedule_single_task(step_name, task_index, task_num)
+                ]
 
             logger.debug(f"job execute info:{_step_results}")
             _status = STATUS.SUCCESS
@@ -307,7 +313,29 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
 
     def info(self) -> t.Dict[str, t.Any]:
-        return self._get_bundle_info()
+        _manifest = self._get_bundle_info()
+        _store = self.store
+        _om = {}
+        if _store.snapshot_workdir.exists():
+            pth = _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+            if pth.exists():
+                _om = load_yaml(pth)
+            else:
+                ignore_error("step_spec not found in model snapshot_workdir")
+        elif _store.bundle_path.exists():
+            if tarfile.is_tarfile(_store.bundle_path):
+                with TarFS(str(_store.bundle_path)) as tar:
+                    with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
+                        _om = yaml.safe_load(f)
+            else:
+                ignore_error(
+                    "model bundle_path is not tarfile, step_spec not extracted"
+                )
+        else:
+            ignore_error("step_spec not found in model")
+        if _om:
+            _manifest["step_spec"] = _om
+        return _manifest
 
     def history(
         self,

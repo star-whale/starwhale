@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
-import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -27,10 +27,9 @@ public class EnvService {
 
     public List<DeviceVo> listDevices() {
         List<DeviceVo> list = new ArrayList<>();
-        for (Device.Clazz cl : Device.Clazz.values()) {
+        for (String device : ResourceOverwriteSpec.SUPPORTED_DEVICES) {
             list.add(DeviceVo.builder()
-                    .id(String.valueOf(cl.getValue()))
-                    .name(cl.name())
+                    .name(device)
                     .build());
         }
         return list;

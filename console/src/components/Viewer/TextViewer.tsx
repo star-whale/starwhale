@@ -40,7 +40,9 @@ export default function TextViewer({ isZoom = false, data }: IImageViewerProps) 
         return (
             <div className={classNames(styles.wrapper, 'fullsize')}>
                 <StatefulTooltip content={() => <p style={{ maxWidth: '300px' }}>{text ?? ''}</p>} placement='bottom'>
-                    <p className='text-ellipsis'>{text}</p>
+                    <p className='text-ellipsis' style={{ lineHeight: '1.5' }}>
+                        {text}
+                    </p>
                 </StatefulTooltip>
             </div>
         )

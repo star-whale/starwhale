@@ -9,6 +9,9 @@ const locales0 = {
     'edit sth': {
         en: 'Edit {{0}}',
     },
+    'delete sth': {
+        en: 'Delete {{0}}',
+    },
     'select sth': {
         en: 'Select {{0}}',
     },
@@ -672,6 +675,15 @@ const locales0 = {
     },
     'wrong yaml syntax': {
         en: 'wrong yaml syntax',
+    },
+    'System Settings': {
+        en: 'System Settings',
+    },
+    'Update': {
+        en: 'Update',
+    },
+    'Reset': {
+        en: 'Reset',
     },
 }
 
