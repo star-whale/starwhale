@@ -25,12 +25,11 @@ import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +37,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SystemSettingService implements CommandLineRunner {
 
-    private final ObjectMapper yamlMapper;
+    private final YAMLMapper yamlMapper;
 
     protected final String path;
 
@@ -49,7 +48,7 @@ public class SystemSettingService implements CommandLineRunner {
 
     static final String PATH_SETTING = "controller.yaml";
 
-    public SystemSettingService(@Qualifier("yamlMapper") ObjectMapper yamlMapper,
+    public SystemSettingService(YAMLMapper yamlMapper,
             StoragePathCoordinator storagePathCoordinator,
             StorageAccessService storageAccessService) {
         this.yamlMapper = yamlMapper;
