@@ -312,7 +312,7 @@ export function parseDecimal(v: number, decimal: number): string {
     return Number(v).toFixed(decimal)
 }
 
-export function expandBorder(width: string, weight: string, color: string) {
+export function expandBorder(width?: string, weight?: string, color?: string) {
     return {
         ...(width
             ? {
@@ -320,6 +320,14 @@ export function expandBorder(width: string, weight: string, color: string) {
                   borderBottomWidth: width,
                   borderRightWidth: width,
                   borderLeftWidth: width,
+              }
+            : {}),
+        ...(weight
+            ? {
+                  borderLeftStyle: weight,
+                  borderRightStyle: weight,
+                  borderTopStyle: weight,
+                  borderBottomStyle: weight,
               }
             : {}),
         ...(color
@@ -342,6 +350,7 @@ export function expandBorderRadius(radius: string) {
     }
 }
 
+// eslint-disable-next-line  @typescript-eslint/no-unused-vars
 export function expandPadding(top: string, right: string, bottom: string, left: string) {
     return {
         paddingTop: top ?? undefined,

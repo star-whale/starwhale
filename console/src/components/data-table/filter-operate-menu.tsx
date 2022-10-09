@@ -6,6 +6,7 @@ import { useStyletron } from 'baseui'
 import { FiFilter } from 'react-icons/fi'
 import { Tag } from 'baseui/tag'
 import { MdAddCircle, MdRemoveCircle } from 'react-icons/md'
+import { expandBorder } from '@/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
 import useEventCallback from '../../hooks/useEventCallback'
 import type { ColumnT } from './types'
@@ -287,14 +288,11 @@ function FilterOperateMenu(props: PropsT) {
                     overrides={{
                         BaseButton: {
                             style: {
-                                background: '',
-                                borderTop: '1px solid #CFD7E6',
-                                borderBottom: '1px solid #CFD7E6',
-                                borderLeft: '1px solid #CFD7E6',
-                                borderRight: '1px solid #CFD7E6',
+                                backgroundColor: 'transparent',
                                 paddingTop: '6px',
                                 paddingBottom: '6px',
                                 lineHeight: '20px',
+                                ...expandBorder('1px', 'solid', '#CFD7E6'),
                             },
                         },
                     }}
@@ -312,12 +310,9 @@ function FilterOperateMenu(props: PropsT) {
                                             marginLeft: 0,
                                             marginRight: 0,
                                             height: '20px',
-                                            background: ' #EEF1F6',
+                                            backgroundColor: ' #EEF1F6',
                                             color: '#2B65D9',
-                                            borderTop: 0,
-                                            borderBottom: 0,
-                                            borderLeft: 0,
-                                            borderRight: 0,
+                                            ...expandBorder('0px'),
                                         },
                                     },
                                 }}

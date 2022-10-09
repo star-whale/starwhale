@@ -12,6 +12,7 @@ import { AiOutlinePushpin } from 'react-icons/ai'
 import { RiDeleteBin6Line } from 'react-icons/ri'
 import { useDrawer } from '@/hooks/useDrawer'
 import IconFont from '@/components/IconFont'
+import { expandBorderRadius } from '@/utils'
 import { DnDContainer } from '../DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
@@ -107,7 +108,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                                 'paddingRight': '7px',
                                                 'color': pined ? 'rgba(2,16,43,0.80)' : 'rgba(2,16,43,0.20)',
                                                 ':hover': {
-                                                    background: 'transparent',
+                                                    backgroundColor: 'transparent',
                                                     color: pined ? '#02102B' : 'rgba(2,16,43,0.50)',
                                                 },
                                             },
@@ -211,11 +212,11 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                             },
                             DrawerContainer: {
                                 style: {
-                                    borderRadius: '0',
                                     boxSizing: 'border-box',
                                     padding: '0px 0 10px',
                                     boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
                                     margin: 0,
+                                    ...expandBorderRadius('0'),
                                 },
                             },
                             DrawerBody: {

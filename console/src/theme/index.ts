@@ -1,4 +1,4 @@
-import { Theme, ThemePrimitives, ThemePrimitives } from 'baseui/theme'
+import { Theme, ThemePrimitives } from 'baseui/theme'
 import color from 'color'
 import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
 

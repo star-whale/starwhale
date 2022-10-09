@@ -15,9 +15,9 @@ import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
 import { DatasetObject } from '@/domain/dataset/sdk'
+import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
-import { useSearchParam } from 'react-use'
 
 const useCardStyles = createUseStyles({
     wrapper: {

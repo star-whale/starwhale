@@ -9,7 +9,7 @@ export interface ICheckBoxProps extends CheckboxProps {
 
 /* eslint-disable react/jsx-props-no-spreading */
 export default function Checkbox({ size = 16, children, ...props }: ICheckBoxProps) {
-    let overrides = mergeOverrides(
+    const overrides = mergeOverrides(
         {
             Root: {
                 style: {
@@ -17,7 +17,7 @@ export default function Checkbox({ size = 16, children, ...props }: ICheckBoxPro
                 },
             },
             Checkmark: {
-                style: ({ $checked, ...args }: any) => {
+                style: ({ $checked }: any) => {
                     return {
                         'width': `${size}px`,
                         'height': `${size}px`,

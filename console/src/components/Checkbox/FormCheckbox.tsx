@@ -1,6 +1,6 @@
 import React from 'react'
 import { CheckboxProps } from 'baseui/checkbox'
-import Checkbox from '../Checkbox'
+import Checkbox from './Checkbox'
 
 export interface ICheckBoxProps extends Omit<CheckboxProps, 'value' | 'onChange'> {
     value?: boolean
