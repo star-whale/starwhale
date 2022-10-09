@@ -13,7 +13,6 @@ from starwhale.api.dataset import (
     ClassLabel,
     S3LinkAuth,
     BoundingBox,
-    get_data_loader_by_sharding,
     BuildExecutor,
     GrayscaleImage,
     get_data_loader,
@@ -24,6 +23,7 @@ from starwhale.api.dataset import (
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
+    get_data_loader_by_sharding,
 )
 from starwhale.api.evaluation import Evaluation
 

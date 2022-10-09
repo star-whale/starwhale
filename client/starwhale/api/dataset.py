@@ -9,7 +9,6 @@ from ._impl.dataset import (
     ClassLabel,
     S3LinkAuth,
     BoundingBox,
-    get_data_loader_by_sharding,
     BuildExecutor,
     GrayscaleImage,
     get_data_loader,
@@ -20,6 +19,7 @@ from ._impl.dataset import (
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
+    get_data_loader_by_sharding,
 )
 
 # TODO: add dataset build/push/list/info api

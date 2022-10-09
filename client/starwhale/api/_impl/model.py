@@ -13,7 +13,7 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str
-from starwhale.consts import context_holder, CURRENT_FNAME
+from starwhale.consts import CURRENT_FNAME, context_holder
 from starwhale.api.job import Context
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
