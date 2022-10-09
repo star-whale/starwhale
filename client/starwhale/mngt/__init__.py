@@ -12,8 +12,10 @@ from starwhale.utils import console
 from starwhale.consts import (
     RECOVER_DIRNAME,
     SW_TMP_DIR_NAME,
+    DATA_STORE_DIRNAME,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
+    OBJECT_STORE_DIRNAME,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import empty_dir
@@ -27,7 +29,12 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
 
     for project_dir in sw.rootdir.iterdir():
         project_name = project_dir.name
-        if project_name in (RECOVER_DIRNAME, SW_TMP_DIR_NAME):
+        if project_name in (
+            RECOVER_DIRNAME,
+            SW_TMP_DIR_NAME,
+            OBJECT_STORE_DIRNAME,
+            DATA_STORE_DIRNAME,
+        ):
             continue
 
         if not yes and not click.confirm(

@@ -2,6 +2,8 @@ import typing as t
 
 import click
 
+from starwhale.consts.env import SWEnv
+
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
@@ -38,15 +40,26 @@ def _list(
 
 
 @eval_job_cmd.command("run", help="Run job")
-@click.argument("project", default="")
-@click.option("--version", default=None, help="Evaluation job version")
+@click.option(
+    "-p",
+    "--project",
+    envvar=SWEnv.project,
+    default="",
+    help=f"project name, env is {SWEnv.project}",
+)
+@click.option(
+    "--version",
+    envvar=SWEnv.eval_version,
+    default=None,
+    help=f"Evaluation job version, env is {SWEnv.eval_version}",
+)
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
 # TODO:support multi dataset
 @click.option(
     "--dataset",
     required=True,
-    # multiple=True,
-    help="dataset uri, one or more",
+    envvar=SWEnv.dataset_uri,
+    help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--name", default="default", help="job name")
