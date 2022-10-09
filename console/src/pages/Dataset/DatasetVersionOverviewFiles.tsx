@@ -338,7 +338,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, tables.data, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
+    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
 
     return (
         <div className={styles.wrapper}>
