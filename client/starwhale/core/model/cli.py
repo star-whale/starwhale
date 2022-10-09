@@ -164,7 +164,7 @@ def _eval(
     dataset: str,
     step: str,
     task_index: int,
-    task_num: int,
+    override_task_num: int,
     runtime: str,
 ) -> None:
     """
@@ -180,6 +180,6 @@ def _eval(
         runtime_uri=runtime,
         step=step,
         task_index=task_index,
-        task_num=task_num,
+        task_num=override_task_num,
         dataset_uris=[dataset],
     )
