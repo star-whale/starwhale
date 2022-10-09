@@ -52,7 +52,7 @@ do
   fi
 done
 last_version_file="$work_dir/last_version"
-if last_version=$(cat last_version_file) ; then echo "last_version is $last_version"; fi
+if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
 else
