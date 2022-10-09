@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.domain.job;
-
-import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
-import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.stereotype.Service;
-
-@Service
-public class EnvService {
-
-    public List<DeviceVo> listDevices() {
-        List<DeviceVo> list = new ArrayList<>();
-        for (String device : ResourceOverwriteSpec.SUPPORTED_DEVICES) {
-            list.add(DeviceVo.builder()
-                    .name(device)
-                    .build());
-        }
-        return list;
-    }
-}
+alter table job_info
+    add step_spec text after result_output_path;
+ALTER TABLE job_info DROP COLUMN device_type;
+ALTER TABLE job_info DROP COLUMN device_amount;

@@ -65,10 +65,10 @@ def _list(
 @click.option("--name", default="default", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
-    "--resource",
-    default="cpu:1",
+    "--step-spec",
+    default="",
     type=str,
-    help="[ONLY Cloud]resource, fmt is resource [name]:[cnt], such as cpu:1, gpu:2",
+    help="[Cloud_ONLY] A file contains the specification for steps of the job",
 )
 @click.option(
     "--use-docker",
@@ -86,7 +86,7 @@ def _run(
     runtime: str,
     name: str,
     desc: str,
-    resource: str,
+    step_spec: str,
     use_docker: bool,
     gencmd: bool,
     step: str,
@@ -100,7 +100,7 @@ def _run(
         runtime_uri=runtime,
         name=name,
         desc=desc,
-        resource=resource,
+        step_spec=step_spec,
         gencmd=gencmd,
         use_docker=use_docker,
         step=step,

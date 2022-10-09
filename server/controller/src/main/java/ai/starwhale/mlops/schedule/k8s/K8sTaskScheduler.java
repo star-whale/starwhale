@@ -21,7 +21,6 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -98,8 +97,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @Override
-    public void schedule(Collection<Task> tasks,
-            Clazz deviceClass) {
+    public void schedule(Collection<Task> tasks) {
         tasks.parallelStream().forEach(this::deployTaskToK8s);
     }
 
@@ -161,14 +159,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
-        JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-        if (null != jobRuntime.getDeviceClass() && null != jobRuntime.getDeviceAmount()) {
-            return new ResourceOverwriteSpec(
-                    jobRuntime.getDeviceClass(),
-                    jobRuntime.getDeviceAmount());
-        }
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
-        runtimeResources.forEach(runtimeResource -> runtimeResource.setNum(runtimeResource.getNum() * 1000));
         if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }
@@ -188,6 +179,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET, instanceUri,
                 swJob.getProject().getName(), swDataSet.getName(), swDataSet.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
+        coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
@@ -199,6 +191,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
+        coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
+        coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
+        coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
         return coreContainerEnvs;
     }
 

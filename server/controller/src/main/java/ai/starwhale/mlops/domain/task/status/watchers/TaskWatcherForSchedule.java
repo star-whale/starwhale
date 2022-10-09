@@ -61,7 +61,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         if (task.getStatus() == TaskStatus.READY) {
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
-            taskScheduler.schedule(List.of(task), task.getStep().getJob().getJobRuntime().getDeviceClass());
+            taskScheduler.schedule(List.of(task));
         } else if (task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())) {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(),
                     task.getId(), task.getStatus());

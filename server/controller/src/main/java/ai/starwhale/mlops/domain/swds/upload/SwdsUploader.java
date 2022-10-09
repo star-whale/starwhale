@@ -45,6 +45,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -86,7 +87,7 @@ public class SwdsUploader {
      */
     static final String FORMATTER_STORAGE_PATH = "%s/%s";
 
-    final ObjectMapper yamlMapper;
+    final YAMLMapper yamlMapper;
 
     final HotJobHolder jobHolder;
     final ProjectManager projectManager;
@@ -101,7 +102,7 @@ public class SwdsUploader {
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SwDatasetMapper swdsMapper,
             SwDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
             StorageAccessService storageAccessService, UserService userService,
-            @Qualifier("yamlMapper") ObjectMapper yamlMapper,
+            YAMLMapper yamlMapper,
             HotJobHolder jobHolder,
             ProjectManager projectManager, DataStoreTableNameHelper dataStoreTableNameHelper,
             IndexWriter indexWriter) {

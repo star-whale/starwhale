@@ -64,10 +64,6 @@ public class JobEntity extends BaseEntity {
 
     private Long runtimeVersionId;
 
-    private Integer deviceType;
-
-    private Integer deviceAmount;
-
     private String resultOutputPath;
 
     private String comment;
@@ -77,4 +73,6 @@ public class JobEntity extends BaseEntity {
     private JobType type;
 
     private Long resourcePoolId;
+
+    private String stepSpec;
 }

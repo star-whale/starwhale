@@ -144,6 +144,11 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 )
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option(
+    "--override-task-num",
+    default=0,
+    help="Total num of tasks in the current step",
+)
 @click.option("--runtime", default="", help="runtime uri")
 @click.option(
     "--dataset",
@@ -159,6 +164,7 @@ def _eval(
     dataset: str,
     step: str,
     task_index: int,
+    override_task_num: int,
     runtime: str,
 ) -> None:
     """
@@ -174,5 +180,6 @@ def _eval(
         runtime_uri=runtime,
         step=step,
         task_index=task_index,
+        task_num=override_task_num,
         dataset_uris=[dataset],
     )

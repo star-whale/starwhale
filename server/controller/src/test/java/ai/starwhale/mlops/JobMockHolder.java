@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.swmp.SwModelPackage;
@@ -49,8 +48,8 @@ public class JobMockHolder {
                 .id(atomicLong.incrementAndGet())
                 .uuid(UUID.randomUUID().toString())
                 .jobRuntime(
-                        JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir)
-                                .deviceClass(Clazz.CPU).build())
+                        JobRuntime.builder().name("runtime1").version("version1").storagePath(jobDir)
+                                .build())
                 .swmp(SwModelPackage.builder().id(1L).name("swmp1").version("versionsmp1")
                         .path(storagePathCoordinator.generateSwmpPath("project1", "swmp1", "versionsmp1")).build())
                 .swDataSets(List.of(SwDataSet.builder().id(1L).name("swds1").version("versionswds1").path(

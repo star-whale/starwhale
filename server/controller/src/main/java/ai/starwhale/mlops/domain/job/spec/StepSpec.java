@@ -14,18 +14,29 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.parser;
+package ai.starwhale.mlops.domain.job.spec;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public class StepMetaData {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class StepSpec {
 
     /**
      * the name of job which would be executed at job yaml during running time
@@ -36,7 +47,7 @@ public class StepMetaData {
     private String stepName;
     private Integer concurrency = 1;
     private List<String> needs;
-    @JsonDeserialize(contentConverter = ResourceConverter.class)
+
     private List<RuntimeResource> resources;
     @JsonProperty("task_num")
     private Integer taskNum = 1;
