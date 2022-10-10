@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale import (
     MIMEType,
     S3LinkAuth,
@@ -22,8 +23,6 @@ from starwhale.core.dataset.store import (
     LocalFSStorageBackend,
 )
 from starwhale.core.dataset.tabular import TabularDatasetRow
-
-from .. import ROOT_DIR
 
 
 class TestDataLoader(TestCase):

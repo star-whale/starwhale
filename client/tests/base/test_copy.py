@@ -4,6 +4,7 @@ from http import HTTPStatus
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.consts import (
     HTTPMethod,
@@ -19,8 +20,6 @@ from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.dataset.store import DatasetStorage
-
-from .. import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
 

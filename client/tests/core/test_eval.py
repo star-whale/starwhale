@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR, get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
@@ -13,8 +14,6 @@ from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.eval.view import JobTermView, JobTermViewRich
 from starwhale.core.eval.model import CloudEvaluationJob, StandaloneEvaluationJob
 from starwhale.core.eval.store import EvaluationStorage
-
-from .. import ROOT_DIR, get_predefined_config_yaml
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
