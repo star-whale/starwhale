@@ -14,7 +14,7 @@ model命令提供适用于Standalone Instance和Cloud Instance的Starwhale Model
 
 model包含如下子命令：
 
-|Command|Standalone|Cloud|
+|命令|Standalone|Cloud|
 |-------|----------|-----|
 |`build`|✅|❌|
 |`copy`|✅|✅|
