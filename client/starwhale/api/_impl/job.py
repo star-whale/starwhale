@@ -10,11 +10,15 @@ from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
-resource_names = {"cpu": numbers.Number, "gpu": int, "memory": numbers.Number}
+resource_names: t.Dict[str, t.List] = {
+    "cpu": [int, float],
+    "gpu": [int],
+    "memory": [int, float],
+}
 attribute_names = ["request", "limit"]
 
 
-def valid_resource(resources: t.Dict[str, t.Any]) -> None:
+def do_resource_validate(resources: t.Dict[str, t.Any]) -> None:
     for _name, _resource in resources.items():
         if _name not in resource_names:
             raise RuntimeError(
@@ -34,9 +38,13 @@ def valid_resource(resources: t.Dict[str, t.Any]) -> None:
             )
 
         for _k, _v in resources[_name].items():
-            if not isinstance(_v, resource_names[_name]):
+            if type(_v) not in resource_names[_name]:
                 raise RuntimeError(
                     f"resource:{_name} only support type:{resource_names[_name]}, but now is {type(_v)}"
+                )
+            if _v <= 0:
+                raise RuntimeError(
+                    f"{_k} only supports non-negative numbers, but now is {_v}"
                 )
 
 
@@ -53,7 +61,7 @@ def step(
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             cls, _, func_name = func.__qualname__.rpartition(".")
-            valid_resource(_resources)
+            do_resource_validate(_resources)
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,
