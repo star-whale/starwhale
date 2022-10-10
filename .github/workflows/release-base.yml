@@ -35,4 +35,4 @@ jobs:
         run: make build-release-base
       - name: Build and push server base image
         working-directory: ./docker
-        run: make release-base-server
+        run: make build-release-base-server
