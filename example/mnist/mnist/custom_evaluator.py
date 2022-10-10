@@ -28,7 +28,6 @@ class CustomPipelineHandler:
     def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
-        self.evaluation = t.Optional[None]
 
     def __enter__(self) -> "CustomPipelineHandler":
         print("enter custom handler!")
