@@ -10,7 +10,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import ROOT_DIR
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Parser, Context
+from starwhale.api._impl.job import Parser, Context, valid_resource
 from starwhale.core.job.model import (
     Step,
     STATUS,
@@ -68,11 +68,72 @@ class JobTestCase(TestCase):
         ensure_dir(root)
         _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(expected_exception=RuntimeError):
             Parser.generate_job_yaml(
                 "job_steps_with_error", Path(_job_data_dir), Path(_f)
             )
-            self.assertTrue("resources value is illegal2" in context.exception)
+
+    def test_resource_valid(self):
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource({"ppu": 1})  # illegal resource name
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource({"cpu": {"res": 1, "limit": 2}})  # illegal attribute name
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource({"cpu": {"request": "u", "limit": 2}})  # don't support str
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource(
+                {
+                    "cpu": 0.1,
+                    "memory": 2,
+                    "gpu": 2.1,  # gpu don't support float
+                }
+            )
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource(
+                {
+                    "cpu": {
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                    "memory": 2,
+                    "gpu": {  # gpu don't support float
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                }
+            )
+        with self.assertRaises(expected_exception=RuntimeError):
+            valid_resource(
+                {  # value must be number or dict
+                    "cpu": "0.1",
+                    "memory": "100",
+                    "gpu": "1",
+                }
+            )
+
+        valid_resource(
+            {
+                "cpu": 0.1,
+                "memory": 100,
+                "gpu": 1,
+            }
+        )
+        valid_resource(
+            {
+                "cpu": {
+                    "request": 0.1,
+                    "limit": 0.2,
+                },
+                "memory": {
+                    "request": 100.1,
+                    "limit": 100.2,
+                },
+                "gpu": {
+                    "request": 1,
+                    "limit": 2,
+                },
+            }
+        )
 
     def test_generate_custom_job_yaml(self):
         Parser.clear_config()

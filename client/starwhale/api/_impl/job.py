@@ -10,7 +10,34 @@ from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
-resource_names = ["request", "limit"]
+resource_names = {"cpu": numbers.Number, "gpu": int, "memory": numbers.Number}
+attribute_names = ["request", "limit"]
+
+
+def valid_resource(resources: t.Dict[str, t.Any]) -> None:
+    for _name, _resource in resources.items():
+        if _name not in resource_names:
+            raise RuntimeError(
+                f"resources name is illegal, name must in {resource_names.keys()}"
+            )
+
+        if isinstance(_resource, numbers.Number):
+            resources[_name] = {"request": _resource, "limit": _resource}
+        elif isinstance(_resource, dict):
+            if not all(n in attribute_names for n in _resource):
+                raise RuntimeError(
+                    f"resources value is illegal, attribute's name must in {attribute_names}"
+                )
+        else:
+            raise RuntimeError(
+                "resources value is illegal, attribute's type must be numer or dict"
+            )
+
+        for _k, _v in resources[_name].items():
+            if not isinstance(_v, resource_names[_name]):
+                raise RuntimeError(
+                    f"resource:{_name} only support type:{resource_names[_name]}, but now is {type(_v)}"
+                )
 
 
 def step(
@@ -26,14 +53,7 @@ def step(
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             cls, _, func_name = func.__qualname__.rpartition(".")
-            for _name, _resource in _resources.items():
-                if isinstance(_resource, numbers.Number):
-                    _resources[_name] = {"request": _resource, "limit": _resource}
-                elif isinstance(_resource, dict):
-                    if not all(n in resource_names for n, _ in _resource.items()):
-                        raise RuntimeError(
-                            f"resources value is illegal, attribute's name must in {resource_names}"
-                        )
+            valid_resource(_resources)
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,
