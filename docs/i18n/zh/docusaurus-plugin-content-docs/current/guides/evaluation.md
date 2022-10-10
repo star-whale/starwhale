@@ -42,9 +42,14 @@ title: Starwhale Evaluation-模型评测
   - `swcli eval remove`
   - `swcli eval recover`
 
+### 2.2 典型工作流程
 
-### 2.2 基本工作流程
+![eval-workflow.jpg](../img/eval-workflow.jpg)
 
 ## 3. job-step-task 抽象
 
-## 4. 模型评测报告
+- job：一次模型评测任务就是一个job，一个job包含一个或多个step。
+- step：step对应评测过程中的某个阶段。使用PipelineHandler的默认评测过程，step就是ppl和cmp；用户自定义的评测过程，step就是使用 `@step` 修饰的函数。step之间可以有依赖关系，形成一个DAG。一个step包含一个或多个task。同一step中的不同task，执行逻辑是一致的，只是输入参数不同，常见做法是将数据集分割成若干部分，然后传入每个task中，task可以并行执行。
+- task：task是最终运行的实体。在Cloud Instance中，一个task就是一个Pod的container；在Standalone Instance中，一个task就是一个Python Thread。
+
+job-step-task 的抽象是实现 `Starwhale Evaluation` 分布式运行的基础。
