@@ -78,12 +78,12 @@ class Evaluation(Logger):
         self,
         data_id: Union[int, str],
         result: Any,
-        to_bytes: bool = False,
+        serialize: bool = False,
         **kwargs: Any,
     ) -> None:
-        record = {"id": data_id, "result": _serialize(result) if to_bytes else result}
+        record = {"id": data_id, "result": _serialize(result) if serialize else result}
         for k, v in kwargs.items():
-            record[k.lower()] = _serialize(v) if to_bytes else v
+            record[k.lower()] = _serialize(v) if serialize else v
         self._log(self._results_table_name, record)
 
     def log_metrics(
@@ -107,11 +107,11 @@ class Evaluation(Logger):
             record[k.lower()] = v
         self._log(self._get_datastore_table_name(table_name), record)
 
-    def get_results(self, from_bytes: bool = False) -> Iterator[Dict[str, Any]]:
+    def get_results(self, deserialize: bool = False) -> Iterator[Dict[str, Any]]:
         for data in self._data_store.scan_tables(
             [data_store.TableDesc(self._results_table_name)]
         ):
-            if from_bytes:
+            if deserialize:
                 for _k, _v in data.items():
                     if _k == "id":
                         continue

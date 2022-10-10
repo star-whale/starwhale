@@ -44,7 +44,7 @@ class PPLResultStorage:
 
     def save(self, data_id: t.Union[int, str], result: t.Any, **kwargs: t.Any) -> None:
         self.evaluation.log_result(
-            data_id=data_id, result=result, **kwargs, to_bytes=True
+            data_id=data_id, result=result, **kwargs, serialize=True
         )
 
     def __exit__(self) -> None:
@@ -59,7 +59,7 @@ class PPLResultIterator:
 
     def __iter__(self) -> t.Iterator[t.Dict[str, t.Any]]:
         # TODO: use class to refactor data
-        return self.evaluation.get_results(from_bytes=True)
+        return self.evaluation.get_results(deserialize=True)
 
     def __exit__(self) -> None:
         self.evaluation.close()
