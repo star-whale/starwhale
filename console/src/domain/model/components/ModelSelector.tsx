@@ -45,6 +45,7 @@ export default function ModelSelector({ projectId, value, onChange, overrides, d
             size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
+            clearable={false}
             isLoading={modelsInfo.isFetching}
             options={options}
             onChange={(params) => {

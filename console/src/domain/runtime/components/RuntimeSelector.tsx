@@ -50,6 +50,7 @@ export default function RuntimeSelector({ projectId, value, onChange, overrides,
             overrides={overrides}
             isLoading={runtimesInfo.isFetching}
             options={options}
+            clearable={false}
             onChange={(params) => {
                 if (!params.option) {
                     return

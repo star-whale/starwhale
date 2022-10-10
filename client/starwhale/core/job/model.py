@@ -39,6 +39,7 @@ class Step:
         task_num: int = 1,
         status: str = "",
         cls_name: str = "",
+        **kw: t.Any,
     ):
         self.job_name = job_name
         self.cls_name = cls_name
@@ -48,6 +49,7 @@ class Step:
         self.task_num = task_num
         self.needs = needs
         self.status = status
+        self.kw = kw
 
     def __repr__(self) -> str:
         return (

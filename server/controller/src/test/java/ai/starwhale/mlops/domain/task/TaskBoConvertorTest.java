@@ -46,8 +46,6 @@ public class TaskBoConvertorTest {
                 .job(Job.builder()
                         .swmp(swModelPackage)
                         .jobRuntime(JobRuntime.builder()
-                                .deviceAmount(1)
-                                .deviceClass(Clazz.CPU)
                                 .name("name_swrt")
                                 .storagePath("path_storage")
                                 .version("version_swrt")

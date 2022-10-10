@@ -29,6 +29,12 @@ import lombok.NoArgsConstructor;
 public class RuntimeResource {
 
     String type;
-    Integer num;
+    Float num;
+
+    public RuntimeResource(String str) {
+        String[] res = str.split("=");
+        this.type = res[0];
+        this.num = Float.valueOf(res[1]);
+    }
 
 }

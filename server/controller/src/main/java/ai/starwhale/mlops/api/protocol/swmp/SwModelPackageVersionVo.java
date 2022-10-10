@@ -17,9 +17,11 @@
 package ai.starwhale.mlops.api.protocol.swmp;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -57,8 +59,10 @@ public class SwModelPackageVersionVo implements Serializable {
     @JsonProperty("owner")
     private UserVo owner;
 
+    private List<StepSpec> stepSpecs;
+
     public static SwModelPackageVersionVo empty() {
         return new SwModelPackageVersionVo("", "", "", "", "{}", "",
-                0L, -1L, UserVo.empty());
+                0L, -1L, UserVo.empty(), List.of());
     }
 }

@@ -1,5 +1,6 @@
 from starwhale.api.job import step, Context, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
+from starwhale.base.uri import URI, URIType
 from starwhale.api.model import PipelineHandler, PPLResultStorage, PPLResultIterator
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (
@@ -18,8 +19,6 @@ from starwhale.api.dataset import (
     get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
@@ -31,6 +30,8 @@ __all__ = [
     "__version__",
     "PipelineHandler",
     "multi_classification",
+    "URI",
+    "URIType",
     "step",
     "pass_context",
     "Context",
@@ -46,8 +47,6 @@ __all__ = [
     "BuildExecutor",  # SWDSBinBuildExecutor alias
     "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
-    "SWDSBinDataLoader",
-    "UserRawDataLoader",
     "Binary",
     "Text",
     "Audio",

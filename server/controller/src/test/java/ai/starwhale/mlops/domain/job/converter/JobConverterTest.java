@@ -94,8 +94,6 @@ public class JobConverterTest {
                 .swmpVersion(SwModelPackageVersionEntity.builder().versionName("v1").build())
                 .runtimeVersionId(1L)
                 .createdTime(new Date(1000L))
-                .deviceType(1)
-                .deviceAmount(3)
                 .jobStatus(JobStatus.SUCCESS)
                 .finishedTime(new Date(1001L))
                 .comment("job-comment")
@@ -113,8 +111,6 @@ public class JobConverterTest {
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
                 hasProperty("datasets", isA(List.class)),
-                hasProperty("device", is("CPU")),
-                hasProperty("deviceAmount", is(3)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),
                 hasProperty("comment", is("job-comment")),

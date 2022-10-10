@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.configuration.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -26,8 +26,8 @@ import org.springframework.context.annotation.Primary;
 public class ObjectMapperConfig {
 
     @Bean
-    public ObjectMapper yamlMapper() {
-        return new ObjectMapper(new YAMLFactory());
+    public YAMLMapper yamlMapper() {
+        return new YAMLMapper();
     }
 
     @Primary

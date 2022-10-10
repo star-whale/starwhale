@@ -50,8 +50,7 @@ public class TaskWatcherForPersistTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.RUNNING)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.READY);
         verify(taskMapper).updateTaskStartedTime(eq(task.getId()), argThat(d -> d.getTime() > 0));
@@ -66,8 +65,8 @@ public class TaskWatcherForPersistTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.SUCCESS)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.RUNNING);
         verify(taskMapper).updateTaskFinishedTime(eq(task.getId()),
@@ -84,8 +83,8 @@ public class TaskWatcherForPersistTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.RUNNING)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
-                        Clazz.CPU).build()).build()).build())
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
                 .build();
         task = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
         task.updateStatus(TaskStatus.RUNNING);

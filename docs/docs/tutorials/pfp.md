@@ -1,5 +1,5 @@
 ---
-title: Object Detection & segmentation on PeenFudanPed dataset
+title: Object Detection & segmentation on PennFudanPed dataset
 ---
 
 This example illustrates how to evaluate a pre-trained image object detection & segmentation model on Starwhale(`version:0.2.0b8`) in 6 steps

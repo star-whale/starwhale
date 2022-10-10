@@ -9,10 +9,10 @@ import { CustomColumn, StringColumn } from '@/components/data-table'
 import _ from 'lodash'
 import IconFont from '@/components/IconFont'
 import { useEvaluationCompareStore } from '@/components/data-table/store'
-import { Checkbox } from 'baseui/checkbox'
 import { longestCommonSubstring } from '@/utils'
 import { RecordListVO } from '@/domain/datastore/schemas/datastore'
 import { LabelSmall } from 'baseui/typography'
+import Checkbox from '@/components/Checkbox'
 
 type RowT = {
     key: string

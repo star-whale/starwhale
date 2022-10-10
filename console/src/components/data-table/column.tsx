@@ -2,12 +2,11 @@
 
 import * as React from 'react'
 
-import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
-
 import type { ColumnT } from './types.js'
 import _ from 'lodash'
 import cn from 'classnames'
+import Checkbox from '@/components/Checkbox'
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     return {
@@ -72,7 +71,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
                                 //@ts-ignore
                                 checked={props.isSelected}
                                 overrides={{
-                                    Checkmark: { style: { marginTop: null, marginBottom: null } },
+                                    Checkmark: { style: { marginTop: 0, marginBottom: 0 } },
                                 }}
                             />
                         </span>

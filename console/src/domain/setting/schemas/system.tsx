@@ -20,3 +20,5 @@ export interface IAgentSchema {
     status: string
     version: string
 }
+
+export type ISystemSettingSchema = string

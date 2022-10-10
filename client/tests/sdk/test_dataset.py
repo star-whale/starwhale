@@ -8,7 +8,9 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale import Link, MIMEType, UserRawBuildExecutor
+from starwhale.consts import OBJECT_STORE_DIRNAME
 from starwhale.utils.fs import blake2b_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
@@ -34,7 +36,6 @@ from starwhale.api._impl.dataset.builder import (
     SWDSBinBuildExecutor,
 )
 
-from .. import ROOT_DIR
 from .test_base import BaseTestCase
 
 _mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
@@ -95,7 +96,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         super().setUp()
 
         self.object_store_dir = os.path.join(
-            self.local_storage, ".objectstore", DatasetStorage.object_hash_algo
+            self.local_storage, OBJECT_STORE_DIRNAME, DatasetStorage.object_hash_algo
         )
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
@@ -164,7 +165,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert not summary.include_user_raw
         assert not summary.include_link
 
-        assert len(data_files_sign) == 11
+        assert len(data_files_sign) == 10
 
         for _sign in data_files_sign:
             _sign_fpath = Path(self.object_store_dir) / _sign[:2] / _sign

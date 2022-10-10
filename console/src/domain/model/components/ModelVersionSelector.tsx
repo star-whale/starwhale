@@ -110,6 +110,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
                 overrides={overrides}
                 isLoading={isFetching}
                 options={options}
+                clearable={false}
                 onChange={(params) => handelChange?.(params.option?.id as string)}
                 onInputChange={(e) => handleSearchInputChange((e.target as HTMLInputElement).value)}
                 value={

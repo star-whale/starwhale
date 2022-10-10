@@ -1,10 +1,10 @@
 import useGlobalState from '@/hooks/global'
 
 export const useRuntimeVersion = () => {
-    const [runtimeVerson, setRuntimeVersion] = useGlobalState('runtimeVersion')
+    const [runtimeVersion, setRuntimeVersion] = useGlobalState('runtimeVersion')
 
     return {
-        runtimeVerson,
+        runtimeVersion,
         setRuntimeVersion,
     }
 }

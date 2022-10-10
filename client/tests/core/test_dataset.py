@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -18,8 +19,6 @@ from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.dataset.model import StandaloneDataset
-
-from .. import ROOT_DIR
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()

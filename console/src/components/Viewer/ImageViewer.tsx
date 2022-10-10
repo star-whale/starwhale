@@ -93,8 +93,6 @@ export function COCOBBoxOverlay({ cocos = [] }: { cocos: IImageViewerProps['coco
         canvas.height = height
 
         cocos.map((c) => drawBox(canvas, c.bbox, c.id))
-
-        // drawSegmentWithCOCOMask(canvas, imgDatas)
     }, [canvasRef, cocos])
 
     if (cocos.length === 0) {

@@ -16,8 +16,11 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -38,17 +41,12 @@ public class JobRequest implements Serializable {
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
 
-    @NotNull
-    @JsonProperty("device")
-    private String device;
-
-    @NotNull
-    @JsonProperty("deviceAmount")
-    private Float deviceAmount;
-
     @JsonProperty("comment")
     private String comment;
 
     @JsonProperty("resourcePool")
     private String resourcePool;
+
+    @JsonProperty("stepSpecOverWrites")
+    private String stepSpecOverWrites;
 }

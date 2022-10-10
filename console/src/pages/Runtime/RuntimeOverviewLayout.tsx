@@ -15,6 +15,7 @@ import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSe
 import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
+import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -46,6 +47,17 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         setRuntime,
         setRuntimeLoading,
     ])
+
+    const runtimeVersionInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
+        fetchRuntime(projectId, runtimeId, runtimeVersionId)
+    )
+    const { setRuntimeVersion } = useRuntimeVersion()
+    const { setRuntimeVersionLoading } = useRuntimeVersionLoading()
+    useEffect(() => {
+        setRuntimeVersionLoading(runtimeVersionInfo.isLoading)
+        setRuntimeVersion(runtimeVersionInfo.data)
+    }, [setRuntimeVersionLoading, runtimeVersionInfo, setRuntimeVersion])
+
     const history = useHistory()
     const [page] = usePage()
     const [t] = useTranslation()
@@ -167,20 +179,22 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <div style={{ width: '280px' }}>
-                                <RuntimeVersionSelector
-                                    projectId={projectId}
-                                    runtimeId={runtimeId}
-                                    value={runtimeVersionId}
-                                    onChange={(v: string) =>
-                                        history.push(
-                                            `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                page
-                                            )}`
-                                        )
-                                    }
-                                />
-                            </div>
+                            {runtimeVersionId && (
+                                <div style={{ width: '280px' }}>
+                                    <RuntimeVersionSelector
+                                        projectId={projectId}
+                                        runtimeId={runtimeId}
+                                        value={runtimeVersionId}
+                                        onChange={(v: string) =>
+                                            history.push(
+                                                `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                                    page
+                                                )}`
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
                             {runtimeVersionId && (
                                 <Button
                                     size='compact'
