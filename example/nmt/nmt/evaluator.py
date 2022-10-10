@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from starwhale import Text, Context, PipelineHandler
+from starwhale import Text, PipelineHandler
 
 from .bleu import calculate_bleu
 from .model import DecoderRNN, EncoderRNN
@@ -12,9 +12,8 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class NMTPipeline(PipelineHandler):
-    def __init__(self, context: Context) -> None:
-        super().__init__(context=context)
-
+    def __init__(self) -> None:
+        super().__init__()
         self.hidden_size = 256
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.vocab = self._load_vocab()

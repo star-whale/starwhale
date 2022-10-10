@@ -1,6 +1,8 @@
 import typing as t
 import numbers
+import threading
 from pathlib import Path
+from functools import wraps
 
 import yaml
 from loguru import logger
@@ -10,6 +12,7 @@ from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
+context_holder = threading.local()
 resource_names: t.Dict[str, t.List] = {
     "cpu": [int, float],
     "gpu": [int],
@@ -76,6 +79,15 @@ def step(
         return func
 
     return decorator
+
+
+def pass_context(func: t.Any) -> t.Any:
+    @wraps(func)
+    def wrap_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        kwargs["context"] = context_holder.context
+        return func(*args, **kwargs)
+
+    return wrap_func
 
 
 # Runtime concept

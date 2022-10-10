@@ -20,7 +20,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.api._impl.job import Context
+from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
@@ -280,12 +280,10 @@ class StandaloneModelTestCase(TestCase):
 
         m_model.load_model_config().return_value = {"run": {"ppl": "test"}}
         m_import.return_value = SimpleHandler
-
-        default_handler._invoke(
-            Context(
-                workdir=Path(_model_data_dir),
-                version="rwerwe9",
-                project="self",
-            ),
-            "some",
+        context = Context(
+            workdir=Path(_model_data_dir),
+            version="rwerwe9",
+            project="self",
         )
+        context_holder.context = context
+        default_handler._invoke(context, "some")

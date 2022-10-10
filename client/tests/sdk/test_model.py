@@ -20,6 +20,7 @@ from starwhale.base.type import (
     DataOriginType,
     ObjectStoreType,
 )
+from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
@@ -100,7 +101,7 @@ class TestModelPipelineHandler(TestCase):
         assert isinstance(_loader, UserRawDataLoader)
         assert not _loader._stores
 
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.api._impl.model.PPLResultIterator")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp(
@@ -129,16 +130,16 @@ class TestModelPipelineHandler(TestCase):
             },
         ]
 
-        with SimpleHandler(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="cmp",
-                index=0,
-            )
-        ) as _handler:
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="cmp",
+            index=0,
+        )
+        context_holder.context = context
+        with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_cmp()
 
         status_file_path = os.path.join(_status_dir, "current")
@@ -193,18 +194,17 @@ class TestModelPipelineHandler(TestCase):
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
-
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="ppl",
+            index=0,
+        )
+        context_holder.context = context
         # mock
-        with SimpleHandler(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="ppl",
-                index=0,
-            )
-        ) as _handler:
+        with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_ppl()
 
         # only one data row
@@ -281,27 +281,27 @@ class TestModelPipelineHandler(TestCase):
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
 
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="ppl",
+            index=0,
+        )
+        context_holder.context = context
         # mock
-        with Dummy(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="ppl",
-                index=0,
-            )
-        ) as _handler:
+        with Dummy() as _handler:
             _handler._starwhale_internal_run_ppl()
 
-        with Dummy(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="cmp",
-                index=0,
-            )
-        ) as _handler:
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="cmp",
+            index=0,
+        )
+        context_holder.context = context
+        with Dummy() as _handler:
             _handler._starwhale_internal_run_cmp()
