@@ -10,15 +10,14 @@ from typing_extensions import Protocol
 
 from starwhale import Context
 from starwhale.utils import load_yaml
-from starwhale.consts import context_holder
-from starwhale.core.job import dag
 from starwhale.utils.load import (
     load_cls,
     load_module,
     get_func_from_module,
     get_func_from_object,
 )
-from starwhale.core.job.dag import DAG
+from starwhale.core.job.dag import DAG, generate_dag
+from starwhale.api._impl.job import context_holder
 
 
 class STATUS:
@@ -87,7 +86,7 @@ class Generator:
             for _pre in step.needs:
                 _edges[_pre] = step.step_name
 
-        return dag.generate_dag(_vertices, _edges)
+        return generate_dag(_vertices, _edges)
 
 
 class TaskResult:

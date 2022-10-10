@@ -19,12 +19,12 @@ from .loader import (
     get_data_loader,
     SWDSBinDataLoader,
     UserRawDataLoader,
-    get_data_loader_by_sharding,
+    get_sharding_data_loader,
 )
 from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 
 __all__ = [
-    "get_data_loader_by_sharding",
+    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",

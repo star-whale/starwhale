@@ -3,7 +3,7 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale import Context, pass_context
-from starwhale.consts import context_holder
+from starwhale.api._impl.job import context_holder
 
 
 class JobTestCase(TestCase):

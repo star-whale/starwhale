@@ -10,7 +10,6 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     HTTPMethod,
-    context_holder,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -20,7 +19,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.api._impl.job import Context
+from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView

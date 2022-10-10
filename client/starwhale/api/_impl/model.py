@@ -13,14 +13,15 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str
-from starwhale.consts import CURRENT_FNAME, context_holder
+from starwhale.consts import CURRENT_FNAME
 from starwhale.api.job import Context
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.api.dataset import get_data_loader_by_sharding
+from starwhale.api.dataset import get_sharding_data_loader
 from starwhale.utils.error import FieldTypeOrValueError
+from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
 
@@ -210,7 +211,7 @@ class PipelineHandler(metaclass=ABCMeta):
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
         # TODO: support multi dataset uris
-        _data_loader = get_data_loader_by_sharding(
+        _data_loader = get_sharding_data_loader(
             dataset_uri=self.context.dataset_uris[0],
             sharding_num=self.context.total,
             sharding_index=self.context.index,

@@ -1,18 +1,17 @@
 import typing as t
+import threading
 from pathlib import Path
 from functools import wraps
 
 import yaml
 from loguru import logger
 
-from starwhale.consts import (
-    context_holder,
-    DEFAULT_EVALUATION_JOB_NAME,
-    DEFAULT_EVALUATION_RESOURCE,
-)
+from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
+
+context_holder = threading.local()
 
 
 def step(

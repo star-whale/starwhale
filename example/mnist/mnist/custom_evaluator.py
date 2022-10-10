@@ -16,7 +16,7 @@ from starwhale import (
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
-    get_data_loader_by_sharding,
+    get_sharding_data_loader,
 )
 
 from .model import Net
@@ -50,7 +50,7 @@ class CustomPipelineHandler:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
         ppl_result_storage = PPLResultStorage(context)
 
-        _data_loader = get_data_loader_by_sharding(
+        _data_loader = get_sharding_data_loader(
             dataset_uri=context.dataset_uris[0],
             sharding_index=context.index,
             sharding_num=context.total,

@@ -14,10 +14,9 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
-from starwhale.consts import context_holder
+from starwhale.api._impl.job import context_holder
 from starwhale.utils.flatten import do_flatten_dict
-
-from .wrapper import Evaluation
+from starwhale.api._impl.wrapper import Evaluation
 
 
 @unique

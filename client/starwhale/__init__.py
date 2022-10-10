@@ -23,7 +23,7 @@ from starwhale.api.dataset import (
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
-    get_data_loader_by_sharding,
+    get_sharding_data_loader,
 )
 from starwhale.api.evaluation import Evaluation
 
@@ -35,7 +35,7 @@ __all__ = [
     "pass_context",
     "Context",
     "Evaluation",
-    "get_data_loader_by_sharding",
+    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",

@@ -1,7 +1,5 @@
 import pathlib
-import threading
 
-context_holder = threading.local()
 # TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
 CONFIG_DIR = HOMEDIR / ".config" / "starwhale"
