@@ -165,10 +165,9 @@ class TaskExecutor:
             else:
                 _cls = load_cls(_module, self.cls_name)
                 # need an instance
-                with _cls() as obj:
-                    func = get_func_from_object(obj, self.func)
-                    # The standard implementation does not return results
-                    func()
+                func = get_func_from_object(_cls(), self.func)
+                # The standard implementation does not return results
+                func()
         except Exception as e:
             self.exception = e
             self.status = STATUS.FAILED

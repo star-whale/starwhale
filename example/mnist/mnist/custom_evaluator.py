@@ -1,5 +1,4 @@
 import typing as t
-from types import TracebackType
 from pathlib import Path
 
 import numpy as np
@@ -28,20 +27,6 @@ class CustomPipelineHandler:
     def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
-
-    def __enter__(self) -> "CustomPipelineHandler":
-        print("enter custom handler!")
-        return self
-
-    def __exit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_val: t.Optional[BaseException],
-        exc_tb: TracebackType,
-    ) -> None:
-        if exc_val:
-            print(f"type:{exc_type}, exception:{exc_val}, traceback:{exc_tb}")
-        print("exit custom handler!")
 
     @step(concurrency=2, task_num=2)
     @pass_context
