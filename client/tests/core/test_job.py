@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
 from starwhale.api._impl.job import Parser, Context
@@ -20,8 +21,6 @@ from starwhale.core.job.model import (
     MultiThreadProcessor,
 )
 from starwhale.core.job.scheduler import Scheduler
-
-from .. import ROOT_DIR
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 
