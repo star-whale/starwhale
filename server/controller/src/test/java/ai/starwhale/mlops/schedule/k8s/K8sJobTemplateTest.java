@@ -69,6 +69,7 @@ public class K8sJobTemplateTest {
         Assertions.assertIterableEquals(List.of("run"), workerC.getArgs());
         Assertions.assertEquals("image123", workerC.getImage());
         Assertions.assertEquals(new Quantity("0.2"), workerC.getResources().getRequests().get("cpu"));
+        Assertions.assertEquals(new Quantity("0.2"), workerC.getResources().getLimits().get("cpu"));
         Assertions.assertIterableEquals(
                 List.of(new V1EnvVar().name("env1").value("env1value"),
                         new V1EnvVar().name("env2").value("env2value")),
@@ -85,7 +86,7 @@ public class K8sJobTemplateTest {
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
         ContainerOverwriteSpec containerOverwriteSpecWorker = ContainerOverwriteSpec.builder()
-                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 0.2f))))
+                .resourceOverwriteSpec(new ResourceOverwriteSpec(Map.of("cpu", new RuntimeResource(0.2f, 0.2f))))
                 .cmds(List.of("run"))
                 .name("worker")
                 .envs(List.of(new V1EnvVar().name("env1").value("env1value"),
@@ -128,10 +129,12 @@ public class K8sJobTemplateTest {
 
         var specs = new HashMap<String, ContainerOverwriteSpec>();
         var cpuSpec = new ContainerOverwriteSpec();
-        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 1f))));
+        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(Map.of("cpu", new RuntimeResource(1f, 1f))));
         specs.put("foo", cpuSpec);
         var gpuSpec = new ContainerOverwriteSpec();
-        gpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("nvidia.com/gpu", 1f))));
+        gpuSpec.setResourceOverwriteSpec(
+            new ResourceOverwriteSpec(Map.of("nvidia.com/gpu", new RuntimeResource(1f, 1f)))
+        );
         specs.put("bar", gpuSpec);
         specs.put("baz", cpuSpec);
 

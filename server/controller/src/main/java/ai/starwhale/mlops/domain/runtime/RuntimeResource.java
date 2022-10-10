@@ -27,14 +27,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RuntimeResource {
-
-    String type;
-    Float num;
-
-    public RuntimeResource(String str) {
-        String[] res = str.split("=");
-        this.type = res[0];
-        this.num = Float.valueOf(res[1]);
-    }
-
+    Float request;
+    Float limit;
 }

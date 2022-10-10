@@ -33,7 +33,9 @@ public class JobSpecTest {
             + "  job_name: default\n"
             + "  needs: []\n"
             + "  resources:\n"
-            + "  - cpu=1\n"
+            + "    cpu:\n"
+            + "      request: 1\n"
+            + "      limit: 1\n"
             + "  step_name: ppl\n"
             + "  task_num: 1\n"
             + "- cls_name: ''\n"
@@ -42,7 +44,9 @@ public class JobSpecTest {
             + "  needs:\n"
             + "  - ppl\n"
             + "  resources:\n"
-            + "  - cpu=1\n"
+            + "    cpu:\n"
+            + "      request: 1\n"
+            + "      limit: 1\n"
             + "  step_name: cmp\n"
             + "  task_num: 1\n";
 
@@ -51,7 +55,9 @@ public class JobSpecTest {
             + "  job_name: default\n"
             + "  needs: []\n"
             + "  resources:\n"
-            + "  - cpu=1\n"
+            + "    cpu:\n"
+            + "      request: 1\n"
+            + "      limit: 1\n"
             + "  step_name: ppl\n"
             + "  task_num: 1\n"
             + "- cls_name: ''\n"
@@ -60,7 +66,9 @@ public class JobSpecTest {
             + "  needs:\n"
             + "  - ppl\n"
             + "  resources:\n"
-            + "  - cpu=1\n"
+            + "    cpu:\n"
+            + "      request: 1\n"
+            + "      limit: 1\n"
             + "  step_name: cmp\n"
             + "  task_num: 1\n";
 
@@ -69,8 +77,9 @@ public class JobSpecTest {
             + "- concurrency: 1\n"
             + "  needs: []\n"
             + "  resources:\n"
-            + "  - type: \"cpu\"\n"
-            + "    num: 1.0\n"
+            + "    cpu:\n"
+            + "      request: 1.0\n"
+            + "      limit: 1.0\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"ppl\"\n"
             + "  task_num: 1\n"
@@ -78,8 +87,9 @@ public class JobSpecTest {
             + "  needs:\n"
             + "  - \"ppl\"\n"
             + "  resources:\n"
-            + "  - type: \"cpu\"\n"
-            + "    num: 1.0\n"
+            + "    cpu:\n"
+            + "      request: 1.0\n"
+            + "      limit: 1.0\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
@@ -88,8 +98,9 @@ public class JobSpecTest {
             + "- concurrency: 1\n"
             + "  needs: []\n"
             + "  resources:\n"
-            + "  - type: \"cpu\"\n"
-            + "    num: 1.0\n"
+            + "    cpu:\n"
+            + "      request: 1.0\n"
+            + "      limit: 1.0\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"ppl\"\n"
             + "  task_num: 1\n"
@@ -97,8 +108,9 @@ public class JobSpecTest {
             + "  needs:\n"
             + "  - \"ppl\"\n"
             + "  resources:\n"
-            + "  - type: \"cpu\"\n"
-            + "    num: 1.0\n"
+            + "    cpu:\n"
+            + "      request: 1.0\n"
+            + "      limit: 1.0\n"
             + "  job_name: \"default\"\n"
             + "  step_name: \"cmp\"\n"
             + "  task_num: 1\n";
@@ -124,7 +136,7 @@ public class JobSpecTest {
         Assertions.assertEquals(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of())
-                .resources(List.of(new RuntimeResource("cpu", 1f)))
+                .resources(Map.of("cpu", new RuntimeResource(1f, 1f)))
                 .stepName("ppl")
                 .taskNum(1)
                 .concurrency(1)
@@ -133,7 +145,7 @@ public class JobSpecTest {
         Assertions.assertEquals(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of("ppl"))
-                .resources(List.of(new RuntimeResource("cpu", 1f)))
+                .resources(Map.of("cpu", new RuntimeResource(1f, 1f)))
                 .stepName("cmp")
                 .taskNum(1)
                 .concurrency(1)
@@ -145,14 +157,14 @@ public class JobSpecTest {
         Map<String, List<StepSpec>> map = Map.of("default", List.of(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of())
-                .resources(List.of(new RuntimeResource("cpu", 1f)))
+                .resources(Map.of("cpu", new RuntimeResource(1f, 1f)))
                 .stepName("ppl")
                 .taskNum(1)
                 .concurrency(1)
                 .build(), StepSpec.builder()
                 .jobName("default")
                 .needs(List.of("ppl"))
-                .resources(List.of(new RuntimeResource("cpu", 1f)))
+                .resources(Map.of("cpu", new RuntimeResource(1f, 1f)))
                 .stepName("cmp")
                 .taskNum(1)
                 .concurrency(1)

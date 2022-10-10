@@ -16,15 +16,17 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.job.parser.JobParser;
-import ai.starwhale.mlops.domain.job.parser.StepMetaData;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class JobParserTest {
     @Test
-    public void testParseFromYamlContent() {
+    public void testParseFromYamlContent() throws JsonProcessingException {
         String yamlContent = "default:\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
@@ -39,12 +41,19 @@ public class JobParserTest {
                 + "  needs:\n"
                 + "  - ppl\n"
                 + "  resources:\n"
-                + "    cpu: 0.1\n"
-                + "    gpu: 1\n"
-                + "    memory: 100\n"
+                + "    cpu: \n"
+                + "      request: 0.1\n"
+                + "      limit: 0.1\n"
+                + "    gpu: \n"
+                + "      request: 1\n"
+                + "      limit: 1\n"
+                + "    memory: \n"
+                + "      request: 1\n"
+                + "      limit: 1\n"
                 + "  step_name: cmp\n"
                 + "  task_num: 1";
-        List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml(yamlContent);
+        JobSpecParser jobSpecParser = new JobSpecParser(new YAMLMapper());
+        List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 2);
     }
 }

@@ -19,10 +19,8 @@ package ai.starwhale.mlops.schedule.k8s;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -47,21 +45,23 @@ public class ResourceOverwriteSpec {
         return (float) Math.ceil(amount);
     }
 
-    public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
-        Map<String, Quantity> resourceRequiredMap = runtimeResources.stream()
-                .collect(convertToMap());
-        this.resourceSelector = new V1ResourceRequirements().requests(resourceRequiredMap);
-        Map<String, Quantity> resourceLimitMap = runtimeResources.stream()
-                .filter(runtimeResource -> !k8sResource(runtimeResource.getType()))
-                .collect(convertToMap());
+    public ResourceOverwriteSpec(Map<String, RuntimeResource> runtimeResources) {
+        Map<String, Quantity> resourceRequestMap = runtimeResources.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> new Quantity(
+                        k8sResource(entry.getKey()) ? entry.getValue().getRequest().toString()
+                            : normalizeNonK8sResources(entry.getValue().getRequest()).toString())
+                ));
+        this.resourceSelector = new V1ResourceRequirements().requests(resourceRequestMap);
+        Map<String, Quantity> resourceLimitMap = runtimeResources.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> new Quantity(
+                        k8sResource(entry.getKey()) ? entry.getValue().getLimit().toString()
+                            : normalizeNonK8sResources(entry.getValue().getLimit()).toString())
+                ));
         resourceSelector.limits(resourceLimitMap);
-    }
-
-    private Collector<RuntimeResource, ?, Map<String, Quantity>> convertToMap() {
-        return Collectors.toMap(RuntimeResource::getType,
-                runtimeResource -> new Quantity(
-                        k8sResource(runtimeResource.getType()) ? runtimeResource.getNum().toString()
-                                : normalizeNonK8sResources(runtimeResource.getNum()).toString()));
     }
 
     boolean k8sResource(String resource) {
