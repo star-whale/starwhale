@@ -33,3 +33,6 @@ jobs:
       - name: Build and push docker image
         working-directory: ./docker
         run: make build-release-base
+      - name: Build and push server base image
+        working-directory: ./docker
+        run: make release-base-server
