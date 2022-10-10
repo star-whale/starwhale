@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -16,8 +17,6 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.eval.executor import EvalExecutor
-
-from .. import ROOT_DIR
 
 _dataset_manifest = open(f"{ROOT_DIR}/data/dataset.yaml").read()
 _model_data_dir = f"{ROOT_DIR}/data/model"

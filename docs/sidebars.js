@@ -56,8 +56,11 @@ module.exports = {
                     "reference/cli/eval",
                     "reference/cli/utilities"],
                 "Python SDK": [
+                    "reference/sdk/overview",
+                    "reference/sdk/data_type",
                     "reference/sdk/dataset",
                     "reference/sdk/evaluation",
+                    "reference/sdk/other",
                 ],
             },
             "Community": [

@@ -1,13 +1,15 @@
 import os
+import sys
+import errno
 import shutil
 import typing as t
-import sysconfig
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale import Context, get_data_loader, PipelineHandler, UserRawDataLoader
+from tests import ROOT_DIR
+from starwhale import Context, get_data_loader, PipelineHandler
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -22,8 +24,7 @@ from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
-
-from .. import ROOT_DIR
+from starwhale.api._impl.dataset.loader import UserRawDataLoader
 
 
 class SimpleHandler(PipelineHandler):
@@ -217,7 +218,15 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_deserializer(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
-        self.fs.add_real_directory(sysconfig.get_paths()["purelib"])
+        # make torch happy
+        for i in sys.path:
+            if not i:
+                continue
+            try:
+                self.fs.add_real_directory(i)
+            except OSError as e:
+                if e.errno not in [errno.EEXIST, errno.ENOENT]:
+                    raise e
         import numpy as np
         import torch
 
