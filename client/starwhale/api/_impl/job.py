@@ -1,4 +1,5 @@
 import typing as t
+import numbers
 from pathlib import Path
 
 import yaml
@@ -8,6 +9,8 @@ from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
+
+resource_names = ["request", "limit"]
 
 
 def step(
@@ -23,6 +26,14 @@ def step(
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             cls, _, func_name = func.__qualname__.rpartition(".")
+            for _name, _resource in _resources.items():
+                if isinstance(_resource, numbers.Number):
+                    _resources[_name] = {"request": _resource, "limit": _resource}
+                elif isinstance(_resource, dict):
+                    if not all(n in resource_names for n, _ in _resource.items()):
+                        raise RuntimeError(
+                            f"resources value is illegal, attribute's name must in {resource_names}"
+                        )
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,

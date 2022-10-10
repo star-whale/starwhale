@@ -61,6 +61,19 @@ class JobTestCase(TestCase):
         self.assertEqual(_steps[0].step_name, "ppl")
         self.assertEqual(_steps[1].step_name, "cmp")
 
+    def test_generate_job_yaml_with_error(self):
+        Parser.clear_config()
+        # create a temporary directory
+        root = "home/starwhale/job"
+        ensure_dir(root)
+        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
+
+        with self.assertRaises(RuntimeError) as context:
+            Parser.generate_job_yaml(
+                "job_steps_with_error", Path(_job_data_dir), Path(_f)
+            )
+            self.assertTrue("resources value is illegal2" in context.exception)
+
     def test_generate_custom_job_yaml(self):
         Parser.clear_config()
         # create a temporary directory
@@ -76,7 +89,9 @@ class JobTestCase(TestCase):
           job_name: default
           needs: []
           resources:
-            cpu: 1
+            cpu:
+              request: 1
+              limit: 1
           step_name: custom_ppl
           task_num: 1
         - concurrency: 1
@@ -84,7 +99,9 @@ class JobTestCase(TestCase):
           needs:
           - custom_ppl
           resources:
-            cpu: 1
+            cpu:
+              request: 1
+              limit: 2
           step_name: custom_cmp
           task_num: 1
         """
@@ -95,8 +112,8 @@ class JobTestCase(TestCase):
         self.assertEqual(_steps[0].step_name, "custom_ppl")
         self.assertEqual(_steps[0].cls_name, "CustomPipeline")
         self.assertEqual(_steps[1].step_name, "custom_cmp")
-        self.assertEqual(_steps[0].resources["cpu"], 1)
-        self.assertEqual(_steps[1].resources["cpu"], 1)
+        self.assertEqual(_steps[0].resources["cpu"], {"limit": 1, "request": 1})
+        self.assertEqual(_steps[1].resources["cpu"], {"limit": 2, "request": 1})
 
     def test_job_check(self):
         self.assertEqual(

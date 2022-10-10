@@ -6,6 +6,6 @@ class CustomPipeline:
     def custom_ppl(self, context: Context) -> None:
         print("in step of ppl")
 
-    @step(needs=["custom_ppl"], resources={"cpu": {"limit": 2, "request": 1}})
+    @step(needs=["custom_ppl"], resources={"cpu": {"limit": 2, "req": 1}})
     def custom_cmp(self, context: Context) -> None:
         print("in step of cmp")
