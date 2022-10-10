@@ -5,7 +5,9 @@ default:
     needs: [ ]
     overwriteable: true
     resources:
-      - cpu=0.2
+      cpu:
+        request: 0.2
+        limit: 0.2
     step_name: ppl
     task_num: 1
   - cls_name: ''
@@ -15,6 +17,8 @@ default:
       - ppl
     overwriteable: false
     resources:
-      - cpu=0.2
+      cpu:
+        request: 0.2
+        limit: 0.2
     step_name: cmp
     task_num: 1
