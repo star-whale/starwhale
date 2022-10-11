@@ -6,7 +6,7 @@ title: Docker Compose for Starwhale Cloud
 
 - Docker >= 19.03
 - [Docker Compose Plugin](https://docs.docker.com/compose/install/compose-plugin/) >= 2.3
-- x86-64 System(Linux, Windows and MacOS)
+- x86-64 System(Linux, Windows and macOS)
 
 Docker Desktop is an easy-to-use way to run containers in your machine that includes all dependencies.
 

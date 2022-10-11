@@ -2,7 +2,7 @@
 title: Standalone Instance 配置文件
 ---
 
-Standalone Instance 是安装在用户的笔记本或开发服务器上，以Linux/Mac用户为粒度进行隔离。用户通过pip命令安装starwhale python package并执行任意命令后，就可以在 `~/.config/starwhale/config.yaml` 中查看该用户的Starwhale 配置。**绝大多数情况加用户不需要手工修改config.yaml文件**。
+Standalone Instance 是安装在用户的笔记本或开发服务器上，以Linux/Mac用户为粒度进行隔离。用户通过pip命令安装starwhale python package并执行任意swcli命令后，就可以在 `~/.config/starwhale/config.yaml` 中查看该用户的Starwhale 配置。**绝大多数情况加用户不需要手工修改config.yaml文件**。
 
 `~/.config/starwhale/config.yaml` 文件权限为 0o600，由于里面存有密钥信息，不建议用户修改该文件权限。
 
@@ -14,14 +14,14 @@ Standalone Instance 是安装在用户的笔记本或开发服务器上，以Lin
 current_instance: local
 instances:
   cloud-cn:
-    sw_token: Bearer TOKEN
+    sw_token: ${TOKEN}
     type: cloud
     updated_at: 2022-09-28 18:41:05 CST
     uri: https://cloud.starwhale.cn
     user_name: starwhale
     user_role: normal
   cloud-k8s:
-    sw_token: Bearer TOKEN
+    sw_token: ${TOKEN}
     type: cloud
     updated_at: 2022-09-19 16:10:01 CST
     uri: http://cloud.pre.intra.starwhale.ai
@@ -34,7 +34,7 @@ instances:
     uri: local
     user_name: liutianwei
   pre-k8s:
-    sw_token: Bearer TOKEN
+    sw_token: ${TOKEN}
     type: cloud
     updated_at: 2022-09-19 18:06:50 CST
     uri: http://console.pre.intra.starwhale.ai
@@ -57,7 +57,7 @@ version: '2.0'
 |instances.{instance-alias-name}.user_role|用户角色|String|normal|是|
 |instances.{instance-alias-name}.updated_at|该条Instance配置更新时间|时间格式字符串||是|
 |storage|与本地存储相关的设置|Dict||是|
-|storage.root|Standalone Instance本地存储的根目录。通常情况下，当home目录空间不足，想把数据文件移动到其他位置时，可以修改该字段|String|`~/.starwhale`|是|
+|storage.root|Standalone Instance本地存储的根目录。通常情况下，当home目录空间不足，手工把数据文件移动到其他位置时，可以修改该字段|String|`~/.starwhale`|是|
 |version|config.yaml的版本，目前仅支持2.0|String|2.0|是|
 
 ## 2. Standalone Instance的文件存储结构
@@ -69,11 +69,11 @@ ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户�
 |  +-- .objectstore     --> 存储数据集chunk文件的简单存储，使用blake2b hash算法
 |  |   +-- blake2b      --> hash算法名称
 |  |   |  +-- 00        --> hash2位前缀
-|  |   |  |  +-- 0019ad58...   --> 完成的object文件，文件名就是文件内容的hash值
+|  |   |  |  +-- 0019ad58...   --> object文件，文件名是文件内容的hash值
 |  |   |  +-- 05
 |  +-- .datastore       --> 基于pyarrow的列式存储
 |  |   +-- project
-|  |   |   +-- self     --> 按照project 名称进行分类存储
+|  |   |   +-- self     --> 按照project名称进行分类存储
 |  |   |   |  +-- dataset --> 数据集相关的datastore存储，一般用来存储数据集的索引信息
 |  |   |   |  +-- eval    --> 模型评测结果存储
 |  +-- .recover   --> 软删除某个project的存储目录，可以用 `swcli project recover` 进行恢复

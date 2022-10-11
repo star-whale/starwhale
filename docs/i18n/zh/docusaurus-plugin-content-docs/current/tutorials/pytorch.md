@@ -15,7 +15,7 @@ title: PyTorch Runtime的构建
 ### 1.1 基础环境
 
 - Python版本: 3.7 ~ 3.10。
-- OS环境: Linux或MacOS。
+- OS环境: Linux或macOS。
 - Starwhale Client 完成安装，且版本不早于0.3.0。
 
 ### 1.2 代码准备

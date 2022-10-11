@@ -14,7 +14,7 @@ We recommend you build an independent virutalenv or conda environment to install
 ## Prerequisites
 
 - Python 3.7+
-- Linux or MacOS
+- Linux or macOS
 - [Conda](https://conda.io/) (optional)
 
 In the Ubuntu system, you can run the following commands:
@@ -28,7 +28,7 @@ sudo apt-get update
 sudo apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv
 ```
 
-Starwhale works on MacOS. If you run into issues with the default system Python3 on MacOS, try installing Python3 through the homebrew:
+Starwhale works on macOS. If you run into issues with the default system Python3 on macOS, try installing Python3 through the homebrew:
 
 ```bash
 brew install python3

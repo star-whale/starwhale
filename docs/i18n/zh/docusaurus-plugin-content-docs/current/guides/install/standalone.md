@@ -11,7 +11,7 @@ title: Standalone Instance的安装建议
 ## 前置条件
 
 - Python 3.7+
-- Linux or MacOS
+- Linux or macOS
 - [Conda](https://conda.io/) (optional)
 
 在Ubuntu系统中，可以执行如下命令：
@@ -25,7 +25,7 @@ sudo apt-get update
 sudo apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv
 ```
 
-Starwhale 可以在MacOS下工作，包括arm(M1 Chip)和x86(Intel Chip)两种体系结构。但MacOS下自带的Python3可能会遇到一些Python自身的问题，推荐使用homebrew进行安装：
+Starwhale 可以在macOS下工作，包括arm(M1 Chip)和x86(Intel Chip)两种体系结构。但macOS下自带的Python3可能会遇到一些Python自身的问题，推荐使用homebrew进行安装：
 
 ```bash
 brew install python3
@@ -61,7 +61,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 👏 现在可以在全局环境中使用swcli命令行。
 
-需要注意的是，在Linux/MacOS中，不使用venv/conda隔离环境，而是使用全局Python，有时会将Starwhale包安装到 ~/.local 下，需要将 ~/.local/bin 添加到PATH中，才能使用 swcli 命令行。
+需要注意的是，在Linux/macOS中，不使用venv/conda隔离环境，而是使用全局Python，有时会将Starwhale包安装到 ~/.local 下，需要将 ~/.local/bin 添加到PATH中，才能使用 swcli 命令行。
 
 ## Starwhale升级
 
@@ -80,4 +80,5 @@ python3 -m pip remove starwhale
 
 rm -rf ~/.config/starwhale
 rm -rf ~/.starwhale
+sudo rm -rf /usr/local/bin/swcli
 ```

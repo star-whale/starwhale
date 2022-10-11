@@ -68,7 +68,7 @@ helm delete starwhale
 | `externalS3OSS.accessKey`| 外部对象存储的access key |  |
 | `externalS3OSS.secretKey`| 外部对象存储的secret key | |
 | `externalS3OSS.region`| 外部对象存储的region | `local` |
-| `externalS3OSS.type`| 外部对象存储的类型，目前支持s3和aliyun两种 | `s3` |
+| `externalS3OSS.type`| 外部对象存储的类型，目前支持s3、aliyun、minio三种OSS | `minio` |
 
 ### minikube参数
 
