@@ -41,8 +41,8 @@ public class JobMockHolder {
     public Job mockJob() {
 
         String jobuuid = UUID.randomUUID().toString();
-        String jobDir = storagePathCoordinator.generateResultMetricsPath(jobuuid);
-        String swdsPath = storagePathCoordinator.generateSwdsPath("projectname1", "swds1", "versionswds1");
+        String jobDir = storagePathCoordinator.allocateResultMetricsPath(jobuuid);
+        String swdsPath = storagePathCoordinator.allocateSwdsPath("projectname1", "swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
                 .id(atomicLong.incrementAndGet())
@@ -51,7 +51,7 @@ public class JobMockHolder {
                         JobRuntime.builder().name("runtime1").version("version1").storagePath(jobDir)
                                 .build())
                 .swmp(SwModelPackage.builder().id(1L).name("swmp1").version("versionsmp1")
-                        .path(storagePathCoordinator.generateSwmpPath("project1", "swmp1", "versionsmp1")).build())
+                        .path(storagePathCoordinator.allocateSwmpPath("project1", "swmp1", "versionsmp1")).build())
                 .swDataSets(List.of(SwDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
                         swdsPath).size(1024L).build()))
                 .status(JobStatus.RUNNING)
@@ -94,7 +94,7 @@ public class JobMockHolder {
                 .uuid(taskUuid)
                 .id(atomicLong.incrementAndGet())
                 .resultRootPath(new ResultPath(
-                        storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUuid)))
+                        storagePathCoordinator.allocateTaskResultPath(step.getJob().getUuid(), taskUuid)))
                 .build();
 
         Task build2 = Task.builder()
@@ -103,7 +103,7 @@ public class JobMockHolder {
                 .uuid(taskUuid)
                 .id(atomicLong.incrementAndGet())
                 .resultRootPath(new ResultPath(
-                        storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUuid)))
+                        storagePathCoordinator.allocateTaskResultPath(step.getJob().getUuid(), taskUuid)))
                 .build();
 
         tasks.add(build);

@@ -18,14 +18,12 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo.PhaseEnum;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
-import com.github.pagehelper.PageInfo;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,16 +35,12 @@ public class SystemController implements SystemApi {
 
     private final SystemService systemService;
 
-    public SystemController(SystemService systemService) {
-        this.systemService = systemService;
-    }
+    private final SystemSettingService systemSettingService;
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<AgentVo>>> listAgent(String ip, Integer pageNum,
-            Integer pageSize) {
-        PageParams pageParams = PageParams.builder().pageNum(pageNum).pageSize(pageSize).build();
-        PageInfo<AgentVo> pageInfo = systemService.listAgents(ip, pageParams);
-        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    public SystemController(SystemService systemService,
+            SystemSettingService systemSettingService) {
+        this.systemService = systemService;
+        this.systemSettingService = systemSettingService;
     }
 
     @Override
@@ -84,5 +78,15 @@ public class SystemController implements SystemApi {
                 .progress(99)
                 .build();
         return ResponseEntity.ok(Code.success.asResponse(progress));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> updateSetting(String setting) {
+        return ResponseEntity.ok(Code.success.asResponse(systemSettingService.updateSetting(setting)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> querySetting() {
+        return ResponseEntity.ok(Code.success.asResponse(systemSettingService.querySetting()));
     }
 }

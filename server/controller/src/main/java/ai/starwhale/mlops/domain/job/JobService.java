@@ -190,7 +190,7 @@ public class JobService {
                 .projectId(projectId)
                 .swmpVersionId(modelVersionId)
                 .comment(comment)
-                .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
+                .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePoolId(resourcePoolId)

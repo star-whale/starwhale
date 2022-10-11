@@ -41,10 +41,13 @@ import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
 import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -111,8 +114,8 @@ public class JobBoConverterTest {
                 SwModelPackageVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
         JobBoConverter jobBoConverter = new JobBoConverter(jobSwdsVersionMapper, swModelPackageMapper, runtimeMapper,
                 runtimeVersionMapper,
-                swdsboConverter, "ghcr.io/star-whale/starwhale:latest", resourcePoolMapper, resourcePoolConverter,
-                swmpVersionConvertor);
+                swdsboConverter, resourcePoolMapper, resourcePoolConverter,
+                swmpVersionConvertor, new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class)));
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(), job.getStatus());

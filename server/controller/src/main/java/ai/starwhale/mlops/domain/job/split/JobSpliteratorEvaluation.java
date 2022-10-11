@@ -142,7 +142,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
                         .outputPath(
-                                storagePathCoordinator.generateTaskResultPath(job.getUuid(), taskUuid))
+                                storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
                                         TaskRequest.builder()
                                                 .total(stepEntity.getTaskNum())

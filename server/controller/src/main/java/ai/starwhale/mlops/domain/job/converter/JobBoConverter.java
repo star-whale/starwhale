@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.converter;
 
+import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
@@ -31,13 +32,13 @@ import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
 import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -60,7 +61,7 @@ public class JobBoConverter {
 
     final SwdsBoConverter swdsBoConverter;
 
-    final String defaultRuntimeImage;
+    final SystemSettingService systemSettingService;
 
     final SwmpVersionConvertor swmpVersionConvertor;
 
@@ -70,18 +71,18 @@ public class JobBoConverter {
             RuntimeMapper runtimeMapper,
             RuntimeVersionMapper runtimeVersionMapper,
             SwdsBoConverter swdsBoConverter,
-            @Value("${sw.runtime.image-default}") String defaultImage,
             ResourcePoolMapper resourcePoolMapper,
             ResourcePoolConverter resourcePoolConverter,
-            SwmpVersionConvertor swmpVersionConvertor) {
+            SwmpVersionConvertor swmpVersionConvertor,
+            SystemSettingService systemSettingService) {
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsBoConverter = swdsBoConverter;
-        this.defaultRuntimeImage = defaultImage;
         this.resourcePoolMapper = resourcePoolMapper;
         this.resourcePoolConverter = resourcePoolConverter;
+        this.systemSettingService = systemSettingService;
         this.swmpVersionConvertor = swmpVersionConvertor;
     }
 
@@ -97,6 +98,13 @@ public class JobBoConverter {
                 runtimeVersionEntity.getRuntimeId());
         ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
         ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
+        String image = runtimeVersionEntity.getImage();
+        if (null != systemSettingService.getSystemSetting() && null != systemSettingService.getSystemSetting()
+                .getDockerSetting() && null != systemSettingService.getSystemSetting().getDockerSetting()
+                .getRegistry()) {
+            image = new DockerImage(image).resolve(
+                    systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+        }
         return Job.builder()
                 .id(jobEntity.getId())
                 .project(Project.builder()
@@ -107,8 +115,7 @@ public class JobBoConverter {
                         .name(runtimeEntity.getRuntimeName())
                         .version(runtimeVersionEntity.getVersionName())
                         .storagePath(runtimeVersionEntity.getStoragePath())
-                        .image(null == runtimeVersionEntity.getImage() ? defaultRuntimeImage
-                                : runtimeVersionEntity.getImage())
+                        .image(image)
                         .build())
                 .status(jobEntity.getJobStatus())
                 .type(jobEntity.getType())
