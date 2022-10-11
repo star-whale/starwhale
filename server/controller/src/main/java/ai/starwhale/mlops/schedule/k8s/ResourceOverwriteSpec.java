@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -48,20 +47,24 @@ public class ResourceOverwriteSpec {
     }
 
     public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
-        Map<String, Quantity> resourceRequiredMap = runtimeResources.stream()
-                .collect(convertToMap());
-        this.resourceSelector = new V1ResourceRequirements().requests(resourceRequiredMap);
+        Map<String, Quantity> resourceRequestMap = runtimeResources.stream()
+                .collect(Collectors.toMap(
+                    RuntimeResource::getType,
+                    runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getRequest())
+                ));
+        this.resourceSelector = new V1ResourceRequirements().requests(resourceRequestMap);
         Map<String, Quantity> resourceLimitMap = runtimeResources.stream()
-                .filter(runtimeResource -> !k8sResource(runtimeResource.getType()))
-                .collect(convertToMap());
+                .collect(Collectors.toMap(
+                    RuntimeResource::getType,
+                    runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getLimit())
+                ));
         resourceSelector.limits(resourceLimitMap);
     }
 
-    private Collector<RuntimeResource, ?, Map<String, Quantity>> convertToMap() {
-        return Collectors.toMap(RuntimeResource::getType,
-                runtimeResource -> new Quantity(
-                        k8sResource(runtimeResource.getType()) ? runtimeResource.getNum().toString()
-                                : normalizeNonK8sResources(runtimeResource.getNum()).toString()));
+    private Quantity convertToQuantity(String type, Float num) {
+        return new Quantity(
+            k8sResource(type) ? num.toString()
+                : normalizeNonK8sResources(num).toString());
     }
 
     boolean k8sResource(String resource) {

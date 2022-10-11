@@ -27,7 +27,7 @@ public class ResourceOverwriteSpecTest {
     @Test
     public void testRuntimeResource() {
         ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(
-                List.of(new RuntimeResource("cpu", 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f)));
+                List.of(new RuntimeResource("cpu", 1.99f, 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f, 1.99f)));
         Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
         Assertions.assertEquals(new Quantity("2"),

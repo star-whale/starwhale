@@ -10,7 +10,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import ROOT_DIR
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Parser, Context
+from starwhale.api._impl.job import Parser, Context, do_resource_transform
 from starwhale.core.job.model import (
     Step,
     STATUS,
@@ -43,16 +43,14 @@ class JobTestCase(TestCase):
         - concurrency: 1
           job_name: default
           needs: []
-          resources:
-          - cpu=1
+          resources: {}
           step_name: ppl
           task_num: 1
         - concurrency: 1
           job_name: default
           needs:
           - ppl
-          resources:
-          - cpu=1
+          resources: {}
           step_name: cmp
           task_num: 1
         """
@@ -62,6 +60,130 @@ class JobTestCase(TestCase):
         self.assertEqual(len(_steps), 2)
         self.assertEqual(_steps[0].step_name, "ppl")
         self.assertEqual(_steps[1].step_name, "cmp")
+
+    def test_generate_job_yaml_with_error(self):
+        Parser.clear_config()
+        # create a temporary directory
+        root = "home/starwhale/job"
+        ensure_dir(root)
+        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
+
+        with self.assertRaises(expected_exception=RuntimeError):
+            Parser.generate_job_yaml(
+                "job_steps_with_error", Path(_job_data_dir), Path(_f)
+            )
+
+    def test_resource_valid(self):
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform({"ppu": 1})  # illegal resource name
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {"cpu": {"res": 1, "limit": 2}}
+            )  # illegal attribute name
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {"cpu": {"request": "u", "limit": 2}}
+            )  # don't support str
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {
+                    "cpu": 0.1,
+                    "memory": 2,
+                    "nvidia.com/gpu": 2.1,  # gpu don't support float
+                }
+            )
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {
+                    "cpu": {
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                    "memory": 2,
+                    "nvidia.com/gpu": {  # gpu don't support float
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                }
+            )
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {  # value must be number or dict
+                    "cpu": "0.1",
+                    "memory": "100",
+                    "nvidia.com/gpu": "1",
+                }
+            )
+        with self.assertRaises(expected_exception=RuntimeError):
+            do_resource_transform(
+                {
+                    "cpu": 0.1,
+                    "memory": -100,  # only supports non-negative numbers
+                    "nvidia.com/gpu": 1,
+                }
+            )
+
+        self.assertEqual(
+            do_resource_transform(
+                {
+                    "cpu": 0.1,
+                    "memory": 100,
+                    "nvidia.com/gpu": 1,
+                }
+            ),
+            [
+                {
+                    "type": "cpu",
+                    "request": 0.1,
+                    "limit": 0.1,
+                },
+                {
+                    "type": "memory",
+                    "request": 100,
+                    "limit": 100,
+                },
+                {
+                    "type": "nvidia.com/gpu",
+                    "request": 1,
+                    "limit": 1,
+                },
+            ],
+        )
+        self.assertEqual(
+            do_resource_transform(
+                {
+                    "cpu": {
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                    "memory": {
+                        "request": 100.1,
+                        "limit": 100.2,
+                    },
+                    "nvidia.com/gpu": {
+                        "request": 1,
+                        "limit": 2,
+                    },
+                }
+            ),
+            [
+                {
+                    "type": "cpu",
+                    "request": 0.1,
+                    "limit": 0.2,
+                },
+                {
+                    "type": "memory",
+                    "request": 100.1,
+                    "limit": 100.2,
+                },
+                {
+                    "type": "nvidia.com/gpu",
+                    "request": 1,
+                    "limit": 2,
+                },
+            ],
+        )
 
     def test_generate_custom_job_yaml(self):
         Parser.clear_config()
@@ -78,7 +200,9 @@ class JobTestCase(TestCase):
           job_name: default
           needs: []
           resources:
-          - cpu=1
+            cpu:
+              request: 1
+              limit: 1
           step_name: custom_ppl
           task_num: 1
         - concurrency: 1
@@ -86,7 +210,9 @@ class JobTestCase(TestCase):
           needs:
           - custom_ppl
           resources:
-          - cpu=1
+            cpu:
+              request: 1
+              limit: 2
           step_name: custom_cmp
           task_num: 1
         """
@@ -97,6 +223,12 @@ class JobTestCase(TestCase):
         self.assertEqual(_steps[0].step_name, "custom_ppl")
         self.assertEqual(_steps[0].cls_name, "CustomPipeline")
         self.assertEqual(_steps[1].step_name, "custom_cmp")
+        self.assertEqual(
+            _steps[0].resources[0], {"type": "cpu", "limit": 1, "request": 1}
+        )
+        self.assertEqual(
+            _steps[1].resources[0], {"type": "cpu", "limit": 2, "request": 1}
+        )
 
     def test_job_check(self):
         self.assertEqual(
@@ -131,19 +263,19 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl-1",
-                        resources=[],
+                        resources={},
                         needs=["cmp"],
                     ),
                     Step(
                         job_name="default",
                         step_name="ppl-2",
-                        resources=[],
+                        resources={},
                         needs=["ppl-1"],
                     ),
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources=[],
+                        resources={},
                         needs=["ppl-2"],
                     ),
                 ]
@@ -154,19 +286,19 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl-1",
-                    resources=[],
+                    resources={},
                     needs=[],
                 ),
                 Step(
                     job_name="default",
                     step_name="ppl-2",
-                    resources=[],
+                    resources={},
                     needs=["ppl-1"],
                 ),
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources=[],
+                    resources={},
                     needs=["ppl-2"],
                 ),
             ]
@@ -262,7 +394,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl",
-                        resources=["cpu=1"],
+                        resources={"cpu": 1},
                         concurrency=1,
                         task_num=2,
                         # cycle point
@@ -271,7 +403,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources=["cpu=1"],
+                        resources={"cpu": 1},
                         concurrency=1,
                         task_num=2,
                         needs=["ppl"],
@@ -295,7 +427,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl",
-                    resources=["cpu=1"],
+                    resources={"cpu": 1},
                     concurrency=1,
                     task_num=2,
                     needs=[],
@@ -303,7 +435,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources=["cpu=1"],
+                    resources={"cpu": 1},
                     concurrency=1,
                     task_num=1,
                     needs=["ppl"],

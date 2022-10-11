@@ -33,7 +33,7 @@ class Step:
         self,
         job_name: str,
         step_name: str,
-        resources: t.List[str],
+        resources: t.List[t.Dict],
         needs: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
