@@ -5,7 +5,7 @@ title: Standalone Instance的安装建议
 我们使用swcli命令行工具完成所有的Standalone Instance上的操作，由于swcli是由纯Python3编写，可以在自己的笔记本或开发机上，使用pip命令完成安装。本文会提供一些安装建议，帮助你获得一个干净的、无依赖冲突的swcli python环境。
 
 :::caution 安装建议
-非常不建议将Starwhale安装在系统的全局Python环境，可能会导致Python的依赖冲突问题。使用virtualenv或conda创建一个隔离的环境，并在其中安装Starwhale，是Python推荐的做法。
+非常不建议将Starwhale安装在系统的全局Python环境中，可能会导致Python的依赖冲突问题。使用venv或conda创建一个隔离的Python环境，并在其中安装Starwhale，是Python推荐的做法。
 :::
 
 ## 前置条件

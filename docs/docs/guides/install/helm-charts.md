@@ -6,7 +6,7 @@ title: Helm Charts Installation
 
 Helm Charts helps you quickly deploy the whole Starwhale instance in Kubernetes.
 
-- To deploy, upgrade, and maintain the Starwhale controller and agents.
+- To deploy, upgrade, and maintain the Starwhale `controller`.
 - To deploy third-party dependencies, such as minio, mysql, etc.
 
 ## TL; DR
