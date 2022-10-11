@@ -73,11 +73,11 @@ class Example(PipelineHandler):
 ```python
 
 @pass_context
-def func(ctx: Context):
+def func(context: Context):
     ...
-    print(ctx.project)
-    print(ctx.version)
-    print(ctx.step)
+    print(context.project)
+    print(context.version)
+    print(context.step)
     ...
 
 Context(
@@ -101,9 +101,34 @@ Context(
 |dataset_uris|dataset uri字符串的列表|
 |workdir|model.yaml所在目录|
 
+## starwhale.PPLResultStorage
+
+`ppl`函数中使用，能够保存 `ppl` 结果、数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
+
+| 函数   | 说明                                                                                                              |
+|------|-----------------------------------------------------------------------------------------------------------------|
+| save | data_id: t.Union[int, str] 数据唯一索引值<br/> result: t.Any 专指ppl过程的评测结果值<br/> **kwargs: t.Any 其他待存储的信息，如annotations等 |
+
+使用例子如下：
+```python
+from starwhale import pass_context, Context, PPLResultStorage
+
+@pass_context
+def func(context: Context) -> None:
+    ppl_result_storage = PPLResultStorage(context)
+    for _idx, _data, _annotations in _dataloader:
+        pred_value = eval_process(_data, ...)
+        ppl_result_storage.save(
+            data_id=_idx,
+            result=pred_value,
+            ...
+            annotations=_annotations,
+        )
+```
+
 ## starwhale.PPLResultIterator
 
-`cmp`函数中使用，是一个可迭代的对象，能够输出 `ppl` 结果，数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
+`cmp`函数中使用，是一个可迭代的对象，能够输出 `ppl` 结果、数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
 
 ```python
 from starwhale import PipelineHandler, PPLResultIterator
@@ -167,7 +192,7 @@ def cmp(ppl_result: PPLResultIterator) -> t.Tuple[t.List[int], t.List[int], t.Li
 
 ```python
 @step(
-    resources: Optional[List[str]] = None,
+    resources: Optional[t.Dict[str, Any]] = None,
     concurrency: int = 1,
     task_num: int = 1,
     needs: Optional[List[str]] = None,
@@ -184,12 +209,30 @@ def func():
 |`task_num`|step会被分成task的数量|
 |`needs`|依赖的step列表|
 
-`resources` 格式为 {名称}:{数量}。名称为资源的种类，目前支持 `cpu`、`gpu` 和 `memory`。当种类为 `cpu` 时，数量的类型为float, 没有单位，1表示1个cpu core，对应Kubernetes resource的request；当种类为 `gpu` 时，数量的类型为int，没有单位，1表示1个gpu，对应Kubernetes resource的request和limit；当种类为 `memory`时，数量的类型为float，没有单位，1表示1MB内存，对应Kubernetes resource的request。`resources` 使用列表的方式支持指定多个资源，且这些资源都满足时才会进行调度。当不写 `resources` 时，会使用所在Kubernetes的cpu、memory默认值。 `resources` 表示的是一个task执行的时所需要的资源情况，并不是step所有task的资源总和限制。**目前 `resources` 只在Cloud Instance中生效**。 `resources` 使用例子如下：
+`resources` 格式为：
+- 简化表达方式：代表request和limit同时设置，且值相同。
+  ```python
+  {
+    {名称}:{数量},
+    ...
+  }
+  ```
+
+- 完全表达方式：代表分别对limit和request进行设置。
+  ```python
+  {
+    {名称}:{"request": {数量},"limit": {数量}},
+    ...
+  }
+  ```
+
+其中，名称为资源的种类，目前支持 `cpu`、`gpu` 和 `memory`。当种类为 `cpu` 时，数量的类型为float, 没有单位，1表示1个cpu core，对应Kubernetes resource的request和limit；当种类为 `gpu` 时，数量的类型为int，没有单位，1表示1个gpu，对应Kubernetes resource的request和limit；当种类为 `memory`时，数量的类型为float，没有单位，1表示1MB内存，对应Kubernetes resource的request和limit。`resources` 使用列表的方式支持指定多个资源，且这些资源都满足时才会进行调度。当不写 `resources` 时，会使用所在Kubernetes的cpu、memory默认值。 `resources` 表示的是一个task执行时所需要的资源情况，并不是step所有task的资源总和限制。**目前 `resources` 只在Cloud Instance中生效**。 `resources` 使用例子如下：
 
 ```python
 @step()
-@step(resources=["cpu=1"])
-@step(resources=["gpu=1"])
-@step(resources=["memory=100"])
-@step(resources=["cpu=0.1", "gpu=1", "memory=100"])
+@step(resources={"cpu":1})
+@step(resources={"gpu":1})
+@step(resources={"memory":100})
+@step(resources={"cpu": 0.1, "gpu": 1, "memory": 100})
+@step(resources={"cpu": {"request": 0.1, "limit": 0.2}, "gpu": {"request": 1, "limit": 1}, "memory": {"request": 100, "limit": 200}})
 ```
