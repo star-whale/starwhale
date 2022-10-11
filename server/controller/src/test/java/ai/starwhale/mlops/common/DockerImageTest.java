@@ -133,18 +133,18 @@ public class DockerImageTest {
 
     @Test
     public void testResolve() {
-        Map<String, String> images = Map.of("", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "docker.io", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "docker.io/", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "ghcr.io", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "ghcr.io/", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "131.0.1.8:5000", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "131.0.1.8:5000/", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "homepage-ca.intra.starwhale.ai:5000",
-                "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "homepage-ca.intra.starwhale.ai:5000/",
-                "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
-                , "localhost:5000", "localhost:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
+        Map<String, String> images = Map.of("", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "docker.io", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "docker.io/", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "ghcr.io", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "ghcr.io/", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "131.0.1.8:5000", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "131.0.1.8:5000/", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "homepage-ca.intra.starwhale.ai:5000",
+                "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "homepage-ca.intra.starwhale.ai:5000/",
+                "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "localhost:5000", "localhost:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
         );
         images.forEach((k, v) -> Assertions.assertEquals(v,
                 new DockerImage("docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507").resolve(k)));

@@ -48,12 +48,12 @@ public class DockerImage {
         if (!matcher.matches()) {
             this.registry = null;
             this.image = imageNameFull;
-        }else {
+        } else {
             String candidateRegistry = matcher.group(1);
-            if(isDomain(candidateRegistry)){
+            if (isDomain(candidateRegistry)) {
                 this.registry = candidateRegistry;
                 image = matcher.group(2);
-            }else {
+            } else {
                 this.registry = null;
                 this.image = imageNameFull;
             }
@@ -61,8 +61,9 @@ public class DockerImage {
         }
     }
 
-    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST=Pattern.compile("localhost(:\\d+)?");
-    private static boolean isDomain(String candidate){
+    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST = Pattern.compile("localhost(:\\d+)?");
+
+    private static boolean isDomain(String candidate) {
         return candidate.contains(".") || PATTERN_DOMAIN_LOCAL_HOST.matcher(candidate).matches();
     }
 
