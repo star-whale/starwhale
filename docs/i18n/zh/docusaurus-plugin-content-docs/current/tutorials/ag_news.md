@@ -16,7 +16,7 @@ title: AG News数据集的文本分类模型评测
 ### 1.1 基础环境
 
 - Python版本: 3.7 ~ 3.10。
-- OS环境: Linux或MacOS(仅运行Standalone)。
+- OS环境: Linux或macOS(仅运行Standalone)。
 - Starwhale Client 完成安装，且版本不早于0.3.0。
 - [可选]Starwhale Controller 完成安装，且版本不早于0.3.0，如果只希望在Standalone Instance中进行评测，可以忽略该步骤。
 - Runtime: [Pytorch Runtime Example](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)
@@ -66,7 +66,7 @@ make train
 ### 步骤1：构建Starwhale Dataset
 
 ```bash
-# 根据dataset.yaml构建swds格式的数据集
+# 根据dataset.yaml构建swds-bin格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
 swcli dataset info ag_news_test/version/latest

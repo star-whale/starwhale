@@ -8,9 +8,9 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 
 - `class PipelineHandler`: 提供默认的模型评测过程定义，需要用户实现 `ppl` 和 `cmp` 函数。
 - `class Context`: 执行模型评测过程中传入的上下文信息，包括Project、Task ID等。
-- `class SWDSBinBuildExecutor`: 提供swds格式的数据集构建类，需要用户实现 `iter_item` 函数。
+- `class SWDSBinBuildExecutor`: 提供swds-bin格式的数据集构建类，需要用户实现 `iter_item` 函数。
 - `class UserRawBuildExecutor`: 提供remote-link和user-raw格式的数据集构建类，需要用户实现 `iter_item` 函数。
-- `class BuildExecutor`: `SWDSBinBuildExecutor` 类的别称，同为swds格式的数据集构建类。
+- `class BuildExecutor`: `SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
 - `class PPLResultIterator`: `cmp`函数中使用，是一个可迭代的对象，能够输出 `ppl` 结果，数据集index和对应的数据集annotations。
 - `class URI`: starwhale uri的类定义，可以将字符串转化成URI对象。
 
