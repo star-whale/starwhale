@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.common;
 
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -37,19 +35,35 @@ public class DockerImage {
     String registry;
     String image;
 
-    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile(
-            "^(([a-z0-9-]+\\.[a-z0-9.]+)(:(\\d{2,5}))?)?\\/?(.+)$");
+    /**
+     * please refer to https://github.com/distribution/distribution/blob/v2.7.1/reference/reference.go
+     */
+    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.+?)\\/(.+)$");
 
     /**
-     * @param imageNameFull ghcr.io/starwhale-ai/starwhale:0.3.5-rc123.dev12432344
+     * @param imageNameFull such as ghcr.io/starwhale-ai/starwhale:0.3.5-rc123.dev12432344
      */
     public DockerImage(String imageNameFull) {
         Matcher matcher = PATTERN_IMAGE_FULL.matcher(imageNameFull);
         if (!matcher.matches()) {
-            throw new SwValidationException(ValidSubject.SETTING).tip("image style unknown");
+            this.registry = null;
+            this.image = imageNameFull;
+        }else {
+            String candidateRegistry = matcher.group(1);
+            if(isDomain(candidateRegistry)){
+                this.registry = candidateRegistry;
+                image = matcher.group(2);
+            }else {
+                this.registry = null;
+                this.image = imageNameFull;
+            }
+
         }
-        registry = matcher.group(1);
-        image = matcher.group(5);
+    }
+
+    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST=Pattern.compile("localhost(:\\d+)?");
+    private static boolean isDomain(String candidate){
+        return candidate.contains(".") || PATTERN_DOMAIN_LOCAL_HOST.matcher(candidate).matches();
     }
 
     private static final String SLASH = "/";
@@ -58,16 +72,7 @@ public class DockerImage {
         if (!StringUtils.hasText(newRegistry)) {
             return image;
         }
-        if (newRegistry.endsWith(SLASH)) {
-            newRegistry = removeEndingSlash(newRegistry);
-        }
-        return newRegistry + SLASH + image;
+        return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
     }
 
-    private String removeEndingSlash(String newRegistry) {
-        if (newRegistry.endsWith(SLASH)) {
-            return removeEndingSlash(newRegistry.substring(0, newRegistry.length() - 1));
-        }
-        return newRegistry;
-    }
 }
