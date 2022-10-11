@@ -33,7 +33,6 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
@@ -44,10 +43,10 @@ import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.UUID;
@@ -116,8 +115,7 @@ public class JobBoConverterTest {
         JobBoConverter jobBoConverter = new JobBoConverter(jobSwdsVersionMapper, swModelPackageMapper, runtimeMapper,
                 runtimeVersionMapper,
                 swdsboConverter, resourcePoolMapper, resourcePoolConverter,
-                swmpVersionConvertor, new SystemSettingService(new YAMLMapper(), new StoragePathCoordinator("test"),
-                        mock(StorageAccessService.class)));
+                swmpVersionConvertor, new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class)));
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(), job.getStatus());

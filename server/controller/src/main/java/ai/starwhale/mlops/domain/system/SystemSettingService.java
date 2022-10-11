@@ -16,18 +16,14 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
+import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -39,21 +35,15 @@ public class SystemSettingService implements CommandLineRunner {
 
     private final YAMLMapper yamlMapper;
 
-    protected final String path;
-
     @Getter
     protected SystemSetting systemSetting;
 
-    private final StorageAccessService storageAccessService;
-
-    static final String PATH_SETTING = "controller.yaml";
+    private final SystemSettingMapper systemSettingMapper;
 
     public SystemSettingService(YAMLMapper yamlMapper,
-            StoragePathCoordinator storagePathCoordinator,
-            StorageAccessService storageAccessService) {
+            SystemSettingMapper systemSettingMapper) {
         this.yamlMapper = yamlMapper;
-        this.storageAccessService = storageAccessService;
-        this.path = storagePathCoordinator.allocateSystemSettingPath(PATH_SETTING);
+        this.systemSettingMapper = systemSettingMapper;
     }
 
     public String querySetting() {
@@ -75,22 +65,17 @@ public class SystemSettingService implements CommandLineRunner {
             log.error("invalid setting yaml {}", setting);
             throw new SwValidationException(ValidSubject.SETTING);
         }
-        try {
-            storageAccessService.put(path, setting.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            log.error("write systemSetting setting to storage failed", e);
-            throw new SwProcessException(ErrorType.STORAGE);
-        }
+        systemSettingMapper.put(setting);
         return querySetting();
     }
 
 
     @Override
     public void run(String... args) throws Exception {
-        StorageObjectInfo head = storageAccessService.head(path);
-        if (head.isExists()) {
-            try (LengthAbleInputStream lengthAbleInputStream = storageAccessService.get(path)) {
-                systemSetting = yamlMapper.readValue(lengthAbleInputStream, SystemSetting.class);
+        SystemSettingEntity setting = systemSettingMapper.get();
+        if (null != setting) {
+            try  {
+                systemSetting = yamlMapper.readValue(setting.getContent(), SystemSetting.class);
             } catch (JsonProcessingException e) {
                 log.error("corrupted system setting yaml");
                 throw new SwValidationException(ValidSubject.SETTING);

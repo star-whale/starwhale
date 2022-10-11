@@ -19,14 +19,9 @@ package ai.starwhale.mlops.domain.system;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
+import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,18 +29,13 @@ import org.junit.jupiter.api.Test;
 public class SystemSettingServiceTest {
 
     private SystemSettingService systemSettingService;
-    StorageAccessService storageAccessService;
+    SystemSettingMapper systemSettingMapper;
 
     @BeforeEach
     public void setUp() throws Exception {
-        storageAccessService = mock(StorageAccessService.class);
-        StoragePathCoordinator storagePathCoordinator = new StoragePathCoordinator("test");
-        String path = storagePathCoordinator.allocateSystemSettingPath(SystemSettingService.PATH_SETTING);
-        when(storageAccessService.head(path)).thenReturn(new StorageObjectInfo(true, 1L, ""));
-        when(storageAccessService.get(path)).thenReturn(
-                new LengthAbleInputStream(new ByteArrayInputStream(YAML.getBytes(StandardCharsets.UTF_8)), 1L));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), storagePathCoordinator,
-                storageAccessService);
+        systemSettingMapper = mock(SystemSettingMapper.class);
+        when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
         systemSettingService.run();
     }
 
@@ -65,10 +55,9 @@ public class SystemSettingServiceTest {
     }
 
     @Test
-    public void testAppStartWithoutSetting() throws IOException {
-        when(storageAccessService.head(systemSettingService.path)).thenReturn(new StorageObjectInfo(false, null, ""));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), new StoragePathCoordinator("test"),
-                storageAccessService);
+    public void testAppStartWithoutSetting() {
+        when(systemSettingMapper.get()).thenReturn(null);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
         Assertions.assertNull(systemSettingService.getSystemSetting());
 
     }
@@ -81,10 +70,9 @@ public class SystemSettingServiceTest {
     }
 
     @Test
-    public void testUpdateWitouData() throws IOException {
-        when(storageAccessService.head(systemSettingService.path)).thenReturn(new StorageObjectInfo(false, null, ""));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), new StoragePathCoordinator("test"),
-                storageAccessService);
+    public void testUpdateWitouData() {
+        when(systemSettingMapper.get()).thenReturn(null);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
@@ -96,10 +84,9 @@ public class SystemSettingServiceTest {
     }
 
     @Test
-    public void testQueryWithoutData() throws IOException {
-        when(storageAccessService.head(systemSettingService.path)).thenReturn(new StorageObjectInfo(false, null, ""));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), new StoragePathCoordinator("test"),
-                storageAccessService);
+    public void testQueryWithoutData() {
+        when(systemSettingMapper.get()).thenReturn(null);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
         Assertions.assertEquals("", systemSettingService.querySetting());
     }
 

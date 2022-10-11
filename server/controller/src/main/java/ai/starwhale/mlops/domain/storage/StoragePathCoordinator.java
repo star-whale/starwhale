@@ -122,10 +122,4 @@ public class StoragePathCoordinator {
         return s.substring(0, 2);
     }
 
-    static final String SYSTEM_SETTING = "%s/sys/setting/%s";
-
-    public String allocateSystemSettingPath(String subPath) {
-        return String.format(SYSTEM_SETTING, prefix, subPath);
-    }
-
 }
