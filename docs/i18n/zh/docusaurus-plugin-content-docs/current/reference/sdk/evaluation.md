@@ -210,21 +210,22 @@ def func():
 |`needs`|依赖的step列表|
 
 `resources` 格式为：
-- 简化表达方式
-  ```json
+- 简化表达方式：代表request和limit同时设置，且值相同。
+  ```python
   {
     {名称}:{数量},
     ...
   }
   ```
-  代表request和limit同时设置，且值相同。
-- 完全表达方式
-  ```json
+
+- 完全表达方式：代表分别对limit和request进行设置。
+  ```python
   {
     {名称}:{"request": {数量},"limit": {数量}},
     ...
   }
   ```
+
 其中，名称为资源的种类，目前支持 `cpu`、`gpu` 和 `memory`。当种类为 `cpu` 时，数量的类型为float, 没有单位，1表示1个cpu core，对应Kubernetes resource的request和limit；当种类为 `gpu` 时，数量的类型为int，没有单位，1表示1个gpu，对应Kubernetes resource的request和limit；当种类为 `memory`时，数量的类型为float，没有单位，1表示1MB内存，对应Kubernetes resource的request和limit。`resources` 使用列表的方式支持指定多个资源，且这些资源都满足时才会进行调度。当不写 `resources` 时，会使用所在Kubernetes的cpu、memory默认值。 `resources` 表示的是一个task执行时所需要的资源情况，并不是step所有task的资源总和限制。**目前 `resources` 只在Cloud Instance中生效**。 `resources` 使用例子如下：
 
 ```python
