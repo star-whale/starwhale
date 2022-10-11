@@ -86,6 +86,8 @@ Starwhale Dataset 对数据集格式的定义，根据实际使用场景，有�
 |handler|继承 `starwhale.SWDSBinBuildExecutor`, `starwhale.UserRawBuildExecutor` 或 `starwhale.BuildExecutor` 类的可import地址，格式为 {module 路径}:{类名} |是|String||
 |desc|数据集描述信息|否|String|""|
 |version|dataset.yaml格式版本，目前仅支持填写 1.0|否|String|1.0|
+|pkg_data|swds中包含的文件或目录，支持wildcard方式描述。默认会包含 `.py/.sh/.yaml` 文件|否|List[String]||
+|exclude_pkg_data|swds中排除的文件或目录，支持wildcard方式描述。默认会包含 `.py/.sh/.yaml` 文件|否|List[String]||
 |attr|数据集构建参数|否|Dict||
 |attr.volume_size|swds-bin格式的数据集每个data文件的大小。当写数字时，单位bytes；也可以是数字+单位格式，如64M, 1GB等|否|Int或Str|64MB|
 |attr.alignment_size|swds-bin格式的数据集每个数据块的数据alignment大小，如果设置alignment_size为4k，数据块大小为7.9K，则会补齐0.1K的空数据，让数据块为alignment_size的整数倍，提升page size等读取效率|否|Int或Str|4k|

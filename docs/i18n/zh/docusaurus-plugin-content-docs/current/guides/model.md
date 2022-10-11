@@ -64,41 +64,43 @@ model.yaml 对于 `Starwhale Model` 至关重要，描述模型包中文件是�
 |name|Starwhale Model的名字|是|String||
 |version|model.yaml格式版本，目前仅支持填写 1.0|否|String|1.0|
 |desc|模型包描述信息|否|String|""|
-|model|模型文件相对路径列表，可以写零个或多个，路径是相对于model.yaml所在目录|否|List[String]||
-|config|配置文件相对路径列表，可以写零个或多个，路径是相对于model.yaml所在目录|否|List[String]||
+|model|模型文件相对路径列表，可以写零个或多个，路径是相对于model.yaml所在目录，会被打包到swmp中|否|List[String]||
+|config|配置文件相对路径列表，可以写零个或多个，路径是相对于model.yaml所在目录，会被打包到swmp中|否|List[String]||
 |run|模型包运行的配置|是|Dict||
 |run.handler|模型评测的入口点，格式为 {module 路径}:{类名} |是|String||
 |run.envs|模型包运行时注入的环境变量，格式为 {名称}={值}|否|List[String]||
+|run.pkg_data|swmp中包含的文件或目录，支持wildcard方式描述|否|List[String]||
+|run.exclude_pkg_data|swmp中排除的文件或目录，支持wildcard方式描述|否|List[String]||
 
 ### 3.2 使用示例
 
 #### 3.2.1 最简示例
 
-```yaml
-name: helloworld
-model:
-  - models/model.pth
-run:
-  handler: model:ExampleHandler
-```
+    ```yaml
+    name: helloworld
+    model:
+    - models/model.pth
+    run:
+    handler: model:ExampleHandler
+    ```
 
 helloworld模型包，包含一个在models目录中的model.pth模型文件，模型评测是程序的入口点是model.py中的ExampleHandler类。
 
 #### 3.2.2 nmt模型包示例
 
-```yaml
-version: 1.0
-name: nmt
+    ```yaml
+    version: 1.0
+    name: nmt
 
-model:
-  - models/encoder.pth
-  - models/decoder.pth
-  - models/vocab_eng-fra.bin
+    model:
+    - models/encoder.pth
+    - models/decoder.pth
+    - models/vocab_eng-fra.bin
 
-run:
-  handler: nmt.evaluator:NMTPipeline
+    run:
+    handler: nmt.evaluator:NMTPipeline
 
-desc: nmt by pytorch
-```
+    desc: nmt by pytorch
+    ```
 
 nmt模型包定义多个模型文件，这些文件都会被打包进入到swmp中。handler为model.yaml所在目录中nmt/evaluator.py文件的NMTPipeline类。
