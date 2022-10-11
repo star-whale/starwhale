@@ -1,6 +1,6 @@
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
-import { IAgentSchema, IDeviceSchema, ISystemVersionSchema } from '../schemas/system'
+import { IAgentSchema, IDeviceSchema, ISystemSettingSchema, ISystemVersionSchema } from '../schemas/system'
 
 export async function fetchSystemVersion(): Promise<ISystemVersionSchema> {
     const resp = await axios.get('/api/v1/system/version')
@@ -22,6 +22,20 @@ export async function deleteAgent(serialNumber: string): Promise<any> {
 export async function listDevices(query: IListQuerySchema): Promise<Array<IDeviceSchema>> {
     const resp = await axios.get('/api/v1/runtime/device', {
         params: query,
+    })
+    return resp.data
+}
+
+export async function fetchSystemSetting(): Promise<ISystemSettingSchema> {
+    const resp = await axios.get('/api/v1/system/setting')
+    return resp.data
+}
+
+export async function updateSystemSetting(data: string): Promise<any> {
+    const resp = await axios.post('/api/v1/system/setting', data, {
+        headers: {
+            'Content-Type': 'text/plain',
+        },
     })
     return resp.data
 }

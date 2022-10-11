@@ -30,7 +30,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
         if (devicesInfo.isSuccess) {
             setOptions(
                 devicesInfo.data?.map((item) => ({
-                    id: item.id,
+                    id: item.name,
                     label: item.name,
                 })) ?? []
             )
@@ -46,6 +46,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
             overrides={overrides}
             isLoading={devicesInfo.isFetching}
             options={options}
+            clearable={false}
             onChange={(params) => {
                 if (!params.option) {
                     return

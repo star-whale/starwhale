@@ -21,17 +21,19 @@ swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
   |-------|----------|-----|
   |build|✅|❌|
   |copy|✅|✅|
+  |diff|✅|❌|
   |history|✅|✅|
   |info|✅|✅|
   |list|✅|✅|
   |recover|✅|✅|
   |remove|✅|✅|
+  |summary|✅|✅|
   |tag|✅|❌|
 
 ## Build a dataset
 
 ```bash
-swcli build [OPTIONS] WORKDIR
+swcli dataset build [OPTIONS] WORKDIR
 ```
 
 - This command builds a dataset within the specified working directory. The working dir must contain a `dataset.yaml`, which defines the metadata and process handler for dataset building.

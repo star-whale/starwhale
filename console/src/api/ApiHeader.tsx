@@ -8,8 +8,8 @@ import { useFirstRender } from '@/hooks/useFirstRender'
 import { useProject } from '@project/hooks/useProject'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import qs from 'qs'
-import { useUserRoles } from '@/domain/user/hooks/useUserRoles'
-import { useProjectRole } from '../domain/project/hooks/useProjectRole'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 export default function ApiHeader() {
     const location = useLocation()
@@ -20,7 +20,7 @@ export default function ApiHeader() {
     const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(\d*)\/?/)?.[1], [location])
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
-    const { projectRole } = useUserRoles(projectId)
+    const { role: projectRole } = useFetchProjectRole(projectId as string)
     const { setRole } = useProjectRole()
 
     useFirstRender(() => {

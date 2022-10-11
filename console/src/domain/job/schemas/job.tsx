@@ -2,6 +2,7 @@ import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IDeviceSchema } from '@/domain/setting/schemas/system'
 import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
+import { StepSpec } from '../../model/schemas/modelVersion'
 
 export enum JobActionType {
     CANCEL = 'cancel',
@@ -44,8 +45,8 @@ export interface ICreateJobSchema {
     modelVersionUrl: string
     datasetVersionUrls?: string
     runtimeVersionUrl?: string
-    device?: string
-    deviceAmount?: number
+    resourcePool?: string
+    stepSpecOverWrites?: string
 }
 
 export interface IJobFormSchema extends IJobSchema {
@@ -57,7 +58,7 @@ export interface IJobFormSchema extends IJobSchema {
     datasetVersionIdsArr?: Array<string>
 }
 
-export interface ICreateJobFormSchema extends ICreateJobSchema {
+export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOverWrites'> {
     modelId: string
     runtimeId: string
     runtimeVersionUrl: string
@@ -65,6 +66,8 @@ export interface ICreateJobFormSchema extends ICreateJobSchema {
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>
     resourcePool: string
+    stepSpecOverWrites: StepSpec[]
+    rawType: boolean
 }
 
 export type IJobResultSchema = any

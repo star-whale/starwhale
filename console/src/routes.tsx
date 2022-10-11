@@ -46,6 +46,7 @@ import DatasetVersionOverviewFiles from './pages/Dataset/DatasetVersionOverviewF
 import RuntimeVersionOverviewMeta from './pages/Runtime/RuntimeVersionOverviewMeta'
 import RuntimeVersionOverview from './pages/Runtime/RuntimeVersionOverview'
 import RuntimeOverviewLayout from './pages/Runtime/RuntimeOverviewLayout'
+import SystemSettings from './pages/Admin/SystemSettings'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -281,6 +282,8 @@ const Routes = () => {
                                 <AdminLayout>
                                     <Switch>
                                         <Route exact path='/admin/users' component={UserManagement} />
+                                        <Route exact path='/admin/settings' component={SystemSettings} />
+
                                         <Redirect exact from='/admin' to='/admin/users' />
                                     </Switch>
                                 </AdminLayout>

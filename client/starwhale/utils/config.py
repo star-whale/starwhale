@@ -12,9 +12,11 @@ from starwhale.consts import (
     DEFAULT_PROJECT,
     DEFAULT_INSTANCE,
     ENV_SW_CLI_CONFIG,
+    DATA_STORE_DIRNAME,
     STANDALONE_INSTANCE,
     ENV_SW_LOCAL_STORAGE,
     LOCAL_CONFIG_VERSION,
+    OBJECT_STORE_DIRNAME,
     DEFAULT_SW_LOCAL_STORAGE,
 )
 from starwhale.consts.env import SWEnv
@@ -111,11 +113,11 @@ class SWCliConfigMixed:
 
     @property
     def datastore_dir(self) -> Path:
-        return self.rootdir / ".datastore"
+        return self.rootdir / DATA_STORE_DIRNAME
 
     @property
     def object_store_dir(self) -> Path:
-        return self.rootdir / ".objectstore"
+        return self.rootdir / OBJECT_STORE_DIRNAME
 
     @property
     def sw_remote_addr(self) -> str:

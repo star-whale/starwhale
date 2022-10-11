@@ -118,7 +118,7 @@ class TestCli:
             dataset=swds["version"],
             runtime=swrt["version"],
             project=cloud_project,
-            resource="cpu:0.2",
+            step_spec=f"{os.path.abspath(CURRENT_DIR)}/step_spec.yaml",
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
@@ -155,7 +155,7 @@ class TestCli:
         _remote_job = self.evaluation.info(
             f"{cloud_uri}/project/{cloud_project}/evaluation/{job_id}"
         )
-        return _remote_job["manifest"]["jobStatus"] if _remote_job else ""
+        return _remote_job["manifest"]["jobStatus"] if _remote_job else "API ERROR"
 
     def test_mnist(self, mode: str) -> None:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)

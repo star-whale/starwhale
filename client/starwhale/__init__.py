@@ -1,6 +1,7 @@
-from starwhale.api.job import step, Context
+from starwhale.api.job import step, Context, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
-from starwhale.api.model import PipelineHandler, PPLResultIterator
+from starwhale.base.uri import URI, URIType
+from starwhale.api.model import PipelineHandler, PPLResultStorage, PPLResultIterator
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (
     Link,
@@ -18,19 +19,24 @@ from starwhale.api.dataset import (
     get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
+    get_sharding_data_loader,
 )
+from starwhale.api.evaluation import Evaluation
 
 __all__ = [
     "__version__",
     "PipelineHandler",
     "multi_classification",
+    "URI",
+    "URIType",
     "step",
+    "pass_context",
     "Context",
+    "Evaluation",
+    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",
@@ -41,8 +47,6 @@ __all__ = [
     "BuildExecutor",  # SWDSBinBuildExecutor alias
     "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
-    "SWDSBinDataLoader",
-    "UserRawDataLoader",
     "Binary",
     "Text",
     "Audio",
@@ -51,5 +55,6 @@ __all__ = [
     "BoundingBox",
     "GrayscaleImage",
     "COCOObjectAnnotation",
+    "PPLResultStorage",
     "PPLResultIterator",
 ]

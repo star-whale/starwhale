@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torchaudio
 
-from starwhale import Audio, Context, PipelineHandler, multi_classification
+from starwhale import Audio, PipelineHandler, multi_classification
 
 from .model import M5
 
@@ -55,8 +55,8 @@ ALL_LABELS_MAP = {label: idx for idx, label in enumerate(ALL_LABELS)}
 
 
 class M5Inference(PipelineHandler):
-    def __init__(self, context: Context) -> None:
-        super().__init__(context=context, ignore_error=False)
+    def __init__(self) -> None:
+        super().__init__(ignore_error=False)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
         self.transform = torchaudio.transforms.Resample(

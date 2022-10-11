@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
@@ -14,8 +15,6 @@ from starwhale.utils.config import (
 from starwhale.core.project.view import ProjectTermView
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import StandaloneProject
-
-from .. import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
 

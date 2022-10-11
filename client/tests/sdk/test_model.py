@@ -1,13 +1,15 @@
 import os
+import sys
+import errno
 import shutil
 import typing as t
-import sysconfig
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale import Context, get_data_loader, PipelineHandler, UserRawDataLoader
+from tests import ROOT_DIR
+from starwhale import Context, get_data_loader, PipelineHandler
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -18,12 +20,12 @@ from starwhale.base.type import (
     DataOriginType,
     ObjectStoreType,
 )
+from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
-
-from .. import ROOT_DIR
+from starwhale.api._impl.dataset.loader import UserRawDataLoader
 
 
 class SimpleHandler(PipelineHandler):
@@ -99,7 +101,7 @@ class TestModelPipelineHandler(TestCase):
         assert isinstance(_loader, UserRawDataLoader)
         assert not _loader._stores
 
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.api._impl.model.PPLResultIterator")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp(
@@ -128,16 +130,16 @@ class TestModelPipelineHandler(TestCase):
             },
         ]
 
-        with SimpleHandler(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="cmp",
-                index=0,
-            )
-        ) as _handler:
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="cmp",
+            index=0,
+        )
+        context_holder.context = context
+        with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_cmp()
 
         status_file_path = os.path.join(_status_dir, "current")
@@ -192,18 +194,17 @@ class TestModelPipelineHandler(TestCase):
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
-
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="ppl",
+            index=0,
+        )
+        context_holder.context = context
         # mock
-        with SimpleHandler(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="ppl",
-                index=0,
-            )
-        ) as _handler:
+        with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_ppl()
 
         # only one data row
@@ -217,7 +218,15 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_deserializer(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
-        self.fs.add_real_directory(sysconfig.get_paths()["purelib"])
+        # make torch happy
+        for i in sys.path:
+            if not i:
+                continue
+            try:
+                self.fs.add_real_directory(i)
+            except OSError as e:
+                if e.errno not in [errno.EEXIST, errno.ENOENT]:
+                    raise e
         import numpy as np
         import torch
 
@@ -272,27 +281,27 @@ class TestModelPipelineHandler(TestCase):
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
 
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="ppl",
+            index=0,
+        )
+        context_holder.context = context
         # mock
-        with Dummy(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="ppl",
-                index=0,
-            )
-        ) as _handler:
+        with Dummy() as _handler:
             _handler._starwhale_internal_run_ppl()
 
-        with Dummy(
-            context=Context(
-                workdir=Path(),
-                project=self.project,
-                version=self.eval_id,
-                dataset_uris=[self.dataset_uri_raw],
-                step="cmp",
-                index=0,
-            )
-        ) as _handler:
+        context = Context(
+            workdir=Path(),
+            project=self.project,
+            version=self.eval_id,
+            dataset_uris=[self.dataset_uri_raw],
+            step="cmp",
+            index=0,
+        )
+        context_holder.context = context
+        with Dummy() as _handler:
             _handler._starwhale_internal_run_cmp()

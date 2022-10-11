@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.bo;
 
-import ai.starwhale.mlops.domain.node.Device;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,16 +29,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JobRuntime {
-
-    /**
-     * specify the job to run on whether CPU or GPU
-     */
-    Device.Clazz deviceClass;
-
-    /**
-     * how many devices does this job need to run on
-     */
-    Integer deviceAmount;
 
     /**
      * the name for the runtime

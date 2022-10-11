@@ -2,6 +2,8 @@ import typing as t
 
 import click
 
+from starwhale.consts.env import SWEnv
+
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
@@ -38,24 +40,35 @@ def _list(
 
 
 @eval_job_cmd.command("run", help="Run job")
-@click.argument("project", default="")
-@click.option("--version", default=None, help="Evaluation job version")
+@click.option(
+    "-p",
+    "--project",
+    envvar=SWEnv.project,
+    default="",
+    help=f"project name, env is {SWEnv.project}",
+)
+@click.option(
+    "--version",
+    envvar=SWEnv.eval_version,
+    default=None,
+    help=f"Evaluation job version, env is {SWEnv.eval_version}",
+)
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
 # TODO:support multi dataset
 @click.option(
     "--dataset",
     required=True,
-    # multiple=True,
-    help="dataset uri, one or more",
+    envvar=SWEnv.dataset_uri,
+    help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--name", default="default", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
-    "--resource",
-    default="cpu:1",
+    "--step-spec",
+    default="",
     type=str,
-    help="[ONLY Cloud]resource, fmt is resource [name]:[cnt], such as cpu:1, gpu:2",
+    help="[Cloud_ONLY] A file contains the specification for steps of the job",
 )
 @click.option(
     "--use-docker",
@@ -64,7 +77,7 @@ def _list(
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=0, help="Index of tasks in the current step")
+@click.option("--task-index", default=-1, help="Index of tasks in the current step")
 def _run(
     project: str,
     version: str,
@@ -73,7 +86,7 @@ def _run(
     runtime: str,
     name: str,
     desc: str,
-    resource: str,
+    step_spec: str,
     use_docker: bool,
     gencmd: bool,
     step: str,
@@ -87,7 +100,7 @@ def _run(
         runtime_uri=runtime,
         name=name,
         desc=desc,
-        resource=resource,
+        step_spec=step_spec,
         gencmd=gencmd,
         use_docker=use_docker,
         step=step,

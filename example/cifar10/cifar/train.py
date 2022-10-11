@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import StepLR
 
 # https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-_MODEL_PATH = os.path.join(_ROOT_DIR, "../models/cifar_net.pth")
+_MODEL_PATH = os.path.join(_ROOT_DIR, "models/cifar_net.pth")
 _DATA_DIR = os.path.join(_ROOT_DIR, "data")
 
 

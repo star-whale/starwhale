@@ -4,14 +4,15 @@ import Button from '@/components/Button'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { FiFilter } from 'react-icons/fi'
-import { Checkbox } from 'baseui/checkbox'
 import { Tag } from 'baseui/tag'
 import { MdAddCircle, MdRemoveCircle } from 'react-icons/md'
+import { expandBorder } from '@/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
 import useEventCallback from '../../hooks/useEventCallback'
 import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
+import Checkbox from '../Checkbox'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 
@@ -62,7 +63,7 @@ export const CategoricalFilter = React.forwardRef<
         (e) => {
             const $categories = categories.map((v) => ({
                 ...v,
-                disable: !e.target.checked,
+                disable: !e.target?.checked,
             }))
             setCategories([...$categories])
         },
@@ -120,20 +121,6 @@ export const CategoricalFilter = React.forwardRef<
                 <Checkbox
                     checked={selectedCategories.length > 0 && selectedCategories.length === categories.length}
                     onChange={handleSelectAll}
-                    overrides={{
-                        Root: {
-                            style: {
-                                alignItems: 'center',
-                            },
-                        },
-                        Checkmark: {
-                            style: {
-                                width: '16px',
-                                height: '16px',
-                            },
-                        },
-                        // Label: { component: HighlightCheckboxLabel, props: { query } },
-                    }}
                 />
                 Filter ({selectedCategories.length})
             </div>
@@ -148,24 +135,7 @@ export const CategoricalFilter = React.forwardRef<
                 {Boolean(categories.length) &&
                     categories.map((category, i) => (
                         <div className={checkboxStyles} key={i}>
-                            <Checkbox
-                                checked={!category.disable}
-                                onChange={() => handleSelectOne(i)}
-                                overrides={{
-                                    Root: {
-                                        style: {
-                                            alignItems: 'center',
-                                        },
-                                    },
-                                    Checkmark: {
-                                        style: {
-                                            width: '16px',
-                                            height: '16px',
-                                        },
-                                    },
-                                    // Label: { component: HighlightCheckboxLabel, props: { query } },
-                                }}
-                            />
+                            <Checkbox checked={!category.disable} onChange={() => handleSelectOne(i)} />
                             <FilterOperateSelector
                                 // @ts-ignore
                                 columns={props.columns}
@@ -318,11 +288,8 @@ function FilterOperateMenu(props: PropsT) {
                     overrides={{
                         BaseButton: {
                             style: {
-                                background: '',
-                                borderTop: '1px solid #CFD7E6',
-                                borderBottom: '1px solid #CFD7E6',
-                                borderLeft: '1px solid #CFD7E6',
-                                borderRight: '1px solid #CFD7E6',
+                                ...expandBorder('1px', 'solid', '#CFD7E6'),
+                                backgroundColor: 'transparent',
                                 paddingTop: '6px',
                                 paddingBottom: '6px',
                                 lineHeight: '20px',
@@ -338,17 +305,14 @@ function FilterOperateMenu(props: PropsT) {
                                 overrides={{
                                     Root: {
                                         style: {
-                                            marginTop: 0,
-                                            marginBottom: 0,
-                                            marginLeft: 0,
-                                            marginRight: 0,
+                                            marginTop: '0px',
+                                            marginBottom: '0px',
+                                            marginLeft: '0px',
+                                            marginRight: '0px',
                                             height: '20px',
-                                            background: ' #EEF1F6',
+                                            backgroundColor: ' #EEF1F6',
                                             color: '#2B65D9',
-                                            borderTop: 0,
-                                            borderBottom: 0,
-                                            borderLeft: 0,
-                                            borderRight: 0,
+                                            ...expandBorder('0px'),
                                         },
                                     },
                                 }}

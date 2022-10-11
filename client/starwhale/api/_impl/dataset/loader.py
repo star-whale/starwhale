@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import math
 import typing as t
 from abc import ABCMeta, abstractmethod
 from urllib.parse import urlparse
@@ -12,8 +13,9 @@ from loguru import logger as _logger
 from starwhale.utils import load_dotenv
 from starwhale.consts import AUTH_ENV_FNAME
 from starwhale.base.uri import URI
-from starwhale.base.type import InstanceType, DataFormatType, ObjectStoreType
+from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.core.dataset.type import BaseArtifact
+from starwhale.core.dataset.model import Dataset
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 
@@ -153,3 +155,36 @@ def get_data_loader(
     include_user_raw = summary.include_user_raw if summary else False
     _cls = UserRawDataLoader if include_user_raw else SWDSBinDataLoader
     return _cls(dataset_uri, start, end, logger or _logger)
+
+
+def get_sharding_data_loader(
+    dataset_uri: str = "",
+    sharding_index: int = 0,
+    sharding_num: int = 1,
+    logger: t.Union[loguru.Logger, None] = None,
+) -> DataLoader:
+    _uri = URI(dataset_uri, expected_type=URIType.DATASET)
+    _dataset = Dataset.get_dataset(_uri)
+    _dataset_summary = _dataset.summary()
+    _dataset_rows = _dataset_summary.rows if _dataset_summary else 0
+    start, end = calculate_index(_dataset_rows, sharding_num, sharding_index)
+
+    return get_data_loader(
+        dataset_uri=_uri,
+        start=start,
+        end=end + 1,
+        logger=logger,
+    )
+
+
+def calculate_index(
+    data_size: int, sharding_num: int, sharding_index: int
+) -> t.Tuple[int, int]:
+    _batch_size = 1
+    if data_size >= sharding_num:
+        _batch_size = math.ceil(data_size / sharding_num)
+    elif sharding_index >= data_size:
+        return -1, -1
+    _start_index = min(_batch_size * sharding_index, data_size - 1)
+    _end_index = min(_batch_size * (sharding_index + 1), data_size)
+    return _start_index, _end_index

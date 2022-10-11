@@ -27,19 +27,25 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
+import ai.starwhale.mlops.domain.system.SystemSetting;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import com.github.pagehelper.Page;
 import java.util.List;
 import java.util.Objects;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 public class SystemControllerTest {
 
@@ -47,32 +53,13 @@ public class SystemControllerTest {
 
     private SystemService systemService;
 
+    private SystemSettingService systemSettingService;
+
     @BeforeEach
     public void setUp() {
         systemService = mock(SystemService.class);
-        controller = new SystemController(systemService);
-    }
-
-    @Test
-    public void testListAgent() {
-        given(systemService.listAgents(anyString(), any(PageParams.class)))
-                .willAnswer(invocation -> {
-                    PageParams pageParams = invocation.getArgument(1);
-                    try (Page<AgentVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
-                        page.add(AgentVo.builder().build());
-                        return page.toPageInfo();
-                    }
-                });
-
-        var resp = controller.listAgent("", 2, 5);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(hasProperty("pageNum", is(2))),
-                is(hasProperty("pageSize", is(5))),
-                is(hasProperty("list", isA(List.class)))
-        ));
-
+        systemSettingService = mock(SystemSettingService.class);
+        controller = new SystemController(systemService, systemSettingService);
     }
 
     @Test
@@ -128,6 +115,18 @@ public class SystemControllerTest {
                 notNullValue(),
                 isA(UpgradeProgressVo.class)
         ));
+    }
+
+    @Test
+    public void testUpdateSetting() {
+        when(systemSettingService.updateSetting("xs")).thenReturn("dss");
+        Assertions.assertEquals(ResponseEntity.ok(Code.success.asResponse("dss")), controller.updateSetting("xs"));
+    }
+
+    @Test
+    public void testQuerySetting() {
+        when(systemSettingService.querySetting()).thenReturn("dss");
+        Assertions.assertEquals(ResponseEntity.ok(Code.success.asResponse("dss")), controller.querySetting());
     }
 
 }

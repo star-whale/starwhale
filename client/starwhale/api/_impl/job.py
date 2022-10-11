@@ -1,35 +1,84 @@
 import typing as t
+import numbers
+import threading
 from pathlib import Path
+from functools import wraps
 
 import yaml
 from loguru import logger
 
-from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
+from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
+context_holder = threading.local()
+resource_names: t.Dict[str, t.List] = {
+    "cpu": [int, float],
+    "nvidia.com/gpu": [int],
+    "memory": [int, float],
+}
+attribute_names = ["request", "limit"]
+
+
+def do_resource_transform(resources: t.Dict[str, t.Any]) -> t.List[t.Dict]:
+    results = []
+    for _name, _resource in resources.items():
+        if _name not in resource_names:
+            raise RuntimeError(
+                f"resources name is illegal, name must in {resource_names.keys()}"
+            )
+
+        if isinstance(_resource, numbers.Number):
+            resources[_name] = {"request": _resource, "limit": _resource}
+        elif isinstance(_resource, dict):
+            if not all(n in attribute_names for n in _resource):
+                raise RuntimeError(
+                    f"resources value is illegal, attribute's name must in {attribute_names}"
+                )
+        else:
+            raise RuntimeError(
+                "resources value is illegal, attribute's type must be numer or dict"
+            )
+
+        for _k, _v in resources[_name].items():
+            if type(_v) not in resource_names[_name]:
+                raise RuntimeError(
+                    f"resource:{_name} only support type:{resource_names[_name]}, but now is {type(_v)}"
+                )
+            if _v <= 0:
+                raise RuntimeError(
+                    f"{_k} only supports non-negative numbers, but now is {_v}"
+                )
+        results.append(
+            {
+                "type": _name,
+                "request": resources[_name]["request"],
+                "limit": resources[_name]["limit"],
+            }
+        )
+    return results
+
 
 def step(
     job_name: str = DEFAULT_EVALUATION_JOB_NAME,
-    resources: t.Optional[t.List[str]] = None,
+    resources: t.Optional[t.Dict[str, t.Any]] = None,
     concurrency: int = 1,
     task_num: int = 1,
     needs: t.Optional[t.List[str]] = None,
 ) -> t.Any:
-    _resources = resources or [
-        DEFAULT_EVALUATION_RESOURCE,
-    ]
+    _resources = resources or {}
     _needs = needs or []
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
-            cls, delim, func_name = func.__qualname__.rpartition(".")
+            cls, _, func_name = func.__qualname__.rpartition(".")
+
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,
                 cls_name=cls,
-                resources=_resources,
+                resources=do_resource_transform(_resources),
                 concurrency=concurrency,
                 task_num=task_num,
                 needs=_needs,
@@ -39,6 +88,15 @@ def step(
         return func
 
     return decorator
+
+
+def pass_context(func: t.Any) -> t.Any:
+    @wraps(func)
+    def wrap_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        kwargs["context"] = context_holder.context
+        return func(*args, **kwargs)
+
+    return wrap_func
 
 
 # Runtime concept

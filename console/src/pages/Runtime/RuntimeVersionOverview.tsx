@@ -1,33 +1,29 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { useRuntime } from '@/domain/runtime/hooks/useRuntime'
+import { useRuntimeVersion } from '@/domain/runtime/hooks/useRuntimeVersion'
 
 export default function RuntimeVersionOverview() {
-    const { runtime } = useRuntime()
+    const { runtimeVersion } = useRuntimeVersion()
 
     const [t] = useTranslation()
 
     const items = [
         {
-            label: t('Version ID'),
-            value: runtime?.id ?? '-',
-        },
-        {
             label: t('sth name', [t('Runtime')]),
-            value: runtime?.name ?? '-',
+            value: runtimeVersion?.name ?? '-',
         },
         {
             label: t('Version Name'),
-            value: runtime?.versionName ?? '-',
+            value: runtimeVersion?.versionName ?? '-',
         },
         {
             label: t('Aliases'),
-            value: runtime?.versionAlias ?? '-',
+            value: runtimeVersion?.versionAlias ?? '-',
         },
         {
             label: t('Created At'),
-            value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
+            value: runtimeVersion?.createdTime && formatTimestampDateTime(runtimeVersion.createdTime),
         },
     ]
 

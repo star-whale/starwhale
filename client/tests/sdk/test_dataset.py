@@ -8,7 +8,9 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale import Link, MIMEType, UserRawBuildExecutor
+from starwhale.consts import OBJECT_STORE_DIRNAME
 from starwhale.utils.fs import blake2b_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
@@ -25,6 +27,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
+from starwhale.api._impl.dataset.loader import calculate_index
 from starwhale.api._impl.dataset.builder import (
     _data_magic,
     _header_size,
@@ -33,7 +36,6 @@ from starwhale.api._impl.dataset.builder import (
     SWDSBinBuildExecutor,
 )
 
-from .. import ROOT_DIR
 from .test_base import BaseTestCase
 
 _mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
@@ -94,7 +96,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         super().setUp()
 
         self.object_store_dir = os.path.join(
-            self.local_storage, ".objectstore", DatasetStorage.object_hash_algo
+            self.local_storage, OBJECT_STORE_DIRNAME, DatasetStorage.object_hash_algo
         )
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
@@ -163,7 +165,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert not summary.include_user_raw
         assert not summary.include_link
 
-        assert len(data_files_sign) == 11
+        assert len(data_files_sign) == 10
 
         for _sign in data_files_sign:
             _sign_fpath = Path(self.object_store_dir) / _sign[:2] / _sign
@@ -322,3 +324,35 @@ class TestDatasetType(TestCase):
             b"link", data_type={"type": "link", "data_type": {"type": "audio"}}
         )
         assert isinstance(link_audio, Audio)
+
+
+class TestLoader(TestCase):
+    def test_calculate_index(self):
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=0)
+        assert _start == 0 and _end == 1
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=1)
+        assert _start == 1 and _end == 2
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=2)
+        assert _start == -1 and _end == -1
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=3)
+        assert _start == -1 and _end == -1
+
+        _start, _end = calculate_index(data_size=100, sharding_num=1, sharding_index=0)
+        assert _start == 0 and _end == 100
+
+        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=0)
+        assert _start == 0 and _end == 50
+        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=1)
+        assert _start == 50 and _end == 100
+
+        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=0)
+        assert _start == 0 and _end == 51
+        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=1)
+        assert _start == 51 and _end == 101
+
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=0)
+        assert _start == 0 and _end == 37
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=1)
+        assert _start == 37 and _end == 74
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=2)
+        assert _start == 74 and _end == 110

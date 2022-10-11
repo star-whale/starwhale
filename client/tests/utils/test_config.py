@@ -2,6 +2,7 @@ import os
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.config import (
@@ -12,8 +13,6 @@ from starwhale.utils.config import (
     ENV_SW_LOCAL_STORAGE,
     get_swcli_config_path,
 )
-
-from .. import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
 

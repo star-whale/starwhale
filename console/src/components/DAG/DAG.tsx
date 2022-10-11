@@ -51,6 +51,8 @@ type TaskT = {
     type: 'PPL' | 'CMP'
 }
 
+const CANVAS_DEFAULT_SIZE = 2000
+
 export default function DAG({ nodes = [], edges = [] }: any) {
     const ref = useRef<CanvasRef | null>(null)
 
@@ -122,6 +124,8 @@ export default function DAG({ nodes = [], edges = [] }: any) {
         }
     })
 
+    const [rect, setRect] = React.useState({ width: CANVAS_DEFAULT_SIZE, height: CANVAS_DEFAULT_SIZE })
+
     return (
         <div
             className='flowContainer'
@@ -136,7 +140,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
             <TransformWrapper wheel={{ disabled: true }} limitToBounds={false} maxScale={1.2} minScale={0.8}>
                 {({ zoomIn, zoomOut, resetTransform }) => (
                     <>
-                        <div className='flow-tools'>
+                        <div className='flow-tools' style={{ top: rect.height + 200 }}>
                             <button type='button' onClick={() => zoomIn()}>
                                 +
                             </button>
@@ -151,11 +155,26 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                             <Canvas
                                 fit
                                 ref={ref}
-                                maxHeight={1000}
+                                maxHeight={rect.height + 200}
+                                maxWidth={rect.width}
+                                zoomable={false}
                                 nodes={$nodes}
                                 edges={$edges}
                                 direction='RIGHT'
                                 defaultPosition={CanvasPosition.LEFT}
+                                onLayoutChange={(layout) => {
+                                    if (
+                                        rect.width !== layout.width &&
+                                        rect.height !== layout.height &&
+                                        rect.width > 0 &&
+                                        rect.height > 0
+                                    ) {
+                                        setRect({
+                                            width: layout.width ?? CANVAS_DEFAULT_SIZE,
+                                            height: layout.height ?? CANVAS_DEFAULT_SIZE,
+                                        })
+                                    }
+                                }}
                                 node={
                                     <Node
                                         className='node'

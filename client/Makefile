@@ -59,7 +59,7 @@ ci-isort:
 .POHNY: ut
 ut:
 	echo "ut"
-	pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
+	python -m pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
 
 .POHNY: all-check
 all-check: ci-format-checker ci-lint ci-mypy ci-isort ut

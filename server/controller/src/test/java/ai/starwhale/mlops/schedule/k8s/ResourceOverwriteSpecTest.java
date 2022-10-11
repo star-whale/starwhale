@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import java.util.List;
@@ -26,30 +25,14 @@ import org.junit.jupiter.api.Test;
 public class ResourceOverwriteSpecTest {
 
     @Test
-    public void testCpu() {
-        ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(Clazz.CPU, 199);
-        Assertions.assertEquals(new Quantity("199m"),
-                resourceOverwriteSpec.getResourceSelector().getRequests().get("cpu"));
-    }
-
-    @Test
-    public void testGpu() {
-        ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(Clazz.GPU, 199);
-        Assertions.assertEquals(new Quantity("1000m"),
-                resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
-        Assertions.assertEquals(new Quantity("1000m"),
-                resourceOverwriteSpec.getResourceSelector().getLimits().get("nvidia.com/gpu"));
-    }
-
-    @Test
     public void testRuntimeResource() {
         ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(
-                List.of(new RuntimeResource("cpu", 199), new RuntimeResource("nvidia.com/gpu", 199)));
-        Assertions.assertEquals(new Quantity("1000m"),
+                List.of(new RuntimeResource("cpu", 1.99f, 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f, 1.99f)));
+        Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
-        Assertions.assertEquals(new Quantity("1000m"),
+        Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getLimits().get("nvidia.com/gpu"));
-        Assertions.assertEquals(new Quantity("199m"),
+        Assertions.assertEquals(new Quantity("1.99"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("cpu"));
     }
 

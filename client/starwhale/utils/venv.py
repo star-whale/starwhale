@@ -21,7 +21,6 @@ from starwhale.consts import (
     SW_DEV_DUMMY_VERSION,
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
-    DEFAULT_PYTHON_VERSION,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
@@ -593,7 +592,7 @@ def create_python_env(
     mode: str,
     name: str,
     workdir: Path,
-    python_version: str = DEFAULT_PYTHON_VERSION,
+    python_version: str,
     force: bool = False,
 ) -> str:
     if mode == PythonRunEnv.VENV:
