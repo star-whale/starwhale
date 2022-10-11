@@ -31,19 +31,11 @@ module.exports = {
                 },
                 {
                     type: 'category',
-                    label: "Standalone Instance",
+                    label: "Configurations",
                     collapsed: true,
                     items: [
-                        "guides/standalone/overview",
-                        "guides/standalone/swignore",
-                    ]
-                },
-                {
-                    type: 'category',
-                    label: "Cloud Instance",
-                    collapsed: true,
-                    items: [
-                        "guides/cloud/overview",
+                        "guides/config/standalone_config",
+                        "guides/config/swignore",
                     ]
                 },
                 "guides/faq",

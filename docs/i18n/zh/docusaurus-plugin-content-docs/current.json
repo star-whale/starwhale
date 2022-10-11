@@ -25,5 +25,8 @@
   },
   "sidebar.mainSidebar.category.Installation": {
     "message": "安装说明"
+  },
+  "sidebar.mainSidebar.category.Configurations": {
+    "message": "配置文件"
   }
 }

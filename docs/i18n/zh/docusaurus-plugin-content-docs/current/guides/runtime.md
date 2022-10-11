@@ -18,7 +18,7 @@ title: Starwhale Runtime-运行环境
 - **多体系结构支持**：当使用Docker为运行载体时，目前支持amd64和aarch64两种体系结构。
 - **ML/DL使用友好**：屏蔽Docker Image概念，提供优化过的Docker Base Image，并支持用户自定义CUDA和CUDNN版本。
 - **制品存储**：Standalone Instance能存储本地构建或分发的swrt文件，Cloud Instance使用对象存储提供集中式的swrt制品存储。
-- **Starwhale无缝集成**：`Starwhale Dataset` 构建，`Starwhale Model` 构建和 `Starwhale Evaluation` 运行时，可以直接在命令行中使用 `--runtime` 参数，就能直接使用某个构建好的 `Starwhale Runtime` 运行本次任务，不需要
+- **Starwhale无缝集成**：`Starwhale Dataset` 构建，`Starwhale Model` 构建和 `Starwhale Evaluation` 运行时，可以直接在命令行中使用 `--runtime` 参数，就能直接使用某个构建好的 `Starwhale Runtime` 运行本次任务。
 
 ### 1.3 关键元素
 
