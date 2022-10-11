@@ -178,7 +178,7 @@ class JobTestCase(TestCase):
                     "limit": 100.2,
                 },
                 {
-                "type": "nvidia.com/gpu",
+                    "type": "nvidia.com/gpu",
                     "request": 1,
                     "limit": 2,
                 },
