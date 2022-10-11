@@ -1,6 +1,5 @@
 PY_CHANGED_FILES = $(shell git diff --name-only --relative -- '*.py')
 
-
 .POHNY: check
 check:
 	python3 setup.py check
