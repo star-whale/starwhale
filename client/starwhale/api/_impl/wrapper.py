@@ -33,7 +33,7 @@ class Logger:
             if exceptions:
                 raise Exception(*exceptions)
 
-    def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+    def _log(self, table_name: str, record: Dict[str, Any], sync: bool = False) -> None:
         with self._lock:
             if table_name not in self._writers:
                 self._writers.setdefault(table_name, None)
@@ -42,7 +42,7 @@ class Logger:
                 writer = data_store.TableWriter(table_name)
                 self._writers[table_name] = writer
 
-        writer.insert(record)
+        writer.insert(record, sync)
 
 
 def _serialize(data: Any) -> Any:
@@ -151,7 +151,7 @@ class Dataset(Logger):
         record = {"id": data_id}
         for k, v in kwargs.items():
             record[k.lower()] = v
-        self._log(self._meta_table_name, record)
+        self._log(self._meta_table_name, record, sync=True)
 
     def scan(self, start: Any, end: Any) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(

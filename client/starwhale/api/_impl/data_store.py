@@ -1279,7 +1279,7 @@ class TableWriter(threading.Thread):
             self._queue_run_exceptions = []
             raise TableWriterException(f"{self} run raise {len(_es)} exceptions: {_es}")
 
-    def insert(self, record: Dict[str, Any]) -> None:
+    def insert(self, record: Dict[str, Any], sync: bool = False) -> None:
         record = _flatten(record)
         for k in record:
             for ch in k:
@@ -1292,12 +1292,12 @@ class TableWriter(threading.Thread):
                     and not ch.isspace()
                 ):
                     raise RuntimeError(f"invalid field {k}")
-        self._insert(record)
+        self._insert(record, sync)
 
     def delete(self, key: Any) -> None:
         self._insert({self.schema.key_column: key, "-": True})
 
-    def _insert(self, record: Dict[str, Any]) -> None:
+    def _insert(self, record: Dict[str, Any], sync: bool = False) -> None:
         self._raise_run_exceptions(self._run_exceptions_limits)
 
         key = record.get(self.schema.key_column, None)
@@ -1305,10 +1305,19 @@ class TableWriter(threading.Thread):
             raise RuntimeError(
                 f"the key {self.schema.key_column} should not be none, record:{record}"
             )
-        with self._cond:
-            self.schema = _update_schema(self.schema, record)
-            self._records.append(record)
-            self._cond.notify()
+        if sync:
+            with self._cond:
+                self.schema = _update_schema(self.schema, record)
+                try:
+                    self.data_store.update_table(self.table_name, self.schema, [record])
+                except Exception as e:
+                    logger.warning(f"{self} run-update-table raise exception: {e}")
+                    self._queue_run_exceptions.append(e)
+        else:
+            with self._cond:
+                self.schema = _update_schema(self.schema, record)
+                self._records.append(record)
+                self._cond.notify()
 
     def run(self) -> None:
         while True:
