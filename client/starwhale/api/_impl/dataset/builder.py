@@ -297,7 +297,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 if _dest_path.resolve() == _obj_path:
                     continue
                 else:
-                    _dest_path.unlink(missing_ok=True)
+                    _dest_path.unlink()
 
             _dest_path.symlink_to(_obj_path)
 
