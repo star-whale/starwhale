@@ -11,7 +11,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 # These images versions are slow to release.
 FIXED_VERSION_BASE_IMAGE := 0.2.2
 FIXED_VERSION_NODEJS_IMAGE := 0.1.2
-FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
+FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.2
 
 GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
 DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERVER_IMAGE}
@@ -116,6 +116,18 @@ build-base-server:
 
 release-base-server:
 	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
+
+build-release-base-server:
+	docker manifest inspect $(GHCR_IO_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) || \
+	docker buildx build \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
+		-t $(DOCKER_HUB_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) \
+		-t $(DOCKER_HUB_REPO)/base_server:latest \
+		-t $(GHCR_IO_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) \
+		-t $(GHCR_IO_REPO)/base_server:latest \
+		--push -f Dockerfile.base_server .
 
 build-server:
 	$(call build-image,server,${RELEASE_VERSION})
