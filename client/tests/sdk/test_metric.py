@@ -1,14 +1,13 @@
 import random
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 
 from starwhale.api._impl.metric import multi_classification
 
 
 class TestMultiClassificationMetric(TestCase):
-    def test_multi_classification_metric(
-        self,
-    ) -> None:
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    def test_multi_classification_metric(self, log_metric_mock: MagicMock) -> None:
         def _cmp(handler, data):
             return (
                 ["a", "b", "c", "d", "a", "a", "a"],
@@ -25,13 +24,15 @@ class TestMultiClassificationMetric(TestCase):
         )(_cmp)(eval_handler, None)
         assert rt["kind"] == "multi_classification"
 
-        metric_call = eval_handler.evaluation.log_metrics.call_args[0][0]
+        metric_call = log_metric_mock.call_args[0][0]
         assert "weighted avg/precision" in metric_call
         assert list(rt["labels"].keys()) == ["a", "b", "c", "d"]
         assert "confusion_matrix/binarylabel" not in rt
 
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_multi_classification_metric_with_pa(
-        self,
+        self, log_mock: MagicMock, log_metric_mock: MagicMock
     ) -> None:
         def _cmp(handler, data):
             return (
@@ -59,14 +60,12 @@ class TestMultiClassificationMetric(TestCase):
         assert "binarylabel" in rt["confusion_matrix"]
         assert len(rt["roc_auc"]) == 9
 
-        metric_call = eval_handler.evaluation.log_metrics.call_args[0][0]
+        metric_call = log_metric_mock.call_args[0][0]
         assert isinstance(metric_call, dict)
         assert metric_call["kind"] == rt["kind"]
         assert "macro avg/f1-score" in metric_call
 
-        log_calls = set(
-            [args[0][0] for args in eval_handler.evaluation.log.call_args_list]
-        )
+        log_calls = set([args[0][0] for args in log_mock.call_args_list])
         assert "labels" in log_calls
         assert "confusion_matrix/binarylabel" in log_calls
         assert "roc_auc/9" in log_calls

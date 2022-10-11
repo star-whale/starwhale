@@ -35,6 +35,5 @@ environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.4
-  python: 3.8
 mode: venv
 name: pytorch

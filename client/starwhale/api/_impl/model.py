@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import sys
-import math
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
@@ -10,23 +9,21 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
-import dill
 import loguru
 import jsonlines
 
 from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
-from starwhale.base.uri import URI
+from starwhale.api.job import Context
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, RunSubDirType
+from starwhale.api._impl import wrapper
+from starwhale.base.type import RunSubDirType
 from starwhale.utils.log import StreamWrapper
+from starwhale.api.dataset import get_sharding_data_loader
 from starwhale.utils.error import FieldTypeOrValueError
-from starwhale.api._impl.job import Context
+from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.api._impl.dataset import get_data_loader
-from starwhale.api._impl.wrapper import Evaluation
-from starwhale.core.dataset.model import Dataset
 
 
 class _LogType:
@@ -39,43 +36,42 @@ _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
 )
 
 
-def calculate_index(
-    data_size: int, task_num: int, task_index: int
-) -> t.Tuple[int, int]:
-    _batch_size = 1
-    if data_size > task_num:
-        _batch_size = math.ceil(data_size / task_num)
-    _start_index = min(_batch_size * task_index, data_size - 1)
-    _end_index = min(_batch_size * (task_index + 1) - 1, data_size - 1)
-    return _start_index, _end_index
+class PPLResultStorage:
+    def __init__(self, context: Context) -> None:
+        self.evaluation = wrapper.Evaluation(
+            eval_id=context.version, project=context.project
+        )
+
+    def save(self, data_id: t.Union[int, str], result: t.Any, **kwargs: t.Any) -> None:
+        self.evaluation.log_result(
+            data_id=data_id, result=result, **kwargs, serialize=True
+        )
+
+    def __exit__(self) -> None:
+        self.evaluation.close()
 
 
 class PPLResultIterator:
-    def __init__(
-        self,
-        data: t.Iterator[t.Dict[str, t.Any]],
-        deserializer: t.Optional[t.Callable] = None,
-    ) -> None:
-        self.data = data
-        self.deserializer = deserializer
+    def __init__(self, context: Context) -> None:
+        self.evaluation = wrapper.Evaluation(
+            eval_id=context.version, project=context.project
+        )
 
     def __iter__(self) -> t.Iterator[t.Dict[str, t.Any]]:
         # TODO: use class to refactor data
-        for d in self.data:
-            if self.deserializer:
-                yield self.deserializer(d)
-            else:
-                yield d
+        return self.evaluation.get_results(deserialize=True)
+
+    def __exit__(self) -> None:
+        self.evaluation.close()
 
 
 class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
-        context: Context,
         ignore_annotations: bool = False,
         ignore_error: bool = False,
     ) -> None:
-        self.context = context
+        self.context: Context = context_holder.context
 
         # TODO: add args for compare result and label directly
         self.ignore_annotations = ignore_annotations
@@ -92,7 +88,7 @@ class PipelineHandler(metaclass=ABCMeta):
         ensure_dir(self.status_dir)
         ensure_dir(self.log_dir)
 
-        self.logger, self._sw_logger = self._init_logger()
+        self.logger, self._sw_logger = self._init_logger(self.log_dir)
         self._stdout_changed = False
         self._stderr_changed = False
         self._orig_stdout = sys.stdout
@@ -100,20 +96,22 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
-        self.evaluation = Evaluation(
+        self.evaluation = wrapper.Evaluation(
             eval_id=self.context.version, project=self.context.project
         )
         self._monkey_patch()
 
-    def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
+    def _init_logger(
+        self, log_dir: Path, rotation: str = "500MB"
+    ) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
         # TODO: add custom log format, include daemonset pod name
         from loguru import logger as _logger
 
         # TODO: configure log rotation size
         _logger.add(
-            self.log_dir / "{time}.log",
-            rotation="500MB",
+            log_dir / "{time}.log",
+            rotation=rotation,
             backtrace=True,
             diagnose=True,
             serialize=True,
@@ -159,10 +157,7 @@ class PipelineHandler(metaclass=ABCMeta):
             sys.stdout = self._orig_stdout
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
-        self.evaluation.close()
         self._timeline_writer.close()
-        # self.logger.remove()
-        # self._sw_logger.remove()
 
     @abstractmethod
     def ppl(self, data: t.Any, **kw: t.Any) -> t.Any:
@@ -172,26 +167,6 @@ class PipelineHandler(metaclass=ABCMeta):
     @abstractmethod
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         raise NotImplementedError
-
-    def _builtin_serialize(self, data: t.Any) -> bytes:
-        return dill.dumps(data)  # type: ignore
-
-    def ppl_result_serialize(self, data: t.Any) -> bytes:
-        return self._builtin_serialize(data)
-
-    def ppl_result_deserialize(self, data: bytes) -> t.Any:
-        return dill.loads(data)
-
-    def annotations_serialize(self, data: t.Any) -> bytes:
-        return self._builtin_serialize(data)
-
-    def annotations_deserialize(self, data: bytes) -> bytes:
-        return dill.loads(data)  # type: ignore
-
-    def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
-        data["result"] = self.ppl_result_deserialize(data["result"])
-        data["annotations"] = self.annotations_deserialize(data["annotations"])
-        return data
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
@@ -216,10 +191,8 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(STATUS.START)
         now = now_str()
         try:
-            _iter = PPLResultIterator(
-                data=self.evaluation.get_results(), deserializer=self.deserialize
-            )
-            self.cmp(_iter)
+            ppl_result_loader = PPLResultIterator(self.context)
+            self.cmp(ppl_result_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             self._timeline_writer.write(
@@ -233,32 +206,22 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(STATUS.START)
 
+        result_storage = PPLResultStorage(self.context)
+
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
         # TODO: support multi dataset uris
-        _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
-        _dataset = Dataset.get_dataset(_dataset_uri)
-        _dataset_summary = _dataset.summary()
-        _dataset_rows = _dataset_summary.rows if _dataset_summary else 0
-        dataset_row_start, dataset_row_end = calculate_index(
-            _dataset_rows, self.context.total, self.context.index
-        )
-        self._sw_logger.debug(
-            f"step:{self.context.step}, ds start from:{dataset_row_start} to:{dataset_row_end}"
-        )
-
-        _data_loader = get_data_loader(
-            dataset_uri=_dataset_uri,
-            start=dataset_row_start,
-            end=dataset_row_end + 1,
-            logger=self._sw_logger,
+        _data_loader = get_sharding_data_loader(
+            dataset_uri=self.context.dataset_uris[0],
+            sharding_num=self.context.total,
+            sharding_index=self.context.index,
         )
         for _idx, _data, _annotations in _data_loader:
-            pred: t.Any = b""
+            result: t.Any = b""
             exception = None
             try:
                 # TODO: inspect profiling
-                pred = self.ppl(_data, annotations=_annotations, index=_idx)
+                result = self.ppl(_data, annotations=_annotations, index=_idx)
             except Exception as e:
                 exception = e
                 self._sw_logger.exception(f"[{_idx}] data handle -> failed")
@@ -268,30 +231,21 @@ class PipelineHandler(metaclass=ABCMeta):
             else:
                 exception = None
 
-            self._do_record(_idx, _annotations, exception, pred)
+            self._timeline_writer.write(
+                {
+                    "time": now_str(),
+                    "status": exception is None,
+                    "exception": str(exception),
+                    "index": _idx,
+                }
+            )
 
-    def _do_record(
-        self,
-        idx: int,
-        annotations: t.Dict,
-        exception: t.Optional[Exception],
-        pred: t.Any,
-    ) -> None:
-        _timeline = {
-            "time": now_str(),
-            "status": exception is None,
-            "exception": str(exception),
-            "index": idx,
-        }
-        self._timeline_writer.write(_timeline)
-
-        annotations = {} if self.ignore_annotations else annotations
-        self.evaluation.log_result(
-            data_id=idx,
-            result=self.ppl_result_serialize(pred),
-            annotations=self.annotations_serialize(annotations),
-        )
-        self._update_status(STATUS.RUNNING)
+            result_storage.save(
+                data_id=_idx,
+                result=result,
+                annotations={} if self.ignore_annotations else _annotations,
+            )
+            self._update_status(STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME

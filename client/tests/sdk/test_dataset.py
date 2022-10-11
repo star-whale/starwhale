@@ -27,6 +27,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
+from starwhale.api._impl.dataset.loader import calculate_index
 from starwhale.api._impl.dataset.builder import (
     _data_magic,
     _header_size,
@@ -323,3 +324,35 @@ class TestDatasetType(TestCase):
             b"link", data_type={"type": "link", "data_type": {"type": "audio"}}
         )
         assert isinstance(link_audio, Audio)
+
+
+class TestLoader(TestCase):
+    def test_calculate_index(self):
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=0)
+        assert _start == 0 and _end == 1
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=1)
+        assert _start == 1 and _end == 2
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=2)
+        assert _start == -1 and _end == -1
+        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=3)
+        assert _start == -1 and _end == -1
+
+        _start, _end = calculate_index(data_size=100, sharding_num=1, sharding_index=0)
+        assert _start == 0 and _end == 100
+
+        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=0)
+        assert _start == 0 and _end == 50
+        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=1)
+        assert _start == 50 and _end == 100
+
+        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=0)
+        assert _start == 0 and _end == 51
+        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=1)
+        assert _start == 51 and _end == 101
+
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=0)
+        assert _start == 0 and _end == 37
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=1)
+        assert _start == 37 and _end == 74
+        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=2)
+        assert _start == 74 and _end == 110

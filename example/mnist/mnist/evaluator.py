@@ -6,13 +6,7 @@ import torch
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale import (
-    Image,
-    Context,
-    PipelineHandler,
-    PPLResultIterator,
-    multi_classification,
-)
+from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
 
 from .model import Net
 
@@ -20,8 +14,8 @@ ROOTDIR = Path(__file__).parent.parent
 
 
 class MNISTInference(PipelineHandler):
-    def __init__(self, context: Context) -> None:
-        super().__init__(context=context)
+    def __init__(self) -> None:
+        super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
