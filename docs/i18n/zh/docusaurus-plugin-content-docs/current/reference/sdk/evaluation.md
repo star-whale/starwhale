@@ -105,7 +105,7 @@ Context(
 
 `ppl`函数中使用，能够保存 `ppl` 结果、数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
 
-| 函数   | 参数说明                                                                                                            |
+| 函数   | 说明                                                                                                              |
 |------|-----------------------------------------------------------------------------------------------------------------|
 | save | data_id: t.Union[int, str] 数据唯一索引值<br/> result: t.Any 专指ppl过程的评测结果值<br/> **kwargs: t.Any 其他待存储的信息，如annotations等 |
 
@@ -221,11 +221,7 @@ def func():
 - 完全表达方式
   ```json
   {
-    {名称}:
-    {
-      "request": {数量},
-      "limit": {数量},
-    },
+    {名称}:{"request": {数量},"limit": {数量}},
     ...
   }
   ```
