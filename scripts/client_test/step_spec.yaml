@@ -9,7 +9,7 @@ default:
       request: 0.2
       limit: 0.2
     step_name: ppl
-    task_num: 1
+    task_num: 2
   - cls_name: ''
     concurrency: 1
     job_name: default
