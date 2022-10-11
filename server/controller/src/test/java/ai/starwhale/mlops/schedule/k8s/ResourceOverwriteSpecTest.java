@@ -18,7 +18,7 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
-import java.util.Map;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ public class ResourceOverwriteSpecTest {
     @Test
     public void testRuntimeResource() {
         ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(
-                Map.of("cpu", new RuntimeResource(1.99f, 1.99f), "nvidia.com/gpu", new RuntimeResource(1.99f, 1.99f)));
+                List.of(new RuntimeResource("cpu", 1.99f, 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f, 1.99f)));
         Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
         Assertions.assertEquals(new Quantity("2"),

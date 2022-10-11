@@ -32,7 +32,7 @@ public class JobParserTest {
                 + "  concurrency: 1\n"
                 + "  job_name: default\n"
                 + "  needs: []\n"
-                + "  resources: {}\n"
+                + "  resources: []\n"
                 + "  step_name: ppl\n"
                 + "  task_num: 1\n"
                 + "- cls_name: ''\n"
@@ -41,19 +41,21 @@ public class JobParserTest {
                 + "  needs:\n"
                 + "  - ppl\n"
                 + "  resources:\n"
-                + "    cpu: \n"
-                + "      request: 0.1\n"
-                + "      limit: 0.1\n"
-                + "    gpu: \n"
-                + "      request: 1\n"
-                + "      limit: 1\n"
-                + "    memory: \n"
-                + "      request: 1\n"
-                + "      limit: 1\n"
+                + "  - type: cpu \n"
+                + "    request: 0.1\n"
+                + "    limit: 0.1\n"
+                + "  - type: nvidia.com/gpu \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
+                + "  - type: memory \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
                 + "  step_name: cmp\n"
                 + "  task_num: 1";
         JobSpecParser jobSpecParser = new JobSpecParser(new YAMLMapper());
         List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 2);
+        Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
+        Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);
     }
 }

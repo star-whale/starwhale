@@ -10,7 +10,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import ROOT_DIR
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Parser, Context, do_resource_validate
+from starwhale.api._impl.job import Parser, Context, do_resource_transform
 from starwhale.core.job.model import (
     Step,
     STATUS,
@@ -75,76 +75,114 @@ class JobTestCase(TestCase):
 
     def test_resource_valid(self):
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate({"ppu": 1})  # illegal resource name
+            do_resource_transform({"ppu": 1})  # illegal resource name
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {"cpu": {"res": 1, "limit": 2}}
             )  # illegal attribute name
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {"cpu": {"request": "u", "limit": 2}}
             )  # don't support str
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {
                     "cpu": 0.1,
                     "memory": 2,
-                    "gpu": 2.1,  # gpu don't support float
+                    "nvidia.com/gpu": 2.1,  # gpu don't support float
                 }
             )
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {
                     "cpu": {
                         "request": 0.1,
                         "limit": 0.2,
                     },
                     "memory": 2,
-                    "gpu": {  # gpu don't support float
+                    "nvidia.com/gpu": {  # gpu don't support float
                         "request": 0.1,
                         "limit": 0.2,
                     },
                 }
             )
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {  # value must be number or dict
                     "cpu": "0.1",
                     "memory": "100",
-                    "gpu": "1",
+                    "nvidia.com/gpu": "1",
                 }
             )
         with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_validate(
+            do_resource_transform(
                 {
                     "cpu": 0.1,
                     "memory": -100,  # only supports non-negative numbers
-                    "gpu": 1,
+                    "nvidia.com/gpu": 1,
                 }
             )
 
-        do_resource_validate(
-            {
-                "cpu": 0.1,
-                "memory": 100,
-                "gpu": 1,
-            }
+        self.assertEqual(
+            do_resource_transform(
+                {
+                    "cpu": 0.1,
+                    "memory": 100,
+                    "nvidia.com/gpu": 1,
+                }
+            ),
+            [
+                {
+                    "type": "cpu",
+                    "request": 0.1,
+                    "limit": 0.1,
+                },
+                {
+                    "type": "memory",
+                    "request": 100,
+                    "limit": 100,
+                },
+                {
+                    "type": "nvidia.com/gpu",
+                    "request": 1,
+                    "limit": 1,
+                },
+            ],
         )
-        do_resource_validate(
-            {
-                "cpu": {
+        self.assertEqual(
+            do_resource_transform(
+                {
+                    "cpu": {
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                    "memory": {
+                        "request": 100.1,
+                        "limit": 100.2,
+                    },
+                    "nvidia.com/gpu": {
+                        "request": 1,
+                        "limit": 2,
+                    },
+                }
+            ),
+            [
+                {
+                    "type": "cpu",
                     "request": 0.1,
                     "limit": 0.2,
                 },
-                "memory": {
+                {
+                    "type": "memory",
                     "request": 100.1,
                     "limit": 100.2,
                 },
-                "gpu": {
+                {
+                "type": "nvidia.com/gpu",
                     "request": 1,
                     "limit": 2,
                 },
-            }
+            ],
         )
 
     def test_generate_custom_job_yaml(self):
@@ -185,8 +223,12 @@ class JobTestCase(TestCase):
         self.assertEqual(_steps[0].step_name, "custom_ppl")
         self.assertEqual(_steps[0].cls_name, "CustomPipeline")
         self.assertEqual(_steps[1].step_name, "custom_cmp")
-        self.assertEqual(_steps[0].resources["cpu"], {"limit": 1, "request": 1})
-        self.assertEqual(_steps[1].resources["cpu"], {"limit": 2, "request": 1})
+        self.assertEqual(
+            _steps[0].resources[0], {"type": "cpu", "limit": 1, "request": 1}
+        )
+        self.assertEqual(
+            _steps[1].resources[0], {"type": "cpu", "limit": 2, "request": 1}
+        )
 
     def test_job_check(self):
         self.assertEqual(

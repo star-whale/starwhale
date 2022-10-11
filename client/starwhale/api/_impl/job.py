@@ -15,13 +15,14 @@ from starwhale.utils.load import load_module
 context_holder = threading.local()
 resource_names: t.Dict[str, t.List] = {
     "cpu": [int, float],
-    "gpu": [int],
+    "nvidia.com/gpu": [int],
     "memory": [int, float],
 }
 attribute_names = ["request", "limit"]
 
 
-def do_resource_validate(resources: t.Dict[str, t.Any]) -> None:
+def do_resource_transform(resources: t.Dict[str, t.Any]) -> t.List[t.Dict]:
+    results = []
     for _name, _resource in resources.items():
         if _name not in resource_names:
             raise RuntimeError(
@@ -49,6 +50,14 @@ def do_resource_validate(resources: t.Dict[str, t.Any]) -> None:
                 raise RuntimeError(
                     f"{_k} only supports non-negative numbers, but now is {_v}"
                 )
+        results.append(
+            {
+                "type": _name,
+                "request": resources[_name]["request"],
+                "limit": resources[_name]["limit"],
+            }
+        )
+    return results
 
 
 def step(
@@ -64,12 +73,12 @@ def step(
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             cls, _, func_name = func.__qualname__.rpartition(".")
-            do_resource_validate(_resources)
+
             _step = dict(
                 job_name=job_name,
                 step_name=func_name,
                 cls_name=cls,
-                resources=_resources,
+                resources=do_resource_transform(_resources),
                 concurrency=concurrency,
                 task_num=task_num,
                 needs=_needs,

@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RuntimeResource {
+    String type;
     Float request;
     Float limit;
 }

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,7 +46,7 @@ public class StepSpec {
     private Integer concurrency = 1;
     private List<String> needs;
 
-    private Map<String, RuntimeResource> resources;
+    private List<RuntimeResource> resources;
     @JsonProperty("task_num")
     private Integer taskNum = 1;
 }

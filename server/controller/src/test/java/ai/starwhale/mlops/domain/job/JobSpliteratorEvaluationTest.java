@@ -31,7 +31,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -50,8 +49,8 @@ public class JobSpliteratorEvaluationTest {
         mockJob.setCurrentStep(null);
         mockJob.setSteps(null);
         mockJob.getSwmp().setStepSpecs(List.of(
-                        StepSpec.builder().stepName("a").taskNum(1).resources(Map.of()).build(),
-                        StepSpec.builder().stepName("b").taskNum(1).resources(Map.of()).needs(List.of("a")).build()
+                        StepSpec.builder().stepName("a").taskNum(1).resources(List.of()).build(),
+                        StepSpec.builder().stepName("b").taskNum(1).resources(List.of()).needs(List.of("a")).build()
                 )
         );
         mockJob.setStepSpec("");
