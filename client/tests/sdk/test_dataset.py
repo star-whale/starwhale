@@ -11,7 +11,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import ROOT_DIR
 from starwhale import Link, MIMEType, UserRawBuildExecutor
 from starwhale.consts import OBJECT_STORE_DIRNAME
-from starwhale.utils.fs import blake2b_file
+from starwhale.utils.fs import ensure_file, blake2b_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import (
     Text,
@@ -178,10 +178,10 @@ class TestDatasetBuildExecutor(BaseTestCase):
                 ).resolve()
             )
 
-        data_path = (
+        src_data_path = (
             Path(self.object_store_dir) / data_files_sign[0][:2] / data_files_sign[0]
         )
-        data_content = data_path.read_bytes()
+        data_content = src_data_path.read_bytes()
         _parser = _header_struct.unpack(data_content[:_header_size])
         assert _parser[0] == _header_magic
         assert _parser[3] == 28 * 28
@@ -197,6 +197,31 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.data_type["type"] == ArtifactType.Image.value
         assert meta.data_type["mime_type"] == MIMEType.GRAYSCALE.value
         assert meta.data_type["shape"] == [28, 28, 1]
+
+        link_data_path = (
+            Path(self.workdir)
+            / "data"
+            / data_files_sign[0][: DatasetStorage.short_sign_cnt]
+        )
+        assert link_data_path.exists()
+        link_data_path.unlink()
+        dummy_path = Path(self.workdir) / "dummy"
+        ensure_file(dummy_path, "")
+        link_data_path.symlink_to(dummy_path)
+        assert link_data_path.exists()
+
+        with MNISTBuildExecutor(
+            dataset_name="mnist",
+            dataset_version="112233",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert link_data_path.resolve() != dummy_path
+        assert link_data_path.resolve() == src_data_path
 
 
 class TestDatasetType(TestCase):
