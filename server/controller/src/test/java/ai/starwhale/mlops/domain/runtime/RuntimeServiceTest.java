@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swmp;
+package ai.starwhale.mlops.domain.runtime;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -34,9 +34,9 @@ import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
 
-import ai.starwhale.mlops.api.protocol.swmp.ClientSwmpRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
-import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVo;
+import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
@@ -48,18 +48,19 @@ import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.swmp.bo.SwmpQuery;
-import ai.starwhale.mlops.domain.swmp.bo.SwmpVersion;
-import ai.starwhale.mlops.domain.swmp.bo.SwmpVersionQuery;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -67,54 +68,58 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-public class SwModelPackageServiceTest {
+public class RuntimeServiceTest {
 
-    private SwModelPackageService service;
-    private SwModelPackageMapper swmpMapper;
-    private SwModelPackageVersionMapper swmpVersionMapper;
-    private SwmpConvertor swmpConvertor;
-    private SwmpVersionConvertor versionConvertor;
+    private RuntimeService service;
+    private RuntimeMapper runtimeMapper;
+    private RuntimeVersionMapper runtimeVersionMapper;
+    private StorageService storageService;
+    private ProjectManager projectManager;
+    private RuntimeConvertor runtimeConvertor;
+    private RuntimeVersionConvertor versionConvertor;
+    private RuntimeManager runtimeManager;
     private StoragePathCoordinator storagePathCoordinator;
     private StorageAccessService storageAccessService;
-    private StorageService storageService;
     private UserService userService;
-    private ProjectManager projectManager;
-    private SwmpManager swmpManager;
     private HotJobHolder jobHolder;
+    private ObjectMapper yamlMapper;
+    @Setter
     private BundleManager bundleManager;
 
     @SneakyThrows
     @BeforeEach
     public void setUp() {
-        swmpMapper = mock(SwModelPackageMapper.class);
-        swmpVersionMapper = mock(SwModelPackageVersionMapper.class);
-        swmpConvertor = mock(SwmpConvertor.class);
-        given(swmpConvertor.convert(any(SwModelPackageEntity.class)))
+        runtimeMapper = mock(RuntimeMapper.class);
+        runtimeVersionMapper = mock(RuntimeVersionMapper.class);
+        runtimeConvertor = mock(RuntimeConvertor.class);
+        given(runtimeConvertor.convert(any(RuntimeEntity.class)))
                 .willAnswer(invocation -> {
-                    SwModelPackageEntity entity = invocation.getArgument(0);
-                    return SwModelPackageVo.builder()
+                    RuntimeEntity entity = invocation.getArgument(0);
+                    return RuntimeVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .name(entity.getName())
                             .build();
                 });
-        versionConvertor = mock(SwmpVersionConvertor.class);
-        given(versionConvertor.convert(any(SwModelPackageVersionEntity.class)))
+        versionConvertor = mock(RuntimeVersionConvertor.class);
+        given(versionConvertor.convert(any(RuntimeVersionEntity.class)))
                 .willAnswer(invocation -> {
-                    SwModelPackageVersionEntity entity = invocation.getArgument(0);
-                    return SwModelPackageVersionVo.builder()
+                    RuntimeVersionEntity entity = invocation.getArgument(0);
+                    return RuntimeVersionVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .name(entity.getName())
                             .build();
@@ -135,23 +140,26 @@ public class SwModelPackageServiceTest {
                 .willReturn(1L);
         given(projectManager.getProjectId(same("2")))
                 .willReturn(2L);
-        swmpManager = mock(SwmpManager.class);
+        runtimeManager = mock(RuntimeManager.class);
         jobHolder = mock(HotJobHolder.class);
 
-        service = new SwModelPackageService(
-                swmpMapper,
-                swmpVersionMapper,
-                new IdConvertor(),
-                new VersionAliasConvertor(),
-                swmpConvertor,
-                versionConvertor,
-                storagePathCoordinator,
-                swmpManager,
-                storageAccessService,
+        yamlMapper = new ObjectMapper(new YAMLFactory());
+
+        service = new RuntimeService(
+                runtimeMapper,
+                runtimeVersionMapper,
                 storageService,
-                userService,
                 projectManager,
-                jobHolder
+                yamlMapper,
+                runtimeConvertor,
+                versionConvertor,
+                runtimeManager,
+                storagePathCoordinator,
+                storageAccessService,
+                jobHolder,
+                userService,
+                new IdConvertor(),
+                new VersionAliasConvertor()
         );
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
@@ -164,24 +172,22 @@ public class SwModelPackageServiceTest {
                     BundleVersionUrl url = invocation.getArgument(0);
                     return Long.valueOf(url.getVersionUrl());
                 });
-
         given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class), anyLong()))
                 .willAnswer(invocation -> {
                     BundleVersionUrl url = invocation.getArgument(0);
                     return Long.valueOf(url.getVersionUrl());
                 });
-
         service.setBundleManager(bundleManager);
     }
 
     @Test
-    public void testListSwmp() {
-        given(swmpMapper.listSwModelPackages(same(1L), anyString()))
+    public void testListRuntime() {
+        given(runtimeMapper.listRuntimes(same(1L), anyString()))
                 .willReturn(List.of(
-                        SwModelPackageEntity.builder().id(1L).build(),
-                        SwModelPackageEntity.builder().id(2L).build()
+                        RuntimeEntity.builder().id(1L).build(),
+                        RuntimeEntity.builder().id(2L).build()
                 ));
-        var res = service.listSwmp(SwmpQuery.builder()
+        var res = service.listRuntime(RuntimeQuery.builder()
                 .projectUrl("1")
                 .namePrefix("")
                 .build(), new PageParams(1, 5));
@@ -193,36 +199,36 @@ public class SwModelPackageServiceTest {
     }
 
     @Test
-    public void testDeleteSwmp() {
+    public void testDeleteRuntime() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p1").swmpUrl("m1").build());
+            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("r1").build());
             assertThat(res, is(true));
 
-            res = service.deleteSwmp(SwmpQuery.builder().projectUrl("p2").swmpUrl("m2").build());
+            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("r2").build());
             assertThat(res, is(false));
         }
     }
 
     @Test
-    public void testRecoverSwmp() {
+    public void testRecoverRuntime() {
         RecoverManager recoverManager = mock(RecoverManager.class);
         given(recoverManager.recoverBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
         ))).willReturn(true);
         try (var mock = mockStatic(RecoverManager.class)) {
             mock.when(() -> RecoverManager.create(any(), any(), any()))
                     .thenReturn(recoverManager);
 
-            var res = service.recoverSwmp("p1", "m1");
+            var res = service.recoverRuntime("p1", "r1");
             assertThat(res, is(true));
 
-            res = service.recoverSwmp("p1", "m2");
+            res = service.recoverRuntime("p1", "r2");
             assertThat(res, is(false));
         }
     }
@@ -233,29 +239,29 @@ public class SwModelPackageServiceTest {
         given(revertManager.revertVersionTo(argThat(
                 url ->
                         Objects.equals(url.getBundleUrl().getProjectUrl(), "p1")
-                                && Objects.equals(url.getBundleUrl().getBundleUrl(), "m1")
+                                && Objects.equals(url.getBundleUrl().getBundleUrl(), "r1")
                                 && Objects.equals(url.getVersionUrl(), "v1")
         ))).willReturn(true);
         try (var mock = mockStatic(RevertManager.class)) {
             mock.when(() -> RevertManager.create(any(), any()))
                     .thenReturn(revertManager);
 
-            var res = service.revertVersionTo("p1", "m1", "v1");
+            var res = service.revertVersionTo("p1", "r1", "v1");
             assertThat(res, is(true));
 
-            res = service.revertVersionTo("p1", "m1", "v2");
+            res = service.revertVersionTo("p1", "r1", "v2");
             assertThat(res, is(false));
         }
     }
 
     @Test
-    public void testListSwmpInfo() {
-        given(swmpMapper.findByName(same("m1"), same(1L)))
-                .willReturn(SwModelPackageEntity.builder().id(1L).build());
-        given(swmpVersionMapper.listVersions(same(1L), any(), any()))
-                .willReturn(List.of(SwModelPackageVersionEntity.builder().versionOrder(2L).build()));
+    public void testListRuntimeInfo() {
+        given(runtimeMapper.findByName(same("r1"), same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
+        given(runtimeVersionMapper.listVersions(same(1L), any(), any()))
+                .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).build()));
 
-        var res = service.listSwmpInfo("1", "m1");
+        var res = service.listRuntimeInfo("1", "r1");
         assertThat(res, hasItem(allOf(
                 hasProperty("id", is("1")),
                 hasProperty("versionAlias", is("v2"))
@@ -263,37 +269,37 @@ public class SwModelPackageServiceTest {
 
         given(projectManager.findByNameOrDefault(same("1"), same(1L)))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(swmpMapper.listSwModelPackages(same(1L), any()))
-                .willReturn(List.of(SwModelPackageEntity.builder().id(1L).build()));
+        given(runtimeMapper.listRuntimes(same(1L), any()))
+                .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
-        res = service.listSwmpInfo("1", "");
+        res = service.listRuntimeInfo("1", "");
         assertThat(res, hasItem(allOf(
                 hasProperty("id", is("1")),
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.listSwmpInfo("2", "m1"));
+        assertThrows(SwValidationException.class,
+                () -> service.listRuntimeInfo("2", "r1"));
     }
 
     @Test
-    public void testGetSwmpInfo() {
-        given(swmpMapper.findSwModelPackageById(same(1L)))
-                .willReturn(SwModelPackageEntity.builder().id(1L).build());
+    public void testGetRuntimeInfo() {
+        given(runtimeMapper.findRuntimeById(same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
 
-        given(swmpMapper.findSwModelPackageById(same(2L)))
-                .willReturn(SwModelPackageEntity.builder().id(2L).build());
+        given(runtimeMapper.findRuntimeById(same(2L)))
+                .willReturn(RuntimeEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getSwmpInfo(SwmpQuery.builder().projectUrl("1").swmpUrl("3").build()));
+                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("3").build()));
 
-        given(swmpVersionMapper.findVersionById(same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().id(1L).versionOrder(2L).build());
+        given(runtimeVersionMapper.findVersionById(same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
 
-        var res = service.getSwmpInfo(SwmpQuery.builder()
+        var res = service.getRuntimeInfo(RuntimeQuery.builder()
                 .projectUrl("1")
-                .swmpUrl("1")
-                .swmpVersionUrl("1")
+                .runtimeUrl("1")
+                .runtimeVersionUrl("1")
                 .build());
 
         assertThat(res, allOf(
@@ -301,12 +307,12 @@ public class SwModelPackageServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        given(swmpVersionMapper.getLatestVersion(same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().id(1L).versionOrder(2L).build());
+        given(runtimeVersionMapper.getLatestVersion(same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
 
-        res = service.getSwmpInfo(SwmpQuery.builder()
+        res = service.getRuntimeInfo(RuntimeQuery.builder()
                 .projectUrl("1")
-                .swmpUrl("1")
+                .runtimeUrl("1")
                 .build());
 
         assertThat(res, allOf(
@@ -315,29 +321,29 @@ public class SwModelPackageServiceTest {
         ));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getSwmpInfo(SwmpQuery.builder().projectUrl("1").swmpUrl("2").build()));
+                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build()));
     }
 
     @Test
-    public void testModifySwmpVersion() {
-        given(swmpVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
+    public void testModifyRuntimeVersion() {
+        given(runtimeVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifySwmpVersion("1", "1", "1", new SwmpVersion());
+        var res = service.modifyRuntimeVersion("1", "1", "1", RuntimeVersion.builder().build());
         assertThat(res, is(true));
 
-        res = service.modifySwmpVersion("1", "1", "2", new SwmpVersion());
+        res = service.modifyRuntimeVersion("1", "1", "2", RuntimeVersion.builder().build());
         assertThat(res, is(false));
     }
 
     @Test
-    public void testListSwmpVersionHistory() {
-        given(swmpVersionMapper.listVersions(anyLong(), anyString(), anyString()))
-                .willReturn(List.of(SwModelPackageVersionEntity.builder().id(1L).swmpName("m1").build()));
-        var res = service.listSwmpVersionHistory(
-                SwmpVersionQuery.builder()
+    public void testListRuntimeVersionHistory() {
+        given(runtimeVersionMapper.listVersions(anyLong(), anyString(), anyString()))
+                .willReturn(List.of(RuntimeVersionEntity.builder().id(1L).build()));
+        var res = service.listRuntimeVersionHistory(
+                RuntimeVersionQuery.builder()
                         .projectUrl("1")
-                        .swmpUrl("1")
+                        .runtimeUrl("1")
                         .versionName("v1")
                         .versionTag("tag1")
                         .build(),
@@ -349,26 +355,19 @@ public class SwModelPackageServiceTest {
     }
 
     @Test
-    public void testFindModelByVersionId() {
-        given(swmpVersionMapper.findVersionsByIds(anyList()))
+    public void testFindRuntimeByVersionIds() {
+        given(runtimeVersionMapper.findVersionsByIds(anyList()))
                 .willReturn(List.of(
-                        SwModelPackageVersionEntity.builder().swmpId(1L).build(),
-                        SwModelPackageVersionEntity.builder().swmpId(2L).build()
+                        RuntimeVersionEntity.builder().runtimeId(1L).build()
                 ));
 
-        given(swmpMapper.findSwModelPackagesByIds(anyList()))
-                .willAnswer(invocation -> {
-                    List<Long> ids = invocation.getArgument(0);
-                    return ids.stream()
-                            .map(id -> SwModelPackageEntity.builder().id(id).build())
-                            .collect(Collectors.toList());
-                });
+        given(runtimeMapper.findRuntimeById(same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
 
-        var res = service.findModelByVersionId(List.of());
+        var res = service.findRuntimeByVersionIds(List.of());
         assertThat(res, allOf(
-                iterableWithSize(2),
-                hasItem(hasProperty("id", is("1"))),
-                hasItem(hasProperty("id", is("2")))
+                iterableWithSize(1),
+                hasItem(hasProperty("id", is("1")))
         ));
     }
 
@@ -376,29 +375,28 @@ public class SwModelPackageServiceTest {
     public void testUpload() {
         given(projectManager.getProject(anyString()))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(swmpMapper.findByNameForUpdate(anyString(), same(1L)))
-                .willReturn(SwModelPackageEntity.builder().id(1L).build());
-        given(swmpVersionMapper.findByNameAndSwmpId(anyString(), same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder()
+        given(runtimeMapper.findByNameForUpdate(anyString(), same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
+        given(runtimeVersionMapper.findByNameAndRuntimeId(anyString(), same(1L)))
+                .willReturn(RuntimeVersionEntity.builder()
                         .id(1L)
                         .storagePath("path1")
-                        .evalJobs("job1")
                         .build());
         given(jobHolder.ofStatus(anySet()))
                 .willReturn(List.of(
-                        Job.builder().swmp(SwModelPackage.builder().name("m1").version("v1").build()).build(),
-                        Job.builder().swmp(SwModelPackage.builder().name("m2").version("v2").build()).build()
+                        Job.builder().jobRuntime(JobRuntime.builder().name("r1").version("v1").build()).build(),
+                        Job.builder().jobRuntime(JobRuntime.builder().name("r2").version("v2").build()).build()
                 ));
-        given(storagePathCoordinator.allocateSwmpPath(any(), any(), any()))
+        given(storagePathCoordinator.allocateRuntimePath(any(), any(), any()))
                 .willReturn("path2");
 
         try (var mock = mockStatic(TarFileUtil.class)) {
             mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
                     .thenReturn(new byte[]{1});
 
-            ClientSwmpRequest request = new ClientSwmpRequest();
+            ClientRuntimeRequest request = new ClientRuntimeRequest();
             request.setProject("1");
-            request.setSwmp("m1:v1");
+            request.setRuntime("r1:v1");
 
             MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
             assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
@@ -406,7 +404,7 @@ public class SwModelPackageServiceTest {
             request.setForce("1");
             assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
 
-            request.setSwmp("m3:v3");
+            request.setRuntime("r3:v3");
             service.upload(dsFile, request);
 
             request.setProject("2");
@@ -417,29 +415,29 @@ public class SwModelPackageServiceTest {
     @Test
     public void testPull() throws IOException {
         HttpServletResponse response = mock(HttpServletResponse.class);
-        given(swmpMapper.findByName(same("m1"), same(1L)))
-                .willReturn(SwModelPackageEntity.builder().id(1L).build());
+        given(runtimeMapper.findByName(same("r1"), same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
         assertThrows(SwValidationException.class,
-                () -> service.pull("2", "m2", "v2", response));
+                () -> service.pull("2", "r2", "v2", response));
 
-        given(swmpVersionMapper.findByNameAndSwmpId(same("v1"), same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().storagePath("path1").build());
+        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v1"), same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().storagePath("path1").build());
         assertThrows(SwValidationException.class,
-                () -> service.pull("1", "m1", "v4", response));
+                () -> service.pull("1", "r1", "v4", response));
 
-        given(swmpVersionMapper.findByNameAndSwmpId(same("v2"), same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().storagePath("path2").build());
+        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v2"), same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().storagePath("path2").build());
 
-        given(swmpVersionMapper.findByNameAndSwmpId(same("v3"), same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().storagePath("path3").build());
+        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v3"), same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().storagePath("path3").build());
 
         given(storageAccessService.list(anyString())).willThrow(IOException.class);
         given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
         given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
         assertThrows(SwValidationException.class,
-                () -> service.pull("1", "m1", "v2", response));
+                () -> service.pull("1", "r1", "v2", response));
         assertThrows(SwProcessException.class,
-                () -> service.pull("1", "m1", "v3", response));
+                () -> service.pull("1", "r1", "v3", response));
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
@@ -447,26 +445,27 @@ public class SwModelPackageServiceTest {
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
 
-            service.pull("1", "m1", "v1", response);
+            service.pull("1", "r1", "v1", response);
         }
+
     }
 
     @Test
     public void testQuery() {
-        given(swmpMapper.findByName(same("m1"), same(1L)))
-                .willReturn(SwModelPackageEntity.builder().id(1L).build());
+        given(runtimeMapper.findByName(same("r1"), same(1L)))
+                .willReturn(RuntimeEntity.builder().id(1L).build());
 
-        given(swmpVersionMapper.findByNameAndSwmpId(same("v1"), same(1L)))
-                .willReturn(SwModelPackageVersionEntity.builder().id(1L).build());
+        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v1"), same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionName("").build());
 
-        var res = service.query("1", "m1", "v1");
+        var res = service.query("1", "r1", "v1");
         assertThat(res, is(""));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "m2", "v1"));
+                () -> service.query("1", "r2", "v1"));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "m1", "v2"));
+                () -> service.query("1", "r1", "v2"));
 
     }
 
