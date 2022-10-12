@@ -91,19 +91,8 @@ public class K8sClientTest {
     @Test
     public void testLogOfJob() throws ApiException, IOException {
 
-        when(coreV1Api.listNamespacedPod(
-                eq(nameSpace),
-                eq(null),
-                eq(null),
-                eq(null),
-                eq(null),
-                eq("selector"),
-                eq(null),
-                eq(null),
-                eq(null),
-                eq(30),
-                eq(null))).thenReturn(
-                new V1PodList().addItemsItem(new V1Pod().metadata(new V1ObjectMeta().name("pdn"))));
+        when(coreV1Api.listNamespacedPod(nameSpace, null, null, null, null, "selector", null, null, null, 30,
+                null)).thenReturn(new V1PodList().addItemsItem(new V1Pod().metadata(new V1ObjectMeta().name("pdn"))));
 
         Call callB = mock(Call.class);
         ResponseBody respbB = mock(ResponseBody.class);
