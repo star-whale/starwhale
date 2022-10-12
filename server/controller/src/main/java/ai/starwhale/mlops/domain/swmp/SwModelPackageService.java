@@ -30,7 +30,6 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
@@ -51,6 +50,7 @@ import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -68,9 +68,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -83,44 +83,48 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class SwModelPackageService {
 
-    @Resource
-    private SwModelPackageMapper swmpMapper;
+    private final SwModelPackageMapper swmpMapper;
+    private final SwModelPackageVersionMapper swmpVersionMapper;
+    private final IdConvertor idConvertor;
+    private final VersionAliasConvertor versionAliasConvertor;
+    private final SwmpConvertor swmpConvertor;
+    private final SwmpVersionConvertor versionConvertor;
+    private final StoragePathCoordinator storagePathCoordinator;
+    private final StorageAccessService storageAccessService;
+    private final StorageService storageService;
+    private final UserService userService;
+    private final ProjectManager projectManager;
+    private final SwmpManager swmpManager;
+    private final HotJobHolder jobHolder;
+    @Setter
+    private BundleManager bundleManager;
 
-    @Resource
-    private SwModelPackageVersionMapper swmpVersionMapper;
-
-    @Resource
-    private IdConvertor idConvertor;
-
-    @Resource
-    private VersionAliasConvertor versionAliasConvertor;
-
-    @Resource
-    private SwmpConvertor swmpConvertor;
-
-    @Resource
-    private SwmpVersionConvertor versionConvertor;
-
-    @Resource
-    private StoragePathCoordinator storagePathCoordinator;
-
-    @Resource
-    private StorageAccessService storageAccessService;
-
-    @Resource
-    private StorageService storageService;
-
-    @Resource
-    private UserService userService;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    @Resource
-    private HotJobHolder jobHolder;
-
-    @Resource
-    private SwmpManager swmpManager;
+    public SwModelPackageService(SwModelPackageMapper swmpMapper, SwModelPackageVersionMapper swmpVersionMapper,
+            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, SwmpConvertor swmpConvertor,
+            SwmpVersionConvertor versionConvertor, StoragePathCoordinator storagePathCoordinator,
+            SwmpManager swmpManager, StorageAccessService storageAccessService, StorageService storageService,
+            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder) {
+        this.swmpMapper = swmpMapper;
+        this.swmpVersionMapper = swmpVersionMapper;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
+        this.swmpConvertor = swmpConvertor;
+        this.versionConvertor = versionConvertor;
+        this.storagePathCoordinator = storagePathCoordinator;
+        this.swmpManager = swmpManager;
+        this.storageAccessService = storageAccessService;
+        this.storageService = storageService;
+        this.userService = userService;
+        this.projectManager = projectManager;
+        this.jobHolder = jobHolder;
+        this.bundleManager = new BundleManager(
+                idConvertor,
+                versionAliasConvertor,
+                projectManager,
+                swmpManager,
+                swmpManager
+        );
+    }
 
     public PageInfo<SwModelPackageVo> listSwmp(SwmpQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -130,7 +134,7 @@ public class SwModelPackageService {
     }
 
     public Boolean deleteSwmp(SwmpQuery query) {
-        return RemoveManager.create(bundleManager(), swmpManager)
+        return RemoveManager.create(bundleManager, swmpManager)
                 .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getSwmpUrl()));
     }
 
@@ -138,7 +142,7 @@ public class SwModelPackageService {
         try {
             return RecoverManager.create(projectManager, swmpManager, idConvertor)
                     .recoverBundle(BundleUrl.create(projectUrl, modelUrl));
-        } catch (RecoverException e) {
+        } catch (StarwhaleException e) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWMP).tip(e.getMessage()),
                     HttpStatus.BAD_REQUEST);
         }
@@ -150,8 +154,8 @@ public class SwModelPackageService {
             Long projectId = projectManager.getProjectId(project);
             SwModelPackageEntity swmp = swmpMapper.findByName(name, projectId);
             if (swmp == null) {
-                throw new SwValidationException(ValidSubject.SWMP)
-                        .tip("Unable to find the swmp with name " + name);
+                throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWMP)
+                        .tip("Unable to find the swmp with name " + name), HttpStatus.BAD_REQUEST);
             }
             return listSwmpInfoOfModel(swmp);
         }
@@ -181,7 +185,6 @@ public class SwModelPackageService {
     }
 
     public SwModelPackageInfoVo getSwmpInfo(SwmpQuery query) {
-        BundleManager bundleManager = bundleManager();
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getSwmpUrl());
         Long swmpId = bundleManager.getBundleId(bundleUrl);
         SwModelPackageEntity model = swmpMapper.findSwModelPackageById(swmpId);
@@ -194,7 +197,7 @@ public class SwModelPackageService {
         if (!StrUtil.isEmpty(query.getSwmpVersionUrl())) {
             // find version by versionId
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(bundleUrl, query.getSwmpVersionUrl()));
+                    .create(bundleUrl, query.getSwmpVersionUrl()), swmpId);
             versionEntity = swmpVersionMapper.findVersionById(versionId);
         }
         if (versionEntity == null) {
@@ -237,7 +240,7 @@ public class SwModelPackageService {
     }
 
     public Boolean modifySwmpVersion(String projectUrl, String swmpUrl, String versionUrl, SwmpVersion version) {
-        Long versionId = bundleManager().getBundleVersionId(BundleVersionUrl
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, swmpUrl, versionUrl));
         SwModelPackageVersionEntity entity = SwModelPackageVersionEntity.builder()
                 .id(versionId)
@@ -252,7 +255,7 @@ public class SwModelPackageService {
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
             TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager(), swmpManager)
+            return TagManager.create(bundleManager, swmpManager)
                     .updateTag(
                             BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
                             tagAction);
@@ -263,12 +266,12 @@ public class SwModelPackageService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String swmpUrl, String versionUrl) {
-        return RevertManager.create(bundleManager(), swmpManager)
+        return RevertManager.create(bundleManager, swmpManager)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, swmpUrl, versionUrl));
     }
 
     public PageInfo<SwModelPackageVersionVo> listSwmpVersionHistory(SwmpVersionQuery query, PageParams pageParams) {
-        Long swmpId = bundleManager().getBundleId(BundleUrl
+        Long swmpId = bundleManager.getBundleId(BundleUrl
                 .create(query.getProjectUrl(), query.getSwmpUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SwModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
@@ -447,10 +450,5 @@ public class SwModelPackageService {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.SWMP), HttpStatus.NOT_FOUND);
         }
         return "";
-    }
-
-    private BundleManager bundleManager() {
-        return new BundleManager(idConvertor, versionAliasConvertor, projectManager, swmpManager, swmpManager,
-                ValidSubject.SWMP);
     }
 }

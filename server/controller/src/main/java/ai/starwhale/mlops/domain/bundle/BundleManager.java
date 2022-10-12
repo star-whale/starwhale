@@ -21,11 +21,7 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 
 @Slf4j
 public class BundleManager {
@@ -36,27 +32,24 @@ public class BundleManager {
     private final VersionAliasConvertor versionAliasConvertor;
     private final BundleAccessor bundleAccessor;
     private final BundleVersionAccessor bundleVersionAccessor;
-    private final ValidSubject validSubject;
 
     public BundleManager(IdConvertor idConvertor,
             VersionAliasConvertor versionAliasConvertor,
             ProjectAccessor projectAccessor,
             BundleAccessor bundleAccessor,
-            BundleVersionAccessor bundleVersionAccessor,
-            ValidSubject validSubject) {
+            BundleVersionAccessor bundleVersionAccessor) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.projectAccessor = projectAccessor;
         this.bundleAccessor = bundleAccessor;
         this.bundleVersionAccessor = bundleVersionAccessor;
-        this.validSubject = validSubject;
     }
 
     public Long getBundleId(BundleUrl bundleUrl) {
         return getBundleId(bundleUrl.getBundleUrl(), bundleUrl.getProjectUrl());
     }
 
-    private Long getBundleId(String bundleUrl, String projectUrl) {
+    private Long getBundleId(String bundleUrl, String projectUrl) throws BundleException {
         BundleEntity entity;
         if (idConvertor.isId(bundleUrl)) {
             entity = bundleAccessor.findById(idConvertor.revert(bundleUrl));
@@ -65,9 +58,7 @@ public class BundleManager {
             entity = bundleAccessor.findByName(bundleUrl, projectId);
         }
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(validSubject)
-                    .tip(String.format("Unable to find %s %s", validSubject.name(), bundleUrl)),
-                    HttpStatus.BAD_REQUEST);
+            throw new BundleException(String.format("Unable to find %s", bundleUrl));
         }
         return entity.getId();
     }
@@ -91,9 +82,7 @@ public class BundleManager {
             entity = bundleVersionAccessor.findVersionByNameAndBundleId(versionUrl, bundleId);
         }
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(validSubject)
-                    .tip(String.format("Unable to find %s %s", validSubject.name(), versionUrl)),
-                    HttpStatus.BAD_REQUEST);
+            throw new BundleException(String.format("Unable to find %s", versionUrl));
         }
         return entity.getId();
     }
