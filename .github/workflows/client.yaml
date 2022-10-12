@@ -184,4 +184,4 @@ jobs:
         env:
           GITHUB_ACTION: 1
           PYTHON_VERSION: ${{matrix.python-version}}
-        run: scripts/run_demo.sh
+        run: python3 scripts/client_test/cli_test.py mnist

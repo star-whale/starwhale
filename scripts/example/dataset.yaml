@@ -1,0 +1,9 @@
+name: simple-test
+
+handler: code.dataset:SimpleTextDatasetBuildExecutor
+
+desc: simple dataset
+
+attr:
+  alignment_size: 128
+  volume_size: 10M

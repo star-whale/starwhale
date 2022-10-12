@@ -212,7 +212,7 @@ client_test() {
   rm -rf .pytest_cache
   rm -rf venv*
   pushd ../
-  scripts/run_demo.sh
+  python3 scripts/client_test/cli_test.py simple
   scripts/e2e_test/print_job_log.sh 127.0.0.1:$PORT_CONTROLLER
   popd
   popd

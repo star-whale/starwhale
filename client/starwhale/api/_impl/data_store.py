@@ -10,6 +10,7 @@ import pathlib
 import binascii
 import importlib
 import threading
+import traceback
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
@@ -1323,7 +1324,9 @@ class TableWriter(threading.Thread):
             try:
                 self.data_store.update_table(self.table_name, self.schema, records)
             except Exception as e:
-                logger.warning(f"{self} run-update-table raise exception: {e}")
+                logger.warning(
+                    f"{self} run-update-table raise exception: {e}, records: {records}, error details: {traceback.format_exc()}"
+                )
                 self._queue_run_exceptions.append(e)
                 if len(self._queue_run_exceptions) > self._run_exceptions_limits:
                     break
