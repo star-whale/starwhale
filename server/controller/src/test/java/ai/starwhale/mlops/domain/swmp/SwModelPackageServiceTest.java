@@ -389,7 +389,7 @@ public class SwModelPackageServiceTest {
                         Job.builder().swmp(SwModelPackage.builder().name("m1").version("v1").build()).build(),
                         Job.builder().swmp(SwModelPackage.builder().name("m2").version("v2").build()).build()
                 ));
-        given(storagePathCoordinator.generateSwmpPath(any(), any(), any()))
+        given(storagePathCoordinator.allocateSwmpPath(any(), any(), any()))
                 .willReturn("path2");
 
         try (var mock = mockStatic(TarFileUtil.class)) {
