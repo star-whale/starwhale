@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 from time import sleep
-from typing import Any
+from typing import Any, Optional
 
 from cmds.eval_cmd import Evaluation
 from cmds.base.common import EnvironmentPrepare
@@ -160,7 +160,7 @@ class TestCli:
         )
         return _remote_job["manifest"]["jobStatus"] if _remote_job else "API ERROR"
 
-    def test_mnist(self, cloud_url: str) -> None:
+    def test_mnist(self, cloud_url: Optional[str]) -> None:
         invoke(["cp", "-rf", f"{ROOT_DIR}/example", f"{self._work_dir}/example"])
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
         _environment_prepare.prepare_mnist_data()
@@ -177,7 +177,7 @@ class TestCli:
             cloud_project="starwhale",
         )
 
-    def test_simple(self, cloud_url: str) -> None:
+    def test_simple(self, cloud_url: Optional[str]) -> None:
         self.standard_workflow(
             mode=RunMode.CLOUD if cloud_url else RunMode.STANDALONE,
             model_name="simple-test",
@@ -222,9 +222,10 @@ if __name__ == "__main__":
         # start test
         test_cli = TestCli(work_dir=workdir)
         example = sys.argv[1]
+        _cloud_url = os.environ.get("CONTROLLER_URL")
         if example == "mnist":
-            test_cli.test_mnist(os.environ.get("CONTROLLER_URL"))
+            test_cli.test_mnist(_cloud_url)
         elif example == "simple":
-            test_cli.test_simple(os.environ.get("CONTROLLER_URL"))
+            test_cli.test_simple(_cloud_url)
         else:
             print("there is nothing to run!")
