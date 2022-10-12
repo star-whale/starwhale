@@ -28,8 +28,8 @@
     <img src="https://github.com/star-whale/starwhale/actions/workflows/client.yaml/badge.svg">
 </a>
 
-<a href="https://github.com/star-whale/starwhale/actions/workflows/server-build.yml">
-    <img src="https://github.com/star-whale/starwhale/actions/workflows/server-build.yml/badge.svg">
+<a href="https://github.com/star-whale/starwhale/actions/workflows/server-ut-report.yml">
+    <img src="https://github.com/star-whale/starwhale/actions/workflows/server-ut-report.yml/badge.svg">
 </a>
 
 <a href="https://github.com/star-whale/starwhale/actions/workflows/console.yml">
@@ -103,56 +103,59 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
     ```bash
     git clone https://github.com/star-whale/starwhale.git
-    cd starwhale/example/mnist
     ```
 
 - ☕ **STEP3**: Building a runtime
 
     ```bash
-    swcli runtime create -n pytorch-mnist -m venv --python 3.9 .
-    source venv/bin/activate
-    python3 -m pip install -r requirements.txt
+    cd example/runtime/pytorch
     swcli runtime build .
-    swcli runtime info pytorch-mnist/version/latest
+    swcli runtime list
+    swcli runtime info pytorch/version/latest
     ```
 
 - 🍞 **STEP4**: Building a model
 
-  - Write some code with Starwhale Python SDK. Complete code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/ppl.py).
+  - Enter `example/mnist` directory:
+
+   ```bash
+   cd ../../mnist
+   ```
+
+  - Write some code with Starwhale Python SDK. Complete code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/evaluator.py).
 
    ```python
-   from starwhale.api.model import PipelineHandler
-   from starwhale.api.metric import multi_classification
+   import typing as t
+   import torch
+   from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
 
    class MNISTInference(PipelineHandler):
+        def __init__(self) -> None:
+            super().__init__()
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model = self._load_model(self.device)
 
-       def __init__(self):
-           super().__init__(merge_label=True, ignore_error=False)
-           self.model = self._load_model()
+        def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:
+            data_tensor = self._pre(img)
+            output = self.model(data_tensor)
+            return self._post(output)
 
-       def ppl(self, data:bytes, **kw):
-           data = self._pre(data)
-           output = self.model(data)
-           return self._post(output)
-
-       def handle_label(self, label:bytes, **kw):
-           return [int(l) for l in label]
-
-       @multi_classification(
-           confusion_matrix_normalize="all",
-           show_hamming_loss=True,
-           show_cohen_kappa_score=True,
-           show_roc_auc=True,
-           all_labels=[i for i in range(0, 10)],
-       )
-       def cmp(self, _data_loader:"DataLoader"):
-           _result, _label, _pr = [], [], []
-           for _data in _data_loader:
-               _label.extend([int(l) for l in _data[self._label_field]])
-               # unpack data according to the return value of function ppl
-               (pred, pr) = _data[self._ppl_data_field]
-               _result.extend([int(l) for l in pred])
-               _pr.extend([l for l in pr])
+        @multi_classification(
+            confusion_matrix_normalize="all",
+            show_hamming_loss=True,
+            show_cohen_kappa_score=True,
+            show_roc_auc=True,
+            all_labels=[i for i in range(0, 10)],
+        )
+        def cmp(
+            self, ppl_result: PPLResultIterator
+        ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
+            result, label, pr = [], [], []
+            for _data in ppl_result:
+                label.append(_data["annotations"]["label"])
+                result.extend(_data["result"][0])
+                pr.extend(_data["result"][1])
+            return label, result, pr
 
        def _pre(self, input:bytes):
            """write some mnist preprocessing code"""
@@ -173,7 +176,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
   config:
     - config/hyperparam.json
   run:
-    ppl: mnist.ppl:MNISTInference
+    handler: mnist.evaluator:MNISTInference
   ```
 
   - Run one command to build the model.
@@ -196,31 +199,47 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     ls -lah data/*
    ```
 
-  - Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/process.py).
+  - Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/dataset.py).
 
    ```python
-    from starwhale.api.dataset import BuildExecutor
+    import struct
+    import typing as t
+    from pathlib import Path
+    from starwhale import BuildExecutor
 
-    class DataSetProcessExecutor(BuildExecutor):
+    class DatasetProcessExecutor(SWDSBinBuildExecutor):
+        def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+            root_dir = Path(__file__).parent.parent / "data"
 
-        def iter_data_slice(self, path: str):
-            """read data file, unpack binary data, yield data bytes"""
+            with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
+                root_dir / "t10k-labels-idx1-ubyte"
+            ).open("rb") as label_file:
+                _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+                _, label_number = struct.unpack(">II", label_file.read(8))
+                print(
+                    f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+                )
+                image_size = height * width
 
-        def iter_label_slice(self, path: str):
-            """read label file, unpack binary data, yield label bytes"""
+                for i in range(0, min(data_number, label_number)):
+                    _data = data_file.read(image_size)
+                    _label = struct.unpack(">B", label_file.read(1))[0]
+                    yield GrayscaleImage(
+                        _data,
+                        display_name=f"{i}",
+                        shape=(height, width, 1),
+                    ), {"label": _label}
    ```
 
   - Define `dataset.yaml`.
 
    ```yaml
     name: mnist
-    data_dir: data
-    data_filter: "t10k-image*"
-    label_filter: "t10k-label*"
-    process: mnist.process:DataSetProcessExecutor
+    handler: mnist.dataset:DatasetProcessExecutor
     attr:
-      alignment_size: 4k
-      volume_size: 2M
+      alignment_size: 1k
+      volume_size: 4M
+      data_mime_type: "x/grayscale"
    ```
 
   - Run one command to build the dataset.
@@ -233,9 +252,9 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 - 🍖 **STEP6**: Running an evaluation job
 
    ```bash
-    swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
-    swcli job list
-    swcli job info ${version}
+    swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
+    swcli eval list
+    swcli eval info ${version}
    ```
 
 👏 Now, you have completed the fundamental steps for Starwhale standalone.
@@ -244,14 +263,12 @@ Let's go ahead and finish the tutorial on the on-premises instance.
 
 ## MNIST Quick Tour for on-premises instance
 
-![Create Job Workflow](docs/docs/img/create-job-workflow.gif)
+![Create Job Workflow](docs/docs/img/console-create-job.gif)
 
 - 🍰 **STEP1**: Install minikube and helm
 
-  - Minikube 1.25+
-  - Helm 3.2.0+
-
-  There are standard installation tutorials for [minikube](https://minikube.sigs.k8s.io/docs/start/) and [helm](https://helm.sh/docs/intro/install/) here.
+  - [Minikube](https://minikube.sigs.k8s.io/docs/start/) 1.25+
+  - [Helm](https://helm.sh/docs/intro/install/) 3.2.0+
 
 - 🍵 **STEP2**: Start minikube
 
@@ -259,14 +276,14 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     minikube start
     ```
 
-    > For users in the mainland of China, please add these startup parameters：`--image-mirror-country='cn' --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers` for `minikube start`
+    > For users in the mainland of China, please add these startup parameters：`--image-mirror-country=cn --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers`. If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
 
-    Installation process:
+- 🍵 **STEP3**: Installing Starwhale
 
     ```bash
     helm repo add starwhale https://star-whale.github.io/charts
     helm repo update
-    helm install my-starwhale starwhale/starwhale --version 0.2.0 -n starwhale --create-namespace --set minikube.enabled=true
+    helm install --devel my-starwhale starwhale/starwhale -n starwhale --create-namespace --set minikube.enabled=true
     ```
 
     After the installation is successful, the following prompt message appears:
@@ -280,8 +297,8 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     NOTES:
     ******************************************
     Chart Name: starwhale
-    Chart Version: 0.2.0
-    App Version: 0.2.0
+    Chart Version: 0.3.0
+    App Version: 0.3.0
     ...
 
     Port Forward Visit:
@@ -311,7 +328,6 @@ Let's go ahead and finish the tutorial on the on-premises instance.
 
     | NAME | READY | STATUS | RESTARTS | AGE |
     |:-----|-------|--------|----------|-----|
-    |my-starwhale-agent-cpu-64699|2/2|Running|0|1m
     |my-starwhale-controller-7d864558bc-vxvb8|1/1|Running|0|1m
     |my-starwhale-minio-7d45db75f6-7wq9b|1/1|Running|0|2m
     |my-starwhale-mysql-0|1/1|Running|0|2m
@@ -322,14 +338,14 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
     ```
 
-- ☕ **STEP3**: Upload the artifacts to the cloud instance
+- ☕ **STEP4**: Upload the artifacts to the cloud instance
 
     > **pre-prepared artifacts**
     > Before starting this tutorial, the following three artifacts should already exist on your machine：
     >
     > - a starwhale model named mnist
     > - a starwhale dataset named mnist
-    > - a starwhale runtime named pytorch-mnist
+    > - a starwhale runtime named pytorch
     >
     > The above three artifacts are what we built on our machine using starwhale.
 
@@ -337,33 +353,21 @@ Let's go ahead and finish the tutorial on the on-premises instance.
         First, log in to the server:
 
         ```bash
-        swcli instance login --username starwhale --password abcd1234 --alias server http://localhost:8082
+        swcli instance login --username starwhale --password abcd1234 --alias dev http://localhost:8082
         ```
 
-        Use the server instance as the default:
+    2. Start copying the model, dataset, and runtime that we constructed earlier:
 
         ```bash
-        swcli instance select server
+        swcli model copy mnist/version/latest dev/project/starwhale
+        swcli dataset copy mnist/version/latest dev/project/starwhale
+        swcli runtime copy pytorch/version/latest dev/project/starwhale
         ```
 
-    2. Create a project named 'project_for_mnist' and make it default:
-
-        ```bash
-        swcli project create project_for_mnist
-        swcli project select project_for_mnist
-        ```
-
-    3. Start copying the model, dataset, and runtime that we constructed earlier:
-
-        ```bash
-        swcli model copy local/project/self/model/mnist/version/latest http://localhost:8082/
-        swcli dataset copy local/project/self/dataset/mnist/version/latest http://localhost:8082/
-        swcli runtime copy local/project/self/runtime/pytorch-mnist/version/latest http://localhost:8082/
-        ```
-
-- 🍞 **STEP4**: Use the web UI to run an evaluation
+- 🍞 **STEP5**: Use the web UI to run an evaluation
 
     1. Log in Starwhale instance: let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://localhost:8082/>).
+
     2. Then, we will see the project named 'project_for_mnist' that we created earlier with swcli. Click the project name, you will see the model, runtime, and dataset uploaded in the previous step.
         <details>
             <summary>Show the uploaded artifacts screenshots</summary>

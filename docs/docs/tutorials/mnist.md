@@ -140,9 +140,3 @@ swcli model copy mnist/version/latest cloud://pre-k8s/project/1
 swcli dataset copy mnist/version/latest cloud://pre-k8s/project/1
 swcli runtime copy pytorch-mnist/version/latest cloud://pre-k8s/project/1
 ```
-
-## Running Cloud Evaluation Job
-
-On the jobs page, you can create an evaluation job.
-
-![Create Job Workflow](../img/create-job-workflow.gif)
