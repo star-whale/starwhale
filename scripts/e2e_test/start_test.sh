@@ -33,20 +33,19 @@ declare_env() {
   export CONTROLLER_URL="http://127.0.0.1:$PORT_CONTROLLER"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
-  export SW_IMAGE_REPO="${SW_IMAGE_REPO:=host.minikube.internal:8083}"
-  export IP_DOCKER_BRIDGE="${IP_DOCKER_BRIDGE:=172.17.0.1}"
+  export SW_IMAGE_REPO="${SW_IMAGE_REPO:=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER}"
   export IP_MINIKUBE_BRIDGE_RANGE="${IP_MINIKUBE_BRIDGE_RANGE:=192.0.0.0/8}"
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
-  export SWNAME="${SWNAME:=starwhale-e2e}"
-  export SWNS="${SWNS:=starwhale-e2e}"
+  export SWNAME="${SWNAME:=e2e}"
+  export SWNS="${SWNS:=e2e}"
 }
 
 start_minikube() {
-    minikube start -p sw-e2e-test --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-    minikube addons enable ingress -p sw-e2e-test
-    minikube addons enable ingress-dns -p sw-e2e-test
+    minikube start -p e2e --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    minikube addons enable ingress -p e2e
+    minikube addons enable ingress-dns -p e2e
     kubectl describe node
 }
 
@@ -201,7 +200,7 @@ check_controller_service() {
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:$PORT_CONTROLLER &
+    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-starwhale-controller $PORT_CONTROLLER:$PORT_CONTROLLER &
     pwd
     check_controller_port.sh &
 }
