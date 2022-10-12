@@ -75,8 +75,6 @@ Dataset的示例程序在 `example/mnist` 目录中。
 
   ```bash
   mkdir -p data && cd data
-  wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
-  wget http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
   wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
   wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
   gzip -d *.gz
