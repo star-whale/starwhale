@@ -15,9 +15,5 @@ dependencies:
   - pip:
       - numpy
   - requirements-sw-lock.txt
-environment:
-  arch: noarch
-  os: ubuntu:20.04
-  cuda: 11.4
 mode: venv
 name: simple-test
