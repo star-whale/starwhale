@@ -21,9 +21,11 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -41,9 +43,7 @@ import org.junit.jupiter.api.Test;
 public class JobSpliteratorEvaluationTest {
 
     @Test
-    public void testJobSpliteratorEvaluation() throws IOException {
-
-
+    public void testJobSpliteratorEvaluation() {
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
         mockJob.setCurrentStep(null);
@@ -59,10 +59,16 @@ public class JobSpliteratorEvaluationTest {
         StepMapper stepMapper = mock(StepMapper.class);
         JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
                 new StoragePathCoordinator("/test"), taskMapper, jobMapper, stepMapper,
-                new JobSpecParser(new YAMLMapper()));
-        jobSpliteratorEvaluation.split(mockJob);
-        mockJob.setStepSpec("xxx");
-        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(mockJob));
+                mock(JobSpecParser.class));
+        JobEntity build = JobEntity.builder()
+                .id(1L)
+                .jobUuid("uuid")
+                .jobStatus(JobStatus.CREATED)
+                .stepSpec("xxx")
+                .build();
+        jobSpliteratorEvaluation.split(build);
+        build.setJobStatus(JobStatus.RUNNING);
+        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(build));
 
     }
 }

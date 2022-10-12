@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -95,17 +95,20 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
      */
     @Override
     @Transactional
-    public List<StepEntity> split(Job job) {
+    public List<StepEntity> split(JobEntity job) {
+        if (JobStatus.CREATED != job.getJobStatus()) {
+            throw new SwValidationException(ValidSubject.JOB).tip("job has been split already!");
+        }
         List<StepSpec> stepSpecs;
-        if (!StringUtils.hasText(job.getStepSpec())) {
-            stepSpecs = job.getSwmp().getStepSpecs();
-        } else {
-            try {
+        try {
+            if (!StringUtils.hasText(job.getStepSpec())) {
+                stepSpecs = jobSpecParser.parseStepFromYaml(job.getSwmpVersion().getEvalJobs());
+            } else {
                 stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
-            } catch (JsonProcessingException e) {
-                log.error("parsing step specification error", e);
-                throw new SwValidationException(ValidSubject.SWMP);
             }
+        } catch (JsonProcessingException e) {
+            log.error("parsing step specification error", e);
+            throw new SwValidationException(ValidSubject.SWMP);
         }
 
         List<StepEntity> stepEntities = new ArrayList<>();
@@ -142,7 +145,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
                         .outputPath(
-                                storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
+                                storagePathCoordinator.allocateTaskResultPath(job.getJobUuid(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
                                         TaskRequest.builder()
                                                 .total(stepEntity.getTaskNum())

@@ -24,9 +24,8 @@ import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.cache.JobLoader;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -35,7 +34,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,39 +48,23 @@ public class DagQuerier {
 
     final JobManager jobManager;
 
-    final HotJobHolder jobHolder;
-
-    final JobMapper jobMapper;
-
     final StepHelper stepHelper;
 
-    final JobLoader jobLoader;
+    final JobBoConverter jobBoConverter;
 
     public DagQuerier(JobManager jobManager,
-            HotJobHolder jobHolder, JobMapper jobMapper,
-            StepHelper stepHelper, JobLoader jobLoader) {
+            StepHelper stepHelper,
+            JobBoConverter jobBoConverter) {
         this.jobManager = jobManager;
-        this.jobHolder = jobHolder;
-        this.jobMapper = jobMapper;
         this.stepHelper = stepHelper;
-        this.jobLoader = jobLoader;
+        this.jobBoConverter = jobBoConverter;
     }
 
-    public Graph dagOfJob(String jobUrl, Boolean withTask) {
-        return dagOfJob(jobManager.getJobId(jobUrl), withTask);
+    public Graph dagOfJob(String jobUrl) {
+        return buildGraph(jobBoConverter.fromEntity(jobManager.findJob(jobManager.fromUrl(jobUrl))));
     }
 
-    private Graph dagOfJob(Long jobId, Boolean withTask) {
-
-        Collection<Job> jobs = jobHolder.ofIds(List.of(jobId));
-        if (null == jobs || jobs.isEmpty()) {
-            return buildGraphFromDb(jobId);
-        }
-        Job job = jobs.stream().findAny().get();
-        return buildGraphFromCache(job);
-    }
-
-    private Graph buildGraphFromCache(Job job) {
+    private Graph buildGraph(Job job) {
         if (job.getStatus() == JobStatus.CREATED) {
             throw new SwValidationException(ValidSubject.JOB).tip("Job is still creating");
         }
@@ -119,15 +101,6 @@ public class DagQuerier {
             graph.add(new GraphEdge(taskNodeId, idx.get(), null));
         }
         return graph;
-    }
-
-    private Graph buildGraphFromDb(Long jobId) {
-        JobEntity jobEntity = jobMapper.findJobById(jobId);
-        if (null == jobEntity) {
-            throw new SwValidationException(ValidSubject.JOB).tip("Job doesn't exists ");
-        }
-        List<Job> jobs = jobLoader.loadEntities(List.of(jobEntity), false, false);
-        return buildGraphFromCache(jobs.get(0));
     }
 
     GraphNode taskNode(TaskNodeContent task, AtomicLong idx) {

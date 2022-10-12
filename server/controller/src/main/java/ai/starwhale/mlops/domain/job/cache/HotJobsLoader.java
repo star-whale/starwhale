@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -43,13 +44,16 @@ public class HotJobsLoader implements CommandLineRunner {
 
     final JobStatusMachine jobStatusMachine;
 
+    final JobBoConverter jobBoConverter;
+
     public HotJobsLoader(
             JobMapper jobMapper,
             JobLoader jobLoader,
-            JobStatusMachine jobStatusMachine) {
+            JobStatusMachine jobStatusMachine, JobBoConverter jobBoConverter) {
         this.jobMapper = jobMapper;
         this.jobLoader = jobLoader;
         this.jobStatusMachine = jobStatusMachine;
+        this.jobBoConverter = jobBoConverter;
     }
 
 
@@ -69,7 +73,9 @@ public class HotJobsLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        jobLoader.loadEntities(hotJobsFromDb(), false, true);
+        hotJobsFromDb().forEach(jobEntity -> {
+            jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+        });
         log.info("hot jobs loaded");
     }
 }

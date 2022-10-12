@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dag;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +26,7 @@ import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -43,34 +45,19 @@ public class DagQuerierTest {
 
     @Test
     public void testDagQuerier() {
-        JobManager jobManager = mock(JobManager.class);
-        when(jobManager.getJobId("1")).thenReturn(1L);
-        when(jobManager.getJobId("2")).thenReturn(2L);
-        when(jobManager.getJobId("3")).thenReturn(3L);
-        HotJobHolder hotJobHolder = mock(HotJobHolder.class);
-        when(hotJobHolder.ofIds(List.of(1L))).thenReturn(Collections.emptySet());
-        JobMockHolder jobMockHolder = new JobMockHolder();
-        Job mockedJob = jobMockHolder.mockJob();
-        Job createdJob = jobMockHolder.mockJob();
-        createdJob.setStatus(JobStatus.CREATED);
-        when(hotJobHolder.ofIds(List.of(2L))).thenReturn(List.of(mockedJob));
-        when(hotJobHolder.ofIds(List.of(3L))).thenReturn(List.of(createdJob));
-
-        JobMapper jobMapper = mock(JobMapper.class);
-        JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
-        when(jobMapper.findJobById(1L)).thenReturn(jobEntity);
-
-        JobLoader jobLoader = mock(JobLoader.class);
-        when(jobLoader.loadEntities(List.of(jobEntity), false, false)).thenReturn(List.of(mockedJob));
-
-        DagQuerier dagQuerier = new DagQuerier(jobManager, hotJobHolder, jobMapper, new StepHelper(), jobLoader);
-        Graph graph = dagQuerier.dagOfJob("1", true);
+        Job mockedJob = new JobMockHolder().mockJob();
+        JobBoConverter jobBoConverter = mock(JobBoConverter.class);
+        when(jobBoConverter.fromEntity(any())).thenReturn(mockedJob);
+        DagQuerier dagQuerier = new DagQuerier(mock(JobManager.class), new StepHelper(), jobBoConverter);
+        Graph graph = dagQuerier.dagOfJob("1");
         Assertions.assertEquals(3, graph.getGroupingNodes().keySet().size());
+        Assertions.assertEquals(4, graph.getGroupingNodes().get("Task").size());
+        Assertions.assertEquals(2, graph.getGroupingNodes().get("Step").size());
+        Assertions.assertEquals(2, graph.getGroupingNodes().get("Job").size());
+        Assertions.assertEquals(9, graph.getEdges().size());
 
-        Graph graph2 = dagQuerier.dagOfJob("2", true);
-        Assertions.assertEquals(3, graph2.getGroupingNodes().keySet().size());
-
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> dagQuerier.dagOfJob("3", true));
+        mockedJob.setStatus(JobStatus.CREATED);
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> dagQuerier.dagOfJob("3"));
 
 
     }

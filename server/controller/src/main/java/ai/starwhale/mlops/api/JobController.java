@@ -142,7 +142,7 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<Graph>> getJobDag(String projectUrl, String jobUrl) {
-        return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl, true)));
+        return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl)));
     }
 
     @Override

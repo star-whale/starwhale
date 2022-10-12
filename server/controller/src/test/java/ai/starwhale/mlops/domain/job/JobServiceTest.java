@@ -46,6 +46,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeManager;
@@ -61,7 +62,6 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,6 +97,7 @@ public class JobServiceTest {
         given(jobConvertor.convert(any(JobEntity.class)))
                 .willReturn(JobVo.builder().id("1").build());
         jobBoConverter = mock(JobBoConverter.class);
+
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);
@@ -128,7 +129,7 @@ public class JobServiceTest {
                 jobBoConverter, jobMapper, jobSwdsVersionMapper, taskMapper,
                 jobConvertor, runtimeManager, jobSpliterator, resourcePoolManager,
                 hotJobHolder, projectManager, jobManager, jobLoader, swmpManager,
-                resultQuerier, swdsManager, storagePathCoordinator, userService);
+                resultQuerier, swdsManager, storagePathCoordinator, userService, mock(JobUpdateHelper.class));
     }
 
     @Test
@@ -245,12 +246,11 @@ public class JobServiceTest {
                 .willReturn(Job.builder().id(1L).build());
         given(jobMapper.findJobById(same(1L)))
                 .willReturn(JobEntity.builder().id(1L).build());
-        final List<JobEntity> jobs = new ArrayList<>();
+        final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
-            List<JobEntity> list = invocation.getArgument(0);
-            jobs.addAll(list);
-            return null;
-        }).when(jobLoader).loadEntities(anyList(), anyBoolean(), anyBoolean());
+            jobs.add(invocation.getArgument(0));
+            return invocation.getArgument(0);
+        }).when(jobLoader).load(any(), anyBoolean());
 
         service.splitNewCreatedJobs();
         assertThat(jobs, allOf(
@@ -317,12 +317,11 @@ public class JobServiceTest {
                 .willReturn(JobEntity.builder().jobStatus(JobStatus.FAIL).build());
         given(jobMapper.findJobById(same(2L)))
                 .willReturn(JobEntity.builder().jobStatus(JobStatus.SUCCESS).build());
-
-        final List<JobEntity> jobs = new ArrayList<>();
+        final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
-            jobs.addAll(invocation.getArgument(0));
-            return null;
-        }).when(jobLoader).loadEntities(anyList(), any(), any());
+            jobs.add(invocation.getArgument(0));
+            return invocation.getArgument(0);
+        }).when(jobLoader).load(any(), any());
         service.resumeJob("1");
         assertThat(jobs, iterableWithSize(1));
 
