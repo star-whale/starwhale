@@ -1,5 +1,6 @@
 import time
 import typing as t
+import traceback
 import concurrent.futures
 from typing import List, Optional
 from pathlib import Path
@@ -169,6 +170,9 @@ class TaskExecutor:
                 # The standard implementation does not return results
                 func()
         except Exception as e:
+            logger.exception(
+                f"execute step:{self.context} occur error: {e}, {traceback.format_exc()}"
+            )
             self.exception = e
             self.status = STATUS.FAILED
         else:
