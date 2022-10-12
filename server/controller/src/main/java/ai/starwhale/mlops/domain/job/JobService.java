@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeManager;
@@ -89,13 +90,14 @@ public class JobService {
     private final SwdsManager swdsManager;
     private final RuntimeManager runtimeManager;
     private final ResourcePoolManager resourcePoolManager;
+    private final JobUpdateHelper jobUpdateHelper;
 
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
             JobSpliterator jobSpliterator, ResourcePoolManager resourcePoolManager, HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
             ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
-            UserService userService) {
+            UserService userService, JobUpdateHelper jobUpdateHelper) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
@@ -113,6 +115,7 @@ public class JobService {
         this.swdsManager = swdsManager;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
+        this.jobUpdateHelper = jobUpdateHelper;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
@@ -212,25 +215,22 @@ public class JobService {
      */
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
     public void splitNewCreatedJobs() {
-        final Stream<Job> allNewJobs = findAllNewJobs();
-        allNewJobs.parallel().forEach(job -> {
-            //one transaction
-            try {
-                jobSpliterator.split(job);
-            } catch (StarwhaleException e) {
-                log.error("parsing step specification error", e);
-                jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.FAIL);
-                return;
-            }
+        jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED))
+                .forEach(jobEntity -> {
+                    //one transaction
+                    try {
+                        jobSpliterator.split(jobEntity);
+                    } catch (StarwhaleException e) {
+                        log.error("parsing step specification error", e);
+                        jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+                        return;
+                    }
 
-            jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())), false, true);
-        });
+                    Job job = jobBoConverter.fromEntity(jobEntity);
+                    jobLoader.load(job, false);
+                    jobUpdateHelper.updateJob(job);
+                });
 
-    }
-
-    Stream<Job> findAllNewJobs() {
-        final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED));
-        return newJobs.stream().map(jobBoConverter::fromEntity);
     }
 
     /**
@@ -282,7 +282,7 @@ public class JobService {
                         && task.getStatus() != TaskStatus.FAIL
                         && task.getStatus() != TaskStatus.CREATED)
                 .collect(Collectors.toList());
-        if (null == notRunningTasks || notRunningTasks.isEmpty()) {
+        if (notRunningTasks.isEmpty()) {
             return;
         }
         batchPersistTaskStatus(notRunningTasks, TaskStatus.PAUSED);
@@ -331,7 +331,9 @@ public class JobService {
                 && jobEntity.getJobStatus() != JobStatus.CANCELED) {
             throw new SwValidationException(ValidSubject.JOB).tip("only failed/paused/canceled job can be resumed ");
         }
-        jobLoader.loadEntities(List.of(jobEntity), true, true);
+        Job job = jobBoConverter.fromEntity(jobEntity);
+        job = jobLoader.load(job, true);
+        jobUpdateHelper.updateJob(job);
     }
 
 }

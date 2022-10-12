@@ -21,6 +21,11 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.step.StepConverter;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
@@ -37,13 +42,22 @@ import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * convert JobEntity to Job
  */
+
+@Slf4j
 @Component
 public class JobBoConverter {
 
@@ -65,6 +79,14 @@ public class JobBoConverter {
 
     final SwmpVersionConvertor swmpVersionConvertor;
 
+    final StepMapper stepMapper;
+
+    final StepConverter stepConverter;
+
+    final TaskMapper taskMapper;
+
+    final TaskBoConverter taskBoConverter;
+
     public JobBoConverter(
             JobSwdsVersionMapper jobSwdsVersionMapper,
             SwModelPackageMapper swModelPackageMapper,
@@ -74,7 +96,9 @@ public class JobBoConverter {
             ResourcePoolMapper resourcePoolMapper,
             ResourcePoolConverter resourcePoolConverter,
             SwmpVersionConvertor swmpVersionConvertor,
-            SystemSettingService systemSettingService) {
+            SystemSettingService systemSettingService, StepMapper stepMapper,
+            StepConverter stepConverter, TaskMapper taskMapper,
+            TaskBoConverter taskBoConverter) {
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
@@ -84,6 +108,10 @@ public class JobBoConverter {
         this.resourcePoolConverter = resourcePoolConverter;
         this.systemSettingService = systemSettingService;
         this.swmpVersionConvertor = swmpVersionConvertor;
+        this.stepMapper = stepMapper;
+        this.stepConverter = stepConverter;
+        this.taskMapper = taskMapper;
+        this.taskBoConverter = taskBoConverter;
     }
 
     public Job fromEntity(JobEntity jobEntity) {
@@ -105,7 +133,7 @@ public class JobBoConverter {
             image = new DockerImage(image).resolve(
                     systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
         }
-        return Job.builder()
+        Job job = Job.builder()
                 .id(jobEntity.getId())
                 .project(Project.builder()
                         .id(jobEntity.getProjectId())
@@ -134,6 +162,42 @@ public class JobBoConverter {
                 .uuid(jobEntity.getJobUuid())
                 .resourcePool(resourcePool)
                 .build();
+        return fillStepsAndTasks(job);
+    }
+
+    private Job fillStepsAndTasks(Job job) {
+        List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
+        List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
+                .peek(step -> {
+                    step.setJob(job);
+                    List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
+                    List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);
+                    step.setTasks(tasks);
+                    if (step.getStatus() == StepStatus.RUNNING) {
+                        if (job.getCurrentStep() != null) {
+                            log.error("ERROR!!!!! A job has two running steps job id: {}", job.getId());
+                        }
+                        job.setCurrentStep(step);
+                    }
+                }).collect(Collectors.toList());
+        linkSteps(steps, stepEntities);
+        job.setSteps(steps);
+        return job;
+    }
+
+    private void linkSteps(List<Step> steps, List<StepEntity> stepEntities) {
+        Map<Long, Step> stepMap = steps.parallelStream()
+                .collect(Collectors.toMap(Step::getId, Function.identity()));
+        Map<Long, Long> linkMap = stepEntities.parallelStream()
+                .filter(stepEntity -> null != stepEntity.getLastStepId())
+                .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
+        steps.forEach(step -> {
+            Long nextStepId = linkMap.get(step.getId());
+            if (null == nextStepId) {
+                return;
+            }
+            step.setNextStep(stepMap.get(nextStepId));
+        });
     }
 
 }
