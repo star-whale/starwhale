@@ -129,6 +129,10 @@ const useCardStyles = createUseStyles({
         display: 'none',
         gap: '12px',
     },
+    actionButton: {
+        display: 'flex',
+        justifyContent: 'center',
+    },
 })
 
 const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
@@ -223,7 +227,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                             }}
                         >
                             <IconFont
-                                type='model'
+                                type='Model'
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
                             />
@@ -254,7 +258,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                             content: t('Manage Member'),
                         }}
                     >
-                        <IconFont type='setting' size={12} style={{ color: 'rgba(2,16,43,0.60)' }} />
+                        <IconFont type='setting' size={12} style={{ color: 'gray' }} />
                     </IconLink>
                     <WithAuth role={role} id='project.update'>
                         <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
@@ -289,49 +293,53 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         </StatefulTooltip>
                     </WithAuth>
                     <WithAuth role={role} id='project.delete'>
-                        <ConfirmButton
-                            as='link'
-                            key={project?.id}
-                            title={
-                                <div>
-                                    <p>{t('Confirm Remove Project?')}</p>
-                                    <LabelMedium>
-                                        {t(
-                                            'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
-                                        )}
-                                    </LabelMedium>
-                                </div>
-                            }
-                            overrides={{
-                                BaseButton: {
-                                    style: {
-                                        'display': 'flex',
-                                        'fontSize': '12px',
-                                        'backgroundColor': '#F4F5F7',
-                                        'width': '20px',
-                                        'height': '20px',
-                                        'textDecoration': 'none',
-                                        'color': 'gray !important',
-                                        'paddingLeft': '10px',
-                                        'paddingRight': '10px',
-                                        ':hover span': {
-                                            color: ' #5181E0  !important',
-                                        },
+                        <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
+                            <div className={styles.actionButton}>
+                                <ConfirmButton
+                                    as='link'
+                                    key={project?.id}
+                                    title={
+                                        <div>
+                                            <p>{t('Confirm Remove Project?')}</p>
+                                            <LabelMedium>
+                                                {t(
+                                                    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
+                                                )}
+                                            </LabelMedium>
+                                        </div>
+                                    }
+                                    overrides={{
+                                        BaseButton: {
+                                            style: {
+                                                'display': 'flex',
+                                                'fontSize': '12px',
+                                                'backgroundColor': '#F4F5F7',
+                                                'width': '20px',
+                                                'height': '20px',
+                                                'textDecoration': 'none',
+                                                'color': 'gray !important',
+                                                'paddingLeft': '10px',
+                                                'paddingRight': '10px',
+                                                ':hover span': {
+                                                    color: ' #5181E0  !important',
+                                                },
 
-                                        ':hover': {
-                                            backgroundColor: '#F0F4FF',
+                                                ':hover': {
+                                                    backgroundColor: '#F0F4FF',
+                                                },
+                                            },
                                         },
-                                    },
-                                },
-                            }}
-                            onClick={async () => {
-                                await removeProject(project?.id)
-                                toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
-                                await query.refetch()
-                            }}
-                        >
-                            <IconFont type='delete' size={10} />
-                        </ConfirmButton>
+                                    }}
+                                    onClick={async () => {
+                                        await removeProject(project?.id)
+                                        toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
+                                        await query.refetch()
+                                    }}
+                                >
+                                    <IconFont type='delete' size={10} />
+                                </ConfirmButton>
+                            </div>
+                        </StatefulTooltip>
                     </WithAuth>
                 </div>
             </div>

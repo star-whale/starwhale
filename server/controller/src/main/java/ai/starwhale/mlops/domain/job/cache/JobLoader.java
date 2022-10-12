@@ -182,13 +182,10 @@ public class JobLoader {
      * load READY tasks on start
      */
     void scheduleReadyTasks(Collection<Task> tasks) {
-        if (null == tasks) {
+        if (CollectionUtils.isEmpty(tasks)) {
             return;
         }
-        tasks.parallelStream()
-                .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()))
-                .forEach((deviceClass, taskList) ->
-                        swTaskScheduler.schedule(taskList, deviceClass));
+        swTaskScheduler.schedule(tasks);
     }
 
     private void triggerPossibleNextStep(Job job) {

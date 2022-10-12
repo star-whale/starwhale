@@ -44,7 +44,6 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
-        // mpa(),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },

@@ -38,13 +38,14 @@ helm delete starwhale
 ## Parameters
 
 ### Common parameters
+
 | Name             | Description                                                                                                                                                                               | Default Value |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
 | `image.registry` | image registry, you can find starwhale docker images in docker.io or ghcr.io.                                                                                                             | `ghcr.io`     |
 | `image.org`      | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io) or some custom org name in other registry | `star-whale`  |
 
-
 ### Starwhale parameters
+
 | Name                        | Description                                | Default Value                    |
 |-----------------------------|--------------------------------------------|----------------------------------|
 | `controller.taskSplitSize`  | task split size                            | `2`                              |
@@ -58,6 +59,7 @@ helm delete starwhale
 | `ingress.host`              | starwhale controller domain                | `console.pre.intra.starwhale.ai` |
 
 ### Infra parameters
+
 | Name                             | Description                                                                                                            | Default Value         |
 |----------------------------------|------------------------------------------------------------------------------------------------------------------------|-----------------------|
 | `mysql.enabled`                  | Deploy a standalone mysql instance with starwhale chart. If set mysql.enabled=true, you should provide a pv for mysql. | `true`                |
@@ -101,7 +103,6 @@ helm install $SWNAME . -n $SWNS --create-namespace \
 	--set mysql.primary.persistence.storageClass=$SWNAME-mysql \
 	--set minio.persistence.storageClass=$SWNAME-minio
 ```
-
 
 ## Community
 - Report a bug or feature request, use [Github Issues](https://github.com/star-whale/starwhale/issues/new/choose).

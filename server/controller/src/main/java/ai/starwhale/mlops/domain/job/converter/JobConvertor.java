@@ -22,8 +22,6 @@ import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
@@ -86,8 +84,6 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
                 .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtimeByVersionIds.get(0))
                 .datasets(idList)
-                .device(getDeviceName(jobEntity.getDeviceType()))
-                .deviceAmount(jobEntity.getDeviceAmount())
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
                 .comment(jobEntity.getComment())
@@ -100,10 +96,4 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
         throw new UnsupportedOperationException();
     }
 
-    private String getDeviceName(int deviceType) {
-        if (deviceType > 0 && deviceType <= Clazz.values().length) {
-            return Device.Clazz.values()[deviceType - 1].name();
-        }
-        return "UNDEFINED";
-    }
 }

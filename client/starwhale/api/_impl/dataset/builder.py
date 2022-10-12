@@ -1,3 +1,4 @@
+import os
 import struct
 import typing as t
 import tempfile
@@ -250,7 +251,13 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             increased_rows += 1
 
         try:
+            empty = dwriter.tell() == 0
             dwriter.close()
+            if empty:
+                # last file is empty
+                f = ds_copy_candidates[fno]
+                del ds_copy_candidates[fno]
+                os.unlink(f)
         except Exception as e:
             print(f"data write close exception: {e}")
 
@@ -290,7 +297,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 if _dest_path.resolve() == _obj_path:
                     continue
                 else:
-                    _dest_path.unlink(missing_ok=True)
+                    _dest_path.unlink()
 
             _dest_path.symlink_to(_obj_path)
 

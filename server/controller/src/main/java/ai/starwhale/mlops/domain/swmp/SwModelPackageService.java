@@ -356,7 +356,7 @@ public class SwModelPackageService {
         log.debug("swmp version checked time use {}", System.currentTimeMillis() - startTime);
         //upload to storage
         final String swmpPath = entityExists ? swModelPackageVersionEntity.getStoragePath()
-                : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(), uploadRequest.name(),
+                : storagePathCoordinator.allocateSwmpPath(projectEntity.getProjectName(), uploadRequest.name(),
                         uploadRequest.version());
         String jobContent = "";
         try (final InputStream inputStream = dsFile.getInputStream()) {

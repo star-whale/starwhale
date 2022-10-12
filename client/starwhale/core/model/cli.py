@@ -130,18 +130,32 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option(
+    "-p",
     "--project",
     envvar=SWEnv.project,
     default="",
     help=f"project name, env is {SWEnv.project}",
 )
 @click.option(
-    "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
+    "--version",
+    envvar=SWEnv.eval_version,
+    default=None,
+    help=f"Evaluation job version, env is {SWEnv.eval_version}",
 )
 @click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=0, help="Index of tasks in the current step")
+@click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option(
+    "--override-task-num",
+    default=0,
+    help="Total num of tasks in the current step",
+)
 @click.option("--runtime", default="", help="runtime uri")
-@click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
+@click.option(
+    "--dataset",
+    required=True,
+    envvar=SWEnv.dataset_uri,
+    help=f"dataset uri, env is {SWEnv.dataset_uri}",
+)
 def _eval(
     project: str,
     target: str,
@@ -150,6 +164,7 @@ def _eval(
     dataset: str,
     step: str,
     task_index: int,
+    override_task_num: int,
     runtime: str,
 ) -> None:
     """
@@ -165,5 +180,6 @@ def _eval(
         runtime_uri=runtime,
         step=step,
         task_index=task_index,
+        task_num=override_task_num,
         dataset_uris=[dataset],
     )

@@ -42,7 +42,6 @@ from starwhale.consts import (
     SW_DEV_DUMMY_VERSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_PYTHON_VERSION,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
@@ -114,7 +113,7 @@ class Environment(ASDictMixin):
         self,
         arch: _t_mixed_str_list = "",
         os: str = SupportOS.UBUNTU,
-        python: str = DEFAULT_PYTHON_VERSION,
+        python: str = "",
         cuda: str = "",
         cudnn: str = "",
         **kw: t.Any,
@@ -122,7 +121,8 @@ class Environment(ASDictMixin):
         self.arch = _list(arch)
         self.os = os.lower()
 
-        # TODO: use user's swcli python version as the python argument version
+        if not python:
+            python = get_python_version()
         self.python = trunc_python_version(str(python))
         self.cuda = str(cuda).strip()
         self.cudnn = str(cudnn).strip()

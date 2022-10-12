@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import Card from '@/components/Card'
 import yaml from 'js-yaml'
 import { JSONTree } from 'react-json-tree'
-import { useRuntime } from '@/domain/runtime/hooks/useRuntime'
+import { useRuntimeVersion } from '@/domain/runtime/hooks/useRuntimeVersion'
 
 const theme = {
     scheme: 'bright',
@@ -26,12 +26,12 @@ const theme = {
 }
 
 export default function RuntimeVersionOverviewMeta() {
-    const { runtime } = useRuntime()
+    const { runtimeVersion } = useRuntimeVersion()
 
     const jsonData = useMemo(() => {
-        if (!runtime?.versionMeta) return {}
-        return yaml.load(runtime?.versionMeta)
-    }, [runtime?.versionMeta])
+        if (!runtimeVersion?.versionMeta) return {}
+        return yaml.load(runtimeVersion?.versionMeta)
+    }, [runtimeVersion?.versionMeta])
 
     return (
         <Card

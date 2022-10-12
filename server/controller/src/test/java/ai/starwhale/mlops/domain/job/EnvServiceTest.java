@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 
-import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ public class EnvServiceTest {
         var res = service.listDevices();
         assertThat(res, allOf(
                 notNullValue(),
-                is(iterableWithSize(Clazz.values().length))
+                is(iterableWithSize(ResourceOverwriteSpec.SUPPORTED_DEVICES.size()))
         ));
     }
 }

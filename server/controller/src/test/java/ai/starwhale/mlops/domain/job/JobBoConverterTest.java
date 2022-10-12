@@ -16,16 +16,18 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
@@ -35,13 +37,17 @@ import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SwModelPackage;
+import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
 import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -61,13 +67,11 @@ public class JobBoConverterTest {
                 .id(1L)
                 .projectId(1L)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
-                .deviceAmount(1)
-                .deviceType(Clazz.CPU.getValue())
                 .jobStatus(JobStatus.RUNNING)
                 .type(JobType.EVALUATION)
                 .swmpVersionId(1L)
                 .swmpVersion(SwModelPackageVersionEntity.builder().id(1L).swmpId(1L).versionName("swmpvname")
-                        .storagePath("swmp_path").build())
+                        .storagePath("swmp_path").evalJobs("stepspec").build())
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
@@ -105,9 +109,13 @@ public class JobBoConverterTest {
         ResourcePool resourcePool = ResourcePool.builder().label(resourcePoolEntity.getLabel()).build();
         when(resourcePoolConverter.toResourcePool(resourcePoolEntity)).thenReturn(resourcePool);
 
+        SwmpVersionConvertor swmpVersionConvertor = mock(SwmpVersionConvertor.class);
+        when(swmpVersionConvertor.convert(any())).thenReturn(
+                SwModelPackageVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
         JobBoConverter jobBoConverter = new JobBoConverter(jobSwdsVersionMapper, swModelPackageMapper, runtimeMapper,
                 runtimeVersionMapper,
-                swdsboConverter, "ghcr.io/star-whale/starwhale:latest", resourcePoolMapper, resourcePoolConverter);
+                swdsboConverter, resourcePoolMapper, resourcePoolConverter,
+                swmpVersionConvertor, new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class)));
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(), job.getStatus());
@@ -120,8 +128,6 @@ public class JobBoConverterTest {
         Assertions.assertEquals(runtimeVersionEntity.getVersionName(), swrt.getVersion());
         Assertions.assertEquals(runtimeEntity.getRuntimeName(), swrt.getName());
         Assertions.assertEquals(runtimeVersionEntity.getStoragePath(), swrt.getStoragePath());
-        Assertions.assertEquals(jobEntity.getDeviceAmount(), swrt.getDeviceAmount());
-        Assertions.assertEquals(jobEntity.getDeviceType(), swrt.getDeviceClass().getValue());
 
         SwModelPackage swmp = job.getSwmp();
         Assertions.assertNotNull(swmp);
@@ -129,6 +135,7 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getSwmpVersion().getId(), swmp.getId());
         Assertions.assertEquals(swModelPackageEntity.getSwmpName(), swmp.getName());
         Assertions.assertEquals(jobEntity.getSwmpVersion().getStoragePath(), swmp.getPath());
+        Assertions.assertEquals(List.of(new StepSpec()), swmp.getStepSpecs());
 
         List<SwDataSet> swDataSets = job.getSwDataSets();
         Assertions.assertNotNull(swDataSets);

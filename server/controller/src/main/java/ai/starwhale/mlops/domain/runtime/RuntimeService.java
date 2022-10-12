@@ -61,6 +61,7 @@ import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -338,7 +339,7 @@ public class RuntimeService {
         log.debug("Runtime version checked time use {}", System.currentTimeMillis() - startTime);
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
-                : storagePathCoordinator.generateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(),
+                : storagePathCoordinator.allocateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(),
                         uploadRequest.version());
 
         try (final InputStream inputStream = dsFile.getInputStream()) {

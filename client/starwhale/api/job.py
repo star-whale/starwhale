@@ -1,3 +1,3 @@
-from ._impl.job import step, Context
+from ._impl.job import step, Context, pass_context
 
-__all__ = ["step", "Context"]
+__all__ = ["step", "Context", "pass_context"]

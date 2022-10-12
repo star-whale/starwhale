@@ -1,7 +1,7 @@
 import os
 import typing as t
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import call, patch, MagicMock
 
 import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -21,7 +21,11 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, RuntimeLockFileType
 from starwhale.utils.venv import EnvTarType, get_python_version
-from starwhale.utils.error import NoSupportError, UnExpectedConfigFieldError
+from starwhale.utils.error import (
+    NoSupportError,
+    ConfigFormatError,
+    UnExpectedConfigFieldError,
+)
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.view import (
     get_term_view,
@@ -464,6 +468,55 @@ class StandaloneRuntimeTestCase(TestCase):
         sr.build(Path(workdir))
         sr.info()
         sr.history()
+
+    @patch("starwhale.core.runtime.model.get_python_version")
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.is_venv")
+    @patch("starwhale.utils.venv.is_conda")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_without_python_version(
+        self,
+        m_call: MagicMock,
+        m_conda: MagicMock,
+        m_venv: MagicMock,
+        m_py_bin: MagicMock,
+        m_py_ver: MagicMock,
+    ) -> None:
+        m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
+        m_venv.return_value = False
+        m_conda.return_value = True
+        m_call.return_value = b"3.7.13"
+        m_py_ver.return_value = "fake.ver"
+
+        name = "demo_runtime"
+        workdir = "/home/starwhale/myproject"
+        self.fs.create_file(
+            os.path.join(workdir, DefaultYAMLName.RUNTIME),
+            contents=yaml.safe_dump({"name": name, "mode": "venv"}),
+        )
+
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        with self.assertRaises(ConfigFormatError):
+            sr.build(Path(workdir))
+        m_py_ver.assert_called_once()
+
+        m_py_ver.return_value = "3.10"
+        sr.build(Path(workdir))
+        m_py_ver.assert_has_calls([call(), call()])
+
+        sw = SWCliConfigMixed()
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        assert _manifest["environment"]["python"] == m_py_ver.return_value
 
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {

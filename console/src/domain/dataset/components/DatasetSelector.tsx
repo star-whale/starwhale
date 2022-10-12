@@ -47,6 +47,7 @@ export default function DatasetSelector({ projectId, value, onChange, overrides,
             overrides={overrides}
             isLoading={datasetsInfo.isFetching}
             options={options}
+            clearable={false}
             onChange={(params) => {
                 if (!params.option) {
                     return

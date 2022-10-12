@@ -53,6 +53,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +76,7 @@ public class SwdsUploaderTest {
 
     @Test
     public void testSwdsUploader() throws IOException {
-        ObjectMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
+        YAMLMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
         SwdsVersionWithMetaConverter swdsVersionWithMetaConverter = new SwdsVersionWithMetaConverter(
                 yamlMapper);
         HotSwdsHolder hotSwdsHolder = new HotSwdsHolder(swdsVersionWithMetaConverter);

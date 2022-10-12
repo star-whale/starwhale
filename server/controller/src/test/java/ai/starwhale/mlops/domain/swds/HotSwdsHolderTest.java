@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.swds.upload.bo.SwdsVersionWithMeta;
 import ai.starwhale.mlops.domain.swds.upload.bo.VersionMeta;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ public class HotSwdsHolderTest {
 
     @Test
     public void testHotSwdsHolder() throws JsonProcessingException {
-        ObjectMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
+        YAMLMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
         SwdsVersionWithMetaConverter swdsVersionWithMetaConverter = new SwdsVersionWithMetaConverter(yamlMapper);
         HotSwdsHolder hotSwdsHolder = new HotSwdsHolder(swdsVersionWithMetaConverter);
 

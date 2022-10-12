@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale import Text, Context, PipelineHandler, multi_classification
+from starwhale import Text, PipelineHandler, multi_classification
 
 from .model import TextClassificationModel
 
@@ -14,8 +14,8 @@ _NUM_CLASSES = len(_LABEL_NAMES)
 
 
 class TextClassificationHandler(PipelineHandler):
-    def __init__(self, context: Context) -> None:
-        super().__init__(context=context)
+    def __init__(self) -> None:
+        super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = get_tokenizer("basic_english")
         self.model = self._load_model(self.device)

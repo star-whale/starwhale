@@ -8,16 +8,16 @@ from collections import defaultdict
 from loguru import logger
 from typing_extensions import Protocol
 
+from starwhale import Context
 from starwhale.utils import load_yaml
-from starwhale.core.job import dag
 from starwhale.utils.load import (
     load_cls,
     load_module,
     get_func_from_module,
     get_func_from_object,
 )
-from starwhale.core.job.dag import DAG
-from starwhale.api._impl.job import Context
+from starwhale.core.job.dag import DAG, generate_dag
+from starwhale.api._impl.job import context_holder
 
 
 class STATUS:
@@ -33,12 +33,13 @@ class Step:
         self,
         job_name: str,
         step_name: str,
-        resources: t.List[str],
+        resources: t.List[t.Dict],
         needs: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
         status: str = "",
         cls_name: str = "",
+        **kw: t.Any,
     ):
         self.job_name = job_name
         self.cls_name = cls_name
@@ -48,6 +49,7 @@ class Step:
         self.task_num = task_num
         self.needs = needs
         self.status = status
+        self.kw = kw
 
     def __repr__(self) -> str:
         return (
@@ -86,7 +88,7 @@ class Generator:
             for _pre in step.needs:
                 _edges[_pre] = step.step_name
 
-        return dag.generate_dag(_vertices, _edges)
+        return generate_dag(_vertices, _edges)
 
 
 class TaskResult:
@@ -154,18 +156,18 @@ class TaskExecutor:
 
         try:
             self.status = STATUS.RUNNING
+            context_holder.context = self.context
             # instance method
             if not self.cls_name:
                 func = get_func_from_module(_module, self.func)
                 # The standard implementation does not return results
-                func(context=self.context)
+                func()
             else:
                 _cls = load_cls(_module, self.cls_name)
                 # need an instance
-                with _cls() as obj:
-                    func = get_func_from_object(obj, self.func)
-                    # The standard implementation does not return results
-                    func(context=self.context)
+                func = get_func_from_object(_cls(), self.func)
+                # The standard implementation does not return results
+                func()
         except Exception as e:
             self.exception = e
             self.status = STATUS.FAILED

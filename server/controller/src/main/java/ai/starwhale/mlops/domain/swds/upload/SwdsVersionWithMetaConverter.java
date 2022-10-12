@@ -24,6 +24,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +41,9 @@ public class SwdsVersionWithMetaConverter {
 
     public static final String EMPTY_YAML = "--- {}";
 
-    final ObjectMapper objectMapper;
+    final YAMLMapper objectMapper;
 
-    public SwdsVersionWithMetaConverter(@Qualifier("yamlMapper") ObjectMapper objectMapper) {
+    public SwdsVersionWithMetaConverter(YAMLMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 

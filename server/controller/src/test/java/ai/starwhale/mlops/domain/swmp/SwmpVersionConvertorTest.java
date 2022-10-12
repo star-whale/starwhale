@@ -31,9 +31,13 @@ import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,8 +53,8 @@ public class SwmpVersionConvertorTest {
         swmpVersionConvertor = new SwmpVersionConvertor(
                 new IdConvertor(),
                 userConvertor,
-                new VersionAliasConvertor()
-        );
+                new VersionAliasConvertor(),
+                new JobSpecParser(new YAMLMapper()));
     }
 
     @Test
@@ -63,6 +67,7 @@ public class SwmpVersionConvertorTest {
                 .versionTag("tag1")
                 .versionMeta("meta1")
                 .manifest("manifest1")
+                .evalJobs("default:\n- concurrency: 2")
                 .build());
         assertThat(res, allOf(
                 notNullValue(),
@@ -71,7 +76,9 @@ public class SwmpVersionConvertorTest {
                 hasProperty("owner", isA(UserVo.class)),
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is("meta1")),
-                hasProperty("manifest", is("manifest1"))
+                hasProperty("manifest", is("manifest1")),
+                hasProperty("stepSpecs",
+                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
         ));
     }
 

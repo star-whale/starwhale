@@ -17,11 +17,9 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
-import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -31,43 +29,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "System")
 @Validated
 public interface SystemApi {
-
-    @Operation(summary = "Get the list of agents")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/system/agent")
-    ResponseEntity<ResponseMessage<PageInfo<AgentVo>>> listAgent(
-            @Parameter(in = ParameterIn.QUERY, description = "Agent ip to search for", schema = @Schema())
-            @Valid
-            @RequestParam(value = "ip", required = false)
-                    String ip,
-            @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
-            @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
 
     @Operation(summary = "Get the list of resource pool")
     @ApiResponses(
@@ -139,4 +111,40 @@ public interface SystemApi {
             })
     @GetMapping(value = "/system/version/progress")
     ResponseEntity<ResponseMessage<UpgradeProgressVo>> getUpgradeProgress();
+
+    @Operation(
+            summary = "Update system settings",
+            description =
+                    "Update system settings")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
+            })
+    @PreAuthorize("hasAnyRole('OWNER')")
+    @PostMapping(value = "/system/setting")
+    ResponseEntity<ResponseMessage<String>> updateSetting(@RequestBody String setting);
+
+    @Operation(
+            summary = "Get system settings",
+            description =
+                    "Get system settings in yaml string")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
+            })
+    @PreAuthorize("hasAnyRole('OWNER')")
+    @GetMapping(value = "/system/setting")
+    ResponseEntity<ResponseMessage<String>> querySetting();
 }

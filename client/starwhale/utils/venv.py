@@ -21,7 +21,6 @@ from starwhale.consts import (
     SW_DEV_DUMMY_VERSION,
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
-    DEFAULT_PYTHON_VERSION,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
@@ -44,6 +43,7 @@ _DUMMY_FIELD = -1
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
 _DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
 _PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
+_PipReqT = t.Union[str, Path, PosixPath]
 
 
 class EnvTarType:
@@ -104,19 +104,30 @@ def _do_pip_install_req(
     pip_config = pip_config or {}
     _env = os.environ
 
-    _extra_index: t.List[str] = [_env.get("SW_PYPI_EXTRA_INDEX_URL", "")]
-    _hosts: t.List[str] = [_env.get("SW_PYPI_TRUSTED_HOST", "")]
-    _index: str = _env.get("SW_PYPI_INDEX_URL", "")
+    list_to_str: t.Callable[[t.Union[str, list]], str] = (
+        lambda x: " ".join(x) if isinstance(x, list) else x
+    )
 
-    if _index:
-        _extra_index.append(pip_config.get("index_url", ""))
+    # TODO: remove SW_PYPI_* envs
+
+    _index_url = _env.get("SW_PYPI_INDEX_URL", "")
+    _extra_index_urls = [
+        _env.get("SW_PYPI_EXTRA_INDEX_URL", ""),
+        list_to_str(pip_config.get("extra_index_url", [])),
+    ]
+    _hosts = [
+        _env.get("SW_PYPI_TRUSTED_HOST", ""),
+        list_to_str(pip_config.get("trusted_host", [])),
+    ]
+
+    config_index_url = list_to_str(pip_config.get("index_url", ""))
+    if _index_url:
+        _extra_index_urls.append(config_index_url)
     else:
-        _index = pip_config.get("index_url", "")
-    _extra_index.extend(pip_config.get("extra_index_url", []))
-    _hosts.extend(pip_config.get("trusted_host", []))
+        _index_url = config_index_url
 
-    _s_index = _index.strip()
-    _s_extra_index = " ".join([s for s in _extra_index if s.strip()])
+    _s_index = _index_url.strip()
+    _s_extra_index = " ".join([s for s in _extra_index_urls if s.strip()])
     _s_hosts = " ".join([s for s in _hosts if s.strip()])
 
     if _s_index:
@@ -145,7 +156,7 @@ def _do_pip_install_req(
 
 def venv_install_req(
     venvdir: t.Union[str, Path],
-    req: t.Union[str, Path],
+    req: _PipReqT,
     enable_pre: bool = False,
     pip_config: _PipConfigT = None,
 ) -> None:
@@ -384,7 +395,7 @@ def conda_export(
     if prefix:
         cmd += ["--prefix", prefix]
 
-    cmd += ["--file", lock_fpath]
+    cmd += ["--file", str(lock_fpath)]
     check_call(cmd)
 
 
@@ -593,7 +604,7 @@ def create_python_env(
     mode: str,
     name: str,
     workdir: Path,
-    python_version: str = DEFAULT_PYTHON_VERSION,
+    python_version: str,
     force: bool = False,
 ) -> str:
     if mode == PythonRunEnv.VENV:
@@ -857,10 +868,10 @@ def iter_pip_reqs(
     workdir: Path,
     wheels: t.Optional[t.List[str]],
     deps: _DepsT,
-) -> t.Generator[t.Union[str, Path, PosixPath], None, None]:
+) -> t.Generator[_PipReqT, None, None]:
     from starwhale.base.type import RuntimeArtifactType
 
-    reqs = []
+    reqs: t.List[_PipReqT] = []
     deps = deps or {}
     for _pf in deps.get("pip_files", []):
         reqs.append(workdir / RuntimeArtifactType.DEPEND / _pf)

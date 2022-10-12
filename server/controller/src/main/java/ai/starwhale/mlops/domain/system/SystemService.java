@@ -16,49 +16,33 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
-import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.system.agent.AgentCache;
-import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SystemService {
 
-    @Resource
-    private AgentCache agentCache;
+    private final ResourcePoolMapper resourcePoolMapper;
 
-    @Resource
-    private AgentConvertor agentConvertor;
+    private final ResourcePoolConverter resourcePoolConverter;
 
-    @Resource
-    private AgentConverter agentConverter;
+    private final String controllerVersion;
 
-    @Resource
-    private ResourcePoolMapper resourcePoolMapper;
+    private final StorageAccessService storageAccessService;
 
-    @Resource
-    private ResourcePoolConverter resourcePoolConverter;
-
-    @Value("${sw.version}")
-    private String controllerVersion;
-
-    public PageInfo<AgentVo> listAgents(String ipPrefix, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<AgentEntity> agents = agentCache.agents().stream().map(agentConverter::toEntity).collect(
-                Collectors.toList());
-        return PageUtil.toPageInfo(agents, agentConvertor::convert);
+    public SystemService(ResourcePoolMapper resourcePoolMapper,
+            ResourcePoolConverter resourcePoolConverter, @Value("${sw.version}") String controllerVersion,
+            StorageAccessService storageAccessService) {
+        this.resourcePoolMapper = resourcePoolMapper;
+        this.resourcePoolConverter = resourcePoolConverter;
+        this.controllerVersion = controllerVersion;
+        this.storageAccessService = storageAccessService;
     }
 
     public String controllerVersion() {

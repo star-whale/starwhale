@@ -19,8 +19,8 @@ package ai.starwhale.mlops.domain.job.split;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.parser.JobParser;
-import ai.starwhale.mlops.domain.job.parser.StepMetaData;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
@@ -30,7 +30,10 @@ import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +47,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * split job by swds index
@@ -61,14 +65,17 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     private final StepMapper stepMapper;
 
+    private final JobSpecParser jobSpecParser;
+
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
             JobMapper jobMapper,
-            StepMapper stepMapper) {
+            StepMapper stepMapper, JobSpecParser jobSpecParser) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.stepMapper = stepMapper;
+        this.jobSpecParser = jobSpecParser;
     }
 
     /**
@@ -89,27 +96,37 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     @Override
     @Transactional
     public List<StepEntity> split(Job job) {
-        // read swmp yaml
-        List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml(job.getEvalJobDdl());
+        List<StepSpec> stepSpecs;
+        if (!StringUtils.hasText(job.getStepSpec())) {
+            stepSpecs = job.getSwmp().getStepSpecs();
+        } else {
+            try {
+                stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
+            } catch (JsonProcessingException e) {
+                log.error("parsing step specification error", e);
+                throw new SwValidationException(ValidSubject.SWMP);
+            }
+        }
+
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
-        Map<String, Tuple2<StepEntity, StepMetaData>> nameMapping = new HashMap<>();
+        Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();
 
-        for (StepMetaData stepMetaData : stepMetaDatas) {
-            boolean firstStep = CollectionUtils.isEmpty(stepMetaData.getNeeds());
+        for (StepSpec stepSpec : stepSpecs) {
+            boolean firstStep = CollectionUtils.isEmpty(stepSpec.getNeeds());
 
             StepEntity stepEntity = StepEntity.builder()
                     .uuid(UUID.randomUUID().toString())
                     .jobId(job.getId())
-                    .name(stepMetaData.getStepName())
-                    .taskNum(stepMetaData.getTaskNum())
-                    .concurrency(stepMetaData.getConcurrency())
+                    .name(stepSpec.getStepName())
+                    .taskNum(stepSpec.getTaskNum())
+                    .concurrency(stepSpec.getConcurrency())
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
-            allDependencies.put(stepMetaData.getStepName(), stepMetaData.getNeeds());
-            nameMapping.put(stepMetaData.getStepName(), new Tuple2<>(stepEntity, stepMetaData));
+            allDependencies.put(stepSpec.getStepName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
+            nameMapping.put(stepSpec.getStepName(), new Tuple2<>(stepEntity, stepSpec));
         }
 
         for (StepEntity stepEntity : stepEntities) {
@@ -125,7 +142,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
                         .outputPath(
-                                storagePathCoordinator.generateTaskResultPath(job.getUuid(), taskUuid))
+                                storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
                                         TaskRequest.builder()
                                                 .total(stepEntity.getTaskNum())

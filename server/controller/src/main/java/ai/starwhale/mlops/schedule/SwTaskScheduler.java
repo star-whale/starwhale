@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule;
 
-import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.Collection;
 
@@ -32,7 +31,7 @@ public interface SwTaskScheduler {
      * @param tasks       tasks to be scheduled
      * @param deviceClass the device type should be scheduled on
      */
-    void schedule(Collection<Task> tasks, Device.Clazz deviceClass);
+    void schedule(Collection<Task> tasks);
 
     /**
      * @param taskIds tasks to be stop scheduled

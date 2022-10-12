@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -38,14 +39,9 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import okhttp3.Call;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.Protocol;
-import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.junit.jupiter.api.Assertions;
@@ -109,43 +105,19 @@ public class K8sClientTest {
                 eq(null))).thenReturn(
                 new V1PodList().addItemsItem(new V1Pod().metadata(new V1ObjectMeta().name("pdn"))));
 
-        Call callA = mock(Call.class);
-        ResponseBody respb = mock(ResponseBody.class);
-        when(respb.byteStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
-        Response resp = new Response(new Request(new HttpUrl("", "", "", "", 89, List.of(), null, null, ""), "post",
-                new Headers.Builder().build(), null,
-                Map.of()), Protocol.HTTP_1_0, "null", 200, null, new Headers.Builder().build(), respb, null, null, null,
-                1L, 1L, null);
-
-        when(callA.execute()).thenReturn(resp);
-        when(coreV1Api.readNamespacedPodLogCall(
-                eq("pdn"),
-                eq(nameSpace),
-                eq("a"),
-                eq(true),
-                eq(null),
-                eq(null),
-                eq("false"),
-                eq(false),
-                eq(null),
-                eq(null),
-                eq(null),
-                eq(null))).thenReturn(callA);
-
         Call callB = mock(Call.class);
         ResponseBody respbB = mock(ResponseBody.class);
-        when(respbB.byteStream()).thenReturn(new ByteArrayInputStream("logs_logs".getBytes(StandardCharsets.UTF_8)));
-        Response respB = new Response(new Request(new HttpUrl("", "", "", "", 89, List.of(), null, null, ""), "post",
-                new Headers.Builder().build(), null,
-                Map.of()), Protocol.HTTP_1_0, "null", 200, null, new Headers.Builder().build(), respbB, null, null,
-                null,
-                1L, 1L, null);
+        when(respbB.byteStream()).thenReturn(
+                new ByteArrayInputStream("foo".getBytes()), new ByteArrayInputStream("bar".getBytes()));
+        Response respB = mock(Response.class);
+        when(respB.body()).thenReturn(respbB);
+        when(respB.isSuccessful()).thenReturn(true);
 
         when(callB.execute()).thenReturn(respB);
         when(coreV1Api.readNamespacedPodLogCall(
                 eq("pdn"),
                 eq(nameSpace),
-                eq("b"),
+                anyString(),
                 eq(true),
                 eq(null),
                 eq(null),
@@ -157,7 +129,7 @@ public class K8sClientTest {
                 eq(null))).thenReturn(callB);
 
         String s = k8sClient.logOfJob("selector", List.of("a", "b"));
-        Assertions.assertEquals("logs_logslogs_logs", s);
+        Assertions.assertEquals("foobar", s);
     }
 
     @Test
@@ -185,5 +157,13 @@ public class K8sClientTest {
         verify(informerFactory).startAllRegisteredInformers();
     }
 
-
+    @Test
+    public void testGetPodsByJobName() throws ApiException {
+        var podMeta = new V1ObjectMeta().name("foo-xxx");
+        var pods = new V1PodList().items(List.of(new V1Pod().metadata(podMeta)));
+        var label = K8sClient.toV1LabelSelector(Map.of(K8sJobTemplate.JOB_IDENTITY_LABEL, "foo"));
+        when(coreV1Api.listNamespacedPod(nameSpace, null, null, null, null, label,
+                null, null, null, 30, null)).thenReturn(pods);
+        Assertions.assertEquals(k8sClient.getPodsByJobName("foo"), pods);
+    }
 }

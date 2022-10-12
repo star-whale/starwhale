@@ -82,12 +82,35 @@ class Scheduler:
 
         return _results
 
-    def schedule_single_task(self, step_name: str, task_index: int) -> StepResult:
+    def schedule_single_step(self, step_name: str) -> StepResult:
+        _step = self._steps[step_name]
+        if not _step:
+            raise RuntimeError(f"step:{step_name} not found")
+        _step_executor = StepExecutor(
+            _step,
+            project=self.project,
+            dataset_uris=self.dataset_uris,
+            module=self.module,
+            workdir=self.workdir,
+            version=self.version,
+        )
+        start_time = time.time()
+        _result = _step_executor.execute()
+
+        logger.debug(
+            f"step:{step_name} {_step.status}, result:{_result}, run time:{time.time() - start_time}"
+        )
+        return _result
+
+    def schedule_single_task(
+        self, step_name: str, task_index: int, task_num: int = 0
+    ) -> StepResult:
         _step = self._steps[step_name]
         if not _step:
             raise RuntimeError(f"step:{step_name} not found")
 
-        if task_index >= _step.task_num:
+        total = task_num or _step.task_num
+        if task_index >= total:
             raise RuntimeError(
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"
             )
@@ -97,7 +120,7 @@ class Scheduler:
                 project=self.project,
                 version=self.version,
                 step=_step.step_name,
-                total=_step.task_num,
+                total=total,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,
@@ -112,6 +135,6 @@ class Scheduler:
         task_result: TaskResult = _task.execute()
 
         logger.debug(
-            f"step:{str(_step)} {_step.status}, task result:{task_result}, run time:{time.time() - start_time}"
+            f"step:{step_name} {_step.status}, task result:{task_result}, run time:{time.time() - start_time}"
         )
         return StepResult(step_name=step_name, task_results=[task_result])
