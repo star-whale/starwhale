@@ -84,3 +84,4 @@ logging:
   level:
     root: info
     ai.starwhale.mlops: debug
+    org.springframework.transaction.interceptor: TRACE
