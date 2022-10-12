@@ -27,9 +27,8 @@ OUT=`curl -X 'GET' \
 task_ids=$(echo $OUT | tr "\n")
 echo $task_ids
 
-for taskid in $task_ids
+for task_id in $task_ids
 do
-  curl -X 'GET'  "http://$1/api/v1/log/offline/$task_id"   -H 'accept: application/json'   -H "$auth_header" | jq -r '.data[0]'
   log_file=`curl -X 'GET'  "http://$1/api/v1/log/offline/$task_id"   -H 'accept: application/json'   -H "$auth_header" | jq -r '.data[0]'`
   echo $log_file
 

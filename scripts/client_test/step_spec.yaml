@@ -6,8 +6,8 @@ default:
     overwriteable: true
     resources:
     - type: cpu
-      request: 0.2
-      limit: 0.2
+      request: 0.4
+      limit: 0.4
     step_name: ppl
     task_num: 2
   - cls_name: ''
@@ -18,7 +18,7 @@ default:
     overwriteable: false
     resources:
     - type: cpu
-      request: 0.2
-      limit: 0.2
+      request: 0.4
+      limit: 0.4
     step_name: cmp
     task_num: 1
