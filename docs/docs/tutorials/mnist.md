@@ -146,4 +146,3 @@ swcli runtime copy pytorch-mnist/version/latest cloud://pre-k8s/project/1
 On the jobs page, you can create an evaluation job.
 
 ![Create Job Workflow](../img/create-job-workflow.gif)
-![Show Job Results](../img/ui-job-results.jpg)

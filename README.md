@@ -368,21 +368,13 @@ Let's go ahead and finish the tutorial on the on-premises instance.
         <details>
             <summary>Show the uploaded artifacts screenshots</summary>
 
-        ![model list](docs/docs/img/ui-list-model.jpg)
-        ![dataset list](docs/docs/img/ui-list-dataset.jpg)
-        ![runtime list](docs/docs/img/ui-list-runtime.jpg)
+        ![console-artifacts.gif](../img/console-artifacts.gif)
         </details>
-    3. Create an evaluation job
+    3. Create and view an evaluation job
         <details>
             <summary>Show create job screenshot</summary>
 
-        ![Create job](docs/docs/img/ui-create-job.jpg)
-        </details>
-    4. The job is completed and the results can be viewed
-        <details>
-            <summary>Show the job evaluation result screenshot</summary>
-
-        ![Show Job Results](docs/docs/img/ui-job-results.jpg)
+        ![console-create-job.gif](../img/console-create-job.gif)
         </details>
 
 **Congratulations! You have completed the evaluation process for a model.**
