@@ -387,7 +387,7 @@ public class RuntimeServiceTest {
                         Job.builder().jobRuntime(JobRuntime.builder().name("r1").version("v1").build()).build(),
                         Job.builder().jobRuntime(JobRuntime.builder().name("r2").version("v2").build()).build()
                 ));
-        given(storagePathCoordinator.generateRuntimePath(any(), any(), any()))
+        given(storagePathCoordinator.allocateRuntimePath(any(), any(), any()))
                 .willReturn("path2");
 
         try (var mock = mockStatic(TarFileUtil.class)) {
