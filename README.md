@@ -91,7 +91,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 ### Use your own python env
 
-![Core Job Workflow](docs/docs/img/core-workflow.gif)
+![Core Job Workflow](docs/docs/img/standalone-core-workflow.gif)
 
 - 🍰 **STEP1**: Installing Starwhale
 

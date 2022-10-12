@@ -32,7 +32,7 @@ cd starwhale
 
 We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
 
-![Core Workflow](../img/core-workflow.gif)
+![Core Workflow](../img/standalone-core-workflow.gif)
 
 ## 3. Building Runtime
 

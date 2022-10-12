@@ -2,6 +2,8 @@
 title: Standalone 快速上手
 ---
 
+![Core Workflow](../img/standalone-core-workflow.gif)
+
 ## 1. 安装Starwhale CLI
 
 Starwhale 有三种类型的Instances：Standalone-单机、On-Premises-私有化集群、Cloud Hosted-SaaS托管服务。Standalone是最简单的模式，可以从Standalone开启你的Starwhale MLOps之旅。Starwhale Standalone 是用Python3编写的，可以通过pip命令安装：
@@ -29,8 +31,6 @@ cd starwhale
 ```
 
 我们选用ML/DL领域的HelloWorld程序-MNIST来介绍如何从零开始构建数据集、模型包和运行环境，并最终完成模型评测。接下来的操作都在 `starwhale` 目录中进行。
-
-![Core Workflow](../img/core-workflow.gif)
 
 ## 3. 构建Starwhale Runtime运行环境
 
