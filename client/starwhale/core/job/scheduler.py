@@ -80,6 +80,13 @@ class Scheduler:
                     if indegree_dict[v_to] == 0:
                         prepared_vertices.add(v_to)
 
+            if not all(
+                [
+                    all(tr.status == STATUS.SUCCESS for tr in sr.task_results)
+                    for sr in step_results
+                ]
+            ):
+                break
         return _results
 
     def schedule_single_step(self, step_name: str) -> StepResult:
