@@ -6,6 +6,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.venv import is_venv
 from starwhale.core.runtime.process import Process
 
 
@@ -29,7 +30,7 @@ class _SimpleTask:
 
 class RuntimeProcessTestCase(TestCase):
     def setUp(self) -> None:
-        self.root = Path(tempfile.mkdtemp(prefix="starwhale-ut-"))
+        self.root = Path(tempfile.mkdtemp(prefix="starwhale-ut-")).resolve()
         ensure_dir(self.root)
 
     def tearDown(self) -> None:
@@ -60,19 +61,27 @@ class RuntimeProcessTestCase(TestCase):
         ensure_dir(prefix_path / "bin")
         ensure_file(prefix_path / "bin" / "activate", content="export SW_ACTIVATE=1")
 
-        os.symlink(sys.executable, str(pybin))
+        if not is_venv():
+            # symlink can not work with virtualenv
+            # https://github.com/pypa/virtualenv/issues/1599
+            # https://peps.python.org/pep-0405/
+            # TODO support venv test
+            os.symlink(sys.executable, str(pybin))
 
-        st = _SimpleTask(name="venv", dest_dir=self.root / "task")
-        p = Process(prefix_path=prefix_path, target=st.run, args=(1,))
-        p.run()
+            st = _SimpleTask(name="venv", dest_dir=self.root / "task")
+            p = Process(prefix_path=prefix_path, target=st.run, args=(1,))
+            p.run()
 
-        assert (self.root / "task" / "venv").exists()
-        assert not (self.root / "task" / "venv.verbose").exists()
-        assert (self.root / "task" / "venv").read_text() == "1"
+            assert (self.root / "task" / "venv").exists()
+            assert not (self.root / "task" / "venv.verbose").exists()
+            assert (self.root / "task" / "venv").read_text() == "1"
 
-        st = _SimpleTask(name="venv", dest_dir=self.root / "task")
-        p = Process(
-            prefix_path=prefix_path, target=st.run, args=(1,), kwargs={"verbose": True}
-        )
-        p.run()
-        assert (self.root / "task" / "venv.verbose").exists()
+            st = _SimpleTask(name="venv", dest_dir=self.root / "task")
+            p = Process(
+                prefix_path=prefix_path,
+                target=st.run,
+                args=(1,),
+                kwargs={"verbose": True},
+            )
+            p.run()
+            assert (self.root / "task" / "venv.verbose").exists()

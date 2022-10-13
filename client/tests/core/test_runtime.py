@@ -1,5 +1,6 @@
 import os
 import typing as t
+import tempfile
 from pathlib import Path
 from unittest.mock import call, patch, MagicMock
 
@@ -737,7 +738,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "--require-virtualenv",
                     "--exclude-editable",
                     ">>",
-                    "/tmp/starwhale-lock-",
+                    f"{tempfile.gettempdir()}/starwhale-lock-",
                 ]
             )
         )
@@ -758,7 +759,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "--require-virtualenv",
                     "--exclude-editable",
                     ">>",
-                    "/tmp/starwhale-lock-",
+                    f"{tempfile.gettempdir()}/starwhale-lock-",
                 ]
             )
         )
