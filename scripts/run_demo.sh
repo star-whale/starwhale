@@ -4,11 +4,19 @@ set -e
 
 PYTHON_VERSION="${PYTHON_VERSION:=3.7}"
 
+python3 -V
+
 in_github_action() {
   [ -n "$GITHUB_ACTION" ]
 }
 
-script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
+# macos do not support realpath
+# use ad-hoc method from https://stackoverflow.com/questions/3572030/bash-script-absolute-path-with-os-x
+realpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+script_dir="$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")"
 cd "$script_dir"/..
 if in_github_action; then
   WORK_DIR="$(pwd)"

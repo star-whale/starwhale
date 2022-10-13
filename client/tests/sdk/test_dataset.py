@@ -126,7 +126,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
         data_path = (
             Path(self.object_store_dir) / self.data_file_sign[:2] / self.data_file_sign
-        )
+        ).resolve()
 
         assert link_path.resolve() == data_path
         assert data_path.exists()
@@ -168,7 +168,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert len(data_files_sign) == 10
 
         for _sign in data_files_sign:
-            _sign_fpath = Path(self.object_store_dir) / _sign[:2] / _sign
+            _sign_fpath = (Path(self.object_store_dir) / _sign[:2] / _sign).resolve()
             assert _sign_fpath.exists()
             assert _sign == blake2b_file(_sign_fpath)
             assert (
@@ -221,7 +221,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             summary = e.make_swds()
 
         assert link_data_path.resolve() != dummy_path
-        assert link_data_path.resolve() == src_data_path
+        assert link_data_path.resolve() == src_data_path.resolve()
 
 
 class TestDatasetType(TestCase):
