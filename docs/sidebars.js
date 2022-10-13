@@ -61,8 +61,6 @@ module.exports = {
             },
             "Community": [
                 "community/contribute",
-                "community/dev",
-                "community/roadmap",
             ]
         },
     ],
