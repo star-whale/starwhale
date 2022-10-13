@@ -16,6 +16,7 @@ module.exports = {
                 "fundamentals/arch"
             ],
             "Guides": [
+                "guides/uri",
                 "guides/dataset",
                 "guides/runtime",
                 "guides/model",
