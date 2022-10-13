@@ -1,6 +1,5 @@
 import time
 import typing as t
-import traceback
 import concurrent.futures
 from typing import List, Optional
 from pathlib import Path
