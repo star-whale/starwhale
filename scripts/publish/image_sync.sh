@@ -61,6 +61,9 @@ else
   sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
   sudo docker push "$target_registry"/"$target_repo_name1"/server:"$release_version"
   sudo docker push "$target_registry"/"$target_repo_name2"/server:"$release_version"
+  sudo docker image rm "$source_registry"/"$source_repo_name"/server:"$release_version""$suf"
+  sudo docker image rm "$target_registry"/"$target_repo_name1"/server:"$release_version""$suf"
+  sudo docker image rm "$target_registry"/"$target_repo_name2"/server:"$release_version""$suf"
 
   for suf in "${starwhale_image_suffix[@]}"
     do
@@ -69,6 +72,9 @@ else
       sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
       sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
       sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+      sudo docker image rm "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
+      sudo docker image rm "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+      sudo docker image rm "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf"
     done
 
   echo "$release_version" > "$last_version_file"
