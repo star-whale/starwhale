@@ -170,9 +170,7 @@ class TaskExecutor:
                 # The standard implementation does not return results
                 func()
         except Exception as e:
-            logger.exception(
-                f"execute step:{self.context} occur error: {e}, {traceback.format_exc()}"
-            )
+            logger.exception(e)
             self.exception = e
             self.status = STATUS.FAILED
         else:
