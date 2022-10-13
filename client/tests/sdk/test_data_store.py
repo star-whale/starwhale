@@ -12,6 +12,7 @@ from requests_mock import Mocker
 
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
+from starwhale.api._impl.data_store import TableWriterException
 
 from .test_base import BaseTestCase
 
@@ -1807,6 +1808,53 @@ class TestTableWriter(BaseTestCase):
     def tearDown(self) -> None:
         self.writer.close()
         super().tearDown()
+
+    def test_writer(self):
+        _writer = data_store.TableWriter("p/test_flush", "id")
+        for i in range(0, 10):
+            _writer.insert({"id": i, "result": f"data-{i}"})
+        with self.assertRaises(RuntimeError):
+            list(_writer.data_store.scan_tables([data_store.TableDesc("p/test_flush")]))
+        _writer.close()
+
+        _writer2 = data_store.TableWriter("p/test_flush2", "id")
+        for i in range(0, 10):
+            _writer2.insert({"id": i, "result": f"data-{i}"})
+        _writer2.flush()
+        self.assertEqual(
+            len(
+                list(
+                    _writer.data_store.scan_tables(
+                        [data_store.TableDesc("p/test_flush2")]
+                    )
+                )
+            ),
+            10,
+        )
+        _writer2.close()
+
+        _writer3 = data_store.TableWriter("p/test_flush3", "id")
+        _writer3.insert({"id": 0, "result": "data-0"})
+        _writer3.flush()
+        with patch(
+            "starwhale.api._impl.data_store.LocalDataStore.update_table"
+        ) as update_table:
+            update_table.side_effect = RuntimeError()
+            for i in range(1, 11):
+                _writer3.insert({"id": i, "result": f"data-{i}"})
+            _writer3.flush()
+            self.assertEqual(
+                len(
+                    list(
+                        _writer.data_store.scan_tables(
+                            [data_store.TableDesc("p/test_flush3")]
+                        )
+                    )
+                ),
+                1,
+            )
+        with self.assertRaises(TableWriterException):
+            _writer3.close()
 
     def test_insert_and_delete(self) -> None:
         with self.assertRaises(RuntimeError, msg="no key"):
