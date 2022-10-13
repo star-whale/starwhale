@@ -27,7 +27,9 @@ ARG HTTPS_PROXY
 RUN export http_proxy=${HTTP_PROXY} https_proxy=${HTTPS_PROXY} HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} \
     && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
-    && apt-get install -y python3.7 python3.8 python3.9 python3.10 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv python3.10-venv \
+    && apt-get install -y python3.7 python3.8 python3.9 python3.10 \
+		python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv python3.10-venv \
+		python3-dev python3.7-dev python3.8-dev python3.9-dev python3.10-dev \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
@@ -45,7 +47,5 @@ RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.8 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.9 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 \
-    && python3.10 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0
-
-# install yq for parsing yaml files
-RUN python3 -m pip install yq && python3 -m pip cache purge
+    && python3.10 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+	&& python3 -m pip install yq && python3 -m pip cache purge
