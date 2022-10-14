@@ -30,9 +30,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build and push docker image
+      - name: Build and push base image
         working-directory: ./docker
         run: make build-release-base
-      - name: Build and push server base image
+
+      - name: Build and push cuda-base image
+        working-directory: ./docker
+        run: make build-cuda
+
+      - name: Build and push server-base image
         working-directory: ./docker
         run: make build-release-base-server
