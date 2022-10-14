@@ -2,7 +2,7 @@
 title: 数据集命令
 ---
 
-## 基本信息
+## 1. 基本信息
 
 ```bash
 swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
@@ -27,7 +27,7 @@ dataset包含如下子命令：
 |`summary`|✅|✅|
 |`tag`|✅|❌|
 
-## 构建数据集
+## 2. 构建数据集
 
 ```bash
 swcli dataset build [OPTIONS] WORKDIR
@@ -47,7 +47,7 @@ swcli dataset build [OPTIONS] WORKDIR
 |`--append-from`||❌|String|latest|与 `--append` 参数组合使用，指定继承数据集的版本，注意此处并不是Dataset URI，而是同一个数据集下的其他版本号或tag，默认为latest，即最近一次构建的版本。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
 
-## 分发数据集
+## 3. 分发数据集
 
 ```bash
 swcli dataset copy [OPTIONS] SRC DEST
@@ -64,7 +64,7 @@ Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的dataset，指定该参数后执行copy命令就会强制覆盖。|
 |`--with-auth`||❌|Boolean|False|当构建remote-link形态的dataset时，一般会使用 `starwhale.S3LinkAuth` 存储密钥信息，`swcli dataset build` 执行后，会在对应的swds目录中产生一个 `.auth-env` 文件。当指定 `--with-auth` 参数时，若从standalone instance向cloud instance 分发数据集，则会携带有敏感信息的`.auth-env`文件，cloud Instance的controller会自动对该文件进行处理，确保运行评测任务加载数据集时建立安全、合法的连接。目前不支持从cloud instance到standalone instance分发数据集时指定 `--with-auth` 参数，即无法下载cloud instance中的密钥文件。|
 
-## 对比数据集
+## 4. 对比数据集
 
 ```bash
 swcli dataset diff [OPTIONS] BASE_URI COMPARE_URI
@@ -80,7 +80,7 @@ swcli dataset diff [OPTIONS] BASE_URI COMPARE_URI
 
 ![dataset-diff.png](../../img/dataset-diff.png)
 
-## 查看数据集摘要信息
+## 5. 查看数据集摘要信息
 
 ```bash
 swcli dataset summary DATASET
@@ -88,7 +88,7 @@ swcli dataset summary DATASET
 
 `dataset summary` 命令输出数据集具体版本的摘要信息，包括数据集行数、尺寸和数据形态等信息。`DATASET` 参数为Dataset URI，需包含version。
 
-## 查看数据集历史版本
+## 6. 查看数据集历史版本
 
 ```bash
 swcli dataset history [OPTIONS] DATASET
@@ -100,7 +100,7 @@ swcli dataset history [OPTIONS] DATASET
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 查看数据集详细信息
+## 7. 查看数据集详细信息
 
 ```bash
 swcli dataset info [OPTIONS] DATASET
@@ -114,7 +114,7 @@ swcli dataset info [OPTIONS] DATASET
 
 ![dataset-info.gif](../../img/dataset-info.gif)
 
-## 展示数据集列表
+## 8. 展示数据集列表
 
 ```bash
 swcli dataset list [OPTIONS]
@@ -130,7 +130,7 @@ swcli dataset list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 删除数据集
+## 9. 删除数据集
 
 ```bash
 swcli dataset remove [OPTIONS] DATASET
@@ -142,7 +142,7 @@ swcli dataset remove [OPTIONS] DATASET
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 恢复软删除的数据集
+## 10. 恢复软删除的数据集
 
 ```bash
 swcli dataset recover [OPTIONS] DATASET
@@ -156,7 +156,7 @@ swcli dataset recover [OPTIONS] DATASET
 
 ![dataset-recover.png](../../img/dataset-recover.png)
 
-## 标记数据集
+## 11. 标记数据集
 
 ```bash
 swcli dataset tag [OPTIONS] DATASET [TAGS]...

@@ -2,7 +2,7 @@
 title: Runtime命令
 ---
 
-## 基本信息
+## 1. 基本信息
 
 ```bash
 swcli runtime [OPTIONS] COMMAND [ARGS]...
@@ -31,7 +31,7 @@ runtime包含如下子命令：
 |`restore`|✅|❌|
 |`tag`|✅|❌|
 
-## 激活Runtime
+## 2. 激活Runtime
 
 ```bash
 swcli runtime activate [OPTIONS]
@@ -49,7 +49,7 @@ swcli runtime activate [OPTIONS]
 |`--uri`|`-u`|❌|String||Standalone Instance下Runtime URI|
 |`--path`|`-p`|❌|String||venv或conda目录路径|
 
-## 构建Runtime
+## 3. 构建Runtime
 
 ```bash
 swcli runtime build [OPTIONS] WORKDIR
@@ -71,7 +71,7 @@ swcli runtime build [OPTIONS] WORKDIR
 |`--env-prefix-path`||❌|String||设定 `--enable-lock` 参数后，锁定venv或conda Python环境的路径|
 |`--env-name`||❌|String||设定 `--enable-lock` 参数后, 锁定conda环境的env名字|
 
-## 分发Runtime
+## 4. 分发Runtime
 
 ```bash
 swcli runtime copy [OPTIONS] SRC DEST
@@ -85,7 +85,7 @@ swcli runtime copy [OPTIONS] SRC DEST
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的Runtime，指定该参数后执行copy命令就会强制覆盖。|
 
-## 制作Runtime的Docker Image
+## 5. 制作Runtime的Docker Image
 
 ```bash
 swcli runtime dockerize [OPTIONS] URI
@@ -106,7 +106,7 @@ swcli runtime dockerize [OPTIONS] URI
 
 ![runtime-dockerize.png](../../img/runtime-dockerize.png)
 
-## 解压Runtime包文件
+## 6. 解压Runtime包文件
 
 ```bash
 swcli runtime extract [OPTIONS] RUNTIME
@@ -119,7 +119,7 @@ swcli runtime extract [OPTIONS] RUNTIME
 |`--force`|`-f`|❌|Boolean|False|若曾经在target-dir目录中extract过，设定该参数后，会强制在target-dir目录覆盖旧的内容|
 |`--target-dir`||❌|String|Runtime URI对应的snapshot_workdir目录|解压Runtime后存储相关内容的目录|
 
-## 查看Runtime历史版本
+## 7. 查看Runtime历史版本
 
 ```bash
 swcli runtime history [OPTIONS] RUNTIME
@@ -131,7 +131,7 @@ swcli runtime history [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 查看Runtime详细信息
+## 8. 查看Runtime详细信息
 
 ```bash
 swcli runtime info [OPTIONS] RUNTIME
@@ -143,7 +143,7 @@ swcli runtime info [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 展示Runtime列表
+## 9. 展示Runtime列表
 
 ```bash
 swcli runtime list [OPTIONS]
@@ -159,7 +159,7 @@ swcli runtime list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 锁定Python依赖信息
+## 10. 锁定Python依赖信息
 
 ```bash
 swcli runtime lock [OPTIONS] [TARGET_DIR]
@@ -197,11 +197,11 @@ lock命令一般用在将一个本地已经调试好的venv或conda环境固化�
 
 ![runtime-lock.gif](../../img/runtime-lock.gif)
 
-## 快速创建全新的Runtime
+## 11. 快速创建全新的Runtime
 
 目前**runtime quickstart只能在standalone instance下执行**。
 
-### 在终端中交互式产生新的Runtime
+### 11.1 在终端中交互式产生新的Runtime
 
 ```bash
 swcli runtime quickstart shell [OPTIONS] WORKDIR
@@ -219,7 +219,7 @@ swcli runtime quickstart shell [OPTIONS] WORKDIR
 
 ![runtime-quickstart.gif](../../img/quickstart-shell.gif)
 
-### 以某个已经存在的Runtime为基础创建新的Runtime
+### 11.2 以某个已经存在的Runtime为基础创建新的Runtime
 
 ```bash
 swcli runtime quickstart uri [OPTIONS] URI WORKDIR
@@ -233,7 +233,7 @@ swcli runtime quickstart uri [OPTIONS] URI WORKDIR
 |`--name`|`-n`|❌|String|父目录名称|runtime的名称|
 |`--restore`||❌|Boolean|False|是否重建Runtime的Python依赖，包括创建venv或conda环境，并下载安装runtime.yaml的依赖|
 
-## 删除Runtime
+## 12. 删除Runtime
 
 ```bash
 swcli runtime remove [OPTIONS] RUNTIME
@@ -245,7 +245,7 @@ swcli runtime remove [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 恢复软删除的Runtime
+## 13. 恢复软删除的Runtime
 
 ```bash
 swcli runtime recover [OPTIONS] RUNTIME
@@ -257,7 +257,7 @@ swcli runtime recover [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 重建Runtime
+## 14. 重建Runtime
 
 ```bash
 swcli runtime restore [OPTIONS] TARGET
@@ -267,7 +267,7 @@ swcli runtime restore [OPTIONS] TARGET
 
 `TARGET` 参数有两种形式，一种是表示某个 runtime uri的snapshot_workdir， 另一种是某个Standalone Instance下的Runtime URI。
 
-## 标记Runtime
+## 15. 标记Runtime
 
 ```bash
 swcli runtime tag [OPTIONS] RUNTIME [TAGS]...

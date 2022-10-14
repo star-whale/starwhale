@@ -6,21 +6,9 @@ title: Starwhale Resources URI
 **Resource URI is widely used in Starwhale client commands. The URI can refer to a resource in the local instance or any other resource in a remote instance. In this way, the Starwhale client can easily manipulate any resource.**
 :::
 
-```graph
-            Instance
-               |
-            Project
-               |
-   +-------+---+---+------+-------+
-   |       |       |      |       |
- Model  Dataset Runtime  Job  Evaluation
-   |       |       |      |       |
-Version Version Version  Step   Version
-  Tag     Tag    Tag      |
-                         Task
-```
+![concepts-org.jpg](../img/concepts-org.jpg)
 
-## Instance URI
+## 1. Instance URI
 
 Instance URI can be either:
 
@@ -43,7 +31,7 @@ swcli model copy mnist/version/latest cloud://pre-k8s/project/1
 swcli runtime copy pytorch/version/v1.0 http://localhost:8081/project/myproject
 ```
 
-## Project URI
+## 2. Project URI
 
 Project URI is in the format `[<Instance URI>/project/]<project name>`. If the instance URI is not specified, use the default instance instead.
 
@@ -54,7 +42,7 @@ swcli project select self   # select self project in the current instance
 swcli project info local/project/self  # inspect self project info in the local instance
 ```
 
-## Model/Dataset/Runtime URI
+## 3. Model/Dataset/Runtime URI
 
 - Model URI: `[<Project URI>/model/]<model name>[/version/<version id|tag>]`.
 - Dataset URI: `[<Project URI>/dataset/]<dataset name>[/version/<version id|tag>]`.
@@ -72,7 +60,7 @@ swcli model info mnist  # inspect mnist model info
 swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest
 ```
 
-## Evaluation URI
+## 4. Evaluation URI
 
 - format: `[<Project URI>/evaluation/]<job id>`.
 - If the project URI is not specified, use the default project.
@@ -84,7 +72,7 @@ swcli eval info mezdayjzge3w   # Inspect mezdayjzge3w version in default instanc
 swcli eval info local/project/self/job/mezday # Inspect the local instance, self project, with short job version:mezday
 ```
 
-## Names Limitation
+## 5. Names Limitation
 
 Names mean project names, model names, dataset names, runtime names, and tag names.
 
@@ -93,7 +81,7 @@ Names mean project names, model names, dataset names, runtime names, and tag nam
 - A name should always start with a letter or the `_` character.
 - The maximum length of a name is 80.
 
-### Names uniqueness requirement
+### 5.1 Names uniqueness requirement
 
 The resource name should be a unique string within its owner. For example, the project name should be unique in the owner instance, and the model name should be unique in the owner project.
 

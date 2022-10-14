@@ -400,7 +400,7 @@ Let's go ahead and finish the tutorial on the on-premises instance.
 
 ## Contributing
 
-🌼👏**PRs are always welcomed** 👍🍺.
+🌼👏**PRs are always welcomed** 👍🍺. See [Contribution to Starwhale](https://doc.starwhale.ai/docs/community/contribute) for more details.
 
 ## License
 

@@ -2,11 +2,11 @@
 title: 使用Helm安装Cloud Instance
 ---
 
-## Helm Charts
+## 1. Helm Charts
 
 使用Helm Charts可以非常容易的将Starwhale Cloud Instance在Kubernetes集群中进行安装，包括Starwhale Controller和第三方基础依赖（mysql/minio等）。
 
-## 核心命令
+## 2. 核心命令
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -14,34 +14,34 @@ helm repo update
 helm install starwhale starwhale/starwhale -n starwhale --create-namespace
 ```
 
-## 前置条件
+## 3. 前置条件
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
 
-## 安装Chart
+## 4. 安装Chart
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
 helm install starwhale starwhale/starwhale
 ```
 
-## 卸载Chart
+## 5. 卸载Chart
 
 ```bash
 helm delete starwhale
 ```
 
-## 配置参数说明
+## 6. 配置参数说明
 
-### 基本参数
+### 6.1 基本参数
 
 |字段|描述|默认值|
 |---|---|-----|
 | `image.registry` | 镜像Registry, Starwhale镜像会发布在 docker.io 和 ghcr.io上| `ghcr.io`|
 | `image.org`      | 镜像的org名字： [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io)、[star-whale](https://github.com/orgs/star-whale)(ghcr.io) 或者其他在私有registry上定义的镜像org名字 | `star-whale`  |
 
-### Starwhale参数
+### 6.2 Starwhale参数
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -50,7 +50,7 @@ helm delete starwhale
 | `ingress.ingressClassName`  | ingress class name  | `nginx`                          |
 | `ingress.host`              | Starwhale Controller 的访问域名  | `console.pre.intra.starwhale.ai` |
 
-### 基础设施参数
+### 6.3 基础设施参数
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -70,7 +70,7 @@ helm delete starwhale
 | `externalS3OSS.region`| 外部对象存储的region | `local` |
 | `externalS3OSS.type`| 外部对象存储的类型，目前支持s3、aliyun、minio三种OSS | `minio` |
 
-### minikube参数
+### 6.4 minikube参数
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -84,7 +84,7 @@ export SWNS=starwhale
 helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio
 ```
 
-### 开发模式
+### 6.5 开发模式
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -98,9 +98,9 @@ helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-na
 export SWNAME=starwhale
 export SWNS=starwhale
 helm install $SWNAME . -n $SWNS --create-namespace \
-	--set devMode.createPV.enabled=true \
-	--set devMode.createPV.host=pv-host \
-	--set devMode.createPV.rootPath=/path/to/pv-storage \
-	--set mysql.primary.persistence.storageClass=$SWNAME-mysql \
-	--set minio.persistence.storageClass=$SWNAME-minio
+    --set devMode.createPV.enabled=true \
+    --set devMode.createPV.host=pv-host \
+    --set devMode.createPV.rootPath=/path/to/pv-storage \
+    --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
+    --set minio.persistence.storageClass=$SWNAME-minio
 ```
