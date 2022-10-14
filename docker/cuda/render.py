@@ -1,5 +1,6 @@
 import os
 import typing as t
+import subprocess
 from copy import deepcopy
 
 import click
@@ -7,6 +8,9 @@ from jinja2 import Environment, FileSystemLoader
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 jinja2_env = Environment(loader=FileSystemLoader(searchpath=CURRENT_DIR))
+
+GHCR_IO_IMAGE_NAME = "ghcr.io/star-whale/cuda"
+DOCKER_IO_IMAGE_NAME = "docker.io/starwhaleai/cuda"
 
 
 class _CUDNN(t.NamedTuple):
@@ -105,14 +109,16 @@ _CUDA_META = {
 )
 @click.option("-d", "--dest-dir", default="", help="Dockerfile destination dir")
 @click.option("--push", is_flag=True, help="add --push args for docker buildx")
+@click.option("--force", is_flag=True, help="force build and push existed image")
 @click.option(
-    "--base-image", default="ghcr.io/star-whale/base:0.2.1", help="Docker base image"
+    "--base-image", default="ghcr.io/star-whale/base:latest", help="Docker base image"
 )
 def _do_render(
     all: bool,
     cuda: str,
     dest_dir: str,
     push: bool,
+    force: bool,
     base_image: str,
 ) -> None:
     cuda_candidates = [cuda]
@@ -140,9 +146,19 @@ def _do_render(
             if _cudnn is None:
                 continue
 
+            _image_tag = _cuda
+            if _cudnn:
+                _image_tag = f"{_image_tag}-cudnn{_cudnn.split('.')[0]}"
+            if tag_version:
+                _image_tag = f"{_image_tag}-base{tag_version}"
+
+            if not force and _check_image_existed(_image_tag):
+                print(f"{_image_tag} existed, skip build and push")
+                continue
+
             _do_render_dockerfile(_cuda, _cudnn, dest_dir, tag_version)
             cmd = _do_render_docker_buildx_cmd(
-                _cuda, _cudnn, push, tag_version, base_image, dest_dir
+                _cuda, _cudnn, push, _image_tag, base_image, dest_dir
             )
             print(f"[done]cuda: {_cuda}, cudnn: {_cudnn if _cudnn else '--'}")
             cmds.append(cmd)
@@ -155,6 +171,21 @@ def _do_render(
 
     print("\n run command to build docker images...")
     print(f"\t bash {build_fpath}")
+
+
+def _check_image_existed(image_tag: str) -> bool:
+    # TODO: check docker.io image
+    image = f"{GHCR_IO_IMAGE_NAME}:{image_tag}"
+    try:
+        subprocess.check_call(
+            ["docker", "manifest", "inspect", image],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError:
+        return False
+    else:
+        return True
 
 
 def _do_render_dockerfile(
@@ -190,7 +221,7 @@ def _do_render_docker_buildx_cmd(
     cuda: str,
     cudnn: str,
     push: bool,
-    tag_version: str,
+    image_tag: str,
     base_image: str,
     dest_dir: str,
 ) -> str:
@@ -214,18 +245,11 @@ def _do_render_docker_buildx_cmd(
     if base_image:
         cmd += ["--build-arg", f"BASE_IMAGE={base_image}"]
 
-    tag = cuda
-    if cudnn:
-        tag = f"{tag}-cudnn{cudnn.split('.')[0]}"
-
-    if tag_version:
-        tag = f"{tag}-base{tag_version}"
-
     cmd += [
         "-t",
-        f"ghcr.io/star-whale/cuda:{tag}",
+        f"{GHCR_IO_IMAGE_NAME}:{image_tag}",
         "-t",
-        f"docker.io/starwhaleai/cuda:{tag}",
+        f"{DOCKER_IO_IMAGE_NAME}:{image_tag}",
     ]
 
     if push:
