@@ -2,7 +2,7 @@
 title: Project命令
 ---
 
-## 基本信息
+## 1. 基本信息
 
 ```bash
 swcli project [OPTIONS] COMMAND [ARGS]...
@@ -23,7 +23,7 @@ project包含如下子命令：
 |recover|✅|✅|
 |select|✅|✅|
 
-## 创建Project
+## 2. 创建Project
 
 ```bash
 swcli project create PROJECT
@@ -38,7 +38,7 @@ swcli project create PROJECT
 🤿 failed to run, reason:/home/liutianwei/.cache/starwhale/myproject was already existed
 ```
 
-## 查看Project详细信息
+## 3. 查看Project详细信息
 
 ```bash
 swcli project info PROJECT
@@ -46,7 +46,7 @@ swcli project info PROJECT
 
 `project info` 命令输出Project详细信息。`PROJECT` 参数为Project URI。
 
-## 展示Project列表
+## 4. 展示Project列表
 
 ```bash
 swcli project list [OPTIONS]
@@ -60,7 +60,7 @@ swcli project list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 删除Project
+## 5. 删除Project
 
 ```bash
 swcli project remove PROJECT
@@ -73,7 +73,7 @@ swcli project remove PROJECT
 🐶 remove project myproject. You can recover it, don't panic.
 ```
 
-## 恢复软删除的Project
+## 6. 恢复软删除的Project
 
 ```bash
 swcli project recover PROJECT
@@ -86,7 +86,7 @@ swcli project recover PROJECT
 👏 recover project myproject
 ```
 
-## 选择当前Instance下默认的Project
+## 7. 选择当前Instance下默认的Project
 
 ```bash
 swcli project select PROJECT

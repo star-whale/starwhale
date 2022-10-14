@@ -37,7 +37,6 @@ module.exports = {
                     items: [
                         "guides/config/standalone_config",
                         "guides/config/swignore",
-                        "guides/config/cloud_admin",
                     ]
                 },
                 "guides/faq",

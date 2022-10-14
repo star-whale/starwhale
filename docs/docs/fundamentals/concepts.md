@@ -4,21 +4,9 @@ title: Core Concepts
 
 This document explains the main concepts in Starwhale.
 
-```graph
-            Instance
-               |
-            Project
-               |
-   +-------+---+---+------+-------+
-   |       |       |      |       |
- Model  Dataset Runtime  Job  Evaluation
-   |       |       |      |       |
-Version Version Version  Step   Version
-  Tag     Tag    Tag      |
-                         Task
-```
+![concepts-org.jpg](../img/concepts-org.jpg)
 
-## Instance
+## 1. Instance
 
 Each installation of Starwhale is called an instance, Cloud or Standalone:
 
@@ -33,13 +21,13 @@ The on-premises instance and hosted instance are both called cloud instances. We
 
 **Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between instances.**
 
-## Project
+## 2. Project
 
 Project is the basic unit for organizing different resources like models, datasets, etc.
 Users may use projects for different purposes. For example, we can create a project for a data scientist team, a product line, or a specific model. Users usually work on one or more projects in their daily lives.
 Every user in cloud instances has their personal project by default. Standalone instances also supports multi projects, `self` project will be created automatically and configured as the default project.
 
-## Model
+## 3. Model
 
 Starwhale Model is the standard model format used in model delivery.
 
@@ -47,7 +35,7 @@ A Starwhale Model is a directory containing arbitrary files. It includes the mod
 
 A Starwhale Model can contain any information required to run the model, such as source codes, different model formats, etc. It can be stripped of redundant information to get a smaller package. The primary purpose of a stripped Starwhale Model Package is for delivery. Users may not want to show python inference code to the production team for security reasons or need a minimum deployable package on edge.
 
-## Runtime
+## 4. Runtime
 
 Starwhale Runtime describes software dependencies to "run" a model. It includes python libraries, native libraries, native binaries, etc.
 
@@ -56,7 +44,7 @@ Stable software dependencies are essential for running a model. One reason is th
 Conda, Pip, and docker images are all solutions to define the software runtime environment. Starwhale Runtime supports all of them. Users can choose anyone they prefer.
 Starwhale provides the ability to synchronize runtimes on different machines and to switch between runtimes. Build once, use anywhere.
 
-## Dataset
+## 5. Dataset
 
 Starwhale organizes data into datasets.
 
@@ -66,7 +54,7 @@ Starwhale dataset provides a unified description of how the data and labels are 
 
 Starwhale Dataset is just a collection of arbitrary data. It is up to the user how to define a dataset.
 
-## Version
+## 6. Version
 
 Starwhale manages the history of Model, Dataset, and Runtime. Every update appends a new version to the history.
 
@@ -76,12 +64,12 @@ Starwhale uses a linear history model. There is neither branch nor cycle in hist
 
 History can not be rollback. When a version is to be reverted, Starwhale copies the version and appends it to the end of the history. However, versions in the history can be manually removed and recovered.
 
-## Job, Step, and Task
+## 7. Job, Step, and Task
 
 A job is a set of programs to do specific work. A job consists of one or more steps, and each step consists of one or more tasks. Steps represent distinct stages of the work. They usually run with different codes. Tasks are replications of a step. Tasks in the same step always share the same program but run with separate data input.
 
 Starwhale uses jobs to execute actions like model training, evaluation, and serving.
 
-## Evaluation
+## 8. Evaluation
 
 **Starwhale Evaluation** manages the entire lifecycle of model evaluation which includes create job, distribute tasks and generate report etc.
