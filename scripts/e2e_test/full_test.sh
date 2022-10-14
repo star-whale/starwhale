@@ -1,4 +1,4 @@
-#docker run -v /var/run/docker.sock:/var/run/docker.sock -v ~/.kube:/root/.kube -v ~/starwhale_code:/starwhale --env-file ~/.sw/setup.env -e SWNAME=e2e -e SWNS=e2e -e YARN_REGISTRY=https://registry.npm.taobao.org -it  homepage-ca.intra.starwhale.ai:5000/docker-e2e:0.6 bash
+#docker run -v /var/run/docker.sock:/var/run/docker.sock -v ~/.kube:/root/.kube -v ~/code/starwhale:/starwhale --env-file ~/.sw/setup.env -e SWNAME=e2e -e SWNS=e2e -e RESOURCE_POOL=x86 -e YARN_REGISTRY=https://registry.npm.taobao.org -it  homepage-ca.intra.starwhale.ai:5000/docker-e2e:0.6 bash
 export SWREPO="${SWREPO:=https://github.com/star-whale/starwhale.git}"
 
 if [[ -n "$YARN_REGISTRY" ]] ; then

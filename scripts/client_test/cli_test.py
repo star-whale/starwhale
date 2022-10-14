@@ -122,6 +122,7 @@ class TestCli:
             runtime=swrt["version"],
             project=cloud_project,
             step_spec=f"{os.path.abspath(CURRENT_DIR)}/step_spec.yaml",
+            resource_pool=os.environ.get("RESOURCE_POOL"),
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
