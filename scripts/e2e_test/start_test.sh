@@ -202,6 +202,7 @@ check_controller_service() {
             sleep 15
     done
     nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:$PORT_CONTROLLER &
+    pwd
     check_controller_port.sh &
 }
 
@@ -213,7 +214,7 @@ client_test() {
   rm -rf venv*
   pushd ../
   python3 scripts/client_test/cli_test.py simple
-  scripts/e2e_test/print_job_log.sh 127.0.0.1:$PORT_CONTROLLER
+  scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER
   popd
   popd
 

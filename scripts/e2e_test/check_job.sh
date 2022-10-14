@@ -17,7 +17,9 @@ do
 done
 
 auth_header=`cat auth_header.h`
+
 sudo apt-get install jq
+
 echo "get task"
 OUT=`curl -X 'GET' \
   "http://$1/api/v1/project/starwhale/job/1/task?pageNum=1&pageSize=10" \
@@ -41,3 +43,16 @@ do
   echo "task log is:"
   curl -X 'GET' "http://$1/api/v1/log/offline/$task_id/$log_file" -H 'accept: plain/text' -H "$auth_header"
 done
+
+echo "get job status"
+
+curl -X 'GET' \
+    "http://$1/api/v1/project/starwhale/job/1" \
+    -H 'accept: application/json' \
+    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus
+job_status=`cat jobStatus`
+
+echo "job status is $job_status"
+if [[ "$job_status" != "SUCCESS" ]] ; then
+  exit 1
+fi
