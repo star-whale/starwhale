@@ -52,7 +52,7 @@ class Evaluation:
             _args.extend(["--desc", desc])
         if step_spec:
             _args.extend(["--step-spec", step_spec])
-        if resource:
+        if resource_pool:
             _args.extend(["--resource-pool", resource_pool])
         if use_docker:
             _args.append("--use-docker")
