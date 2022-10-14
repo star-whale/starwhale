@@ -258,15 +258,17 @@ public class DataStoreTest {
         this.dataStore.update("t1",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("a").type("INT32").build())),
-                List.of(Map.of("k", "0", "a", "5"),
-                        Map.of("k", "1", "a", "4"),
+                                ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("l").type("FLOAT64").build())),
+                List.of(Map.of("k", "0", "a", "5", "l", "3ff8000000000000"), // l=1.5
+                        Map.of("k", "1", "a", "4", "l", "3ff6666666666666"), // l=1.4
                         new HashMap<>() {{
                             put("k", "2");
                             put("a", null);
+                            put("l", "0000000000000000"); // 0.0
                         }},
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1")));
+                        Map.of("k", "3", "a", "2", "l", "3ff3333333333333"), // l=1.2
+                        Map.of("k", "4", "a", "1", "l", "3ff199999999999a"))); // l=1.1
         var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t1")
@@ -316,15 +318,19 @@ public class DataStoreTest {
                 .startInclusive(true)
                 .end("3")
                 .endInclusive(true)
-                .limit(2)
+                .limit(3)
                 .build());
         assertThat("all columns",
                 recordList.getColumnTypeMap(),
-                is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
+                is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32, "l", ColumnTypeScalar.FLOAT64)));
         assertThat("all columns",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "1", "a", "4"), Map.of("k", "2"))));
-        assertThat("all columns", recordList.getLastKey(), is("2"));
+                is(List.of(
+                    Map.of("k", "1", "a", "4", "l", "3ff6666666666666"),
+                    Map.of("k", "2", "l", "0"), // not 0000000000000000
+                    Map.of("k", "3", "a", "2", "l", "3ff3333333333333")
+                )));
+        assertThat("all columns", recordList.getLastKey(), is("3"));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -335,7 +341,7 @@ public class DataStoreTest {
                 .build());
         assertThat("schema only",
                 recordList.getColumnTypeMap(),
-                is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
+                is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32, "l", ColumnTypeScalar.FLOAT64)));
         assertThat("schema only", recordList.getRecords(), empty());
 
         this.dataStore.update("t1",
@@ -355,17 +361,19 @@ public class DataStoreTest {
                         ColumnTypeScalar.STRING,
                         "a",
                         ColumnTypeScalar.INT32,
+                        "l",
+                        ColumnTypeScalar.FLOAT64,
                         "x:link/url",
                         ColumnTypeScalar.STRING,
                         "x:link/mime_type",
                         ColumnTypeScalar.STRING)));
         assertThat("object type",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5"),
-                        Map.of("k", "1", "a", "4"),
-                        Map.of("k", "2"),
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1"),
+                is(List.of(Map.of("k", "0", "a", "5", "l", "3ff8000000000000"),
+                        Map.of("k", "1", "a", "4", "l", "3ff6666666666666"),
+                        Map.of("k", "2", "l", "0"),
+                        Map.of("k", "3", "a", "2", "l", "3ff3333333333333"),
+                        Map.of("k", "4", "a", "1", "l", "3ff199999999999a"),
                         Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
 
