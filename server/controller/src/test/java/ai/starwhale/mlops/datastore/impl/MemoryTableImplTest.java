@@ -283,7 +283,9 @@ public class MemoryTableImplTest {
                                     .pythonType("t")
                                     .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
                                             ColumnSchemaDesc.builder().name("b").type("INT32").build()))
-                                    .build())),
+                                    .build(),
+                            ColumnSchemaDesc.builder().name("l").type("FLOAT64").build())),
+
                     List.of(new HashMap<>() {
                         {
                             put("key", "x");
@@ -298,11 +300,13 @@ public class MemoryTableImplTest {
                             put("i", null);
                             put("j", List.of("a"));
                             put("k", Map.of("a", "b", "b", "c"));
+                            put("l", Long.toHexString(Double.doubleToLongBits(0.0)));
                         }
                     }));
             assertThat("all types",
-                    scanAll(this.memoryTable, List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"),
-                            false),
+                    scanAll(this.memoryTable,
+                        List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"),
+                        false),
                     contains(new MemoryTable.RecordResult("x",
                             new HashMap<>() {
                                 {
@@ -317,6 +321,7 @@ public class MemoryTableImplTest {
                                     put("h", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
                                     put("j", List.of(10));
                                     put("k", Map.of("a", 11, "b", 12));
+                                    put("l", 0.0);
                                 }
                             })));
         }
