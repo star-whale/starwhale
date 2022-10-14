@@ -294,13 +294,4 @@ Here we are. We have finished all the complex parts.
 
 Before we evaluate our model, we should copy the runtime, model, and dataset to the Starwhale instance. Open the console, create one job, and look at the evaluation metrics.
 
-* **Create one evaluation job**
-![create evaluation job](../img/cifar10_create.png)
-
-* **Watch the results**
-![watch the result](../img/cifar10_result1.png)
-![watch the result](../img/cifar10_result2.png)
-![watch the result](../img/cifar10_result3.png)
-![watch the result](../img/cifar10_result4.png)
-
 Congratulations, we have finished the whole example! From now on, we can update the training method, get a new model, build a new SWMP and evaluate our model from time to time.

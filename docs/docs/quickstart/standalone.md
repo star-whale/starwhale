@@ -2,7 +2,7 @@
 title: Standalone Quickstart
 ---
 
-## Installing Starwhale
+## 1. Installing Starwhale
 
 Starwhale has three types of instances: Standalone, On-Premises, and Cloud Hosted. Starting with the standalone mode is ideal for quickly understanding and mastering Starwhale.
 You install Starwhale Standalone by running:
@@ -14,56 +14,48 @@ python3 -m pip install --pre starwhale
 :::note
 The Starwhale client version is currently under alpha preview. Thus `--pre` is required.
 :::
+
 :::note
-Starwhale standalone requires Python 3.7 or above. Currently, Starwhale only supports Linux and macOS. Windows is coming soon.
+Starwhale standalone requires Python 3.7~3.10. Currently, Starwhale only supports Linux and macOS. Windows is coming soon.
 :::
 
 At the installation stage, we strongly recommend you follow the [doc](../guides/install/standalone.md).
 
-## Downloading Examples
+## 2. Downloading Examples
 
 Download Starwhale examples by cloning Starwhale via:
 
 ```bash
 git clone https://github.com/star-whale/starwhale.git
-cd starwhale/example/mnist
+cd starwhale
 ```
 
-We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale/example/mnist` directory.
+We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
 
-![Core Workflow](../img/core-workflow.gif)
+![Core Workflow](../img/standalone-core-workflow.gif)
 
-## Building Runtime
+## 3. Building Runtime
 
-- Create a python runtime with `Virtualenv` or `Conda`, then activate it.
+Runtime example code are in the `example/runtime/pytorch` directory.
 
-  ```bash
-  swcli runtime create -n pytorch-mnist -m venv --python 3.9 .
-  source venv/bin/activate
-  ```
-
-- Install your python packages with `pip install`.
-
-  ```bash
-  python3 -m pip install -r requirements.txt
-  ```
-
-- Build the Starwhale Runtime bundle.
+- Build the Starwhale Runtime bundle:
 
   ```bash
   swcli runtime build .
   ```
 
-- Check your local Starwhale Runtimes.
+- Check your local Starwhale Runtimes:
 
   ```bash
   swcli runtime list
-  swcli runtime info pytorch-mnist/version/latest
+  swcli runtime info pytorch/version/latest
   ```
 
-## Building Model
+## 4. Building Model
 
-- Build a Starwhale Model
+Model example code are in the `example/mnist` directory.
+
+- Build a Starwhale Model:
 
   ```bash
   swcli model build .
@@ -76,9 +68,11 @@ We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The f
   swcli model info mnist/version/latest
   ```
 
-## Building Dataset
+## 5. Building Dataset
 
-- Download the MNIST raw data
+Dataset example code are in the `example/mnist` directory.
+
+- Download the MNIST raw data:
 
   ```bash
   mkdir -p data && cd data
@@ -91,44 +85,36 @@ We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The f
   ls -lah data/*
   ```
 
-- Build a Starwhale Dataset
+- Build a Starwhale Dataset:
 
   ```bash
   swcli dataset build .
   ```
 
-- Check your local Starwhale Dataset.
+- Check your local Starwhale Dataset:
 
   ```bash
   swcli dataset list
   swcli dataset info mnist/version/latest
   ```
 
-## Running an Evaluation Job
-
-Run an evaluation job in the currently activated python runtime.
+## 6. Running an Evaluation Job
 
 - Create an evaluation job
 
  ```bash
- swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
+ swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
  ```
 
 - Check the evaluation result
 
  ```bash
- swcli job list
- swcli job info ${version}
- ```
-
-- [Optional Step] You can also create a job with docker.
-
- ```bash
- swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --use-docker
+ swcli eval list
+ swcli eval info ${version}
  ```
 
 :::tip
-The `job create` command will pull the runtime base image from ghcr.io by default. It may cost a lot of time for users in the mainland of China. `pip install` can be slow too.
+When you first use Runtime in the eval run command which maybe use a lot of time to create isolated python environment, download python dependencies. Use the befitting pypi mirror in the `~/.pip/pip.conf` file is a recommend practice.
 :::
 
   👏 Now, you have completed the basic steps for Starwhale standalone.

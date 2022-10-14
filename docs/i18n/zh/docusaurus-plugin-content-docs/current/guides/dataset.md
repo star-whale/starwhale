@@ -47,7 +47,7 @@ Starwhale Dataset 对数据集格式的定义，根据实际使用场景，有�
 
 `Starwhale Dataset` 的构建是独立进行的，如果编写构建脚本时需要引入第三方库，那么使用 `Starwhale Runtime` 可以简化Python的依赖管理，能保证数据集的构建可复现。Starwhale平台会尽可能多的内建开源数据集，让用户copy下来数据集后能立即使用。
 
-`Starwhale Dataset` 构建的时候会自动将Python文件进行打包，可以设置 `.swignore` [文件](standalone/swignore.md) 排除某些文件。
+`Starwhale Dataset` 构建的时候会自动将Python文件进行打包，可以设置 `.swignore` [文件](config/swignore.md) 排除某些文件。
 
 ### 2.1 命令行分组
 
