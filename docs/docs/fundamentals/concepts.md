@@ -9,22 +9,23 @@ This document explains the main concepts in Starwhale.
                |
             Project
                |
-   +-------+---+---+------+
-   |       |       |      |
- Model  Dataset Runtime  Job
-   |       |       |      |
-Version Version Version  Step
-                          |
+   +-------+---+---+------+-------+
+   |       |       |      |       |
+ Model  Dataset Runtime  Job  Evaluation
+   |       |       |      |       |
+Version Version Version  Step   Version
+  Tag     Tag    Tag      |
                          Task
 ```
 
 ## Instance
 
-Each installation of Starwhale is called an instance. Generally, Starwhale has three types of instances:
+Each installation of Starwhale is called an instance, Cloud or Standalone:
 
-- Standalone instance
-- On-Premises instance
-- Cloud Hosted instance
+- Standalone Instance
+- Cloud Instance
+  - On-Premises
+  - Cloud Hosted
 
 The standalone instance is the simplest form that requires only the Starwhale client (swcli). All data and metadata are stored locally on the client machine. All jobs and tasks are executed on the client machine as well. It is similar to git, which requires only a set of executable binaries.
 
@@ -36,7 +37,7 @@ The on-premises instance and hosted instance are both called cloud instances. We
 
 Project is the basic unit for organizing different resources like models, datasets, etc.
 Users may use projects for different purposes. For example, we can create a project for a data scientist team, a product line, or a specific model. Users usually work on one or more projects in their daily lives.
-Every user in cloud instances has their personal project by default. Standalone instances do not have such a thing because they are mainly intended for single-user usage.
+Every user in cloud instances has their personal project by default. Standalone instances also supports multi projects, `self` project will be created automatically and configured as the default project.
 
 ## Model
 
@@ -80,3 +81,7 @@ History can not be rollback. When a version is to be reverted, Starwhale copies 
 A job is a set of programs to do specific work. A job consists of one or more steps, and each step consists of one or more tasks. Steps represent distinct stages of the work. They usually run with different codes. Tasks are replications of a step. Tasks in the same step always share the same program but run with separate data input.
 
 Starwhale uses jobs to execute actions like model training, evaluation, and serving.
+
+## Evaluation
+
+**Starwhale Evaluation** manages the entire lifecycle of model evaluation which includes create job, distribute tasks and generate report etc.
