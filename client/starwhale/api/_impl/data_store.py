@@ -205,7 +205,9 @@ class SwScalarType(SwType):
         if self.name == "int":
             return int(value, 16)
         if self.name == "float":
-            raw = binascii.unhexlify(value)
+            raw = binascii.unhexlify(
+                value if value != "0" else "".zfill(int(self.nbits / 4))
+            )
             if self.nbits == 16:
                 return struct.unpack(">e", raw)[0]
             if self.nbits == 32:

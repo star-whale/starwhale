@@ -1325,6 +1325,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 [
                     data_store.ColumnSchema("k", data_store.INT64),
                     data_store.ColumnSchema("a", data_store.STRING),
+                    data_store.ColumnSchema("z", data_store.FLOAT64),
                 ],
             ),
             [
@@ -1332,6 +1333,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 {"k": 2, "a": "2"},
                 {"k": 3, "-": True},
                 {"k": 4, "a": None},
+                {"k": 5, "z": 0.0},
             ],
         )
         mock_post.assert_called_with(
@@ -1344,6 +1346,7 @@ class TestRemoteDataStore(unittest.TestCase):
                         "columnSchemaList": [
                             {"type": "INT64", "name": "k"},
                             {"type": "STRING", "name": "a"},
+                            {"type": "FLOAT64", "name": "z"},
                         ],
                     },
                     "records": [
@@ -1369,6 +1372,12 @@ class TestRemoteDataStore(unittest.TestCase):
                             "values": [
                                 {"key": "k", "value": "4"},
                                 {"key": "a", "value": None},
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"key": "k", "value": "5"},
+                                {"key": "z", "value": "0000000000000000"},
                             ]
                         },
                     ],
@@ -1617,6 +1626,9 @@ class TestRemoteDataStore(unittest.TestCase):
                             },
                         },
                     },
+                    {"name": "n", "type": "FLOAT16"},
+                    {"name": "o", "type": "FLOAT32"},
+                    {"name": "p", "type": "FLOAT64"},
                 ],
                 "records": [
                     {
@@ -1637,6 +1649,9 @@ class TestRemoteDataStore(unittest.TestCase):
                             {"uri": "2", "display_text": "2", "mime_type": "2"},
                             {"uri": "3", "display_text": "3", "mime_type": "3"},
                         ],
+                        "n": "0",  # client(python):0000, server(java):0
+                        "o": "0",  # client(python):00000000, server(java):0
+                        "p": "0",  # client(python):0000000000000000, server(java):0
                     }
                 ],
             }
@@ -1661,6 +1676,9 @@ class TestRemoteDataStore(unittest.TestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ],
+                    "n": 0.0,
+                    "o": 0.0,
+                    "p": 0.0,
                 }
             ],
             list(
