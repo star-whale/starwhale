@@ -20,15 +20,21 @@ auth_header=`cat auth_header.h`
 sudo apt-get install jq
 echo "get task"
 OUT=`curl -X 'GET' \
-  "http://$1/api/v1/project/1/job/1/task?pageNum=1&pageSize=10" \
+  "http://$1/api/v1/project/starwhale/job/1/task?pageNum=1&pageSize=10" \
   -H 'accept: application/json' \
   -H "$auth_header" | jq '.data.list'| jq -r '.[]|.id'`
+echo "taskids: $OUT..."
+read -a task_ids <<< $OUT
+task_ids=($OUT)
 
-task_ids=$(echo $OUT | tr "\n")
-echo $task_ids
-echo "get log"
-for task_id in $task_ids
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+task_ids=($OUT) # split the `names` string into an array by the same name
+IFS=$SAVEIFS   # Restore original IFS
+echo "get logs..."
+for (( i=0; i<${#task_ids[@]}; i++ ))
 do
+  task_id=${task_ids[$i]}
   log_file=`curl -X 'GET'  "http://$1/api/v1/log/offline/$task_id"   -H 'accept: application/json'   -H "$auth_header" | jq -r '.data[0]'`
   echo $log_file
 
