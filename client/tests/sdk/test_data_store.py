@@ -1629,6 +1629,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     {"name": "n", "type": "FLOAT16"},
                     {"name": "o", "type": "FLOAT32"},
                     {"name": "p", "type": "FLOAT64"},
+                    {"name": "q", "type": "FLOAT64"},
                 ],
                 "records": [
                     {
@@ -1652,6 +1653,7 @@ class TestRemoteDataStore(unittest.TestCase):
                         "n": "0",  # client(python):0000, server(java):0
                         "o": "0",  # client(python):00000000, server(java):0
                         "p": "0",  # client(python):0000000000000000, server(java):0
+                        "q": "111111",  # client(python):000000000111111, server(java):111111
                     }
                 ],
             }
@@ -1679,6 +1681,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     "n": 0.0,
                     "o": 0.0,
                     "p": 0.0,
+                    "q": 5.52603e-318,
                 }
             ],
             list(
