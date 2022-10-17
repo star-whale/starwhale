@@ -1,4 +1,4 @@
-from .invoke import invoke
+from .invoke import invoke, invoke_with_react
 
 
 class EnvironmentPrepare:
@@ -52,28 +52,28 @@ class EnvironmentPrepare:
                 "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz",
             ]
         )
-        invoke(
+        invoke_with_react(
             [
                 "gzip",
                 "-d",
                 f"{self.work_dir}/example/mnist/data/train-images-idx3-ubyte.gz",
             ]
         )
-        invoke(
+        invoke_with_react(
             [
                 "gzip",
                 "-d",
                 f"{self.work_dir}/example/mnist/data/train-labels-idx1-ubyte.gz",
             ]
         )
-        invoke(
+        invoke_with_react(
             [
                 "gzip",
                 "-d",
                 f"{self.work_dir}/example/mnist/data/t10k-images-idx3-ubyte.gz",
             ]
         )
-        invoke(
+        invoke_with_react(
             [
                 "gzip",
                 "-d",

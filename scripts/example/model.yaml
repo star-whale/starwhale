@@ -1,0 +1,10 @@
+version: 1.0
+name: simple-test
+
+model:
+  - model/empty.pt
+
+run:
+  handler: code.evaluator:SimplePipeline
+
+desc: simple model

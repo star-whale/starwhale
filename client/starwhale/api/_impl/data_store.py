@@ -1332,7 +1332,7 @@ class TableWriter(threading.Thread):
                     self.table_name, self.schema, self._updating_records
                 )
             except Exception as e:
-                logger.warning(f"{self} run-update-table raise exception: {e}")
+                logger.exception(e)
                 self._queue_run_exceptions.append(e)
                 if len(self._queue_run_exceptions) > self._run_exceptions_limits:
                     break

@@ -172,7 +172,7 @@ def get_sharding_data_loader(
     return get_data_loader(
         dataset_uri=_uri,
         start=start,
-        end=end + 1,
+        end=end,
         logger=logger,
     )
 
