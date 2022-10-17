@@ -52,6 +52,11 @@ do
   fi
 done
 last_version_file="$work_dir/last_version"
+function remove_image() {
+    if [[ -n "$last_version" ]]; then
+        sudo docker image rm $1
+    fi
+}
 if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
@@ -61,9 +66,9 @@ else
   sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
   sudo docker push "$target_registry"/"$target_repo_name1"/server:"$release_version"
   sudo docker push "$target_registry"/"$target_repo_name2"/server:"$release_version"
-  sudo docker image rm "$source_registry"/"$source_repo_name"/server:"$release_version""$suf"
-  sudo docker image rm "$target_registry"/"$target_repo_name1"/server:"$release_version""$suf"
-  sudo docker image rm "$target_registry"/"$target_repo_name2"/server:"$release_version""$suf"
+  remove_image rm "$source_registry"/"$source_repo_name"/server:"$last_version""$suf"
+  remove_image rm "$target_registry"/"$target_repo_name1"/server:"$last_version""$suf"
+  remove_image rm "$target_registry"/"$target_repo_name2"/server:"$last_version""$suf"
 
   for suf in "${starwhale_image_suffix[@]}"
     do
@@ -72,9 +77,9 @@ else
       sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
       sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
       sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
-      sudo docker image rm "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
-      sudo docker image rm "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
-      sudo docker image rm "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf"
+      remove_image "$target_registry"/"$target_repo_name1"/starwhale:"$last_version""$suf"
+      remove_image "$target_registry"/"$target_repo_name2"/starwhale:"$last_version""$suf"
+      remove_image "$source_registry"/"$source_repo_name"/starwhale:"$last_version""$suf"
     done
 
   echo "$release_version" > "$last_version_file"
