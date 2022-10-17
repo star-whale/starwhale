@@ -19,7 +19,6 @@ filelock==3.7.1
 fonttools==4.37.1
 fs==2.4.16
 idna==3.3
-importlib-metadata==4.12.0
 Jinja2==3.1.2
 jmespath==0.10.0
 joblib==1.1.0
@@ -28,7 +27,6 @@ kiwisolver==1.4.4
 loguru==0.6.0
 MarkupSafe==2.1.1
 matplotlib==3.5.3
-numpy==1.23.2
 packaging==21.3
 Pillow==9.2.0
 platformdirs==2.5.2
@@ -43,19 +41,29 @@ requests==2.28.1
 requests-toolbelt==0.9.1
 rich==12.5.1
 s3transfer==0.5.2
-scikit-learn==1.1.1
-scipy==1.8.1
 shellingham==1.5.0
 six==1.16.0
 starwhale==0.3.0rc12
 tenacity==8.0.1
 textual==0.1.18
 threadpoolctl==3.1.0
-torch==1.12.1
-torchaudio==0.12.1
-torchdata==0.4.1
-torchtext==0.13.1
-torchvision==0.13.1
+numpy==1.21.6; python_version=='3.7'
+torch==1.11.0; python_version=='3.7'
+torchaudio==0.11.0; python_version=='3.7'
+torchdata==0.3.0; python_version=='3.7'
+torchtext==0.12.0; python_version=='3.7'
+torchvision==0.12.0; python_version=='3.7'
+scikit-learn==1.0.2; python_version=='3.7'
+scipy==1.7.3; python_version=='3.7'
+numpy==1.23.2; python_version>='3.8'
+torch==1.12.1; python_version>='3.8'
+scikit-learn==1.1.1; python_version>='3.8'
+scipy==1.8.1; python_version>='3.8'
+importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'
+torchaudio==0.12.1; python_version>='3.8'
+torchdata==0.4.1; python_version>='3.8'
+torchtext==0.13.1; python_version>='3.8'
+torchvision==0.13.1; python_version>='3.8'
 tqdm==4.64.0
 typing_extensions==4.3.0
 urllib3==1.26.10
