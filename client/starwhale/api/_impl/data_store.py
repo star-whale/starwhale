@@ -206,9 +206,7 @@ class SwScalarType(SwType):
         if self.name == "int":
             return int(value, 16)
         if self.name == "float":
-            raw = binascii.unhexlify(
-                value if value != "0" else "".zfill(int(self.nbits / 4))
-            )
+            raw = binascii.unhexlify(value.zfill(int(self.nbits / 4)))
             if self.nbits == 16:
                 return struct.unpack(">e", raw)[0]
             if self.nbits == 32:
@@ -1254,6 +1252,7 @@ class TableWriter(threading.Thread):
         self._cond = threading.Condition()
         self._stopped = False
         self._records: List[Dict[str, Any]] = []
+        self._updating_records: List[Dict[str, Any]] = []
         self._queue_run_exceptions: List[Exception] = []
         self._run_exceptions_limits = max(run_exceptions_limits, 0)
 
@@ -1322,6 +1321,12 @@ class TableWriter(threading.Thread):
                 self._records.append(record)
                 self._cond.notify()
 
+    def flush(self) -> None:
+        while True:
+            with self._cond:
+                if len(self._records) == 0 and len(self._updating_records) == 0:
+                    break
+
     def run(self) -> None:
         while True:
             with self._cond:
@@ -1329,11 +1334,13 @@ class TableWriter(threading.Thread):
                     self._cond.wait()
                 if len(self._records) == 0:
                     break
-                records = self._records
+                self._updating_records = self._records
                 self._records = []
 
             try:
-                self.data_store.update_table(self.table_name, self.schema, records)
+                self.data_store.update_table(
+                    self.table_name, self.schema, self._updating_records
+                )
             except Exception as e:
                 logger.warning(
                     f"{self} run-update-table raise exception: {e}, records: {records}, error details: {traceback.format_exc()}"
@@ -1341,3 +1348,5 @@ class TableWriter(threading.Thread):
                 self._queue_run_exceptions.append(e)
                 if len(self._queue_run_exceptions) > self._run_exceptions_limits:
                     break
+            finally:
+                self._updating_records = []

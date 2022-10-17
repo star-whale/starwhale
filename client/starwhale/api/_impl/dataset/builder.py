@@ -250,6 +250,8 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
             increased_rows += 1
 
+        self.tabular_dataset.flush()
+
         try:
             empty = dwriter.tell() == 0
             dwriter.close()

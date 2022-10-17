@@ -2,7 +2,7 @@
 title: Instance命令
 ---
 
-## 基本信息
+## 1. 基本信息
 
 ```bash
 swcli instance [OPTIONS] COMMAND [ARGS]
@@ -11,9 +11,10 @@ swcli instance [OPTIONS] COMMAND [ARGS]
 instance命令提供基本的Instance管理，包括登陆、查看本地Instance列表等操作。已经登陆的Instance信息会存储在 `~/.config/starwhale/config.yaml` 文件中。Cloud Instance的所有操作都需要先进行登录。
 
 **Instance URI**格式：
-    - `local`：standalone instance.
-    - `[http(s)://]<hostname or ip>[:<port>]`：通过http/https协议指定的Cloud Instance。
-    - `[cloud://]<cloud alias>`：通过登陆阶段指定的alias名字访问Cloud Instance。
+
+- `local`：standalone instance.
+- `[http(s)://]<hostname or ip>[:<port>]`：通过http/https协议指定的Cloud Instance。
+- `[cloud://]<cloud alias>`：通过登陆阶段指定的alias名字访问Cloud Instance。
 
 instance包含如下子命令：
 
@@ -25,7 +26,7 @@ instance包含如下子命令：
 |list|✅|✅|
 |info|✅|✅|
 
-## 登陆Instance
+## 2. 登陆Instance
 
 ```bash
 swcli instance login [OPTIONS] [INSTANCE]
@@ -45,7 +46,7 @@ swcli instance login [OPTIONS] [INSTANCE]
 |`--token`||❌|String||登陆Token，可以在Cloud Instance的Web页面中获取|
 |`--alias`||✅||String||instance别名|
 
-## 登出Instance
+## 3. 登出Instance
 
 ```bash
 swcli instance logout [INSTANCE]
@@ -53,7 +54,7 @@ swcli instance logout [INSTANCE]
 
 `instance logout` 命令用来退出已登录的Instance。`INSTANCE` 参数是Instance URI。当 `INSTANCE` 参数不指定时，会退出默认选定的Instance。需要注意的时，Standalone Instance无需登出。
 
-## 查看Instance详细信息
+## 4. 查看Instance详细信息
 
 ```bash
 swcli instance info [INSTANCE]
@@ -63,7 +64,7 @@ swcli instance info [INSTANCE]
 
 ![instance-info.png](../../img/instance-info.png)
 
-## 展示Instance列表
+## 5. 展示Instance列表
 
 ```bash
 swcli instance list
@@ -73,7 +74,7 @@ swcli instance list
 
 ![instance-list.png](../../img/instance-list.png)
 
-## 选择默认Instance
+## 6. 选择默认Instance
 
 ```bash
 swcli instance select INSTANCE

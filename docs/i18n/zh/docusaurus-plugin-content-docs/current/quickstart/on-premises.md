@@ -115,7 +115,7 @@ swcli runtime copy pytorch/version/latest dev/project/starwhale
 
 ### 3.1 在Cloud Instance上查看制品
 
-在Web浏览器中打开 http://localhost:8082 地址，使用默认用户名(starwhale)和密码(abcd1234)登陆。进入 `starwhale` project中，可以查看发布的Runtime、Dataset和Model。
+在Web浏览器中打开 [http://localhost:8082](http://localhost:8082) 地址，使用默认用户名(starwhale)和密码(abcd1234)登陆。进入 `starwhale` project中，可以查看发布的Runtime、Dataset和Model。
 
 ![console-artifacts.gif](../img/console-artifacts.gif)
 

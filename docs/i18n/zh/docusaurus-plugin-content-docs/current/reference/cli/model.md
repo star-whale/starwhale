@@ -2,7 +2,7 @@
 title: 模型包命令
 ---
 
-## 基本信息
+## 1. 基本信息
 
 ```bash
 swcli [GLOBAL OPTIONS] model [OPTIONS] COMMAND [ARGS]...
@@ -27,7 +27,7 @@ model包含如下子命令：
 |`remove`|✅|✅|
 |`tag`|✅|❌|
 
-## 构建模型包
+## 2. 构建模型包
 
 ```bash
 swcli model build [OPTIONS] WORKDIR
@@ -45,7 +45,7 @@ swcli model build [OPTIONS] WORKDIR
 |`--model-yaml`|`-f`|❌|String|model.yaml|建议使用默认的model.yaml，无需修改。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示模型包构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
 
-## 分发模型包
+## 3. 分发模型包
 
 ```bash
 swcli model copy [OPTIONS] SRC DEST
@@ -59,7 +59,7 @@ swcli model copy [OPTIONS] SRC DEST
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的模型包，指定该参数后执行copy命令就会强制覆盖。|
 
-## 评测模型
+## 4. 评测模型
 
 ```bash
 swcli model eval [OPTIONS] TARGET
@@ -81,7 +81,7 @@ swcli model eval [OPTIONS] TARGET
 
 ![model-eval.gif](../../img/model-eval.gif)
 
-## 解压模型包文件
+## 5. 解压模型包文件
 
 ```bash
 swcli model extract [OPTIONS] MODEL
@@ -94,7 +94,7 @@ swcli model extract [OPTIONS] MODEL
 |`--force`|`-f`|❌|Boolean|False|若曾经在target-dir目录中extract过，设定该参数后，会强制在target-dir目录覆盖旧的内容|
 |`--target-dir`||❌|String|Model URI对应的snapshot_workdir目录|解压模型包后存储相关内容的目录|
 
-## 查看模型包历史版本
+## 6. 查看模型包历史版本
 
 ```bash
 swcli model history [OPTIONS] MODEL
@@ -106,7 +106,7 @@ swcli model history [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 查看模型包详细信息
+## 7. 查看模型包详细信息
 
 ```bash
 swcli model info [OPTIONS] MODEL
@@ -118,7 +118,7 @@ swcli model info [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 展示模型包列表
+## 8. 展示模型包列表
 
 ```bash
 swcli model list [OPTIONS]
@@ -134,7 +134,7 @@ swcli model list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 删除模型包
+## 9. 删除模型包
 
 ```bash
 swcli model remove [OPTIONS] MODEL
@@ -146,7 +146,7 @@ swcli model remove [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 恢复软删除的模型包
+## 10. 恢复软删除的模型包
 
 ```bash
 swcli model recover [OPTIONS] MODEL
@@ -158,7 +158,7 @@ swcli model recover [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 标记模型包
+## 11. 标记模型包
 
 ```bash
 swcli model tag [OPTIONS] MODEL [TAGS]...
