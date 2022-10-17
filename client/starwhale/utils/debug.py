@@ -5,7 +5,7 @@ import logging
 from rich import traceback
 from loguru import logger
 
-from starwhale.consts import ENV_LOG_LEVEL
+from starwhale.consts import ENV_LOG_LEVEL, ENV_LOG_VERBOSE_COUNT
 
 
 def init_logger(verbose: int) -> None:
@@ -15,16 +15,11 @@ def init_logger(verbose: int) -> None:
     elif verbose == 1:
         lvl = logging.INFO
     else:
-        fmt = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-            "<level>{level: <6}</level> | "
-            "<level>{message}</level>"
-        )
         lvl = logging.DEBUG
 
     lvl_name = logging.getLevelName(lvl)
-
     os.environ[ENV_LOG_LEVEL] = lvl_name
+    os.environ[ENV_LOG_VERBOSE_COUNT] = str(verbose)
 
     # TODO: custom debug for tb install
     traceback.install(show_locals=True, max_frames=1, width=200)
