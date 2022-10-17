@@ -44,6 +44,13 @@ class Logger:
 
         writer.insert(record)
 
+    def _flush(self, table_name: str) -> None:
+        with self._lock:
+            writer = self._writers.get(table_name)
+            if writer is None:
+                return
+        writer.flush()
+
 
 def _serialize(data: Any) -> Any:
     return dill.dumps(data)
@@ -132,6 +139,15 @@ class Evaluation(Logger):
             [data_store.TableDesc(self._get_datastore_table_name(table_name))]
         )
 
+    def flush_result(self) -> None:
+        self._flush(self._results_table_name)
+
+    def flush_metrics(self) -> None:
+        self._flush(self._summary_table_name)
+
+    def flush(self, table_name: str) -> None:
+        self._flush(table_name)
+
 
 class Dataset(Logger):
     def __init__(self, dataset_id: str, project: str) -> None:
@@ -157,6 +173,9 @@ class Dataset(Logger):
         return self._data_store.scan_tables(
             [data_store.TableDesc(self._meta_table_name)], start=start, end=end
         )
+
+    def flush(self) -> None:
+        self._flush(self._meta_table_name)
 
     def __str__(self) -> str:
         return f"Dataset Wrapper, table:{self._meta_table_name}"

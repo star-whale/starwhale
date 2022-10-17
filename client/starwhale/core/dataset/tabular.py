@@ -203,6 +203,9 @@ class TabularDataset:
     def put(self, row: TabularDatasetRow) -> None:
         self._ds_wrapper.put(row.id, **row.asdict())
 
+    def flush(self) -> None:
+        self._ds_wrapper.flush()
+
     def scan(
         self, start: int = 0, end: int = sys.maxsize
     ) -> t.Generator[TabularDatasetRow, None, None]:
