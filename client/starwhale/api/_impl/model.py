@@ -47,6 +47,9 @@ class PPLResultStorage:
             data_id=data_id, result=result, **kwargs, serialize=True
         )
 
+    def flush(self) -> None:
+        self.evaluation.flush_result()
+
     def __exit__(self) -> None:
         self.evaluation.close()
 
@@ -70,12 +73,14 @@ class PipelineHandler(metaclass=ABCMeta):
         self,
         ignore_annotations: bool = False,
         ignore_error: bool = False,
+        flush_result: bool = False,
     ) -> None:
         self.context: Context = context_holder.context
 
         # TODO: add args for compare result and label directly
         self.ignore_annotations = ignore_annotations
         self.ignore_error = ignore_error
+        self.flush_result = flush_result
 
         _logdir = EvaluationStorage.local_run_dir(
             self.context.project, self.context.version
@@ -100,6 +105,7 @@ class PipelineHandler(metaclass=ABCMeta):
             eval_id=self.context.version, project=self.context.project
         )
         self._monkey_patch()
+        self._update_status(STATUS.START)
 
     def _init_logger(
         self, log_dir: Path, rotation: str = "500MB"
@@ -188,7 +194,6 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
-        self._update_status(STATUS.START)
         now = now_str()
         try:
             ppl_result_loader = PPLResultIterator(self.context)
@@ -204,8 +209,6 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
-        self._update_status(STATUS.START)
-
         result_storage = PPLResultStorage(self.context)
 
         if not self.context.dataset_uris:
@@ -245,7 +248,8 @@ class PipelineHandler(metaclass=ABCMeta):
                 result=result,
                 annotations={} if self.ignore_annotations else _annotations,
             )
-            self._update_status(STATUS.RUNNING)
+        if self.flush_result:
+            result_storage.flush()
 
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME

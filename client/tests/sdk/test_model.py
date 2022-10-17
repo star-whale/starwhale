@@ -291,7 +291,7 @@ class TestModelPipelineHandler(TestCase):
         )
         context_holder.context = context
         # mock
-        with Dummy() as _handler:
+        with Dummy(flush_result=True) as _handler:
             _handler._starwhale_internal_run_ppl()
 
         context = Context(
