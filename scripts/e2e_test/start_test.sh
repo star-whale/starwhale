@@ -227,18 +227,11 @@ api_test() {
 }
 
 restore_env() {
-  rm -rf venve2e
-  docker kill nexus
-  docker container rm nexus
   docker image rm starwhale
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker image rm server
-  mv ~/.pypirc.bak_e2e ~/.pypirc
-  mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
-  rm /tmp/service_wait.sh
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  minikube delete -p sw-e2e-test
   cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
   if test -n $WORK_DIR ; then
@@ -249,11 +242,11 @@ restore_env() {
   echo 'cleanup'
 }
 
-main() {
-  declare_env
-  if ! in_github_action; then
-    trap restore_env EXIT
-  fi
+exit() {
+  if restore_env ; then echo "restore_env success" ; fi
+}
+
+publish_to_mini_k8s() {
   start_nexus
   start_minikube
   overwrite_pip_config
@@ -268,6 +261,23 @@ main() {
   build_runtime_image
   push_images_to_nexus
   start_starwhale
+}
+
+publish_to_k8s() {
+  pushd ../publish
+  bash pub.sh --config
+  source pub.sh all -s --app $SWNAME --ns $SWNS
+  popd
+}
+
+main() {
+  declare_env
+  if ! in_github_action; then
+    trap exit EXIT
+    publish_to_k8s
+  else
+    publish_to_mini_k8s
+  fi
   check_controller_service
   client_test
   api_test

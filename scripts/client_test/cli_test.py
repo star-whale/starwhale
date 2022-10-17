@@ -38,6 +38,7 @@ class TestCli:
         rt_workdir: str,
         cloud_uri: str,
         cloud_project: str,
+        step_spec_file: str,
     ) -> None:
         # use local instance
         print("select local")
@@ -121,7 +122,7 @@ class TestCli:
             dataset=swds["version"],
             runtime=swrt["version"],
             project=cloud_project,
-            step_spec=f"{os.path.abspath(CURRENT_DIR)}/step_spec.yaml",
+            step_spec=step_spec_file,
             resource_pool=os.environ.get("RESOURCE_POOL"),
         )
         _new_job_list = self.evaluation.list(project=cloud_project)
@@ -166,6 +167,7 @@ class TestCli:
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
         _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
+
         self.standard_workflow(
             mode=RunMode.CLOUD if cloud_url else RunMode.STANDALONE,
             model_name="mnist",
@@ -189,6 +191,9 @@ class TestCli:
             rt_workdir=f"{self._work_dir}/scripts/example",
             cloud_uri=cloud_url if cloud_url else "http://127.0.0.1:8082",
             cloud_project="starwhale",
+            step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
+            if os.environ.get("GITHUB_ACTION")
+            else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
         )
 
     # TODO add more example

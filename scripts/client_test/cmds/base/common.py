@@ -19,7 +19,7 @@ class EnvironmentPrepare:
         )
         print(f"install package info:{_res}, err is:{_err}")
 
-    def download(self, package) -> None:
+    def download(self, package: str) -> None:
         if not exists(f"{self.work_dir}/example/mnist/data/{package}"):
             invoke(
                 [
@@ -39,7 +39,11 @@ class EnvironmentPrepare:
 
     def prepare_mnist_data(self) -> None:
         # TODO use make
-        packages = ["train-images-idx3-ubyte.gz", "train-labels-idx1-ubyte.gz", "t10k-images-idx3-ubyte.gz", "t10k-labels-idx1-ubyte.gz"]
+        packages = [
+            "train-images-idx3-ubyte.gz",
+            "train-labels-idx1-ubyte.gz",
+            "t10k-images-idx3-ubyte.gz",
+            "t10k-labels-idx1-ubyte.gz",
+        ]
         for pkg in packages:
             self.download(pkg)
-
