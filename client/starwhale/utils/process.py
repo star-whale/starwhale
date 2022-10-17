@@ -20,19 +20,20 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     p = Popen(*args, **kwargs)
     logger.debug(f"cmd: {p.args!r}")
 
-    def _print_log() -> None:
+    while True:
         line = p.stdout.readline()  # type: ignore
         if line:
             log(line.rstrip())
             output.append(line)
 
-    while True:
-        _print_log()
         if p.poll() is not None:
             break
 
     p.wait()
-    _print_log()
+    for line in p.stdout.readlines():  # type: ignore
+        if line:
+            log(line.rstrip())
+            output.append(line)
 
     try:
         p.stdout.close()  # type: ignore
