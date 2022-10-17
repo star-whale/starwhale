@@ -30,6 +30,12 @@ git clone https://github.com/star-whale/starwhale.git
 cd starwhale
 ```
 
+If [git-lfs](https://git-lfs.github.com/) has not been previously installed in the local environment(the command is `git lfs install`), you need to download the trained model file.
+
+```bash
+wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
+```
+
 We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
 
 ![Core Workflow](../img/standalone-core-workflow.gif)
