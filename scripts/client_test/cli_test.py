@@ -178,6 +178,9 @@ class TestCli:
             rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
             cloud_uri=cloud_url if cloud_url else "http://127.0.0.1:8082",
             cloud_project="starwhale",
+            step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
+            if os.environ.get("GITHUB_ACTION")
+            else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
         )
 
     def test_simple(self, cloud_url: Optional[str]) -> None:

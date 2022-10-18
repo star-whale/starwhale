@@ -3,13 +3,23 @@
 
 set -x
 
-send_feishu() {
-    if [[ -n "$FEISHU_HOOK" ]] ; then
-        curl -X POST -H "Content-Type: application/json" \
-        -d '{"msg_type":"text","content":{"text":"$1"}}' \
-        ${FEISHU_HOOK}
-    fi
+generate_post_data()
+{
+cat <<EOF
+{
+"msg_type": "text",
+"content": {"text":"$1"}
 }
+EOF
+}
+send_feishu() {
+  if [[ -n "$FEISHU_HOOK" ]] ; then
+    curl -X POST -H "Content-Type: application/json" \
+    -d "$(generate_post_data "$1")" \
+    ${FEISHU_HOOK}
+  fi
+}
+
 
 export SWREPO="${SWREPO:=https://github.com/star-whale/starwhale.git}"
 
