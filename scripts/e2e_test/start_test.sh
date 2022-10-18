@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -e
+set -x
 
-if [[ ! -z ${DEBUG} ]]; then
-    set -x
+if [[ -n ${DEBUG} ]]; then
+    set -e
 fi
 
 in_github_action() {
