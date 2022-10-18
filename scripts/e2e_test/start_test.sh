@@ -17,7 +17,7 @@ file_exists() {
 if in_github_action; then
     export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
 else
-    SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
+    export SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
     export PARENT_CLEAN="${PARENT_CLEAN:=true}"
 fi
 
@@ -148,7 +148,7 @@ upload_pypi_to_nexus() {
 
 build_runtime_image() {
   pushd ../../docker
-  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION="$PYPI_RELEASE_VERSION" --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_UR" .
+  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION="$PYPI_RELEASE_VERSION" --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
   popd
