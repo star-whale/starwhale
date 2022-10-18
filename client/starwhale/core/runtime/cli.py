@@ -12,25 +12,32 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
+from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
 
 
 @click.group(
-    "runtime", help="Runtime management, quickstart/build/copy/activate/restore..."
+    "runtime",
+    cls=AliasedGroup,
+    help="Runtime management, quickstart/build/copy/activate/restore...",
 )
 @click.pass_context
 def runtime_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@click.group("quickstart", help="[Standalone]Quickstart your Starwhale Runtime")
+@click.group(
+    "quickstart",
+    cls=AliasedGroup,
+    help="[Standalone]Quickstart your Starwhale Runtime",
+)
 def quickstart() -> None:
     pass
 
 
-runtime_cmd.add_command(quickstart)
+runtime_cmd.add_command(quickstart, aliases=["qs"])  # type: ignore
 
 
 @quickstart.command("uri")
@@ -163,7 +170,7 @@ def _build(
     )
 
 
-@runtime_cmd.command("remove")
+@runtime_cmd.command("remove", aliases=["rm"])
 @click.argument("runtime")
 @click.option(
     "-f",
@@ -217,12 +224,12 @@ def _restore(target: str) -> None:
     """
     [Only Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
 
-    TARGET: runtime uri or runtime workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    TARGET: runtime uri or runtice workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     RuntimeTermView.restore(target)
 
 
-@runtime_cmd.command("list", help="List runtime")
+@runtime_cmd.command("list", aliases=["ls"], help="List runtime")
 @click.option("--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of runtime version")
 @click.option("--show-removed", is_flag=True, help="Show removed runtime")
@@ -258,7 +265,7 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
     RuntimeTermView(runtime).extract(force, target_dir)
 
 
-@runtime_cmd.command("copy", help="Copy runtime, standalone <--> cloud")
+@runtime_cmd.command("copy", aliases=["cp"], help="Copy runtime, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
@@ -282,6 +289,7 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 
 @runtime_cmd.command(
     "activate",
+    aliases=["actv"],
     help="[Only Standalone]Activate python runtime environment for development",
 )
 @click.option("-u", "--uri", help="Runtime uri which has already been restored")

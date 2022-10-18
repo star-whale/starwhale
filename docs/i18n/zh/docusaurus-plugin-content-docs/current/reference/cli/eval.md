@@ -14,17 +14,17 @@ eval命令提供适用于Standalone Instance和Cloud Instance的模型评测管�
 
 eval命令包含如下子命令：
 
-|命令|Standalone|Cloud|
-|-------|----------|-----|
-|run|✅|✅|
-|compare|✅|❌|
-|info|✅|✅|
-|list|✅|✅|
-|remove|✅|✅|
-|recover|✅|✅|
-|pause|✅|✅|
-|cancel|✅|✅|
-|resume|✅|✅|
+|命令|别名|Standalone|Cloud|
+|---|---|----------|-----|
+|run||✅|✅|
+|compare|cmp|✅|❌|
+|info||✅|✅|
+|list|ls|✅|✅|
+|remove|rm|✅|✅|
+|recover||✅|✅|
+|pause||✅|✅|
+|cancel||✅|✅|
+|resume||✅|✅|
 
 ## 2. 评测模型
 

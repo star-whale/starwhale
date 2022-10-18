@@ -10,11 +10,16 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
+from starwhale.utils.cli import AliasedGroup
 
 from .view import get_term_view, DatasetTermView
 
 
-@click.group("dataset", help="Dataset management, build/info/list/copy/tag...")
+@click.group(
+    "dataset",
+    cls=AliasedGroup,
+    help="Dataset management, build/info/list/copy/tag...",
+)
 @click.pass_context
 def dataset_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
@@ -61,7 +66,7 @@ def _diff(
     view(base_uri).diff(URI(compare_uri, expected_type=URIType.DATASET), show_details)
 
 
-@dataset_cmd.command("list", help="List dataset")
+@dataset_cmd.command("list", aliases=["ls"], help="List dataset")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of dataset version")
 @click.option("--show-removed", is_flag=True, help="Show removed datasets")
@@ -92,7 +97,7 @@ def _info(view: t.Type[DatasetTermView], dataset: str, fullname: bool) -> None:
     view(dataset).info(fullname)
 
 
-@dataset_cmd.command("remove")
+@dataset_cmd.command("remove", aliases=["rm"])
 @click.argument("dataset")
 @click.option(
     "-f",
@@ -143,7 +148,7 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     view(dataset).summary()
 
 
-@dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")
+@dataset_cmd.command("copy", aliases=["cp"], help="Copy dataset, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
