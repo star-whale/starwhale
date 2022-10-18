@@ -71,6 +71,12 @@ def _list(
     help="[Cloud_ONLY] A file contains the specification for steps of the job",
 )
 @click.option(
+    "--resource-pool",
+    default="default",
+    type=str,
+    help="[Cloud_ONLY] The node group you would like to run your job on",
+)
+@click.option(
     "--use-docker",
     is_flag=True,
     help="[ONLY Standalone]use docker to run evaluation job",
@@ -87,6 +93,7 @@ def _run(
     name: str,
     desc: str,
     step_spec: str,
+    resource_pool: str,
     use_docker: bool,
     gencmd: bool,
     step: str,
@@ -101,6 +108,7 @@ def _run(
         name=name,
         desc=desc,
         step_spec=step_spec,
+        resource_pool=resource_pool,
         gencmd=gencmd,
         use_docker=use_docker,
         step=step,

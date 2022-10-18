@@ -42,6 +42,7 @@ YARN_VOLUME=yarn-cache
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
 	docker build \
+	    --network=host \
 		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
 		--build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
@@ -152,8 +153,9 @@ build-console:
 		-v ${YARN_VOLUME}:/var/yarn-cache \
 		-v ${ROOT_DIR}console:/app \
 		-e HOME=/var/yarn-cache \
+		--network host \
 		-w /app ${DH_NODEJS_IMAGE} \
-		/bin/sh -c "npm config set registry ${YARN_REGISTRY} && yarn config set network-timeout 600000 -g && yarn && yarn build"
+		/bin/sh -c "npm config set registry ${YARN_REGISTRY} && yarn config set registry ${YARN_REGISTRY} && yarn config set network-timeout 600000 -g && yarn && yarn build"
 
 build-jar:
 	docker volume create --name ${MVN_VOLUME} && \
@@ -162,5 +164,6 @@ build-jar:
 		-e MAVEN_CONFIG=/var/maven/.m2 \
 		-v ${MVN_VOLUME}:/var/maven/.m2 \
 		-v ${ROOT_DIR}:/app \
+		--network host \
 		-w /app/server ${MVN_IMG} \
 		mvn -Duser.home=/var/maven clean package -f pom.xml -DskipTests

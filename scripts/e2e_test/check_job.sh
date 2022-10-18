@@ -18,8 +18,6 @@ done
 
 auth_header=`cat auth_header.h`
 
-sudo apt-get install jq
-
 echo "get task"
 OUT=`curl -X 'GET' \
   "http://$1/api/v1/project/starwhale/job/1/task?pageNum=1&pageSize=10" \

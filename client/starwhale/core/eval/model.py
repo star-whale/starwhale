@@ -361,6 +361,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
                     "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
                     "runtimeVersionUrl": runtime_uri,
                     "stepSpecOverWrites": _step_spec,
+                    "resourcePool": kw.get("resource_pool") or "default",
                 }
             ),
         )
