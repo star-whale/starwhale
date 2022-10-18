@@ -14,18 +14,18 @@ model命令提供适用于Standalone Instance和Cloud Instance的Starwhale Model
 
 model包含如下子命令：
 
-|命令|Standalone|Cloud|
-|-------|----------|-----|
-|`build`|✅|❌|
-|`copy`|✅|✅|
-|`eval`|✅|❌|
-|`extract`|✅|❌|
-|`history`|✅|✅|
-|`info`|✅|✅|
-|`list`|✅|✅|
-|`recover`|✅|✅|
-|`remove`|✅|✅|
-|`tag`|✅|❌|
+|命令|别名|Standalone|Cloud|
+|---|---|----------|-----|
+|build||✅|❌|
+|copy|cp|✅|✅|
+|eval||✅|❌|
+|extract||✅|❌|
+|history||✅|✅|
+|info||✅|✅|
+|list|ls|✅|✅|
+|recover||✅|✅|
+|remove|rm|✅|✅|
+|tag||✅|❌|
 
 ## 2. 构建模型包
 

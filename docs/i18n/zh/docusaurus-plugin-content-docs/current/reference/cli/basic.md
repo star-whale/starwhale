@@ -28,3 +28,14 @@ swcli -o json dataset diff  mnist/version/gfrtmobxha3w  mnist/version/latest
 
 swcli -o json model list
 ```
+
+swcli支持子命令的前缀简写输入，如果遇到冲突会有相关提示：
+
+```bash
+swcli r -h
+swcli ru -h
+swcli run -h
+swcli runt -h
+```
+
+上面四个命令等价于 `swcli runtime -h`。
