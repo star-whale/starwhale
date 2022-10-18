@@ -13,7 +13,7 @@ test.beforeAll(async ({ user }) => {
 test.afterAll(async ({}) => {
     await wait(1000)
 
-    if (process.env.CLOSE_AFTER_TEST === 'true' || 1) {
+    if (process.env.CLOSE_AFTER_TEST === 'true') {
         await page.context().close()
         if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/test.webm`)
     }
@@ -160,7 +160,22 @@ test.describe('Evaluation', () => {
         })
     })
 
-    test.describe('Compare', () => {})
+    test.describe('Compare', () => {
+        test('should show compare table when checked one row', async () => {
+            const p = page.locator(SELECTOR.table)
+
+            const isChecked = await p.locator(SELECTOR.headerFirst).locator('label input').isChecked()
+            if (isChecked) await p.locator(SELECTOR.headerFirst).locator('label').click()
+            await p.locator(SELECTOR.row1column1).locator('label').check()
+            await p.locator(SELECTOR.row2column1).locator('label').check()
+            await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
+            await wait(1000)
+            await expect(page.locator('.header-cell--focused')).toHaveText(/mnist\-5/)
+            await expect(await page.locator('.icon-rise').count()).toBeGreaterThan(0)
+            await p.locator(SELECTOR.row1column1).locator('label').uncheck()
+            await p.locator(SELECTOR.row2column1).locator('label').uncheck()
+        })
+    })
 })
 
 export default wait

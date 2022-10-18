@@ -45,7 +45,9 @@ export const SELECTOR = {
     // table: '[class^=table]',
     table: '[class*=tablePinnable]',
     tableCompare: '[class*=tableComparable]',
-    headerFirst: '.table-headers [tabindex=0] label',
+    headerFirst: '.table-headers .header-cell >> nth=0',
+    row1column1: '[data-row-index="0"] [data-column-index="0"]',
+    row2column1: '[data-row-index="1"] [data-column-index="0"]',
     // --- list ----
     listCreate: '[class*=cardHeadWrapper] >> :has-text("Create")',
 }
