@@ -1,19 +1,9 @@
 import * as React from 'react'
-import {
-    queryAllByText,
-    fireEvent,
-    getByText,
-    screen,
-    waitFor,
-    queryAllByAttribute,
-    render,
-} from '@testing-library/react'
-// import { queryByAttribute } from '@testing-library/dom'
-import SystemSettings from './SystemSettings'
+import { queryAllByText, waitFor, render } from '@testing-library/react'
 import { routeRender } from '@/test/provider'
 import Editor from '@monaco-editor/react'
-
 import * as system from '@/domain/setting/services/system'
+import SystemSettings from './SystemSettings'
 
 jest.spyOn(system, 'fetchSystemSetting').mockImplementation(() =>
     Promise.resolve(`
@@ -38,7 +28,7 @@ describe('SystemSettings', () => {
     })
 
     it('render with fetchSystemSetting', async () => {
-        const { container } = routeRender(<SystemSettings />)
+        routeRender(<SystemSettings />)
         // expect(container).toMatchSnapshot()
         // await expect(document.querySelector('.monaco-editor')).toBeTruthy()
         // await new Promise(process.nextTick)
