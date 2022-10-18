@@ -12,13 +12,16 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
+from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
 
 
 @click.group(
-    "runtime", help="Runtime management, quickstart/build/copy/activate/restore..."
+    "runtime",
+    cls=AliasedGroup,
+    help="Runtime management, quickstart/build/copy/activate/restore...",
 )
 @click.pass_context
 def runtime_cmd(ctx: click.Context) -> None:

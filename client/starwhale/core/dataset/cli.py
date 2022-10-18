@@ -10,11 +10,16 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
+from starwhale.utils.cli import AliasedGroup
 
 from .view import get_term_view, DatasetTermView
 
 
-@click.group("dataset", help="Dataset management, build/info/list/copy/tag...")
+@click.group(
+    "dataset",
+    cls=AliasedGroup,
+    help="Dataset management, build/info/list/copy/tag...",
+)
 @click.pass_context
 def dataset_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)

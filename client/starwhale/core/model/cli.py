@@ -3,11 +3,16 @@ import typing as t
 import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.core.model.view import get_term_view, ModelTermView
 
 
-@click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
+@click.group(
+    "model",
+    cls=AliasedGroup,
+    help="Model management, build/copy/ppl/cmp/eval/extract...",
+)
 @click.pass_context
 def model_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)

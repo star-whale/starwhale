@@ -3,11 +3,14 @@ import typing as t
 
 import click
 
+from starwhale.utils.cli import AliasedGroup
+
 from .view import get_term_view, InstanceTermView
 
 
 @click.group(
     "instance",
+    cls=AliasedGroup,
     help="Starwhale Instance management, login and select standalone or cloud instance",
 )
 @click.pass_context

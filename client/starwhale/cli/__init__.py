@@ -4,6 +4,7 @@ import random
 import click
 
 from starwhale.version import STARWHALE_VERSION
+from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
 from starwhale.utils.config import load_swcli_config
 from starwhale.core.eval.cli import eval_job_cmd
@@ -19,7 +20,7 @@ from .completion import completion_cmd
 
 
 def create_sw_cli() -> click.core.Group:
-    @click.group()
+    @click.group(cls=AliasedGroup)
     @click.version_option(version=STARWHALE_VERSION)
     @click.option(
         "-v",

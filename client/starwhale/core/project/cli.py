@@ -2,10 +2,16 @@ import typing as t
 
 import click
 
+from starwhale.utils.cli import AliasedGroup
+
 from .view import get_term_view, ProjectTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
-@click.group("project", help="Project management, for standalone and cloud instances")
+@click.group(
+    "project",
+    cls=AliasedGroup,
+    help="Project management, for standalone and cloud instances",
+)
 @click.pass_context
 def project_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)

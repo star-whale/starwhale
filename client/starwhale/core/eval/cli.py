@@ -2,13 +2,16 @@ import typing as t
 
 import click
 
+from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
 @click.group(
-    "eval", help="Evaluation management, create/list/info/compare evaluation job"
+    "eval",
+    cls=AliasedGroup,
+    help="Evaluation management, create/list/info/compare evaluation job",
 )
 @click.pass_context
 def eval_job_cmd(ctx: click.Context) -> None:
