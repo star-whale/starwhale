@@ -22,7 +22,9 @@
       "./types",
       "./node_modules/@types",
     ],
-    "types": ["vite/client"],
+    "types": [
+      "vite/client",
+    ],
   },
   "include": [
     "src",
@@ -33,7 +35,7 @@
     "**/iconfont.js",
     "baseui/helpers/overrides",
     "node_modules/baseui/helpers/**",
-    "node_modules/baseui/helpers/overrides.js"
+    "node_modules/baseui/helpers/overrides.js",
   ],
   "extends": "./tsconfig.paths.json"
 }

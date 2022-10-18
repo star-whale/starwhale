@@ -60,7 +60,7 @@ function ConfigViews(props: PropsT) {
     )
 
     return (
-        <div style={{ maxWidth: '280px' }}>
+        <div className='table-config-view' style={{ maxWidth: '280px' }}>
             <Select
                 size='compact'
                 options={$options}
