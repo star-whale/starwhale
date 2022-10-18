@@ -49,24 +49,31 @@ You can get involved, get updates and contact Starwhale developers in the follow
 - [example](https://github.com/star-whale/starwhale/tree/main/example)：Example code.
 - [scripts](https://github.com/star-whale/starwhale/tree/main/scripts)：Bash and Python scripts for E2E testing and software releases, etc.
 
-## 4. Development environment for Standalone Instance
+## 4. Fork and clone the repository
+
+You will need to fork the code of Starwhale repository and clone it to your local machine.
+
+- Fork Starwhale repository: [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork),For more usage details, please refer to: [Fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
+- Clone code to local machine
+  ```bash
+  git clone https://github.com/${your username}/starwhale.git
+  ```
+## 5. Development environment for Standalone Instance
 
 Standalone Instance is written in Python3. When you want to modify swcli and sdk, you need to build the development environment.
 
-### 4.1 Prerequisites
+### 5.1 Prerequisites
 
 - OS: Linux or macOS.
 - Python: 3.7~3.10.
 - Docker: >=19.03(optional).
 - Python isolated env tools：Python venv, virtualenv or conda, etc.
-- [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork)
 
-### 4.2 Building from source code
+### 5.2 Building from source code
 
-Clone the repository：
+Based on the previous step, clone to the local directory: starwhale, and enter the client subdirectory:
 
 ```bash
-git clone https://github.com/${your username}/starwhale.git
 cd starwhale/client
 ```
 
@@ -94,11 +101,11 @@ swcli, version 0.0.0.dev0
 /home/username/anaconda3/envs/starwhale-dev/bin/swcli
 ```
 
-### 4.3 Modifying the code
+### 5.3 Modifying the code
 
 When you modify the code, you need not to install python package(run `make install-sw` command) again. [.editorconfig](https://github.com/star-whale/starwhale/blob/main/.editorconfig) will be imported into the most IDE and code editors which helps maintain consistent coding styles for multiple developers.
 
-### 4.4 Lint and Test
+### 5.4 Lint and Test
 
 Run unit test, E2E test, mypy lint, flake lint and isort check in the `starwhale` directory.
 
@@ -106,6 +113,59 @@ Run unit test, E2E test, mypy lint, flake lint and isort check in the `starwhale
 make client-all-check
 ```
 
-## 5. Development environment for Standalone Instance
+## 6. Development environment for Standalone Instance
 
 Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
+
+### 6.1 Development environment for Console
+
+### 6.2 Development environment for Server
+
+- Language: Java
+- Build tool: Maven
+- Development framework: Spring Boot+Mybatis
+- Unit test framework：Junit5
+  - Mockito used for mocking
+  - Hamcrest used for assertion
+  - Testcontainers used for providing lightweight, throwaway instances of common databases, Selenium web browsers that can run in a Docker container.
+- Check style tool：use maven-checkstyle-plugin
+
+#### 6.2.1 Prerequisites
+- OS：Linux、macOS or Windows
+- JDK: >=11
+- Maven：>=3.8.1
+- Mysql：>=8.0.29(As a basic data storage service for server, you need to rely on this service when starting)
+
+#### 6.2.2 Modify the code and add unit tests
+
+Now you can enter the corresponding module to modify and adjust the code on the server side. The main business code directory is src/main/java, and the unit test directory is src/test/java.
+
+#### 6.2.3 Execute code check and run unit tests
+
+```bash
+cd starwhale/server
+mvn clean test
+```
+
+#### 6.2.4 Deploy the server at local machine
+- Package server program
+  > If you need to deploy the front-end at the same time when deploying the server, you can execute the build command of the front-end part first, and then execute 'mvn clean package', and the compiled front-end files will be automatically packaged.
+
+- Specify the environment variables required for startup
+  > If mysql's properties are consistent with the default value, it is no need to set it separately
+  ```bash
+  export SW_METADATA_STORAGE_IP=${Mysql IP,default: 127.0.0.1}
+  export SW_METADATA_STORAGE_PORT=${Mysql port,default: 3306}
+  export SW_METADATA_STORAGE_DB=${Mysql dbname,default: starwhale}
+  export SW_METADATA_STORAGE_USER=${Mysql user,default: starwhale}
+  export SW_METADATA_STORAGE_PASSWORD=${user password,default: starwhale}
+  ```
+- Deploy server service
+  ```bash
+  java -jar controller/target/starwhale-controller-0.1.0-SNAPSHOT.jar
+  ```
+- Debug
+
+  there are two ways to debug the modified function:
+  - Use swagger-ui for interface debugging, visit http://localhost:8082/swagger-ui/index.html to find the corresponding api
+  - Debug the corresponding function directly in the ui (provided that the front-end code has been built in advance according to the instructions when packaging)
