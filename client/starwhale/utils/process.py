@@ -1,6 +1,5 @@
 import os
 import typing as t
-from select import select
 from subprocess import PIPE, Popen, STDOUT, CalledProcessError
 
 from loguru import logger
@@ -8,28 +7,33 @@ from loguru import logger
 
 def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     log = kwargs.pop("log", logger.debug)
+    kwargs["bufsize"] = 1
     kwargs["stdout"] = PIPE
     kwargs["stderr"] = STDOUT
     env = os.environ.copy()
     env.update(kwargs.get("env", {}))
+    env["PYTHONUNBUFFERED"] = "1"
     kwargs["env"] = env
     kwargs["universal_newlines"] = True
-    env["PYTHONUNBUFFERED"] = "1"
 
     output = []
     p = Popen(*args, **kwargs)
-    log(f"cmd: {p.args!r}")
+    logger.debug(f"cmd: {p.args!r}")
+
     while True:
-        fds, _, _ = select([p.stdout], [], [], 30)  # timeout 30s
-        for fd in fds:
-            for line in fd.readlines():
-                log(line.rstrip())
-                output.append(line)
-        else:
-            if p.poll() is not None:
-                break
+        line = p.stdout.readline()  # type: ignore
+        if line:
+            log(line.rstrip())
+            output.append(line)
+
+        if p.poll() is not None:
+            break
 
     p.wait()
+    for line in p.stdout.readlines():  # type: ignore
+        if line:
+            log(line.rstrip())
+            output.append(line)
 
     try:
         p.stdout.close()  # type: ignore

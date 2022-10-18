@@ -7,6 +7,7 @@ SW_CLI_CONFIG = CONFIG_DIR / "config.yaml"
 
 ENV_SW_CLI_CONFIG = "SW_CLI_CONFIG"
 ENV_LOG_LEVEL = "SW_LOG_LEVEL"
+ENV_LOG_VERBOSE_COUNT = "SW_LOG_VERBOSE_COUNT"
 ENV_SW_IMAGE_REPO = "SW_IMAGE_REPO"
 # SW_LOCAL_STORAGE env used for generating default swcli config
 # and overriding 'storage.root' swcli config in runtime
