@@ -24,6 +24,8 @@
     ],
     "types": [
       "vite/client",
+      "node",
+      "jest"
     ],
   },
   "include": [
