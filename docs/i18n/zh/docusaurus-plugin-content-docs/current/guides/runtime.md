@@ -87,6 +87,7 @@ runtime.yaml 对于 `Starwhale Runtime` 至关重要，一切的构建都是从r
 |environment.python|运行的Python版本，目前支持3.7/3.8/3.9/3.10四个版本，当前无法对micro字段进行设置，即不支持类似3.7.11这种版本的设置。当生成swrt后会被固化在_manifest.yaml中，确保每次复原Runtime使用同一版本的Python|否|执行swcli命令所在的Python解释器的版本|
 |environment.cuda|运行的CUDA版本，目前支持11.3/11.4/11.5/11.6/11.7四个版本。若不设置，则镜像中不包含cuda库。需要注意CUDA版本与宿主机上nvidia驱动版本有一定的[适配关系](https://docs.nvidia.com/deploy/cuda-compatibility/index.html)|否||
 |environment.cudnn|运行的CUDNN版本，目前支持CUDNN 8。若不设置，则镜像中不包含cudnn库。设置cudnn字段必须要先设置cuda字段|否||
+|environment.docker.image|运行使用的docker环境配置，目前支持设置 image, 一般建议不配置此字段，使用 Starwhale 提供的镜像|否|String||
 
 - Python支持的设置版本与镜像实际使用的版本映射关系(starwhale 0.3.0)
   - Python3.7 --> Python3.7.13

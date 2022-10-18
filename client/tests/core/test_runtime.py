@@ -519,6 +519,68 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         assert _manifest["environment"]["python"] == m_py_ver.return_value
 
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.is_venv")
+    @patch("starwhale.utils.venv.is_conda")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_with_docker_image_specified(
+        self,
+        m_call: MagicMock,
+        m_conda: MagicMock,
+        m_venv: MagicMock,
+        m_py_bin: MagicMock,
+    ) -> None:
+        m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
+        m_venv.return_value = False
+        m_conda.return_value = True
+        m_call.return_value = b"3.7.13"
+
+        docker_image = "foo.com/bar:latest"
+        name = "demo_runtime"
+        workdir = "/home/starwhale/myproject"
+
+        yaml_content = {
+            "name": name,
+            "mode": "venv",
+        }
+        yaml_file = os.path.join(workdir, DefaultYAMLName.RUNTIME)
+        self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
+
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        sr.build(Path(workdir))
+
+        sw = SWCliConfigMixed()
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        assert _manifest["base_image"] != docker_image
+
+        yaml_content["environment"] = {"docker": {"image": docker_image}}
+
+        self.fs.remove_object(yaml_file)
+        self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
+        sr = StandaloneRuntime(uri)
+        sr.build(Path(workdir))
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        assert _manifest["base_image"] == docker_image
+
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {
             "name": "rttest",
