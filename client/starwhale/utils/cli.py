@@ -3,21 +3,23 @@ import typing as t
 import click
 
 _TCallCommand = t.Callable[[t.Callable[..., t.Any]], click.Command]
+_TCallGroup = t.Callable[[t.Callable[..., t.Any]], click.Group]
+_TCallDeco = t.Union[_TCallGroup, _TCallCommand]
 
 
 class AliasedGroup(click.Group):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         super().__init__(*args, **kwargs)
-        self._commands = {}
-        self._aliases = {}
+        self._commands: t.Dict[str, t.List[str]] = {}
+        self._aliases: t.Dict[str, str] = {}
 
     def _attach_aliases_args(
-        self, orig_deco: _TCallCommand, aliases: t.List[str]
-    ) -> _TCallCommand:
+        self, orig_deco: _TCallDeco, aliases: t.List[str]
+    ) -> _TCallDeco:
         if not aliases:
             return orig_deco
 
-        def alias_cmd_deco(f: t.Callable) -> click.Command:
+        def alias_cmd_deco(f: t.Callable) -> t.Union[click.Command, click.Group]:
             cmd = orig_deco(f)
             if aliases:
                 self._commands[cmd.name] = aliases
@@ -32,10 +34,25 @@ class AliasedGroup(click.Group):
         cmd_deco = super().command(*args, **kwargs)
         return self._attach_aliases_args(cmd_deco, aliases)
 
-    def group(self, *args: t.Any, **kwargs: t.Any) -> _TCallCommand:
+    def group(self, *args: t.Any, **kwargs: t.Any) -> _TCallGroup:
         aliases = kwargs.pop("aliases", [])
         group_deco = super().group(*args, **kwargs)
-        return self._attach_aliases_args(group_deco, aliases)
+        return self._attach_aliases_args(group_deco, aliases)  # type: ignore
+
+    def add_command(
+        self,
+        cmd: click.Command,
+        name: t.Optional[str] = None,
+        aliases: t.Optional[t.List[str]] = None,
+    ) -> None:
+        aliases = aliases or []
+        if aliases:
+            name = name or cmd.name
+            self._commands[name] = aliases
+            for alias in aliases:
+                self._aliases[alias] = name
+
+        super().add_command(cmd, name)
 
     def get_command(
         self, ctx: click.Context, cmd_name: str

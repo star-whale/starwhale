@@ -46,7 +46,7 @@ def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     ModelTermView(model).tag(tags, remove, quiet)
 
 
-@model_cmd.command("copy", help="Copy model, standalone <--> cloud")
+@model_cmd.command("copy", aliases=["cp"], help="Copy model, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy model")
@@ -62,7 +62,7 @@ def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
     view(model).info(fullname)
 
 
-@model_cmd.command("list", help="List Model")
+@model_cmd.command("list", aliases=["ls"], help="List Model")
 @click.option("--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of model version")
 @click.option("--show-removed", is_flag=True, help="Show removed model")
@@ -92,7 +92,7 @@ def _history(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
     view(model).history(fullname)
 
 
-@model_cmd.command("remove", help="Remove model")
+@model_cmd.command("remove", aliases=["rm"], help="Remove model")
 @click.argument("model")
 @click.option(
     "-f",
