@@ -28,6 +28,7 @@ module.exports = {
                     items: [
                         "guides/install/standalone",
                         "guides/install/helm-charts",
+                        "guides/install/docker",
                     ]
                 },
                 {
