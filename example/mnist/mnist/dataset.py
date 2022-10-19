@@ -10,57 +10,65 @@ from starwhale import (
     UserRawBuildExecutor,
 )
 
+_TItem = t.Generator[t.Tuple[t.Any, t.Any], None, None]
+
+
+def iter_swds_bin_item() -> _TItem:
+    root_dir = Path(__file__).parent.parent / "data"
+
+    with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
+        root_dir / "t10k-labels-idx1-ubyte"
+    ).open("rb") as label_file:
+        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+        _, label_number = struct.unpack(">II", label_file.read(8))
+        print(
+            f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+        )
+        image_size = height * width
+
+        for i in range(0, min(data_number, label_number)):
+            _data = data_file.read(image_size)
+            _label = struct.unpack(">B", label_file.read(1))[0]
+            yield GrayscaleImage(
+                _data,
+                display_name=f"{i}",
+                shape=(height, width, 1),
+            ), {"label": _label}
+
 
 class DatasetProcessExecutor(SWDSBinBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        root_dir = Path(__file__).parent.parent / "data"
+    def iter_item(self) -> _TItem:
+        return iter_swds_bin_item()
 
-        with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
-            root_dir / "t10k-labels-idx1-ubyte"
-        ).open("rb") as label_file:
-            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-            _, label_number = struct.unpack(">II", label_file.read(8))
-            print(
-                f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+
+def iter_user_raw_item() -> _TItem:
+    root_dir = Path(__file__).parent.parent / "data"
+    data_fpath = root_dir / "t10k-images-idx3-ubyte"
+    label_fpath = root_dir / "t10k-labels-idx1-ubyte"
+
+    with data_fpath.open("rb") as data_file, label_fpath.open("rb") as label_file:
+        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+        _, label_number = struct.unpack(">II", label_file.read(8))
+
+        image_size = height * width
+        offset = 16
+
+        for i in range(0, min(data_number, label_number)):
+            _data = Link(
+                uri=str(data_fpath.absolute()),
+                offset=offset,
+                size=image_size,
+                data_type=GrayscaleImage(display_name=f"{i}", shape=(height, width, 1)),
+                with_local_fs_data=True,
             )
-            image_size = height * width
-
-            for i in range(0, min(data_number, label_number)):
-                _data = data_file.read(image_size)
-                _label = struct.unpack(">B", label_file.read(1))[0]
-                yield GrayscaleImage(
-                    _data,
-                    display_name=f"{i}",
-                    shape=(height, width, 1),
-                ), {"label": _label}
+            _label = struct.unpack(">B", label_file.read(1))[0]
+            yield _data, {"label": _label}
+            offset += image_size
 
 
 class RawDatasetProcessExecutor(UserRawBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        root_dir = Path(__file__).parent.parent / "data"
-        data_fpath = root_dir / "t10k-images-idx3-ubyte"
-        label_fpath = root_dir / "t10k-labels-idx1-ubyte"
-
-        with data_fpath.open("rb") as data_file, label_fpath.open("rb") as label_file:
-            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-            _, label_number = struct.unpack(">II", label_file.read(8))
-
-            image_size = height * width
-            offset = 16
-
-            for i in range(0, min(data_number, label_number)):
-                _data = Link(
-                    uri=str(data_fpath.absolute()),
-                    offset=offset,
-                    size=image_size,
-                    data_type=GrayscaleImage(
-                        display_name=f"{i}", shape=(height, width, 1)
-                    ),
-                    with_local_fs_data=True,
-                )
-                _label = struct.unpack(">B", label_file.read(1))[0]
-                yield _data, {"label": _label}
-                offset += image_size
+    def iter_item(self) -> _TItem:
+        return iter_user_raw_item()
 
 
 class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):

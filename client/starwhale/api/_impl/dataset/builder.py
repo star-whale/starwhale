@@ -1,6 +1,7 @@
 import os
 import struct
 import typing as t
+import inspect
 import tempfile
 from abc import ABCMeta, abstractmethod
 from types import TracebackType
@@ -138,7 +139,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
 
 class SWDSBinBuildExecutor(BaseBuildExecutor):
     """
-    SWDSBinBuildExecutor can build swds_bin.
+    SWDSBinBuildExecutor builds swds_bin format dataset.
 
     swds_bin format:
         header_magic    uint32  I
@@ -410,3 +411,42 @@ class UserRawBuildExecutor(BaseBuildExecutor):
     @property
     def data_format_type(self) -> DataFormatType:
         return DataFormatType.USER_RAW
+
+
+def create_generic_cls(
+    handler: t.Callable,
+) -> t.Type[BaseBuildExecutor]:
+    res = handler()
+
+    if inspect.isgenerator(res):
+        items_iter = res
+    elif getattr(res, "__getitem__", None):
+        items_iter = iter(res)
+    else:
+        raise RuntimeError(
+            f"{handler} function return is not generator or iterable object"
+        )
+
+    item = next(items_iter)
+
+    def _do_iter_item(self: t.Any) -> t.Generator:
+        yield item
+        for _item in items_iter:
+            yield _item
+
+    attrs = {"iter_item": _do_iter_item}
+
+    if isinstance(item[0], Link):
+        _cls = type(
+            "GenericUserRawHandler",
+            (UserRawBuildExecutor,),
+            attrs,
+        )
+    else:
+        _cls = type(
+            "GenericSWDSBinHandler",
+            (SWDSBinBuildExecutor,),
+            attrs,
+        )
+
+    return _cls

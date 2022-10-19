@@ -261,7 +261,7 @@ class StandaloneModelTestCase(TestCase):
 
     @patch("starwhale.api._impl.data_store.atexit")
     @patch("starwhale.core.model.default_handler.StandaloneModel")
-    @patch("starwhale.core.model.default_handler.import_cls")
+    @patch("starwhale.core.model.default_handler.import_object")
     def test_default_handler(
         self, m_import: MagicMock, m_model: MagicMock, m_atexit: MagicMock
     ):

@@ -7,7 +7,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import ENV_VENV
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils.load import import_cls
+from starwhale.utils.load import import_object
 
 
 class MockPPL:
@@ -54,7 +54,7 @@ class ImportClsTestCase(TestCase):
         ensure_dir(os.path.join(venv_dir, "bin"))
         ensure_file(py_bin, " ")
 
-        _cls = import_cls(Path(self.workdir), "ppl:Handler")
+        _cls = import_object(Path(self.workdir), "ppl:Handler")
         assert _cls.__module__ == "tests.utils.test_load"
         assert _cls.x == 1
         for _p in self.inject_paths + [self.workdir]:

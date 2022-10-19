@@ -6,17 +6,19 @@ from loguru import logger
 from starwhale import step, Context, pass_context, PipelineHandler
 from starwhale.utils import console
 from starwhale.consts import DefaultYAMLName
-from starwhale.utils.load import import_cls, get_func_from_object
+from starwhale.utils.load import import_object, get_func_from_object
 from starwhale.core.model.model import StandaloneModel
 
 
 def _get_cls(src_dir: Path) -> Any:
-    _mp = src_dir / DefaultYAMLName.MODEL
-    _model_config = StandaloneModel.load_model_config(_mp)
-    _handler = _model_config.run.handler
+    mp = src_dir / DefaultYAMLName.MODEL
+    model_config = StandaloneModel.load_model_config(mp)
+    handler_path = model_config.run.handler
 
-    logger.debug(f"try to import {_handler}@{src_dir}...")
-    _cls = import_cls(src_dir, _handler, PipelineHandler)
+    logger.debug(f"try to import {handler_path}@{src_dir}...")
+    _cls = import_object(src_dir, handler_path)
+    if not issubclass(_cls, PipelineHandler):
+        raise RuntimeError(f"{handler_path} is not subclass of PipelineHandler")
     return _cls
 
 

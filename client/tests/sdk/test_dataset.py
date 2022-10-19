@@ -33,6 +33,7 @@ from starwhale.api._impl.dataset.builder import (
     _header_size,
     _header_magic,
     _header_struct,
+    create_generic_cls,
     SWDSBinBuildExecutor,
 )
 
@@ -43,52 +44,58 @@ _mnist_data_path = _mnist_dir / "data"
 _mnist_label_path = _mnist_dir / "label"
 
 
+def iter_mnist_swds_bin_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
+        "rb"
+    ) as label_file:
+        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+        _, label_number = struct.unpack(">II", label_file.read(8))
+        print(
+            f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+        )
+        image_size = height * width
+
+        for i in range(0, min(data_number, label_number)):
+            _data = data_file.read(image_size)
+            _label = struct.unpack(">B", label_file.read(1))[0]
+            yield GrayscaleImage(
+                _data,
+                display_name=f"{i}",
+                shape=(height, width, 1),
+            ), {"label": _label}
+
+
 class MNISTBuildExecutor(SWDSBinBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
-            "rb"
-        ) as label_file:
-            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-            _, label_number = struct.unpack(">II", label_file.read(8))
-            print(
-                f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
-            )
-            image_size = height * width
+        return iter_mnist_swds_bin_item()
 
-            for i in range(0, min(data_number, label_number)):
-                _data = data_file.read(image_size)
-                _label = struct.unpack(">B", label_file.read(1))[0]
-                yield GrayscaleImage(
-                    _data,
-                    display_name=f"{i}",
-                    shape=(height, width, 1),
-                ), {"label": _label}
+
+def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
+        "rb"
+    ) as label_file:
+        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+        _, label_number = struct.unpack(">II", label_file.read(8))
+
+        image_size = height * width
+        offset = 16
+
+        for i in range(0, min(data_number, label_number)):
+            _data = Link(
+                uri=str(_mnist_data_path.absolute()),
+                offset=offset,
+                size=image_size,
+                data_type=GrayscaleImage(display_name=f"{i}", shape=(height, width, 1)),
+                with_local_fs_data=True,
+            )
+            _label = struct.unpack(">B", label_file.read(1))[0]
+            yield _data, {"label": _label}
+            offset += image_size
 
 
 class _UserRawMNIST(UserRawBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
-            "rb"
-        ) as label_file:
-            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-            _, label_number = struct.unpack(">II", label_file.read(8))
-
-            image_size = height * width
-            offset = 16
-
-            for i in range(0, min(data_number, label_number)):
-                _data = Link(
-                    uri=str(_mnist_data_path.absolute()),
-                    offset=offset,
-                    size=image_size,
-                    data_type=GrayscaleImage(
-                        display_name=f"{i}", shape=(height, width, 1)
-                    ),
-                    with_local_fs_data=True,
-                )
-                _label = struct.unpack(">B", label_file.read(1))[0]
-                yield _data, {"label": _label}
-                offset += image_size
+        return iter_mnist_user_raw_item()
 
 
 class TestDatasetBuildExecutor(BaseTestCase):
@@ -101,6 +108,77 @@ class TestDatasetBuildExecutor(BaseTestCase):
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
         self.data_file_sign = blake2b_file(_mnist_data_path)
+
+    def test_user_raw_function_handler(self) -> None:
+        _cls = create_generic_cls(iter_mnist_user_raw_item)
+        assert issubclass(_cls, UserRawBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="332211",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 10
+        assert summary.include_user_raw
+
+    def test_swds_bin_function_handler(self) -> None:
+        _cls = create_generic_cls(iter_mnist_swds_bin_item)
+        assert issubclass(_cls, SWDSBinBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="112233",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 10
+        assert not summary.include_user_raw
+        assert not summary.include_link
+
+    def test_abnormal_function_handler(self) -> None:
+        non_generator_f = lambda: 1
+        with self.assertRaises(RuntimeError):
+            _cls = create_generic_cls(non_generator_f)  # type: ignore
+
+        list_f = lambda: [(b"1", {}), (b"2", {}), (b"3", {})]
+        _cls = create_generic_cls(list_f)  # type: ignore
+        assert issubclass(_cls, SWDSBinBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="112233",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+        assert summary.rows == 3
+
+        def _gen_only_one() -> t.Generator:
+            yield b"", {}
+
+        _cls = create_generic_cls(_gen_only_one)
+        assert issubclass(_cls, SWDSBinBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="112233",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 1
+        assert not summary.include_user_raw
+        assert not summary.include_link
 
     def test_user_raw_workflow(self) -> None:
         with _UserRawMNIST(
@@ -353,31 +431,57 @@ class TestDatasetType(TestCase):
 
 class TestLoader(TestCase):
     def test_calculate_index(self):
-        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=0)
-        assert _start == 0 and _end == 1
-        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=1)
-        assert _start == 1 and _end == 2
-        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=2)
-        assert _start == -1 and _end == -1
-        _start, _end = calculate_index(data_size=2, sharding_num=5, sharding_index=3)
-        assert _start == -1 and _end == -1
+        cases = [
+            (
+                dict(data_size=2, sharding_num=5, sharding_index=0),
+                (0, 1),
+            ),
+            (
+                dict(data_size=2, sharding_num=5, sharding_index=1),
+                (1, 2),
+            ),
+            (
+                dict(data_size=2, sharding_num=5, sharding_index=2),
+                (-1, -1),
+            ),
+            (
+                dict(data_size=2, sharding_num=5, sharding_index=3),
+                (-1, -1),
+            ),
+            (
+                dict(data_size=100, sharding_num=1, sharding_index=0),
+                (0, 100),
+            ),
+            (
+                dict(data_size=100, sharding_num=2, sharding_index=0),
+                (0, 50),
+            ),
+            (
+                dict(data_size=100, sharding_num=2, sharding_index=1),
+                (50, 100),
+            ),
+            (
+                dict(data_size=101, sharding_num=2, sharding_index=0),
+                (0, 51),
+            ),
+            (
+                dict(data_size=101, sharding_num=2, sharding_index=1),
+                (51, 101),
+            ),
+            (
+                dict(data_size=110, sharding_num=3, sharding_index=0),
+                (0, 37),
+            ),
+            (
+                dict(data_size=110, sharding_num=3, sharding_index=1),
+                (37, 74),
+            ),
+            (
+                dict(data_size=110, sharding_num=3, sharding_index=2),
+                (74, 110),
+            ),
+        ]
 
-        _start, _end = calculate_index(data_size=100, sharding_num=1, sharding_index=0)
-        assert _start == 0 and _end == 100
-
-        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=0)
-        assert _start == 0 and _end == 50
-        _start, _end = calculate_index(data_size=100, sharding_num=2, sharding_index=1)
-        assert _start == 50 and _end == 100
-
-        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=0)
-        assert _start == 0 and _end == 51
-        _start, _end = calculate_index(data_size=101, sharding_num=2, sharding_index=1)
-        assert _start == 51 and _end == 101
-
-        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=0)
-        assert _start == 0 and _end == 37
-        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=1)
-        assert _start == 37 and _end == 74
-        _start, _end = calculate_index(data_size=110, sharding_num=3, sharding_index=2)
-        assert _start == 74 and _end == 110
+        for kwargs, expected in cases:
+            result = calculate_index(**kwargs)
+            assert expected == result
