@@ -25,6 +25,8 @@ git clone --depth=1 https://github.com/star-whale/starwhale.git
 cd starwhale/example/runtime/pytorch
 ```
 
+在 `example/runtime` 目录中，有两个pytorch的例子：`pytorch` 是没有设置pypi mirror的，直接使用pypi.org下载包；`pytorch-cn-mirror` 是针对中国大陆网络情况，设置了pypi教育源。可以按需使用，Python依赖包的版本完全一致。`pytorch-cn-mirror` 的runtime.yaml中省略了dependencies中的`wheels`和`files`字段。
+
 ## 2. Starwhale Runtime构建
 
 ```console

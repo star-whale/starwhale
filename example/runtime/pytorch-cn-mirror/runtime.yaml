@@ -5,6 +5,12 @@ configs:
       - conda-forge
   docker:
     image: ghcr.io/star-whale/runtime/pytorch
+  pip:
+    extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple
+    index_url: https://pypi.tuna.tsinghua.edu.cn/simple
+    trusted_host:
+      - pypi.tuna.tsinghua.edu.cn
+      - mirrors.bfsu.edu.cn
 dependencies:
   - pip:
       - Pillow
@@ -16,18 +22,10 @@ dependencies:
       - torchtext
       - torchaudio
       - pycocotools
-  - wheels:
-      - dummy-0.0.0-py3-none-any.whl
-  - files:
-      - dest: bin/prepare.sh
-        name: prepare
-        post: bash bin/prepare.sh
-        pre: ls bin/prepare.sh
-        src: scripts/prepare.sh
   - requirements-sw-lock.txt
 environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.4
 mode: venv
-name: pytorch
+name: pytorch-cn-mirror
