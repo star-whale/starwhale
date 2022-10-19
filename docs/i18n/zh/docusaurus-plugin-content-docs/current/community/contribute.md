@@ -64,6 +64,7 @@ Standalone Instance采用Python编写，当要修改Python SDK和swcli时，需�
 - Docker：>=19.03 (非必须，当调试dockerize、生成docker image或采用docker为载体运行模型任务时需要)
 - Python隔离环境：Python venv 或 virtualenv 或 conda等都可以，用来构建一个隔离的Python环境
 - [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork)
+- Git和[Git LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
 
 ### 4.2 从源码进行安装
 
