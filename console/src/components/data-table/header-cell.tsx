@@ -83,6 +83,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             role='button'
             tabIndex={0}
             className={cn(
+                'header-cell',
                 props.isHovered ? 'header-cell--hovered' : undefined,
                 props.isFocus ? 'header-cell--focused' : undefined,
                 css({

@@ -42,6 +42,7 @@ export interface StepSpec {
     concurrency?: number
     needs?: string[]
     resources?: RuntimeResource[]
+    overwriteable?: boolean
     job_name?: string
     step_name?: string
     task_num?: number

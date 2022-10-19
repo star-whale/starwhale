@@ -186,7 +186,10 @@ export default function FilterOperateSelector({
     }, [columns, key])
 
     return (
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '200px 120px 200px', gap: '8px' }}>
+        <div
+            className='filter-ops'
+            style={{ position: 'relative', display: 'grid', gridTemplateColumns: '200px 120px 200px', gap: '8px' }}
+        >
             <Select
                 size='compact'
                 disabled={disabled}

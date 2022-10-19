@@ -233,7 +233,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                 required
                                 initialValue={spec.task_num}
                             >
-                                <NumberInput />
+                                <NumberInput disabled={!spec?.overwriteable} />
                             </FormItem>
                             {spec.resources?.map((resource, j) => (
                                 <React.Fragment key={['stepSpecOverWrites', i, 'resources', j].join('')}>
@@ -243,7 +243,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                         required
                                         initialValue={resource.type}
                                     >
-                                        <DeviceSelector />
+                                        <DeviceSelector disabled={!spec?.overwriteable} />
                                     </FormItem>
                                     <FormItem
                                         label={i === 0 && t('Resource Amount')}
@@ -251,7 +251,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                         required
                                         initialValue={resource.num}
                                     >
-                                        <NumberInput />
+                                        <NumberInput disabled={!spec?.overwriteable} />
                                     </FormItem>
                                 </React.Fragment>
                             ))}
