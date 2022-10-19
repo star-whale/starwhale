@@ -137,6 +137,8 @@ Cloud Instance的后端采用Java编写，前端采用React+TypeScript编写，�
 - JDK: >=11
 - Maven：>=3.8.1
 - Mysql：>=8.0.29(作为server端基础数据存储服务，启动时需要依赖该服务)
+- Minio
+- Kubernetes cluster
 
 #### 6.2.2 修改代码并增加单测
 
@@ -150,7 +152,7 @@ mvn clean package
 ```
 
 #### 6.2.4 本地部署服务
-
+docker run --restart=always --name mysql -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=starwhale -e MYSQL_USER=starwhale -e MYSQL_PASSWORD=starwhale -e MYSQL_DATABASE=starwhale mysql:8.0-debian
 > 若部署server端时，需要把前端同时部署上，可先执行前端部分的构建命令，然后执行'mvn clean package'，则会自动将已编译好的前端文件打包进来。
 
 - 指定启动所需的环境变量
