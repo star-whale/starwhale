@@ -1,7 +1,9 @@
 ---
-title: Server Instance superuser Password Reset
+title: Controller Admin Settings
 ---
-In case you forget THE superusers password, you could use the sql below to reset the password to `abcd1234`
+
+## Superuser Password Reset
+In case you forget the superusers password, you could use the sql below to reset the password to `abcd1234`
 
 ```sql
 update user_info set user_pwd='ee9533077d01d2d65a4efdb41129a91e', user_pwd_salt='6ea18d595773ccc2beacce26' where id=1
