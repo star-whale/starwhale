@@ -53,3 +53,26 @@ title: Starwhale Evaluation-模型评测
 - task：task是最终运行的实体。在Cloud Instance中，一个task就是一个Pod的container；在Standalone Instance中，一个task就是一个Python Thread。
 
 job-step-task 的抽象是实现 `Starwhale Evaluation` 分布式运行的基础。
+
+## 4. 在服务器上运行评测任务
+### 覆盖step配置
+你可以在创建job的时候提交一个yaml来覆盖在`SWPM`中硬编码的step配置。`resources`字段的行为与[K8S容器与pod的资源管理](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)中描述的一样。
+```yaml
+  - job_name: default
+    needs: [ ]
+    resources:
+      - type: cpu # nvidia.com/gpu, memory
+        request: 1 # float
+        limit: 1 # float
+    step_name: ppl
+    task_num: 2
+  - job_name: default
+    needs:
+      - ppl
+    resources:
+      - type: cpu
+        request: 1
+        limit: 1
+    step_name: cmp
+    task_num: 1
+```
