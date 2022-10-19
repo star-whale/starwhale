@@ -96,7 +96,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 - 🍰 **STEP1**: Installing Starwhale
 
     ```bash
-    python3 -m pip install --pre starwhale
+    python3 -m pip install starwhale
     ```
 
 - 🍵 **STEP2**: Downloading the MNIST example
