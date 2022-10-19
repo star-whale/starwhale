@@ -3,6 +3,7 @@ title: Controller Admin Settings
 ---
 
 ## Superuser Password Reset
+
 In case you forget the superusers password, you could use the sql below to reset the password to `abcd1234`
 
 ```sql
