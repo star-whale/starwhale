@@ -160,11 +160,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             setStepSpecOverWrites(yaml.dump(_.merge([], stepSource, form.getFieldValue('stepSpecOverWrites'))))
         }
         rawRef.current = rawType
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites, rawType, modelVersionId, stepSpecOverWrites])
 
     React.useEffect(() => {
         setStepSpecOverWrites(yaml.dump(stepSource))
         updateFormStepObj([...stepSource])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites])
 
     // const handleAddDataset = useCallback(() => {
@@ -199,8 +201,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         },
         [setStepSpecOverWrites]
     )
-
-    console.log(stepSpecOverWritesList)
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
