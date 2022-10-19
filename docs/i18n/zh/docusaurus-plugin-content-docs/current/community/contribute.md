@@ -135,10 +135,11 @@ Cloud Instance的后端采用Java编写，前端采用React+TypeScript编写，�
 #### 6.2.1 前置条件
 - OS：Linux、macOS或Windows
 - JDK: >=11
+- Docker：>=19.03
 - Maven：>=3.8.1
-- Mysql：>=8.0.29(作为server端基础数据存储服务，启动时需要依赖该服务)
+- Mysql：>=8.0.29
 - Minio
-- Kubernetes cluster
+- Kubernetes cluster/Minikube（如果没有k8s集群，可以使用Minikube作为开发调试时的备选方案）
 
 #### 6.2.2 修改代码并增加单测
 
@@ -152,24 +153,74 @@ mvn clean package
 ```
 
 #### 6.2.4 本地部署服务
-docker run --restart=always --name mysql -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=starwhale -e MYSQL_USER=starwhale -e MYSQL_PASSWORD=starwhale -e MYSQL_DATABASE=starwhale mysql:8.0-debian
-> 若部署server端时，需要把前端同时部署上，可先执行前端部分的构建命令，然后执行'mvn clean package'，则会自动将已编译好的前端文件打包进来。
+- 前置服务
+  - Minikube（可选，无k8s集群时可使用此服务，安装方式可见：[Minikube](https://minikube.sigs.k8s.io/docs/start/)）
+    ```bash
+    minikube start
+    minikube addons enable ingress
+    minikube addons enable ingress-dns
+    ```
+  - Mysql
+    ```bash
+    docker run --name sw-mysql -d \
+    -p 3306:3306 \
+    -e MYSQL_ROOT_PASSWORD=starwhale \
+    -e MYSQL_USER=starwhale \
+    -e MYSQL_PASSWORD=starwhale \
+    -e MYSQL_DATABASE=starwhale \
+    mysql:latest
+    ```
+  - Minio
+    ```bash
+    docker run --name minio -d
+    -p 9000:9000  --publish 9001:9001
+    -e MINIO_DEFAULT_BUCKETS='starwhale'
+    -e MINIO_ROOT_USER="minioadmin"
+    -e MINIO_ROOT_PASSWORD="minioadmin"
+    bitnami/minio:latest
+    ```
 
-- 指定启动所需的环境变量
-  > 如果mysql的属性和以下环境变量的默认值一致，则无需进行单独设置。
+- 打包server程序
+  > 若部署server端时，需要把前端同时部署上，可先执行前端部分的构建命令，然后执行'mvn clean package'，则会自动将已编译好的前端文件打包进来。
+
+  使用如下命令对程序进行打包：
   ```bash
+  cd starwhale/server
+  mvn clean package
+  ```
+
+- 指定server启动所需的环境变量
+
+  ```bash
+  # Minio相关配置
+  export SW_STORAGE_ENDPOINT=http://${Minio IP，默认为127.0.0.1}:9000
+  export SW_STORAGE_BUCKET=${Minio bucket，默认为starwhale}
+  export SW_STORAGE_ACCESSKEY=${Minio accessKey，默认为starwhale}
+  export SW_STORAGE_SECRETKEY=${Minio secretKey，默认为starwhale}
+  export SW_STORAGE_REGION=${Minio region，默认为local}
+  # kubernetes配置
+  export KUBECONFIG=${.kube配置文件所在路径}\.kube\config
+
+  export SW_INSTANCE_URI=http://${Server服务所在机器IP}:8082
+  # Mysql相关配置
   export SW_METADATA_STORAGE_IP=${Mysql IP，默认为127.0.0.1}
   export SW_METADATA_STORAGE_PORT=${Mysql port，默认为3306}
   export SW_METADATA_STORAGE_DB=${Mysql dbname，默认为starwhale}
   export SW_METADATA_STORAGE_USER=${Mysql user，默认为starwhale}
   export SW_METADATA_STORAGE_PASSWORD=${user password，默认为starwhale}
   ```
+
 - 部署server服务
+
+  使用IDE或如下方式部署均可。
+
   ```bash
   java -jar controller/target/starwhale-controller-0.1.0-SNAPSHOT.jar
   ```
+
 - 功能调试
 
     这里有两种方式对修改的功能进行调试：
+
   - 使用swagger-ui进行接口调试，访问 http://localhost:8082/swagger-ui/index.html找到对应的api即可。
-  - 或直接在ui中进行相应功能的调试（前提是打包时已经按说明将前端代码进行了提前构建）
+  - 或直接在ui（访问http://localhost:8082）中进行相应功能的调试（前提是打包时已经按说明将前端代码进行了提前构建）

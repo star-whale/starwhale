@@ -148,12 +148,55 @@ mvn clean test
 ```
 
 #### 6.2.4 Deploy the server at local machine
+- Dependent services that need to be deployed
+  - Minikube（Optional. Minikube can be used when there is no k8s cluster, there is the installation doc: [Minikube](https://minikube.sigs.k8s.io/docs/start/)）
+    ```bash
+    minikube start
+    minikube addons enable ingress
+    minikube addons enable ingress-dns
+    ```
+  - Mysql
+    ```bash
+    docker run --name sw-mysql -d \
+    -p 3306:3306 \
+    -e MYSQL_ROOT_PASSWORD=starwhale \
+    -e MYSQL_USER=starwhale \
+    -e MYSQL_PASSWORD=starwhale \
+    -e MYSQL_DATABASE=starwhale \
+    mysql:latest
+    ```
+  - Minio
+    ```bash
+    docker run --name minio -d
+    -p 9000:9000  --publish 9001:9001
+    -e MINIO_DEFAULT_BUCKETS='starwhale'
+    -e MINIO_ROOT_USER="minioadmin"
+    -e MINIO_ROOT_PASSWORD="minioadmin"
+    bitnami/minio:latest
+    ```
+
 - Package server program
   > If you need to deploy the front-end at the same time when deploying the server, you can execute the build command of the front-end part first, and then execute 'mvn clean package', and the compiled front-end files will be automatically packaged.
 
-- Specify the environment variables required for startup
-  > If mysql's properties are consistent with the default value, it is no need to set it separately
+  Use the following command to package the program
+
   ```bash
+    cd starwhale/server
+    mvn clean package
+  ```
+
+- Specify the environment required for server startup
+  ```bash
+  # Minio env
+  export SW_STORAGE_ENDPOINT=http://${Minio IP,default is:27.0.0.1}:9000
+  export SW_STORAGE_BUCKET=${Minio bucket,default is:starwhale}
+  export SW_STORAGE_ACCESSKEY=${Minio accessKey,default is:starwhale}
+  export SW_STORAGE_SECRETKEY=${Minio secretKey,default is:starwhale}
+  export SW_STORAGE_REGION=${Minio region,default is:local}
+  # kubernetes env
+  export KUBECONFIG=${the '.kube' file path}\.kube\config
+
+  export SW_INSTANCE_URI=http://${Server IP}:8082
   export SW_METADATA_STORAGE_IP=${Mysql IP,default: 127.0.0.1}
   export SW_METADATA_STORAGE_PORT=${Mysql port,default: 3306}
   export SW_METADATA_STORAGE_DB=${Mysql dbname,default: starwhale}
@@ -161,6 +204,9 @@ mvn clean test
   export SW_METADATA_STORAGE_PASSWORD=${user password,default: starwhale}
   ```
 - Deploy server service
+
+  You can use the IDE or the command to deploy.
+
   ```bash
   java -jar controller/target/starwhale-controller-0.1.0-SNAPSHOT.jar
   ```
