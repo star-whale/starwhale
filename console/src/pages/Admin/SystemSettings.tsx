@@ -28,12 +28,13 @@ export default function SystemSettings() {
     const [values, setValues] = React.useState<any>(null)
 
     React.useEffect(() => {
-        if (systemSetting.data) {
-            form.setFieldsValue({
-                setting: systemSetting.data,
-            })
+        if (systemSetting.isSuccess) {
+            if (typeof systemSetting.data === 'string')
+                form.setFieldsValue({
+                    setting: systemSetting.data,
+                })
         }
-    }, [systemSetting.data, form])
+    }, [systemSetting, form])
 
     const handleValuesChange = useCallback((_changes, values_) => {
         setValues(values_)

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
-import { useDataset } from '@dataset/hooks/useDataset'
 import Card from '@/components/Card'
 import yaml from 'js-yaml'
 import { JSONTree } from 'react-json-tree'
+import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 
 const theme = {
     scheme: 'bright',
@@ -26,7 +26,7 @@ const theme = {
 }
 
 export default function DatasetVersionMeta() {
-    const { dataset } = useDataset()
+    const { datasetVersion: dataset } = useDatasetVersion()
 
     const jsonData = useMemo(() => {
         if (!dataset?.versionMeta) return {}
