@@ -60,12 +60,14 @@ Standalone Instance is written in Python3. When you want to modify swcli and sdk
 - Docker: >=19.03(optional).
 - Python isolated env tools：Python venv, virtualenv or conda, etc.
 - [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork)
+- Git and [Git-LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
 
 ### 4.2 Building from source code
 
 Clone the repository：
 
 ```bash
+git lfs install
 git clone https://github.com/${your username}/starwhale.git
 cd starwhale/client
 ```
