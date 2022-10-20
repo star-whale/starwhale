@@ -170,6 +170,7 @@ test.describe('Evaluation', () => {
             await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
             await wait(1000)
             await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-/)
+            await wait(1000)
             await expect(await page.locator('.icon-rise').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
             await p.locator(SELECTOR.row2column1).locator('label').uncheck()
@@ -267,6 +268,7 @@ test.describe('Evaluation Results', () => {
                 .getByText(/View Log/)
                 .first()
                 .click()
+            await wait(1000)
             await page.getByText(/Log\:/).first().click()
             await page.waitForSelector('.ReactVirtualized__Grid__innerScrollContainer > div')
             await expect(
