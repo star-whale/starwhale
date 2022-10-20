@@ -8,11 +8,11 @@ Starwhale has three types of instances: Standalone, On-Premises, and Cloud Hoste
 You install Starwhale Standalone by running:
 
 ```bash
-python3 -m pip install --pre starwhale
+python3 -m pip install starwhale
 ```
 
 :::note
-The Starwhale client version is currently under alpha preview. Thus `--pre` is required.
+You can install the alpha version by the `--pre` argument.
 :::
 
 :::note

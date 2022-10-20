@@ -38,7 +38,7 @@ venv环境即可以使用Python3自带的venv，也可以virtualenv工具。
 ```bash
 python3 -m venv ~/.cache/venv/starwhale
 source ~/.cache/venv/starwhale/bin/activate
-python3 -m pip install --pre starwhale
+python3 -m pip install starwhale
 
 swcli --version
 
@@ -51,7 +51,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 ```bash
 conda create --name starwhale --yes  python=3.9
 conda activate starwhale
-python3 -m pip install --pre starwhale
+python3 -m pip install starwhale
 
 swcli --version
 
@@ -67,10 +67,10 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 ```bash
 #for venv
-~/.cache/venv/starwhale/bin/python3 -m pip install --pre --upgrade starwhale
+~/.cache/venv/starwhale/bin/python3 -m pip install --upgrade starwhale
 
 #for conda
-conda run -n starwhale python3 -m pip install --pre --upgrade starwhale
+conda run -n starwhale python3 -m pip install --upgrade starwhale
 ```
 
 ## 5. Starwhale卸载
