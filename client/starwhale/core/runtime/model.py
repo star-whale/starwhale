@@ -456,15 +456,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
         return _r
 
-    def buildImpl(
-        self,
-        workdir: Path,
-        yaml_name: str,
-        **kw: t.Any,
-    ) -> None:
-        # do nothing because we override build function
-        pass
-
     def build(
         self,
         workdir: Path,

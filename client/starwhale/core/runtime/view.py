@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, pretty_bytes, in_production
+from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import (
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
@@ -107,8 +107,9 @@ class RuntimeTermView(BaseTermView):
         env_prefix_path: str = "",
         env_name: str = "",
     ) -> None:
+        _config = load_yaml(Path(workdir) / yaml_name)
         _runtime_uri = cls.prepare_build_bundle(
-            workdir, project, yaml_name, URIType.RUNTIME
+            project=project, bundle_name=_config.get("name"), typ=URIType.RUNTIME
         )
         if include_editable:
             console.print(

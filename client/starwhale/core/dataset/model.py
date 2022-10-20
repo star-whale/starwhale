@@ -15,7 +15,6 @@ from fs.copy import copy_fs
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
-    LATEST_TAG,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -25,7 +24,7 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, copy_file, empty_dir, ensure_dir
+from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
@@ -251,19 +250,16 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         return rs, {}
 
-    def buildImpl(
-        self, workdir: Path, yaml_name: str = DefaultYAMLName.DATASET, **kw: t.Any
-    ) -> None:
-        dataset_config = self._load_dataset_config(workdir / yaml_name)
-
-        append = kw.get("append", False)
+    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:
+        config = kw["config"]
+        append = config.append
         if append:
             append_from_uri = URI.capsulate_uri(
                 instance=self.uri.instance,
                 project=self.uri.project,
                 obj_type=self.uri.object.typ,
                 obj_name=self.uri.object.name,
-                obj_ver=kw.get("append_from", LATEST_TAG),
+                obj_ver=config.append_from,
             )
             append_from_store = DatasetStorage(append_from_uri)
             if not append_from_store.snapshot_workdir.exists():
@@ -278,14 +274,21 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (
+                self._dump_dataset_yaml,
+                5,
+                "dump_dataset_yaml",
+                dict(
+                    swds_config=config,
+                ),
+            ),
+            (
                 self._copy_src,
                 15,
                 "copy src",
                 dict(
                     workdir=workdir,
-                    yaml_name=yaml_name,
-                    pkg_data=dataset_config.pkg_data,
-                    exclude_pkg_data=dataset_config.exclude_pkg_data,
+                    pkg_data=config.pkg_data,
+                    exclude_pkg_data=config.exclude_pkg_data,
                 ),
             ),
             (
@@ -303,7 +306,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 "make swds",
                 dict(
                     workdir=workdir,
-                    swds_config=dataset_config,
+                    swds_config=config,
                     append=append,
                     append_from_uri=append_from_uri,
                     append_from_store=append_from_store,
@@ -440,10 +443,16 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             f":file_folder: swds workdir: [underline]{self.store.snapshot_workdir}[/]"
         )
 
+    def _dump_dataset_yaml(self, swds_config: DatasetConfig) -> None:
+        console.print(":battery: dump dataset.yaml")
+        _fpath = self.store.snapshot_workdir / DefaultYAMLName.DATASET
+        ensure_file(
+            _fpath, yaml.safe_dump(swds_config.asdict(), default_flow_style=False)
+        )
+
     def _copy_src(
         self,
         workdir: Path,
-        yaml_name: str,
         pkg_data: t.List[str],
         exclude_pkg_data: t.List[str],
     ) -> None:
@@ -451,12 +460,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         console.print(":thumbs_up: try to copy source code files...")
         workdir_fs = open_fs(str(workdir.absolute()))
         src_fs = open_fs(str(self.store.src_dir.absolute()))
-
-        # FIXME: user custom dataset.yaml file name
-        copy_file(workdir / yaml_name, self.store.src_dir / DefaultYAMLName.DATASET)
-        copy_file(
-            workdir / yaml_name, self.store.snapshot_workdir / DefaultYAMLName.DATASET
-        )
         # TODO: tune copy src
         copy_fs(
             workdir_fs,
@@ -466,10 +469,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
         logger.info("[step:copy]finish copy files")
-
-    def _load_dataset_config(self, yaml_path: Path) -> DatasetConfig:
-        self._do_validate_yaml(yaml_path)
-        return DatasetConfig.create_by_yaml(yaml_path)
 
 
 class CloudDataset(CloudBundleModelMixin, Dataset):

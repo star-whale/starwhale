@@ -3,6 +3,8 @@ import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+import yaml
+from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
@@ -18,7 +20,14 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.dataset.type import Link, DatasetConfig, DatasetSummary
+from starwhale.core.dataset.cli import _build as build_cli
+from starwhale.core.dataset.type import (
+    Link,
+    MIMEType,
+    DatasetConfig,
+    DatasetSummary,
+    D_FILE_VOLUME_SIZE,
+)
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.api._impl.dataset.builder import BaseBuildExecutor
@@ -81,6 +90,118 @@ class StandaloneDatasetTestCase(TestCase):
         sd._call_make_swds(**kwargs)  # type: ignore
         assert m_user_raw.call_count == 1
 
+    def test_build_only_cli(self) -> None:
+        workdir = "/tmp/workdir"
+        ensure_dir(workdir)
+
+        assert not (Path(workdir) / DefaultYAMLName.DATASET).exists()
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [workdir, "--name", "mnist", "--handler", "mnist:test"],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.build.call_count == 1
+        call_args = mock_obj.build.call_args[0]
+        assert call_args[0] == workdir
+        assert call_args[1].name == "mnist"
+        assert call_args[1].handler == "mnist:test"
+        assert call_args[1].append is not None
+
+    def test_build_only_yaml(self) -> None:
+        workdir = "/tmp/workdir"
+        ensure_dir(workdir)
+
+        config = DatasetConfig(
+            name="mnist", handler="dataset:build", append=True, append_from="112233"
+        )
+        yaml_path = Path(workdir) / DefaultYAMLName.DATASET
+        ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                workdir,
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build.call_count == 1
+        call_args = mock_obj.build.call_args[0]
+        assert call_args[1].name == "mnist"
+        assert call_args[1].handler == "dataset:build"
+        assert call_args[1].append
+        assert call_args[1].append_from == "112233"
+
+        new_workdir = "/tmp/workdir-new"
+        ensure_dir(new_workdir)
+        new_yaml_path = Path(new_workdir) / "dataset-new.yaml"
+        yaml_path.rename(new_yaml_path)
+        assert new_yaml_path.exists() and not yaml_path.exists()
+
+        mock_obj.reset_mock()
+        result = runner.invoke(build_cli, [new_workdir], obj=mock_obj)
+
+        assert result.exit_code == 1
+        assert result.exception
+
+        mock_obj.reset_mock()
+        result = runner.invoke(
+            build_cli, [new_workdir, "-f", "dataset-new.yaml"], obj=mock_obj
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build.call_count == 1
+        assert call_args[1].name == "mnist"
+        assert call_args[1].handler == "dataset:build"
+        assert call_args[1].append
+        assert call_args[1].append_from == "112233"
+
+    def test_build_mixed_cli_yaml(self) -> None:
+        workdir = "/tmp/workdir"
+        ensure_dir(workdir)
+        config = DatasetConfig(
+            name="mnist-error",
+            handler="dataset:buildClass",
+            append=True,
+            append_from="112233",
+        )
+        yaml_path = Path(workdir) / DefaultYAMLName.DATASET
+        ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                workdir,
+                "--name",
+                "mnist",
+                "--handler",
+                "dataset:buildFunction",
+                "--project",
+                "self",
+                "-dmt",
+                "video/mp4",
+            ],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.build.call_count == 1
+        call_args = mock_obj.build.call_args[0]
+        assert call_args[1].name == "mnist"
+        assert call_args[1].handler == "dataset:buildFunction"
+        assert call_args[1].append
+        assert call_args[1].append_from == "112233"
+        assert call_args[1].attr.data_mime_type == MIMEType.MP4
+        assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
+
     @patch("starwhale.core.dataset.model.copy_fs")
     @patch("starwhale.core.dataset.model.import_object")
     def test_build_workflow(
@@ -95,15 +216,13 @@ class StandaloneDatasetTestCase(TestCase):
         workdir = "/home/starwhale/myproject"
         name = "mnist"
 
-        self.fs.create_file(
-            os.path.join(workdir, DefaultYAMLName.DATASET), contents=_dataset_yaml
-        )
         ensure_dir(os.path.join(workdir, "data"))
         ensure_file(os.path.join(workdir, "mnist.py"), " ")
 
+        config = DatasetConfig(**yaml.safe_load(_dataset_yaml))
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
-        sd.build(Path(workdir))
+        sd.build(Path(workdir), config=config)
         build_version = sd.uri.object.version
 
         snapshot_workdir = (
@@ -179,7 +298,8 @@ class StandaloneDatasetTestCase(TestCase):
         _list, _ = StandaloneDataset.list(URI(""))
         assert len(_list[name]) == 0
 
-        DatasetTermView.build(workdir, "self")
+        config.project_uri = "self"
+        DatasetTermView.build(workdir, config)
 
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0

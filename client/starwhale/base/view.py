@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 import typing as t
@@ -11,18 +10,11 @@ from rich.table import Table
 from rich.pretty import Pretty
 from rich.console import RenderableType
 
-from starwhale.utils import (
-    Order,
-    console,
-    load_yaml,
-    pretty_bytes,
-    sort_obj_list,
-    snake_to_camel,
-)
+from starwhale.utils import Order, console, pretty_bytes, sort_obj_list, snake_to_camel
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
-from starwhale.utils.error import FileFormatError
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 
 
@@ -123,21 +115,17 @@ class BaseTermView(SWCliConfigMixed):
         return status, style, icon
 
     @staticmethod
-    def prepare_build_bundle(
-        workdir: str, project: str, yaml_name: str, typ: str
-    ) -> URI:
+    def prepare_build_bundle(project: str, bundle_name: str, typ: str) -> URI:
         console.print(f":construction: start to build {typ} bundle...")
         _project_uri = URI(project, expected_type=URIType.PROJECT)
-        _path = os.path.join(workdir, yaml_name)
-        _config = load_yaml(_path)
-        if "name" not in _config:
-            raise FileFormatError(f"{_path}, no name field")
+        if not bundle_name:
+            raise FieldTypeOrValueError("no bundle_name")
 
         _uri = URI.capsulate_uri(
             instance=_project_uri.instance,
             project=_project_uri.project,
             obj_type=typ,
-            obj_name=_config["name"],
+            obj_name=bundle_name,
         )
         console.print(f":construction_worker: uri:{_uri}")
         return _uri

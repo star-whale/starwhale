@@ -39,7 +39,7 @@ Starwhale Dataset 对数据集格式的定义，根据实际使用场景，有�
 - `swds` 虚拟包文件：swds 与swmp和swrt不一样，不是一个打包的单一文件，而是一个虚拟的概念，具体指的是一个目录，是Starwhale Dataset某个版本包含的数据集相关的文件，包括 _manifest.yaml, dataset.yaml, 数据集构建的Python脚本和数据文件的链接等。可以通过 `swcli dataset info` 命令查看swds所在目录。swds 是Starwhale Dataset的简写。
 ![swds-tree.png](../img/swds-tree.png)
 - `swcli dataset` 命令行：一组dataset相关的命令，包括构建、分发和管理等功能，具体说明参考[CLI Reference](../reference/cli/dataset.md)。
-- `dataset.yaml` 配置文件：描述数据集的构建过程，可以完全省略，通过swcli dataset build参数指定，可以认为dataset.yaml是build命令行参数的一种配置文件表示方式。
+- `dataset.yaml` 配置文件：描述数据集的构建过程，可以完全省略，通过swcli dataset build参数指定，可以认为dataset.yaml是build命令行参数的一种配置文件表示方式。swcli dataset build 参数优先级高于 dataset.yaml。
 - Dataset Python SDK：包括数据构建、数据加载和若干预定义的数据类型，具体说明参考[Python SDK](../reference/sdk/dataset.md)。
 - 数据集构建的Python脚本：使用Starwhale Python SDK编写的用来构建数据集的一系列脚本。
 
@@ -90,8 +90,12 @@ Starwhale Dataset 对数据集格式的定义，根据实际使用场景，有�
 |exclude_pkg_data|swds中排除的文件或目录，支持wildcard方式描述。不在pkg_data中指定或`.py/.sh/.yaml`后缀的文件，都不会拷贝到swds中|否|List[String]||
 |attr|数据集构建参数|否|Dict||
 |attr.volume_size|swds-bin格式的数据集每个data文件的大小。当写数字时，单位bytes；也可以是数字+单位格式，如64M, 1GB等|否|Int或Str|64MB|
-|attr.alignment_size|swds-bin格式的数据集每个数据块的数据alignment大小，如果设置alignment_size为4k，数据块大小为7.9K，则会补齐0.1K的空数据，让数据块为alignment_size的整数倍，提升page size等读取效率|否|Int或Str|4k|
-|attr.data_mime_type|如果不在代码中为每条数据指定MIMEType，则会使用该字段，便于Dataset Viewer呈现|否|Str|undefined|
+|attr.alignment_size|swds-bin格式的数据集每个数据块的数据alignment大小，如果设置alignment_size为4k，数据块大小为7.9K，则会补齐0.1K的空数据，让数据块为alignment_size的整数倍，提升page size等读取效率|否|Integer或String|4k|
+|attr.data_mime_type|如果不在代码中为每条数据指定MIMEType，则会使用该字段，便于Dataset Viewer呈现|否|String|undefined|
+|append|当append设置为True时，表示此次数据集构建会继承 `append_from`版本的数据集内容，实现追加数据集的目的。|否|Boolean|False|
+|append_from|与 `append` 参数组合使用，指定继承数据集的版本，注意此处并不是Dataset URI，而是同一个数据集下的其他版本号或tag，默认为latest，即最近一次构建的版本。|否|String|latest|
+|project_uri|Project URI|`swcli project select`命令设定的project|String||
+|runtime_uri|Runtime URI，若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时|否|String||
 
 当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。Starwhale SDK会根据函数返回值判断首个元素为 `Starwhale.Link` 类型时，构建remote-link或user-raw格式的数据集，否则构建user-raw格式的数据集。不支持混合格式的数据集。
 
