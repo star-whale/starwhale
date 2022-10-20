@@ -1,7 +1,7 @@
 import { expect, Locator, Page } from '@playwright/test'
 import { test } from '../setup/auth'
 import { CONST, ROUTES, SELECTOR } from './config'
-import { getTableDisplayRow, selectOption, wait } from './utils'
+import { getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
 let page: Page
 
 test.beforeAll(async ({ user }) => {
@@ -11,7 +11,7 @@ test.beforeAll(async ({ user }) => {
 })
 
 test.afterAll(async ({}) => {
-    await wait(1000)
+    await wait(10000)
 
     if (process.env.CLOSE_AFTER_TEST === 'true') {
         await page.context().close()
@@ -77,6 +77,9 @@ test.describe('Evaluation', () => {
         const p = page.locator(SELECTOR.table)
         await selectOption(page, '.table-config-view', 'All runs')
         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
+    })
+    test.afterAll(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
     })
 
     test.describe('Auth', () => {
@@ -170,7 +173,7 @@ test.describe('Evaluation', () => {
             await p.locator(SELECTOR.row2column1).locator('label').check()
             await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
             await wait(1000)
-            await expect(page.locator('.header-cell--focused')).toHaveText(/mnist\-5/)
+            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-5/)
             await expect(await page.locator('.icon-rise').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
             await p.locator(SELECTOR.row2column1).locator('label').uncheck()
@@ -178,4 +181,72 @@ test.describe('Evaluation', () => {
     })
 })
 
-export default wait
+test.describe('Evaluation Create', () => {
+    test.beforeAll(async () => {
+        await page.goto(ROUTES.evaluations)
+        await wait(500)
+        await page.getByRole('button', { name: /Create$/ }).click()
+        await expect(page).toHaveURL(ROUTES.evaluationNewJob)
+    })
+    test.afterAll(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
+
+    test.describe('Auth', () => {
+        test('none admin should have no create button', async () => {
+            await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
+        })
+    })
+})
+
+test.describe('Evaluation Results', () => {
+    test.afterEach(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
+
+    test.describe('Results', () => {
+        test.beforeAll(async () => {
+            if (page.url().includes(ROUTES.evaluations)) await page.getByRole('link', { name: '5' }).click()
+            if (!page.url().includes(ROUTES.evaluationResult)) await page.goto(ROUTES.evaluationResult)
+        })
+        test('should have panels  summary/confusion matrix/label.roc_auc', async () => {
+            await expect(page.getByText('Summary')).toBeVisible()
+            await expect(page.getByText('roc_auc/0')).toBeVisible()
+            await expect(page.getByText('labels')).toBeVisible()
+            await expect(page.locator(SELECTOR.confusionMatrix)).toBeVisible()
+        })
+    })
+
+    test.describe('Actions', () => {
+        test.beforeAll(async () => {
+            await page.getByRole('tab', { name: /Actions/ }).click()
+            if (!page.url().includes(ROUTES.evaluationActions)) await page.goto(ROUTES.evaluationActions)
+        })
+        test('should have dag', async () => {
+            await page.waitForSelector(':has-text("Step")')
+            await expect(page.getByText('Step')).toBeDefined()
+            await wait(1000)
+        })
+    })
+
+    test.describe('Tasks', () => {
+        test.beforeAll(async () => {
+            await page.getByRole('tab', { name: /Tasks/ }).click()
+            if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
+        })
+        test('should have 3 tasks of success status', async () => {
+            await expect(page.getByText('Success')).toHaveCount(3)
+        })
+        test('should show log & log count greater than 10', async () => {
+            await page
+                .getByText(/View Log/)
+                .first()
+                .click()
+            await page.getByText(/Log\:/).first().click()
+            await page.waitForSelector('.ReactVirtualized__Grid__innerScrollContainer > div')
+            await expect(
+                await page.locator('.ReactVirtualized__Grid__innerScrollContainer > div').count()
+            ).toBeGreaterThan(10)
+        })
+    })
+})

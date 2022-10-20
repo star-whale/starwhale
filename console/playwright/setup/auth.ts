@@ -7,9 +7,10 @@ import config from '../playwright.config'
 import { USERS, SELECTOR } from '../tests/config'
 export { expect } from '@playwright/test'
 
-fse.emptyDir('test-video')
+// fse.emptyDir('test-video')
 // fse.emptyDir('test-storage')
 fse.ensureDir('test-video')
+fse.ensureDir('test-storage')
 
 export const test = baseTest.extend({
     admin: async ({ browser }, use) => {

@@ -1,3 +1,6 @@
+export const CONFIG = {
+    screenshotDir: 'test-video',
+}
 export const USERS = [
     { role: 'admin', username: 'starwhale', password: 'abcd1234' },
     { role: 'maintainer', username: 'lwzlwz', password: 'abcd1234' },
@@ -18,6 +21,10 @@ export const CONST = {
 }
 export const ROUTES = {
     evaluations: `/projects/${CONST.projectId}/evaluations`,
+    evaluationResult: `/projects/${CONST.projectId}/evaluations/5/results`,
+    evaluationActions: `/projects/${CONST.projectId}/evaluations/5/actions`,
+    evaluationTasks: `/projects/${CONST.projectId}/evaluations/5/tasks`,
+    evaluationNewJob: `/projects/${CONST.projectId}/new_job`,
 }
 export const SELECTOR = {
     loginName: 'input[type="text"]',
@@ -46,8 +53,11 @@ export const SELECTOR = {
     table: '[class*=tablePinnable]',
     tableCompare: '[class*=tableComparable]',
     headerFirst: '.table-headers .header-cell >> nth=0',
+    headerFocused: '.header-cell--focused',
     row1column1: '[data-row-index="0"] [data-column-index="0"]',
     row2column1: '[data-row-index="1"] [data-column-index="0"]',
     // --- list ----
     listCreate: '[class*=cardHeadWrapper] >> :has-text("Create")',
+    // --- evaluation result ----
+    confusionMatrix: '[class*=card]:has(:has-text("Confusion Matrix")) >> .plotly',
 }
