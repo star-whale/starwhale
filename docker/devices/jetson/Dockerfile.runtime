@@ -1,0 +1,20 @@
+ARG BASE_IMAGE=ghcr.io/star-whale/jetson-cuda-base:r34.1
+FROM ${BASE_IMAGE}
+
+ARG SW_VERSION=0.1.0
+ENV SW_VERSION ${SW_VERSION}
+
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+
+ENV SW_SWMP_WORKDIR=/opt/starwhale/swmp
+ENV SW_TASK_INPUT_CONFIG=/opt/starwhale/config/input.json
+ENV SW_TASK_STATUS_DIR=/opt/starwhale/status
+ENV SW_TASK_LOG_DIR=/opt/starwhale/log
+ENV SW_TASK_RESULT_DIR=/opt/starwhale/result
+
+ENV SW_CONTAINER=1
+
+COPY simple-entrypoint /usr/local/bin/sw-docker-entrypoint
+WORKDIR /opt/starwhale/swmp
+ENTRYPOINT ["/usr/local/bin/sw-docker-entrypoint"]

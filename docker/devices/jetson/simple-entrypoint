@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -e
+
+SWMP_DIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
+SWRT_DIR=${SW_SWRT_WORKDIR:=/opt/starwhale/swrt}
+PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
+VERBOSE="-vvvv"
+STEP=${SW_TASK_STEP:-""}
+TASK_INDEX=${SW_TASK_INDEX:-0}
+TASK_NUM=${SW_TASK_NUM:-0}
+
+run() {
+    echo "--> start to run swmp ${STEP}, use $(which swcli) cli @ ${SWMP_DIR} ..."
+    swcli ${VERBOSE} model eval "${SWMP_DIR}"/src --dataset=${SW_DATASET_URI} --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --version=${SW_EVALUATION_VERSION} || exit 1
+}
+
+welcome() {
+    echo "===================================="
+    echo "StarWhale Docker Entrypoint"
+    echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
+    echo "Version: `swcli --version`"
+    echo "Run: $1 "
+    echo "Model Version: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
+    echo "Model Workdir: ${SWMP_DIR}"
+    echo "Runtime Workdir: ${SWRT_DIR}"
+    echo "===================================="
+}
+
+welcome && run

@@ -1,0 +1,10 @@
+api_version: 1.1
+configs:
+  pip:
+    index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple
+    trusted_host:
+      - mirrors.bfsu.edu.cn
+environment:
+  docker:
+    image: jetson:runtime
+name: jetson-gpu-for-mnist
