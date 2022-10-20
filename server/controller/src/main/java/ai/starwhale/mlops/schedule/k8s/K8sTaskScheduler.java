@@ -98,12 +98,12 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     @Override
     public void schedule(Collection<Task> tasks) {
-        tasks.parallelStream().forEach(this::deployTaskToK8s);
+        tasks.stream().forEach(this::deployTaskToK8s);
     }
 
     @Override
     public void stopSchedule(Collection<Long> taskIds) {
-        taskIds.parallelStream().forEach(id -> {
+        taskIds.stream().forEach(id -> {
             try {
                 k8sClient.deleteJob(id.toString());
             } catch (ApiException e) {
@@ -225,7 +225,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     private void taskFailed(Task task) {
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(
-                Set.of(TaskWatcherForJobStatus.class, TaskWatcherForSchedule.class, TaskWatcherForLogging.class));
+                Set.of(TaskWatcherForSchedule.class, TaskWatcherForLogging.class));
         // todo save log
         task.updateStatus(TaskStatus.FAIL);
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
