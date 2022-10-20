@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -66,6 +67,13 @@ public class K8sTaskSchedulerTest {
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
+        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
+        scheduler.schedule(Set.of(mockTask()));
+        verify(k8sClient).deploy(any());
+    }
+
+    @NotNull
+    private K8sTaskScheduler buildK8sSheduler(K8sClient k8sClient) throws IOException {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setS3Config(
                 S3Config.builder()
@@ -87,8 +95,17 @@ public class K8sTaskSchedulerTest {
                 null,
                 null,
                 "http://instanceUri", new StorageEnvsPropertiesConverter(storageProperties));
-        scheduler.schedule(Set.of(mockTask()));
-        verify(k8sClient).deploy(any());
+        return scheduler;
+    }
+
+    @Test
+    public void testException() throws ApiException, IOException {
+        K8sClient k8sClient = mock(K8sClient.class);
+        when(k8sClient.deploy(any())).thenThrow(new ApiException());
+        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
+        Task task = mockTask();
+        scheduler.schedule(Set.of(task));
+        Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
 
     private Task mockTask() {
