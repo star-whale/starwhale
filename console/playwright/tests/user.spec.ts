@@ -1,7 +1,7 @@
 import { expect, Locator, Page } from '@playwright/test'
 import { test } from '../setup/auth'
 import { CONST, ROUTES, SELECTOR } from './config'
-import { getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
+import { getLastestRowID, getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
 let page: Page
 
 test.beforeAll(async ({ user }) => {
@@ -77,33 +77,29 @@ test.describe('Evaluation', () => {
         const p = page.locator(SELECTOR.table)
         await selectOption(page, '.table-config-view', 'All runs')
         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
+        await page.locator('role=button[name="Evaluation ID"] >> label:not([aria-checked="false"])').click()
     })
     test.afterAll(async () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
 
-    test.describe('Auth', () => {
-        test('none admin should have no create button', async () => {
-            await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
-        })
-    })
+    // test.describe('Auth', () => {
+    //     test('none admin should have no create button', async () => {
+    //         await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
+    //     })
+    // })
 
     test.describe('List', () => {
         test('should evaluation have toolbar/header/row', async () => {
             const p = page.locator(SELECTOR.table)
 
-            await page.waitForSelector('role=button[name="Evaluation ID"] ')
-            // await page.getByRole('button', { name: 'Evaluation ID' }).click()
-            // await p.locator('role=button[name="Evaluation ID"] >> role=checkbox[checked=false]').click()
-            // await p.locator('role=button[name="Evaluation ID"] >> label').click()
-            // console.log(await p.locator('role=button[name="Evaluation ID"] >> input').isChecked())
+            await page.waitForSelector('role=button[name="Evaluation ID"]')
 
             await expect(p.getByText('Select a view')).toBeTruthy()
             await expect(p.getByText('Filters')).toBeTruthy()
             await expect(p.getByText('Manage Columns')).toBeTruthy()
 
             await page.waitForSelector('.table-headers')
-            await expect(p.locator('.table-headers')).toHaveCount(1)
             await expect(p.locator('.table-headers').getByText('Evaluation ID')).toBeTruthy()
         })
     })
@@ -120,7 +116,7 @@ test.describe('Evaluation', () => {
             const p = page.locator(SELECTOR.table)
             await p.getByRole('textbox', { name: 'Search by text' }).fill('')
             await wait(1000)
-            await expect(await getTableDisplayRow(p)).toEqual(5)
+            await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
         })
     })
 
@@ -173,7 +169,7 @@ test.describe('Evaluation', () => {
             await p.locator(SELECTOR.row2column1).locator('label').check()
             await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
             await wait(1000)
-            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-5/)
+            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-/)
             await expect(await page.locator('.icon-rise').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
             await p.locator(SELECTOR.row2column1).locator('label').uncheck()
@@ -182,19 +178,48 @@ test.describe('Evaluation', () => {
 })
 
 test.describe('Evaluation Create', () => {
+    let rowCount: any
+
     test.beforeAll(async () => {
         await page.goto(ROUTES.evaluations)
         await wait(500)
+        rowCount = await getLastestRowID(page)
         await page.getByRole('button', { name: /Create$/ }).click()
         await expect(page).toHaveURL(ROUTES.evaluationNewJob)
+        await selectOption(page, SELECTOR.formItem('Model Name'), 'mnist')
+        await selectOption(page, SELECTOR.formItem('Dataset Name'), 'mnist')
+        await selectOption(page, SELECTOR.formItem('Runtime'), 'pytorch-mnist')
+        const versions = page.locator(SELECTOR.formItem('Version'))
+        const count = await versions.count()
+        for (let i = 0; i < count; i++) {
+            await expect(versions.nth(i)).not.toBeEmpty()
+        }
     })
     test.afterAll(async () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
+    test.describe('Overview', () => {
+        test('should add resource', async () => {
+            const add = page.getByRole('button', { name: /Add/ }).first()
+            await expect(add).toBeVisible()
 
-    test.describe('Auth', () => {
-        test('none admin should have no create button', async () => {
-            await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
+            await add.click()
+            const resourceItem = (i: number, j: number) =>
+                `[class*=resource] >> nth=${i} >> [data-baseweb="form-control-container"] >> nth=${j} >> div`
+            await selectOption(page, resourceItem(0, 0), 'cpu')
+            await page.locator(resourceItem(0, 1)).locator('input').fill('1')
+            await page.locator(SELECTOR.formItem('Raw Type')).click()
+            expect(page.locator('.view-lines')).toHaveText(
+                '- concurrency: 1  needs: []  resources:    - type: cpu      num: 1  job_name: default  step_name: ppl  task_num: 1- concurrency: 1  needs:    - ppl  resources: []  job_name: default  step_name: cmp  task_num: 1'
+            )
+        })
+    })
+
+    test.describe('Submit', () => {
+        test('should select lastest versions', async () => {
+            await page.getByRole('button', { name: 'Submit' }).click()
+            await expect(page).toHaveURL(ROUTES.evaluations)
+            await expect(await getLastestRowID(page)).toBeGreaterThan(rowCount)
         })
     })
 })
