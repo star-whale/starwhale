@@ -140,10 +140,13 @@ Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
 
 #### 6.2.1 Prerequisites
 
-- OS：Linux、macOS or Windows
+- OS: Linux, macOS or Windows
+- Docker: >=19.03
 - JDK: >=11
-- Maven：>=3.8.1
-- Mysql：>=8.0.29(As a basic data storage service for server, you need to rely on this service when starting)
+- Maven: >=3.8.1
+- Mysql: >=8.0.29
+- Minio
+- Kubernetes cluster/Minikube(If you don't have a k8s cluster, you can use Minikube as an alternative for development and debugging)
 
 #### 6.2.2 Modify the code and add unit tests
 
