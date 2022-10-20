@@ -55,13 +55,17 @@ You will need to fork the code of Starwhale repository and clone it to your loca
 
 - Fork Starwhale repository: [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork),For more usage details, please refer to: [Fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 - Install Git-LFS:[Git-LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
-  ```bash
+
+ ```bash
   git lfs install
   ```
+
 - Clone code to local machine
+
   ```bash
   git clone https://github.com/${your username}/starwhale.git
   ```
+
 ## 5. Development environment for Standalone Instance
 
 Standalone Instance is written in Python3. When you want to modify swcli and sdk, you need to build the development environment.
@@ -135,6 +139,7 @@ Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
 - Check style tool：use maven-checkstyle-plugin
 
 #### 6.2.1 Prerequisites
+
 - OS：Linux、macOS or Windows
 - JDK: >=11
 - Maven：>=3.8.1
@@ -152,14 +157,18 @@ mvn clean test
 ```
 
 #### 6.2.4 Deploy the server at local machine
+
 - Dependent services that need to be deployed
   - Minikube（Optional. Minikube can be used when there is no k8s cluster, there is the installation doc: [Minikube](https://minikube.sigs.k8s.io/docs/start/)）
+
     ```bash
     minikube start
     minikube addons enable ingress
     minikube addons enable ingress-dns
     ```
+
   - Mysql
+
     ```bash
     docker run --name sw-mysql -d \
     -p 3306:3306 \
@@ -169,7 +178,9 @@ mvn clean test
     -e MYSQL_DATABASE=starwhale \
     mysql:latest
     ```
+
   - Minio
+
     ```bash
     docker run --name minio -d
     -p 9000:9000  --publish 9001:9001
@@ -190,6 +201,7 @@ mvn clean test
   ```
 
 - Specify the environment required for server startup
+
   ```bash
   # Minio env
   export SW_STORAGE_ENDPOINT=http://${Minio IP,default is:27.0.0.1}:9000
@@ -207,6 +219,7 @@ mvn clean test
   export SW_METADATA_STORAGE_USER=${Mysql user,default: starwhale}
   export SW_METADATA_STORAGE_PASSWORD=${user password,default: starwhale}
   ```
+
 - Deploy server service
 
   You can use the IDE or the command to deploy.
@@ -214,8 +227,10 @@ mvn clean test
   ```bash
   java -jar controller/target/starwhale-controller-0.1.0-SNAPSHOT.jar
   ```
+
 - Debug
 
   there are two ways to debug the modified function:
-  - Use swagger-ui for interface debugging, visit http://localhost:8082/swagger-ui/index.html to find the corresponding api
+
+  - Use swagger-ui for interface debugging, visit /swagger-ui/index.html to find the corresponding api
   - Debug the corresponding function directly in the ui (provided that the front-end code has been built in advance according to the instructions when packaging)

@@ -59,10 +59,13 @@ Starwhale社区使用[Github Issues](https://github.com/star-whale/starwhale/iss
 
 - Fork Starwhale仓库：[Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork)，更多使用详情可参考：[Fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 - 安装Git-LFS：[Git LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
+
   ```bash
   git lfs install
   ```
+
 - Clone代码到本地
+
   ```bash
   git clone https://github.com/${your username}/starwhale.git
   ```
@@ -137,6 +140,7 @@ Cloud Instance的后端采用Java编写，前端采用React+TypeScript编写，�
 - 代码检查：使用maven插件 maven-checkstyle-plugin
 
 #### 6.2.1 前置条件
+
 - OS：Linux、macOS或Windows
 - JDK: >=11
 - Docker：>=19.03
@@ -157,14 +161,18 @@ mvn clean package
 ```
 
 #### 6.2.4 本地部署服务
+
 - 前置服务
   - Minikube（可选，无k8s集群时可使用此服务，安装方式可见：[Minikube](https://minikube.sigs.k8s.io/docs/start/)）
+
     ```bash
     minikube start
     minikube addons enable ingress
     minikube addons enable ingress-dns
     ```
+
   - Mysql
+
     ```bash
     docker run --name sw-mysql -d \
     -p 3306:3306 \
@@ -174,7 +182,9 @@ mvn clean package
     -e MYSQL_DATABASE=starwhale \
     mysql:latest
     ```
+
   - Minio
+
     ```bash
     docker run --name minio -d
     -p 9000:9000  --publish 9001:9001
@@ -188,6 +198,7 @@ mvn clean package
   > 若部署server端时，需要把前端同时部署上，可先执行前端部分的构建命令，然后执行'mvn clean package'，则会自动将已编译好的前端文件打包进来。
 
   使用如下命令对程序进行打包：
+
   ```bash
   cd starwhale/server
   mvn clean package
@@ -226,5 +237,5 @@ mvn clean package
 
     这里有两种方式对修改的功能进行调试：
 
-  - 使用swagger-ui进行接口调试，访问 http://localhost:8082/swagger-ui/index.html找到对应的api即可。
-  - 或直接在ui（访问http://localhost:8082）中进行相应功能的调试（前提是打包时已经按说明将前端代码进行了提前构建）
+  - 使用swagger-ui进行接口调试，访问 /swagger-ui/index.html找到对应的api即可。
+  - 或直接在ui访问，进行相应功能的调试（前提是打包时已经按说明将前端代码进行了提前构建）
