@@ -22,6 +22,7 @@ class Evaluation:
         gencmd: bool = False,
         step: str = "",
         task_index: int = 0,
+        resource_pool: str = "",
     ) -> bool:
         """
         :param project:
@@ -31,12 +32,12 @@ class Evaluation:
         :param runtime: runtime uri
         :param name: job name
         :param desc: job description
-        :param step_spec: [ONLY Cloud]resource, fmt is resource [name]:[cnt],
-                         such as cpu:1, gpu:2
+        :param step_spec: [ONLY Cloud]yaml format
         :param use_docker: [ONLY Standalone]use docker to run evaluation job
         :param gencmd: [ONLY Standalone]gen docker run command
         :param step: Evaluation run step
         :param task_index:
+        :param resource_pool: [ONLY Cloud] which nodes should job run on
         :return:
         """
         _valid_str = "success to create job"
@@ -51,6 +52,8 @@ class Evaluation:
             _args.extend(["--desc", desc])
         if step_spec:
             _args.extend(["--step-spec", step_spec])
+        if resource_pool:
+            _args.extend(["--resource-pool", resource_pool])
         if use_docker:
             _args.append("--use-docker")
         # TODO: return value is str

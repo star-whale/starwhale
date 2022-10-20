@@ -10,9 +10,19 @@ import { FormControl } from 'baseui/form-control'
 import { Textarea } from 'baseui/textarea'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { IUserSchema } from '@user/schemas/user'
+import { createUseStyles } from 'react-jss'
 import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
+
+const useStyles = createUseStyles({
+    project: {},
+    projectName: {
+        display: 'flex',
+        alignContent: 'stretch',
+        alignItems: 'flex-start',
+    },
+})
 
 export interface IProjectFormProps {
     project?: IProjectSchema
@@ -89,6 +99,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     const [t] = useTranslation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
+    const styles = useStyles()
 
     const user = React.useMemo(() => {
         return project?.owner ?? currentUser
@@ -129,14 +140,13 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     )
 
     return (
-        <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <div
-                style={{
-                    display: 'flex',
-                    alignContent: 'stretch',
-                    alignItems: 'flex-start',
-                }}
-            >
+        <Form
+            className={styles.project}
+            initialValues={values}
+            onFinish={handleFinish}
+            onValuesChange={handleValuesChange}
+        >
+            <div className={styles.projectName}>
                 <FormItem
                     key='ownerId'
                     name='ownerId'

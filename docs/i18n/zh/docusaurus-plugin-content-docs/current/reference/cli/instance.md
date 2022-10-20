@@ -18,13 +18,13 @@ instance命令提供基本的Instance管理，包括登陆、查看本地Instanc
 
 instance包含如下子命令：
 
-|Command|Standalone|Cloud|
-|-------|----------|-----|
-|login|❌|✅|
-|logout|❌|✅|
-|select|✅|✅|
-|list|✅|✅|
-|info|✅|✅|
+|命令|别名|Standalone|Cloud|
+|---|---|----------|-----|
+|login||❌|✅|
+|logout||❌|✅|
+|select|use|✅|✅|
+|list|ls|✅|✅|
+|info||✅|✅|
 
 ## 2. 登陆Instance
 

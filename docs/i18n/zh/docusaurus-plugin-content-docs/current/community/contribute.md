@@ -58,6 +58,10 @@ Starwhale社区使用[Github Issues](https://github.com/star-whale/starwhale/iss
 你需要fork Starwhale仓库代码并clone到本机，
 
 - Fork Starwhale仓库：[Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork)，更多使用详情可参考：[Fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
+- 安装Git-LFS：[Git LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
+  ```bash
+  git lfs install
+  ```
 - Clone代码到本地
   ```bash
   git clone https://github.com/${your username}/starwhale.git

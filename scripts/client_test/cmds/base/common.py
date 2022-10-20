@@ -1,3 +1,5 @@
+from os.path import exists
+
 from .invoke import invoke, invoke_with_react
 
 
@@ -18,65 +20,31 @@ class EnvironmentPrepare:
         )
         print(f"install package info:{_res}, err is:{_err}")
 
+    def download(self, package: str) -> None:
+        if not exists(f"{self.work_dir}/example/mnist/data/{package}"):
+            invoke(
+                [
+                    "wget",
+                    "-P",
+                    f"{self.work_dir}/example/mnist/data",
+                    f"http://yann.lecun.com/exdb/mnist/{package}",
+                ]
+            )
+        invoke_with_react(
+            [
+                "gzip",
+                "-d",
+                f"{self.work_dir}/example/mnist/data/{package}",
+            ]
+        )
+
     def prepare_mnist_data(self) -> None:
         # TODO use make
-        invoke(
-            [
-                "wget",
-                "-P",
-                f"{self.work_dir}/example/mnist/data",
-                "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz",
-            ]
-        )
-        invoke(
-            [
-                "wget",
-                "-P",
-                f"{self.work_dir}/example/mnist/data",
-                "http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz",
-            ]
-        )
-        invoke(
-            [
-                "wget",
-                "-P",
-                f"{self.work_dir}/example/mnist/data",
-                "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz",
-            ]
-        )
-        invoke(
-            [
-                "wget",
-                "-P",
-                f"{self.work_dir}/example/mnist/data",
-                "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz",
-            ]
-        )
-        invoke_with_react(
-            [
-                "gzip",
-                "-d",
-                f"{self.work_dir}/example/mnist/data/train-images-idx3-ubyte.gz",
-            ]
-        )
-        invoke_with_react(
-            [
-                "gzip",
-                "-d",
-                f"{self.work_dir}/example/mnist/data/train-labels-idx1-ubyte.gz",
-            ]
-        )
-        invoke_with_react(
-            [
-                "gzip",
-                "-d",
-                f"{self.work_dir}/example/mnist/data/t10k-images-idx3-ubyte.gz",
-            ]
-        )
-        invoke_with_react(
-            [
-                "gzip",
-                "-d",
-                f"{self.work_dir}/example/mnist/data/t10k-labels-idx1-ubyte.gz",
-            ]
-        )
+        packages = [
+            "train-images-idx3-ubyte.gz",
+            "train-labels-idx1-ubyte.gz",
+            "t10k-images-idx3-ubyte.gz",
+            "t10k-labels-idx1-ubyte.gz",
+        ]
+        for pkg in packages:
+            self.download(pkg)

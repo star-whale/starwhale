@@ -31,7 +31,7 @@ type IProjectCardProps = {
 }
 
 const useCardStyles = createUseStyles({
-    card: {
+    projectCard: {
         'display': 'flex',
         'height': '120px',
         'gap': '6px',
@@ -129,7 +129,11 @@ const useCardStyles = createUseStyles({
         display: 'none',
         gap: '12px',
     },
-    actionButton: {
+    edit: {
+        display: 'flex',
+        justifyContent: 'center',
+    },
+    delete: {
         display: 'flex',
         justifyContent: 'center',
     },
@@ -142,7 +146,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
     const { role } = useFetchProjectRole(project?.id)
 
     return (
-        <div className={styles.card}>
+        <div className={styles.projectCard}>
             <div className={styles.row}>
                 <div className={styles.name}>
                     <TextLink className={styles.text} to={`/projects/${project.id}/evaluations`}>
@@ -262,39 +266,41 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                     </IconLink>
                     <WithAuth role={role} id='project.update'>
                         <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
-                            <Button
-                                onClick={onEdit}
-                                size='compact'
-                                kind='secondary'
-                                overrides={{
-                                    BaseButton: {
-                                        style: {
-                                            'display': 'flex',
-                                            'fontSize': '12px',
-                                            'backgroundColor': '#F4F5F7',
-                                            'width': '20px',
-                                            'height': '20px',
-                                            'textDecoration': 'none',
-                                            'color': 'gray !important',
-                                            'paddingLeft': '10px',
-                                            'paddingRight': '10px',
-                                            ':hover span': {
-                                                color: ' #5181E0  !important',
-                                            },
-                                            ':hover': {
-                                                backgroundColor: '#F0F4FF',
+                            <div className={styles.edit}>
+                                <Button
+                                    onClick={onEdit}
+                                    size='compact'
+                                    kind='secondary'
+                                    overrides={{
+                                        BaseButton: {
+                                            style: {
+                                                'display': 'flex',
+                                                'fontSize': '12px',
+                                                'backgroundColor': '#F4F5F7',
+                                                'width': '20px',
+                                                'height': '20px',
+                                                'textDecoration': 'none',
+                                                'color': 'gray !important',
+                                                'paddingLeft': '10px',
+                                                'paddingRight': '10px',
+                                                ':hover span': {
+                                                    color: ' #5181E0  !important',
+                                                },
+                                                ':hover': {
+                                                    backgroundColor: '#F0F4FF',
+                                                },
                                             },
                                         },
-                                    },
-                                }}
-                            >
-                                <IconFont type='edit' size={10} />
-                            </Button>
+                                    }}
+                                >
+                                    <IconFont type='edit' size={10} />
+                                </Button>
+                            </div>
                         </StatefulTooltip>
                     </WithAuth>
                     <WithAuth role={role} id='project.delete'>
                         <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
-                            <div className={styles.actionButton}>
+                            <div className={styles.delete}>
                                 <ConfirmButton
                                     as='link'
                                     key={project?.id}

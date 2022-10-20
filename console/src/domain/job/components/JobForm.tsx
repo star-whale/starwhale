@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE, KIND } from 'baseui/button'
+import { SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
@@ -22,6 +22,8 @@ import yaml from 'js-yaml'
 import Toggle from '@/components/Select/Toggle'
 import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
+import IconFont from '@/components/IconFont'
+import Button from '@/components/Button'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
@@ -34,8 +36,14 @@ const useStyles = createUseStyles({
     },
     row4: {
         display: 'grid',
-        gap: 40,
-        gridTemplateColumns: '280px 140px 280px 140px',
+        columnGap: 40,
+        gridTemplateColumns: '120px 120px 480px 100px',
+    },
+    resource: {
+        gridColumnStart: 3,
+        display: 'grid',
+        columnGap: 40,
+        gridTemplateColumns: '260px 120px 40px',
     },
 })
 
@@ -95,7 +103,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
     const modelVersionApi = modelVersionRef.current?.getData()
 
-    const stepSource = React.useMemo(() => {
+    const stepSource: StepSpec[] = React.useMemo(() => {
         if (!modelVersionApi) return []
         const list = modelVersionApi?.data?.list ?? []
         return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
@@ -134,30 +142,31 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         },
         [onSubmit, history, stepSpecOverWrites, t, stepSource]
     )
+
+    const updateFormStepObj = ($newStep: StepSpec[]) => {
+        form.setFieldsValue({ stepSpecOverWrites: $newStep })
+        setValues({
+            ...(values as any),
+            stepSpecOverWrites: $newStep,
+        })
+    }
+
     const rawRef = React.useRef(false)
     React.useEffect(() => {
         if (rawRef.current === rawType) return
         if (!rawType) {
-            const $stepOverided = yaml.load(stepSpecOverWrites)
-            form.setFieldsValue({ stepSpecOverWrites: $stepOverided as StepSpec[] })
+            updateFormStepObj(yaml.load(stepSpecOverWrites) as StepSpec[])
         } else {
-            const $stepOverided = _.merge([], stepSource, values?.stepSpecOverWrites)
-            setStepSpecOverWrites(yaml.dump($stepOverided))
+            setStepSpecOverWrites(yaml.dump(_.merge([], stepSource, form.getFieldValue('stepSpecOverWrites'))))
         }
         rawRef.current = rawType
-    }, [
-        stepSource,
-        form,
-        setStepSpecOverWrites,
-        rawType,
-        modelVersionId,
-        stepSpecOverWrites,
-        values?.stepSpecOverWrites,
-    ])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stepSource, form, setStepSpecOverWrites, rawType, modelVersionId, stepSpecOverWrites])
 
     React.useEffect(() => {
         setStepSpecOverWrites(yaml.dump(stepSource))
-        form.setFieldsValue({ stepSpecOverWrites: [...stepSource] })
+        updateFormStepObj([...stepSource])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites])
 
     // const handleAddDataset = useCallback(() => {
@@ -223,7 +232,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                 label={i === 0 && t('Step')}
                                 name={['stepSpecOverWrites', i, 'step_name']}
                                 required
-                                initialValue={spec?.step_name}
                             >
                                 <Input disabled />
                             </FormItem>
@@ -231,35 +239,74 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                 label={i === 0 && t('Task Amount')}
                                 name={['stepSpecOverWrites', i, 'task_num']}
                                 required
-                                initialValue={spec.task_num}
                             >
                                 <NumberInput />
                             </FormItem>
-                            {spec.resources?.map((resource, j) => (
-                                <React.Fragment key={['stepSpecOverWrites', i, 'resources', j].join('')}>
-                                    <FormItem
-                                        label={i === 0 && t('Resource')}
-                                        name={['stepSpecOverWrites', i, 'resources', j, 'type']}
-                                        required
-                                        initialValue={resource.type}
-                                    >
-                                        <DeviceSelector />
-                                    </FormItem>
-                                    <FormItem
-                                        label={i === 0 && t('Resource Amount')}
-                                        name={['stepSpecOverWrites', i, 'resources', j, 'num']}
-                                        required
-                                        initialValue={resource.num}
-                                    >
-                                        <NumberInput />
-                                    </FormItem>
-                                </React.Fragment>
-                            ))}
+                            {spec.resources && spec.resources?.length > 0 && (
+                                <div>
+                                    {spec.resources?.map((resource, j) => (
+                                        <div
+                                            className={styles.resource}
+                                            key={['stepSpecOverWrites', i, 'resources', j].join('')}
+                                        >
+                                            <FormItem
+                                                label={i === 0 && j === 0 && t('Resource')}
+                                                name={['stepSpecOverWrites', i, 'resources', j, 'type']}
+                                                required
+                                            >
+                                                <DeviceSelector />
+                                            </FormItem>
+                                            <FormItem
+                                                label={i === 0 && j === 0 && t('Resource Amount')}
+                                                name={['stepSpecOverWrites', i, 'resources', j, 'num']}
+                                                required
+                                            >
+                                                <NumberInput />
+                                            </FormItem>
+                                            <FormItem label={i === 0 && j === 0 && ' '}>
+                                                <Button
+                                                    as='link'
+                                                    type='button'
+                                                    onClick={() => {
+                                                        const $step = [...stepSpecOverWritesList]
+                                                        $step?.[i]?.resources?.splice(j, 1)
+                                                        updateFormStepObj($step)
+                                                    }}
+                                                    startEnhancer={
+                                                        <IconFont
+                                                            type='item-reduce'
+                                                            style={{ color: 'red', marginTop: '8px' }}
+                                                            size={20}
+                                                        />
+                                                    }
+                                                />
+                                            </FormItem>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <FormItem label={i === 0 && t('Add Resource')}>
+                                <Button
+                                    size='compact'
+                                    type='button'
+                                    onClick={() => {
+                                        const $step = [...stepSpecOverWritesList]
+                                        $step?.[i]?.resources?.push({})
+                                        updateFormStepObj($step)
+                                    }}
+                                    startEnhancer={<IconFont type='add' kind='white' />}
+                                >
+                                    Add
+                                </Button>
+                            </FormItem>
                         </div>
                     )
                 })}
-
-            {rawType && (
+            <div
+                style={{
+                    display: rawType ? 'block' : 'none',
+                }}
+            >
                 <Editor
                     height='500px'
                     width='960px'
@@ -269,7 +316,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     // @ts-ignore
                     onChange={handleEditorChange}
                 />
-            )}
+            </div>
+
             <Divider orientation='top'>{t('Datasets')}</Divider>
             <div className={styles.row3}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>

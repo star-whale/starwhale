@@ -2,20 +2,25 @@ import typing as t
 
 import click
 
+from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
 @click.group(
-    "eval", help="Evaluation management, create/list/info/compare evaluation job"
+    "eval",
+    cls=AliasedGroup,
+    help="Evaluation management, create/list/info/compare evaluation job",
 )
 @click.pass_context
 def eval_job_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@eval_job_cmd.command("list", help="List all jobs in the current project")
+@eval_job_cmd.command(
+    "list", aliases=["ls"], help="List all jobs in the current project"
+)
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option("--show-removed", is_flag=True, help="Show removed dataset")
@@ -71,6 +76,12 @@ def _list(
     help="[Cloud_ONLY] A file contains the specification for steps of the job",
 )
 @click.option(
+    "--resource-pool",
+    default="default",
+    type=str,
+    help="[Cloud_ONLY] The node group you would like to run your job on",
+)
+@click.option(
     "--use-docker",
     is_flag=True,
     help="[ONLY Standalone]use docker to run evaluation job",
@@ -87,6 +98,7 @@ def _run(
     name: str,
     desc: str,
     step_spec: str,
+    resource_pool: str,
     use_docker: bool,
     gencmd: bool,
     step: str,
@@ -101,6 +113,7 @@ def _run(
         name=name,
         desc=desc,
         step_spec=step_spec,
+        resource_pool=resource_pool,
         gencmd=gencmd,
         use_docker=use_docker,
         step=step,
@@ -108,7 +121,7 @@ def _run(
     )
 
 
-@eval_job_cmd.command("remove", help="Remove job")
+@eval_job_cmd.command("remove", aliases=["rm"], help="Remove job")
 @click.argument("job")
 @click.option(
     "-f",
@@ -164,7 +177,7 @@ def _info(view: t.Type[JobTermView], job: str, page: int, size: int) -> None:
     view(job).info(page, size)
 
 
-@eval_job_cmd.command("compare")
+@eval_job_cmd.command("compare", aliases=["cmp"])
 @click.argument("base_job", nargs=1)
 @click.argument("job", nargs=-1)
 def _compare(base_job: str, job: t.List[str]) -> None:

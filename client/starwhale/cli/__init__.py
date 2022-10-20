@@ -4,6 +4,7 @@ import random
 import click
 
 from starwhale.version import STARWHALE_VERSION
+from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
 from starwhale.utils.config import load_swcli_config
 from starwhale.core.eval.cli import eval_job_cmd
@@ -19,7 +20,7 @@ from .completion import completion_cmd
 
 
 def create_sw_cli() -> click.core.Group:
-    @click.group()
+    @click.group(cls=AliasedGroup)
     @click.version_option(version=STARWHALE_VERSION)
     @click.option(
         "-v",
@@ -38,11 +39,11 @@ def create_sw_cli() -> click.core.Group:
     random.seed(time.time_ns())
 
     cli.add_command(instance_cmd)
-    cli.add_command(project_cmd)
+    cli.add_command(project_cmd, aliases=["prj"])  # type: ignore
     cli.add_command(eval_job_cmd)
-    cli.add_command(runtime_cmd)
-    cli.add_command(model_cmd)
-    cli.add_command(dataset_cmd)
+    cli.add_command(runtime_cmd, aliases=["rt"])  # type: ignore
+    cli.add_command(model_cmd, aliases=["mp"])  # type: ignore
+    cli.add_command(dataset_cmd, aliases=["ds"])  # type: ignore
     cli.add_command(open_board)
     cli.add_command(completion_cmd)
     add_mngt_command(cli)

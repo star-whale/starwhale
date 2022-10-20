@@ -14,14 +14,14 @@ project命令提供适用于Standalone Instance和Cloud Instance的Starwhale Pro
 
 project包含如下子命令：
 
-|命令|Standalone|Cloud|
+|命令|别名|Standalone|Cloud|
 |-------|----------|-----|
-|create|✅|✅|
-|info|✅|✅|
-|list|✅|✅|
-|remove|✅|✅|
-|recover|✅|✅|
-|select|✅|✅|
+|create|new,add|✅|✅|
+|info||✅|✅|
+|list|ls|✅|✅|
+|remove|rm|✅|✅|
+|recover||✅|✅|
+|select|use|✅|✅|
 
 ## 2. 创建Project
 

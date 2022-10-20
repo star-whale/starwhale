@@ -39,7 +39,9 @@ set_up_version() {
 }
 
 load_config() {
-  export $(grep -v '^#' ~/.sw/setup.env | xargs -0)
+  if test -f ~/.sw/setup.env; then
+    export $(grep -v '^#' ~/.sw/setup.env | xargs -0)
+  fi
 }
 
 file_exists() {
@@ -49,16 +51,28 @@ file_exists() {
 build() {
 
   console() {
-    pushd ../../docker
-    make build-console
-    popd
+    if [[ -n ${DOCKER_BUILD} ]]; then
+        pushd ../../docker
+        make build-console
+        popd
+    else
+        pushd ../../console
+        yarn && yarn build
+        popd
+    fi
     b_controller
   }
 
   b_controller() {
-    pushd ../../docker
-    make build-jar
-    popd
+    if [[ -n ${DOCKER_BUILD} ]]; then
+        pushd ../../docker
+        make build-jar
+        popd
+    else
+        pushd ../../server
+        make build-package
+        popd
+    fi
     pushd ../../docker
     make build-server
     if ! docker tag starwhaleai/server:latest $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
@@ -74,8 +88,6 @@ build() {
 }
 
 deploy() {
-  user=$(whoami)
-  if [[ "$user" == "root" ]]; then echo "root user is not allowed to run server deployment" && exit 1; fi
   pushd ../../docker/charts
   helm upgrade --install ${SWNAME//./-} . -n $SWNS --create-namespace \
     --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
@@ -132,12 +144,15 @@ EOF
     fi
 
     cat >$HOME/.pip/pip.conf <<EOF
-  [global]
-  index-url=$SW_PYPI_EXTRA_INDEX_URL
-  extra-index-url=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
+[global]
+index-url=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
+extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
+                http://pypi.mirrors.ustc.edu.cn/simple
+                https://mirrors.bfsu.edu.cn/pypi/web/simple
 
-  [install]
-  trusted-host=$NEXUS_HOSTNAME
+[install]
+trusted-host=$NEXUS_HOSTNAME
+             pypi.mirrors.ustc.edu.cn
 EOF
 
     echo "$HOME/.pip/pip.conf is modified to "
@@ -172,7 +187,7 @@ cli() {
     if ! twine upload --repository nexus dist/* ; then echo "[ERROR] Something wrong while uploading pypi version , press CTL+C to interrupt execution if needed"; fi
     popd
     pushd ../../docker
-    docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
+    docker build --network=host -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME --build-arg SW_VERSION=$PYPI_RELEASE_VERSION  --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
     if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
@@ -280,8 +295,8 @@ controller() {
   fi
 }
 all() {
-  cli -s
-  console -s "$1" "$2" "$3" "$4"
+  cli "$1"
+  console "$1" "$2" "$3" "$4" "$5" "$6"
 }
 if test -z "$1"; then
   --help

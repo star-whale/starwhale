@@ -30,7 +30,7 @@ export default function ApiHeader() {
         axios.interceptors.response.use(
             (response) => {
                 if (response.headers?.authorization) setToken(response.headers.authorization)
-                return response.data?.data ? response.data : response
+                return 'data' in response.data ? response.data : response
             },
             (error) => {
                 // eslint-disable-next-line no-restricted-globals

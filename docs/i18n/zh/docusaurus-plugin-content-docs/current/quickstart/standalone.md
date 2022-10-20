@@ -30,6 +30,12 @@ git clone https://github.com/star-whale/starwhale.git
 cd starwhale
 ```
 
+如果本机环境中之前没有安装过[git-lfs](https://git-lfs.github.com/)（命令为`git lfs install`），需要手工下载训练好的mnist.pt文件。
+
+```bash
+wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
+```
+
 我们选用ML/DL领域的HelloWorld程序-MNIST来介绍如何从零开始构建数据集、模型包和运行环境，并最终完成模型评测。接下来的操作都在 `starwhale` 目录中进行。
 
 ## 3. 构建Starwhale Runtime运行环境

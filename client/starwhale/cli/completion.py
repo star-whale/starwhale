@@ -5,6 +5,7 @@ import click
 
 from starwhale.utils import console, get_current_shell
 from starwhale.utils.fs import ensure_dir
+from starwhale.utils.cli import AliasedGroup
 
 _SUPPORT_SHELLS = {
     "bash": ("~/.bashrc", 'eval "$(_{prog_u}_COMPLETE=bash_source {prog})"'),
@@ -16,7 +17,9 @@ _SUPPORT_SHELLS = {
 }
 
 
-@click.group("completion", help="Shell completion for Starwhale command-line")
+@click.group(
+    "completion", cls=AliasedGroup, help="Shell completion for Starwhale command-line"
+)
 def completion_cmd() -> None:
     pass
 

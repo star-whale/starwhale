@@ -786,7 +786,7 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
                 <div
                     // @ts-ignore
                     ref={ref}
-                    data-type='table-inner'
+                    className='table-inner'
                     // @ts-ignore
                     style={{
                         ...props.style,

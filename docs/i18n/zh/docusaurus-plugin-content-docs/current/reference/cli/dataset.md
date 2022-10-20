@@ -14,18 +14,18 @@ dataset命令提供适用于Standalone Instance和Cloud Instance的Starwhale Dat
 
 dataset包含如下子命令：
 
-|Command|Standalone|Cloud|
-|-------|----------|-----|
-|`build`|✅|❌|
-|`copy`|✅|✅|
-|`diff`|✅|❌|
-|`history`|✅|✅|
-|`info`|✅|✅|
-|`list`|✅|✅|
-|`recover`|✅|✅|
-|`remove`|✅|✅|
-|`summary`|✅|✅|
-|`tag`|✅|❌|
+|命令|别名|Standalone|Cloud|
+|---|----|----------|-----|
+|build||✅|❌|
+|copy|cp|✅|✅|
+|diff||✅|❌|
+|history||✅|✅|
+|info||✅|✅|
+|list|ls|✅|✅|
+|recover||✅|✅|
+|remove|rm|✅|✅|
+|summary||✅|✅|
+|tag||✅|❌|
 
 ## 2. 构建数据集
 
@@ -129,6 +129,8 @@ swcli dataset list [OPTIONS]
 |`--show-removed`||❌|Boolean|False|显示本地已经删除但能恢复的数据集。|
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
+
+`dataset list` 的alias命令为 `dataset ls`。
 
 ## 9. 删除数据集
 

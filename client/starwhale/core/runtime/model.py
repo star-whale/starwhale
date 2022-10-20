@@ -108,6 +108,18 @@ _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"
 _SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 
+class DockerEnv(ASDictMixin):
+    def __init__(self, **kwargs: t.Any):
+        self.image = kwargs.get("image", "")
+
+    def __str__(self) -> str:
+        if self.image:
+            return f"image:{self.image}"
+        return "emtpy"
+
+    __repr__ = __str__
+
+
 class Environment(ASDictMixin):
     def __init__(
         self,
@@ -126,6 +138,7 @@ class Environment(ASDictMixin):
         self.python = trunc_python_version(str(python))
         self.cuda = str(cuda).strip()
         self.cudnn = str(cudnn).strip()
+        self.docker = DockerEnv(**kw.get("docker", {}))
 
         self._do_validate()
 
@@ -159,7 +172,7 @@ class Environment(ASDictMixin):
             raise NoSupportError(f"cuda:{self.cuda} no support cudnn:{self.cudnn}")
 
     def __str__(self) -> str:
-        return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}-cudnn:{self.cudnn}"
+        return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}-cudnn:{self.cudnn}-docker:{self.docker}"
 
     __repr__ = __str__
 
@@ -610,20 +623,24 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
     def _dump_base_image(self, config: RuntimeConfig) -> None:
-        _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        _tag = config._starwhale_version or LATEST_TAG
-        base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
+        # prefer using image configured in runtime.yaml
+        base_image = config.environment.docker.image
 
-        _cuda = config.environment.cuda
-        _cudnn = config.environment.cudnn
-        _suffix = []
-        if _cuda:
-            _suffix.append(f"-cuda{_cuda}")
+        if not base_image:
+            _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
+            _tag = config._starwhale_version or LATEST_TAG
+            base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
 
-            if _cudnn:
-                _suffix.append(f"-cudnn{_cudnn}")
+            _cuda = config.environment.cuda
+            _cudnn = config.environment.cudnn
+            _suffix = []
+            if _cuda:
+                _suffix.append(f"-cuda{_cuda}")
 
-        base_image += "".join(_suffix)
+                if _cudnn:
+                    _suffix.append(f"-cudnn{_cudnn}")
+
+            base_image += "".join(_suffix)
 
         console.print(
             f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"

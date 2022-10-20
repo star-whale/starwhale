@@ -14,22 +14,22 @@ runtime命令提供适用于Standalone Instance和Cloud Instance的Starwhale Run
 
 runtime包含如下子命令：
 
-|Command|Standalone|Cloud|
-|-------|----------|-----|
-|`activate`|✅|❌|
-|`build`|✅|❌|
-|`copy`|✅|✅|
-|`dockerize`|✅|❌|
-|`extract`|✅|❌|
-|`history`|✅|✅|
-|`info`|✅|✅|
-|`list`|✅|✅|
-|`lock`|✅|❌|
-|`quickstart`|✅|❌|
-|`recover`|✅|✅|
-|`remove`|✅|✅|
-|`restore`|✅|❌|
-|`tag`|✅|❌|
+|命令|别名|Standalone|Cloud|
+|----|---|----------|-----|
+|activate|actv|✅|❌|
+|build||✅|❌|
+|copy|cp|✅|✅|
+|dockerize||✅|❌|
+|extract||✅|❌|
+|history||✅|✅|
+|info||✅|✅|
+|list|ls|✅|✅|
+|lock||✅|❌|
+|quickstart|qs|✅|❌|
+|recover||✅|✅|
+|remove|rm|✅|✅|
+|restore||✅|❌|
+|tag||✅|❌|
 
 ## 2. 激活Runtime
 

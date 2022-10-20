@@ -105,6 +105,12 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     git clone https://github.com/star-whale/starwhale.git
     ```
 
+    If [git-lfs](https://git-lfs.github.com/) has not been previously installed in the local environment(the command is `git lfs install`), you need to download the trained model file.
+
+    ```bash
+    wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
+    ```
+
 - ☕ **STEP3**: Building a runtime
 
     ```bash

@@ -3,11 +3,14 @@ import typing as t
 
 import click
 
+from starwhale.utils.cli import AliasedGroup
+
 from .view import get_term_view, InstanceTermView
 
 
 @click.group(
     "instance",
+    cls=AliasedGroup,
     help="Starwhale Instance management, login and select standalone or cloud instance",
 )
 @click.pass_context
@@ -15,7 +18,7 @@ def instance_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@instance_cmd.command("select")
+@instance_cmd.command("select", aliases=["use"])
 @click.argument("instance")
 def _select(instance: str) -> None:
     """
@@ -62,7 +65,7 @@ def _logout(instance: str) -> None:
     InstanceTermView().logout(instance)
 
 
-@instance_cmd.command("list", help="List login Starwhale instances")
+@instance_cmd.command("list", aliases=["ls"], help="List login Starwhale instances")
 @click.pass_obj
 def _list(view: t.Type[InstanceTermView]) -> None:
     view().list()

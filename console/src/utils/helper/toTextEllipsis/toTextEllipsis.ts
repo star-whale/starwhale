@@ -16,7 +16,7 @@ function toTextEllipsis({
     text,
     width,
     fontSize = '16px',
-    fontFamily = 'Inter, sans-serif',
+    fontFamily = 'sans-serif',
     fontWeight = 400,
     recourseIndex = 0,
 }: {

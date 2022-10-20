@@ -17,7 +17,7 @@ const context = canvas.getContext('2d')
 function measureTextWidth({
     text,
     fontSize = '16px',
-    fontFamily = 'Inter, sans-serif',
+    fontFamily = 'sans-serif',
     fontWeight = 400,
 }: {
     text: string

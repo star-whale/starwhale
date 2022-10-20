@@ -54,6 +54,10 @@ You can get involved, get updates and contact Starwhale developers in the follow
 You will need to fork the code of Starwhale repository and clone it to your local machine.
 
 - Fork Starwhale repository: [Fork Starwhale Github Repo](https://github.com/star-whale/starwhale/fork),For more usage details, please refer to: [Fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
+- Install Git-LFS:[Git-LFS](https://github.com/git-lfs/git-lfs/blob/main/INSTALLING.md#installing-packages)
+  ```bash
+  git lfs install
+  ```
 - Clone code to local machine
   ```bash
   git clone https://github.com/${your username}/starwhale.git
@@ -113,7 +117,7 @@ Run unit test, E2E test, mypy lint, flake lint and isort check in the `starwhale
 make client-all-check
 ```
 
-## 6. Development environment for Standalone Instance
+## 6. Development environment for Cloud Instance
 
 Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
 

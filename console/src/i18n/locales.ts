@@ -267,6 +267,9 @@ const locales0 = {
     'Resource': {
         en: 'Resource',
     },
+    'Add Resource': {
+        en: 'Add Resource',
+    },
     'Selected Dataset': {
         en: 'Selected Dataset',
     },

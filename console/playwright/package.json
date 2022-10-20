@@ -1,0 +1,13 @@
+{
+  "name": "playwright",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.27.0"
+  },
+  "scripts": {
+    "test": "yarn playwright test --project=chromium",
+    "report": "yarn playwright show-report"
+  }
+}
