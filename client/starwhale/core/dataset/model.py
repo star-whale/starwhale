@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import inspect
 import tarfile
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -28,7 +29,7 @@ from starwhale.utils.fs import move_dir, copy_file, empty_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
-from starwhale.utils.load import import_cls
+from starwhale.utils.load import import_object
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
@@ -347,7 +348,10 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         append_from_uri: t.Optional[URI],
         append_from_store: t.Optional[DatasetStorage],
     ) -> None:
-        from starwhale.api._impl.dataset.builder import BaseBuildExecutor
+        from starwhale.api._impl.dataset.builder import (
+            BaseBuildExecutor,
+            create_generic_cls,
+        )
 
         logger.info("[step:swds]try to gen swds...")
         append_from_version = (
@@ -366,9 +370,17 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         # TODO: add more import format support, current is module:class
         logger.info(f"[info:swds]try to import {swds_config.handler} @ {workdir}")
-        _cls: t.Type[BaseBuildExecutor] = import_cls(
-            workdir, swds_config.handler, BaseBuildExecutor
-        )
+        _handler = import_object(workdir, swds_config.handler)
+
+        _cls: t.Type[BaseBuildExecutor]
+        if inspect.isclass(_handler) and issubclass(_handler, BaseBuildExecutor):
+            _cls = _handler
+        elif inspect.isfunction(_handler):
+            _cls = create_generic_cls(_handler)
+        else:
+            raise RuntimeError(
+                f"{swds_config.handler} not BaseBuildExecutor or generator function"
+            )
 
         with _cls(
             dataset_name=self.uri.object.name,

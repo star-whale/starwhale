@@ -1,4 +1,5 @@
 import os
+import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -17,11 +18,21 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.dataset.type import Link, DatasetConfig, DatasetSummary
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.dataset.model import StandaloneDataset
+from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
+
+
+class MockBuildExecutor(BaseBuildExecutor):
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        yield b"", ""
+
+    def make_swds(self) -> DatasetSummary:
+        return DatasetSummary()
 
 
 class StandaloneDatasetTestCase(TestCase):
@@ -29,24 +40,57 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+    @patch("starwhale.api._impl.dataset.builder.UserRawBuildExecutor.make_swds")
+    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    @patch("starwhale.core.dataset.model.import_object")
+    def test_function_handler_make_swds(
+        self, m_import: MagicMock, m_swds_bin: MagicMock, m_user_raw: MagicMock
+    ) -> None:
+        name = "mnist"
+        dataset_uri = URI(name, expected_type=URIType.DATASET)
+        sd = StandaloneDataset(dataset_uri)
+        sd._version = "112233"
+        workdir = "/home/starwhale/myproject"
+        config = DatasetConfig(name, handler="mnist:handler")
+
+        kwargs = dict(
+            workdir=Path(workdir),
+            swds_config=config,
+            append=False,
+            append_from_uri=None,
+            append_from_store=None,
+        )
+
+        m_import.return_value = lambda: 1
+        with self.assertRaises(RuntimeError):
+            sd._call_make_swds(**kwargs)  # type: ignore
+
+        m_import.reset_mock()
+
+        def _iter_swds_bin_item() -> t.Generator:
+            yield b"", {}
+
+        def _iter_user_raw_item() -> t.Generator:
+            yield Link(""), {}
+
+        m_import.return_value = _iter_swds_bin_item
+        sd._call_make_swds(**kwargs)  # type: ignore
+        assert m_swds_bin.call_count == 1
+
+        m_import.return_value = _iter_user_raw_item
+        sd._call_make_swds(**kwargs)  # type: ignore
+        assert m_user_raw.call_count == 1
+
     @patch("starwhale.core.dataset.model.copy_fs")
-    @patch("starwhale.core.dataset.model.import_cls")
-    def test_build_workflow(self, m_import: MagicMock, m_copy_fs: MagicMock) -> None:
+    @patch("starwhale.core.dataset.model.import_object")
+    def test_build_workflow(
+        self,
+        m_import: MagicMock,
+        m_copy_fs: MagicMock,
+    ) -> None:
         sw = SWCliConfigMixed()
 
-        m_cls = MagicMock()
-        m_cls.return_value = MagicMock(
-            **{
-                "__enter__.return_value": MagicMock(
-                    **{
-                        "make_swds.return_value": MagicMock(
-                            **{"asdict.return_value": {}}
-                        )
-                    }
-                )
-            }
-        )
-        m_import.return_value = m_cls
+        m_import.return_value = MockBuildExecutor
 
         workdir = "/home/starwhale/myproject"
         name = "mnist"
@@ -74,9 +118,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert m_import.call_count == 1
         assert m_import.call_args[0][0] == Path(workdir)
         assert m_import.call_args[0][1] == "mnist.dataset:DatasetProcessExecutor"
-
-        assert m_cls.call_count == 1
-        assert m_cls.call_args[1]["alignment_bytes_size"] == 4096
 
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "data").exists()

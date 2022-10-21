@@ -14,10 +14,7 @@ from starwhale.utils.venv import (
 )
 
 
-def import_cls(
-    workdir: Path, mc: str, parentClass: t.Any = object, py_env: str = ""
-) -> t.Any:
-    logger.debug("enter import cls func...")
+def import_object(workdir: Path, handler_path: str, py_env: str = "") -> t.Any:
     workdir_path = str(workdir.absolute())
     external_paths = [workdir_path]
     py_env = py_env or guess_current_py_env()
@@ -39,19 +36,20 @@ def import_cls(
             sys_changed = True
 
     try:
-        module_name, cls_name = mc.split(":", 1)
-        logger.debug(f"import module:{module_name}, cls:{cls_name}")
+        module_name, handler_name = handler_path.split(":", 1)
+        logger.debug(f"import module:{module_name}, handler:{handler_name}")
         _module = importlib.import_module(module_name, package=workdir_path)
-        _cls = getattr(_module, cls_name, None)
-        if not _cls or not issubclass(_cls, parentClass):
-            raise Exception(f"{mc} is not subclass of {parentClass}")
+        _obj = getattr(_module, handler_name, None)
+
+        if not _obj:
+            raise ModuleNotFoundError(f"{handler_path}")
     except Exception as e:
         logger.exception(e)
         if sys_changed:
             sys.path[:] = prev_paths
         raise
 
-    return _cls
+    return _obj
 
 
 def load_module(module: str, path: Path) -> t.Any:
@@ -73,22 +71,22 @@ def load_module(module: str, path: Path) -> t.Any:
     return importlib.import_module(module, package=workdir_path)
 
 
-def load_cls(module: str, cls: str) -> t.Any:
-    _cls = getattr(module, cls, None)
+def load_cls(module: str, cls_str: str) -> t.Any:
+    _cls = getattr(module, cls_str, None)
     if not _cls:
-        raise RuntimeError(f"can't find class:{cls} from module:{module}")
+        raise ModuleNotFoundError(f"class:{cls_str} from module:{module}")
     return _cls
 
 
-def get_func_from_object(obj: t.Any, func: str) -> t.Any:
-    _func = getattr(obj, func, None)
+def get_func_from_object(obj: t.Any, func_str: str) -> t.Any:
+    _func = getattr(obj, func_str, None)
     if not _func:
-        raise RuntimeError(f"can't find function:{func} from instance:{obj}")
+        raise ModuleNotFoundError(f"function:{func_str} from object:{obj}")
     return _func
 
 
-def get_func_from_module(module: str, func: str) -> t.Any:
-    _func = getattr(module, func, None)
+def get_func_from_module(module: str, func_str: str) -> t.Any:
+    _func = getattr(module, func_str, None)
     if not _func:
-        raise RuntimeError(f"can't find function:{func} from module:{module}")
+        raise ModuleNotFoundError(f"function:{func_str} from module:{module}")
     return _func
