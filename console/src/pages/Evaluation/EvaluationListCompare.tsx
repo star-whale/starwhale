@@ -13,6 +13,23 @@ import { longestCommonSubstring } from '@/utils'
 import { RecordListVO } from '@/domain/datastore/schemas/datastore'
 import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@/components/Checkbox'
+import { createUseStyles } from 'react-jss'
+import cn from 'classnames'
+
+const useStyles = createUseStyles({
+    cellCompare: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        padding: '0 12px',
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%',
+        width: '100%',
+    },
+    cellPinned: { borderLeft: '1px dashed blue', borderRight: '1px dashed blue' },
+    cellNotEqual: { backgroundColor: '#FFFAF5' },
+})
 
 type RowT = {
     key: string
@@ -94,6 +111,7 @@ export default function EvaluationListCompare({
     const evaluationsInfo = useFetchJobs(projectId, page)
     const store = useEvaluationCompareStore()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
+    const styles = useStyles()
 
     React.useEffect(() => {
         const row = rows.find((r) => r.id === store.compare?.comparePinnedKey)
@@ -128,7 +146,7 @@ export default function EvaluationListCompare({
         }
     }, [rows, comparePinnedKey])
 
-    const conmparePinnedRowIndex = useMemo(() => {
+    const comparePinnedRowIndex = useMemo(() => {
         return rows.findIndex((r) => r.id === comparePinnedKey)
     }, [rows, comparePinnedKey])
 
@@ -233,22 +251,11 @@ export default function EvaluationListCompare({
                             data,
                         }
 
-                        if (comparePinnedKey && conmparePinnedRowIndex === index) {
+                        if (comparePinnedKey && comparePinnedRowIndex === index) {
                             return (
                                 <div
-                                    style={{
-                                        position: 'absolute',
-                                        left: 0,
-                                        right: 0,
-                                        padding: '0 12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        height: '100%',
-                                        width: '100%',
-                                        borderLeft: '1px dashed blue',
-                                        borderRight: '1px dashed blue',
-                                        borderBottom: props.y === rowLength - 1 ? '1px dashed blue' : undefined,
-                                    }}
+                                    className={cn('cell--pinned', styles.cellCompare, styles.cellPinned)}
+                                    style={{ borderBottom: props.y === rowLength - 1 ? '1px dashed blue' : undefined }}
                                 >
                                     {NoneCompareCell(newProps)}
                                 </div>
@@ -256,24 +263,12 @@ export default function EvaluationListCompare({
                         }
 
                         if (renderedValue === newProps.comparedValue) {
-                            return NoneCompareCell(newProps)
+                            return <div className={cn('cell--eq', styles.cellCompare)}>{NoneCompareCell(newProps)}</div>
                         }
 
-                        if (compareShowCellChanges && comparePinnedKey && conmparePinnedRowIndex !== index) {
+                        if (compareShowCellChanges && comparePinnedKey && comparePinnedRowIndex !== index) {
                             return (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        left: 0,
-                                        right: 0,
-                                        padding: '0 12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        height: '100%',
-                                        width: '100%',
-                                        backgroundColor: '#FFFAF5',
-                                    }}
-                                >
+                                <div className={cn('cell--neq', styles.cellCompare, styles.cellNotEqual)}>
                                     {renderCompare(newProps)}
                                 </div>
                             )
@@ -289,7 +284,7 @@ export default function EvaluationListCompare({
                 })
             ),
         ],
-        [rows, conmparePinnedRow, conmparePinnedRowIndex, compareShowCellChanges, comparePinnedKey, $rowsWithDiffOnly]
+        [rows, conmparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, comparePinnedKey, $rowsWithDiffOnly]
     )
 
     return (

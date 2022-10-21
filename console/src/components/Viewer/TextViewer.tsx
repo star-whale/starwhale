@@ -38,7 +38,7 @@ export default function TextViewer({ isZoom = false, data }: IImageViewerProps) 
 
     if (!isZoom) {
         return (
-            <div className={classNames(styles.wrapper, 'fullsize')}>
+            <div className={classNames(styles.wrapper, 'dataset-viewer text fullsize')}>
                 <StatefulTooltip content={() => <p style={{ maxWidth: '300px' }}>{text ?? ''}</p>} placement='bottom'>
                     <p className='text-ellipsis' style={{ lineHeight: '1.5' }}>
                         {text}
@@ -49,7 +49,7 @@ export default function TextViewer({ isZoom = false, data }: IImageViewerProps) 
     }
 
     return (
-        <div className='fullsize' style={{ height: '100%' }}>
+        <div className='dataset-viewer text fullsize' style={{ height: '100%' }}>
             <p className={styles.text}>{text}</p>
         </div>
     )

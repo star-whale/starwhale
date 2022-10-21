@@ -77,7 +77,6 @@ test.describe('Evaluation', () => {
         const p = page.locator(SELECTOR.table)
         await selectOption(page, '.table-config-view', 'All runs')
         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
-        await page.locator('role=button[name="Evaluation ID"] >> label:not([aria-checked="false"])').click()
     })
     test.afterAll(async () => {
         await takeScreenshot({ testcase: page, route: page.url() })
@@ -122,6 +121,8 @@ test.describe('Evaluation', () => {
 
     test.describe('Manage columns', () => {
         test('remove evaluation column & add accuracy column', async () => {
+            await page.locator('role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))').click()
+
             const p = page.locator(SELECTOR.table)
             const drawer = page.locator('[data-baseweb="drawer"]')
             await p.getByRole('button', { name: /Manage Columns/ }).click()
@@ -171,7 +172,7 @@ test.describe('Evaluation', () => {
             await wait(1000)
             await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-/)
             await wait(1000)
-            await expect(await page.locator('.icon-rise').count()).toBeGreaterThan(0)
+            await expect(await page.locator('.cell--neq').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
             await p.locator(SELECTOR.row2column1).locator('label').uncheck()
         })
@@ -245,7 +246,6 @@ test.describe('Evaluation Results', () => {
 
     test.describe('Actions', () => {
         test.beforeAll(async () => {
-            await page.getByRole('tab', { name: /Actions/ }).click()
             if (!page.url().includes(ROUTES.evaluationActions)) await page.goto(ROUTES.evaluationActions)
         })
         test('should have dag', async () => {
@@ -257,23 +257,117 @@ test.describe('Evaluation Results', () => {
 
     test.describe('Tasks', () => {
         test.beforeAll(async () => {
-            await page.getByRole('tab', { name: /Tasks/ }).click()
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
         test('should have 3 tasks of success status', async () => {
             await expect(page.getByText('Success')).toHaveCount(3)
         })
-        test('should show log & log count greater than 10', async () => {
+        test('should show success task log', async () => {
             await page
                 .getByText(/View Log/)
                 .first()
                 .click()
-            await wait(1000)
+            await expect(page.locator('.tr--selected')).toBeDefined()
+        })
+        test('should log count be greater than 10', async () => {
             await page.getByText(/Log\:/).first().click()
             await page.waitForSelector('.ReactVirtualized__Grid__innerScrollContainer > div')
             await expect(
                 await page.locator('.ReactVirtualized__Grid__innerScrollContainer > div').count()
             ).toBeGreaterThan(10)
+        })
+    })
+})
+
+test.describe('Models', () => {
+    test.afterEach(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
+
+    test.describe('List', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
+        })
+
+        test('should have 1 model', async () => {
+            await expect(page.locator('td').getByText('mnist')).toHaveCount(1)
+        })
+
+        test('should model name be link to model overview', async () => {
+            await page.getByRole('link', { name: 'mnist' }).click()
+            await expect(page).toHaveURL(ROUTES.modelOverview)
+        })
+
+        test('breadcrumb should be back to models', async () => {
+            await page.getByRole('button', { name: 'Models' }).click()
+            await expect(page).toHaveURL(ROUTES.models)
+        })
+    })
+
+    test.describe('Overview', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.modelOverview)) await page.goto(ROUTES.modelOverview)
+        })
+
+        test('should model name be link to model overview', async () => {
+            await page.getByRole('button', { name: /Model ID\:/ }).click()
+            await expect(page.locator('div:right-of(:text("Version Name"))').first()).toHaveText(
+                'mftdoolcgvqwknrtmftdgyjzobvti2q'
+            )
+            await expect(page.getByRole('cell', { name: 'mftdoolcgvqwknrtmftdgyjzobvti2q.swmp' })).toBeVisible()
+        })
+    })
+
+    test.describe('Versions', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
+        })
+
+        test('should link to model versions', async () => {
+            await page.getByRole('link', { name: /Version History/ }).click()
+            await expect(page).toHaveURL(ROUTES.modelVersions)
+        })
+
+        test('lastest model should not be reverted', async () => {
+            await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
+            await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
+        })
+    })
+})
+
+test.describe('Datasets', () => {
+    test.afterEach(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
+
+    test.describe('List', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.datasets)) await page.goto(ROUTES.datasets)
+        })
+
+        test('should have 1 dataset', async () => {
+            await expect(page.locator('td').getByText('mnist')).toHaveCount(1)
+        })
+
+        test('should dataset name be link to version files', async () => {
+            await page.getByRole('link', { name: 'mnist' }).click()
+            await expect(page).toHaveURL(ROUTES.datasetVersionFiles)
+        })
+
+        test('breadcrumb should be back to dataset list', async () => {
+            await page.getByRole('button', { name: 'Datasets' }).click()
+            await expect(page).toHaveURL(ROUTES.datasets)
+        })
+    })
+
+    test.describe('Files', async () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.datasetVersionFiles)) await page.goto(ROUTES.datasetVersionFiles)
+        })
+
+        test('should canvas render one dataset', async () => {
+            const dom = page.locator('.image-grayscale >> nth=0 >> canvas')
+            await expect(await dom.screenshot()).toMatchSnapshot()
         })
     })
 })

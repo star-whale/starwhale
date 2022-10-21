@@ -29,14 +29,14 @@ export default function ImageViewer({ isZoom = false, data, masks = [], cocos = 
 
     if (!isZoom) {
         return (
-            <div className='fullsize' style={{ height: '100%' }}>
+            <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
                 <img src={data.src} width='auto' height='100%' alt='dataset view' />
             </div>
         )
     }
 
     return (
-        <div className='fullsize' style={{ height: '100%' }}>
+        <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
             <ZoomWrapper isTools={isZoom ? false : undefined}>
                 <img src={data.src} width='auto' height='100%' alt='dataset view' />
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}

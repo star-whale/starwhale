@@ -76,7 +76,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
     if (!isZoom) {
         return (
             <div
-                className='fullsize'
+                className='dataset-viewer audio fullsize'
                 style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             >
                 {/* eslint-disable jsx-a11y/media-has-caption */}
@@ -89,7 +89,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
     }
 
     return (
-        <div className={classnames('fullsize', styles.wrapper)}>
+        <div className={classnames('dataset-viewer audio fullsize', styles.wrapper)}>
             <div className={styles.card}>
                 <canvas
                     ref={canvasRef}
