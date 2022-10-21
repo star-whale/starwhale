@@ -67,7 +67,7 @@
       and project_id = #{projectId}
     </where>
     <if test="swmpId != null and swmpId != ''">
-      and swmp_id = #{swmpId}
+      and swmp_version_id = #{swmpId}
     </if>
     order by job_id desc
   </select>
