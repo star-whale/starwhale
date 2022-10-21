@@ -40,7 +40,9 @@ public class ResourceOverwriteSpec {
 
     static final String RESOURCE_MEMORY = "memory";
 
-    public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, "nvidia.com/gpu");
+    static final String RESOURCE_GPU = "nvidia.com/gpu";
+
+    public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, RESOURCE_GPU);
 
     private Float normalizeNonK8sResources(Float amount) {
         return (float) Math.ceil(amount);

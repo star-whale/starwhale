@@ -18,6 +18,7 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,6 +56,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 public class K8sTaskSchedulerTest {
 
@@ -108,6 +110,43 @@ public class K8sTaskSchedulerTest {
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
 
+    @Test
+    public void testRenderWithoutGpuResource() throws IOException, ApiException {
+        var client = mock(K8sClient.class);
+
+        var s3Config = new S3Config();
+        s3Config.setBucket("");
+        var storageProperties = new StorageProperties();
+        storageProperties.setS3Config(s3Config);
+        var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
+        var k8sJobTemplate = new K8sJobTemplate("", "");
+        var scheduler = new K8sTaskScheduler(
+                client,
+                storageProperties,
+                mock(JobTokenConfig.class),
+                runTimeProperties,
+                mock(K8sResourcePoolConverter.class),
+                k8sJobTemplate,
+                null,
+                null,
+                "",
+                mock(StorageEnvsPropertiesConverter.class)
+        );
+        var task = mockTask();
+        scheduler.schedule(Set.of(task));
+        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
+        task.getStep().setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
+        scheduler.schedule(Set.of(task));
+
+        verify(client, times(2)).deploy(jobArgumentCaptor.capture());
+        var jobs = jobArgumentCaptor.getAllValues();
+        var expectedEnv = new V1EnvVar().name("NVIDIA_VISIBLE_DEVICES").value("");
+        Assertions.assertTrue(jobs.get(0).getSpec().getTemplate().getSpec()
+                .getContainers().get(0).getEnv().contains(expectedEnv));
+        Assertions.assertFalse(jobs.get(1).getSpec().getTemplate().getSpec()
+                .getContainers().get(0).getEnv().contains(expectedEnv));
+    }
+
     private Task mockTask() {
         Job job = Job.builder()
                 .id(1L)
@@ -127,6 +166,7 @@ public class K8sTaskSchedulerTest {
         step.setId(1L);
         step.setName("cmp");
         step.setJob(job);
+        step.setRuntimeResources(List.of());
         Task task = Task.builder()
                 .id(1L)
                 .taskRequest(TaskRequest.builder().index(1).total(2).build())
@@ -176,6 +216,7 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("ENVS4", "envS4V");
             expectedEnvs.put(StorageEnv.ENV_KEY_PREFIX, "swds_path");
             expectedEnvs.put(StorageEnv.ENV_TYPE, "S3");
+            expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(expectedEnvs, actualEnv);

@@ -194,6 +194,16 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
         coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
+
+        // GPU resource
+        var resources = task.getStep().getRuntimeResources().stream();
+        var gpu = resources.anyMatch(r -> r.getType().equals(ResourceOverwriteSpec.RESOURCE_GPU) && r.getRequest() > 0);
+        // overwrite visible devices to none
+        if (!gpu) {
+            // https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration
+            coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
+        }
+
         return coreContainerEnvs;
     }
 
