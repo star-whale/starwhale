@@ -413,9 +413,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
         return rs, {}
 
-    def buildImpl(
-        self, workdir: Path, yaml_name: str = DefaultYAMLName.MODEL, **kw: t.Any
-    ) -> None:
+    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:
+        yaml_name = kw.get("yaml_name", DefaultYAMLName.MODEL)
         _mp = workdir / yaml_name
         _model_config = self.load_model_config(_mp)
 

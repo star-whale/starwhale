@@ -33,7 +33,9 @@ dataset包含如下子命令：
 swcli dataset build [OPTIONS] WORKDIR
 ```
 
-`dataset build` 命令会在 `WORKDIR` 目录中寻找 `dataset.yaml`文件，并以该文件的配置为起点开始构建数据集。`WORKDIR`参数应为一个合法的路径字符串，`dataset.yaml`中handler路径是相对于 `WORKDIR` 的，一般在这个目录中会有 `.swignore`文件、数据集构建代码等。目前构建数据集会自动包括 `WORKDIR` 及子目录中的Python文件，便于更好的版本化最终数据集，若不想携带此类文件，可以在 `WORKDIR` 中创建 `.swignore` 文件并进行相关设置。**`dataset build`命令目前只能在standalone instance下执行**。
+`dataset build` 根据命令行参数或`WORKDIR` 目录中`dataset.yaml`文件（非必需，也可以通过`-f`参数指定其他文件名字）决定如何构建数据集。`dataset.yaml` 相当于命令行参数的配置文件化，命令行参数优先级高于dataset.yaml。
+
+`WORKDIR`参数应为一个合法的路径字符串，`dataset.yaml`中handler路径或 `--handler` 参数是相对于 `WORKDIR` 的，一般在这个目录中会有 `.swignore`文件、数据集构建代码等。目前构建数据集会自动包括 `WORKDIR` 及子目录中的Python文件，便于更好的版本化最终数据集，若不想携带此类文件，可以在 `WORKDIR` 中创建 `.swignore` 文件并进行相关设置。**`dataset build`命令目前只能在standalone instance下执行**。
 
 `dataset build` 命令会调用用户代码进行数据集构建，如果有第三方库的使用，建议使用Starwhale Runtime对依赖进行管理，便于后续迭代。
 
@@ -41,11 +43,17 @@ swcli dataset build [OPTIONS] WORKDIR
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
+|`--name`|`-n`|❌|String||数据集的名称，若不指定，则选用dataset.yaml中name字段，若也没有设定，则使用父目录的名字|
+|`--handler`|`-h`|❌|String||数据集构建的Python入口点，格式为: ${module路径}:${类名或函数名}|
 |`--project`|`-p`|❌|String|`swcli project select`命令设定的project|Project URI|
 |`--dataset-yaml`|`-f`|❌|String|dataset.yaml|建议使用默认的dataset.yaml，无需修改。|
-|`--append`||❌|Boolean|False|当指定该参数时，表示此次数据集构建会继承 `--append-from`版本的数据集内容，实现追加数据集的目的。|
-|`--append-from`||❌|String|latest|与 `--append` 参数组合使用，指定继承数据集的版本，注意此处并不是Dataset URI，而是同一个数据集下的其他版本号或tag，默认为latest，即最近一次构建的版本。|
-|`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
+|`--append`|`-a`|❌|Boolean|False|当指定该参数时，表示此次数据集构建会继承 `--append-from`版本的数据集内容，实现追加数据集的目的。|
+|`--append-from`|`-af`|❌|String|latest|与 `--append` 参数组合使用，指定继承数据集的版本，注意此处并不是Dataset URI，而是同一个数据集下的其他版本号或tag，默认为latest，即最近一次构建的版本。|
+|`--runtime`|`-r`|❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
+|`--desc`||❌|String||Dataset的描述|
+|`--alignment-size`|`-as`|❌|String|4K|swds-bin格式的数据集每个数据块的数据alignment大小，如果设置alignment_size为4k，数据块大小为7.9K，则会补齐0.1K的空数据，让数据块为alignment_size的整数倍，提升page size等读取效率|
+|`--volume-size`|`-vs`|❌|String|64MB|swds-bin格式的数据集每个data文件的大小。当写数字时，单位bytes；也可以是数字+单位格式，如64M, 1GB等|
+|`--data-mime-type`|`-dmt`|❌|String|x/undefined|全局默认的数据MIME类型，候选值为 `starwhale.MIMEType` [枚举值](../sdk/data_type.md)|
 
 ## 3. 分发数据集
 

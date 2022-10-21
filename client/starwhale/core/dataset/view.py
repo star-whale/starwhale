@@ -7,16 +7,11 @@ from rich.table import Table
 from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
-from starwhale.consts import (
-    LATEST_TAG,
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    SHORT_VERSION_CNT,
-)
+from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Dataset
@@ -155,25 +150,22 @@ class DatasetTermView(BaseTermView):
     def build(
         cls,
         workdir: str,
-        project: str,
-        yaml_name: str = DefaultYAMLName.DATASET,
-        append: bool = False,
-        append_from: str = LATEST_TAG,
-        runtime_uri: str = "",
+        config: DatasetConfig,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
-            workdir, project, yaml_name, URIType.DATASET
+            project=config.project_uri, bundle_name=config.name, typ=URIType.DATASET
         )
         ds = Dataset.get_dataset(dataset_uri)
-        if runtime_uri:
+
+        if config.runtime_uri:
             RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
+                uri=config.runtime_uri,
                 target=ds.build,
-                args=(Path(workdir), yaml_name),
-                kwargs={"append": append, "append_from": append_from},
+                args=(Path(workdir),),
+                kwargs=dict(config=config),
             ).run()
         else:
-            ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
+            ds.build(Path(workdir), config=config)
 
     @classmethod
     def copy(

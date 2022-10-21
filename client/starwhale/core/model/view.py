@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, pretty_bytes, in_production
+from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -120,8 +120,9 @@ class ModelTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.MODEL,
         runtime_uri: str = "",
     ) -> None:
+        _config = load_yaml(Path(workdir) / yaml_name)
         _model_uri = cls.prepare_build_bundle(
-            workdir, project, yaml_name, URIType.MODEL
+            project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
         if runtime_uri:

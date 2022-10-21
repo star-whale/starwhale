@@ -9,8 +9,12 @@ from enum import Enum, unique
 from pathlib import Path
 from functools import partial
 
-from starwhale.utils import load_yaml, convert_to_bytes
-from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_STARWHALE_API_VERSION
+from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
+from starwhale.consts import (
+    LATEST_TAG,
+    SHORT_VERSION_CNT,
+    DEFAULT_STARWHALE_API_VERSION,
+)
 from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
@@ -522,31 +526,38 @@ class DatasetAttr(ASDictMixin):
 class DatasetConfig(ASDictMixin):
     def __init__(
         self,
-        name: str,
-        handler: str,
-        runtime: str = "",
+        name: str = "",
+        handler: str = "",
         pkg_data: t.List[str] = [],
         exclude_pkg_data: t.List[str] = [],
-        tag: t.List[str] = [],
         desc: str = "",
         version: str = DEFAULT_STARWHALE_API_VERSION,
         attr: t.Dict[str, t.Any] = {},
+        project_uri: str = "",
+        runtime_uri: str = "",
+        append: bool = False,
+        append_from: str = LATEST_TAG,
         **kw: t.Any,
     ) -> None:
         self.name = name
         self.handler = handler
-        self.tag = tag
         self.desc = desc
         self.version = version
-        self.runtime = runtime.strip()
         self.attr = DatasetAttr(**attr)
         self.pkg_data = pkg_data
         self.exclude_pkg_data = exclude_pkg_data
+        self.project_uri = project_uri
+        self.runtime_uri = runtime_uri
+        self.append = append
+        self.append_from = append_from
+
         self.kw = kw
 
-        self._validator()
+    def do_validate(self) -> None:
+        _ok, _reason = validate_obj_name(self.name)
+        if not _ok:
+            raise FieldTypeOrValueError(f"name field:({self.name}) error: {_reason}")
 
-    def _validator(self) -> None:
         if ":" not in self.handler:
             raise Exception(
                 f"please use module:class format, current is: {self.handler}"

@@ -88,6 +88,7 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
+        # TODO: remove yaml_name in build function
         self.store.building = True  # type: ignore
 
         # use a temp dir to build resources
@@ -102,10 +103,10 @@ class BaseBundle(metaclass=ABCMeta):
 
         with ExitStack() as stack:
             stack.callback(when_exit)
-            yaml_name = yaml_name or self.yaml_name
-            self.buildImpl(workdir, yaml_name, **kw)
+            kw["yaml_name"] = yaml_name or self.yaml_name
+            self.buildImpl(workdir, **kw)
 
-    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:
         raise NotImplementedError
 
 
@@ -121,9 +122,9 @@ class LocalStorageBundleMixin:
         )
 
         # TODO: add signature for import files: model, config
-        _f = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
-        ensure_file(_f, yaml.safe_dump(self._manifest, default_flow_style=False))
-        logger.info(f"[step:manifest]render manifest: {_f}")
+        _fpath = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
+        ensure_file(_fpath, yaml.safe_dump(self._manifest, default_flow_style=False))
+        logger.info(f"[step:manifest]render manifest: {_fpath}")
 
     def _gen_version(self) -> None:
         logger.info("[step:version]create version...")
@@ -227,7 +228,9 @@ class LocalStorageBundleMixin:
     ) -> Walker:
         include_files = include_files or []
         exclude_files = exclude_files or []
-        _filter = ["*.py", "*.sh", "*.yaml"] + SUPPORTED_PIP_REQ + include_files
+        _filter = (
+            ["*.py", "*.sh", "*.yaml", "*.yml"] + SUPPORTED_PIP_REQ + include_files
+        )
         _exclude = exclude_files
 
         _sw_ignore_path = workdir / SW_IGNORE_FILE_NAME

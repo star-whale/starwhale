@@ -1,16 +1,15 @@
+import os
 import typing as t
+from pathlib import Path
 
 import click
 
-from starwhale.consts import (
-    LATEST_TAG,
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-)
+from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.cli import AliasedGroup
+from starwhale.utils.error import NotFoundError
+from starwhale.core.dataset.type import MIMEType, DatasetAttr, DatasetConfig
 
 from .view import get_term_view, DatasetTermView
 
@@ -27,30 +26,82 @@ def dataset_cmd(ctx: click.Context) -> None:
 
 @dataset_cmd.command("build", help="[Only Standalone]Build swds with dataset.yaml")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-h",
+    "--handler",
+    help="Dataset build executor handler: [module path]:[class or function name]",
+)
+@click.option("-n", "--name", help="Dataset name")
+@click.option("-p", "--project", help="Project URI")
+@click.option("--desc", help="Dataset description")
+@click.option(
+    "-as",
+    "--alignment-size",
+    help="swds-bin format dataset: alignment size",
+)
+@click.option(
+    "-vs",
+    "--volume-size",
+    help="swds-bin format dataset: volume size",
+)
+@click.option("-dmt", "--data-mime-type", help="Dataset global default data mime type")
 @click.option(
     "-f",
     "--dataset-yaml",
     default=DefaultYAMLName.DATASET,
     help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
-@click.option("--append", is_flag=True, help="Only append new data")
-@click.option("--append-from", default=LATEST_TAG, help="Append from dataset version")
-@click.option("--runtime", default="", help="runtime uri")
+@click.option("-a", "--append", is_flag=True, default=None, help="Only append new data")
+@click.option("-af", "--append-from", help="Append from dataset version")
+@click.option("-r", "--runtime", help="runtime uri")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
     workdir: str,
+    handler: str,
+    name: str,
     project: str,
+    desc: str,
     dataset_yaml: str,
+    alignment_size: str,
+    volume_size: str,
+    data_mime_type: str,
     append: bool,
     append_from: str,
     runtime: str,
 ) -> None:
-    # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dry-run
     # TODO: add compress args
-    view.build(workdir, project, dataset_yaml, append, append_from, runtime)
+    if not os.path.exists(workdir):
+        raise NotFoundError(workdir)
+
+    yaml_path = Path(workdir) / dataset_yaml
+    config = DatasetConfig()
+    if yaml_path.exists():
+        config = DatasetConfig.create_by_yaml(yaml_path)
+
+    config.name = name or config.name or Path(workdir).absolute().name
+    config.handler = handler or config.handler
+    config.runtime_uri = runtime or config.runtime_uri
+    config.project_uri = project or config.project_uri
+    # TODO: support README.md as the default desc
+    config.desc = desc or config.desc
+    config.append_from = append_from or config.append_from
+
+    config.attr = DatasetAttr(
+        volume_size=volume_size or config.attr.volume_size,
+        alignment_size=alignment_size or config.attr.alignment_size,
+        data_mime_type=MIMEType(data_mime_type or config.attr.data_mime_type),
+    )
+
+    if append is not None:
+        config.append = append
+
+    print(config.name)
+    print(config.handler)
+
+    config.do_validate()
+    view.build(workdir, config)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
