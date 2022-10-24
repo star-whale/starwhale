@@ -53,6 +53,7 @@ example/nmt/models/
 example/nmt/data/
 example/speech_command/data/
 example/speech_command/models/
+example/datasets/*/data
 
 # UI
 node_modules
