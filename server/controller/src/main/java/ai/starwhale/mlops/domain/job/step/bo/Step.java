@@ -47,6 +47,4 @@ public class Step extends TimeConcern {
     StepStatus status;
 
     List<Task> tasks;
-
-    List<RuntimeResource> runtimeResources;
 }

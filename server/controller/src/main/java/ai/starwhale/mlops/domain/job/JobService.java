@@ -37,7 +37,6 @@ import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SwdsManager;
 import ai.starwhale.mlops.domain.swmp.SwmpManager;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolManager;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -89,12 +88,11 @@ public class JobService {
     private final SwmpManager swmpManager;
     private final SwdsManager swdsManager;
     private final RuntimeManager runtimeManager;
-    private final ResourcePoolManager resourcePoolManager;
     private final JobUpdateHelper jobUpdateHelper;
 
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
-            JobSpliterator jobSpliterator, ResourcePoolManager resourcePoolManager, HotJobHolder hotJobHolder,
+            JobSpliterator jobSpliterator,  HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
             ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
             UserService userService, JobUpdateHelper jobUpdateHelper) {
@@ -105,7 +103,6 @@ public class JobService {
         this.jobConvertor = jobConvertor;
         this.runtimeManager = runtimeManager;
         this.jobSpliterator = jobSpliterator;
-        this.resourcePoolManager = resourcePoolManager;
         this.hotJobHolder = hotJobHolder;
         this.projectManager = projectManager;
         this.jobManager = jobManager;
@@ -185,7 +182,6 @@ public class JobService {
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
         Long modelVersionId = swmpManager.getSwmpVersionId(modelVersionUrl, null);
-        Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
                 .jobUuid(jobUuid)
@@ -196,7 +192,7 @@ public class JobService {
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
-                .resourcePoolId(resourcePoolId)
+                .resourcePool(resourcePool)
                 .stepSpec(stepSpecOverWrites)
                 .build();
 

@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.po;
+package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
-import ai.starwhale.mlops.common.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-
-@EqualsAndHashCode(callSuper = true)
 @Data
-@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResourcePoolEntity extends BaseEntity {
+public class Resource {
 
-    private Long id;
+    String name;
+    Float max;
+    Float min;
+    Float defaults;
 
-    /**
-     * K8s label without prefix: pool.starwhale.ai.
-     */
-    private String label;
-
-    /**
-     * User-friendly name, alias of label, nullable.
-     */
-    private String name;
-
-    /**
-     * description of this pool, nullable.
-     */
-    private String description;
+    public Resource(String name) {
+        this.name = name;
+    }
 }

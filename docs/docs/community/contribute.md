@@ -185,11 +185,11 @@ mvn clean test
   - Minio
 
     ```bash
-    docker run --name minio -d
-    -p 9000:9000  --publish 9001:9001
-    -e MINIO_DEFAULT_BUCKETS='starwhale'
-    -e MINIO_ROOT_USER="minioadmin"
-    -e MINIO_ROOT_PASSWORD="minioadmin"
+    docker run --name minio -d \
+    -p 9000:9000  --publish 9001:9001 \
+    -e MINIO_DEFAULT_BUCKETS='starwhale' \
+    -e MINIO_ROOT_USER="minioadmin" \
+    -e MINIO_ROOT_PASSWORD="minioadmin" \
     bitnami/minio:latest
     ```
 

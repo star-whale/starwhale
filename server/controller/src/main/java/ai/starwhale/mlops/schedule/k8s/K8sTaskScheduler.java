@@ -61,8 +61,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
-    final K8sResourcePoolConverter resourcePoolConverter;
-
     final StorageProperties storageProperties;
 
     final RunTimeProperties runTimeProperties;
@@ -79,7 +77,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             StorageProperties storageProperties,
             JobTokenConfig jobTokenConfig,
             RunTimeProperties runTimeProperties,
-            K8sResourcePoolConverter resourcePoolConverter,
             K8sJobTemplate k8sJobTemplate,
             ResourceEventHandler<V1Job> eventHandlerJob,
             ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri,
@@ -88,7 +85,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
-        this.resourcePoolConverter = resourcePoolConverter;
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
@@ -120,7 +116,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
         try {
-            var nodeSelector = this.resourcePoolConverter.toK8sLabel(task.getStep().getJob().getResourcePool());
+            Map<String, String> nodeSelector =
+                    null != task.getStep().getJob().getResourcePool() ? task.getStep().getJob().getResourcePool()
+                            .getNodeSelector() : Map.of();
             V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(), buildContainerSpecMap(task), nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             k8sClient.deploy(k8sJob);
@@ -196,7 +194,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
 
         // GPU resource
-        var resources = task.getStep().getRuntimeResources().stream();
+        var resources = task.getTaskRequest().getRuntimeResources().stream();
         var gpu = resources.anyMatch(r -> r.getType().equals(ResourceOverwriteSpec.RESOURCE_GPU) && r.getRequest() > 0);
         // overwrite visible devices to none
         if (!gpu) {

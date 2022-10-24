@@ -53,7 +53,6 @@ import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SwdsManager;
 import ai.starwhale.mlops.domain.swmp.SwmpManager;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolManager;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -86,7 +85,6 @@ public class JobServiceTest {
     private SwmpManager swmpManager;
     private SwdsManager swdsManager;
     private RuntimeManager runtimeManager;
-    private ResourcePoolManager resourcePoolManager;
 
     @BeforeEach
     public void setUp() {
@@ -123,11 +121,10 @@ public class JobServiceTest {
         swmpManager = mock(SwmpManager.class);
         swdsManager = mock(SwdsManager.class);
         runtimeManager = mock(RuntimeManager.class);
-        resourcePoolManager = mock(ResourcePoolManager.class);
 
         service = new JobService(
                 jobBoConverter, jobMapper, jobSwdsVersionMapper, taskMapper,
-                jobConvertor, runtimeManager, jobSpliterator, resourcePoolManager,
+                jobConvertor, runtimeManager, jobSpliterator,
                 hotJobHolder, projectManager, jobManager, jobLoader, swmpManager,
                 resultQuerier, swdsManager, storagePathCoordinator, userService, mock(JobUpdateHelper.class));
     }
@@ -216,8 +213,6 @@ public class JobServiceTest {
                 .willReturn(2L);
         given(swmpManager.getSwmpVersionId(same("3"), any()))
                 .willReturn(3L);
-        given(resourcePoolManager.getResourcePoolId("4"))
-                .willReturn(4L);
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
         given(jobMapper.addJob(any(JobEntity.class)))

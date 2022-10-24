@@ -18,12 +18,12 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo.PhaseEnum;
 import ai.starwhale.mlops.domain.system.SystemService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,7 +44,7 @@ public class SystemController implements SystemApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<ResourcePoolVo>>> listResourcePools() {
+    public ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools() {
         return ResponseEntity.ok(Code.success.asResponse(systemService.listResourcePools()));
     }
 

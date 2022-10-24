@@ -38,9 +38,6 @@ import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
 import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
@@ -48,6 +45,7 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -69,10 +67,6 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
-    final ResourcePoolMapper resourcePoolMapper;
-
-    final ResourcePoolConverter resourcePoolConverter;
-
     final SwdsBoConverter swdsBoConverter;
 
     final SystemSettingService systemSettingService;
@@ -93,8 +87,6 @@ public class JobBoConverter {
             RuntimeMapper runtimeMapper,
             RuntimeVersionMapper runtimeVersionMapper,
             SwdsBoConverter swdsBoConverter,
-            ResourcePoolMapper resourcePoolMapper,
-            ResourcePoolConverter resourcePoolConverter,
             SwmpVersionConvertor swmpVersionConvertor,
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
@@ -104,8 +96,6 @@ public class JobBoConverter {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsBoConverter = swdsBoConverter;
-        this.resourcePoolMapper = resourcePoolMapper;
-        this.resourcePoolConverter = resourcePoolConverter;
         this.systemSettingService = systemSettingService;
         this.swmpVersionConvertor = swmpVersionConvertor;
         this.stepMapper = stepMapper;
@@ -124,8 +114,6 @@ public class JobBoConverter {
                 jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
                 runtimeVersionEntity.getRuntimeId());
-        ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
-        ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
         String image = runtimeVersionEntity.getImage();
         if (null != systemSettingService.getSystemSetting() && null != systemSettingService.getSystemSetting()
                 .getDockerSetting() && null != systemSettingService.getSystemSetting().getDockerSetting()
@@ -160,7 +148,7 @@ public class JobBoConverter {
                 .swDataSets(swDataSets)
                 .outputDir(jobEntity.getResultOutputPath())
                 .uuid(jobEntity.getJobUuid())
-                .resourcePool(resourcePool)
+                .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
                 .build();
         return fillStepsAndTasks(job);
     }

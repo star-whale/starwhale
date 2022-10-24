@@ -13,30 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.api.protocol.system;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import lombok.Builder;
-import lombok.Data;
-import org.springframework.validation.annotation.Validated;
-
-@Data
-@Builder
-@Schema(description = "Resource Pool for job execution", title = "Resource Pool")
-@Validated
-public class ResourcePoolVo implements Serializable {
-
-    String id;
-
-    String label;
-
-    String name;
-
-    String description;
-
-    public static ResourcePoolVo empty() {
-        return new ResourcePoolVo("", "", "", "");
-    }
-}
+drop table resource_pool;
+ALTER TABLE job_info RENAME COLUMN resource_pool_id TO resource_pool;
+ALTER TABLE job_info MODIFY resource_pool varchar(255) null;

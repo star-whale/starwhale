@@ -87,12 +87,12 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .build();
         swModelPackageVersionMapper.addNewVersion(swModelPackageVersionEntity);
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
-                .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
+                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .stepSpec("stepSpec1")
                 .projectId(project.getId()).ownerId(user.getId()).build();
         jobCreated = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
-                .resourcePoolId(1L).runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
+                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .stepSpec("stepSpec2")
                 .projectId(project.getId()).ownerId(user.getId()).build();
@@ -211,7 +211,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expectedJob.getType(), jobEntity.getType());
         Assertions.assertEquals(expectedJob.getResultOutputPath(), jobEntity.getResultOutputPath());
         Assertions.assertEquals(expectedJob.getProjectId(), jobEntity.getProjectId());
-        Assertions.assertEquals(expectedJob.getResourcePoolId(), jobEntity.getResourcePoolId());
+        Assertions.assertEquals(expectedJob.getResourcePool(), jobEntity.getResourcePool());
         Assertions.assertEquals(expectedJob.getRuntimeVersionId(), jobEntity.getRuntimeVersionId());
         Assertions.assertEquals(expectedJob.getSwmpVersionId(), jobEntity.getSwmpVersionId());
         Assertions.assertEquals(expectedJob.getJobUuid(), jobEntity.getJobUuid());
