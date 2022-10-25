@@ -121,30 +121,22 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         compare_ds = StandaloneDataset(compare_uri)
         base_summary = self.summary()
         compare_summary = compare_ds.summary()
-
-        base_rows = base_summary.rows if base_summary else 0
-        compare_rows = compare_summary.rows if compare_summary else 0
-        scan_end_rows = min(base_rows, compare_rows)
-
-        base_tabular_ds = TabularDataset.from_uri(self.uri)
-        compare_tabular_ds = TabularDataset.from_uri(compare_uri)
+        base_tds_iter = TabularDataset.from_uri(self.uri).scan()
+        compare_tds_iter = TabularDataset.from_uri(compare_uri).scan()
 
         unchanged_cnt = 0
         diff_updated = []
 
         # TODO: tune diff performance
-        for _brow, _crow in zip(
-            base_tabular_ds.scan(0, scan_end_rows),
-            compare_tabular_ds.scan(0, scan_end_rows),
-        ):
+        for _brow, _crow in zip(base_tds_iter, compare_tds_iter):
             if _brow == _crow:
                 unchanged_cnt += 1
             else:
                 diff_updated.append((_brow.asdict(), _crow.asdict()))
 
         # TODO: tune diff deleted and added rows like git diff
-        diff_deleted = list(range(scan_end_rows, base_rows))
-        diff_added = list(range(scan_end_rows, compare_rows))
+        diff_deleted_keys = [r.id for r in base_tds_iter]
+        diff_added_keys = [r.id for r in compare_tds_iter]
 
         return {
             "version": {
@@ -157,14 +149,14 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             },
             "diff": {
                 "updated": diff_updated,
-                "deleted": diff_deleted,
-                "added": diff_added,
+                "deleted": diff_deleted_keys,
+                "added": diff_added_keys,
             },
             "diff_rows": {
                 "unchanged": unchanged_cnt,
                 "updated": len(diff_updated),
-                "added": len(diff_added),
-                "deleted": len(diff_deleted),
+                "added": len(diff_added_keys),
+                "deleted": len(diff_deleted_keys),
             },
         }
 

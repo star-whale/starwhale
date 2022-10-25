@@ -68,33 +68,24 @@ class ModelTermView(BaseTermView):
             _store = ModelStorage(_uri)
             workdir = _store.loc
 
+        kw = dict(
+            project=project,
+            version=version,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            step_name=step,
+            task_index=task_index,
+            task_num=task_num,
+            model_yaml_name=yaml_name,
+        )
         if not in_production() and runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=StandaloneModel.eval_user_handler,
-                args=(
-                    project,
-                    version,
-                    workdir,
-                    dataset_uris,
-                    yaml_name,
-                    "default",
-                    step,
-                    task_index,
-                    task_num,
-                ),
+                kwargs=kw,
             ).run()
         else:
-            StandaloneModel.eval_user_handler(
-                project=project,
-                version=version,
-                workdir=workdir,
-                dataset_uris=dataset_uris,
-                step_name=step,
-                task_index=task_index,
-                task_num=task_num,
-                model_yaml_name=yaml_name,
-            )
+            StandaloneModel.eval_user_handler(**kw)  # type: ignore
 
     @classmethod
     def list(

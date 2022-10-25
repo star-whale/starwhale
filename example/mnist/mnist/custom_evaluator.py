@@ -12,10 +12,11 @@ from starwhale import (
     Image,
     Context,
     pass_context,
+    get_data_loader,
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
-    get_sharding_data_loader,
+    get_dataset_consumption,
 )
 
 from .model import Net
@@ -34,13 +35,13 @@ class CustomPipelineHandler:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
         ppl_result_storage = PPLResultStorage(context)
 
-        _data_loader = get_sharding_data_loader(
-            dataset_uri=context.dataset_uris[0],
-            sharding_index=context.index,
-            sharding_num=context.total,
+        ds_uri = context.dataset_uris[0]
+        consumption = get_dataset_consumption(
+            dataset_uri=ds_uri, session_id=context.version
         )
+        loader = get_data_loader(ds_uri, session_consumption=consumption)
 
-        for _idx, _data, _annotations in _data_loader:
+        for _idx, _data, _annotations in loader:
             try:
                 data_tensor = self._pre(_data)
                 output = self.model(data_tensor)

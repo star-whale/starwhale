@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
-import math
 import typing as t
 from abc import ABCMeta, abstractmethod
 from urllib.parse import urlparse
@@ -15,31 +13,37 @@ from starwhale.consts import AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.core.dataset.type import BaseArtifact
-from starwhale.core.dataset.model import Dataset
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
-from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
+from starwhale.core.dataset.tabular import (
+    TabularDataset,
+    TabularDatasetRow,
+    TabularDatasetSessionConsumption,
+)
 
 
 class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
         dataset_uri: URI,
-        start: int = 0,
-        end: int = sys.maxsize,
-        logger: t.Union[loguru.Logger, None] = None,
+        start: t.Optional[t.Any] = None,
+        end: t.Optional[t.Any] = None,
+        logger: t.Optional[loguru.Logger] = None,
+        session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
     ):
         self.dataset_uri = dataset_uri
+        self.logger = logger or _logger
         self.start = start
         self.end = end
-        self.logger = logger or _logger
+
         # TODO: refactor TabularDataset with dataset_uri
         # TODO: refactor dataset, tabular_dataset and standalone dataset module
         self.tabular_dataset = TabularDataset.from_uri(
             dataset_uri, start=start, end=end
         )
+        self.session_consumption = session_consumption
         self._stores: t.Dict[str, ObjectStore] = {}
-
         self._load_dataset_auth_env()
+        self.last_processed_range: t.Optional[t.Tuple[t.Any, t.Any]] = None
 
     def _load_dataset_auth_env(self) -> None:
         # TODO: support multi datasets
@@ -82,30 +86,47 @@ class DataLoader(metaclass=ABCMeta):
         _key_compose = f"{data_uri}:{offset}:{offset + size - 1}"
         return _key_compose
 
-    def __iter__(self) -> t.Generator[t.Tuple[int, t.Any, t.Dict], None, None]:
-        for row in self.tabular_dataset.scan():
+    def _do_iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
+        if not self.session_consumption:
+            for row in self.tabular_dataset.scan():
+                yield row
+        else:
+            while True:
+                # TODO: multithread for get meta, get data and ppl process
+                pk = [self.last_processed_range] if self.last_processed_range else None
+                rt = self.session_consumption.get_scan_range(pk)
+                self.last_processed_range = rt
+                if rt is None:
+                    break
+
+                for row in self.tabular_dataset.scan(rt[0], rt[1]):
+                    yield row
+
+    def __iter__(
+        self,
+    ) -> t.Generator[t.Tuple[t.Union[str, int], t.Any, t.Dict], None, None]:
+        for row in self._do_iter_row():
             # TODO: tune performance by fetch in batch
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
 
-            self.logger.info(f"[{row.id}] @{_store.bucket}/{_key_compose}")
             _file = _store.backend._make_file(_store.bucket, _key_compose)
-            for data_content, _ in self._do_iter(_file, row):
+            for data_content, _ in self._do_iter_data(_file, row):
                 data = BaseArtifact.reflect(data_content, row.data_type)
                 # TODO: refactor annotation origin type
                 yield row.id, data, row.annotations
 
     @abstractmethod
-    def _do_iter(
+    def _do_iter_data(
         self, file: FileLikeObj, row: TabularDatasetRow
     ) -> t.Generator[t.Tuple[bytes, int], None, None]:
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}"
+        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}, range:[{self.start},{self.end}], use consumption:{bool(self.session_consumption)}"
 
     def __repr__(self) -> str:
-        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}, start:{self.start}, end:{self.end}"
+        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}, consumption:{self.session_consumption}"
 
     @property
     def kind(self) -> DataFormatType:
@@ -117,7 +138,7 @@ class UserRawDataLoader(DataLoader):
     def kind(self) -> DataFormatType:
         return DataFormatType.USER_RAW
 
-    def _do_iter(
+    def _do_iter_data(
         self,
         file: FileLikeObj,
         row: TabularDatasetRow,
@@ -130,7 +151,7 @@ class SWDSBinDataLoader(DataLoader):
     def kind(self) -> DataFormatType:
         return DataFormatType.SWDS_BIN
 
-    def _do_iter(
+    def _do_iter_data(
         self, file: FileLikeObj, row: TabularDatasetRow
     ) -> t.Generator[t.Tuple[bytes, int], None, None]:
         from .builder import _header_size, _header_struct
@@ -144,47 +165,25 @@ class SWDSBinDataLoader(DataLoader):
 
 
 def get_data_loader(
-    dataset_uri: URI,
-    start: int = 0,
-    end: int = sys.maxsize,
-    logger: t.Union[loguru.Logger, None] = None,
+    dataset_uri: t.Union[str, URI],
+    start: t.Optional[t.Any] = None,
+    end: t.Optional[t.Any] = None,
+    session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
+    logger: t.Optional[loguru.Logger] = None,
 ) -> DataLoader:
     from starwhale.core.dataset import model
+
+    if isinstance(dataset_uri, str):
+        dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
 
     summary = model.Dataset.get_dataset(dataset_uri).summary()
     include_user_raw = summary.include_user_raw if summary else False
     _cls = UserRawDataLoader if include_user_raw else SWDSBinDataLoader
-    return _cls(dataset_uri, start, end, logger or _logger)
 
-
-def get_sharding_data_loader(
-    dataset_uri: str = "",
-    sharding_index: int = 0,
-    sharding_num: int = 1,
-    logger: t.Union[loguru.Logger, None] = None,
-) -> DataLoader:
-    _uri = URI(dataset_uri, expected_type=URIType.DATASET)
-    _dataset = Dataset.get_dataset(_uri)
-    _dataset_summary = _dataset.summary()
-    _dataset_rows = _dataset_summary.rows if _dataset_summary else 0
-    start, end = calculate_index(_dataset_rows, sharding_num, sharding_index)
-
-    return get_data_loader(
-        dataset_uri=_uri,
+    return _cls(
+        dataset_uri,
         start=start,
         end=end,
-        logger=logger,
+        session_consumption=session_consumption,
+        logger=logger or _logger,
     )
-
-
-def calculate_index(
-    data_size: int, sharding_num: int, sharding_index: int
-) -> t.Tuple[int, int]:
-    _batch_size = 1
-    if data_size >= sharding_num:
-        _batch_size = math.ceil(data_size / sharding_num)
-    elif sharding_index >= data_size:
-        return -1, -1
-    _start_index = min(_batch_size * sharding_index, data_size - 1)
-    _end_index = min(_batch_size * (sharding_index + 1), data_size)
-    return _start_index, _end_index

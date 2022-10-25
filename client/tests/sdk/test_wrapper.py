@@ -98,3 +98,9 @@ class TestDataset(BaseTestCase):
             list(dataset.scan("1", "4")),
             "scan",
         )
+
+        self.assertEqual(
+            [{"id": f"{i}"} for i in range(0, 4)],
+            list(dataset.scan_id(None, None)),
+            "scan_id",
+        )

@@ -1,4 +1,3 @@
-import time
 import typing as t
 import concurrent.futures
 from typing import List, Optional
@@ -146,11 +145,7 @@ class TaskExecutor:
         self.exception: Optional[Exception] = None
 
     def execute(self) -> TaskResult:
-        """
-        call function from module
-        :return: function results
-        """
-        logger.debug("execute step:{} start.", self.context)
+        logger.info(f"start to execute {self.context} ...")
 
         _module = load_module(self.module, self.work_dir)
 
@@ -175,8 +170,8 @@ class TaskExecutor:
         else:
             self.status = STATUS.SUCCESS
         finally:
-            logger.debug(
-                f"execute step:{self.context}, status:{self.status}, error:{self.exception}"
+            logger.info(
+                f"finish {self.context}, status:{self.status}, error:{self.exception}"
             )
             return TaskResult(
                 task_id=self.index, status=self.status, exception=self.exception
@@ -203,12 +198,12 @@ class StepExecutor:
         self.version = version
 
     def execute(self) -> StepResult:
-        logger.debug(f"start execute step:{self.step}")
+        logger.info(f"start to execute step:{self.step}")
         processor = MultiThreadProcessor(
             self.step.step_name, self.step.concurrency, self._split_tasks()
         )
         task_results = processor.execute()
-        logger.debug(f"finish execute step:{self.step}")
+        logger.info(f"finish to execute step:{self.step}")
         return StepResult(step_name=self.step.step_name, task_results=task_results)
 
     def _split_tasks(self) -> t.List[BaseExecutor]:
@@ -249,12 +244,8 @@ class MultiThreadProcessor:
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.concurrency
         ) as pool:
-            start_time = time.time()
             futures = [pool.submit(executor.execute) for executor in self.executors]
             _results: t.List[t.Any] = [
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
-
-            exec_time = time.time() - start_time
-            logger.debug(f"execute:{self.name} time:{exec_time}")
         return _results

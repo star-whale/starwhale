@@ -255,7 +255,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         _steps = _jobs[job_name]
 
-        console.print(":hourglass_not_done: start to evaluation...")
+        console.print(f":hourglass_not_done: start to evaluation[{version}]...")
         _scheduler = Scheduler(
             project=_project_uri.project,
             version=version,

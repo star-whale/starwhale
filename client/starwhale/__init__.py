@@ -22,9 +22,9 @@ from starwhale.api.dataset import (
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
-    get_sharding_data_loader,
 )
 from starwhale.api.evaluation import Evaluation
+from starwhale.core.dataset.tabular import get_dataset_consumption
 
 __all__ = [
     "__version__",
@@ -36,7 +36,6 @@ __all__ = [
     "pass_context",
     "Context",
     "Evaluation",
-    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",
@@ -57,4 +56,5 @@ __all__ = [
     "COCOObjectAnnotation",
     "PPLResultStorage",
     "PPLResultIterator",
+    "get_dataset_consumption",
 ]

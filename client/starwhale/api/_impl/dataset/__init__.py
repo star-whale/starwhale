@@ -15,16 +15,10 @@ from starwhale.core.dataset.type import (
     COCOObjectAnnotation,
 )
 
-from .loader import (
-    get_data_loader,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
-    get_sharding_data_loader,
-)
+from .loader import get_data_loader, SWDSBinDataLoader, UserRawDataLoader
 from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 
 __all__ = [
-    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",
