@@ -34,7 +34,7 @@ git config --global --add safe.directory /starwhale
 git config --global user.email "renyanda@starwhale.ai"
 cd /starwhale/scripts/e2e_test
 if [[ -z "$PUBLISH" ]] ; then
-  if source start_test.sh ;then
+  if bash start_test.sh ;then
     send_feishu "e2e SUCCESS ns:$SWNS name:$SWNAME"
   else
     send_feishu "e2e FAIL ns:$SWNS name:$SWNAME"

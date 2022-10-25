@@ -16,42 +16,29 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SystemService {
 
-    private final ResourcePoolMapper resourcePoolMapper;
-
-    private final ResourcePoolConverter resourcePoolConverter;
+    private final SystemSettingService systemSettingService;
 
     private final String controllerVersion;
 
-    private final StorageAccessService storageAccessService;
-
-    public SystemService(ResourcePoolMapper resourcePoolMapper,
-            ResourcePoolConverter resourcePoolConverter, @Value("${sw.version}") String controllerVersion,
-            StorageAccessService storageAccessService) {
-        this.resourcePoolMapper = resourcePoolMapper;
-        this.resourcePoolConverter = resourcePoolConverter;
+    public SystemService(SystemSettingService systemSettingService, @Value("${sw.version}") String controllerVersion) {
+        this.systemSettingService = systemSettingService;
         this.controllerVersion = controllerVersion;
-        this.storageAccessService = storageAccessService;
     }
 
     public String controllerVersion() {
         return controllerVersion;
     }
 
-    public List<ResourcePoolVo> listResourcePools() {
-        var entities = resourcePoolMapper.listResourcePools();
-        return entities.stream().map(resourcePoolConverter::toResourcePoolVo).collect(Collectors.toList());
+    public List<ResourcePool> listResourcePools() {
+        return systemSettingService.getResourcePools();
     }
 
 }

@@ -24,9 +24,8 @@ import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -41,21 +40,19 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
 
     private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
-    private final ResourcePoolConverter resourcePoolConverter;
     private final RuntimeService runtimeService;
     private final JobSwdsVersionMapper jobSwdsVersionMapper;
-    private final ResourcePoolMapper resourcePoolMapper;
+
+    private final SystemSettingService systemSettingService;
 
     public JobConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
-            ResourcePoolConverter resourcePoolConverter,
             RuntimeService runtimeService, JobSwdsVersionMapper jobSwdsVersionMapper,
-            ResourcePoolMapper resourcePoolMapper) {
+            SystemSettingService systemSettingService) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
-        this.resourcePoolConverter = resourcePoolConverter;
         this.runtimeService = runtimeService;
         this.jobSwdsVersionMapper = jobSwdsVersionMapper;
-        this.resourcePoolMapper = resourcePoolMapper;
+        this.systemSettingService = systemSettingService;
     }
 
     @Override
@@ -72,9 +69,6 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
                 .map(SwDatasetVersionEntity::getVersionName)
                 .collect(Collectors.toList());
 
-        ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
-        var resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
-
         return JobVo.builder()
                 .id(idConvertor.convert(jobEntity.getId()))
                 .uuid(jobEntity.getJobUuid())
@@ -87,7 +81,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
                 .comment(jobEntity.getComment())
-                .resourcePool(resourcePool.getLabel())
+                .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .build();
     }
 

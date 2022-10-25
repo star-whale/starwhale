@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
-import java.util.Objects;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,27 +33,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ResourcePool {
 
-    public static final String DEFAULT = "default";
-    String label;
+    public static final String DEFAULT_NAME = "default";
+    String name;
+    Map<String, String> nodeSelector;
+    List<Resource> resources;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ResourcePool)) {
-            return false;
-        }
-        ResourcePool pool = (ResourcePool) o;
-        return Objects.equals(label, pool.getLabel());
+    public static ResourcePool defaults() {
+        return ResourcePool
+                .builder()
+                .name(DEFAULT_NAME)
+                .nodeSelector(Map.of())
+                .resources(List.of(
+                        new Resource(ResourceOverwriteSpec.RESOURCE_CPU),
+                        new Resource(ResourceOverwriteSpec.RESOURCE_MEMORY)
+                ))
+                .build();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(label);
-    }
-
-    public static ResourcePool empty() {
-        return new ResourcePool(DEFAULT);
-    }
 }

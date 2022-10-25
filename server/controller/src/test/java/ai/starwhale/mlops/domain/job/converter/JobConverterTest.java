@@ -25,9 +25,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
@@ -39,9 +41,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
@@ -59,9 +59,6 @@ public class JobConverterTest {
         UserConvertor userConvertor = mock(UserConvertor.class);
         given(userConvertor.convert(any(UserEntity.class)))
                 .willReturn(UserVo.builder().build());
-        ResourcePoolConverter resourcePoolConverter = mock(ResourcePoolConverter.class);
-        given(resourcePoolConverter.toResourcePool(any(ResourcePoolEntity.class)))
-                .willReturn(ResourcePool.empty());
 
         RuntimeService runtimeService = mock(RuntimeService.class);
         given(runtimeService.findRuntimeByVersionIds(anyList()))
@@ -69,18 +66,15 @@ public class JobConverterTest {
         JobSwdsVersionMapper jobSwdsVersionMapper = mock(JobSwdsVersionMapper.class);
         given(jobSwdsVersionMapper.listSwdsVersionsByJobId(anyLong()))
                 .willReturn(List.of(SwDatasetVersionEntity.builder().id(1L).versionName("v1").build()));
-        ResourcePoolMapper resourcePoolMapper = mock(ResourcePoolMapper.class);
-        given(resourcePoolMapper.findById(anyLong()))
-                .willReturn(ResourcePoolEntity.builder().build());
         IdConvertor idConvertor = new IdConvertor();
-        
+        SystemSettingService systemSettingService = mock(SystemSettingService.class);
+        when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
         jobConvertor = new JobConvertor(
                 idConvertor,
                 userConvertor,
-                resourcePoolConverter,
                 runtimeService,
                 jobSwdsVersionMapper,
-                resourcePoolMapper
+                systemSettingService
         );
     }
 
@@ -97,7 +91,7 @@ public class JobConverterTest {
                 .jobStatus(JobStatus.SUCCESS)
                 .finishedTime(new Date(1001L))
                 .comment("job-comment")
-                .resourcePoolId(1L)
+                .resourcePool("rp")
                 .build();
 
         var res = jobConvertor.convert(entity);

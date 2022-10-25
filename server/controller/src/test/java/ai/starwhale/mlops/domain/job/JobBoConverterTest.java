@@ -17,16 +17,12 @@
 package ai.starwhale.mlops.domain.job;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
@@ -53,10 +49,7 @@ import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
-import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -89,7 +82,7 @@ public class JobBoConverterTest {
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
-                .resourcePoolId(7L)
+                .resourcePool("rp")
                 .build();
         JobSwdsVersionMapper jobSwdsVersionMapper = mock(JobSwdsVersionMapper.class);
         when(jobSwdsVersionMapper.listSwdsVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
@@ -116,13 +109,6 @@ public class JobBoConverterTest {
         when(runtimeMapper.findRuntimeById(
                 runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
-        ResourcePoolMapper resourcePoolMapper = mock(ResourcePoolMapper.class);
-        ResourcePoolEntity resourcePoolEntity = ResourcePoolEntity.builder().id(7L).label("foo").build();
-        when(resourcePoolMapper.findById(7L)).thenReturn(resourcePoolEntity);
-        ResourcePoolConverter resourcePoolConverter = mock(ResourcePoolConverter.class);
-        ResourcePool resourcePool = ResourcePool.builder().label(resourcePoolEntity.getLabel()).build();
-        when(resourcePoolConverter.toResourcePool(resourcePoolEntity)).thenReturn(resourcePool);
-
         SwmpVersionConvertor swmpVersionConvertor = mock(SwmpVersionConvertor.class);
         when(swmpVersionConvertor.convert(any())).thenReturn(
                 SwModelPackageVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
@@ -141,10 +127,12 @@ public class JobBoConverterTest {
         when(taskMapper.findByStepId(any())).thenReturn(
                 List.of(TaskEntity.builder().build(), TaskEntity.builder().build()));
 
+        SystemSettingService systemSettingService = mock(SystemSettingService.class);
+        when(systemSettingService.queryResourcePool("rp")).thenReturn(ResourcePool.builder().name("fool").build());
         JobBoConverter jobBoConverter = new JobBoConverter(jobSwdsVersionMapper, swModelPackageMapper, runtimeMapper,
                 runtimeVersionMapper,
-                swdsboConverter, resourcePoolMapper, resourcePoolConverter,
-                swmpVersionConvertor, new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class)),
+                swdsboConverter,
+                swmpVersionConvertor, systemSettingService,
                 stepMapper, stepConverter, taskMapper, taskBoConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
@@ -171,8 +159,7 @@ public class JobBoConverterTest {
         Assertions.assertNotNull(swDataSets);
         Assertions.assertEquals(2, swDataSets.size());
 
-        Assertions.assertEquals(jobEntity.getResourcePoolId(), resourcePoolEntity.getId());
-        Assertions.assertEquals(job.getResourcePool(), resourcePool);
+        Assertions.assertEquals("fool", job.getResourcePool().getName());
 
         Assertions.assertEquals(1L, job.getCurrentStep().getId());
         Assertions.assertEquals(2L, job.getCurrentStep().getNextStep().getId());

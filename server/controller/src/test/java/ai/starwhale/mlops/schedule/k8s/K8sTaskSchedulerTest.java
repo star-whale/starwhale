@@ -92,7 +92,6 @@ public class K8sTaskSchedulerTest {
                 storageProperties,
                 jobTokenConfig,
                 runTimeProperties,
-                new K8sResourcePoolConverter(),
                 new K8sJobTemplateMock(""),
                 null,
                 null,
@@ -125,7 +124,6 @@ public class K8sTaskSchedulerTest {
                 storageProperties,
                 mock(JobTokenConfig.class),
                 runTimeProperties,
-                mock(K8sResourcePoolConverter.class),
                 k8sJobTemplate,
                 null,
                 null,
@@ -135,7 +133,8 @@ public class K8sTaskSchedulerTest {
         var task = mockTask();
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
-        task.getStep().setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
+        task.getTaskRequest()
+                .setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
         scheduler.schedule(Set.of(task));
 
         verify(client, times(2)).deploy(jobArgumentCaptor.capture());
@@ -159,14 +158,13 @@ public class K8sTaskSchedulerTest {
                                 .size(300L).fileStorageEnvs(Map.of("FS",
                                         new StorageEnv(StorageEnvType.S3).add("envS4", "envS4V"))).build()))
                 .stepSpec("")
-                .resourcePool(ResourcePool.builder().label("bj01").build())
+                .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").build())
                 .build();
         Step step = new Step();
         step.setId(1L);
         step.setName("cmp");
         step.setJob(job);
-        step.setRuntimeResources(List.of());
         Task task = Task.builder()
                 .id(1L)
                 .taskRequest(TaskRequest.builder().index(1).total(2).build())
@@ -192,9 +190,6 @@ public class K8sTaskSchedulerTest {
         public V1Job renderJob(String jobName,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
                 Map<String, String> nodeSelectors) {
-            Assertions.assertIterableEquals(
-                    new K8sResourcePoolConverter().toK8sLabel(ResourcePool.builder().label("bj01").build()).entrySet(),
-                    nodeSelectors.entrySet());
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
             Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
             Assertions.assertEquals("imageRT", worker.getImage());

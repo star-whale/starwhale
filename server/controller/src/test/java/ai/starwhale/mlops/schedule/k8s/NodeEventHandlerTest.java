@@ -18,11 +18,9 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
-import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolCache;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeAddress;
@@ -39,15 +37,11 @@ public class NodeEventHandlerTest {
 
     NodeEventHandler nodeEventHandler;
     AgentCache agentCache;
-    K8sResourcePoolConverter k8sResourcePoolConverter;
-    ResourcePoolCache resourcePoolCache;
 
     @BeforeEach
     public void setUp() {
-        k8sResourcePoolConverter = mock(K8sResourcePoolConverter.class);
         agentCache = mock(AgentCache.class);
-        resourcePoolCache = mock(ResourcePoolCache.class);
-        nodeEventHandler = new NodeEventHandler(agentCache, resourcePoolCache, k8sResourcePoolConverter);
+        nodeEventHandler = new NodeEventHandler(agentCache);
     }
 
     @Test
@@ -60,7 +54,6 @@ public class NodeEventHandlerTest {
                         .addAddressesItem(new V1NodeAddress().address("addr")))
                 .metadata(new V1ObjectMeta().labels(Map.of("label1", "x", "label2", "y"))));
         verify(agentCache).nodeReport(any());
-        verify(resourcePoolCache).labelReport(any());
     }
 
     @Test
@@ -70,14 +63,12 @@ public class NodeEventHandlerTest {
         });
         nodeEventHandler.onUpdate(null, new V1Node().metadata(new V1ObjectMeta()));
         verify(agentCache).nodeReport(any());
-        verify(resourcePoolCache).labelReport(any());
     }
 
     @Test
     public void testOnDelete() {
         nodeEventHandler.onDelete(new V1Node(), true);
         verify(agentCache).removeOfflineAgent(any());
-        verify(resourcePoolCache, times(0)).labelReport(any());
     }
 
 }

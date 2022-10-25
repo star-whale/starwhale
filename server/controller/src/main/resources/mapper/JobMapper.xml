@@ -25,7 +25,7 @@
     j.result_output_path as job_result_output_path,
     j.step_spec,
     j.job_comment,
-    j.resource_pool_id,
+    j.resource_pool,
     j.is_deleted as job_is_deleted,
     p.project_name,
     p.is_deleted as project_is_deleted,
@@ -156,7 +156,7 @@
     swrt_version_id,
     result_output_path,
     step_spec,
-    resource_pool_id)
+    resource_pool)
     values (#{job.jobUuid},
     #{job.projectId},
     #{job.swmpVersionId},
@@ -167,7 +167,7 @@
     #{job.runtimeVersionId},
     #{job.resultOutputPath},
     #{job.stepSpec},
-    #{job.resourcePoolId}
+    #{job.resourcePool}
     )
   </insert>
 
@@ -188,7 +188,7 @@
     <result property="comment" column="job_comment"/>
     <result property="isDeleted" column="job_is_deleted"/>
     <result property="runtimeVersionId" column="swrt_version_id"/>
-    <result property="resourcePoolId" column="resource_pool_id"/>
+    <result property="resourcePool" column="resource_pool"/>
     <association property="project"
       resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
     <association property="swmpVersion"

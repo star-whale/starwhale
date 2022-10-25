@@ -17,9 +17,9 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -53,7 +53,7 @@ public interface SystemApi {
                                     schema = @Schema(implementation = List.class)))
             })
     @GetMapping(value = "/system/resourcePool")
-    ResponseEntity<ResponseMessage<List<ResourcePoolVo>>> listResourcePools();
+    ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools();
 
     @Operation(summary = "Upgrade system version or cancel upgrade")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

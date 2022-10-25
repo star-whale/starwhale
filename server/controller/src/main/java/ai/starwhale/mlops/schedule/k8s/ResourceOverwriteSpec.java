@@ -36,9 +36,9 @@ public class ResourceOverwriteSpec {
 
     V1ResourceRequirements resourceSelector;
 
-    static final String RESOURCE_CPU = "cpu";
+    public static final String RESOURCE_CPU = "cpu";
 
-    static final String RESOURCE_MEMORY = "memory";
+    public static final String RESOURCE_MEMORY = "memory";
 
     static final String RESOURCE_GPU = "nvidia.com/gpu";
 

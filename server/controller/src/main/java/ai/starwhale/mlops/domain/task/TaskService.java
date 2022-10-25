@@ -19,12 +19,10 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
-import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -53,31 +51,25 @@ public class TaskService {
 
     private final JobManager jobManager;
 
-    private final ResourcePoolMapper resourcePoolMapper;
+    private final SystemSettingService systemSettingService;
 
     public TaskService(TaskConvertor taskConvertor, TaskMapper taskMapper,
             StorageAccessService storageAccessService, JobManager jobManager,
-            ResourcePoolMapper resourcePoolMapper) {
+            SystemSettingService systemSettingService) {
         this.taskConvertor = taskConvertor;
         this.taskMapper = taskMapper;
         this.storageAccessService = storageAccessService;
         this.jobManager = jobManager;
-        this.resourcePoolMapper = resourcePoolMapper;
+        this.systemSettingService = systemSettingService;
     }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long jobId = jobManager.getJobId(jobUrl);
         JobEntity job = jobManager.findJob(Job.builder().id(jobId).build());
-        Long resourcePoolId = job.getResourcePoolId();
-        String label = ResourcePool.DEFAULT;
-        if (null != resourcePoolId) {
-            ResourcePoolEntity resourcePool = resourcePoolMapper.findById(resourcePoolId);
-            label = resourcePool.getLabel();
-        }
-        final String resourcePool = label;
         List<TaskVo> tasks = taskMapper.listTasks(jobId).stream().map(taskConvertor::convert)
-                .peek(taskVo -> taskVo.setResourcePool(resourcePool)).collect(
+                .peek(taskVo -> taskVo.setResourcePool(
+                        systemSettingService.queryResourcePool(job.getResourcePool()).getName())).collect(
                         Collectors.toList());
         return PageInfo.of(tasks);
 

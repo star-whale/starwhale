@@ -72,7 +72,7 @@ public class JobEntity extends BaseEntity {
 
     private JobType type;
 
-    private Long resourcePoolId;
+    private String resourcePool;
 
     private String stepSpec;
 }

@@ -41,11 +41,13 @@ public class SystemSettingServiceTest {
 
     static String YAML = "---\n"
             + "dockerSetting:\n"
-            + "  registry: \"abcd.com\"";
+            + "  registry: \"abcd.com\"\n"
+            + "resourcePoolSetting: []";
 
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
-            + "  registry: \"abcd1.com\"";
+            + "  registry: \"abcd1.com\"\n"
+            + "resourcePoolSetting: []";
 
     @Test
     public void testAppStartWithSetting() {
@@ -84,10 +86,12 @@ public class SystemSettingServiceTest {
     }
 
     @Test
-    public void testQueryWithoutData() {
+    public void testQueryWithoutData() throws Exception {
         when(systemSettingMapper.get()).thenReturn(null);
         systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
-        Assertions.assertEquals("", systemSettingService.querySetting());
+        systemSettingService.run();
+        Assertions.assertEquals("---\n"
+                + "resourcePoolSetting: []", systemSettingService.querySetting().trim());
     }
 
 

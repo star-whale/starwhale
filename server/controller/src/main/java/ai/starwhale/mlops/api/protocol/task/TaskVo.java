@@ -49,6 +49,6 @@ public class TaskVo implements Serializable {
     private String resourcePool;
 
     public static TaskVo empty() {
-        return new TaskVo("", "", -1L, TaskStatus.CREATED, ResourcePool.DEFAULT);
+        return new TaskVo("", "", -1L, TaskStatus.CREATED, ResourcePool.DEFAULT_NAME);
     }
 }
