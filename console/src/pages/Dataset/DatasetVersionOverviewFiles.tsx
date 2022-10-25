@@ -143,16 +143,23 @@ export default function DatasetVersionFiles() {
         datasetId: string
         datasetVersionId: string
     }>()
+    const layoutKey = useSearchParam('layout') as string
     const [page, setPage] = usePage()
     const { token } = useAuth()
     const history = useHistory()
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
-    const layoutKey = useSearchParam('layout') as string
 
     const [preview, setPreview] = React.useState('')
 
-    const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
+    const $page = React.useMemo(() => {
+        return {
+            ...page,
+            layout: layoutKey,
+        }
+    }, [page, layoutKey])
+
+    const tables = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
 
     const rowCount = React.useMemo(() => {
         return getMetaRow(datasetVersion?.versionMeta as string)
@@ -197,7 +204,7 @@ export default function DatasetVersionFiles() {
                         style: {
                             textAlign: 'center',
                             backgroundColor: 'var(--color-brandTableHeaderBackground)',
-                            borderBottom: '0',
+                            borderBottomWidth: '0',
                             fontWeight: 'bold',
                             fontSize: '14px',
                             lineHeight: '14px',
