@@ -82,7 +82,8 @@ public class MemoryTableImplTest {
     @BeforeEach
     public void setUp() throws IOException {
         var bufferManager = new SwByteBufferManager();
-        var objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
+        var objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath(),
+                "serviceProvider"));
         this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
     }
 
@@ -305,8 +306,8 @@ public class MemoryTableImplTest {
                     }));
             assertThat("all types",
                     scanAll(this.memoryTable,
-                        List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"),
-                        false),
+                            List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"),
+                            false),
                     contains(new MemoryTable.RecordResult("x",
                             new HashMap<>() {
                                 {
@@ -485,7 +486,8 @@ public class MemoryTableImplTest {
             MemoryTableImplTest.this.walManager.terminate();
             SwBufferManager bufferManager = new SwByteBufferManager();
             var objectStore = new ObjectStore(bufferManager,
-                    new StorageAccessServiceFile(MemoryTableImplTest.this.rootDir.getAbsolutePath()));
+                    new StorageAccessServiceFile(MemoryTableImplTest.this.rootDir.getAbsolutePath(),
+                            "serviceProvider"));
             MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             var it = MemoryTableImplTest.this.walManager.readAll();

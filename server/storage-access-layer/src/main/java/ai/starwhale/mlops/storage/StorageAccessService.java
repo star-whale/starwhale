@@ -38,4 +38,14 @@ public interface StorageAccessService {
     Stream<String> list(String path) throws IOException;
 
     void delete(String path) throws IOException;
+
+    /**
+     * return an accessible url using http get method
+     *
+     * @param path          the key of an object or path of a file
+     * @param expTimeMillis the url will expire after expTimeMillis
+     * @return pre-signed url of an object or http get accessible url
+     * @throws IOException any possible IO exception
+     */
+    String signedUrl(String path, Long expTimeMillis) throws IOException;
 }

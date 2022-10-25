@@ -21,9 +21,12 @@ import static org.hamcrest.Matchers.is;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,7 +40,7 @@ public class StorageAccessServiceFileTest {
 
     @BeforeEach
     public void setUp() {
-        this.service = new StorageAccessServiceFile(this.rootDir.getAbsolutePath());
+        this.service = new StorageAccessServiceFile(this.rootDir.getAbsolutePath(), "http://localhost:8082");
     }
 
     @Test
@@ -60,6 +63,15 @@ public class StorageAccessServiceFileTest {
         this.service.delete("d/a");
         assertThat(this.rootDir.list(), is(new String[0]));
         assertThat(this.rootDir.exists(), is(true));
+    }
+
+    @Test
+    public void testSignedUrl() throws IOException {
+        String path = "unit_test/x";
+        String content = "hello word";
+        service.put(path, content.getBytes(StandardCharsets.UTF_8));
+        String signedUrl = service.signedUrl(path, 1000 * 60L);
+        Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
     }
 
 }
