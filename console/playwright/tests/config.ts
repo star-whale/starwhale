@@ -29,7 +29,7 @@ export const ROUTES = {
     modelOverview: `/projects/${CONST.projectId}/models/1`,
     modelVersions: `/projects/${CONST.projectId}/models/1/versions`,
     datasets: `/projects/${CONST.projectId}/datasets`,
-    datasetlOverview: `/projects/${CONST.projectId}/datasets/1`,
+    datasetOverview: `/projects/${CONST.projectId}/datasets/1`,
     datasetVersions: `/projects/${CONST.projectId}/datasets/1/versions`,
     datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/6/files`,
 }

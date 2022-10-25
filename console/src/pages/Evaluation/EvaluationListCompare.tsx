@@ -284,7 +284,15 @@ export default function EvaluationListCompare({
                 })
             ),
         ],
-        [rows, conmparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, comparePinnedKey, $rowsWithDiffOnly]
+        [
+            styles,
+            rows,
+            conmparePinnedRow,
+            comparePinnedRowIndex,
+            compareShowCellChanges,
+            comparePinnedKey,
+            $rowsWithDiffOnly,
+        ]
     )
 
     return (

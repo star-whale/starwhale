@@ -1,12 +1,15 @@
 import { expect, Locator, Page } from '@playwright/test'
-import { test } from '../setup/auth'
+import { test } from '../setup'
 import { CONST, ROUTES, SELECTOR } from './config'
 import { getLastestRowID, getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
 let page: Page
 
 test.beforeAll(async ({ user }) => {
     page = user.page
-    await page.goto('/')
+    await wait(1000)
+    await page.goto('/', {
+        waitUntil: 'networkidle',
+    })
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
@@ -15,11 +18,14 @@ test.afterAll(async ({}) => {
 
     if (process.env.CLOSE_AFTER_TEST === 'true') {
         await page.context().close()
-        if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/test.webm`)
+        if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/user.webm`)
     }
 })
 
 test.describe('Login', () => {
+    test.afterAll(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
     test('default route should be projects', async ({}) => {
         await expect(page).toHaveURL(/\/projects/)
     })
@@ -34,6 +40,9 @@ test.describe('Login', () => {
 })
 
 test.describe('Project list', () => {
+    test.afterAll(async () => {
+        await takeScreenshot({ testcase: page, route: page.url() })
+    })
     test('should project form modal act show,submit,close', async ({}) => {
         const el = await page.waitForSelector(SELECTOR.projectCreate)
         await el.click()
@@ -214,6 +223,7 @@ test.describe('Evaluation Create', () => {
             await selectOption(page, resourceItem(0, 0), 'cpu')
             await page.locator(resourceItem(0, 1)).locator('input').fill('1')
             await page.locator(SELECTOR.formItem('Raw Type')).click()
+            await page.waitForSelector('.monaco-editor')
             expect(page.locator('.view-lines')).toHaveText(
                 '- concurrency: 1  needs: []  resources:    - type: cpu      num: 1  job_name: default  step_name: ppl  task_num: 1- concurrency: 1  needs:    - ppl  resources: []  job_name: default  step_name: cmp  task_num: 1'
             )
@@ -241,8 +251,11 @@ test.describe('Evaluation Results', () => {
         })
         test('should have panels  summary/confusion matrix/label.roc_auc', async () => {
             await expect(page.getByText('Summary')).toBeVisible()
+            await wait(1000)
             await expect(page.getByText('roc_auc/0')).toBeVisible()
+            await wait(1000)
             await expect(page.getByText('labels')).toBeVisible()
+            await wait(1000)
             await expect(page.locator(SELECTOR.confusionMatrix)).toBeVisible()
         })
     })
@@ -307,9 +320,25 @@ test.describe('Models', () => {
         })
     })
 
+    test.describe('Versions', () => {
+        test.beforeAll(async () => {
+            await page.goto(ROUTES.models)
+        })
+
+        test('should link to model versions', async () => {
+            await page.getByRole('link', { name: /History/ }).click()
+            await expect(page).toHaveURL(ROUTES.modelVersions)
+        })
+
+        test('lastest model should not be reverted', async () => {
+            await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
+            await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
+        })
+    })
+
     test.describe('Overview', () => {
         test.beforeAll(async () => {
-            if (!page.url().includes(ROUTES.modelOverview)) await page.goto(ROUTES.modelOverview)
+            await page.goto(ROUTES.modelOverview)
         })
 
         test('should model name be link to model overview', async () => {
@@ -318,22 +347,6 @@ test.describe('Models', () => {
                 'mftdoolcgvqwknrtmftdgyjzobvti2q'
             )
             await expect(page.getByRole('cell', { name: 'mftdoolcgvqwknrtmftdgyjzobvti2q.swmp' })).toBeVisible()
-        })
-    })
-
-    test.describe('Versions', () => {
-        test.beforeAll(async () => {
-            if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
-        })
-
-        test('should link to model versions', async () => {
-            await page.getByRole('link', { name: /Version History/ }).click()
-            await expect(page).toHaveURL(ROUTES.modelVersions)
-        })
-
-        test('lastest model should not be reverted', async () => {
-            await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
-            await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
         })
     })
 })
@@ -366,11 +379,33 @@ test.describe('Datasets', () => {
     test.describe('Files', async () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.datasetVersionFiles)) await page.goto(ROUTES.datasetVersionFiles)
+            await page.locator('.icon-grid').click()
         })
 
-        test('should canvas render one dataset', async () => {
+        test('should canvas render at least one dataset', async () => {
             const dom = page.locator('.image-grayscale >> nth=0 >> canvas')
+            await wait(1000)
             await expect(await dom.screenshot()).toMatchSnapshot()
+        })
+
+        test('should show data when version changed', async () => {
+            await selectOption(page, '[data-baseweb="select"]', /v5/)
+            await expect(page).toHaveURL(/\/versions\/5\/files/)
+            // fix: dom not attached
+            await page.click('.image-grayscale >> nth=0 >> canvas')
+            await expect(page.locator('.react-transform-wrapper canvas')).toBeVisible()
+        })
+    })
+
+    test.describe('Versions', async () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.datasetVersionFiles)) await page.goto(ROUTES.datasetVersionFiles)
+        })
+
+        test('should history be link to version list', async () => {
+            await page.getByText(/History/).click()
+            await expect(page).toHaveURL(ROUTES.datasetOverview)
+            await expect(page.getByText(/History/)).toBeHidden()
         })
     })
 })

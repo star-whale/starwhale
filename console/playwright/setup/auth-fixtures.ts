@@ -19,7 +19,6 @@ export class AdminPage {
                 dir: 'test-video/',
             },
         })
-        context.grantPermissions(['clipboard-read'])
         const page = await context.newPage()
         return new AdminPage(page)
     }
@@ -42,7 +41,6 @@ export class UserPage {
                 dir: 'test-video/',
             },
         })
-        context.grantPermissions(['clipboard-read'])
         const page = await context.newPage()
         return new UserPage(page)
     }

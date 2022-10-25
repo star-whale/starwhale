@@ -3,7 +3,7 @@ import path from 'path'
 import * as fse from 'fs-extra'
 import { CONFIG } from './config'
 
-export async function selectOption(page: Page, selector: string, text: string) {
+export async function selectOption(page: Page, selector: string, text: string | RegExp) {
     const ops = page.locator(selector)
     await ops.locator('div').first().click()
     await page.getByRole('option').getByText(text).click()
