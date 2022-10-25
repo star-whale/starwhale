@@ -56,9 +56,9 @@ job-step-task 的抽象是实现 `Starwhale Evaluation` 分布式运行的基础
 
 ## 4. 在服务器上运行评测任务
 
-### 覆盖step配置
+### 4.1 覆盖step配置
 
-你可以在创建job的时候提交一个yaml来覆盖在`SWPM`中硬编码的step配置。`resources`字段的行为与[K8S容器与pod的资源管理](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)中描述的一样。
+你可以在创建job的时候提交一个yaml来覆盖在`swmp`中硬编码的step配置。`resources`字段的行为与[K8S容器与pod的资源管理](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)中描述的一样。
 
 ```yaml
   - job_name: default

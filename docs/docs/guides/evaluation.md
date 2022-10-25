@@ -5,7 +5,7 @@ title: Evaluation
 
 ### Overwrite the step specification
 
-You could submit a step specification yaml to server when you create a job to overwrite the hard coded step in `SWPM` . The `resources` field behaves exactly the same as [K8S Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+You could submit a step specification yaml to server when you create a job to overwrite the hard coded step in `swmp` . The `resources` field behaves exactly the same as [K8S Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 
 ```yaml
   - job_name: default
