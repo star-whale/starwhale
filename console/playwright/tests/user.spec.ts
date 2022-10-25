@@ -121,7 +121,10 @@ test.describe('Evaluation', () => {
 
     test.describe('Manage columns', () => {
         test('remove evaluation column & add accuracy column', async () => {
-            await page.locator('role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))').click()
+            const checkedButton = page.locator(
+                'role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))'
+            )
+            if ((await checkedButton.count()) > 0) await checkedButton.click()
 
             const p = page.locator(SELECTOR.table)
             const drawer = page.locator('[data-baseweb="drawer"]')
