@@ -75,7 +75,7 @@ class SWCliConfigTestCase(TestCase):
         self.fs.create_file(path, contents=_existed_config_contents)
         _config = load_swcli_config()
 
-        assert len(_config["instances"]) == 3
+        assert len(_config["instances"]) == 5
         assert "pre-bare" == _config["current_instance"]
         assert "cloud" == _config["instances"]["pre-bare"]["type"]
         assert "starwhale" == _config["instances"]["pre-bare"]["user_name"]
@@ -98,7 +98,7 @@ class SWCliConfigTestCase(TestCase):
 
         _config = load_swcli_config()
         assert "local" == sw.current_instance
-        assert len(_config["instances"]) == 1
+        assert len(_config["instances"]) == 3
 
         sw.update_instance(
             uri="console.pre.intra.starwhale.ai",
@@ -107,7 +107,7 @@ class SWCliConfigTestCase(TestCase):
         )
 
         _config = load_swcli_config()
-        assert len(_config["instances"]) == 2
+        assert len(_config["instances"]) == 4
         assert "pre-k8s" in _config["instances"]
         assert (
             "http://console.pre.intra.starwhale.ai"

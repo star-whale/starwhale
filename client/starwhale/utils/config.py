@@ -158,9 +158,18 @@ class SWCliConfigMixed:
             return self.current_instance
 
         if instance not in self._config["instances"]:
+            _count = 0
+            _alias = None
             for k, v in self._config["instances"].items():
                 if v["uri"] == instance:
-                    return str(k)
+                    _alias = str(k)
+                    _count += 1
+            if _count > 1:
+                raise RuntimeError(
+                    f"instance uri:{instance} has multi items!! please use alias."
+                )
+            if _alias:
+                return _alias
 
         return instance
 
