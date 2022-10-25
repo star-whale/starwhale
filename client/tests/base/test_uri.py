@@ -157,3 +157,6 @@ class URITestCase(TestCase):
 
         uri = URI("", expected_type=URIType.PROJECT)
         assert uri.project == "self"
+
+        with self.assertRaises(RuntimeError):
+            URI("http://2.2.2.2:8182", expected_type=URIType.INSTANCE)
