@@ -36,9 +36,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.stream.Stream;
 
 public class StorageAccessServiceAliyun implements StorageAccessService {
+
     final String bucket;
 
     final OSS ossClient;
@@ -110,5 +112,11 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     @Override
     public void delete(String path) throws IOException {
         this.ossClient.deleteObject(this.bucket, path);
+    }
+
+    @Override
+    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        return ossClient.generatePresignedUrl(this.bucket, path, new Date(System.currentTimeMillis() + expTimeMillis))
+                .toString();
     }
 }

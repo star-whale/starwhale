@@ -24,6 +24,7 @@ import com.google.common.collect.Streams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,6 +36,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.internal.signing.DefaultS3Presigner;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
@@ -51,6 +53,9 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner.Builder;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 @Slf4j
 public class StorageAccessServiceS3 implements StorageAccessService {
@@ -58,6 +63,8 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     final S3Config s3Config;
 
     final S3Client s3client;
+
+    final S3Presigner s3Presigner;
 
     public StorageAccessServiceS3(S3Config s3Config) {
         this.s3Config = s3Config;
@@ -69,6 +76,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
             s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
         }
         this.s3client = s3ClientBuilder.build();
+        Builder s3ResignedBuilder = DefaultS3Presigner.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                .region(Region.of(s3Config.getRegion()));
+        if (s3Config.overWriteEndPoint()) {
+            s3ResignedBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
+        }
+        this.s3Presigner = s3ResignedBuilder.build();
 
         // abort all previous pending multipart uploads
         var resp = this.s3client.listMultipartUploads(ListMultipartUploadsRequest.builder()
@@ -215,5 +229,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                 .bucket(s3Config.getBucket())
                 .key(path)
                 .build());
+    }
+
+    @Override
+    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
+                .getObjectRequest(GetObjectRequest.builder().bucket(this.s3Config.getBucket()).key(path).build())
+                .signatureDuration(Duration.ofMillis(expTimeMillis))
+                .build()).url().toString();
     }
 }
