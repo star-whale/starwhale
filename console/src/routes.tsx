@@ -29,7 +29,6 @@ import SettingAgentListCard from '@/pages/Settings/SettingAgentListCard'
 import RuntimeVersionListCard from '@/pages/Runtime/RuntimeVersionListCard'
 import RuntimeVersionOverviewFiles from '@/pages/Runtime/RuntimeVersionOverviewFiles'
 import ProjectRuntimes from '@/pages/Project/Runtimes'
-import JobDAG from '@/pages/Job/JobDAG'
 import ProjectEvaluations from '@/pages/Project/Evaluations'
 import EvaluationOverviewLayout from '@/pages/Evaluation/EvaluationOverviewLayout'
 import EvaluationResults from '@/pages/Evaluation/EvaluationResults'
@@ -47,6 +46,8 @@ import RuntimeVersionOverviewMeta from './pages/Runtime/RuntimeVersionOverviewMe
 import RuntimeVersionOverview from './pages/Runtime/RuntimeVersionOverview'
 import RuntimeOverviewLayout from './pages/Runtime/RuntimeOverviewLayout'
 import SystemSettings from './pages/Admin/SystemSettings'
+
+const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({

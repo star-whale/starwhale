@@ -8,8 +8,6 @@ import { LabelSmall } from 'baseui/typography'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
 import useSelection from '@/hooks/useSelection'
-import { AiOutlinePushpin } from 'react-icons/ai'
-import { RiDeleteBin6Line } from 'react-icons/ri'
 import { useDrawer } from '@/hooks/useDrawer'
 import IconFont from '@/components/IconFont'
 import { expandBorderRadius } from '@/utils'
@@ -117,7 +115,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                     as='transparent'
                                     onClick={() => handlePinOne(column.key as string)}
                                 >
-                                    <AiOutlinePushpin size={16} />
+                                    <IconFont size={14} type='pin' />
                                 </Button>
                             )}
                             <Button
@@ -133,7 +131,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                 as='transparent'
                                 onClick={() => handleSelectOne(column.key as string)}
                             >
-                                <RiDeleteBin6Line size={16} />
+                                <IconFont size={14} type='delete' />
                             </Button>
                         </div>
                     </div>

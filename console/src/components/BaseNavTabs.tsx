@@ -5,7 +5,6 @@ import { Tabs, Tab, TabsProps, TabProps } from 'baseui/tabs-motion'
 import { useHistory, useLocation } from 'react-router-dom'
 import _ from 'lodash'
 import { StatefulTooltip } from 'baseui/tooltip'
-import { AiOutlineQuestionCircle } from 'react-icons/ai'
 import { mergeOverrides } from '@/utils/baseui'
 import { INavItem } from './BaseSidebar'
 
@@ -111,9 +110,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                                                     display: 'inline-flex',
                                                     cursor: 'pointer',
                                                 }}
-                                            >
-                                                <AiOutlineQuestionCircle />
-                                            </div>
+                                            />
                                         </StatefulTooltip>
                                     )}
                                 </div>
