@@ -16,24 +16,24 @@ title: Deploy Starwhale Controller with Docker
 Most of the configuration of Controller can be controlled by environment variables. Here is a list of available
 environment variables.
 
-| Name                         | Description                                  | Optional | Default | Example                |
-|------------------------------|----------------------------------------------|----------|---------|------------------------|
-| SW_JWT_SECRET                | JWT secret                                   | No       |         |                        |
-| SW_JWT_TOKEN_EXPIRE_MINUTES  | JWT token expire duration in minutes         | Yes      | 43200   |                        |
-| SW_CONTROLLER_PORT           | Exposed port by Controller                   | Yes      | 8082    |                        |
-| SW_K8S_NAME_SPACE            | K8s namespace used by   evaluations          | No       |         | default                |
-| SW_INSTANCE_URI              | Controller connection uri for evaluation job | No       |         | http://controller:8082 |
-| SW_STORAGE_ENDPOINT          | Endpoint of the external OSS                 | No       |         | http://foo.com:8088    |
-| SW_STORAGE_BUCKET            | bucket of the external OSS                   | No       |         | starwhale              |
-| SW_STORAGE_ACCESSKEY         | access key of the external OSS               | No       |         |                        |
-| SW_STORAGE_SECRETKEY         | secret key of the external OSS               | No       |         |                        |
-| SW_STORAGE_REGION            | region of the external OSS                   | Yes      | local   |                        |
-| SW_STORAGE_TYPE              | OSS type, (s3, aliyun, minio)                | Yes      | minio   |                        |
-| SW_METADATA_STORAGE_IP       | MySQL host                                   | No       |         |                        |
-| SW_METADATA_STORAGE_PORT     | MySQL port                                   | No       |         |                        |
-| SW_METADATA_STORAGE_USER     | MySQL user                                   | No       |         |                        |
-| SW_METADATA_STORAGE_PASSWORD | MySQL password                               |          |         |                        |
-| SW_METADATA_STORAGE_DB       | MySQL database name                          |          |         |                        |
+| Name                         | Description                                  | Optional | Default | Example                  |
+|------------------------------|----------------------------------------------|----------|---------|--------------------------|
+| SW_JWT_SECRET                | JWT secret                                   | No       |         |                          |
+| SW_JWT_TOKEN_EXPIRE_MINUTES  | JWT token expire duration in minutes         | Yes      | 43200   |                          |
+| SW_CONTROLLER_PORT           | Exposed port by Controller                   | Yes      | 8082    |                          |
+| SW_K8S_NAME_SPACE            | K8s namespace used by   evaluations          | No       |         | default                  |
+| SW_INSTANCE_URI              | Controller connection uri for evaluation job | No       |         | <http://controller:8082> |
+| SW_STORAGE_ENDPOINT          | Endpoint of the external OSS                 | No       |         | <http://foo.com:8088>    |
+| SW_STORAGE_BUCKET            | bucket of the external OSS                   | No       |         | starwhale                |
+| SW_STORAGE_ACCESSKEY         | access key of the external OSS               | No       |         |                          |
+| SW_STORAGE_SECRETKEY         | secret key of the external OSS               | No       |         |                          |
+| SW_STORAGE_REGION            | region of the external OSS                   | Yes      | local   |                          |
+| SW_STORAGE_TYPE              | OSS type, (s3, aliyun, minio)                | Yes      | minio   |                          |
+| SW_METADATA_STORAGE_IP       | MySQL host                                   | No       |         |                          |
+| SW_METADATA_STORAGE_PORT     | MySQL port                                   | No       |         |                          |
+| SW_METADATA_STORAGE_USER     | MySQL user                                   | No       |         |                          |
+| SW_METADATA_STORAGE_PASSWORD | MySQL password                               |          |         |                          |
+| SW_METADATA_STORAGE_DB       | MySQL database name                          |          |         |                          |
 
 More environment variables in [application.yaml](https://github.com/star-whale/starwhale/blob/main/server/controller/src/main/resources/application.yaml).
 

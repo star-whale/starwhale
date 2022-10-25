@@ -5,6 +5,7 @@ title: 使用 Docker 部署 Starwhale Controller
 ## 1. 使用场景
 
 本章节主要介绍如何使用 docker 独立部署 Starwhale 的 Controller， 独立部署 Controller 一般适用于如下场景
+
 * 不具备将 Starwhale Controller 部署到 K8s 集群中的条件 (比如无法给Controller创建SVC)
 * 不想将 Controller 部署到 K8s
 
@@ -18,17 +19,18 @@ title: 使用 Docker 部署 Starwhale Controller
 ## 3. 配置
 
 ### 3.1. 环境变量
+
 Controller 的大部分配置都可以通过环境变量来控制， 下面是可用的环境变量列表
 
-| 环境变量名称                   | 说明                              | 是否必须 | 默认值   |举例|
-|------------------------------|---------------------------------|---------|--------|----|
+| 环境变量名称                   | 说明                              | 是否必须 | 默认值   | 举例                       |
+|------------------------------|---------------------------------|---------|--------|--------------------------|
 | SW_JWT_SECRET                | JWT的加密secret字符串                 | 是    |||
 | SW_JWT_TOKEN_EXPIRE_MINUTES  | JWT token 的过期时间（单位：分钟）          |否|43200||
 | SW_CONTROLLER_PORT           | Controller对外Serve的端口            | 否    | 8082 |
-| SW_K8S_NAME_SPACE            | 对接的K8s集群时使用的命名空间                |是    | |default|
-| SW_INSTANCE_URI              | Controller 对外暴露的访问方法            |是    | |http://controller:8082|
-| SW_STORAGE_ENDPOINT          | 外部对象存储的 endpoint                |是| |http://foo.com:8088|
-| SW_STORAGE_BUCKET            | 外部对象存储的 bucket                  |是| |starwhale|
+| SW_K8S_NAME_SPACE            | 对接的K8s集群时使用的命名空间                |是    | | default                  |
+| SW_INSTANCE_URI              | Controller 对外暴露的访问方法            |是    | | <http://controller:8082> |
+| SW_STORAGE_ENDPOINT          | 外部对象存储的 endpoint                |是| | <http://foo.com:8088>    |
+| SW_STORAGE_BUCKET            | 外部对象存储的 bucket                  |是| | starwhale                |
 | SW_STORAGE_ACCESSKEY         | 外部对象存储的 access key              |是|||
 | SW_STORAGE_SECRETKEY         | 外部对象存储的 secret key              |是|||
 | SW_STORAGE_REGION            | 外部对象存储的 region                  |否|local||
