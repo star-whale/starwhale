@@ -1,11 +1,15 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
 import { devices } from '@playwright/test'
+import * as fse from 'fs-extra'
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 require('dotenv').config()
+
+fse.emptyDirSync('test-video')
+fse.emptyDirSync('test-storage')
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -42,7 +46,7 @@ const config: PlaywrightTestConfig = {
         trace: 'on-first-retry',
 
         video: {
-            mode: 'on',
+            mode: 'on-first-retry',
             size: { width: 640, height: 480 },
         },
     },
@@ -53,6 +57,10 @@ const config: PlaywrightTestConfig = {
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
+                contextOptions: {
+                    // chromium-specific permissions
+                    permissions: ['clipboard-read', 'clipboard-write'],
+                },
             },
         },
 

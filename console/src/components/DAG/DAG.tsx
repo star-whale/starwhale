@@ -5,7 +5,6 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { Spinner } from 'baseui/spinner'
 import { Link } from 'react-router-dom'
 import { durationToStr } from '@/utils/datetime'
-import { BsClockHistory } from 'react-icons/bs'
 import IconFont from '../IconFont/index'
 import './index.scss'
 
@@ -68,7 +67,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                 icon = <IconFont type='clear' style={{ color: 'red' }} />
                 break
             case Status.CREATED:
-                icon = <BsClockHistory size={14} />
+                icon = <IconFont type='success' style={{ color: 'green' }} />
                 break
             case Status.CANCELED:
                 icon = <IconFont type='clear' />

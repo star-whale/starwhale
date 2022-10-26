@@ -1,15 +1,10 @@
 import path from 'path'
 import fs from 'fs'
-import * as fse from 'fs-extra'
 import { test as baseTest, expect, Page } from '@playwright/test'
 import { AdminPage, UserPage } from './auth-fixtures'
 import config from '../playwright.config'
 import { USERS, SELECTOR } from '../tests/config'
 export { expect } from '@playwright/test'
-
-fse.emptyDir('test-video')
-// fse.emptyDir('test-storage')
-fse.ensureDir('test-video')
 
 export const test = baseTest.extend({
     admin: async ({ browser }, use) => {

@@ -1,7 +1,6 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import { AiOutlineCloudServer } from 'react-icons/ai'
 import IconFont from '@/components/IconFont'
 
 export default function SettingsSidebar({ style }: IComposedSidebarProps) {
@@ -14,7 +13,6 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
                 title: t('Agent'),
                 path: '/settings/agents',
                 activePathPattern: /\/(agents)\/?/,
-                icon: <AiOutlineCloudServer size={20} />,
             },
         ]
     }, [t])

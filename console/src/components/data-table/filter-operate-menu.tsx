@@ -3,9 +3,7 @@ import { SHAPE, SIZE, KIND } from 'baseui/button'
 import Button from '@/components/Button'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
-import { FiFilter } from 'react-icons/fi'
 import { Tag } from 'baseui/tag'
-import { MdAddCircle, MdRemoveCircle } from 'react-icons/md'
 import { expandBorder } from '@/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
 import useEventCallback from '../../hooks/useEventCallback'
@@ -13,6 +11,7 @@ import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
 import Checkbox from '../Checkbox'
+import IconFont from '../IconFont'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 
@@ -144,7 +143,7 @@ export const CategoricalFilter = React.forwardRef<
                                 onChange={(v) => handleChange(v, i)}
                             />
                             <Button as='link' type='button' onClick={() => handleDeleteOne(i)}>
-                                <MdRemoveCircle size='20' style={{ color: 'rgba(2,16,43,0.40)' }} />
+                                <IconFont type='item-reduce' size={16} style={{ color: 'rgba(2,16,43,0.40)' }} />
                             </Button>
                         </div>
                     ))}
@@ -163,7 +162,7 @@ export const CategoricalFilter = React.forwardRef<
                     alignItems: 'center',
                 })}
                 onClick={handleAddFilter}
-                startEnhancer={() => <MdAddCircle size='20' />}
+                startEnhancer={() => <IconFont type='item-add' size={16} />}
             >
                 Add filter
             </Button>
@@ -296,7 +295,7 @@ function FilterOperateMenu(props: PropsT) {
                             },
                         },
                     }}
-                    startEnhancer={() => <FiFilter />}
+                    startEnhancer={() => <IconFont type='filter' />}
                     endEnhancer={() =>
                         enableFitlers.length > 0 ? (
                             <Tag

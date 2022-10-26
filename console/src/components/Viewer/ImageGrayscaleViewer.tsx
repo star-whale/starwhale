@@ -21,7 +21,7 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
 
     if (!isZoom) {
         return (
-            <div className='fullsize'>
+            <div className='dataset-viewer image-grayscale fullsize'>
                 <canvas
                     ref={canvasRef}
                     style={{
@@ -36,7 +36,7 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
     }
 
     return (
-        <div className='fullsize'>
+        <div className='dataset-viewer image-grayscale fullsize'>
             <ZoomWrapper>
                 <canvas
                     ref={canvasRef}

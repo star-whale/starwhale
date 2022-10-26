@@ -3,13 +3,13 @@ import { Button } from 'baseui/button'
 import { toaster } from 'baseui/toast'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
-import { AiFillCaretDown } from 'react-icons/ai'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectFrom from '@project/components/ProjectForm'
 import { createProject } from '@project/services/project'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import { useHistory } from 'react-router-dom'
+import IconFont from '../IconFont'
 
 export default function HeaderLeftMenu() {
     const [t] = useTranslation()
@@ -68,7 +68,7 @@ export default function HeaderLeftMenu() {
                                 },
                             },
                         }}
-                        endEnhancer={() => <AiFillCaretDown size={24} />}
+                        endEnhancer={() => <IconFont size={14} type='more' />}
                     >
                         {t('PROJECT')}
                     </Button>
