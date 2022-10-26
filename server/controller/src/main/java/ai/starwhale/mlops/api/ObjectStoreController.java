@@ -41,11 +41,28 @@ public class ObjectStoreController implements ObjectStoreApi {
     }
 
     @Override
-    public void getObjectContent(String path, Long expTimeMillis, HttpServletResponse httpResponse) {
+    public void getObjectContent(String path, String range, Long expTimeMillis, HttpServletResponse httpResponse) {
         if (expTimeMillis < System.currentTimeMillis()) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE).tip("link expired");
         }
-        try (InputStream fileInputStream = storageAccessService.get(path);
+        Long start = 0L;
+        Long end = 0L;
+        boolean withRange;
+        if (null != range) {
+            String[] split = range.split("="); //"start-end"
+            if (split.length < 2) {
+                withRange = false;
+            } else {
+                start = Long.valueOf(split[1].split("-")[0]);
+                end = Long.valueOf(split[1].split("-")[1]);
+                withRange = true;
+            }
+        } else {
+            withRange = false;
+        }
+
+        try (InputStream fileInputStream = withRange ? storageAccessService.get(path, start, end - start + 1)
+                : storageAccessService.get(path);
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             long length = fileInputStream.transferTo(outputStream);
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"content\"");
@@ -55,5 +72,6 @@ public class ObjectStoreController implements ObjectStoreApi {
             log.error("download file from storage failed {}", path, e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
+
     }
 }

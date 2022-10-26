@@ -13,7 +13,7 @@ spec:
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: amazon/aws-cli:2.7.25
+          image: ghcr.io/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
@@ -21,35 +21,14 @@ spec:
           args:
             - -c
             - >-
-              mkdir -p $HOME/.aws;
-              CRED="$HOME/.aws/credentials";
-              echo [default] > $CRED;
-              echo "aws_access_key_id=$SW_S3_ACCESS_KEY" >> $CRED;
-              echo "aws_secret_access_key=$SW_S3_SECRET" >> $CRED;
-              if echo $SW_S3_EXTRA_CONFIGS | grep virtual; then
-                 echo [default] >> $HOME/.aws/config;
-                 echo s3= >> $HOME/.aws/config;
-                 echo '    addressing_style=virtual' >> $HOME/.aws/config;
-               fi;
                for item in $DOWNLOADS; do
-                 SRC=$(echo $item|cut -d';' -f1);
-                 DST=$(echo $item|cut -d';' -f2);
-                 echo $SRC,$DST;
-                 mkdir -p $DST;
-                 aws --endpoint-url=$SW_S3_ENDPOINT --region=$SW_S3_REGION s3 cp --recursive $SRC $DST;
-               done
-        - name: untar
-          imagePullPolicy: IfNotPresent
-          image: ghcr.io/star-whale/starwhale:latest
-          volumeMounts:
-            - mountPath: /opt/starwhale
-              name: data
-          command:
-            - sh
-            - -c
-            - >-
-              cd /opt/starwhale && find ./ -type f \( -name \*.swmp \) -exec tar -C swmp/ -xf {} \;
-              && find ./ -type f \( -name \*.swrt \) -exec tar -C swrt/ -xf {} \;
+                 wget $item -P /opt/starwhale;
+               done;
+               cd /opt/starwhale;
+               mkdir swmp;
+               mkdir swrt;
+               find ./ -type f \( -name \*.swmp\* \) -exec tar -C swmp/ -xf {} \; &&
+               find ./ -type f \( -name \*.swrt\* \) -exec tar -C swrt/ -xf {} \;
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'

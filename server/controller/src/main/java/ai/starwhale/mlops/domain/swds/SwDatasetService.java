@@ -291,4 +291,8 @@ public class SwDatasetService {
             String size) {
         return dsFileGetter.dataOf(datasetId, uri, authName, offset, size);
     }
+
+    public String signLink(Long id, String uri, String authName, Long expTimeMillis) {
+        return dsFileGetter.linkOf(id, uri, authName, expTimeMillis);
+    }
 }

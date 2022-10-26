@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,10 +39,10 @@ import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.env.StorageEnv;
 import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -88,14 +90,19 @@ public class K8sTaskSchedulerTest {
         JobTokenConfig jobTokenConfig = mock(JobTokenConfig.class);
         when(jobTokenConfig.getToken()).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
+        StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.list("path_swmp")).thenReturn(Stream.of("path_swmp"));
+        when(storageAccessService.list("path_rt")).thenReturn(Stream.of("path_rt"));
+        when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
+        when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
         K8sTaskScheduler scheduler = new K8sTaskScheduler(k8sClient,
-                storageProperties,
                 jobTokenConfig,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
                 null,
                 null,
-                "http://instanceUri", new StorageEnvsPropertiesConverter(storageProperties));
+                "http://instanceUri",
+                storageAccessService);
         return scheduler;
     }
 
@@ -121,15 +128,13 @@ public class K8sTaskSchedulerTest {
         var k8sJobTemplate = new K8sJobTemplate("", "");
         var scheduler = new K8sTaskScheduler(
                 client,
-                storageProperties,
                 mock(JobTokenConfig.class),
                 runTimeProperties,
                 k8sJobTemplate,
                 null,
                 null,
                 "",
-                mock(StorageEnvsPropertiesConverter.class)
-        );
+                mock(StorageAccessService.class));
         var task = mockTask();
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
@@ -219,13 +224,7 @@ public class K8sTaskSchedulerTest {
             ContainerOverwriteSpec dp = containerSpecMap.get("data-provider");
 
             Map<String, String> initEnv = Map.of("DOWNLOADS",
-                    "s3://bucket/path_swmp;/opt/starwhale/swmp/ s3://bucket/path_rt;/opt/starwhale/swrt/",
-                    "SW_S3_BUCKET", K8sTaskSchedulerTest.bucket,
-                    "SW_S3_ENDPOINT", K8sTaskSchedulerTest.endpoint,
-                    "SW_S3_SECRET", K8sTaskSchedulerTest.secretKey,
-                    "SW_S3_ACCESS_KEY", K8sTaskSchedulerTest.accessKey,
-                    "SW_S3_REGION", K8sTaskSchedulerTest.region,
-                    StorageEnv.ENV_TYPE, "S3");
+                    "s3://bucket/path_swmp s3://bucket/path_rt");
             Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);

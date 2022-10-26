@@ -47,6 +47,31 @@ public class DsFileGetter {
             String size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
                 datasetId, uri, authName);
+        String path = checkPath(datasetId, uri, storageAccessService);
+        try (InputStream inputStream = storageAccessService.get(path,
+                (long) ColumnTypeScalar.INT64.decode(offset), (long) ColumnTypeScalar.INT64.decode(size))) {
+            return inputStream.readAllBytes();
+        } catch (IOException ioException) {
+            log.error("error while accessing storage ", ioException);
+            throw new SwProcessException(ErrorType.STORAGE).tip(
+                    String.format("error while accessing storage : %s", ioException.getMessage()));
+        }
+    }
+
+    public String linkOf(Long datasetId, String uri, String authName, Long expTimeMillis) {
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
+                datasetId, uri, authName);
+        String path = checkPath(datasetId, uri, storageAccessService);
+        try {
+            return storageAccessService.signedUrl(path, expTimeMillis);
+        } catch (IOException e) {
+            log.error("error while accessing storage ", e);
+            throw new SwProcessException(ErrorType.STORAGE).tip(
+                    String.format("error while accessing storage : %s", e.getMessage()));
+        }
+    }
+
+    private String checkPath(Long datasetId, String uri, StorageAccessService storageAccessService) {
         String path = new StorageUri(uri).getPath();
         StorageObjectInfo objectInfo;
         try {
@@ -60,13 +85,6 @@ public class DsFileGetter {
             SwDatasetVersionEntity versionById = swDatasetVersionMapper.getVersionById(datasetId);
             path = versionById.getStoragePath() + "/" + path;
         }
-        try (InputStream inputStream = storageAccessService.get(path,
-                (long) ColumnTypeScalar.INT64.decode(offset), (long) ColumnTypeScalar.INT64.decode(size))) {
-            return inputStream.readAllBytes();
-        } catch (IOException ioException) {
-            log.error("error while accessing storage ", ioException);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
-                    String.format("error while accessing storage : %s", ioException.getMessage()));
-        }
+        return path;
     }
 }

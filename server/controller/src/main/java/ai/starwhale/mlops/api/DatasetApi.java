@@ -71,14 +71,14 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Dataset Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Valid @RequestBody RevertSwdsRequest revertRequest);
 
     @Operation(summary = "Delete a dataset")
@@ -91,10 +91,10 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl);
+            String datasetUrl);
 
     @Operation(summary = "Recover a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -107,10 +107,10 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl);
+            String datasetUrl);
 
     @Operation(summary = "Get the information of a dataset",
             description = "Return the information of the latest version of the current dataset")
@@ -132,17 +132,17 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.QUERY,
                     description = "Dataset versionUrl. "
                             + "(Return the current version as default when the versionUrl is not set.)",
                     schema = @Schema())
             @Valid
             @RequestParam(value = "versionUrl", required = false)
-                    String versionUrl);
+            String versionUrl);
 
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
@@ -163,34 +163,34 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Dataset Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Dataset version name prefix",
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
-                    String name,
+            String name,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Dataset version tag",
                     schema = @Schema())
             @RequestParam(value = "tag", required = false)
-                    String tag,
+            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
     @Operation(summary = "Create a new dataset version",
             description = "Create a new version of the dataset. "
@@ -246,6 +246,24 @@ public interface DatasetApi {
             @RequestParam(name = "size", required = false) String size,
             HttpServletResponse httpResponse);
 
+    @Operation(summary = "Sign SWDS uri to get a temporarily accessible link",
+            description = "Sign SWDS uri to get a temporarily accessible link")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-link",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> signLink(
+            @PathVariable(name = "projectName") String projectUrl,
+            @PathVariable(name = "datasetName") String datasetUrl,
+            @PathVariable(name = "version") String versionUrl,
+            @Parameter(name = "uri", description = "uri of the link")
+            @RequestParam(name = "uri", required = true) String uri,
+            @Parameter(name = "authName", description = "auth name the link used")
+            @RequestParam(name = "authName", required = false) String authName,
+            @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
+            @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
+
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -257,13 +275,13 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl,
+            String versionUrl,
             @Valid @RequestBody SwdsTagRequest swdsTagRequest);
 
     @Operation(
@@ -279,13 +297,13 @@ public interface DatasetApi {
                     description = "Project url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl,
+            String versionUrl,
             @Valid @RequestBody SwdsTagRequest swdsTagRequest);
 
     @Operation(summary = "Get the list of the datasets")
@@ -307,19 +325,19 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.QUERY, description = "Dataset versionId", schema = @Schema())
             @Valid
             @RequestParam(value = "versionId", required = false)
-                    String versionId,
+            String versionId,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
     @Operation(summary = "head for swds info ",
             description = "head for swds info")
@@ -334,12 +352,12 @@ public interface DatasetApi {
                     description = "Project url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl);
+            String versionUrl);
 
 }

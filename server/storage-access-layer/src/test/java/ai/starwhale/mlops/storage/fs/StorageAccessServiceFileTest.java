@@ -19,6 +19,7 @@ package ai.starwhale.mlops.storage.fs;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,6 +73,16 @@ public class StorageAccessServiceFileTest {
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
         String signedUrl = service.signedUrl(path, 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+    }
+
+    @Test
+    public void testRange() throws IOException {
+        String path = "unit_test/x";
+        String content = "hello word";
+        service.put(path, content.getBytes(StandardCharsets.UTF_8));
+        LengthAbleInputStream lengthAbleInputStream = service.get(path, 2L, 2L);
+        Assertions.assertEquals(2, lengthAbleInputStream.getSize());
+        Assertions.assertEquals("ll", new String(lengthAbleInputStream.readAllBytes()));
     }
 
 }
