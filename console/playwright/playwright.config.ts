@@ -9,13 +9,15 @@ import * as fse from 'fs-extra'
 require('dotenv').config()
 
 fse.emptyDirSync('test-video')
-fse.emptyDirSync('test-storage')
+if (process.env.CLEAN_AUTH === 'true') fse.emptyDirSync('test-storage')
+else fse.ensureDir('test-storage')
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 const config: PlaywrightTestConfig = {
     testDir: './tests',
+    // testIgnore: ['tests-examples/*'],
     /* Maximum time one test can run for. */
     timeout: 30 * 1000,
     expect: {

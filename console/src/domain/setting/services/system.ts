@@ -32,6 +32,10 @@ export async function fetchSystemSetting(): Promise<ISystemSettingSchema> {
 }
 
 export async function updateSystemSetting(data: string): Promise<any> {
-    const resp = await axios.post('/api/v1/system/setting', data)
+    const resp = await axios.post('/api/v1/system/setting', data, {
+        headers: {
+            'Content-Type': 'text/plain',
+        },
+    })
     return resp.data
 }
