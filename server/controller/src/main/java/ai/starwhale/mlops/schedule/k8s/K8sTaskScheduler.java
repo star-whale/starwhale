@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SwRunTime;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
@@ -28,16 +27,18 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,8 +61,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
-    final StorageProperties storageProperties;
-
     final RunTimeProperties runTimeProperties;
 
     final JobTokenConfig jobTokenConfig;
@@ -70,25 +69,25 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
     final String instanceUri;
-    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
+
+    final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-            StorageProperties storageProperties,
             JobTokenConfig jobTokenConfig,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
             ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri,
-            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
+            ResourceEventHandler<V1Node> eventHandlerNode,
+            @Value("${sw.instance-uri}") String instanceUri,
+            StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
-        this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
-        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
+        this.storageAccessService = storageAccessService;
     }
 
     @Override
@@ -208,19 +207,41 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private Map<String, String> getInitContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
-        Map<String, String> initContainerEnvs = new HashMap<>();
-        Map<String, StorageEnv> fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
-        // Ignore keys, we use only one key by now
-        fileStorageEnvs.values().forEach((StorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
 
         List<String> downloads = new ArrayList<>();
-        String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
-        downloads.add(prefix + swJob.getModel().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
-        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
+        try {
+            storageAccessService.list(swJob.getModel().getPath()).forEach(path -> {
+                try {
+                    String modelSignedUrl = storageAccessService.signedUrl(path, 1000 * 60 * 60L);
+                    downloads.add(modelSignedUrl);
+                } catch (IOException e) {
+                    log.error("sign model url failed for {} ", path, e);
+                    throw new SwProcessException(ErrorType.STORAGE).tip("sign model url failed");
+                }
+            });
+        } catch (IOException e) {
+            log.error("list model files failed for {} ", swJob.getModel().getPath(), e);
+            throw new SwProcessException(ErrorType.STORAGE).tip("list model files failed");
+        }
+        try {
+            storageAccessService.list(jobRuntime.getStoragePath()).forEach(path -> {
+                try {
+                    String runtimeSignedUrl = storageAccessService.signedUrl(path,
+                            1000 * 60 * 60L);
+                    downloads.add(runtimeSignedUrl);
+                } catch (IOException e) {
+                    log.error("sign runtime url failed for {} ", path, e);
+                    throw new SwProcessException(ErrorType.STORAGE).tip("sign runtime url failed");
+                }
 
-        return initContainerEnvs;
+            });
+
+        } catch (IOException e) {
+            log.error("list runtime url failed for {} ", jobRuntime.getStoragePath(), e);
+            throw new SwProcessException(ErrorType.STORAGE).tip("list runtime url failed");
+        }
+
+        return Map.of("DOWNLOADS", Strings.join(downloads, ' '));
     }
 
     @NotNull

@@ -13,15 +13,15 @@ spec:
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: amazon/aws-cli:2.7.25
+          image: ghcr.io/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
           command: [ "/bin/sh" ]
-          args: [ "-c", "for item in $DOWNLOADS; do SRC=$(echo $item|cut -d';' -f1) && DST=$(echo $item|cut -d';' -f2) && echo $SRC,$DST && mkdir -p $DST && aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST; done" ]
+          args: [ "-c", "for item in $DOWNLOADS; do SRC=$(echo $item|cut -d';' -f1) && DST=$(echo $item|cut -d';' -f2) && echo $SRC,$DST && mkdir -p $DST && wget $SRC -P $DST; done" ]
         - name: untar
           imagePullPolicy: IfNotPresent
-          image: ghcr.io/star-whale/starwhale:latest
+          image: ghcr.io/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
@@ -29,7 +29,7 @@ spec:
             - sh
             - -c
             - >-
-              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \;
+              cd /opt/starwhale && find ./ -type f \( -name \*.swmp* -o -name \*.swrt* \) -exec tar -C swmp/ -xf {} \;
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'

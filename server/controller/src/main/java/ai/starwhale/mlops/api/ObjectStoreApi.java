@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @Tag(name = "Object Store")
 @Validated
@@ -52,6 +53,7 @@ public interface ObjectStoreApi {
     void getObjectContent(
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("path") String path,
+            @RequestHeader(name = "Range", required = false) String range,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("expTimeMillis") Long expTimeMillis,
             HttpServletResponse httpResponse);

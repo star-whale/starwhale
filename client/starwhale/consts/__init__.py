@@ -87,6 +87,7 @@ VERSION_PREFIX_CNT = 2
 class SWDSBackendType:
     S3 = "s3"
     LocalFS = "local_fs"
+    SignedUrl = "signed_url"
 
 
 class EvalHandlerType:

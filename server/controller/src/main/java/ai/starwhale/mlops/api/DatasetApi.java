@@ -246,6 +246,24 @@ public interface DatasetApi {
             @RequestParam(name = "size", required = false) String size,
             HttpServletResponse httpResponse);
 
+    @Operation(summary = "Sign SWDS uri to get a temporarily accessible link",
+            description = "Sign SWDS uri to get a temporarily accessible link")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-link",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> signLink(
+            @PathVariable(name = "projectName") String projectUrl,
+            @PathVariable(name = "datasetName") String datasetUrl,
+            @PathVariable(name = "version") String versionUrl,
+            @Parameter(name = "uri", description = "uri of the link")
+            @RequestParam(name = "uri", required = true) String uri,
+            @Parameter(name = "authName", description = "auth name the link used")
+            @RequestParam(name = "authName", required = false) String authName,
+            @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
+            @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
+
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

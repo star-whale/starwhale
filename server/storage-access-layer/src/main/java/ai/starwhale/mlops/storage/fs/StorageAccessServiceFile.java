@@ -111,10 +111,14 @@ public class StorageAccessServiceFile implements StorageAccessService {
         if (size == null || size < 0) {
             size = -1L;
         }
-        var f = new RandomAccessFile(this.rootDir, "r");
-        f.seek(offset);
+        File f = new File(this.rootDir, path);
+        if (!f.exists()) {
+            throw new FileNotFoundException(f.getAbsolutePath());
+        }
+        RandomAccessFile rf = new RandomAccessFile(f, "r");
+        rf.seek(offset);
         //noinspection UnstableApiUsage
-        var is = ByteStreams.limit(Channels.newInputStream(f.getChannel()), size);
+        var is = ByteStreams.limit(Channels.newInputStream(rf.getChannel()), size);
         return new LengthAbleInputStream(is, size);
     }
 
