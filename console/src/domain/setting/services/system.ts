@@ -1,6 +1,12 @@
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
-import { IAgentSchema, IDeviceSchema, ISystemSettingSchema, ISystemVersionSchema } from '../schemas/system'
+import {
+    IAgentSchema,
+    IDeviceSchema,
+    ISystemResourcePool,
+    ISystemSettingSchema,
+    ISystemVersionSchema,
+} from '../schemas/system'
 
 export async function fetchSystemVersion(): Promise<ISystemVersionSchema> {
     const resp = await axios.get('/api/v1/system/version')
@@ -37,5 +43,10 @@ export async function updateSystemSetting(data: string): Promise<any> {
             'Content-Type': 'text/plain',
         },
     })
+    return resp.data
+}
+
+export async function fetchSystemResourcePool(): Promise<ISystemResourcePool[]> {
+    const resp = await axios.get('/api/v1/system/resourcePool')
     return resp.data
 }

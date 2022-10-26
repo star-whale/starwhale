@@ -22,3 +22,15 @@ export interface IAgentSchema {
 }
 
 export type ISystemSettingSchema = string
+
+export type ISystemResource = {
+    name: string
+    max: number
+    min: number
+    defaults: number
+}
+export type ISystemResourcePool = {
+    name: string
+    nodeSelector: Record<string, string>
+    resources: ISystemResource[]
+}

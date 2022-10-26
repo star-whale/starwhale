@@ -13,8 +13,7 @@ import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
 import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
-import DeviceSelector from '@/domain/setting/components/DeviceSelector'
-import ResourcePoolSelector from '@job/components/ResourcePoolSelector'
+import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import Input from '@/components/Input'
 import Editor from '@monaco-editor/react'
@@ -24,6 +23,9 @@ import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
 import Button from '@/components/Button'
+import ResourceSelector from '@/domain/setting/components/ResourceSelector'
+import { ISystemResourcePool } from '@/domain/setting/schemas/system'
+
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
@@ -202,8 +204,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [setStepSpecOverWrites]
     )
 
+    const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
+
+    console.log(resourcePool)
+
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+            <Divider orientation='top'>{t('Environment')}</Divider>
+            <div className={styles.row3}>
+                <FormItem label={t('Resource Pool')} name='resourcePool' required>
+                    <ResourcePoolSelector onChangeItem={setResourcePool} autoSelected />
+                </FormItem>
+            </div>
             <Divider orientation='top'>{t('Model Information')}</Divider>
             <div className={styles.row3}>
                 <FormItem label={t('sth name', [t('Model')])} name='modelId' required>
@@ -254,7 +266,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                                 name={['stepSpecOverWrites', i, 'resources', j, 'type']}
                                                 required
                                             >
-                                                <DeviceSelector />
+                                                <ResourceSelector data={resourcePool?.resources ?? []} />
                                             </FormItem>
                                             <FormItem
                                                 label={i === 0 && j === 0 && t('Resource Amount')}
@@ -355,13 +367,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </FormItem>
                 )}
             </div>
-            <Divider orientation='top'>{t('Environment')}</Divider>
-            <div className={styles.row3}>
-                <FormItem label={t('Resource Pool')} name='resourcePool' required initialValue='default'>
-                    <ResourcePoolSelector />
-                </FormItem>
-            </div>
-
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <div style={{ flexGrow: 1 }} />

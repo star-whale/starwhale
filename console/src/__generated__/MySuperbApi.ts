@@ -109,27 +109,7 @@ export interface JobRequest {
   runtimeVersionUrl: string;
   comment?: string;
   resourcePool?: string;
-  stepSpecOverWrites?: StepSpec[];
-}
-
-export interface RuntimeResource {
-  type?: string;
-
-  /** @format int32 */
-  num?: number;
-}
-
-export interface StepSpec {
-  /** @format int32 */
-  concurrency?: number;
-  needs?: string[];
-  resources?: RuntimeResource[];
-  overwriteable?: boolean;
-  job_name?: string;
-  step_name?: string;
-
-  /** @format int32 */
-  task_num?: number;
+  stepSpecOverWrites?: string;
 }
 
 export interface ConfigRequest {
@@ -161,6 +141,8 @@ export interface UploadResult {
 export interface ColumnSchemaDesc {
   name?: string;
   type?: string;
+  pythonType?: string;
+  elementType?: ColumnSchemaDesc;
 }
 
 export interface RecordDesc {
@@ -169,7 +151,7 @@ export interface RecordDesc {
 
 export interface RecordValueDesc {
   key: string;
-  value?: string;
+  value?: object;
 }
 
 export interface TableSchemaDesc {
@@ -194,7 +176,6 @@ export interface ScanTableRequest {
   startInclusive?: boolean;
   end?: string;
   endInclusive?: boolean;
-
   /** @format int32 */
   limit?: number;
   keepNone?: boolean;
@@ -209,8 +190,8 @@ export interface TableDesc {
 }
 
 export interface RecordListVo {
-  columnTypes?: Record<string, string>;
-  records?: Record<string, string>[];
+  columnTypes?: ColumnSchemaDesc[];
+  records?: Record<string, object>[];
   lastKey?: string;
 }
 
@@ -231,10 +212,8 @@ export interface QueryTableRequest {
   orderBy?: OrderByDesc[];
   descending?: boolean;
   filter?: TableQueryFilterDesc;
-
   /** @format int32 */
   start?: number;
-
   /** @format int32 */
   limit?: number;
   keepNone?: boolean;
@@ -251,10 +230,8 @@ export interface TableQueryOperandDesc {
   filter?: TableQueryFilterDesc;
   columnName?: string;
   boolValue?: boolean;
-
   /** @format int64 */
   intValue?: number;
-
   /** @format double */
   floatValue?: number;
   stringValue?: string;
@@ -279,53 +256,42 @@ export interface PageInfo {
   /** @format int64 */
   total?: number;
   list?: object[];
-
   /** @format int32 */
   pageNum?: number;
-
   /** @format int32 */
   pageSize?: number;
-
   /** @format int32 */
   size?: number;
-
   /** @format int64 */
   startRow?: number;
-
   /** @format int64 */
   endRow?: number;
-
   /** @format int32 */
   pages?: number;
-
   /** @format int32 */
   prePage?: number;
-
   /** @format int32 */
   nextPage?: number;
   isFirstPage?: boolean;
   isLastPage?: boolean;
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
-
   /** @format int32 */
   navigatePages?: number;
   navigatepageNums?: number[];
-
   /** @format int32 */
   navigateFirstPage?: number;
-
   /** @format int32 */
   navigateLastPage?: number;
 }
 
 /**
+ * User
  * User object
  */
 export interface UserVo {
   id?: string;
   name?: string;
-
   /** @format int64 */
   createdTime?: number;
   isEnabled?: boolean;
@@ -334,6 +300,7 @@ export interface UserVo {
 }
 
 /**
+ * Project
  * Project object
  */
 export interface ProjectVo {
@@ -341,10 +308,8 @@ export interface ProjectVo {
   name?: string;
   description?: string;
   privacy?: string;
-
   /** @format int64 */
   createdTime?: number;
-
   /** User object */
   owner?: UserVo;
   statistics?: StatisticsVo;
@@ -357,6 +322,7 @@ export interface ResponseMessageListUserRoleVo {
 }
 
 /**
+ * User
  * User object
  */
 export interface RoleVo {
@@ -369,31 +335,28 @@ export interface RoleVo {
 export interface StatisticsVo {
   /** @format int32 */
   modelCounts?: number;
-
   /** @format int32 */
   datasetCounts?: number;
-
   /** @format int32 */
   memberCounts?: number;
-
   /** @format int32 */
   evaluationCounts?: number;
 }
 
 /**
+ * Role
  * User Role object
  */
 export interface UserRoleVo {
   id?: string;
-
   /** Project object */
   project?: ProjectVo;
-
   /** User object */
   role?: RoleVo;
 }
 
 /**
+ * Version
  * System verion
  */
 export interface SystemVersionVo {
@@ -402,11 +365,11 @@ export interface SystemVersionVo {
 }
 
 /**
+ * Progress
  * Upgrade progress object
  */
 export interface UpgradeProgressVo {
   phase?: "downloading" | "upgrading";
-
   /** @format int32 */
   progress?: number;
 }
@@ -418,14 +381,13 @@ export interface ResponseMessageListSystemRoleVo {
 }
 
 /**
+ * Role
  * System Role object
  */
 export interface SystemRoleVo {
   id?: string;
-
   /** User object */
   user?: UserVo;
-
   /** User object */
   role?: RoleVo;
 }
@@ -439,12 +401,12 @@ export interface ResponseMessageListRoleVo {
 export interface ResponseMessageRuntimeInfoVo {
   code?: string;
   message?: string;
-
   /** Runtime information object */
   data?: RuntimeInfoVo;
 }
 
 /**
+ * RuntimeInfo
  * Runtime information object
  */
 export interface RuntimeInfoVo {
@@ -455,13 +417,13 @@ export interface RuntimeInfoVo {
   versionTag?: string;
   versionMeta?: string;
   manifest?: string;
-
   /** @format int64 */
   createdTime?: number;
   files?: StorageFileVo[];
 }
 
 /**
+ * StorageFile
  * Storage file object
  */
 export interface StorageFileVo {
@@ -473,42 +435,31 @@ export interface PageInfoRuntimeVersionVo {
   /** @format int64 */
   total?: number;
   list?: RuntimeVersionVo[];
-
   /** @format int32 */
   pageNum?: number;
-
   /** @format int32 */
   pageSize?: number;
-
   /** @format int32 */
   size?: number;
-
   /** @format int64 */
   startRow?: number;
-
   /** @format int64 */
   endRow?: number;
-
   /** @format int32 */
   pages?: number;
-
   /** @format int32 */
   prePage?: number;
-
   /** @format int32 */
   nextPage?: number;
   isFirstPage?: boolean;
   isLastPage?: boolean;
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
-
   /** @format int32 */
   navigatePages?: number;
   navigatepageNums?: number[];
-
   /** @format int32 */
   navigateFirstPage?: number;
-
   /** @format int32 */
   navigateLastPage?: number;
 }
@@ -520,6 +471,7 @@ export interface ResponseMessagePageInfoRuntimeVersionVo {
 }
 
 /**
+ * RuntimeVersion
  * Runtime version object
  */
 export interface RuntimeVersionVo {
@@ -529,26 +481,22 @@ export interface RuntimeVersionVo {
   alias?: string;
   meta?: object;
   image?: string;
-
   /** @format int64 */
   createdTime?: number;
-
   /** User object */
   owner?: UserVo;
 }
 
 /**
+ * Role
  * Project Role object
  */
 export interface ProjectRoleVo {
   id?: string;
-
   /** User object */
   user?: UserVo;
-
   /** Project object */
   project?: ProjectVo;
-
   /** User object */
   role?: RoleVo;
 }
@@ -560,6 +508,7 @@ export interface ResponseMessageListProjectRoleVo {
 }
 
 /**
+ * ModelInfo
  * SWModelPackage information object
  */
 export interface SwModelPackageInfoVo {
@@ -570,13 +519,13 @@ export interface SwModelPackageInfoVo {
   versionTag?: string;
   versionMeta?: string;
   manifest?: string;
-
   /** @format int64 */
   createdTime?: number;
   files?: StorageFileVo[];
 }
 
 /**
+ * Job
  * Job object
  */
 export interface JobVo {
@@ -585,20 +534,15 @@ export interface JobVo {
   modelName?: string;
   modelVersion?: string;
   datasets?: string[];
-
   /** Runtime object */
   runtime?: RuntimeVo;
   device?: string;
-
   /** @format int32 */
   deviceAmount?: number;
-
   /** User object */
   owner?: UserVo;
-
   /** @format int64 */
   createdTime?: number;
-
   /** @format int64 */
   stopTime?: number;
   jobStatus?:
@@ -614,24 +558,21 @@ export interface JobVo {
     | "UNKNOWN";
   comment?: string;
   resourcePool?: string;
-
   /** @format int64 */
   duration?: number;
 }
 
 /**
+ * Runtime
  * Runtime object
  */
 export interface RuntimeVo {
   id?: string;
   name?: string;
-
   /** @format int64 */
   createdTime?: number;
-
   /** User object */
   owner?: UserVo;
-
   /** Runtime version object */
   version?: RuntimeVersionVo;
 }
@@ -646,7 +587,6 @@ export interface Graph {
 export interface GraphEdge {
   /** @format int64 */
   from?: number;
-
   /** @format int64 */
   to?: number;
   content?: string;
@@ -658,7 +598,6 @@ export interface GraphNode {
   type?: string;
   content?: object;
   group?: string;
-
   /** @format int64 */
   entityId?: number;
 }
@@ -673,42 +612,31 @@ export interface PageInfoSummaryVo {
   /** @format int64 */
   total?: number;
   list?: SummaryVo[];
-
   /** @format int32 */
   pageNum?: number;
-
   /** @format int32 */
   pageSize?: number;
-
   /** @format int32 */
   size?: number;
-
   /** @format int64 */
   startRow?: number;
-
   /** @format int64 */
   endRow?: number;
-
   /** @format int32 */
   pages?: number;
-
   /** @format int32 */
   prePage?: number;
-
   /** @format int32 */
   nextPage?: number;
   isFirstPage?: boolean;
   isLastPage?: boolean;
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
-
   /** @format int32 */
   navigatePages?: number;
   navigatepageNums?: number[];
-
   /** @format int32 */
   navigateFirstPage?: number;
-
   /** @format int32 */
   navigateLastPage?: number;
 }
@@ -720,6 +648,7 @@ export interface ResponseMessagePageInfoSummaryVo {
 }
 
 /**
+ * Evaluation
  * Evaluation Summary object
  */
 export interface SummaryVo {
@@ -732,17 +661,13 @@ export interface SummaryVo {
   datasets?: string;
   runtime?: string;
   device?: string;
-
   /** @format int32 */
   deviceAmount?: number;
-
   /** @format int64 */
   createdTime?: number;
-
   /** @format int64 */
   stopTime?: number;
   owner?: string;
-
   /** @format int64 */
   duration?: number;
   jobStatus?:
@@ -760,12 +685,12 @@ export interface SummaryVo {
 }
 
 /**
+ * Evaluation
  * Evaluation View Config object
  */
 export interface ConfigVo {
   name?: string;
   content?: string;
-
   /** @format int64 */
   createTime?: number;
 }
@@ -773,12 +698,12 @@ export interface ConfigVo {
 export interface ResponseMessageConfigVo {
   code?: string;
   message?: string;
-
   /** Evaluation View Config object */
   data?: ConfigVo;
 }
 
 /**
+ * Evaluation
  * Evaluation Attribute object
  */
 export interface AttributeVo {
@@ -793,6 +718,7 @@ export interface ResponseMessageListAttributeVo {
 }
 
 /**
+ * DatasetInfo
  * SWDataset information object
  */
 export interface SwDatasetInfoVo {
@@ -803,7 +729,6 @@ export interface SwDatasetInfoVo {
   versionAlias?: string;
   versionTag?: string;
   versionMeta?: string;
-
   /** @format int64 */
   createdTime?: number;
   files?: StorageFileVo[];
@@ -813,7 +738,7 @@ export interface UserRoleDeleteRequest {
   currentUserPwd: string;
 }
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -858,7 +783,7 @@ export class HttpClient<SecurityDataType = unknown> {
   constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
     this.instance = axios.create({
       ...axiosConfig,
-      baseURL: axiosConfig.baseURL || "http://stepcfg.pre.intra.starwhale.ai",
+      baseURL: axiosConfig.baseURL || "http://rspl.pre.intra.starwhale.ai",
     });
     this.secure = secure;
     this.format = format;
@@ -869,30 +794,39 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  private mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+    const method = params1.method || (params2 && params2.method);
+
     return {
       ...this.instance.defaults,
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...(this.instance.defaults.headers || {}),
+        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
     };
   }
 
-  private createFormData(input: Record<string, unknown>): FormData {
+  protected stringifyFormItem(formItem: unknown) {
+    if (typeof formItem === "object" && formItem !== null) {
+      return JSON.stringify(formItem);
+    } else {
+      return `${formItem}`;
+    }
+  }
+
+  protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      formData.append(
-        key,
-        property instanceof Blob
-          ? property
-          : typeof property === "object" && property !== null
-          ? JSON.stringify(property)
-          : `${property}`,
-      );
+      const propertyContent: Iterable<any> = property instanceof Array ? property : [property];
+
+      for (const formItem of propertyContent) {
+        const isFileType = formItem instanceof Blob || formItem instanceof File;
+        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
+      }
+
       return formData;
     }, new FormData());
   }
@@ -912,21 +846,17 @@ export class HttpClient<SecurityDataType = unknown> {
         (await this.securityWorker(this.securityData))) ||
       {};
     const requestParams = this.mergeRequestParams(params, secureParams);
-    const responseFormat = (format && this.format) || void 0;
+    const responseFormat = format || this.format || undefined;
 
     if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
-      requestParams.headers.common = { Accept: "*/*" };
-      requestParams.headers.post = {};
-      requestParams.headers.put = {};
-
       body = this.createFormData(body as Record<string, unknown>);
     }
 
     return this.instance.request({
       ...requestParams,
       headers: {
-        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
         ...(requestParams.headers || {}),
+        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
       },
       params: query,
       responseType: responseFormat,
@@ -939,7 +869,7 @@ export class HttpClient<SecurityDataType = unknown> {
 /**
  * @title Starwhale Rest Api
  * @version {sw.version:1.0}
- * @baseUrl http://stepcfg.pre.intra.starwhale.ai
+ * @baseUrl http://rspl.pre.intra.starwhale.ai
  *
  * Rest Api for Starwhale controller
  */
@@ -1212,7 +1142,9 @@ export class Api<SecurityDataType extends unknown> {
     modifyProjectRole: (
       projectUrl: string,
       projectRoleId: string,
-      query: { roleId: string },
+      query: {
+        roleId: string;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessageString, any>({
@@ -1508,7 +1440,23 @@ export class Api<SecurityDataType extends unknown> {
      * @secure
      * @response `200` `PageInfo` ok
      */
-    listUser: (query?: { userName?: string; pageNum?: number; pageSize?: number }, params: RequestParams = {}) =>
+    listUser: (
+      query?: {
+        /** User name prefix to search for */
+        userName?: string;
+        /**
+         * Page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
+      params: RequestParams = {},
+    ) =>
       this.http.request<PageInfo, any>({
         path: `/api/v1/user`,
         method: "GET",
@@ -1553,6 +1501,46 @@ export class Api<SecurityDataType extends unknown> {
         path: `/api/v1/system/version/${action}`,
         method: "POST",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * @description Get system settings in yaml string
+     *
+     * @tags System
+     * @name QuerySetting
+     * @summary Get system settings
+     * @request GET:/api/v1/system/setting
+     * @secure
+     * @response `200` `string` ok
+     */
+    querySetting: (params: RequestParams = {}) =>
+      this.http.request<string, any>({
+        path: `/api/v1/system/setting`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update system settings
+     *
+     * @tags System
+     * @name UpdateSetting
+     * @summary Update system settings
+     * @request POST:/api/v1/system/setting
+     * @secure
+     * @response `200` `string` ok
+     */
+    updateSetting: (data: string, params: RequestParams = {}) =>
+      this.http.request<string, any>({
+        path: `/api/v1/system/setting`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -1605,7 +1593,16 @@ export class Api<SecurityDataType extends unknown> {
      * @response `200` `PageInfo` ok
      */
     listProject: (
-      query?: { projectName?: string; pageNum?: number; pageSize?: number; sort?: string; order?: number },
+      query?: {
+        projectName?: string;
+        /** @format int32 */
+        pageNum?: number;
+        /** @format int32 */
+        pageSize?: number;
+        sort?: string;
+        /** @format int32 */
+        order?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -1677,8 +1674,16 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       runtimeName: string,
       versionName: string,
-      query: { uploadRequest: ClientRuntimeRequest },
-      data: { file: File },
+      query: {
+        uploadRequest: ClientRuntimeRequest;
+      },
+      data: {
+        /**
+         * file detail
+         * @format binary
+         */
+        file: File;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessageString, any>({
@@ -1720,7 +1725,14 @@ export class Api<SecurityDataType extends unknown> {
      * @secure
      * @response `200` `ResponseMessageString` ok
      */
-    addProjectRole: (projectUrl: string, query: { userId: string; roleId: string }, params: RequestParams = {}) =>
+    addProjectRole: (
+      projectUrl: string,
+      query: {
+        userId: string;
+        roleId: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.http.request<ResponseMessageString, any>({
         path: `/api/v1/project/${projectUrl}/role`,
         method: "POST",
@@ -1768,8 +1780,16 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       modelName: string,
       versionName: string,
-      query: { uploadRequest: ClientSwmpRequest },
-      data: { file: File },
+      query: {
+        uploadRequest: ClientSwmpRequest;
+      },
+      data: {
+        /**
+         * file detail
+         * @format binary
+         */
+        file: File;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessageString, any>({
@@ -1795,7 +1815,13 @@ export class Api<SecurityDataType extends unknown> {
      */
     listJobs: (
       projectUrl: string,
-      query?: { swmpId?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        swmpId?: string;
+        /** @format int32 */
+        pageNum?: number;
+        /** @format int32 */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -1874,7 +1900,13 @@ export class Api<SecurityDataType extends unknown> {
      * @secure
      * @response `200` `ResponseMessageConfigVo` ok
      */
-    getViewConfig: (projectUrl: string, query: { name: string }, params: RequestParams = {}) =>
+    getViewConfig: (
+      projectUrl: string,
+      query: {
+        name: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.http.request<ResponseMessageConfigVo, any>({
         path: `/api/v1/project/${projectUrl}/evaluation/view/config`,
         method: "GET",
@@ -1942,8 +1974,16 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       datasetName: string,
       versionName: string,
-      query: { uploadRequest: UploadRequest },
-      data: { file?: File },
+      query: {
+        uploadRequest: UploadRequest;
+      },
+      data: {
+        /**
+         * file detail
+         * @format binary
+         */
+        file?: File;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessageUploadResult, any>({
@@ -2119,7 +2159,12 @@ export class Api<SecurityDataType extends unknown> {
      * @secure
      * @response `200` `ResponseMessageListUserRoleVo` ok
      */
-    getCurrentUserRoles: (query?: { projectUrl?: string }, params: RequestParams = {}) =>
+    getCurrentUserRoles: (
+      query?: {
+        projectUrl?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.http.request<ResponseMessageListUserRoleVo, any>({
         path: `/api/v1/user/current/role`,
         method: "GET",
@@ -2207,26 +2252,6 @@ export class Api<SecurityDataType extends unknown> {
     /**
      * No description
      *
-     * @tags System
-     * @name ListAgent
-     * @summary Get the list of agents
-     * @request GET:/api/v1/system/agent
-     * @secure
-     * @response `200` `PageInfo` ok
-     */
-    listAgent: (query?: { ip?: string; pageNum?: number; pageSize?: number }, params: RequestParams = {}) =>
-      this.http.request<PageInfo, any>({
-        path: `/api/v1/system/agent`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags Runtime
      * @name ListDevice
      * @summary Get the list of device types
@@ -2273,7 +2298,20 @@ export class Api<SecurityDataType extends unknown> {
      */
     listRuntime: (
       projectUrl: string,
-      query?: { runtimeName?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Runtime name prefix to search for */
+        runtimeName?: string;
+        /**
+         * Page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2298,7 +2336,9 @@ export class Api<SecurityDataType extends unknown> {
     getRuntimeInfo: (
       projectUrl: string,
       runtimeUrl: string,
-      query?: { runtimeVersionUrl?: string },
+      query?: {
+        runtimeVersionUrl?: string;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessageRuntimeInfoVo, any>({
@@ -2342,7 +2382,22 @@ export class Api<SecurityDataType extends unknown> {
     listRuntimeVersion: (
       projectUrl: string,
       runtimeUrl: string,
-      query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Runtime version name prefix */
+        name?: string;
+        /** Runtime version tag */
+        tag?: string;
+        /**
+         * The page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessagePageInfoRuntimeVersionVo, any>({
@@ -2384,7 +2439,22 @@ export class Api<SecurityDataType extends unknown> {
      */
     listModel: (
       projectUrl: string,
-      query?: { versionId?: string; modelName?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Model versionId */
+        versionId?: string;
+        /** Model name prefix to search for */
+        modelName?: string;
+        /**
+         * Page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2406,7 +2476,15 @@ export class Api<SecurityDataType extends unknown> {
      * @secure
      * @response `200` `SwModelPackageInfoVo` OK
      */
-    getModelInfo: (projectUrl: string, modelUrl: string, query?: { versionUrl?: string }, params: RequestParams = {}) =>
+    getModelInfo: (
+      projectUrl: string,
+      modelUrl: string,
+      query?: {
+        /** Model versionUrl. (Return the current version as default when the versionUrl is not set.) */
+        versionUrl?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.http.request<SwModelPackageInfoVo, any>({
         path: `/api/v1/project/${projectUrl}/model/${modelUrl}`,
         method: "GET",
@@ -2447,7 +2525,22 @@ export class Api<SecurityDataType extends unknown> {
     listModelVersion: (
       projectUrl: string,
       modelUrl: string,
-      query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Model version name prefix to search for */
+        name?: string;
+        /** Model version tag */
+        tag?: string;
+        /**
+         * Page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2490,7 +2583,12 @@ export class Api<SecurityDataType extends unknown> {
     listTasks: (
       projectUrl: string,
       jobUrl: string,
-      query?: { pageNum?: number; pageSize?: number },
+      query?: {
+        /** @format int32 */
+        pageNum?: number;
+        /** @format int32 */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2552,7 +2650,13 @@ export class Api<SecurityDataType extends unknown> {
      */
     listEvaluationSummary: (
       projectUrl: string,
-      query: { filter: string; pageNum?: number; pageSize?: number },
+      query: {
+        filter: string;
+        /** @format int32 */
+        pageNum?: number;
+        /** @format int32 */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<ResponseMessagePageInfoSummaryVo, any>({
@@ -2593,7 +2697,20 @@ export class Api<SecurityDataType extends unknown> {
      */
     listDataset: (
       projectUrl: string,
-      query?: { versionId?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Dataset versionId */
+        versionId?: string;
+        /**
+         * Page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2618,7 +2735,10 @@ export class Api<SecurityDataType extends unknown> {
     getDatasetInfo: (
       projectUrl: string,
       datasetUrl: string,
-      query?: { versionUrl?: string },
+      query?: {
+        /** Dataset versionUrl. (Return the current version as default when the versionUrl is not set.) */
+        versionUrl?: string;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<SwDatasetInfoVo, any>({
@@ -2661,7 +2781,22 @@ export class Api<SecurityDataType extends unknown> {
     listDatasetVersion: (
       projectUrl: string,
       datasetUrl: string,
-      query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
+      query?: {
+        /** Dataset version name prefix */
+        name?: string;
+        /** Dataset version tag */
+        tag?: string;
+        /**
+         * The page number
+         * @format int32
+         */
+        pageNum?: number;
+        /**
+         * Rows per page
+         * @format int32
+         */
+        pageSize?: number;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<PageInfo, any>({
@@ -2687,7 +2822,16 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       datasetUrl: string,
       versionUrl: string,
-      query: { uri: string; authName?: string; offset?: string; size?: string },
+      query: {
+        /** uri of the link */
+        uri: string;
+        /** auth name the link used */
+        authName?: string;
+        /** offset in the content */
+        offset?: string;
+        /** data size */
+        size?: string;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<void, any>({
@@ -2712,7 +2856,10 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       datasetUrl: string,
       versionUrl: string,
-      query?: { part_name?: string },
+      query?: {
+        /** optional, _manifest.yaml is used if not specified */
+        part_name?: string;
+      },
       params: RequestParams = {},
     ) =>
       this.http.request<void, any>({
@@ -2757,6 +2904,26 @@ export class Api<SecurityDataType extends unknown> {
         path: `/api/v1/log/offline/${taskId}/${fileName}`,
         method: "GET",
         secure: true,
+        ...params,
+      }),
+  };
+  objStore = {
+    /**
+     * No description
+     *
+     * @tags Object Store
+     * @name GetObjectContent
+     * @summary Get the content of an object or a file
+     * @request GET:/obj-store/{path}/{expTimeMillis}
+     * @secure
+     * @response `200` `string` ok
+     */
+    getObjectContent: (path: string, expTimeMillis: number, params: RequestParams = {}) =>
+      this.http.request<string, any>({
+        path: `/obj-store/${path}/${expTimeMillis}`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
   };
