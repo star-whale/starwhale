@@ -208,14 +208,19 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         mime_type = MIMEType(data_type.get("mime_type", MIMEType.UNDEFINED))
         shape = data_type.get("shape", [])
         encoding = data_type.get("encoding", "")
+        display_name = data_type.get("display_name", "")
 
         if dtype == ArtifactType.Text.value:
             _encoding = encoding or Text.DEFAULT_ENCODING
             return Text(content=raw_data.decode(_encoding), encoding=_encoding)
         elif dtype == ArtifactType.Image.value:
-            return Image(raw_data, mime_type=mime_type, shape=shape)
+            return Image(
+                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
+            )
         elif dtype == ArtifactType.Audio.value:
-            return Audio(raw_data, mime_type=mime_type, shape=shape)
+            return Audio(
+                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
+            )
         elif not dtype or dtype == ArtifactType.Binary.value:
             return Binary(raw_data)
         elif dtype == ArtifactType.Link.value:
