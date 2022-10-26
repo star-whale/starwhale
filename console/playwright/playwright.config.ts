@@ -8,10 +8,8 @@ import * as fse from 'fs-extra'
  */
 require('dotenv').config()
 
-fse.emptyDir('test-video')
-fse.emptyDir('test-storage')
-fse.ensureDir('test-video')
-fse.ensureDir('test-storage')
+fse.emptyDirSync('test-video')
+fse.emptyDirSync('test-storage')
 
 /**
  * See https://playwright.dev/docs/test-configuration.
