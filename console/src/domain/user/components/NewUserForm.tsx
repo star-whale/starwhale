@@ -27,7 +27,7 @@ export default function NewUserForm({ onSubmit }: INewUserFormProps) {
     const [useRandomRadioVal, setUseRandomRadioVal] = useState('no')
 
     return (
-        <Form form={form} onFinish={onSubmit}>
+        <Form form={form} onFinish={onSubmit} className='user'>
             <FormItem label={t('Username')} name='userName' required>
                 <Input size='compact' />
             </FormItem>

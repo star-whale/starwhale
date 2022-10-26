@@ -18,6 +18,8 @@ export const CONST = {
     },
     adminSettings: 'Admin Settings',
     projectId: '3',
+    newUserName: 'lwz1',
+    newUserPassword: 'abcd1234',
 }
 export const ROUTES = {
     evaluations: `/projects/${CONST.projectId}/evaluations`,
@@ -32,6 +34,8 @@ export const ROUTES = {
     datasetOverview: `/projects/${CONST.projectId}/datasets/1`,
     datasetVersions: `/projects/${CONST.projectId}/datasets/1/versions`,
     datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/6/files`,
+    adminUsers: `/admin/users`,
+    adminSettings: `/admin/settings`,
 }
 export const SELECTOR = {
     loginName: 'input[type="text"]',
@@ -69,4 +73,9 @@ export const SELECTOR = {
     confusionMatrix: '[class*=card]:has(:has-text("Confusion Matrix")) >> .plotly',
     // --- form ---
     formItem: (text: string) => `[class*=formItem]:has(:has-text("${text}")) > div`,
+    // --- user form ---
+    userForm: 'form[class*=user]',
+    userSubmit: 'form[class^=user] >> button:has-text("Submit")',
+    userClose: 'role=button[name="Close"]',
+    userDisableConfirm: 'role=button[name="Continue"]',
 }

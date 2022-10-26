@@ -688,6 +688,9 @@ const locales0 = {
     'Reset': {
         en: 'Reset',
     },
+    'Update Setting Success': {
+        en: 'Update Setting Success',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

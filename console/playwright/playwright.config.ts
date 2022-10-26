@@ -16,6 +16,7 @@ fse.emptyDirSync('test-storage')
  */
 const config: PlaywrightTestConfig = {
     testDir: './tests',
+    testIgnore: ['tests-examples/*'],
     /* Maximum time one test can run for. */
     timeout: 30 * 1000,
     expect: {

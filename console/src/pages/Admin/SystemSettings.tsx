@@ -34,7 +34,7 @@ export default function SystemSettings() {
                     setting: systemSetting.data,
                 })
         }
-    }, [systemSetting, form])
+    }, [systemSetting.isSuccess, systemSetting.data, form])
 
     const handleValuesChange = useCallback((_changes, values_) => {
         setValues(values_)
@@ -51,6 +51,7 @@ export default function SystemSettings() {
             setLoading(true)
             try {
                 await updateSystemSetting(values_.setting)
+                toaster.positive(t('Update Setting Success'), { autoHideDuration: 1000 })
             } finally {
                 setLoading(false)
             }
