@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { IResourcePoolSchema } from '@job/schemas/resourcePool'
 import { ICreateJobSchema, IJobSchema, IJobDetailSchema, JobActionType, IJobResultSchema } from '../schemas/job'
 
 export async function listJobs(projectId: string, query: IListQuerySchema): Promise<IListSchema<IJobSchema>> {
@@ -32,10 +31,5 @@ export async function fetchJobResult(projectId: string, jobId: string): Promise<
 
 export async function fetchJobDAG(projectId: string, jobId: string): Promise<IJobResultSchema> {
     const resp = await axios.get<IJobResultSchema>(`/api/v1/project/${projectId}/job/${jobId}/dag`)
-    return resp.data
-}
-
-export async function fetchResourcePool(): Promise<IResourcePoolSchema[]> {
-    const resp = await axios.get<IResourcePoolSchema[]>('/api/v1/system/resourcePool')
     return resp.data
 }

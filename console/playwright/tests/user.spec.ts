@@ -200,6 +200,8 @@ test.describe('Evaluation Create', () => {
         rowCount = await getLastestRowID(page)
         await page.getByRole('button', { name: /Create$/ }).click()
         await expect(page).toHaveURL(ROUTES.evaluationNewJob)
+
+        await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
         await selectOption(page, SELECTOR.formItem('Model Name'), 'mnist')
         await selectOption(page, SELECTOR.formItem('Dataset Name'), 'mnist')
         await selectOption(page, SELECTOR.formItem('Runtime'), 'pytorch-mnist')

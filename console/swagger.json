@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://stepcfg.pre.intra.starwhale.ai",
+            "url": "http://rspl.pre.intra.starwhale.ai",
             "description": "Generated server url"
         }
     ],
@@ -40,6 +40,9 @@
         },
         {
             "name": "Project"
+        },
+        {
+            "name": "Object Store"
         },
         {
             "name": "Dataset"
@@ -1298,6 +1301,58 @@
                 }
             }
         },
+        "/api/v1/system/setting": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Get system settings",
+                "description": "Get system settings in yaml string",
+                "operationId": "querySetting",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Update system settings",
+                "description": "Update system settings",
+                "operationId": "updateSetting",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/role": {
             "get": {
                 "tags": [
@@ -2357,6 +2412,54 @@
                 }
             }
         },
+        "/obj-store/{path}/{expTimeMillis}": {
+            "get": {
+                "tags": [
+                    "Object Store"
+                ],
+                "summary": "Get the content of an object or a file",
+                "operationId": "getObjectContent",
+                "parameters": [
+                    {
+                        "name": "path",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Range",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "expTimeMillis",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/{userId}": {
             "get": {
                 "tags": [
@@ -2553,60 +2656,6 @@
                             "application/json": {
                                 "schema": {
                                     "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/system/agent": {
-            "get": {
-                "tags": [
-                    "System"
-                ],
-                "summary": "Get the list of agents",
-                "operationId": "listAgent",
-                "parameters": [
-                    {
-                        "name": "ip",
-                        "in": "query",
-                        "description": "Agent ip to search for",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "pageNum",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "pageSize",
-                        "in": "query",
-                        "description": "Rows per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32",
-                            "default": 10
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
                                 }
                             }
                         }
@@ -4159,56 +4208,7 @@
                         "type": "string"
                     },
                     "stepSpecOverWrites": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/StepSpec"
-                        }
-                    }
-                }
-            },
-            "RuntimeResource": {
-                "type": "object",
-                "properties": {
-                    "type": {
                         "type": "string"
-                    },
-                    "num": {
-                        "type": "integer",
-                        "format": "int32"
-                    }
-                }
-            },
-            "StepSpec": {
-                "type": "object",
-                "properties": {
-                    "concurrency": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "needs": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "resources": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/RuntimeResource"
-                        }
-                    },
-                    "overwriteable": {
-                        "type": "boolean"
-                    },
-                    "job_name": {
-                        "type": "string"
-                    },
-                    "step_name": {
-                        "type": "string"
-                    },
-                    "task_num": {
-                        "type": "integer",
-                        "format": "int32"
                     }
                 }
             },
@@ -4294,6 +4294,12 @@
                     },
                     "type": {
                         "type": "string"
+                    },
+                    "pythonType": {
+                        "type": "string"
+                    },
+                    "elementType": {
+                        "$ref": "#/components/schemas/ColumnSchemaDesc"
                     }
                 }
             },
@@ -4321,7 +4327,7 @@
                         "type": "string"
                     },
                     "value": {
-                        "type": "string"
+                        "type": "object"
                     }
                 }
             },
@@ -4424,9 +4430,9 @@
                 "type": "object",
                 "properties": {
                     "columnTypes": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "string"
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ColumnSchemaDesc"
                         }
                     },
                     "records": {
@@ -4434,7 +4440,7 @@
                         "items": {
                             "type": "object",
                             "additionalProperties": {
-                                "type": "string"
+                                "type": "object"
                             }
                         }
                     },
