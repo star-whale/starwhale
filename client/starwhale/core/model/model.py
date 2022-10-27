@@ -269,7 +269,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not step_name:
                 _step_results = _scheduler.schedule()
             elif task_index < 0:
-                _step_results = [_scheduler.schedule_single_step(step_name)]
+                _step_results = [
+                    _scheduler.schedule_single_step(
+                        step_name=step_name, task_num=task_num
+                    )
+                ]
             else:
                 _step_results = [
                     _scheduler.schedule_single_task(step_name, task_index, task_num)

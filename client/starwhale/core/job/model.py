@@ -192,8 +192,10 @@ class StepExecutor:
         module: str,
         workdir: Path,
         dataset_uris: t.List[str],
+        task_num: int = 0,
     ) -> None:
         self.step = step
+        self.task_num = step.task_num if task_num <= 0 else task_num
         self.project = project
         self.dataset_uris = dataset_uris
         self.module = module
@@ -217,7 +219,7 @@ class StepExecutor:
                     project=self.project,
                     version=self.version,
                     step=self.step.step_name,
-                    total=self.step.task_num,
+                    total=self.task_num,
                     index=index,
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
@@ -228,7 +230,7 @@ class StepExecutor:
                 cls_name=self.step.cls_name,
                 workdir=self.workdir,
             )
-            for index in range(self.step.task_num)
+            for index in range(self.task_num)
         )
 
 
