@@ -55,17 +55,21 @@ class DataLoader(metaclass=ABCMeta):
         if _store:
             return _store
 
-        if row.object_store_type == ObjectStoreType.REMOTE:
-            _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+        _type = self.dataset_uri.instance_type
+        if _type == InstanceType.CLOUD:
+            _store = ObjectStore.from_remote_dataset(self.dataset_uri, row.auth_name)
         else:
-            _store = ObjectStore.from_dataset_uri(self.dataset_uri)
+            if row.object_store_type == ObjectStoreType.REMOTE:
+                _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+            else:
+                _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
         self._stores[_k] = _store
         return _store
 
     def _get_key_compose(self, row: TabularDatasetRow, store: ObjectStore) -> str:
         if row.object_store_type == ObjectStoreType.REMOTE:
-            data_uri = urlparse(row.data_uri).path
+            data_uri = row.data_uri
         else:
             data_uri = row.data_uri
             if store.key_prefix:
@@ -79,15 +83,13 @@ class DataLoader(metaclass=ABCMeta):
         else:
             offset, size = row.data_offset, row.data_size
 
-        _key_compose = f"{data_uri}:{offset}:{offset + size - 1}"
-        return _key_compose
+        return data_uri, offset, offset + size - 1
 
     def __iter__(self) -> t.Generator[t.Tuple[int, t.Any, t.Dict], None, None]:
         for row in self.tabular_dataset.scan():
             # TODO: tune performance by fetch in batch
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
-
             self.logger.info(f"[{row.id}] @{_store.bucket}/{_key_compose}")
             _file = _store.backend._make_file(_store.bucket, _key_compose)
             for data_content, _ in self._do_iter(_file, row):

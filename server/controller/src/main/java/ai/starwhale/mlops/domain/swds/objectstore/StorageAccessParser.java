@@ -52,6 +52,8 @@ public class StorageAccessParser {
             String authName) {
         if (StringUtils.hasText(authName)) {
             authName = authName.toUpperCase(); // env vars are uppercase always
+        } else {
+            return defaultStorageAccessService;
         }
         StorageAccessService cachedStorageAccessService = storageAccessServicePool.get(
                 formatKey(datasetId, authName));
