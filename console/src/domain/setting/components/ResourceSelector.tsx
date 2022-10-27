@@ -24,10 +24,6 @@ export default function ResourceSelector({ data, value, onChange, overrides, dis
     }, [data])
 
     const handleDeviceInputChange = _.debounce((term: string) => {
-        if (!term) {
-            setOptions([])
-            return
-        }
         setKeyword(term)
     })
 

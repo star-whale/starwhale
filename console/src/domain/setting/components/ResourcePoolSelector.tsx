@@ -27,7 +27,7 @@ export default function ResourcePoolSelector({
                 onChangeItem?.(item, data)
             }
         },
-        [onChange, onChangeItem, pools]
+        [onChange, onChangeItem, pools, value]
     )
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export default function ResourcePoolSelector({
             if (value) handelChange(value)
             else if (data) handelChange(first.name)
         }
-    }, [pools, value, autoSelected])
+    }, [pools, value, autoSelected, handelChange])
 
     return (
         <Select

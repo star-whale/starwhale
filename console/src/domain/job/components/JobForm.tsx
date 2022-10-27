@@ -24,6 +24,7 @@ import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
 import Button from '@/components/Button'
 import ResourceSelector from '@/domain/setting/components/ResourceSelector'
+import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
 
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
@@ -65,6 +66,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [rawType, setRawType] = React.useState(false)
     const [stepSpecOverWrites, setStepSpecOverWrites] = React.useState('')
     const [t] = useTranslation()
+    const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
 
     // const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
     // const [page] = usePage()
@@ -81,6 +83,21 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             if (values_.runtimeId) setRuntimeId(values_.runtimeId)
             if (values_.modelVersionUrl) setModelVersionId(values_.modelVersionUrl)
             let rawTypeTmp = values_.rawType
+            // cascade type with default value
+            if ('stepSpecOverWrites' in _changes) {
+                _changes.stepSpecOverWrites?.forEach((obj: any, i: number) => {
+                    obj.resources?.forEach((resource: any, j: number) => {
+                        if (!('num' in resource)) {
+                            const config = resourcePool?.resources.find((v) => v.name === resource.type)
+                            const step = [...values_.stepSpecOverWrites]
+                            step[i].resources[j].num = config?.defaults
+                            form.setFieldsValue({
+                                stepSpecOverWrites: step,
+                            })
+                        }
+                    })
+                })
+            }
             if ('rawType' in _changes && !_changes.rawType) {
                 try {
                     yaml.load(stepSpecOverWrites)
@@ -99,7 +116,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 rawType: rawTypeTmp,
             })
         },
-        [stepSpecOverWrites, form, t]
+        [stepSpecOverWrites, form, t, resourcePool]
     )
 
     const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
@@ -204,9 +221,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [setStepSpecOverWrites]
     )
 
-    const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
-
-    console.log(resourcePool)
+    const getResourceAttr = (i: number, j: number) => {
+        const type = form.getFieldValue(['stepSpecOverWrites', i, 'resources', j, 'type'])
+        const resource = resourcePool?.resources.find((v) => v.name === type)
+        return resource
+    }
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -264,14 +283,32 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                             <FormItem
                                                 label={i === 0 && j === 0 && t('Resource')}
                                                 name={['stepSpecOverWrites', i, 'resources', j, 'type']}
-                                                required
+                                                deps={['resourcePool']}
                                             >
                                                 <ResourceSelector data={resourcePool?.resources ?? []} />
                                             </FormItem>
                                             <FormItem
                                                 label={i === 0 && j === 0 && t('Resource Amount')}
                                                 name={['stepSpecOverWrites', i, 'resources', j, 'num']}
-                                                required
+                                                deps={['stepSpecOverWrites']}
+                                                validators={[
+                                                    getResourceAttr(i, j)?.min
+                                                        ? min(
+                                                              (getResourceAttr(i, j)?.min as number) - 1,
+                                                              `should be between ${getResourceAttr(i, j)?.min} - ${
+                                                                  getResourceAttr(i, j)?.max
+                                                              }`
+                                                          )
+                                                        : null,
+                                                    getResourceAttr(i, j)?.max
+                                                        ? max(
+                                                              (getResourceAttr(i, j)?.max as number) + 1,
+                                                              `should be between ${getResourceAttr(i, j)?.min} - ${
+                                                                  getResourceAttr(i, j)?.max
+                                                              }`
+                                                          )
+                                                        : null,
+                                                ]}
                                             >
                                                 <NumberInput />
                                             </FormItem>
