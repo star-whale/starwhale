@@ -22,11 +22,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.swmp.SwModelPackageVersionVo;
+import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -35,26 +38,21 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.model.Model;
+import ai.starwhale.mlops.domain.model.ModelVersionConvertor;
+import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
-import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
-import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -65,7 +63,7 @@ import org.junit.jupiter.api.Test;
  */
 public class JobBoConverterTest {
 
-    final SwdsBoConverter swdsboConverter = mock(SwdsBoConverter.class);
+    final DatasetBoConverter converter = mock(DatasetBoConverter.class);
 
     @Test
     public void testJobBoConverter() {
@@ -76,27 +74,27 @@ public class JobBoConverterTest {
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .jobStatus(JobStatus.RUNNING)
                 .type(JobType.EVALUATION)
-                .swmpVersionId(1L)
-                .swmpVersion(SwModelPackageVersionEntity.builder().id(1L).swmpId(1L).versionName("swmpvname")
-                        .storagePath("swmp_path").evalJobs("stepspec").build())
+                .modelVersionId(1L)
+                .modelVersion(ModelVersionEntity.builder().id(1L).modelId(1L).versionName("modelvname")
+                        .storagePath("model_path").evalJobs("stepspec").build())
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
                 .resourcePool("rp")
                 .build();
-        JobSwdsVersionMapper jobSwdsVersionMapper = mock(JobSwdsVersionMapper.class);
-        when(jobSwdsVersionMapper.listSwdsVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
-                SwDatasetVersionEntity.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
+        JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
+        when(jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
+                DatasetVersionEntity.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
                         .versionName("name_swds").build(),
-                SwDatasetVersionEntity.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")
+                DatasetVersionEntity.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")
                         .versionName("name_swds1").build()
         ));
 
-        SwModelPackageMapper swModelPackageMapper = mock(SwModelPackageMapper.class);
-        SwModelPackageEntity swModelPackageEntity = SwModelPackageEntity.builder().swmpName("name_swmp")
+        ModelMapper modelMapper = mock(ModelMapper.class);
+        ModelEntity modelEntity = ModelEntity.builder().modelName("name_model")
                 .build();
-        when(swModelPackageMapper.findSwModelPackageById(
-                jobEntity.getSwmpVersion().getSwmpId())).thenReturn(swModelPackageEntity);
+        when(modelMapper.findModelById(
+                jobEntity.getModelVersion().getModelId())).thenReturn(modelEntity);
 
         RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
         RuntimeVersionEntity runtimeVersionEntity = RuntimeVersionEntity.builder().versionName("name_swrt_version")
@@ -109,9 +107,9 @@ public class JobBoConverterTest {
         when(runtimeMapper.findRuntimeById(
                 runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
-        SwmpVersionConvertor swmpVersionConvertor = mock(SwmpVersionConvertor.class);
-        when(swmpVersionConvertor.convert(any())).thenReturn(
-                SwModelPackageVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
+        ModelVersionConvertor modelVersionConvertor = mock(ModelVersionConvertor.class);
+        when(modelVersionConvertor.convert(any())).thenReturn(
+                ModelVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
         StepConverter stepConverter = mock(StepConverter.class);
         given(stepConverter.fromEntity(any()))
                 .willAnswer(invocation -> {
@@ -129,10 +127,10 @@ public class JobBoConverterTest {
 
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool("rp")).thenReturn(ResourcePool.builder().name("fool").build());
-        JobBoConverter jobBoConverter = new JobBoConverter(jobSwdsVersionMapper, swModelPackageMapper, runtimeMapper,
+        JobBoConverter jobBoConverter = new JobBoConverter(jobDatasetVersionMapper, modelMapper, runtimeMapper,
                 runtimeVersionMapper,
-                swdsboConverter,
-                swmpVersionConvertor, systemSettingService,
+                converter,
+                modelVersionConvertor, systemSettingService,
                 stepMapper, stepConverter, taskMapper, taskBoConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
@@ -147,17 +145,17 @@ public class JobBoConverterTest {
         Assertions.assertEquals(runtimeEntity.getRuntimeName(), swrt.getName());
         Assertions.assertEquals(runtimeVersionEntity.getStoragePath(), swrt.getStoragePath());
 
-        SwModelPackage swmp = job.getSwmp();
-        Assertions.assertNotNull(swmp);
-        Assertions.assertEquals(jobEntity.getSwmpVersion().getVersionName(), swmp.getVersion());
-        Assertions.assertEquals(jobEntity.getSwmpVersion().getId(), swmp.getId());
-        Assertions.assertEquals(swModelPackageEntity.getSwmpName(), swmp.getName());
-        Assertions.assertEquals(jobEntity.getSwmpVersion().getStoragePath(), swmp.getPath());
-        Assertions.assertEquals(List.of(new StepSpec()), swmp.getStepSpecs());
+        Model model = job.getModel();
+        Assertions.assertNotNull(model);
+        Assertions.assertEquals(jobEntity.getModelVersion().getVersionName(), model.getVersion());
+        Assertions.assertEquals(jobEntity.getModelVersion().getId(), model.getId());
+        Assertions.assertEquals(modelEntity.getModelName(), model.getName());
+        Assertions.assertEquals(jobEntity.getModelVersion().getStoragePath(), model.getPath());
+        Assertions.assertEquals(List.of(new StepSpec()), model.getStepSpecs());
 
-        List<SwDataSet> swDataSets = job.getSwDataSets();
-        Assertions.assertNotNull(swDataSets);
-        Assertions.assertEquals(2, swDataSets.size());
+        List<DataSet> dataSets = job.getDataSets();
+        Assertions.assertNotNull(dataSets);
+        Assertions.assertEquals(2, dataSets.size());
 
         Assertions.assertEquals("fool", job.getResourcePool().getName());
 

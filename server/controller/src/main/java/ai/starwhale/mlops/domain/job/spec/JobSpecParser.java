@@ -54,7 +54,7 @@ public class JobSpecParser {
         List<StepSpec> specList = map.get(jobName);
         if (CollectionUtils.isEmpty(specList)) {
             log.error("step specification is empty for {}", yamlContent);
-            throw new SwValidationException(ValidSubject.SWMP);
+            throw new SwValidationException(ValidSubject.MODEL);
         }
         return specList;
     }

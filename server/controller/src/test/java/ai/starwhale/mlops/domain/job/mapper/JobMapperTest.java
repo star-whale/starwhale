@@ -20,12 +20,12 @@ import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
+import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.Date;
@@ -53,15 +53,15 @@ public class JobMapperTest extends MySqlContainerHolder {
     private ProjectMapper projectMapper;
 
     @Autowired
-    private SwModelPackageMapper swModelPackageMapper;
+    private ModelMapper modelMapper;
 
     @Autowired
-    private SwModelPackageVersionMapper swModelPackageVersionMapper;
+    private ModelVersionMapper modelVersionMapper;
 
     UserEntity user;
     ProjectEntity project;
-    SwModelPackageEntity swmp;
-    SwModelPackageVersionEntity swModelPackageVersionEntity;
+    ModelEntity model;
+    ModelVersionEntity modelVersionEntity;
     JobEntity jobPaused;
     JobEntity jobCreated;
 
@@ -72,11 +72,11 @@ public class JobMapperTest extends MySqlContainerHolder {
         project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(0)
                 .build();
         projectMapper.createProject(project);
-        swmp = SwModelPackageEntity.builder().swmpName("swmp").projectId(project.getId())
+        model = ModelEntity.builder().modelName("model").projectId(project.getId())
                 .ownerId(user.getId()).build();
-        swModelPackageMapper.addSwModelPackage(swmp);
-        swModelPackageVersionEntity = SwModelPackageVersionEntity.builder()
-                .swmpId(swmp.getId())
+        modelMapper.addModel(model);
+        modelVersionEntity = ModelVersionEntity.builder()
+                .modelId(model.getId())
                 .versionName("vn")
                 .ownerId(user.getId())
                 .evalJobs("stepSpec")
@@ -85,14 +85,14 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .storagePath("s")
                 .versionOrder(1L)
                 .build();
-        swModelPackageVersionMapper.addNewVersion(swModelPackageVersionEntity);
+        modelVersionMapper.addNewVersion(modelVersionEntity);
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
-                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .stepSpec("stepSpec1")
                 .projectId(project.getId()).ownerId(user.getId()).build();
         jobCreated = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
-                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(swModelPackageVersionEntity.getId())
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .stepSpec("stepSpec2")
                 .projectId(project.getId()).ownerId(user.getId()).build();
@@ -106,25 +106,25 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(2, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
-                        project, swModelPackageVersionEntity, jobEntity));
-        jobEntities = jobMapper.listJobs(project.getId(), swModelPackageVersionEntity.getId());
+                        project, modelVersionEntity, jobEntity));
+        jobEntities = jobMapper.listJobs(project.getId(), modelVersionEntity.getId());
         Assertions.assertEquals(2, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
-                        project, swModelPackageVersionEntity, jobEntity));
-        jobEntities = jobMapper.listJobs(project.getId(), swModelPackageVersionEntity.getId() + 1234L);
+                        project, modelVersionEntity, jobEntity));
+        jobEntities = jobMapper.listJobs(project.getId(), modelVersionEntity.getId() + 1234L);
         Assertions.assertIterableEquals(List.of(), jobEntities);
 
     }
 
     @Test
     public void testFindById() {
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+        validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
     }
 
     @Test
     public void testFindByUuId() {
-        validateJob(jobPaused, user, project, swModelPackageVersionEntity,
+        validateJob(jobPaused, user, project, modelVersionEntity,
                 jobMapper.findJobByUuid(jobPaused.getJobUuid()));
     }
 
@@ -132,19 +132,19 @@ public class JobMapperTest extends MySqlContainerHolder {
     public void testFindByStatusIn() {
         List<JobEntity> jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED));
         Assertions.assertEquals(1, jobEntities.size());
-        validateJob(jobPaused, user, project, swModelPackageVersionEntity, jobEntities.get(0));
+        validateJob(jobPaused, user, project, modelVersionEntity, jobEntities.get(0));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED));
         Assertions.assertEquals(2, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
-                        project, swModelPackageVersionEntity, jobEntity));
+                        project, modelVersionEntity, jobEntity));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED, JobStatus.FAIL));
         Assertions.assertEquals(2, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
-                        project, swModelPackageVersionEntity, jobEntity));
+                        project, modelVersionEntity, jobEntity));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.CANCELED));
         Assertions.assertEquals(0, jobEntities.size());
@@ -156,7 +156,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobMapper.updateJobStatus(List.of(jobCreated.getId()), JobStatus.SUCCESS);
         JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
         jobCreated.setJobStatus(JobStatus.SUCCESS);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+        validateJob(jobCreated, user, project, modelVersionEntity, jobById);
     }
 
     @Test
@@ -164,7 +164,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobMapper.updateJobFinishedTime(List.of(jobCreated.getId()), new Date());
         JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
         jobCreated.setFinishedTime(new Date());
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+        validateJob(jobCreated, user, project, modelVersionEntity, jobById);
     }
 
     @Test
@@ -173,7 +173,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobMapper.updateJobComment(jobCreated.getId(), comment);
         JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
         jobCreated.setComment(comment);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+        validateJob(jobCreated, user, project, modelVersionEntity, jobById);
     }
 
     @Test
@@ -182,30 +182,30 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobMapper.updateJobCommentByUuid(jobCreated.getJobUuid(), comment);
         JobEntity jobById = jobMapper.findJobById(jobCreated.getId());
         jobCreated.setComment(comment);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobById);
+        validateJob(jobCreated, user, project, modelVersionEntity, jobById);
     }
 
     @Test
     public void testRemoveJob() {
         jobMapper.removeJob(jobCreated.getId());
         jobCreated.setIsDeleted(1);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+        validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
 
         jobMapper.recoverJob(jobCreated.getId());
         jobCreated.setIsDeleted(0);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+        validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
 
         jobMapper.removeJobByUuid(jobCreated.getJobUuid());
         jobCreated.setIsDeleted(1);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+        validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
 
         jobMapper.recoverJobByUuid(jobCreated.getJobUuid());
         jobCreated.setIsDeleted(0);
-        validateJob(jobCreated, user, project, swModelPackageVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+        validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
     }
 
     private void validateJob(JobEntity expectedJob, UserEntity user, ProjectEntity project,
-            SwModelPackageVersionEntity swModelPackageVersionEntity, JobEntity jobEntity) {
+            ModelVersionEntity modelVersionEntity, JobEntity jobEntity) {
         Assertions.assertEquals(expectedJob.getId(), jobEntity.getId());
         Assertions.assertEquals(expectedJob.getJobStatus(), jobEntity.getJobStatus());
         Assertions.assertEquals(expectedJob.getType(), jobEntity.getType());
@@ -213,10 +213,10 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expectedJob.getProjectId(), jobEntity.getProjectId());
         Assertions.assertEquals(expectedJob.getResourcePool(), jobEntity.getResourcePool());
         Assertions.assertEquals(expectedJob.getRuntimeVersionId(), jobEntity.getRuntimeVersionId());
-        Assertions.assertEquals(expectedJob.getSwmpVersionId(), jobEntity.getSwmpVersionId());
+        Assertions.assertEquals(expectedJob.getModelVersionId(), jobEntity.getModelVersionId());
         Assertions.assertEquals(expectedJob.getJobUuid(), jobEntity.getJobUuid());
         Assertions.assertEquals(expectedJob.getDurationMs(), jobEntity.getDurationMs());
-        Assertions.assertEquals("swmp", jobEntity.getModelName());
+        Assertions.assertEquals("model", jobEntity.getModelName());
         Assertions.assertEquals(expectedJob.getStepSpec(), jobEntity.getStepSpec());
         Assertions.assertEquals(expectedJob.getComment(), jobEntity.getComment());
         Assertions.assertNotNull(jobEntity.getCreatedTime());
@@ -230,15 +230,15 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(null == expectedJob.getIsDeleted() ? 0 : expectedJob.getIsDeleted(),
                 jobEntity.getIsDeleted());
         validUser(user, jobEntity.getOwner());
-        validateSwModelPackageVersionEntity(swModelPackageVersionEntity, user, jobEntity.getSwmpVersion());
+        validateModelVersionEntity(modelVersionEntity, user, jobEntity.getModelVersion());
         validProject(project, user, jobEntity.getProject());
 
     }
 
-    private void validateSwModelPackageVersionEntity(SwModelPackageVersionEntity expected, UserEntity user,
-            SwModelPackageVersionEntity target) {
+    private void validateModelVersionEntity(ModelVersionEntity expected, UserEntity user,
+            ModelVersionEntity target) {
         Assertions.assertEquals(expected.getId(), target.getId());
-        Assertions.assertEquals(expected.getSwmpId(), target.getSwmpId());
+        Assertions.assertEquals(expected.getModelId(), target.getModelId());
         Assertions.assertEquals(expected.getOwnerId(), target.getOwnerId());
         Assertions.assertEquals(expected.getVersionName(), target.getVersionName());
         Assertions.assertEquals(expected.getStoragePath(), target.getStoragePath());
@@ -246,7 +246,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getManifest(), target.getManifest());
         Assertions.assertEquals(expected.getEvalJobs(), target.getEvalJobs());
         Assertions.assertNotNull(target.getVersionOrder());
-        Assertions.assertEquals("swmp", target.getSwmpName());
+        Assertions.assertEquals("model", target.getModelName());
         Assertions.assertEquals(expected.getName(), target.getName());
         validUser(user, target.getOwner());
     }

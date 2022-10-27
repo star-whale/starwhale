@@ -19,13 +19,13 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
-import ai.starwhale.mlops.api.protocol.swds.RevertSwdsRequest;
-import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
-import ai.starwhale.mlops.api.protocol.swds.SwdsTagRequest;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -71,15 +71,15 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Dataset Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
-            @Valid @RequestBody RevertSwdsRequest revertRequest);
+            String datasetUrl,
+            @Valid @RequestBody RevertDatasetRequest revertRequest);
 
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -122,27 +122,27 @@ public interface DatasetApi {
                             content =
                             @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = SwDatasetInfoVo.class)))
+                                    schema = @Schema(implementation = DatasetInfoVo.class)))
             })
     @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<SwDatasetInfoVo>> getDatasetInfo(
+    ResponseEntity<ResponseMessage<DatasetInfoVo>> getDatasetInfo(
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.QUERY,
                     description = "Dataset versionUrl. "
                             + "(Return the current version as default when the versionUrl is not set.)",
                     schema = @Schema())
             @Valid
             @RequestParam(value = "versionUrl", required = false)
-                    String versionUrl);
+            String versionUrl);
 
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
@@ -210,8 +210,8 @@ public interface DatasetApi {
             @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile dsFile,
             UploadRequest uploadRequest);
 
-    @Operation(summary = "Pull SWDS files",
-            description = "Pull SWDS files part by part. ")
+    @Operation(summary = "Pull Dataset files",
+            description = "Pull Dataset files part by part. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/file",
@@ -225,8 +225,8 @@ public interface DatasetApi {
             @RequestParam(name = "part_name", required = false) String partName,
             HttpServletResponse httpResponse);
 
-    @Operation(summary = "Pull SWDS uri file contents",
-            description = "Pull SWDS uri file contents ")
+    @Operation(summary = "Pull Dataset uri file contents",
+            description = "Pull Dataset uri file contents ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link",
@@ -257,14 +257,14 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl,
-            @Valid @RequestBody SwdsTagRequest swdsTagRequest);
+            String versionUrl,
+            @Valid @RequestBody DatasetTagRequest datasetTagRequest);
 
     @Operation(
             summary = "Manage tag of the dataset version",
@@ -279,14 +279,14 @@ public interface DatasetApi {
                     description = "Project url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl,
-            @Valid @RequestBody SwdsTagRequest swdsTagRequest);
+            String versionUrl,
+            @Valid @RequestBody DatasetTagRequest datasetTagRequest);
 
     @Operation(summary = "Get the list of the datasets")
     @ApiResponses(
@@ -307,22 +307,22 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.QUERY, description = "Dataset versionId", schema = @Schema())
             @Valid
             @RequestParam(value = "versionId", required = false)
-                    String versionId,
+            String versionId,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
-    @Operation(summary = "head for swds info ",
-            description = "head for swds info")
+    @Operation(summary = "head for dataset info ",
+            description = "head for dataset info")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}",

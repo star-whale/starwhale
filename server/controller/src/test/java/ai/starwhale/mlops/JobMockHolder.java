@@ -17,15 +17,15 @@
 package ai.starwhale.mlops;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.LinkedList;
@@ -42,7 +42,7 @@ public class JobMockHolder {
 
         String jobuuid = UUID.randomUUID().toString();
         String jobDir = storagePathCoordinator.allocateResultMetricsPath(jobuuid);
-        String swdsPath = storagePathCoordinator.allocateSwdsPath("projectname1", "swds1", "versionswds1");
+        String datasetPath = storagePathCoordinator.allocateDatasetPath("projectname1", "swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
                 .id(atomicLong.incrementAndGet())
@@ -50,10 +50,10 @@ public class JobMockHolder {
                 .jobRuntime(
                         JobRuntime.builder().name("runtime1").version("version1").storagePath(jobDir)
                                 .build())
-                .swmp(SwModelPackage.builder().id(1L).name("swmp1").version("versionsmp1")
-                        .path(storagePathCoordinator.allocateSwmpPath("project1", "swmp1", "versionsmp1")).build())
-                .swDataSets(List.of(SwDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
-                        swdsPath).size(1024L).build()))
+                .model(Model.builder().id(1L).name("swmp1").version("versionsmp1")
+                        .path(storagePathCoordinator.allocateModelPath("project1", "swmp1", "versionsmp1")).build())
+                .dataSets(List.of(DataSet.builder().id(1L).name("swds1").version("versionswds1").path(
+                        datasetPath).size(1024L).build()))
                 .status(JobStatus.RUNNING)
                 .type(JobType.EVALUATION)
                 .steps(steps)
