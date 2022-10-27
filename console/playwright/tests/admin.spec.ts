@@ -30,6 +30,7 @@ test.describe('Login', () => {
     })
 
     test('logined, check homepage & token', async ({}) => {
+        await page.waitForURL(/\/projects/)
         await expect(page).toHaveURL(/\/projects/)
         expect(await page.evaluate(() => localStorage.getItem('token'))).not.toBe('')
     })
@@ -59,7 +60,8 @@ test.describe('Admin', () => {
         })
 
         test('should new user be success added & showing in list', async () => {
-            test.skip(!!(await page.$$(`tr:has-text("${CONST.newUserName}")`)), 'user exists, skip')
+            const user = await page.$$(`tr:has-text("${CONST.newUserName}")`)
+            test.skip(user.length > 0, 'user exists, skip')
 
             await page.getByText(/Add User/).click()
             await page.locator(SELECTOR.formItem('Username')).locator('input').fill(CONST.newUserName)
@@ -105,7 +107,7 @@ test.describe('Admin', () => {
         test.beforeAll(async ({ request }) => {
             const token = await page.evaluate(() => localStorage.getItem('token'))
             const resp = await request.post('/api/v1/system/setting', {
-                data: '---\ndockerSetting:\n registry: "abcd.com"\n',
+                data: '---\ndockerSetting:\n registry: "docker-registry.starwhale.ai"\nresourcePoolSetting: []',
                 headers: {
                     'Content-Type': 'text/plain',
                     'Authorization': token as string,
@@ -117,7 +119,7 @@ test.describe('Admin', () => {
 
         test('should show system settings', async ({}) => {
             await page.waitForSelector('.monaco-editor')
-            expect(page.locator('.view-lines')).toHaveText('---dockerSetting:  registry: "abcd.com"')
+            expect(page.locator('.view-lines')).toHaveText(/docker\-registry\.starwhale\.ai/)
         })
 
         test('should setting be successful updated', async ({}) => {

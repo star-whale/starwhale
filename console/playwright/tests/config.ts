@@ -75,7 +75,7 @@ export const SELECTOR = {
     formItem: (text: string) => `[class*=formItem]:has(:has-text("${text}")) > div`,
     // --- user form ---
     userForm: 'form[class*=user]',
-    userSubmit: 'form[class^=user] >> button:has-text("Submit")',
+    userSubmit: 'form[class*=user] >> button:has-text("Submit")',
     userClose: 'role=button[name="Close"]',
     userDisableConfirm: 'role=button[name="Continue"]',
 }
