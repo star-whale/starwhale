@@ -263,19 +263,19 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl-1",
-                        resources={},
+                        resources=[],
                         needs=["cmp"],
                     ),
                     Step(
                         job_name="default",
                         step_name="ppl-2",
-                        resources={},
+                        resources=[],
                         needs=["ppl-1"],
                     ),
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources={},
+                        resources=[],
                         needs=["ppl-2"],
                     ),
                 ]
@@ -286,19 +286,19 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl-1",
-                    resources={},
+                    resources=[],
                     needs=[],
                 ),
                 Step(
                     job_name="default",
                     step_name="ppl-2",
-                    resources={},
+                    resources=[],
                     needs=["ppl-1"],
                 ),
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources={},
+                    resources=[],
                     needs=["ppl-2"],
                 ),
             ]
@@ -394,7 +394,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="ppl",
-                        resources={"cpu": 1},
+                        resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
                         task_num=2,
                         # cycle point
@@ -403,7 +403,7 @@ class JobTestCase(TestCase):
                     Step(
                         job_name="default",
                         step_name="cmp",
-                        resources={"cpu": 1},
+                        resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
                         task_num=2,
                         needs=["ppl"],
@@ -427,7 +427,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="ppl",
-                    resources={"cpu": 1},
+                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
                     task_num=2,
                     needs=[],
@@ -435,7 +435,7 @@ class JobTestCase(TestCase):
                 Step(
                     job_name="default",
                     step_name="cmp",
-                    resources={"cpu": 1},
+                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
                     task_num=1,
                     needs=["ppl"],
