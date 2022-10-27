@@ -33,7 +33,7 @@ public class UserStorageAuthEnv {
     static final String NAME_DEFAULT = "";
 
     static final Pattern LINE_PATTERN = Pattern.compile(
-            "^(USER\\.(S3|ALIYUN|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w*)$");
+            "^(USER\\.(S3|ALIYUN|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(.*)$");
 
     public UserStorageAuthEnv(String authsText) {
         String[] lines = authsText.split("\n");
