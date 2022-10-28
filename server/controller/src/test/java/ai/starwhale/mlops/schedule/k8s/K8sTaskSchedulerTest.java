@@ -213,9 +213,6 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_TOKEN", "tt");
             expectedEnvs.put("SW_INSTANCE_URI", "http://instanceUri");
             expectedEnvs.put("SW_TASK_STEP", "cmp");
-            expectedEnvs.put("ENVS4", "envS4V");
-            expectedEnvs.put(StorageEnv.ENV_KEY_PREFIX, "swds_path");
-            expectedEnvs.put(StorageEnv.ENV_TYPE, "S3");
             expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));

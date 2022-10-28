@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import os
 import json
-import requests
 import shutil
 import typing as t
 from abc import ABCMeta, abstractmethod
@@ -11,12 +10,17 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import boto3
+import requests
 from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
-from starwhale.consts import SWDSBackendType, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME, HTTPMethod
-from starwhale.base.cloud import CloudRequestMixed
+from starwhale.consts import (
+    HTTPMethod,
+    SWDSBackendType,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     ensure_dir,
@@ -24,7 +28,8 @@ from starwhale.utils.fs import (
     FilePosition,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.type import URIType, BundleType
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.store import BaseStorage
 from starwhale.utils.error import (
     FormatError,
@@ -316,13 +321,18 @@ class ObjectStore:
     def from_dataset_uri(cls, dataset_uri: URI) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
-        return cls(backend=SWDSBackendType.LocalFS, bucket=str(DatasetStorage(dataset_uri).data_dir.absolute()))
+        return cls(
+            backend=SWDSBackendType.LocalFS,
+            bucket=str(DatasetStorage(dataset_uri).data_dir.absolute()),
+        )
 
     @classmethod
     def from_remote_dataset(cls, dataset_uri: URI, auth_name: str) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
-        return cls(backend=SWDSBackendType.SignedUrl, bucket=auth_name, dataset_uri=dataset_uri)
+        return cls(
+            backend=SWDSBackendType.SignedUrl, bucket=auth_name, dataset_uri=dataset_uri
+        )
 
 
 class StorageBackend(metaclass=ABCMeta):
