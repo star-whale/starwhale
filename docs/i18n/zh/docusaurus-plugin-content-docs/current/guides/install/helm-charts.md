@@ -104,3 +104,64 @@ helm install $SWNAME . -n $SWNS --create-namespace \
     --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
     --set minio.persistence.storageClass=$SWNAME-minio
 ```
+
+### 6.6 ServiceAccount
+
+为了 Starwhale Controller 能够在 K8s 集群上正常运行，我们需要给 Controller 配置 ServiceAccount，并且分配足够的权限，目前需要的权限列表如下（以RBAC为例）
+
+| Resource | API Group | Get | List | Watch | Create | Delete |
+|----------|-----------|-----|------|-------|--------|--------|
+| jobs     | batch     | Y   | Y    | Y     | Y      | Y      |
+| pods     | core      | Y   | Y    | Y     |        |        |
+| nodes    | core      | Y   | Y    | Y     |        |        |
+| events   | ""        | Y   |      |       |        |        |
+
+示例编排如下
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "batch"
+  resources:
+  - jobs
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - watch
+  - list
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-role
+subjects:
+- kind: ServiceAccount
+  name: test-sa
+```
