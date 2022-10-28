@@ -5,7 +5,6 @@ import sys
 import math
 import typing as t
 from abc import ABCMeta, abstractmethod
-from urllib.parse import urlparse
 
 import loguru
 from loguru import logger as _logger
