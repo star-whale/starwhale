@@ -277,6 +277,7 @@ class ObjectStore:
         self,
         backend: str,
         bucket: str,
+        dataset_uri: URI = URI(""),
         key_prefix: str = "",
         **kw: t.Any,
     ) -> None:
@@ -287,7 +288,7 @@ class ObjectStore:
             conn = kw.get("conn") or S3Connection.from_env()
             self.backend = S3StorageBackend(conn)
         elif backend == SWDSBackendType.SignedUrl:
-            self.backend = SignedUrlBackend(kw.get("dataset_uri"))
+            self.backend = SignedUrlBackend(dataset_uri)
         else:
             self.backend = LocalFSStorageBackend()
 
@@ -348,7 +349,7 @@ class StorageBackend(metaclass=ABCMeta):
     __repr__ = __str__
 
     @abstractmethod
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
         raise NotImplementedError
 
 
@@ -377,7 +378,7 @@ class S3StorageBackend(StorageBackend):
             region_name=conn.region,
         )
 
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
         # TODO: merge connections for s3
         _key, _start, _end = key_compose
         return S3BufferedFileLike(
@@ -393,7 +394,7 @@ class LocalFSStorageBackend(StorageBackend):
     def __init__(self) -> None:
         super().__init__(kind=SWDSBackendType.LocalFS)
 
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
         _key, _start, _end = key_compose
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
@@ -413,7 +414,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         super().__init__(kind=SWDSBackendType.SignedUrl)
         self.dataset_uri = dataset_uri
 
-    def _make_file(self, auth: str, key_compose: str) -> FileLikeObj:
+    def _make_file(self, auth: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
         _key, _start, _end = key_compose
         url = self.sign_uri(_key, auth)
         headers = {}
@@ -422,7 +423,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         r = requests.get(url, headers=headers)
         return io.BytesIO(r.content)
 
-    def sign_uri(self, uri: str, auth_name: str) -> str:
+    def sign_uri(self, uri: str, auth_name: str) -> t.Any:
         r = self.do_http_request(
             f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-link",
             method=HTTPMethod.GET,
