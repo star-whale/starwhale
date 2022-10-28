@@ -66,7 +66,7 @@ class DataLoader(metaclass=ABCMeta):
         self._stores[_k] = _store
         return _store
 
-    def _get_key_compose(self, row: TabularDatasetRow, store: ObjectStore) -> str:
+    def _get_key_compose(self, row: TabularDatasetRow, store: ObjectStore) -> t.Tuple[str, int, int]:
         if row.object_store_type == ObjectStoreType.REMOTE:
             data_uri = row.data_uri
         else:
