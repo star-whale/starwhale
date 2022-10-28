@@ -33,6 +33,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
@@ -58,6 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -350,5 +352,18 @@ public class DatasetControllerTest {
 
         resp = controller.headDataset("p2", "d1", "v1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testSignLink() {
+        String pj = "pj";
+        String ds = "ds";
+        String v = "v";
+        String uri = "uri";
+        String auth = "auth";
+        when(swdsService.query(pj, ds, v)).thenReturn(SwDatasetVersionEntity.builder().id(1L).build());
+        String signUrl = "sign-url";
+        when(swdsService.signLink(1L, uri, auth, 100L)).thenReturn(signUrl);
+        Assertions.assertEquals(signUrl, controller.signLink(pj, ds, v, uri, auth, 100L).getBody().getData());
     }
 }
