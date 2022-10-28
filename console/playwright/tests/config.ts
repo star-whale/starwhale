@@ -3,11 +3,11 @@ export const CONFIG = {
 }
 export const USERS = [
     { role: 'admin', username: 'starwhale', password: 'abcd1234' },
-    { role: 'maintainer', username: 'lwzlwz', password: 'abcd1234' },
+    { role: 'maintainer', username: 'lwz1', password: 'abcd1234' },
 ]
 export const CONST = {
     user: {
-        userName: 'lwzlwz',
+        userName: 'lwz1',
         projectName: 'e2e',
         projectDescription: 'testing',
     },

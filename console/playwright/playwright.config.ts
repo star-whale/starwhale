@@ -2,6 +2,7 @@ import type { PlaywrightTestConfig } from '@playwright/test'
 import { devices } from '@playwright/test'
 import * as fse from 'fs-extra'
 
+// process.env.PROXY = 'http://e2e.pre.intra.starwhale.ai/'
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv

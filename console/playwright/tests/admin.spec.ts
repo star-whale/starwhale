@@ -38,8 +38,8 @@ test.describe('Login', () => {
     test('header show have admin settings', async ({}) => {
         await page.hover(SELECTOR.userWrapper)
         await expect(page.locator(SELECTOR.authAdminSetting).first()).toBeVisible()
-        // await page.mouse.move(0, 0)
         await page.locator(SELECTOR.authAdminSetting).first().click()
+        await page.mouse.move(0, 0)
         await expect(page).toHaveURL(ROUTES.adminUsers)
     })
 })

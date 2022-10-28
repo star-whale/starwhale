@@ -27,6 +27,7 @@ test.describe('Login', () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
     test('default route should be projects', async ({}) => {
+        await page.waitForURL(/\/projects/)
         await expect(page).toHaveURL(/\/projects/)
     })
 
@@ -182,7 +183,7 @@ test.describe('Evaluation', () => {
             await p.locator(SELECTOR.row2column1).locator('label').check()
             await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
             await wait(1000)
-            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-/)
+            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist/)
             await wait(1000)
             await expect(await page.locator('.cell--neq').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
@@ -204,7 +205,7 @@ test.describe('Evaluation Create', () => {
         await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
         await selectOption(page, SELECTOR.formItem('Model Name'), 'mnist')
         await selectOption(page, SELECTOR.formItem('Dataset Name'), 'mnist')
-        await selectOption(page, SELECTOR.formItem('Runtime'), 'pytorch-mnist')
+        await selectOption(page, SELECTOR.formItem('Runtime'), 'pytorch')
         const versions = page.locator(SELECTOR.formItem('Version'))
         const count = await versions.count()
         for (let i = 0; i < count; i++) {
@@ -307,7 +308,7 @@ test.describe('Models', () => {
             if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
         })
 
-        test('should have 1 model', async () => {
+        test('should have 1 model of mnist', async () => {
             await expect(page.locator('td').getByText('mnist')).toHaveCount(1)
         })
 

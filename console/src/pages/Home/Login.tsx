@@ -8,7 +8,6 @@ import { useHistory } from 'react-router-dom'
 import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
 import { useAuth } from '@/api/Auth'
-import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
 
@@ -32,82 +31,80 @@ export default function Login() {
     )
 
     return (
-        <LoginLayout>
+        <div
+            style={{
+                display: 'flex',
+                width: '100%',
+                height: '100%',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                position: 'relative',
+                top: '-100px',
+            }}
+        >
             <div
                 style={{
                     display: 'flex',
-                    width: '100%',
-                    height: '100%',
-                    flexDirection: 'row',
+                    flexDirection: 'column',
                     justifyContent: 'center',
-                    position: 'relative',
-                    top: '-100px',
                 }}
             >
-                <div
+                <Card
                     style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
+                        padding: '40px 60px',
+                        width: 420,
+                    }}
+                    bodyStyle={{
+                        padding: 0,
+                        borderRadius: 12,
+                        boxShadow: 'none',
                     }}
                 >
-                    <Card
-                        style={{
-                            padding: '40px 60px',
-                            width: 420,
-                        }}
-                        bodyStyle={{
-                            padding: 0,
-                            borderRadius: 12,
-                            boxShadow: 'none',
-                        }}
-                    >
-                        <Form onFinish={handleFinish}>
-                            <div
-                                style={{
-                                    fontSize: '28px',
-                                    fontWeight: 600,
-                                    lineHeight: '28px',
-                                    marginBottom: '40px',
+                    <Form onFinish={handleFinish}>
+                        <div
+                            style={{
+                                fontSize: '28px',
+                                fontWeight: 600,
+                                lineHeight: '28px',
+                                marginBottom: '40px',
+                            }}
+                        >
+                            {t('LOGIN')}
+                        </div>
+                        <FormItem name='userName' label={t('Username')}>
+                            <Input startEnhancer={<IconFont type='user' kind='gray' />} />
+                        </FormItem>
+                        <FormItem name='userPwd' label={t('Password')}>
+                            <Input
+                                startEnhancer={<IconFont type='password' kind='gray' />}
+                                overrides={{
+                                    MaskToggleHideIcon: () => <IconFont type='eye_off' kind='gray' />,
+                                    MaskToggleShowIcon: () => <IconFont type='eye' kind='gray' />,
                                 }}
-                            >
-                                {t('LOGIN')}
-                            </div>
-                            <FormItem name='userName' label={t('Username')}>
-                                <Input startEnhancer={<IconFont type='user' kind='gray' />} />
-                            </FormItem>
-                            <FormItem name='userPwd' label={t('Password')}>
-                                <Input
-                                    startEnhancer={<IconFont type='password' kind='gray' />}
+                                type='password'
+                            />
+                        </FormItem>
+                        <FormItem>
+                            <div style={{ display: 'flex', marginTop: '40px' }}>
+                                <Button
+                                    isFull
+                                    isLoading={isLoading}
                                     overrides={{
-                                        MaskToggleHideIcon: () => <IconFont type='eye_off' kind='gray' />,
-                                        MaskToggleShowIcon: () => <IconFont type='eye' kind='gray' />,
-                                    }}
-                                    type='password'
-                                />
-                            </FormItem>
-                            <FormItem>
-                                <div style={{ display: 'flex', marginTop: '40px' }}>
-                                    <Button
-                                        isFull
-                                        isLoading={isLoading}
-                                        overrides={{
-                                            BaseButton: {
-                                                style: {
-                                                    height: '40px',
-                                                    fontSize: '16px',
-                                                },
+                                        BaseButton: {
+                                            style: {
+                                                height: '40px',
+                                                fontSize: '16px',
                                             },
-                                        }}
-                                    >
-                                        {t('login')}
-                                    </Button>
-                                </div>
-                            </FormItem>
-                        </Form>
-                    </Card>
-                </div>
+                                        },
+                                    }}
+                                >
+                                    {t('login')}
+                                </Button>
+                            </div>
+                        </FormItem>
+                    </Form>
+                </Card>
             </div>
-        </LoginLayout>
+        </div>
     )
 }
