@@ -1,5 +1,6 @@
 import os
 import shutil
+from http import HTTPStatus
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -13,7 +14,7 @@ from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectS
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,
-    S3StorageBackend,
+    SignedUrlBackend,
     LocalFSStorageBackend,
 )
 from starwhale.core.dataset.tabular import TabularDatasetRow
@@ -227,8 +228,15 @@ class TestDataLoader(TestCase):
     @patch("starwhale.core.dataset.store.boto3.resource")
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    @patch("requests.get")
+    @patch("requests.request")
     def test_swds_bin_s3(
-        self, m_scan: MagicMock, m_summary: MagicMock, m_boto3: MagicMock
+        self,
+        m_request: MagicMock,
+        m_get: MagicMock,
+        m_scan: MagicMock,
+        m_summary: MagicMock,
+        m_boto3: MagicMock,
     ) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,
@@ -266,7 +274,6 @@ class TestDataLoader(TestCase):
         os.environ.update(
             {
                 "SW_S3_BUCKET": "starwhale",
-                "SW_OBJECT_STORE_KEY_PREFIX": f"project/self/dataset/mnist/version/11/{version}",
                 "SW_S3_ENDPOINT": "starwhale.mock:9000",
                 "SW_S3_ACCESS_KEY": "foo",
                 "SW_S3_SECRET": "bar",
@@ -276,6 +283,14 @@ class TestDataLoader(TestCase):
         with open(os.path.join(self.swds_dir, fname), "rb") as f:
             swds_content = f.read(-1)
 
+        m_request.return_value = MagicMock(
+            **{"status_code": HTTPStatus.OK, "data": "a"}
+        )
+        m_get.return_value = MagicMock(
+            **{
+                "content": swds_content,
+            }
+        )
         m_boto3.return_value = MagicMock(
             **{
                 "Object.return_value": MagicMock(
@@ -301,18 +316,11 @@ class TestDataLoader(TestCase):
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend
-        assert isinstance(backend, S3StorageBackend)
-        assert backend.kind == SWDSBackendType.S3
-        assert backend.s3.Object.call_args[0] == (
-            "starwhale",
-            f"project/self/dataset/mnist/version/11/{version}/{fname}",
-        )
+        assert isinstance(backend, SignedUrlBackend)
+        assert backend.kind == SWDSBackendType.SignedUrl
 
-        assert loader._stores["local."].bucket == "starwhale"
-        assert (
-            loader._stores["local."].key_prefix
-            == f"project/self/dataset/mnist/version/11/{version}"
-        )
+        assert loader._stores["local."].bucket == ""
+        assert loader._stores["local."].key_prefix == ""
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")

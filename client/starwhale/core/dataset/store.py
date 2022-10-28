@@ -349,7 +349,9 @@ class StorageBackend(metaclass=ABCMeta):
     __repr__ = __str__
 
     @abstractmethod
-    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
         raise NotImplementedError
 
 
@@ -378,7 +380,9 @@ class S3StorageBackend(StorageBackend):
             region_name=conn.region,
         )
 
-    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
         # TODO: merge connections for s3
         _key, _start, _end = key_compose
         return S3BufferedFileLike(
@@ -394,7 +398,9 @@ class LocalFSStorageBackend(StorageBackend):
     def __init__(self) -> None:
         super().__init__(kind=SWDSBackendType.LocalFS)
 
-    def _make_file(self, bucket: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
         _key, _start, _end = key_compose
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
