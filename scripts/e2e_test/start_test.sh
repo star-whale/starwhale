@@ -211,7 +211,7 @@ client_test() {
   rm -rf venv*
   pushd ../
   python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip
-  python3 scripts/client_test/cli_test.py simple
+  python3 scripts/client_test/cli_test.py mnist
   scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER
   popd
   popd
