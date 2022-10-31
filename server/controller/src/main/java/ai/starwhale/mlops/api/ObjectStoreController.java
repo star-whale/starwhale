@@ -26,12 +26,14 @@ import java.io.InputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @RequestMapping("/")
+@ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
 public class ObjectStoreController implements ObjectStoreApi {
 
     private final StorageAccessService storageAccessService;
