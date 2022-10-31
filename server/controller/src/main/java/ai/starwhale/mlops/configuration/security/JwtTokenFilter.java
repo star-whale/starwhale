@@ -93,19 +93,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         Set<Role> roles = sysRoles.stream().filter(
                 role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
         // Get project roles
-        String projectUrl = httpServletRequest.getParameter("project");
-        if (StrUtil.isEmpty(projectUrl)) {
-            projectUrl = httpServletRequest.getParameter("projectUrl");
-        }
-        if (StrUtil.isEmpty(projectUrl)) {
-            projectUrl = HttpUtil.getResourceUrlFromPath(httpServletRequest.getRequestURI(), Resources.PROJECT);
-        }
-        if (StrUtil.isEmpty(projectUrl)) {
-            projectUrl = "0";
-        }
+
         try {
-            List<Role> rolesOfUser = userService.getProjectRolesOfUser(user,
-                    projectUrl);
+            Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user,
+                    (Set<String>) httpServletRequest.getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT));
             roles.addAll(rolesOfUser);
         } catch (StarwhaleApiException e) {
             logger.error(e.getMessage());

@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -135,6 +136,19 @@ public class UserService implements UserDetailsService {
         }
 
         return list;
+    }
+
+    public Set<Role> getProjectsRolesOfUser(User user, Set<String> projects) {
+        if (projects.isEmpty()) {
+            return Set.of();
+        }
+        String anyProject = projects.stream().findAny().get();
+        Set<Role> projectRolesOfUser = this.getProjectRolesOfUser(user, anyProject).stream()
+                .collect(Collectors.toSet());
+        projects.forEach(pj -> {
+            projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, anyProject));
+        });
+        return projectRolesOfUser;
     }
 
     public UserVo currentUser() {
