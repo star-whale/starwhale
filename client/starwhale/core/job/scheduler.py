@@ -89,7 +89,7 @@ class Scheduler:
                 break
         return _results
 
-    def schedule_single_step(self, step_name: str) -> StepResult:
+    def schedule_single_step(self, step_name: str, task_num: int = 0) -> StepResult:
         _step = self._steps[step_name]
         if not _step:
             raise RuntimeError(f"step:{step_name} not found")
@@ -100,6 +100,7 @@ class Scheduler:
             module=self.module,
             workdir=self.workdir,
             version=self.version,
+            task_num=task_num,
         )
         start_time = time.time()
         _result = _step_executor.execute()
