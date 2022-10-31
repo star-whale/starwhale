@@ -26,14 +26,14 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
@@ -149,12 +149,12 @@ public class K8sTaskSchedulerTest {
     private Task mockTask() {
         Job job = Job.builder()
                 .id(1L)
-                .swmp(SwModelPackage.builder().path("path_swmp").build())
+                .model(Model.builder().path("path_swmp").build())
                 .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
                 .type(JobType.EVALUATION)
                 .uuid("juuid")
-                .swDataSets(
-                        List.of(SwDataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
+                .dataSets(
+                        List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).fileStorageEnvs(Map.of("FS",
                                         new StorageEnv(StorageEnvType.S3).add("envS4", "envS4V"))).build()))
                 .stepSpec("")

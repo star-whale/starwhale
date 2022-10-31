@@ -74,17 +74,17 @@ public class StoragePathCoordinator {
     /**
      * @return consistency of path is guaranteed among multiple method calls
      */
-    public String allocateSwdsPath(String projectName, String swdsName, String swdsVersion) {
-        checkKeyWord(swdsVersion, ValidSubject.SWDS);
-        return allocateBundlePath(projectName, BUNDLE_DATASET, swdsName, swdsVersion);
+    public String allocateDatasetPath(String projectName, String datasetName, String datasetVersion) {
+        checkKeyWord(datasetVersion, ValidSubject.DATASET);
+        return allocateBundlePath(projectName, BUNDLE_DATASET, datasetName, datasetVersion);
     }
 
     /**
      * @return consistency of path is guaranteed among multiple method calls
      */
-    public String allocateSwmpPath(String projectName, String swmpName, String swmpVersion) {
-        checkKeyWord(swmpVersion, ValidSubject.SWMP);
-        return allocateBundlePath(projectName, BUNDLE_MODEL, swmpName, swmpVersion);
+    public String allocateModelPath(String projectName, String modelName, String modelVersion) {
+        checkKeyWord(modelVersion, ValidSubject.MODEL);
+        return allocateBundlePath(projectName, BUNDLE_MODEL, modelName, modelVersion);
     }
 
     public String allocateRuntimePath(String projectName, String runtimeName,

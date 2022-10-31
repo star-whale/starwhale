@@ -17,12 +17,12 @@
 package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.common.TimeConcern;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import java.util.List;
 import java.util.Objects;
@@ -53,12 +53,12 @@ public class Job extends TimeConcern {
     /**
      * the SWDSs to run on
      */
-    List<SwDataSet> swDataSets;
+    List<DataSet> dataSets;
 
     /**
-     * SWMP to be run
+     * Model to be run
      */
-    SwModelPackage swmp;
+    Model model;
 
     /**
      * runtime info of the job

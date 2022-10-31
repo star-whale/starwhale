@@ -125,7 +125,7 @@
     COALESCE(c4.count_jobs,0)
     from project_info as p
     left join
-    (select count(*) as count_model, project_id from swmp_info group by project_id) as c1
+    (select count(*) as count_model, project_id from model_info group by project_id) as c1
     on p.id = c1.project_id
     left join
     (select count(*) as count_dataset, project_id from dataset_info group by project_id) as c2

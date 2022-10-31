@@ -19,8 +19,8 @@ package ai.starwhale.mlops.domain.job.po;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -47,9 +47,9 @@ public class JobEntity extends BaseEntity {
 
     private ProjectEntity project;
 
-    private Long swmpVersionId;
+    private Long modelVersionId;
 
-    private SwModelPackageVersionEntity swmpVersion;
+    private ModelVersionEntity modelVersion;
 
     private Long ownerId;
 

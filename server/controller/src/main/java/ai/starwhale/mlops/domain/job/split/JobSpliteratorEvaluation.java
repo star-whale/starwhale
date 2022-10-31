@@ -102,13 +102,13 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         List<StepSpec> stepSpecs;
         try {
             if (!StringUtils.hasText(job.getStepSpec())) {
-                stepSpecs = jobSpecParser.parseStepFromYaml(job.getSwmpVersion().getEvalJobs());
+                stepSpecs = jobSpecParser.parseStepFromYaml(job.getModelVersion().getEvalJobs());
             } else {
                 stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
             }
         } catch (JsonProcessingException e) {
             log.error("parsing step specification error", e);
-            throw new SwValidationException(ValidSubject.SWMP);
+            throw new SwValidationException(ValidSubject.MODEL);
         }
 
         List<StepEntity> stepEntities = new ArrayList<>();

@@ -14,14 +14,14 @@
     select * from (select j.id as job_id,
     j.job_uuid,
     j.project_id,
-    j.swmp_version_id,
+    j.model_version_id,
     j.owner_id,
     j.created_time as job_created_time,
     j.finished_time as job_finished_time,
     j.duration_ms as job_duration_ms,
     j.job_status,
     j.job_type,
-    j.swrt_version_id as swrt_version_id,
+    j.runtime_version_id as runtime_version_id,
     j.result_output_path as job_result_output_path,
     j.step_spec,
     j.job_comment,
@@ -38,7 +38,7 @@
     u.created_time as user_created_time,
     u.modified_time as user_modified_time,
     mv.id as mv_id,
-    mv.swmp_id,
+    mv.model_id,
     mv.version_name as mv_version_name,
     mv.eval_jobs as mv_eval_jobs,
     mv.version_tag as mv_version_tag,
@@ -48,16 +48,16 @@
     mv.storage_path as mv_storage_path,
     mv.manifest as mv_manifest,
     mv.version_order as mv_version_order,
-    m.swmp_name as swmp_name
+    m.model_name as model_name
     from job_info as j,
     user_info as u,
     project_info as p,
-    swmp_version as mv,
-    swmp_info as m
+    model_version as mv,
+    model_info as m
     where u.id = j.owner_id
     and p.id = j.project_id
-    and mv.id = j.swmp_version_id
-    and m.id = mv.swmp_id) as j2
+    and mv.id = j.model_version_id
+    and m.id = mv.model_id) as j2
   </sql>
 
   <select id="listJobs" resultMap="jobResultMap">
@@ -66,8 +66,8 @@
       and job_is_deleted = 0
       and project_id = #{projectId}
     </where>
-    <if test="swmpId != null and swmpId != ''">
-      and swmp_version_id = #{swmpId}
+    <if test="modelId != null and modelId != ''">
+      and model_version_id = #{modelId}
     </if>
     order by job_id desc
   </select>
@@ -148,18 +148,18 @@
     useGeneratedKeys="true" keyProperty="id">
     insert into job_info(job_uuid,
     project_id,
-    swmp_version_id,
+    model_version_id,
     owner_id,
     finished_time,
     job_status,
     job_type,
-    swrt_version_id,
+    runtime_version_id,
     result_output_path,
     step_spec,
     resource_pool)
     values (#{job.jobUuid},
     #{job.projectId},
-    #{job.swmpVersionId},
+    #{job.modelVersionId},
     #{job.ownerId},
     #{job.finishedTime},
     #{job.jobStatus},
@@ -175,8 +175,8 @@
     <id property="id" column="job_id"/>
     <result property="jobUuid" column="job_uuid"/>
     <result property="projectId" column="project_id"/>
-    <result property="modelName" column="swmp_name"/>
-    <result property="swmpVersionId" column="swmp_version_id"/>
+    <result property="modelName" column="model_name"/>
+    <result property="modelVersionId" column="model_version_id"/>
     <result property="ownerId" column="owner_id"/>
     <result property="createdTime" column="job_created_time"/>
     <result property="finishedTime" column="job_finished_time"/>
@@ -187,12 +187,12 @@
     <result property="stepSpec" column="step_spec"/>
     <result property="comment" column="job_comment"/>
     <result property="isDeleted" column="job_is_deleted"/>
-    <result property="runtimeVersionId" column="swrt_version_id"/>
+    <result property="runtimeVersionId" column="runtime_version_id"/>
     <result property="resourcePool" column="resource_pool"/>
     <association property="project"
       resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
-    <association property="swmpVersion"
-      resultMap="ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageVersionMapper.swmpVersionResultMap"/>
+    <association property="modelVersion"
+      resultMap="ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper.modelVersionResultMap"/>
     <association property="owner"
       resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap"/>
   </resultMap>

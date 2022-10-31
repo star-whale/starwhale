@@ -20,23 +20,23 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.dataset.DatasetManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.model.ModelManager;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.SwdsManager;
-import ai.starwhale.mlops.domain.swmp.SwmpManager;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -73,7 +73,7 @@ import org.springframework.util.CollectionUtils;
 public class JobService {
 
     private final JobMapper jobMapper;
-    private final JobSwdsVersionMapper jobSwdsVersionMapper;
+    private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final TaskMapper taskMapper;
     private final JobConvertor jobConvertor;
     private final JobBoConverter jobBoConverter;
@@ -85,20 +85,21 @@ public class JobService {
     private final UserService userService;
     private final ProjectManager projectManager;
     private final JobManager jobManager;
-    private final SwmpManager swmpManager;
-    private final SwdsManager swdsManager;
+    private final ModelManager modelManager;
+    private final DatasetManager datasetManager;
     private final RuntimeManager runtimeManager;
     private final JobUpdateHelper jobUpdateHelper;
 
-    public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper, JobSwdsVersionMapper jobSwdsVersionMapper,
+    public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper,
+            JobDatasetVersionMapper jobDatasetVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
-            JobSpliterator jobSpliterator,  HotJobHolder hotJobHolder,
-            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, SwmpManager swmpManager,
-            ResultQuerier resultQuerier, SwdsManager swdsManager, StoragePathCoordinator storagePathCoordinator,
+            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
+            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelManager modelManager,
+            ResultQuerier resultQuerier, DatasetManager datasetManager, StoragePathCoordinator storagePathCoordinator,
             UserService userService, JobUpdateHelper jobUpdateHelper) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
-        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
+        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.runtimeManager = runtimeManager;
@@ -107,18 +108,18 @@ public class JobService {
         this.projectManager = projectManager;
         this.jobManager = jobManager;
         this.jobLoader = jobLoader;
-        this.swmpManager = swmpManager;
+        this.modelManager = modelManager;
         this.resultQuerier = resultQuerier;
-        this.swdsManager = swdsManager;
+        this.datasetManager = datasetManager;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
     }
 
-    public PageInfo<JobVo> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
+    public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
+        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
@@ -181,13 +182,13 @@ public class JobService {
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = swmpManager.getSwmpVersionId(modelVersionUrl, null);
+        Long modelVersionId = modelManager.getModelVersionId(modelVersionUrl, null);
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
                 .jobUuid(jobUuid)
                 .runtimeVersionId(runtimeVersionId)
                 .projectId(projectId)
-                .swmpVersionId(modelVersionId)
+                .modelVersionId(modelVersionId)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
@@ -200,9 +201,9 @@ public class JobService {
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
 
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(url -> swdsManager.getSwdsVersionId(url, null))
+                .map(url -> datasetManager.getDatasetVersionId(url, null))
                 .collect(Collectors.toList());
-        jobSwdsVersionMapper.addJobSwdsVersions(jobEntity.getId(), datasetVersionIds);
+        jobDatasetVersionMapper.addJobDatasetVersions(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
 
