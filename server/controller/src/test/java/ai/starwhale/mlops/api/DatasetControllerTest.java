@@ -34,21 +34,21 @@ import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doAnswer;
 
-import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.swds.DatasetVo;
-import ai.starwhale.mlops.api.protocol.swds.RevertSwdsRequest;
-import ai.starwhale.mlops.api.protocol.swds.SwDatasetInfoVo;
-import ai.starwhale.mlops.api.protocol.swds.SwdsTagRequest;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadPhase;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.UploadPhase;
+import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.swds.SwDatasetService;
-import ai.starwhale.mlops.domain.swds.bo.SwdsQuery;
-import ai.starwhale.mlops.domain.swds.bo.SwdsVersion;
-import ai.starwhale.mlops.domain.swds.bo.SwdsVersionQuery;
-import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -69,23 +69,23 @@ public class DatasetControllerTest {
 
     private DatasetController controller;
 
-    private SwDatasetService swdsService;
+    private DatasetService datasetService;
 
-    private SwdsUploader swdsUploader;
+    private DatasetUploader datasetUploader;
 
     @BeforeEach
     public void setUp() {
-        swdsService = mock(SwDatasetService.class);
-        swdsUploader = mock(SwdsUploader.class);
+        datasetService = mock(DatasetService.class);
+        datasetUploader = mock(DatasetUploader.class);
 
-        controller = new DatasetController(swdsService, new IdConvertor(), swdsUploader);
+        controller = new DatasetController(datasetService, new IdConvertor(), datasetUploader);
     }
 
     @Test
     public void testRevertDatasetVersion() {
-        given(swdsService.revertVersionTo(same("p1"), same("d1"), same("v1")))
+        given(datasetService.revertVersionTo(same("p1"), same("d1"), same("v1")))
                 .willReturn(true);
-        RevertSwdsRequest request = new RevertSwdsRequest();
+        RevertDatasetRequest request = new RevertDatasetRequest();
         request.setVersionUrl("v1");
         var resp = controller.revertDatasetVersion("p1", "d1", request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -96,8 +96,8 @@ public class DatasetControllerTest {
 
     @Test
     public void testDeleteDataset() {
-        given(swdsService.deleteSwds(argThat(argument -> Objects.equals(argument.getProjectUrl(), "p1")
-                && Objects.equals(argument.getSwdsUrl(), "d1"))))
+        given(datasetService.deleteDataset(argThat(argument -> Objects.equals(argument.getProjectUrl(), "p1")
+                && Objects.equals(argument.getDatasetUrl(), "d1"))))
                 .willReturn(true);
 
         var resp = controller.deleteDataset("p1", "d1");
@@ -109,7 +109,7 @@ public class DatasetControllerTest {
 
     @Test
     public void testRecoverDataset() {
-        given(swdsService.recoverSwds(same("p1"), same("d1")))
+        given(datasetService.recoverDataset(same("p1"), same("d1")))
                 .willReturn(true);
         var resp = controller.recoverDataset("p1", "d1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -121,13 +121,13 @@ public class DatasetControllerTest {
 
     @Test
     public void testGetDatasetInfo() {
-        given(swdsService.getSwdsInfo(any(SwdsQuery.class)))
-                .willAnswer((Answer<SwDatasetInfoVo>) invocation -> {
-                    SwdsQuery query = invocation.getArgument(0);
+        given(datasetService.getDatasetInfo(any(DatasetQuery.class)))
+                .willAnswer((Answer<DatasetInfoVo>) invocation -> {
+                    DatasetQuery query = invocation.getArgument(0);
                     if (Objects.equals(query.getProjectUrl(), "p1")) {
-                        return SwDatasetInfoVo.builder()
-                                .name(query.getSwdsUrl())
-                                .versionName(query.getSwdsVersionUrl())
+                        return DatasetInfoVo.builder()
+                                .name(query.getDatasetUrl())
+                                .versionName(query.getDatasetVersionUrl())
                                 .build();
                     } else {
                         return null;
@@ -149,9 +149,9 @@ public class DatasetControllerTest {
 
     @Test
     public void testListDatasetVersion() {
-        given(swdsService.listDatasetVersionHistory(any(SwdsVersionQuery.class), any(PageParams.class)))
+        given(datasetService.listDatasetVersionHistory(any(DatasetVersionQuery.class), any(PageParams.class)))
                 .willAnswer((Answer<PageInfo<DatasetVersionVo>>) invocation -> {
-                    SwdsVersionQuery query = invocation.getArgument(0);
+                    DatasetVersionQuery query = invocation.getArgument(0);
                     List<DatasetVersionVo> list = List.of(
                             DatasetVersionVo.builder()
                                     .name(query.getVersionName())
@@ -181,7 +181,7 @@ public class DatasetControllerTest {
     public void testUploadDs() {
         MultipartFile file = new MockMultipartFile("dsFile", "originalName", null,
                 "file_content".getBytes());
-        given(swdsUploader.create(anyString(), anyString(), any(UploadRequest.class)))
+        given(datasetUploader.create(anyString(), anyString(), any(UploadRequest.class)))
                 .willAnswer((Answer<String>) invocation -> {
                     String yamlContent = invocation.getArgument(0);
                     String fileName = invocation.getArgument(1);
@@ -223,7 +223,7 @@ public class DatasetControllerTest {
         doAnswer(invocation -> {
             called.set(true);
             return null;
-        }).when(swdsUploader).pull(anyString(), anyString(), anyString(), anyString(), any());
+        }).when(datasetUploader).pull(anyString(), anyString(), anyString(), anyString(), any());
 
         controller.pullDs("p1", "d1", "v1", "part", null);
         assertThat(called.get(), is(true));
@@ -255,9 +255,9 @@ public class DatasetControllerTest {
                         str.append(b);
                     }
                 });
-        given(swdsService.query(anyString(), anyString(), anyString()))
-                .willReturn(SwDatasetVersionEntity.builder().id(1L).build());
-        given(swdsService.dataOf(same(1L), anyString(), anyString(), anyString(), anyString()))
+        given(datasetService.query(anyString(), anyString(), anyString()))
+                .willReturn(DatasetVersionEntity.builder().id(1L).build());
+        given(datasetService.dataOf(same(1L), anyString(), anyString(), anyString(), anyString()))
                 .willReturn(new byte[]{100});
 
         controller.pullLinkContent("p1", "d1", "v1", "", "", "", "", response);
@@ -272,9 +272,9 @@ public class DatasetControllerTest {
 
     @Test
     public void testModifyDatasetVersionInfo() {
-        given(swdsService.modifySwdsVersion(same("p1"), same("d1"), same("v1"), any(SwdsVersion.class)))
+        given(datasetService.modifyDatasetVersion(same("p1"), same("d1"), same("v1"), any(DatasetVersion.class)))
                 .willReturn(true);
-        SwdsTagRequest request = new SwdsTagRequest();
+        DatasetTagRequest request = new DatasetTagRequest();
         request.setTag("tag1");
         var resp = controller.modifyDatasetVersionInfo("p1", "d1", "v1", request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -285,10 +285,10 @@ public class DatasetControllerTest {
 
     @Test
     public void testManageModelTag() {
-        given(swdsService.manageVersionTag(same("p1"), same("d1"), same("v1"), argThat(
+        given(datasetService.manageVersionTag(same("p1"), same("d1"), same("v1"), argThat(
                 argument -> Objects.equals(argument.getTags(), "tag1")))).willReturn(true);
 
-        SwdsTagRequest reqeust = new SwdsTagRequest();
+        DatasetTagRequest reqeust = new DatasetTagRequest();
         reqeust.setTag("tag1");
         reqeust.setAction("add");
         var resp = controller.manageDatasetTag("p1", "d1", "v1", reqeust);
@@ -317,9 +317,9 @@ public class DatasetControllerTest {
 
     @Test
     public void testListDataset() {
-        given(swdsService.findDatasetsByVersionIds(anyList()))
+        given(datasetService.findDatasetsByVersionIds(anyList()))
                 .willReturn(List.of(DatasetVo.builder().id("1").build()));
-        given(swdsService.listSwDataset(any(SwdsQuery.class), any(PageParams.class)))
+        given(datasetService.listSwDataset(any(DatasetQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
                         DatasetVo.builder().id("1").build(),
                         DatasetVo.builder().id("2").build()
@@ -342,7 +342,7 @@ public class DatasetControllerTest {
 
     @Test
     public void testHeadDataset() {
-        given(swdsService.query(same("p1"), same("d1"), same("v1")))
+        given(datasetService.query(same("p1"), same("d1"), same("v1")))
                 .willThrow(StarwhaleApiException.class);
 
         var resp = controller.headDataset("p1", "d1", "v1");

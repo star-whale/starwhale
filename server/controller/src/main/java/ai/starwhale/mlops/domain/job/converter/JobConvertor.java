@@ -20,12 +20,11 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -41,17 +40,17 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
     private final IdConvertor idConvertor;
     private final UserConvertor userConvertor;
     private final RuntimeService runtimeService;
-    private final JobSwdsVersionMapper jobSwdsVersionMapper;
+    private final JobDatasetVersionMapper jobDatasetVersionMapper;
 
     private final SystemSettingService systemSettingService;
 
     public JobConvertor(IdConvertor idConvertor, UserConvertor userConvertor,
-            RuntimeService runtimeService, JobSwdsVersionMapper jobSwdsVersionMapper,
+            RuntimeService runtimeService, JobDatasetVersionMapper jobDatasetVersionMapper,
             SystemSettingService systemSettingService) {
         this.idConvertor = idConvertor;
         this.userConvertor = userConvertor;
         this.runtimeService = runtimeService;
-        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
+        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.systemSettingService = systemSettingService;
     }
 
@@ -62,11 +61,11 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
         if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
             throw new SwProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
         }
-        List<SwDatasetVersionEntity> dsvEntities = jobSwdsVersionMapper.listSwdsVersionsByJobId(
+        List<DatasetVersionEntity> dsvEntities = jobDatasetVersionMapper.listDatasetVersionsByJobId(
                 jobEntity.getId());
 
         List<String> idList = dsvEntities.stream()
-                .map(SwDatasetVersionEntity::getVersionName)
+                .map(DatasetVersionEntity::getVersionName)
                 .collect(Collectors.toList());
 
         return JobVo.builder()
@@ -74,7 +73,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
                 .uuid(jobEntity.getJobUuid())
                 .owner(userConvertor.convert(jobEntity.getOwner()))
                 .modelName(jobEntity.getModelName())
-                .modelVersion(jobEntity.getSwmpVersion().getVersionName())
+                .modelVersion(jobEntity.getModelVersion().getVersionName())
                 .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtimeByVersionIds.get(0))
                 .datasets(idList)

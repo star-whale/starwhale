@@ -20,8 +20,7 @@ import ai.starwhale.mlops.ObjectMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
+import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -36,7 +35,7 @@ import org.junit.jupiter.api.Test;
  */
 public class TaskBoConvertorTest {
 
-    SwModelPackage swModelPackage = SwModelPackage.builder().build();
+    Model model = Model.builder().build();
 
     @Test
     public void testTaskBoConverter() {
@@ -44,7 +43,7 @@ public class TaskBoConvertorTest {
 
         Step step = Step.builder()
                 .job(Job.builder()
-                        .swmp(swModelPackage)
+                        .model(model)
                         .jobRuntime(JobRuntime.builder()
                                 .name("name_swrt")
                                 .storagePath("path_storage")

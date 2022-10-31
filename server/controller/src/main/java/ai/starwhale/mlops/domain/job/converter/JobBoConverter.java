@@ -17,35 +17,33 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 import ai.starwhale.mlops.common.DockerImage;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.model.Model;
+import ai.starwhale.mlops.domain.model.ModelVersionConvertor;
+import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
-import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
-import ai.starwhale.mlops.domain.swmp.SwModelPackage;
-import ai.starwhale.mlops.domain.swmp.SwmpVersionConvertor;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -59,19 +57,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class JobBoConverter {
 
-    final JobSwdsVersionMapper jobSwdsVersionMapper;
+    final JobDatasetVersionMapper jobDatasetVersionMapper;
 
-    final SwModelPackageMapper swModelPackageMapper;
+    final ModelMapper modelMapper;
 
     final RuntimeMapper runtimeMapper;
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
-    final SwdsBoConverter swdsBoConverter;
+    final DatasetBoConverter datasetBoConverter;
 
     final SystemSettingService systemSettingService;
 
-    final SwmpVersionConvertor swmpVersionConvertor;
+    final ModelVersionConvertor modelVersionConvertor;
 
     final StepMapper stepMapper;
 
@@ -82,22 +80,22 @@ public class JobBoConverter {
     final TaskBoConverter taskBoConverter;
 
     public JobBoConverter(
-            JobSwdsVersionMapper jobSwdsVersionMapper,
-            SwModelPackageMapper swModelPackageMapper,
+            JobDatasetVersionMapper jobDatasetVersionMapper,
+            ModelMapper modelMapper,
             RuntimeMapper runtimeMapper,
             RuntimeVersionMapper runtimeVersionMapper,
-            SwdsBoConverter swdsBoConverter,
-            SwmpVersionConvertor swmpVersionConvertor,
+            DatasetBoConverter datasetBoConverter,
+            ModelVersionConvertor modelVersionConvertor,
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
             TaskBoConverter taskBoConverter) {
-        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
-        this.swModelPackageMapper = swModelPackageMapper;
+        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
+        this.modelMapper = modelMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
-        this.swdsBoConverter = swdsBoConverter;
+        this.datasetBoConverter = datasetBoConverter;
         this.systemSettingService = systemSettingService;
-        this.swmpVersionConvertor = swmpVersionConvertor;
+        this.modelVersionConvertor = modelVersionConvertor;
         this.stepMapper = stepMapper;
         this.stepConverter = stepConverter;
         this.taskMapper = taskMapper;
@@ -105,11 +103,11 @@ public class JobBoConverter {
     }
 
     public Job fromEntity(JobEntity jobEntity) {
-        List<SwDataSet> swDataSets = jobSwdsVersionMapper.listSwdsVersionsByJobId(jobEntity.getId())
-                .stream().map(swdsBoConverter::fromEntity)
+        List<DataSet> dataSets = jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())
+                .stream().map(datasetBoConverter::fromEntity)
                 .collect(Collectors.toList());
-        SwModelPackageEntity modelPackageEntity = swModelPackageMapper.findSwModelPackageById(
-                jobEntity.getSwmpVersion().getSwmpId());
+        ModelEntity modelEntity = modelMapper.findModelById(
+                jobEntity.getModelVersion().getModelId());
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(
                 jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
@@ -135,17 +133,17 @@ public class JobBoConverter {
                         .build())
                 .status(jobEntity.getJobStatus())
                 .type(jobEntity.getType())
-                .swmp(SwModelPackage
+                .model(Model
                         .builder()
-                        .id(jobEntity.getSwmpVersionId())
-                        .name(modelPackageEntity.getSwmpName())
-                        .version(jobEntity.getSwmpVersion().getVersionName())
-                        .path(jobEntity.getSwmpVersion().getStoragePath())
-                        .stepSpecs(swmpVersionConvertor.convert(jobEntity.getSwmpVersion()).getStepSpecs())
+                        .id(jobEntity.getModelVersionId())
+                        .name(modelEntity.getModelName())
+                        .version(jobEntity.getModelVersion().getVersionName())
+                        .path(jobEntity.getModelVersion().getStoragePath())
+                        .stepSpecs(modelVersionConvertor.convert(jobEntity.getModelVersion()).getStepSpecs())
                         .build()
                 )
                 .stepSpec(jobEntity.getStepSpec())
-                .swDataSets(swDataSets)
+                .dataSets(dataSets)
                 .outputDir(jobEntity.getResultOutputPath())
                 .uuid(jobEntity.getJobUuid())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))

@@ -15,9 +15,9 @@ file_exists() {
 }
 
 if in_github_action; then
-    export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
+    export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.org/simple}"
 else
-    export SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
+    export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.doubanio.com/simple}"
     export PARENT_CLEAN="${PARENT_CLEAN:=true}"
 fi
 

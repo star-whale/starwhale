@@ -19,14 +19,13 @@ package ai.starwhale.mlops.schedule.k8s;
 import ai.starwhale.mlops.api.protocol.report.resp.SwRunTime;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
@@ -172,18 +171,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         // TODO: support multi dataset uris
         // oss env
-        List<SwDataSet> swDataSets = swJob.getSwDataSets();
-        SwDataSet swDataSet = swDataSets.get(0);
+        List<DataSet> dataSets = swJob.getDataSets();
+        DataSet dataSet = dataSets.get(0);
         coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET, instanceUri,
-                swJob.getProject().getName(), swDataSet.getName(), swDataSet.getVersion()));
+                swJob.getProject().getName(), dataSet.getName(), dataSet.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
-        swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
+        dataSets.forEach(ds -> ds.getFileStorageEnvs().values()
                 .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
 
-        coreContainerEnvs.put(StorageEnv.ENV_KEY_PREFIX, swDataSet.getPath());
+        coreContainerEnvs.put(StorageEnv.ENV_KEY_PREFIX, dataSet.getPath());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
@@ -216,7 +215,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
         List<String> downloads = new ArrayList<>();
         String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
-        downloads.add(prefix + swJob.getSwmp().getPath() + ";/opt/starwhale/swmp/");
+        downloads.add(prefix + swJob.getModel().getPath() + ";/opt/starwhale/swmp/");
         downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
                 jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));

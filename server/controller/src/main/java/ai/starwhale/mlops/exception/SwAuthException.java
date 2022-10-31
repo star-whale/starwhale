@@ -48,8 +48,8 @@ public class SwAuthException extends StarwhaleException {
     }
 
     public enum AuthType {
-        SWDS_UPLOAD("001", "SWDS UPLOAD"),
-        SWMP_UPLOAD("002", "SWMP UPLOAD"),
+        DATASET_UPLOAD("001", "DATASET UPLOAD"),
+        MODEL_UPLOAD("002", "MODEL UPLOAD"),
         CURRENT_USER("003", "CURRENT USER");
         final String code;
         final String tipSubject;

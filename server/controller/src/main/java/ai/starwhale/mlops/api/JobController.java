@@ -66,10 +66,10 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(String projectUrl, String swmpId,
+    public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(String projectUrl, String modelId,
             Integer pageNum, Integer pageSize) {
 
-        PageInfo<JobVo> jobVos = jobService.listJobs(projectUrl, idConvertor.revert(swmpId),
+        PageInfo<JobVo> jobVos = jobService.listJobs(projectUrl, idConvertor.revert(modelId),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)

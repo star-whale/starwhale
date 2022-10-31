@@ -17,17 +17,17 @@
 package ai.starwhale.mlops.domain.project.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
+import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
-import ai.starwhale.mlops.domain.swds.mapper.SwDatasetMapper;
-import ai.starwhale.mlops.domain.swds.po.SwDatasetEntity;
-import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import cn.hutool.db.sql.Direction;
@@ -56,10 +56,10 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     private JobMapper jobMapper;
 
     @Autowired
-    private SwDatasetMapper swDatasetMapper;
+    private DatasetMapper datasetMapper;
 
     @Autowired
-    private SwModelPackageMapper swModelPackageMapper;
+    private ModelMapper modelMapper;
 
     @Autowired
     private ProjectRoleMapper projectRoleMapper;
@@ -154,32 +154,32 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testListObjectCounts() {
-        swModelPackageMapper.addSwModelPackage(
-                SwModelPackageEntity.builder().swmpName("swmp").projectId(project.getId())
+        modelMapper.addModel(
+                ModelEntity.builder().modelName("swmp").projectId(project.getId())
                         .ownerId(user.getId()).build());
-        swModelPackageMapper.addSwModelPackage(
-                SwModelPackageEntity.builder().swmpName("swmp").projectId(project2.getId())
+        modelMapper.addModel(
+                ModelEntity.builder().modelName("swmp").projectId(project2.getId())
                         .ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
-                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(1L)
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
-                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(1L)
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
-                .resourcePool("rp").runtimeVersionId(1L).swmpVersionId(1L)
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project2.getId()).ownerId(user.getId()).build());
-        swDatasetMapper.addDataset(
-                SwDatasetEntity.builder().datasetName("dsn").projectId(project.getId()).ownerId(1L).build());
-        swDatasetMapper.addDataset(
-                SwDatasetEntity.builder().datasetName("dsn2").projectId(project.getId()).ownerId(1L).build());
-        swDatasetMapper.addDataset(
-                SwDatasetEntity.builder().datasetName("dsn3").projectId(project.getId()).ownerId(1L).build());
-        swDatasetMapper.addDataset(
-                SwDatasetEntity.builder().datasetName("dsn3").projectId(project2.getId()).ownerId(1L).build());
+        datasetMapper.addDataset(
+                DatasetEntity.builder().datasetName("dsn").projectId(project.getId()).ownerId(1L).build());
+        datasetMapper.addDataset(
+                DatasetEntity.builder().datasetName("dsn2").projectId(project.getId()).ownerId(1L).build());
+        datasetMapper.addDataset(
+                DatasetEntity.builder().datasetName("dsn3").projectId(project.getId()).ownerId(1L).build());
+        datasetMapper.addDataset(
+                DatasetEntity.builder().datasetName("dsn3").projectId(project2.getId()).ownerId(1L).build());
 
         List<ProjectObjectCountEntity> projectObjectCountEntities = projectMapper.listObjectCounts(
                 List.of(project.getId()));

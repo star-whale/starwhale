@@ -35,12 +35,12 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swmp.po.SwModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -63,9 +63,9 @@ public class JobConverterTest {
         RuntimeService runtimeService = mock(RuntimeService.class);
         given(runtimeService.findRuntimeByVersionIds(anyList()))
                 .willReturn(List.of(RuntimeVo.builder().id("1").build()));
-        JobSwdsVersionMapper jobSwdsVersionMapper = mock(JobSwdsVersionMapper.class);
-        given(jobSwdsVersionMapper.listSwdsVersionsByJobId(anyLong()))
-                .willReturn(List.of(SwDatasetVersionEntity.builder().id(1L).versionName("v1").build()));
+        JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
+        given(jobDatasetVersionMapper.listDatasetVersionsByJobId(anyLong()))
+                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).versionName("v1").build()));
         IdConvertor idConvertor = new IdConvertor();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
@@ -73,7 +73,7 @@ public class JobConverterTest {
                 idConvertor,
                 userConvertor,
                 runtimeService,
-                jobSwdsVersionMapper,
+                jobDatasetVersionMapper,
                 systemSettingService
         );
     }
@@ -85,7 +85,7 @@ public class JobConverterTest {
                 .jobUuid("job-uuid")
                 .owner(UserEntity.builder().build())
                 .modelName("model")
-                .swmpVersion(SwModelPackageVersionEntity.builder().versionName("v1").build())
+                .modelVersion(ModelVersionEntity.builder().versionName("v1").build())
                 .runtimeVersionId(1L)
                 .createdTime(new Date(1000L))
                 .jobStatus(JobStatus.SUCCESS)
