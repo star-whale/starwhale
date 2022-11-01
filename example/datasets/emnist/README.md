@@ -23,7 +23,7 @@ https://cloud.starwhale.cn/projects/14/datasets/5/versions/22/files
 
 - Sign up with https://cloud.starwhale.cn
 ```shell
-$ python3 -m pip install starwhale
+$ python3 -m pip install -r requirements.txt
 $ swcli instance login https://cloud.starwhale.cn --token 'YOUR TOKEN' --alias saas
 $ swcli dataset copy cloud://saas/project/datasets/emnist-digits-test/version/gvsggndcgfrdimjugjqwkzlgo4zwo4a local
 $ python3 example.py
