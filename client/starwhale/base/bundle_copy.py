@@ -295,6 +295,7 @@ class BundleCopy(CloudRequestMixed):
                     total=float(_size),
                 )
                 _p_map[_tid] = (_path, _hash)
+                _upload_blob(_path, _tid, _hash)
 
             _meta_names = [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]
             if self.kw.get("with_auth") and (workdir / AUTH_ENV_FNAME).exists():
@@ -307,10 +308,9 @@ class BundleCopy(CloudRequestMixed):
                     total=_path.stat().st_size,
                 )
                 _p_map[_tid] = (_path, "")
+                _upload_blob(_path, _tid, "")
 
             # TODO: parallel upload
-            for _tid, (_p, _data_uri) in _p_map.items():
-                _upload_blob(_p, _tid, _data_uri)
         except Exception as e:
             console.print(
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
