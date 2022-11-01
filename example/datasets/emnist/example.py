@@ -5,7 +5,7 @@ from starwhale import URI, URIType, get_data_loader
 
 
 def show_image(image) -> None:
-    plt.imshow(image, cmap='gray')
+    plt.imshow(image, cmap="gray")
     plt.show(block=True)
 
 

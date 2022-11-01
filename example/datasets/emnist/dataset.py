@@ -2,9 +2,7 @@ import struct
 import typing as t
 from pathlib import Path
 
-from starwhale import (
-    GrayscaleImage,
-)
+from starwhale import GrayscaleImage
 
 _TItem = t.Generator[t.Tuple[t.Any, t.Any], None, None]
 
@@ -39,4 +37,3 @@ def _do_iter_item(fname):
                 display_name=f"{i}",
                 shape=(height, width),
             ), {"label": _label}
-
