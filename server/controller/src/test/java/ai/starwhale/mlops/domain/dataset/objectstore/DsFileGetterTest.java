@@ -66,9 +66,9 @@ public class DsFileGetterTest {
         when(storageAccessService.signedUrl(eq("bdc/bdcsd"), anyLong())).thenReturn("abc");
         when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
                 storageAccessService);
-        SwDatasetVersionMapper versionMapper = mock(SwDatasetVersionMapper.class);
+        DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.getVersionById(anyLong())).thenReturn(
-                SwDatasetVersionEntity.builder().storagePath("bdc").build());
+                DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
         Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdcsd", "", 1L));
         Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", "", 1L));

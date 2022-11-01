@@ -361,9 +361,9 @@ public class DatasetControllerTest {
         String v = "v";
         String uri = "uri";
         String auth = "auth";
-        when(swdsService.query(pj, ds, v)).thenReturn(SwDatasetVersionEntity.builder().id(1L).build());
+        when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersionEntity.builder().id(1L).build());
         String signUrl = "sign-url";
-        when(swdsService.signLink(1L, uri, auth, 100L)).thenReturn(signUrl);
+        when(datasetService.signLink(1L, uri, auth, 100L)).thenReturn(signUrl);
         Assertions.assertEquals(signUrl, controller.signLink(pj, ds, v, uri, auth, 100L).getBody().getData());
     }
 }
