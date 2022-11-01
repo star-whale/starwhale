@@ -69,6 +69,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Resource
     private AuthenticationFailureHandler authenticationFailureHandler;
 
+    @Resource
+    private ProjectDetectionFilter projectDetectionFilter;
+
+    @Resource
+    private ContentCachingFilter contentCachingFilter;
+
     public SecurityConfiguration() {
         super();
         // Inherit security context ,so async function calls can effect
@@ -121,7 +127,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .formLogin()
                 .and()
                 .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
+                .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class)
+                .addFilterBefore(projectDetectionFilter, JwtTokenFilter.class)
+                .addFilterBefore(contentCachingFilter, ProjectDetectionFilter.class)
+        ;
     }
 
     // Expose authentication manager bean

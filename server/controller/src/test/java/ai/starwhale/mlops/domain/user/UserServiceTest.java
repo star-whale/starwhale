@@ -51,6 +51,7 @@ import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -245,6 +246,38 @@ public class UserServiceTest {
                 notNullValue(),
                 is(iterableWithSize(1)),
                 is(hasItem(hasProperty("roleName", is("Guest"))))
+        ));
+    }
+
+    @Test
+    public void testGetProjectsRolesOfUser() {
+        RoleEntity owner = RoleEntity.builder().id(1L).roleName("Owner").roleCode("OWNER").build();
+        RoleEntity guest = RoleEntity.builder().id(3L).roleName("Guest").roleCode("GUEST").build();
+        given(roleMapper.getRolesOfProject(same(1L), same(1L)))
+                .willReturn(List.of(owner));
+        given(roleMapper.getRolesOfProject(same(2L), same(2L)))
+                .willReturn(List.of(guest));
+        given(projectMapper.findProject(same(3L)))
+                .willReturn(ProjectEntity.builder().id(3L).privacy(1).build());
+
+        var res = service.getProjectsRolesOfUser(User.builder().id(1L).build(), Set.of("1"));
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(1)),
+                is(hasItem(hasProperty("roleCode", is("OWNER"))))
+        ));
+
+        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(), Set.of("2", "3"));
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(1)),
+                is(hasItem(hasProperty("roleCode", is("GUEST"))))
+        ));
+
+        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(), Set.of("3", "1"));
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(0))
         ));
     }
 

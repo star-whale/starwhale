@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.datastore;
+package ai.starwhale.mlops.configuration.security;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ListTablesRequest {
+public interface ProjectNameExtractor {
 
-    private String prefix = "";
+    Set<String> extractProjectName(HttpServletRequest request);
+
 }
