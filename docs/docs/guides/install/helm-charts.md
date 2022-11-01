@@ -107,3 +107,64 @@ helm install $SWNAME . -n $SWNS --create-namespace \
     --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
     --set minio.persistence.storageClass=$SWNAME-minio
 ```
+
+### 6.6 ServiceAccount
+
+Starwhale Controller can only works properly with ServiceAccount with sufficient permissions. The list of permissions required is as follows (take RBAC as an example):
+
+| Resource | API Group | Get | List | Watch | Create | Delete |
+|----------|-----------|-----|------|-------|--------|--------|
+| jobs     | batch     | Y   | Y    | Y     | Y      | Y      |
+| pods     | core      | Y   | Y    | Y     |        |        |
+| nodes    | core      | Y   | Y    | Y     |        |        |
+| events   | ""        | Y   |      |       |        |        |
+
+example
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "batch"
+  resources:
+  - jobs
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - watch
+  - list
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-role
+subjects:
+- kind: ServiceAccount
+  name: test-sa
+```
