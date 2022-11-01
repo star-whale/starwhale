@@ -146,7 +146,7 @@ public class UserService implements UserDetailsService {
         Set<Role> projectRolesOfUser = this.getProjectRolesOfUser(user, anyProject).stream()
                 .collect(Collectors.toSet());
         projects.forEach(pj -> {
-            projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, anyProject));
+            projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, pj));
         });
         return projectRolesOfUser;
     }

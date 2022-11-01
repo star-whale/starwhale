@@ -68,7 +68,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     }
 
     private Set<String> projectsOfDatastore(HttpServletRequest request) {
-        String path = request.getServletPath().replace(apiPrefix, "");
+        String path = request.getRequestURI().replace(apiPrefix, "");
         try {
             ServletInputStream wrappedInputStream = request.getInputStream();
             byte[] bytes = inputStreamToBytes(wrappedInputStream);
@@ -130,7 +130,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     }
 
     boolean isDataStore(HttpServletRequest request) {
-        return request.getServletPath().startsWith(this.apiPrefix + "/datastore");
+        return request.getRequestURI().startsWith(this.apiPrefix + "/datastore");
     }
 
     public static String SYSTEM_PROJECT = "0";
