@@ -6,6 +6,7 @@ configs:
   docker:
     image: ghcr.io/star-whale/runtime/pytorch
 dependencies:
+  - requirements-sw-lock.txt
   - pip:
       - Pillow
       - numpy
@@ -24,7 +25,6 @@ dependencies:
         post: bash bin/prepare.sh
         pre: ls bin/prepare.sh
         src: scripts/prepare.sh
-  - requirements-sw-lock.txt
 environment:
   arch: noarch
   os: ubuntu:20.04
