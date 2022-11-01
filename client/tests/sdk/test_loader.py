@@ -78,10 +78,21 @@ class TestDataLoader(TestCase):
         assert isinstance(_data, Image)
 
         assert loader.kind == DataFormatType.USER_RAW
-        assert list(loader._stores.keys()) == ["local."]
-        assert loader._stores["local."].bucket == str(data_dir)
-        assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
-        assert not loader._stores["local."].key_prefix
+        assert list(loader._stores.keys()) == [
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        assert loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].bucket == str(data_dir)
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788."
+            ].backend.kind
+            == SWDSBackendType.LocalFS
+        )
+        assert not loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].key_prefix
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.store.boto3.resource")
@@ -221,8 +232,18 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 28 * 28
         assert isinstance(_data.to_bytes(), bytes)
         assert len(loader._stores) == 3
-        assert loader._stores["remote.server1"].backend.kind == SWDSBackendType.S3
-        assert loader._stores["remote.server1"].bucket == "starwhale"
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+            ].backend.kind
+            == SWDSBackendType.S3
+        )
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+            ].bucket
+            == "starwhale"
+        )
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.store.boto3.resource")
@@ -314,13 +335,27 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 10 * 28 * 28
         assert isinstance(_data, Image)
 
-        assert list(loader._stores.keys()) == ["local."]
-        backend = loader._stores["local."].backend
+        assert list(loader._stores.keys()) == [
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        backend = loader._stores[
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+        ].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
-        assert loader._stores["local."].bucket == ""
-        assert loader._stores["local."].key_prefix == ""
+        assert (
+            loader._stores[
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            ].bucket
+            == ""
+        )
+        assert (
+            loader._stores[
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            ].key_prefix
+            == ""
+        )
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
@@ -391,9 +426,17 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 7840
         assert isinstance(_data.to_bytes(), bytes)
 
-        assert list(loader._stores.keys()) == ["local."]
-        backend = loader._stores["local."].backend
+        assert list(loader._stores.keys()) == [
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        backend = loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
-        assert loader._stores["local."].bucket == str(data_dir)
-        assert not loader._stores["local."].key_prefix
+        assert loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].bucket == str(data_dir)
+        assert not loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].key_prefix
