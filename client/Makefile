@@ -34,7 +34,7 @@ isort-format:
 
 .POHNY: format
 format:
-	black --config pyproject.toml . ../scripts/client_test && isort . ../scripts/client_test
+	black --config pyproject.toml . ../example ../scripts/client_test && isort . ../example ../scripts/client_test
 
 .POHNY: ci-format-checker
 ci-format-checker:
