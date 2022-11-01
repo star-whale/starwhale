@@ -211,9 +211,9 @@ public class DatasetController implements DatasetApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> signLink(String projectUrl, String datasetUrl, String versionUrl,
             String uri, String authName, Long expTimeMillis) {
-        SwDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(
-                swDatasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
+                datasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
     }
 
     @Override
