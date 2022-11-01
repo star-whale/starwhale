@@ -694,40 +694,35 @@ class TestDatasetSessionConsumption(TestCase):
 
         mock_request = rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8081/api/v1/dataset/consumption",
-            json={"data": ["path/1", "path/100"]},
+            "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/nextRange",
+            json={"data": {"start": "path/1", "end": "path/100"}},
         )
 
         range_key = tdsc.get_scan_range()
-        assert range_key == ["path/1", "path/100"]
+        assert range_key == ("path/1", "path/100")
         assert len(mock_request.request_history) == 1  # type: ignore
         request = mock_request.request_history[0]  # type: ignore
-        assert request.path == "/api/v1/dataset/consumption"
+        assert (
+            request.path == "/api/v1/project/test/dataset/mnist/version/123/nextrange"
+        )
         assert request.json() == {
-            "projectName": "test",
-            "datasetName": "mnist",
-            "datasetVersion": "123",
             "batchSize": 50,
             "maxRetries": 5,
             "sessionId": "123",
             "runEnv": "pod",
             "consumerId": "pod-1",
-            "processedKeys": None,
         }
 
         range_key = tdsc.get_scan_range(processed_keys=[(1, 1)])
         assert len(mock_request.request_history) == 2  # type: ignore
-        assert range_key == ["path/1", "path/100"]
+        assert range_key == ("path/1", "path/100")
         assert mock_request.request_history[1].json() == {  # type: ignore
-            "projectName": "test",
-            "datasetName": "mnist",
-            "datasetVersion": "123",
             "batchSize": 50,
             "maxRetries": 5,
             "sessionId": "123",
             "runEnv": "pod",
             "consumerId": "pod-1",
-            "processedKeys": [[1, 1]],
+            "processedData": [{"end": 1, "start": 1}],
         }
 
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")

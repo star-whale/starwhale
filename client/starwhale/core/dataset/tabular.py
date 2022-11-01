@@ -355,7 +355,7 @@ def get_dataset_consumption(
     else:
         _token = (
             instance_token
-            or SWCliConfigMixed().get_sw_token(instance=instance_uri)
+            or SWCliConfigMixed().get_sw_token(instance=_uri)
             or os.getenv(SWEnv.instance_token, "")
         )
         return CloudTDSC(
@@ -511,25 +511,28 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         self, processed_keys: t.Optional[t.List[t.Tuple[t.Any, t.Any]]] = None
     ) -> t.Optional[t.Tuple[t.Any, t.Any]]:
         post_data = {
-            "projectName": self.dataset_uri.project,
-            "datasetName": self.dataset_uri.object.name,
-            "datasetVersion": self.dataset_uri.object.version,
             "batchSize": self.batch_size,
             "maxRetries": self.max_retries,
             "sessionId": self.session_id,
             "runEnv": self.run_env.value,
             "consumerId": self.consumer_id,
-            "processedKeys": processed_keys,
         }
+        if processed_keys is not None:
+            post_data["processedData"] = [
+                {"start": p[0], "end": p[1]} for p in processed_keys
+            ]
 
         if self.session_start is not None:
-            post_data["sessionStart"] = self.session_start
+            post_data["start"] = self.session_start
 
         if self.session_end is not None:
-            post_data["sessionEnd"] = self.session_end
+            post_data["end"] = self.session_end
 
         resp = requests.post(
-            urllib.parse.urljoin(self.instance_uri, "/api/v1/dataset/consumption"),
+            urllib.parse.urljoin(
+                self.instance_uri,
+                f"api/v1/project/{self.dataset_uri.project}/dataset/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/nextRange",
+            ),
             data=json.dumps(post_data),
             headers={
                 "Content-Type": "application/json; charset=utf-8",
@@ -538,7 +541,9 @@ class CloudTDSC(TabularDatasetSessionConsumption):
             timeout=300,
         )
         resp.raise_for_status()
-        return resp.json()["data"]  # type: ignore
+        range_data = resp.json()["data"]
+
+        return None if range_data is None else (range_data["start"], range_data["end"])
 
     def __str__(self) -> str:
         return (
