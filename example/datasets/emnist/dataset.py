@@ -37,6 +37,6 @@ def _do_iter_item(fname):
             yield GrayscaleImage(
                 _data,
                 display_name=f"{i}",
-                shape=(height, width, 1),
+                shape=(height, width),
             ), {"label": _label}
 
