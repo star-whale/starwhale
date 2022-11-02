@@ -3,6 +3,7 @@ import os.path
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from concurrent.futures import wait, ThreadPoolExecutor
 
 from rich.progress import (
     TaskID,
@@ -202,10 +203,14 @@ class BundleCopy(CloudRequestMixed):
             TransferSpeedColumn(),
             console=console,
             refresh_per_second=0.2,
-        ) as progress:
+        ) as progress, ThreadPoolExecutor(
+            max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
+        ) as executor:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
                 if self.typ == URIType.DATASET:
-                    self._do_upload_bundle_dir(progress, add_data_uri_header=True)
+                    self._do_upload_bundle_dir(
+                        progress, add_data_uri_header=True, executor=executor
+                    )
                 else:
                     self._do_upload_bundle_tar(progress)
             else:
@@ -224,7 +229,10 @@ class BundleCopy(CloudRequestMixed):
                 StandaloneTag(_dest_uri).add_fast_tag()
 
     def _do_upload_bundle_dir(
-        self, progress: Progress, add_data_uri_header: bool = False
+        self,
+        progress: Progress,
+        executor: ThreadPoolExecutor,
+        add_data_uri_header: bool = False,
     ) -> None:
         workdir: Path = self._get_target_path(self.src_uri)
         manifest_path = workdir / DEFAULT_MANIFEST_NAME
@@ -268,6 +276,7 @@ class BundleCopy(CloudRequestMixed):
                 _upload_headers["X-SW-UPLOAD-DATA-URI"] = _data_uri
                 _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = _data_uri
 
+            progress.update(_tid, visible=True)
             self.do_multipart_upload_file(
                 url_path=url_path,
                 file_path=_fp,
@@ -293,9 +302,9 @@ class BundleCopy(CloudRequestMixed):
                 _tid = progress.add_task(
                     f":arrow_up: {_path.name}",
                     total=float(_size),
+                    visible=False,
                 )
                 _p_map[_tid] = (_path, _hash)
-                _upload_blob(_path, _tid, _hash)
 
             _meta_names = [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]
             if self.kw.get("with_auth") and (workdir / AUTH_ENV_FNAME).exists():
@@ -306,11 +315,16 @@ class BundleCopy(CloudRequestMixed):
                 _tid = progress.add_task(
                     f":arrow_up: {_path.name}",
                     total=_path.stat().st_size,
+                    visible=False,
                 )
                 _p_map[_tid] = (_path, "")
-                _upload_blob(_path, _tid, "")
 
-            # TODO: parallel upload
+            futures = [
+                executor.submit(_upload_blob, _p, _tid, _data_uri)
+                for _tid, (_p, _data_uri) in _p_map.items()
+            ]
+            wait(futures)
+
         except Exception as e:
             console.print(
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
