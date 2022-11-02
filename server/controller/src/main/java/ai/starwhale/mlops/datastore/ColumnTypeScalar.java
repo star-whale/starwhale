@@ -124,10 +124,13 @@ public class ColumnTypeScalar extends ColumnType {
         } else {
             if (this == BOOL) {
                 return (Boolean) value ? "1" : "0";
-            } else if (this == INT8
-                    || this == INT16
-                    || this == INT32
-                    || this == INT64) {
+            } else if (this == INT8) {
+                return Integer.toHexString(((Number) value).byteValue() & 0xFF);
+            } else if (this == INT16) {
+                return Integer.toHexString(((Number) value).shortValue() & 0xFFFF);
+            } else if (this == INT32) {
+                return Integer.toHexString(((Number) value).intValue());
+            } else if (this == INT64) {
                 return Long.toHexString(((Number) value).longValue());
             } else if (this == FLOAT32) {
                 return Integer.toHexString(Float.floatToIntBits((Float) value));
@@ -151,6 +154,7 @@ public class ColumnTypeScalar extends ColumnType {
             if (!(value instanceof String)) {
                 throw new IllegalArgumentException("value should be of type String");
             }
+            String valueStr = (String) value;
             if (this == UNKNOWN) {
                 throw new IllegalArgumentException("invalid unknown value " + value);
             } else if (this == BOOL) {
@@ -161,12 +165,16 @@ public class ColumnTypeScalar extends ColumnType {
                 }
                 throw new IllegalArgumentException("invalid bool value " + value);
             } else if (this == INT8) {
-                return Byte.parseByte((String) value, 16);
+                return (byte) (Integer.parseInt((String) value, 16) & 0xFF);
             } else if (this == INT16) {
-                return Short.parseShort((String) value, 16);
+                return (short) (Integer.parseInt((String) value, 16) & 0xFFFF);
             } else if (this == INT32) {
-                return Integer.parseInt((String) value, 16);
+                return (int) (Long.parseLong((String) value, 16) & 0xFFFFFFFF);
             } else if (this == INT64) {
+                if (valueStr.length() == 16) {
+                    return (Long.parseLong(valueStr.substring(0, 8), 16) << 32) | Long.parseLong(
+                            valueStr.substring(8, 16), 16);
+                }
                 return Long.parseLong((String) value, 16);
             } else if (this == FLOAT32) {
                 return Float.intBitsToFloat(Integer.parseUnsignedInt((String) value, 16));

@@ -159,16 +159,23 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.BOOL.encode(true, true), is("true"));
         assertThat(ColumnTypeScalar.INT8.encode((byte) 10, false), is("a"));
         assertThat(ColumnTypeScalar.INT8.encode((byte) 10, true), is("10"));
+        assertThat(ColumnTypeScalar.INT8.encode(-1, false), is("ff"));
         assertThat(ColumnTypeScalar.INT16.encode((short) 10, false), is("a"));
         assertThat(ColumnTypeScalar.INT16.encode((short) 10, true), is("10"));
+        assertThat(ColumnTypeScalar.INT16.encode(-1, false), is("ffff"));
         assertThat(ColumnTypeScalar.INT32.encode(10, false), is("a"));
         assertThat(ColumnTypeScalar.INT32.encode(10, true), is("10"));
+        assertThat(ColumnTypeScalar.INT32.encode(-1, false), is("ffffffff"));
         assertThat(ColumnTypeScalar.INT64.encode(10L, false), is("a"));
         assertThat(ColumnTypeScalar.INT64.encode(10L, true), is("10"));
+        assertThat(ColumnTypeScalar.INT64.encode(-1, false), is("ffffffffffffffff"));
+        assertThat(ColumnTypeScalar.INT64.encode(-1152921504606846977L, false), is("efffffffffffffff"));
         assertThat(ColumnTypeScalar.FLOAT32.encode(1.003f, false),
                 is(Integer.toHexString(Float.floatToIntBits(1.003f))));
         assertThat(ColumnTypeScalar.FLOAT32.encode(1.003f, true), is("1.003"));
         assertThat(ColumnTypeScalar.FLOAT64.encode(1.003, false), is(Long.toHexString(Double.doubleToLongBits(1.003))));
+        assertThat(ColumnTypeScalar.FLOAT64.encode(-1.003, false),
+                is(Long.toHexString(Double.doubleToLongBits(-1.003))));
         assertThat(ColumnTypeScalar.FLOAT64.encode(1.003, true), is("1.003"));
         assertThat(ColumnTypeScalar.STRING.encode("test", false), is("test"));
         assertThat(ColumnTypeScalar.STRING.encode("test", true), is("test"));
@@ -185,9 +192,14 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.BOOL.decode("0"), is(Boolean.FALSE));
         assertThat(ColumnTypeScalar.BOOL.decode("1"), is(true));
         assertThat(ColumnTypeScalar.INT8.decode("a"), is((byte) 10));
+        assertThat(ColumnTypeScalar.INT8.decode("ff"), is((byte) -1));
         assertThat(ColumnTypeScalar.INT16.decode("a"), is((short) 10));
+        assertThat(ColumnTypeScalar.INT16.decode("ffff"), is((short) -1));
         assertThat(ColumnTypeScalar.INT32.decode("a"), is(10));
+        assertThat(ColumnTypeScalar.INT32.decode("ffffffff"), is(-1));
         assertThat(ColumnTypeScalar.INT64.decode("a"), is(10L));
+        assertThat(ColumnTypeScalar.INT64.decode("ffffffffffffffff"), is(-1L));
+        assertThat(ColumnTypeScalar.INT64.decode("efffffffffffffff"), is(-1152921504606846977L));
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(1.003f))), is(1.003f));
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(Float.NaN))),
                 is(Float.NaN));
@@ -200,6 +212,7 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(Float.MIN_VALUE))),
                 is(Float.MIN_VALUE));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(1.003))), is(1.003));
+        assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(-1.003))), is(-1.003));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(Double.NaN))),
                 is(Double.NaN));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(Double.POSITIVE_INFINITY))),
