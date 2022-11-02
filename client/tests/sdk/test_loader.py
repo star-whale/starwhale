@@ -10,6 +10,7 @@ from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
+from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,
@@ -30,6 +31,33 @@ class TestDataLoader(TestCase):
         self.dataset_uri = URI("mnist/version/1122334455667788", URIType.DATASET)
         self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
+
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
+    def test_range_match(self, m_scan_id: MagicMock, m_summary: MagicMock) -> None:
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=True,
+            include_link=False,
+        )
+        m_scan_id.return_value = [{"id": "path/0"}]
+        consumption = get_dataset_consumption(
+            self.dataset_uri,
+            session_id="10",
+            session_start="path/0",
+            session_end=None,
+        )
+        with self.assertRaises(ParameterError):
+            get_data_loader(self.dataset_uri, session_consumption=consumption)
+
+        with self.assertRaises(ParameterError):
+            get_data_loader(
+                self.dataset_uri, session_consumption=consumption, start="path/1"
+            )
+
+        with self.assertRaises(ParameterError):
+            get_data_loader(
+                self.dataset_uri, session_consumption=consumption, end="path/1"
+            )
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.wrapper.Dataset.scan_id")

@@ -12,6 +12,7 @@ from starwhale.utils import load_dotenv
 from starwhale.consts import AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
+from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import BaseArtifact
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import (
@@ -172,6 +173,14 @@ def get_data_loader(
     logger: t.Optional[loguru.Logger] = None,
 ) -> DataLoader:
     from starwhale.core.dataset import model
+
+    if session_consumption:
+        sc_start = session_consumption.session_start  # type: ignore
+        sc_end = session_consumption.session_end  # type: ignore
+        if sc_start != start or sc_end != end:
+            raise ParameterError(
+                f"star-end range keys not match, session_consumption:[{sc_start}, {sc_end}], loader:[{start}, {end}]"
+            )
 
     if isinstance(dataset_uri, str):
         dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
