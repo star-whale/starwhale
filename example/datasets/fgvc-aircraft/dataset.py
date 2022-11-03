@@ -49,8 +49,8 @@ def _do_iter_raw_item(fname):
             meta = line.split(" ", 1)  # ['1514522', 'Boeing 707']
             annotations = {"family": meta[1].replace("\n", "")}
             _img = DATA_DIR / "images" / f"{meta[0]}.jpg"
-            with PILImage.open(_img) as pil_image_open:
-                shape = pil_image_open.size
+            with PILImage.open(_img) as img:
+                shape = img.size
             yield Link(
                 uri=str(_img.absolute()),
                 data_type=Image(display_name=meta[0], shape=shape),
