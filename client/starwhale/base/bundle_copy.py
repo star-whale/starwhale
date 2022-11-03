@@ -206,9 +206,7 @@ class BundleCopy(CloudRequestMixed):
         ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
                 if self.typ == URIType.DATASET:
-                    self._do_upload_bundle_dir(
-                        progress, add_data_uri_header=True
-                    )
+                    self._do_upload_bundle_dir(progress, add_data_uri_header=True)
                 else:
                     self._do_upload_bundle_tar(progress)
             else:

@@ -23,9 +23,7 @@ def _do_iter_item(fname):
             annotations = {"family": meta[1].replace("\n", "")}
             with (DATA_DIR / "images" / f"{meta[0]}.jpg").open("rb") as img:
                 image_bytes = img.read()
-            with PILImage.open(
-                DATA_DIR / "images" / f"{meta[0]}.jpg"
-            ) as img:
+            with PILImage.open(DATA_DIR / "images" / f"{meta[0]}.jpg") as img:
                 shape = img.size
             yield Image(
                 fp=image_bytes,
