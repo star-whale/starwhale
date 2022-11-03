@@ -29,8 +29,6 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
@@ -50,6 +48,9 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.trash.Trash;
+import ai.starwhale.mlops.domain.trash.Trash.Type;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -86,6 +87,7 @@ public class DatasetService {
     private final UserService userService;
     private final DsFileGetter dsFileGetter;
     private final DataReadManager dataReadManager;
+    private final TrashService trashService;
     @Setter
     private BundleManager bundleManager;
 
@@ -93,7 +95,7 @@ public class DatasetService {
             DatasetVersionMapper datasetVersionMapper, DatasetVoConvertor datasetVoConvertor,
             DatasetVersionConvertor versionConvertor, StorageService storageService, DatasetManager datasetManager,
             IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, UserService userService,
-            DsFileGetter dsFileGetter, DataReadManager dataReadManager) {
+            DsFileGetter dsFileGetter, DataReadManager dataReadManager, TrashService trashService) {
         this.projectManager = projectManager;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -106,6 +108,7 @@ public class DatasetService {
         this.userService = userService;
         this.dsFileGetter = dsFileGetter;
         this.dataReadManager = dataReadManager;
+        this.trashService = trashService;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -131,18 +134,19 @@ public class DatasetService {
     }
 
     public Boolean deleteDataset(DatasetQuery query) {
+        BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl());
+        Trash trash = Trash.builder()
+                .projectId(projectManager.getProjectId(query.getProjectUrl()))
+                .objectId(bundleManager.getBundleId(bundleUrl))
+                .type(Type.DATASET)
+                .build();
+        trashService.moveToRecycleBin(trash, userService.currentUserDetail());
         return RemoveManager.create(bundleManager, datasetManager)
                 .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl()));
     }
 
     public Boolean recoverDataset(String projectUrl, String datasetUrl) {
-        try {
-            return RecoverManager.create(projectManager, datasetManager, idConvertor)
-                    .recoverBundle(BundleUrl.create(projectUrl, datasetUrl));
-        } catch (RecoverException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET).tip(e.getMessage()),
-                    HttpStatus.BAD_REQUEST);
-        }
+        throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
     public DatasetInfoVo getDatasetInfo(DatasetQuery query) {
@@ -304,7 +308,7 @@ public class DatasetService {
     }
 
     public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
-                         String size) {
+            String size) {
         return dsFileGetter.dataOf(datasetId, uri, authName, offset, size);
     }
 

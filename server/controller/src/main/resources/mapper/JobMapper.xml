@@ -82,6 +82,7 @@
   <select id="findJobByUuid" resultMap="jobResultMap">
     <include refid="select_jobs"/>
     <where>
+      and job_is_deleted = 0
       and job_uuid = #{uuid}
     </where>
   </select>

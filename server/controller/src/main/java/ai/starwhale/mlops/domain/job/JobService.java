@@ -42,6 +42,9 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
+import ai.starwhale.mlops.domain.trash.Trash;
+import ai.starwhale.mlops.domain.trash.Trash.Type;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.StarwhaleException;
@@ -50,7 +53,6 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
@@ -90,13 +92,15 @@ public class JobService {
     private final RuntimeManager runtimeManager;
     private final JobUpdateHelper jobUpdateHelper;
 
+    private final TrashService trashService;
+
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper,
             JobDatasetVersionMapper jobDatasetVersionMapper,
             TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelManager modelManager,
             ResultQuerier resultQuerier, DatasetManager datasetManager, StoragePathCoordinator storagePathCoordinator,
-            UserService userService, JobUpdateHelper jobUpdateHelper) {
+            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
         this.jobDatasetVersionMapper = jobDatasetVersionMapper;
@@ -114,6 +118,7 @@ public class JobService {
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
+        this.trashService = trashService;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -151,27 +156,20 @@ public class JobService {
     }
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
-        Job job = jobManager.fromUrl(jobUrl);
-        int res = 0;
-        if (job.getId() != null) {
-            res = jobMapper.removeJob(job.getId());
-        } else if (!StrUtil.isEmpty(job.getUuid())) {
-            res = jobMapper.removeJobByUuid(job.getUuid());
-        }
+        Long jobId = jobManager.getJobId(jobUrl);
+        Trash trash = Trash.builder()
+                .projectId(projectManager.getProjectId(projectUrl))
+                .objectId(jobId)
+                .type(Type.EVALUATION)
+                .build();
+        trashService.moveToRecycleBin(trash, userService.currentUserDetail());
 
+        int res = jobMapper.removeJob(jobId);
         return res > 0;
     }
 
     public Boolean recoverJob(String projectUrl, String jobUrl) {
-        Job job = jobManager.fromUrl(jobUrl);
-        int res = 0;
-        if (job.getId() != null) {
-            res = jobMapper.recoverJob(job.getId());
-        } else if (!StrUtil.isEmpty(job.getUuid())) {
-            res = jobMapper.recoverJobByUuid(job.getUuid());
-        }
-
-        return res > 0;
+        throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
     public Long createJob(String projectUrl,
