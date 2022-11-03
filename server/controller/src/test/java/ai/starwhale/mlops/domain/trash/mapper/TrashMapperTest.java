@@ -43,8 +43,8 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .size(10L)
                 .trashName("model1")
                 .trashType("MODEL")
-                .retention(new Date())
-                .updatedTime(new Date())
+                .retention(new Date(1000))
+                .updatedTime(new Date(1000))
                 .build();
         trashMapper.insert(trashPo);
         Assertions.assertEquals(trashPo, trashMapper.find(trashPo.getId()));
