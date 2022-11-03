@@ -25,6 +25,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class ColumnTypeScalarTest {
@@ -260,6 +261,44 @@ public class ColumnTypeScalarTest {
                         ColumnTypeScalar.BYTES.toWal(0,
                                 ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))).build()),
                 is(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))));
+    }
+
+    @Test
+    public void testEnDeCodeInt8() {
+        Map cases = Map.of("ff", (byte) -1, "1", (byte) 1, "0", (byte) 0, "80", (byte) -128, "7f", (byte) 127);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT8.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT8.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt16() {
+        Map cases = Map.of("ffff", (short) -1, "1", (short) 1, "0", (short) 0, "8000", (short) -32768, "7fff",
+                (short) 32767);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT16.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT16.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt32() {
+        Map cases = Map.of("ffffffff", -1, "1", 1, "0", 0, "80000000", -2147483648, "7fffffff", 2147483647);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT32.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT32.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt64() {
+        Map cases = Map.of("ffffffffffffffff", -1L, "1", 1L, "0", 0L, "8000000000000000", -9223372036854775808L,
+                "7fffffffffffffff", 9223372036854775807L);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT64.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT64.encode(v, false), is(k));
+        });
     }
 
 }

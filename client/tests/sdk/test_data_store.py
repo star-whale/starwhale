@@ -1975,5 +1975,59 @@ class TestTableWriter(BaseTestCase):
             remote_writer.close()
 
 
+class TestScalarEncodeDecode(BaseTestCase):
+    def test_int8(self) -> None:
+        test_cases = {"ff": -1, "01": 1, "00": 0, "80": -128, "7f": 127}
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT8.encode(tc[1]), f"INT8 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT8.decode(tc[0]), f"INT8 encode {tc[0]} error"
+            )
+
+    def test_int16(self) -> None:
+        test_cases = {"ffff": -1, "0001": 1, "0000": 0, "8000": -32768, "7fff": 32767}
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT16.encode(tc[1]), f"INT16 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT16.decode(tc[0]), f"INT16 encode {tc[0]} error"
+            )
+
+    def test_int32(self) -> None:
+        test_cases = {
+            "ffffffff": -1,
+            "00000001": 1,
+            "00000000": 0,
+            "80000000": -2147483648,
+            "7fffffff": 2147483647,
+        }
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT32.encode(tc[1]), f"INT32 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT32.decode(tc[0]), f"INT32 encode {tc[0]} error"
+            )
+
+    def test_int64(self) -> None:
+        test_cases = {
+            "ffffffffffffffff": -1,
+            "0000000000000001": 1,
+            "0000000000000000": 0,
+            "8000000000000000": -9223372036854775808,
+            "7fffffffffffffff": 9223372036854775807,
+        }
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT64.encode(tc[1]), f"INT64 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT64.decode(tc[0]), f"INT64 encode {tc[0]} error"
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
