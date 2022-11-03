@@ -203,13 +203,11 @@ class BundleCopy(CloudRequestMixed):
             TransferSpeedColumn(),
             console=console,
             refresh_per_second=0.2,
-        ) as progress, ThreadPoolExecutor(
-            max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
-        ) as executor:
+        ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
                 if self.typ == URIType.DATASET:
                     self._do_upload_bundle_dir(
-                        progress, add_data_uri_header=True, executor=executor
+                        progress, add_data_uri_header=True
                     )
                 else:
                     self._do_upload_bundle_tar(progress)
@@ -231,7 +229,6 @@ class BundleCopy(CloudRequestMixed):
     def _do_upload_bundle_dir(
         self,
         progress: Progress,
-        executor: ThreadPoolExecutor,
         add_data_uri_header: bool = False,
     ) -> None:
         workdir: Path = self._get_target_path(self.src_uri)
@@ -319,11 +316,14 @@ class BundleCopy(CloudRequestMixed):
                 )
                 _p_map[_tid] = (_path, "")
 
-            futures = [
-                executor.submit(_upload_blob, _p, _tid, _data_uri)
-                for _tid, (_p, _data_uri) in _p_map.items()
-            ]
-            wait(futures)
+            with ThreadPoolExecutor(
+                max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
+            ) as executor:
+                futures = [
+                    executor.submit(_upload_blob, _p, _tid, _data_uri)
+                    for _tid, (_p, _data_uri) in _p_map.items()
+                ]
+                wait(futures)
 
         except Exception as e:
             console.print(

@@ -25,8 +25,8 @@ def _do_iter_item(fname):
                 image_bytes = img.read()
             with PILImage.open(
                 DATA_DIR / "images" / f"{meta[0]}.jpg"
-            ) as pil_image_open:
-                shape = pil_image_open.size
+            ) as img:
+                shape = img.size
             yield Image(
                 fp=image_bytes,
                 display_name=meta[0],
