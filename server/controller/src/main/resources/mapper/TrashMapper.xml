@@ -20,9 +20,9 @@
 <mapper namespace="ai.starwhale.mlops.domain.trash.mapper.TrashMapper">
   <insert id="insert" parameterType="ai.starwhale.mlops.domain.trash.po.TrashPo"
     useGeneratedKeys="true" keyProperty="id">
-    insert into trash(project_id, object_id, operator_id, trash_name, trash_type, retention,
+    insert into trash(project_id, object_id, operator_id, trash_name, trash_type, size, retention,
                       updated_time)
-    values (#{projectId}, #{objectId}, #{operatorId}, #{trashName}, #{trashType}, #{retention},
+    values (#{projectId}, #{objectId}, #{operatorId}, #{trashName}, #{trashType}, #{size}, #{retention},
             #{updatedTime})
   </insert>
   <delete id="delete">
