@@ -40,7 +40,6 @@ SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
 _DUMMY_FIELD = -1
 
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
-_DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
 _PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
 _PipReqT = t.Union[str, Path, PosixPath]
 
@@ -401,6 +400,7 @@ def conda_export(
 def conda_env_update(
     env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
 ) -> None:
+    target_env = Path(target_env).resolve()
     cmd = [
         get_conda_bin(),
         "env",
@@ -477,6 +477,16 @@ def _render_sw_activate(
         console.print(" :compass: run cmd:  ")
         console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
         console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
+
+
+def get_conda_prefix_path(name: str = "") -> str:
+    cmd = [get_conda_bin(), "run"]
+    if name:
+        cmd += ["--name", name]
+
+    cmd += ["printenv", "CONDA_PREFIX"]
+    output = subprocess.check_output(cmd)
+    return output.decode().strip()
 
 
 def get_conda_bin() -> str:
@@ -616,7 +626,7 @@ def create_python_env(
         logger.info(
             f"create conda {name}:{isolated_env_dir}, use python {python_version}..."
         )
-        conda_setup(python_version, name=name, prefix=isolated_env_dir)
+        conda_setup(python_version, prefix=isolated_env_dir)
     else:
         raise NoSupportError(mode)
 

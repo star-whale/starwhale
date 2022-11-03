@@ -50,6 +50,7 @@ from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
+    empty_dir,
     ensure_dir,
     ensure_file,
     is_within_dir,
@@ -87,6 +88,7 @@ from starwhale.utils.venv import (
     pip_freeze_by_pybin,
     guess_current_py_env,
     trunc_python_version,
+    get_conda_prefix_path,
     check_valid_venv_prefix,
     get_user_python_version,
     check_valid_conda_prefix,
@@ -101,6 +103,7 @@ from starwhale.utils.error import (
     NoSupportError,
     ConfigFormatError,
     MissingFieldError,
+    ExclusiveArgsError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.progress import run_with_progress_bar
@@ -198,10 +201,10 @@ class BaseDependency(Protocol):
     def kind(self) -> DependencyType:
         ...
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         ...
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         ...
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
@@ -228,20 +231,21 @@ class NativeFileDependency(ASDictMixin, BaseDependency):
     def kind(self) -> DependencyType:
         return DependencyType.NATIVE_FILE
 
-    def _do_install(self, workdir: Path, mode: str) -> None:
+    def _do_install(self, src_dir: Path, mode: str) -> None:
         # TODO: support native file pre-hook, post-hook
         for d in self.deps:
             if in_container():
                 _dest = Path(d["dest"])
             else:
-                _mode_dir = workdir / "export" / mode
+                _mode_dir = src_dir / "export" / mode
                 _dest = _mode_dir / d["dest"]
                 if not is_within_dir(_mode_dir, _dest):
                     raise NoSupportError(
                         f"native files installation does not support the out of base({_mode_dir}) dir relative path({d['dest']}) in the host environment"
                     )
 
-            _src = workdir / RuntimeArtifactType.FILES / d["src"]
+            # TODO: remove hard-code files dir
+            _src = src_dir / RuntimeArtifactType.FILES / d["src"]
             console.print(f":baby_chick: copy native files: {_src} -> {_dest}")
             if _src.is_dir():
                 copy_fs(str(_src), str(_dest))
@@ -249,11 +253,11 @@ class NativeFileDependency(ASDictMixin, BaseDependency):
                 ensure_dir(_dest.parent)
                 shutil.copyfile(str(_src), str(_dest))
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        self._do_install(workdir, PythonRunEnv.CONDA)
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._do_install(src_dir, PythonRunEnv.CONDA)
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        self._do_install(workdir, PythonRunEnv.VENV)
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._do_install(src_dir, PythonRunEnv.VENV)
 
 
 class WheelDependency(ASDictMixin, BaseDependency):
@@ -270,27 +274,27 @@ class WheelDependency(ASDictMixin, BaseDependency):
     def kind(self) -> DependencyType:
         return DependencyType.WHEEL
 
-    def _get_wheels(self, workdir: Path) -> t.Generator[Path, None, None]:
+    def _get_wheels(self, src_dir: Path) -> t.Generator[Path, None, None]:
         for d in self.deps:
             if not d:
                 continue
 
-            fpath = workdir / RuntimeArtifactType.WHEELS / d
+            fpath = src_dir / d
             if not fpath.exists():
                 raise NotFoundError(f"wheel install: {fpath}")
 
             yield fpath
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        for wpath in self._get_wheels(workdir):
-            logger.debug(f"conda run pip install: {wpath}")
-            conda_install_req(req=wpath, prefix_path=env_dir, configs=configs)
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        for path in self._get_wheels(src_dir):
+            logger.debug(f"conda run pip install: {path}")
+            conda_install_req(req=path, prefix_path=env_dir, configs=configs)
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        for wpath in self._get_wheels(workdir):
-            logger.debug(f"venv pip install: {wpath}")
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        for path in self._get_wheels(src_dir):
+            logger.debug(f"venv pip install: {path}")
             venv_install_req(
-                env_dir, wpath, pip_config=configs.get("pip")
+                env_dir, path, pip_config=configs.get("pip")
             )  # type:ignore
 
 
@@ -311,7 +315,7 @@ class CondaPkgDependency(ASDictMixin, BaseDependency):
     def kind(self) -> DependencyType:
         return DependencyType.CONDA_PKG
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         _conda_pkgs = " ".join([repr(_p) for _p in self.deps if _p])
         _conda_pkgs = _conda_pkgs.strip()
         if _conda_pkgs:
@@ -323,7 +327,7 @@ class CondaPkgDependency(ASDictMixin, BaseDependency):
                 configs=configs,
             )
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         logger.warning("no support install conda pkg in the venv environment")
 
 
@@ -345,15 +349,15 @@ class CondaEnvFileDependency(ASDictMixin, BaseDependency):
     def kind(self) -> DependencyType:
         return DependencyType.CONDA_ENV_FILE
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        env_fpath = workdir / RuntimeArtifactType.DEPEND / self.deps
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        env_fpath = src_dir / self.deps
         if not env_fpath.exists():
             raise NotFoundError(f"conda install env file: {env_fpath}")
 
         # TODO: configs for conda env update?
         conda_env_update(env_fpath=env_fpath, target_env=env_dir)
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         logger.warning(
             "no support install/update conda environment file in the venv environment"
         )
@@ -380,13 +384,13 @@ class PipPkgDependency(ASDictMixin, BaseDependency):
             if d:
                 yield d
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         # TODO: merge deps
         for pkg in self._get_pkgs():
             logger.debug(f"conda run pip install: {pkg}")
             conda_install_req(req=pkg, prefix_path=env_dir, configs=configs)
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         for pkg in self._get_pkgs():
             logger.debug(f"venv pip install: {pkg}")
             venv_install_req(env_dir, pkg, pip_config=configs.get("pip"))  # type:ignore
@@ -410,18 +414,19 @@ class PipReqFileDependency(ASDictMixin, BaseDependency):
     def kind(self) -> DependencyType:
         return DependencyType.PIP_REQ_FILE
 
-    def _get_req_path(self, workdir: Path) -> Path:
-        fpath = workdir / RuntimeArtifactType.DEPEND / self.deps
+    def _get_req_path(self, src_dir: Path) -> Path:
+        # TODO: remove hard-code depend dir
+        fpath = src_dir / self.deps
         if not fpath.exists():
             raise NotFoundError(f"pip req file: {fpath}")
         return fpath
 
-    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        fpath = self._get_req_path(workdir)
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        fpath = self._get_req_path(src_dir)
         conda_install_req(req=fpath, prefix_path=env_dir, configs=configs)
 
-    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
-        fpath = self._get_req_path(workdir)
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        fpath = self._get_req_path(src_dir)
         venv_install_req(env_dir, fpath, pip_config=configs.get("pip"))  # type:ignore
 
 
@@ -647,6 +652,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         stdout: bool = False,
         include_editable: bool = False,
         emit_pip_options: bool = False,
+        env_use_shell: bool = False,
     ) -> None:
         StandaloneRuntime.lock(
             target_dir,
@@ -657,6 +663,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             stdout,
             include_editable,
             emit_pip_options,
+            env_use_shell,
         )
 
     def dockerize(
@@ -732,12 +739,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         **kw: t.Any,
     ) -> None:
-        enable_lock = kw.get("enable_lock", False)
+        disable_env_lock = kw.get("disable_env_lock", False)
         env_name = kw.get("env_name", "")
         env_prefix_path = kw.get("env_prefix_path", "")
+        env_use_shell = kw.get("env_use_shell", False)
         include_editable = kw.get("include_editable", False)
 
-        if enable_lock:
+        if not disable_env_lock:
             console.print(
                 f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
             )
@@ -749,6 +757,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 disable_auto_inject=False,
                 stdout=False,
                 include_editable=include_editable,
+                env_use_shell=env_use_shell,
             )
 
         # TODO: tune for no runtime.yaml file
@@ -769,9 +778,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "lock environment",
                 dict(
                     swrt_config=_swrt_config,
-                    enable_lock=enable_lock,
+                    disable_env_lock=disable_env_lock,
                     env_prefix_path=env_prefix_path,
                     env_name=env_name,
+                    env_use_shell=env_use_shell,
                 ),
             ),
             (
@@ -910,9 +920,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _lock_environment(
         self,
         swrt_config: RuntimeConfig,
-        enable_lock: bool = False,
+        disable_env_lock: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
+        env_use_shell: bool = False,
     ) -> None:
         console.print(":bee: dump environment info...")
         sh_py_env = guess_current_py_env()
@@ -933,9 +944,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     },
                     "env_prefix_path": env_prefix_path,
                     "env_name": env_name,
-                    "use_shell_detection": not (env_prefix_path or env_name),
+                    "env_use_shell": env_use_shell,
                 },
-                "auto_lock_dependencies": enable_lock,
+                "auto_lock_dependencies": not disable_env_lock,
                 "python": swrt_config.environment.python,
                 "arch": swrt_config.environment.arch,
                 "mode": swrt_config.mode,
@@ -1029,7 +1040,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         name: str,
         uri: URI,
         force: bool = False,
-        restore: bool = False,
+        disable_restore: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
         ensure_dir(workdir)
@@ -1053,7 +1064,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         console.print(":printer: fork runtime files...")
         cls._do_fork_runtime_bundles(workdir, extract_d, name, force)
 
-        if restore:
+        if not disable_restore:
             console.print(f":safety_vest: start to restore to {extract_d}...")
             _manifest = load_yaml(extract_d / DEFAULT_MANIFEST_NAME)
             isolated_env_dir = sw_auto_d / _manifest["environment"]["mode"]
@@ -1176,6 +1187,32 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
 
     @classmethod
+    def _ensure_isolated_python_env(
+        cls, env_dir: Path, python_version: str, mode: str, invalid_rebuild: bool = True
+    ) -> None:
+        if env_dir.exists():
+            is_valid_conda = mode == PythonRunEnv.CONDA and check_valid_conda_prefix(
+                env_dir
+            )
+            is_valid_venv = mode == PythonRunEnv.VENV and check_valid_venv_prefix(
+                env_dir
+            )
+
+            # TODO: add rebuild option
+            if is_valid_conda or is_valid_venv:
+                return
+            else:
+                if invalid_rebuild:
+                    empty_dir(env_dir)
+                    ensure_dir(env_dir)
+                else:
+                    raise FormatError(f"{env_dir} is a valid {mode} dir")
+        else:
+            ensure_dir(env_dir)
+
+        cls._setup_python_env(env_dir, mode=mode, python_version=python_version)
+
+    @classmethod
     def lock(
         cls,
         target_dir: t.Union[str, Path],
@@ -1186,58 +1223,72 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         stdout: bool = False,
         include_editable: bool = False,
         emit_pip_options: bool = False,
+        env_use_shell: bool = False,
     ) -> None:
-        runtime_fpath = Path(target_dir) / yaml_name
+        target_dir = Path(target_dir)
+        runtime_fpath = target_dir / yaml_name
         if not runtime_fpath.exists():
             raise NotFoundError(runtime_fpath)
         runtime_yaml = load_yaml(runtime_fpath)
         mode = runtime_yaml.get("mode", PythonRunEnv.VENV)
         expected_pyver = str(runtime_yaml.get("environment", {}).get("python", ""))
+        _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
         console.print(f":butterfly: lock dependencies at mode {mode}")
 
-        _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
-        if mode == PythonRunEnv.CONDA:
-            if not env_name and not env_prefix_path:
-                env_prefix_path = get_base_prefix(PythonRunEnv.CONDA)
-
-            if env_prefix_path and not check_valid_conda_prefix(env_prefix_path):
-                raise FormatError(f"conda prefix: {env_prefix_path}")
-
-            if not env_prefix_path and not env_name:
-                raise MissingFieldError("conda lock need name or prefix_path")
-
-            _kw = {"prefix": env_prefix_path, "name": env_name}
-            _pybin = get_conda_pybin(**_kw)
-            _detected_pyver = get_python_version_by_bin(_pybin)
-            if expected_pyver and not _detected_pyver.startswith(expected_pyver):
-                raise EnvironmentError(
-                    f"conda: expected python({expected_pyver}) is not equal to detected python({_detected_pyver})"
-                )
-
-            console.print(
-                f":cat_face: use conda env name({env_name})/prefix({env_prefix_path}) to export environment..."
+        set_args = list(filter(bool, (env_name, env_prefix_path, env_use_shell)))
+        if len(set_args) >= 2:
+            raise ExclusiveArgsError(
+                f"env_name({env_name}), env_prefix_path({env_prefix_path}) and env_use_shell({env_use_shell}) are the mutex arguments"
             )
-            conda_export(temp_lock_path, **_kw)
-        else:
-            if env_name:
+
+        prefix_path = ""
+        if env_name:
+            if mode == PythonRunEnv.VENV:
                 raise NoSupportError(
                     f"lock environment by the env name({env_name}) in venv mode"
                 )
+            prefix_path = get_conda_prefix_path(env_name)
+        elif env_use_shell:
+            prefix_path = get_base_prefix(mode)
+        elif env_prefix_path:
+            prefix_path = env_prefix_path
+        else:
+            _sw_auto_path = target_dir / SW_AUTO_DIRNAME / mode
+            cls._ensure_isolated_python_env(_sw_auto_path, expected_pyver, mode)
+            prefix_path = str(_sw_auto_path)
 
-            prefix_path = env_prefix_path or get_base_prefix(PythonRunEnv.VENV)
+        cls._install_dependencies_with_runtime_yaml(
+            workdir=target_dir,
+            runtime_yaml=runtime_yaml,
+            env_dir=prefix_path,
+            skip_deps=[DependencyType.NATIVE_FILE],
+        )
+
+        if mode == PythonRunEnv.CONDA:
+            if not check_valid_conda_prefix(prefix_path):
+                raise FormatError(f"conda prefix: {prefix_path}")
+
+            pybin = get_conda_pybin(prefix=prefix_path)
+            console.print(
+                f":cat_face: use conda env prefix({prefix_path}) to export environment..."
+            )
+            conda_export(temp_lock_path, prefix=prefix_path)
+        elif mode == PythonRunEnv.VENV:
             if not check_valid_venv_prefix(prefix_path):
                 raise FormatError(f"venv prefix: {prefix_path}")
 
-            _pybin = os.path.join(prefix_path, "bin", "python3")
-            _detected_pyver = get_python_version_by_bin(_pybin)
-            if expected_pyver and not _detected_pyver.startswith(expected_pyver):
-                raise EnvironmentError(
-                    f"venv: expected python({expected_pyver}) is not equal to detected python({_detected_pyver})"
-                )
-
-            console.print(f":cat_face: use {_pybin} to freeze requirements...")
+            pybin = os.path.join(str(prefix_path), "bin", "python3")
+            console.print(f":cat_face: use {pybin} to freeze requirements...")
             pip_freeze_by_pybin(
-                _pybin, temp_lock_path, include_editable, emit_pip_options
+                pybin, temp_lock_path, include_editable, emit_pip_options
+            )
+        else:
+            raise NoSupportError(f"lock {mode} environment")
+
+        detected_pyver = get_python_version_by_bin(pybin)
+        if expected_pyver and not detected_pyver.startswith(expected_pyver):
+            raise EnvironmentError(
+                f"{mode}: expected python({expected_pyver}) is not equal to detected python({detected_pyver})"
             )
 
         if stdout:
@@ -1284,6 +1335,16 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         if _rm.exists() and not force:
             raise ExistedError(f"{_rm} was already existed")
 
+        if mode == PythonRunEnv.CONDA:
+            lock_file = RuntimeLockFileType.CONDA
+            lock_content = f"name: {name}"
+        else:
+            lock_file = RuntimeLockFileType.VENV
+            lock_content = ""
+
+        if not Path(lock_file).exists():
+            ensure_file(lock_file, content=lock_content)
+
         ensure_dir(workdir)
         config = dict(
             name=name,
@@ -1294,9 +1355,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "os": SupportOS.UBUNTU,
             },
             dependencies=[
-                RuntimeLockFileType.CONDA
-                if mode == PythonRunEnv.CONDA
-                else RuntimeLockFileType.VENV,
+                lock_file,
                 {"pip": pkgs},
             ],
             api_version=RUNTIME_API_VERSION,
@@ -1430,14 +1489,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                         20,
                         "setup python env",
                         dict(
-                            workdir=workdir,
+                            env_dir=isolated_env_dir
+                            or (workdir / "export" / _env["mode"]),
                             mode=_env["mode"],
                             python_version=_env["python"],
-                            isolated_env_dir=isolated_env_dir,
                         ),
                     ),
                     (
-                        cls._install_dependencies,
+                        cls._install_dependencies_within_restore,
                         50,
                         "install dependencies",
                         dict(
@@ -1485,7 +1544,33 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         run_with_progress_bar("runtime restore...", operations)
 
     @staticmethod
-    def _install_dependencies(
+    def _install_dependencies_with_runtime_yaml(
+        workdir: Path,
+        runtime_yaml: t.Any,
+        env_dir: t.Union[Path, str],
+        skip_deps: t.Optional[t.List[DependencyType]] = None,
+    ) -> None:
+        env_dir = Path(env_dir)
+
+        mode = runtime_yaml.get("mode", PythonRunEnv.VENV)
+        configs = runtime_yaml.get("configs", {})
+        skip_deps = skip_deps or []
+        console.print(
+            f":baby_bottle: install runtime.yaml dependencies @ {env_dir} for lock..."
+        )
+        deps_config = Dependencies(runtime_yaml.get("dependencies", []))
+        for dep in deps_config.deps:
+            if dep.kind in skip_deps:
+                logger.debug(f"skip {dep} to install")
+                continue
+
+            _func = (
+                dep.conda_install if PythonRunEnv.CONDA == mode else dep.venv_install
+            )
+            _func(workdir, env_dir, configs)
+
+    @staticmethod
+    def _install_dependencies_within_restore(
         workdir: Path,
         mode: str,
         deps: t.Dict,
@@ -1500,6 +1585,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         export_dir = workdir / "export"
         env_dir = isolated_env_dir or export_dir / mode
 
+        src_map = {
+            DependencyType.WHEEL: RuntimeArtifactType.WHEELS,
+            DependencyType.CONDA_ENV_FILE: RuntimeArtifactType.DEPEND,
+            DependencyType.PIP_REQ_FILE: RuntimeArtifactType.DEPEND,
+        }
+
         for dep in deps["raw_deps"]:
             kind = DependencyType(dep["kind"])
             if kind not in dependency_map:
@@ -1513,21 +1604,26 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             _func = (
                 _obj.conda_install if PythonRunEnv.CONDA == mode else _obj.venv_install
             )
-            _func(workdir, env_dir, configs)
+            if kind in src_map:
+                src_dir = workdir / src_map[kind]
+            else:
+                src_dir = workdir
+
+            _func(src_dir, env_dir, configs)
 
     @staticmethod
     def _setup_python_env(
-        workdir: Path,
+        env_dir: Path,
         mode: str,
         python_version: str,
-        isolated_env_dir: t.Optional[Path] = None,
     ) -> None:
-        env_dir = isolated_env_dir or workdir / "export" / mode
-        logger.info(f"setup python({python_version}) env with {mode}...")
+        console.print(f":abacus: setup python({python_version}) env with {mode}...")
         if mode == PythonRunEnv.CONDA:
             conda_setup(python_version, prefix=env_dir)
-        else:
+        elif mode == PythonRunEnv.VENV:
             venv_setup(env_dir, python_version=python_version)
+        else:
+            raise NoSupportError(f"ensure and build {mode} isolated python env")
 
     @staticmethod
     def _extract_local_packaged_env(

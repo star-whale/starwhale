@@ -2,6 +2,7 @@ import typing as t
 from pathlib import Path
 
 import click
+from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
 from starwhale.consts import (
     SupportArch,
@@ -46,13 +47,14 @@ runtime_cmd.add_command(quickstart, aliases=["qs"])  # type: ignore
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option("-n", "--name", default="", help="Runtime name")
 @click.option(
-    "--restore",
+    "-dr",
+    "--disable-restore",
     is_flag=True,
     default=False,
     help="Create isolated python environment and restore the runtime",
 )
 def _quickstart_from_uri(
-    uri: str, workdir: str, force: bool, name: str, restore: bool
+    uri: str, workdir: str, force: bool, name: str, disable_restore: bool
 ) -> None:
     """Quickstart from Starwhale Runtime URI
 
@@ -65,7 +67,11 @@ def _quickstart_from_uri(
     name = name or p_workdir.name
     _uri = URI(uri, expected_type=URIType.RUNTIME)
     RuntimeTermView.quickstart_from_uri(
-        workdir=p_workdir, name=name, uri=_uri, force=force, restore=restore
+        workdir=p_workdir,
+        name=name,
+        uri=_uri,
+        force=force,
+        disable_restore=disable_restore,
     )
 
 
@@ -136,17 +142,36 @@ def _quickstart(
     help="Runtime yaml filename, default use ${workdir}/runtime.yaml file",
 )
 @click.option(
-    "--gen-all-bundles", is_flag=True, help="Generate conda or venv files into runtime"
-)
-@click.option("--include-editable", is_flag=True, help="Include editable packages")
-@click.option(
-    "--enable-lock",
+    "-gab",
+    "--gen-all-bundles",
     is_flag=True,
-    help="Enable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
+    help="Generate conda or venv files into runtime",
 )
-@click.option("--env-prefix-path", default="", help="Conda or virtualenv prefix path")
 @click.option(
-    "--env-name", default="", help="conda name in lock or gen all bundles process"
+    "-ie", "--include-editable", is_flag=True, help="Include editable packages"
+)
+@click.option(
+    "-del",
+    "--disable-env-lock",
+    is_flag=True,
+    help="Disable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
+)
+@optgroup.group(  # type: ignore
+    "Python environment selectors",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of the python environment, default is the starwhale auto create env prefix path",
+)
+@optgroup.option(  # type: ignore
+    "-ep", "--env-prefix-path", default="", help="Conda or virtualenv prefix path"
+)
+@optgroup.option(  # type: ignore
+    "-en",
+    "--env-name",
+    default="",
+    help="conda name in lock or gen all bundles process",
+)
+@optgroup.option(  # type: ignore
+    "-es", "--env-use-shell", is_flag=True, default=False, help="use current shell"
 )
 def _build(
     workdir: str,
@@ -154,9 +179,10 @@ def _build(
     runtime_yaml: str,
     gen_all_bundles: bool,
     include_editable: bool,
-    enable_lock: bool,
+    disable_env_lock: bool,
     env_prefix_path: str,
     env_name: str,
+    env_use_shell: bool,
 ) -> None:
     RuntimeTermView.build(
         workdir=workdir,
@@ -164,9 +190,10 @@ def _build(
         yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
-        enable_lock=enable_lock,
+        disable_env_lock=disable_env_lock,
         env_prefix_path=env_prefix_path,
         env_name=env_name,
+        env_use_shell=env_use_shell,
     )
 
 
@@ -316,8 +343,18 @@ def _activate(uri: str, path: str) -> None:
     is_flag=True,
     help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
 )
-@click.option("-n", "--name", default="", help="conda name")
-@click.option("-p", "--prefix", default="", help="conda or virtualenv prefix path")
+@optgroup.group(  # type: ignore
+    "Python environment selectors",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of the python environment, default is the starwhale auto create env prefix path",
+)
+@optgroup.option("-n", "--env-name", default="", help="conda name")  # type: ignore
+@optgroup.option(  # type: ignore
+    "-p", "--env-prefix-path", default="", help="conda or virtualenv prefix path"
+)
+@optgroup.option(  # type: ignore
+    "-s", "--env-use-shell", is_flag=True, default=False, help="use current shell"
+)
 @click.option("--stdout", is_flag=True, help="Output lock file content to the stdout")
 @click.option(
     "--include-editable",
@@ -333,8 +370,9 @@ def _lock(
     target_dir: str,
     yaml_name: str,
     disable_auto_inject: bool,
-    name: str,
-    prefix: str,
+    env_name: str,
+    env_prefix_path: str,
+    env_use_shell: bool,
     stdout: bool,
     include_editable: bool,
     emit_pip_options: bool,
@@ -344,15 +382,17 @@ def _lock(
 
     TARGET_DIR: the runtime.yaml and local file dir, default is "."
     """
+
     RuntimeTermView.lock(
         target_dir,
         yaml_name,
-        name,
-        prefix,
+        env_name,
+        env_prefix_path,
         disable_auto_inject,
         stdout,
         include_editable,
         emit_pip_options,
+        env_use_shell,
     )
 
 
