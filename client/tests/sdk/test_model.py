@@ -150,14 +150,14 @@ class TestModelPipelineHandler(TestCase):
     @patch.dict(os.environ, {})
     @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.wrapper.data_store.LocalDataStore.scan_tables")
     def test_ppl(
         self,
         m_summary: MagicMock,
-        m_scan: MagicMock,
         m_eval_log: MagicMock,
         m_eval_get: MagicMock,
+        m_scan: MagicMock,
     ) -> None:
         _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
@@ -189,7 +189,7 @@ class TestModelPipelineHandler(TestCase):
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
                 auth_name="",
-            ),
+            ).asdict(),
         ]
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
         ensure_dir(data_dir)
@@ -203,21 +203,22 @@ class TestModelPipelineHandler(TestCase):
             index=0,
         )
         context_holder.context = context
-        # mock
         with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_ppl()
 
-        # only one data row
         m_eval_log.assert_called_once()
-
         status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(_status_dir, "timeline"))
 
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    @patch.dict(os.environ, {})
+    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
+    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    def test_deserializer(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
+    def test_deserializer(
+        self, m_summary: MagicMock, m_scan: MagicMock, m_scan_id: MagicMock
+    ) -> None:
         # make torch happy
         for i in sys.path:
             if not i:
@@ -275,8 +276,9 @@ class TestModelPipelineHandler(TestCase):
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
                 auth_name="",
-            ),
+            ).asdict(),
         ]
+        m_scan_id.return_value = [{"id": 0}]
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))

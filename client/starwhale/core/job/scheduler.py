@@ -105,7 +105,7 @@ class Scheduler:
         start_time = time.time()
         _result = _step_executor.execute()
 
-        logger.debug(
+        logger.info(
             f"step:{step_name} {_step.status}, result:{_result}, run time:{time.time() - start_time}"
         )
         return _result
@@ -142,7 +142,7 @@ class Scheduler:
         start_time = time.time()
         task_result: TaskResult = _task.execute()
 
-        logger.debug(
+        logger.info(
             f"step:{step_name} {_step.status}, task result:{task_result}, run time:{time.time() - start_time}"
         )
         return StepResult(step_name=step_name, task_results=[task_result])

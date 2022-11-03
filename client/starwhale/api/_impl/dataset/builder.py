@@ -77,12 +77,12 @@ class BaseBuildExecutor(metaclass=ABCMeta):
 
         self._forked_summary: t.Optional[DatasetSummary]
         if append and append_from_uri:
-            self._forked_last_idx, self._forked_rows = self.tabular_dataset.fork(
+            self._forked_last_seq_id, self._forked_rows = self.tabular_dataset.fork(
                 append_from_version
             )
             self._forked_summary = model.Dataset.get_dataset(append_from_uri).summary()
         else:
-            self._forked_last_idx = -1
+            self._forked_last_seq_id = -1
             self._forked_rows = 0
             self._forked_summary = None
 
@@ -113,7 +113,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         print("cleanup done.")
 
     @abstractmethod
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Tuple, None, None]:
         raise NotImplementedError
 
     @abstractmethod
@@ -191,20 +191,33 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     def make_swds(self) -> DatasetSummary:
         # TODO: add lock
-        ds_copy_candidates: t.Dict[int, Path] = {}
+        ds_copy_candidates: t.Dict[str, Path] = {}
         fno, wrote_size = 0, 0
 
         dwriter_path = self.data_tmpdir / str(fno)
         dwriter = dwriter_path.open("wb")
-        ds_copy_candidates[fno] = dwriter_path
+        ds_copy_candidates[str(fno)] = dwriter_path
 
         increased_rows = 0
         total_data_size = 0
         dataset_annotations: t.Dict[str, t.Any] = {}
 
-        for idx, (row_data, row_annotations) in enumerate(
-            self.iter_item(), start=self._forked_last_idx + 1
+        for append_seq_id, item_content in enumerate(
+            self.iter_item(), start=self._forked_last_seq_id + 1
         ):
+            if not isinstance(item_content, tuple):
+                raise FormatError(f"iter_item not return tuple type: {item_content}")
+
+            if len(item_content) == 2:
+                idx = append_seq_id
+                row_data, row_annotations = item_content
+            elif len(item_content) == 3:
+                idx, row_data, row_annotations = item_content
+            else:
+                raise FormatError(
+                    f"iter_item must return (data, annotations) or (id, data, annotations): {item_content}"
+                )
+
             if not isinstance(row_annotations, dict):
                 raise FormatError(f"annotations({row_annotations}) must be dict type")
 
@@ -234,6 +247,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                     data_origin=DataOriginType.NEW,
                     data_type=_artifact.astype(),
                     annotations=row_annotations,
+                    _append_seq_id=append_seq_id,
                 )
             )
 
@@ -247,7 +261,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 dwriter.close()
                 dwriter_path = self.data_tmpdir / str(fno)
                 dwriter = (dwriter_path).open("wb")
-                ds_copy_candidates[fno] = dwriter_path
+                ds_copy_candidates[str(fno)] = dwriter_path
 
             increased_rows += 1
 
@@ -258,16 +272,13 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             dwriter.close()
             if empty:
                 # last file is empty
-                f = ds_copy_candidates[fno]
-                del ds_copy_candidates[fno]
+                f = ds_copy_candidates[str(fno)]
+                del ds_copy_candidates[str(fno)]
                 os.unlink(f)
         except Exception as e:
             print(f"data write close exception: {e}")
 
-        self._copy_files(
-            ds_copy_candidates,
-            (self._forked_last_idx + 1, self._forked_last_idx + 1 + increased_rows),
-        )
+        self._copy_files(ds_copy_candidates)
 
         summary = DatasetSummary(
             rows=increased_rows,
@@ -281,10 +292,9 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     def _copy_files(
         self,
-        ds_copy_candidates: t.Dict[int, Path],
-        row_pos: t.Tuple[int, int],
+        ds_copy_candidates: t.Dict[str, Path],
     ) -> None:
-        map_fno_sign: t.Dict[int, str] = {}
+        map_fno_sign: t.Dict[str, str] = {}
         for _fno, _src_path in ds_copy_candidates.items():
             _sign_name, _obj_path = DatasetStorage.save_data_file(
                 _src_path, remove_src=True
@@ -305,9 +315,12 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             _dest_path.symlink_to(_obj_path)
 
         # TODO: tune performance scan after put in a second
-        for row in self.tabular_dataset.scan(*row_pos):
+        for row in self.tabular_dataset.scan():
+            if row.data_uri not in map_fno_sign:
+                continue
+
             self.tabular_dataset.update(
-                row_id=row.id, data_uri=map_fno_sign[int(row.data_uri)]
+                row_id=row.id, data_uri=map_fno_sign[row.data_uri]
             )
 
 
@@ -324,10 +337,20 @@ class UserRawBuildExecutor(BaseBuildExecutor):
         map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
         dataset_annotations: t.Dict[str, t.Any] = {}
 
-        for idx, (row_data, row_annotations) in enumerate(
+        for append_seq_id, item_content in enumerate(
             self.iter_item(),
-            start=self._forked_last_idx + 1,
+            start=self._forked_last_seq_id + 1,
         ):
+            if len(item_content) == 2:
+                idx = append_seq_id
+                row_data, row_annotations = item_content
+            elif len(item_content) == 3:
+                idx, row_data, row_annotations = item_content
+            else:
+                raise FormatError(
+                    f"iter_item must return (data, annotations) or (id, data, annotations): {item_content}"
+                )
+
             if not isinstance(row_annotations, dict):
                 raise FormatError(f"annotations({row_annotations}) must be dict type")
 
@@ -373,6 +396,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                     auth_name=auth,
                     data_type=row_data.astype(),
                     annotations=row_annotations,
+                    _append_seq_id=append_seq_id,
                 )
             )
 
@@ -436,7 +460,14 @@ def create_generic_cls(
 
     attrs = {"iter_item": _do_iter_item}
 
-    if isinstance(item[0], Link):
+    if len(item) == 2:
+        data = item[0]
+    elif len(item) == 3:
+        data = item[1]
+    else:
+        raise FormatError(f"wrong item format: {item}")
+
+    if isinstance(data, Link):
         _cls = type(
             "GenericUserRawHandler",
             (UserRawBuildExecutor,),
