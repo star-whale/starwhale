@@ -88,9 +88,9 @@ def _quickstart_from_uri(
     prompt="Please enter Starwhale Runtime name",
 )
 @click.option(
-    "-c",
-    "--create-env",
-    prompt="Do you want to create isolated python environment",
+    "-dce",
+    "--disable-create-env",
+    prompt="Do you want to disable the isolated python environment creation automatically(NOT RECOMMENDED)?",
     is_flag=True,
     default=False,
     show_default=True,
@@ -107,7 +107,7 @@ def _quickstart(
     force: bool,
     python_env: str,
     name: str,
-    create_env: bool,
+    disable_create_env: bool,
     interactive: bool,
 ) -> None:
     """[Only Standalone]Quickstart Starwhale Runtime
@@ -119,7 +119,7 @@ def _quickstart(
     p_workdir = Path(workdir).absolute()
     name = name or p_workdir.name
     RuntimeTermView.quickstart_from_ishell(
-        p_workdir, name, python_env, create_env, force, interactive
+        p_workdir, name, python_env, disable_create_env, force, interactive
     )
 
 

@@ -33,6 +33,7 @@ from starwhale.consts import (
     SW_IMAGE_FMT,
     DEFAULT_PROJECT,
     DefaultYAMLName,
+    SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     SW_PYPI_PKG_NAME,
     DEFAULT_PAGE_SIZE,
@@ -1042,11 +1043,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 expected_type=URIType.RUNTIME,
             )
 
-        extract_d = workdir / ".extract"
+        sw_auto_d = workdir / SW_AUTO_DIRNAME
+        extract_d = sw_auto_d / "fork-runtime-extract"
         console.print(f":package: extract swrt into {extract_d}...")
         _sr = StandaloneRuntime(uri)
         _sr.extract(force, extract_d)
-        make_dir_gitignore(extract_d)
+        make_dir_gitignore(sw_auto_d)
 
         console.print(":printer: fork runtime files...")
         cls._do_fork_runtime_bundles(workdir, extract_d, name, force)
@@ -1054,10 +1056,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         if restore:
             console.print(f":safety_vest: start to restore to {extract_d}...")
             _manifest = load_yaml(extract_d / DEFAULT_MANIFEST_NAME)
-            isolated_env_dir = workdir / f".{_manifest['environment']['mode']}"
+            isolated_env_dir = sw_auto_d / _manifest["environment"]["mode"]
             if not isolated_env_dir.exists() or force:
                 cls.restore(extract_d, isolated_env_dir)
-                make_dir_gitignore(isolated_env_dir)
             else:
                 console.print(f":sake: {isolated_env_dir} existed, skip restore")
 
@@ -1107,7 +1108,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         workdir: t.Union[Path, str],
         name: str,
         mode: str,
-        create_env: bool = False,
+        disable_create_env: bool = False,
         force: bool = False,
         interactive: bool = False,
     ) -> None:
@@ -1123,24 +1124,33 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         cls.render_runtime_yaml(workdir, name, mode, python_version, [sw_pkg], force)
 
-        if create_env:
+        if not disable_create_env:
+            sw_auto_dir = workdir / SW_AUTO_DIRNAME
+            make_dir_gitignore(sw_auto_dir)
+            isolated_env_dir = sw_auto_dir / mode
             console.print(
                 f":construction_worker: create {mode} isolated python environment..."
             )
-            _id = create_python_env(
+            create_python_env(
                 mode=mode,
                 name=name,
-                workdir=workdir,
+                isolated_env_dir=isolated_env_dir,
                 python_version=python_version,
                 force=force,
             )
-            console.print(f":dog: install {sw_pkg} {mode}@{_id}...")
+            console.print(f":dog: install {sw_pkg} {mode}@{isolated_env_dir}...")
             if mode == PythonRunEnv.VENV:
-                venv_install_req(_id, req=sw_pkg, enable_pre=True)
+                venv_install_req(isolated_env_dir, req=sw_pkg, enable_pre=True)
             elif mode == PythonRunEnv.CONDA:
-                conda_install_req(env_name=_id, req=sw_pkg, enable_pre=True)
+                conda_install_req(
+                    prefix_path=isolated_env_dir, req=sw_pkg, enable_pre=True
+                )
 
-            activate_python_env(mode=mode, identity=_id, interactive=interactive)
+            activate_python_env(
+                mode=mode,
+                identity=str(isolated_env_dir.absolute()),
+                interactive=interactive,
+            )
 
     @classmethod
     def activate(cls, path: str = "", uri: str = "") -> None:

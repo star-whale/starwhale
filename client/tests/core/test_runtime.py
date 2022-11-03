@@ -14,6 +14,7 @@ from starwhale.consts import (
     SupportArch,
     PythonRunEnv,
     DefaultYAMLName,
+    SW_AUTO_DIRNAME,
     ENV_CONDA_PREFIX,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -57,7 +58,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self, m_venv: MagicMock, m_call: MagicMock
     ) -> None:
         workdir = "/home/starwhale/myproject"
-        venv_dir = os.path.join(workdir, ".venv")
+        venv_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "venv")
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-venv"
 
@@ -65,7 +66,7 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.VENV,
-            create_env=True,
+            disable_create_env=False,
             force=True,
             interactive=True,
         )
@@ -106,7 +107,7 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.VENV,
-            create_env=False,
+            disable_create_env=True,
         )
         assert m_venv.call_count == 0
 
@@ -121,13 +122,14 @@ class StandaloneRuntimeTestCase(TestCase):
     def test_quickstart_from_ishell_conda(self, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
+        conda_prefix_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "conda")
         name = "test-conda"
 
         StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.CONDA,
-            create_env=True,
+            disable_create_env=False,
         )
         assert os.path.exists(os.path.join(workdir, runtime_path))
         _rt_config = load_yaml(runtime_path)
@@ -138,6 +140,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "--yes",
             "--name",
             name,
+            "--prefix",
+            conda_prefix_dir,
             f"python={get_python_version()}",
         ]
         assert " ".join(m_call.call_args_list[1][0][0]).startswith(
@@ -145,8 +149,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 [
                     "conda",
                     "run",
-                    "--name",
-                    name,
+                    "--prefix",
+                    conda_prefix_dir,
                     "python3",
                     "-m",
                     "pip",
@@ -165,7 +169,7 @@ class StandaloneRuntimeTestCase(TestCase):
         name = "rttest"
         version = "112233"
         cloud_uri = URI(f"http://0.0.0.0:80/project/1/runtime/{name}/version/{version}")
-        extract_dir = workdir / ".extract"
+        extract_dir = workdir / SW_AUTO_DIRNAME / "fork-runtime-extract"
         ensure_dir(extract_dir)
 
         runtime_config = self.get_runtime_config()
@@ -190,11 +194,12 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         ensure_dir(os.path.dirname(bundle_path))
         ensure_file(bundle_path, "")
-        venv_dir = workdir / ".venv"
+        auto_dir = workdir / SW_AUTO_DIRNAME
+        venv_dir = auto_dir / "venv"
         ensure_dir(venv_dir)
 
         assert not (workdir / "dummy.whl").exists()
-        assert not (venv_dir / ".gitignore").exists()
+        assert not (auto_dir / ".gitignore").exists()
         assert not (workdir / "requirements.txt").exists()
 
         RuntimeTermView.quickstart_from_uri(
@@ -214,7 +219,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert runtime_config["dependencies"][1]["wheels"] == ["dummy.whl"]
         assert runtime_config["dependencies"][2]["pip"] == ["Pillow"]
         assert (workdir / "dummy.whl").exists()
-        assert (venv_dir / ".gitignore").exists()
+        assert (auto_dir / ".gitignore").exists()
         assert (workdir / "requirements.txt").exists()
 
         assert m_bundle_copy.call_count == 1

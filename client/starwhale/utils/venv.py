@@ -602,22 +602,21 @@ def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
 def create_python_env(
     mode: str,
     name: str,
-    workdir: Path,
+    isolated_env_dir: Path,
     python_version: str,
     force: bool = False,
-) -> str:
+) -> None:
     if mode == PythonRunEnv.VENV:
-        venvdir = workdir / ".venv"
-        if venvdir.exists() and not force:
-            raise ExistedError(str(venvdir))
+        if isolated_env_dir.exists() and not force:
+            raise ExistedError(str(isolated_env_dir))
 
-        logger.info(f"create venv @ {venvdir}...")
-        venv_setup(venvdir, python_version=python_version, prompt=name)
-        return str(venvdir.absolute())
+        logger.info(f"create venv @ {isolated_env_dir}...")
+        venv_setup(isolated_env_dir, python_version=python_version, prompt=name)
     elif mode == PythonRunEnv.CONDA:
-        logger.info(f"create conda {name}:{workdir}, use python {python_version}...")
-        conda_setup(python_version, name=name)
-        return name
+        logger.info(
+            f"create conda {name}:{isolated_env_dir}, use python {python_version}..."
+        )
+        conda_setup(python_version, name=name, prefix=isolated_env_dir)
     else:
         raise NoSupportError(mode)
 
