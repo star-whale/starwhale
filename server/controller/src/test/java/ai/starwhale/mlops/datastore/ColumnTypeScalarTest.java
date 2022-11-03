@@ -158,16 +158,16 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.BOOL.encode(false, true), is("false"));
         assertThat(ColumnTypeScalar.BOOL.encode(true, false), is("1"));
         assertThat(ColumnTypeScalar.BOOL.encode(true, true), is("true"));
-        assertThat(ColumnTypeScalar.INT8.encode((byte) 10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT8.encode((byte) 10, false), is("0a"));
         assertThat(ColumnTypeScalar.INT8.encode((byte) 10, true), is("10"));
         assertThat(ColumnTypeScalar.INT8.encode(-1, false), is("ff"));
-        assertThat(ColumnTypeScalar.INT16.encode((short) 10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT16.encode((short) 10, false), is("000a"));
         assertThat(ColumnTypeScalar.INT16.encode((short) 10, true), is("10"));
         assertThat(ColumnTypeScalar.INT16.encode(-1, false), is("ffff"));
-        assertThat(ColumnTypeScalar.INT32.encode(10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT32.encode(10, false), is("0000000a"));
         assertThat(ColumnTypeScalar.INT32.encode(10, true), is("10"));
         assertThat(ColumnTypeScalar.INT32.encode(-1, false), is("ffffffff"));
-        assertThat(ColumnTypeScalar.INT64.encode(10L, false), is("a"));
+        assertThat(ColumnTypeScalar.INT64.encode(10L, false), is("000000000000000a"));
         assertThat(ColumnTypeScalar.INT64.encode(10L, true), is("10"));
         assertThat(ColumnTypeScalar.INT64.encode(-1, false), is("ffffffffffffffff"));
         assertThat(ColumnTypeScalar.INT64.encode(-1152921504606846977L, false), is("efffffffffffffff"));
@@ -265,7 +265,7 @@ public class ColumnTypeScalarTest {
 
     @Test
     public void testEnDeCodeInt8() {
-        Map cases = Map.of("ff", (byte) -1, "1", (byte) 1, "0", (byte) 0, "80", (byte) -128, "7f", (byte) 127);
+        Map cases = Map.of("ff", (byte) -1, "01", (byte) 1, "00", (byte) 0, "80", (byte) -128, "7f", (byte) 127);
         cases.forEach((k, v) -> {
             assertThat(ColumnTypeScalar.INT8.decode(k), is(v));
             assertThat(ColumnTypeScalar.INT8.encode(v, false), is(k));
@@ -274,7 +274,7 @@ public class ColumnTypeScalarTest {
 
     @Test
     public void testEnDeCodeInt16() {
-        Map cases = Map.of("ffff", (short) -1, "1", (short) 1, "0", (short) 0, "8000", (short) -32768, "7fff",
+        Map cases = Map.of("ffff", (short) -1, "0001", (short) 1, "0000", (short) 0, "8000", (short) -32768, "7fff",
                 (short) 32767);
         cases.forEach((k, v) -> {
             assertThat(ColumnTypeScalar.INT16.decode(k), is(v));
@@ -284,7 +284,8 @@ public class ColumnTypeScalarTest {
 
     @Test
     public void testEnDeCodeInt32() {
-        Map cases = Map.of("ffffffff", -1, "1", 1, "0", 0, "80000000", -2147483648, "7fffffff", 2147483647);
+        Map cases = Map.of("ffffffff", -1, "00000001", 1, "00000000", 0, "80000000", -2147483648, "7fffffff",
+                2147483647);
         cases.forEach((k, v) -> {
             assertThat(ColumnTypeScalar.INT32.decode(k), is(v));
             assertThat(ColumnTypeScalar.INT32.encode(v, false), is(k));
@@ -293,7 +294,8 @@ public class ColumnTypeScalarTest {
 
     @Test
     public void testEnDeCodeInt64() {
-        Map cases = Map.of("ffffffffffffffff", -1L, "1", 1L, "0", 0L, "8000000000000000", -9223372036854775808L,
+        Map cases = Map.of("ffffffffffffffff", -1L, "0000000000000001", 1L, "0000000000000000", 0L, "8000000000000000",
+                -9223372036854775808L,
                 "7fffffffffffffff", 9223372036854775807L);
         cases.forEach((k, v) -> {
             assertThat(ColumnTypeScalar.INT64.decode(k), is(v));

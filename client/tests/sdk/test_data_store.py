@@ -1353,31 +1353,31 @@ class TestRemoteDataStore(unittest.TestCase):
                     "records": [
                         {
                             "values": [
-                                {"key": "k", "value": "1"},
+                                {"key": "k", "value": "0000000000000001"},
                                 {"key": "a", "value": "1"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "2"},
+                                {"key": "k", "value": "0000000000000002"},
                                 {"key": "a", "value": "2"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "3"},
+                                {"key": "k", "value": "0000000000000003"},
                                 {"key": "-", "value": "1"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "4"},
+                                {"key": "k", "value": "0000000000000004"},
                                 {"key": "a", "value": None},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "5"},
+                                {"key": "k", "value": "0000000000000005"},
                                 {"key": "z", "value": "0000000000000000"},
                             ]
                         },
@@ -1536,16 +1536,16 @@ class TestRemoteDataStore(unittest.TestCase):
                     "records": [
                         {
                             "values": [
-                                {"key": "key", "value": "1"},
+                                {"key": "key", "value": "0000000000000001"},
                                 {"key": "b", "value": "1"},
-                                {"key": "c", "value": "1"},
-                                {"key": "d", "value": "1"},
-                                {"key": "e", "value": "1"},
+                                {"key": "c", "value": "01"},
+                                {"key": "d", "value": "0001"},
+                                {"key": "e", "value": "00000001"},
                                 {"key": "f", "value": "3c00"},
                                 {"key": "g", "value": "3f800000"},
                                 {"key": "h", "value": "3ff0000000000000"},
                                 {"key": "i", "value": "MQ=="},
-                                {"key": "j", "value": ["1", "2", "3"]},
+                                {"key": "j", "value": ["0000000000000001", "0000000000000002", "0000000000000003"]},
                                 {
                                     "key": "k",
                                     "value": {
@@ -1699,6 +1699,37 @@ class TestRemoteDataStore(unittest.TestCase):
             ),
             "all types",
         )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                            "columns": [{"columnName": "a", "alias": "b"}],
+                            "keepNone": True,
+                        },
+                        {
+                            "tableName": "t2",
+                            "columns": [{"columnName": "a", "alias": "a"}],
+                        },
+                        {
+                            "tableName": "t3",
+                        },
+                    ],
+                    "end": "0000000000000001",
+                    "start": "0000000000000001",
+                    "limit": 1000,
+                    "keepNone": True,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=60,
+        )
         mock_post.return_value.json.side_effect = [
             {
                 "data": {
@@ -1726,37 +1757,6 @@ class TestRemoteDataStore(unittest.TestCase):
             [{"a": i} for i in range(2001)],
             list(self.ds.scan_tables([data_store.TableDesc("t1")])),
             "scan page",
-        )
-        mock_post.assert_any_call(
-            "http://test/api/v1/datastore/scanTable",
-            data=json.dumps(
-                {
-                    "tables": [
-                        {
-                            "tableName": "t1",
-                            "columns": [{"columnName": "a", "alias": "b"}],
-                            "keepNone": True,
-                        },
-                        {
-                            "tableName": "t2",
-                            "columns": [{"columnName": "a", "alias": "a"}],
-                        },
-                        {
-                            "tableName": "t3",
-                        },
-                    ],
-                    "end": "1",
-                    "start": "1",
-                    "limit": 1000,
-                    "keepNone": True,
-                },
-                separators=(",", ":"),
-            ),
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "tt",
-            },
-            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",

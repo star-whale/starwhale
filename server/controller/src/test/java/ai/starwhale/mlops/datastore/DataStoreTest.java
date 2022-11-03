@@ -108,7 +108,7 @@ public class DataStoreTest {
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5"), Map.of("k", "1", "a", "2"))));
+                is(List.of(Map.of("k", "0", "a", "00000005"), Map.of("k", "1", "a", "00000002"))));
         this.dataStore.update("t1",
                 null,
                 List.of(Map.of("k", "0", "-", "anyString"), Map.of("k", "4", "-", "1")));
@@ -120,7 +120,7 @@ public class DataStoreTest {
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "1", "a", "2"))));
+                is(List.of(Map.of("k", "1", "a", "00000002"))));
         assertThat("t2",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -129,7 +129,7 @@ public class DataStoreTest {
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "3", "x", "2"))));
+                is(List.of(Map.of("k", "3", "x", "00000002"))));
 
         this.dataStore.terminate();
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
@@ -142,7 +142,7 @@ public class DataStoreTest {
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "1", "a", "2"))));
+                is(List.of(Map.of("k", "1", "a", "00000002"))));
         assertThat("t2",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -151,7 +151,7 @@ public class DataStoreTest {
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "3", "x", "2"))));
+                is(List.of(Map.of("k", "3", "x", "00000002"))));
     }
 
     @Test
@@ -179,8 +179,8 @@ public class DataStoreTest {
         assertThat("test", recordList.getColumnTypeMap(), is(Map.of("a", ColumnTypeScalar.INT32)));
         assertThat("test",
                 recordList.getRecords(),
-                is(List.of(Map.of("a", "3"),
-                        Map.of("a", "4"))));
+                is(List.of(Map.of("a", "00000003"),
+                        Map.of("a", "00000004"))));
 
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
@@ -197,8 +197,8 @@ public class DataStoreTest {
                 is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
         assertThat("all columns",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "2", "a", "3"),
-                        Map.of("k", "1", "a", "4"))));
+                is(List.of(Map.of("k", "2", "a", "00000003"),
+                        Map.of("k", "1", "a", "00000004"))));
 
         this.dataStore.update("t1",
                 new TableSchemaDesc(null,
@@ -219,11 +219,11 @@ public class DataStoreTest {
                         ColumnTypeScalar.STRING)));
         assertThat("object type",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5"),
-                        Map.of("k", "1", "a", "4"),
-                        Map.of("k", "2", "a", "3"),
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1"),
+                is(List.of(Map.of("k", "0", "a", "00000005"),
+                        Map.of("k", "1", "a", "00000004"),
+                        Map.of("k", "2", "a", "00000003"),
+                        Map.of("k", "3", "a", "00000002"),
+                        Map.of("k", "4", "a", "00000001"),
                         Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
 
@@ -284,11 +284,11 @@ public class DataStoreTest {
         assertThat("test", recordList.getColumnTypeMap(), is(Map.of("a", ColumnTypeScalar.INT32)));
         assertThat("test",
                 recordList.getRecords(),
-                is(List.of(Map.of("a", "4"),
+                is(List.of(Map.of("a", "00000004"),
                         new HashMap<>() {{
                             put("a", null);
                         }},
-                        Map.of("a", "2"))));
+                        Map.of("a", "00000002"))));
         assertThat("test", recordList.getLastKey(), is("3"));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
@@ -306,7 +306,7 @@ public class DataStoreTest {
         assertThat("test", recordList.getColumnTypeMap(), is(Map.of("a", ColumnTypeScalar.INT32)));
         assertThat("test",
                 recordList.getRecords(),
-                is(List.of(Map.of("a", "4"), Map.of())));
+                is(List.of(Map.of("a", "00000004"), Map.of())));
         assertThat("test", recordList.getLastKey(), is("2"));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
@@ -326,9 +326,9 @@ public class DataStoreTest {
         assertThat("all columns",
                 recordList.getRecords(),
                 is(List.of(
-                    Map.of("k", "1", "a", "4", "l", "3ff6666666666666"),
-                    Map.of("k", "2", "l", "0"), // not 0000000000000000
-                    Map.of("k", "3", "a", "2", "l", "3ff3333333333333")
+                    Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
+                    Map.of("k", "2", "l", "0000000000000000"),
+                    Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333")
                 )));
         assertThat("all columns", recordList.getLastKey(), is("3"));
 
@@ -369,11 +369,11 @@ public class DataStoreTest {
                         ColumnTypeScalar.STRING)));
         assertThat("object type",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5", "l", "3ff8000000000000"),
-                        Map.of("k", "1", "a", "4", "l", "3ff6666666666666"),
-                        Map.of("k", "2", "l", "0"),
-                        Map.of("k", "3", "a", "2", "l", "3ff3333333333333"),
-                        Map.of("k", "4", "a", "1", "l", "3ff199999999999a"),
+                is(List.of(Map.of("k", "0", "a", "00000005", "l", "3ff8000000000000"),
+                        Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
+                        Map.of("k", "2", "l", "0000000000000000"),
+                        Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333"),
+                        Map.of("k", "4", "a", "00000001", "l", "3ff199999999999a"),
                         Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
 
@@ -409,18 +409,18 @@ public class DataStoreTest {
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
                                 ColumnSchemaDesc.builder().name("a").type("INT32").build())),
-                List.of(Map.of("k", "0", "a", "5"),
-                        Map.of("k", "1", "a", "4"),
-                        Map.of("k", "2", "a", "3"),
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1")));
+                List.of(Map.of("k", "0", "a", "00000005"),
+                        Map.of("k", "1", "a", "00000004"),
+                        Map.of("k", "2", "a", "00000003"),
+                        Map.of("k", "3", "a", "00000002"),
+                        Map.of("k", "4", "a", "00000001")));
         this.dataStore.update("t2",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
                                 ColumnSchemaDesc.builder().name("b").type("INT32").build())),
-                List.of(Map.of("k", "0", "b", "15"),
-                        Map.of("k", "2", "b", "13"),
-                        Map.of("k", "4", "b", "11")));
+                List.of(Map.of("k", "0", "b", "00000015"),
+                        Map.of("k", "2", "b", "00000013"),
+                        Map.of("k", "4", "b", "00000011")));
         this.dataStore.update("t3",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -430,7 +430,7 @@ public class DataStoreTest {
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
                                 ColumnSchemaDesc.builder().name("a").type("INT32").build())),
-                List.of(Map.of("k", "2")));
+                List.of(Map.of("k", "00000002")));
         var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                                 .tableName("t1")
@@ -456,15 +456,15 @@ public class DataStoreTest {
                         ColumnTypeScalar.INT32)));
         assertThat("test",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5", "b", "15"),
-                        Map.of("k", "1", "a", "4"),
+                is(List.of(Map.of("k", "0", "a", "00000005", "b", "00000015"),
+                        Map.of("k", "1", "a", "00000004"),
                         new HashMap<>() {{
                             put("k", "2");
                             put("a", null);
-                            put("b", "13");
+                            put("b", "00000013");
                         }},
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1", "b", "11"))));
+                        Map.of("k", "3", "a", "00000002"),
+                        Map.of("k", "4", "a", "00000001", "b", "00000011"))));
         assertThat("test", recordList.getLastKey(), is("4"));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
@@ -491,11 +491,11 @@ public class DataStoreTest {
                         ColumnTypeScalar.INT32)));
         assertThat("test",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5", "b", "15"),
-                        Map.of("k", "1", "a", "4"),
-                        Map.of("k", "2", "b", "13"),
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "1", "b", "11"))));
+                is(List.of(Map.of("k", "0", "a", "00000005", "b", "00000015"),
+                        Map.of("k", "1", "a", "00000004"),
+                        Map.of("k", "2", "b", "00000013"),
+                        Map.of("k", "3", "a", "00000002"),
+                        Map.of("k", "4", "a", "00000001", "b", "00000011"))));
         assertThat("test", recordList.getLastKey(), is("4"));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
@@ -540,14 +540,14 @@ public class DataStoreTest {
                 is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
         assertThat("alias",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "15"),
-                        Map.of("k", "1", "a", "4"),
+                is(List.of(Map.of("k", "0", "a", "00000015"),
+                        Map.of("k", "1", "a", "00000004"),
                         new HashMap<>() {{
                             put("k", "2");
                             put("a", null);
                         }},
-                        Map.of("k", "3", "a", "2"),
-                        Map.of("k", "4", "a", "11"))));
+                        Map.of("k", "3", "a", "00000002"),
+                        Map.of("k", "4", "a", "00000011"))));
         assertThat("alias", recordList.getLastKey(), is("4"));
 
         assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
@@ -576,7 +576,7 @@ public class DataStoreTest {
                 is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
         assertThat("result of non exist table",
                 recordList.getRecords(),
-                is(List.of(Map.of("k", "0", "a", "5"))));
+                is(List.of(Map.of("k", "0", "a", "00000005"))));
     }
 
     @Test

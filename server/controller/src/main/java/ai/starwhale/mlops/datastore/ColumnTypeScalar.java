@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.Map;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public class ColumnTypeScalar extends ColumnType {
@@ -125,17 +126,17 @@ public class ColumnTypeScalar extends ColumnType {
             if (this == BOOL) {
                 return (Boolean) value ? "1" : "0";
             } else if (this == INT8) {
-                return Integer.toHexString(((Number) value).byteValue() & 0xFF);
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).byteValue() & 0xFF), 2, "0");
             } else if (this == INT16) {
-                return Integer.toHexString(((Number) value).shortValue() & 0xFFFF);
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).shortValue() & 0xFFFF), 4, "0");
             } else if (this == INT32) {
-                return Integer.toHexString(((Number) value).intValue());
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).intValue()), 8, "0");
             } else if (this == INT64) {
-                return Long.toHexString(((Number) value).longValue());
+                return StringUtils.leftPad(Long.toHexString(((Number) value).longValue()), 16, "0");
             } else if (this == FLOAT32) {
-                return Integer.toHexString(Float.floatToIntBits((Float) value));
+                return StringUtils.leftPad(Integer.toHexString(Float.floatToIntBits((Float) value)), 8, "0");
             } else if (this == FLOAT64) {
-                return Long.toHexString(Double.doubleToLongBits((Double) value));
+                return StringUtils.leftPad(Long.toHexString(Double.doubleToLongBits((Double) value)), 16, "0");
             } else if (this == STRING) {
                 return (String) value;
             } else if (this == BYTES) {

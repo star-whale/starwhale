@@ -106,12 +106,12 @@ public class DataStoreControllerTest {
                         setValues(List.of(new RecordValueDesc() {
                             {
                                 setKey("k");
-                                setValue("0");
+                                setValue("00000000");
                             }
                         }, new RecordValueDesc() {
                             {
                                 setKey("a");
-                                setValue("1");
+                                setValue("00000001");
                             }
                         }));
                     }
@@ -126,12 +126,12 @@ public class DataStoreControllerTest {
                         setValues(List.of(new RecordValueDesc() {
                             {
                                 setKey("k");
-                                setValue("1");
+                                setValue("00000001");
                             }
                         }, new RecordValueDesc() {
                             {
                                 setKey("a");
-                                setValue("2");
+                                setValue("00000002");
                             }
                         }));
                     }
@@ -149,12 +149,12 @@ public class DataStoreControllerTest {
                         setValues(List.of(new RecordValueDesc() {
                             {
                                 setKey("k");
-                                setValue("3");
+                                setValue("00000003");
                             }
                         }, new RecordValueDesc() {
                             {
                                 setKey("x");
-                                setValue("2");
+                                setValue("00000002");
                             }
                         }));
                     }
@@ -169,7 +169,7 @@ public class DataStoreControllerTest {
                         setValues(List.of(new RecordValueDesc() {
                             {
                                 setKey("k");
-                                setValue("0");
+                                setValue("00000000");
                             }
                         }, new RecordValueDesc() {
                             {
@@ -183,7 +183,7 @@ public class DataStoreControllerTest {
                         setValues(List.of(new RecordValueDesc() {
                             {
                                 setKey("k");
-                                setValue("4");
+                                setValue("00000004");
                             }
                         }, new RecordValueDesc() {
                             {
@@ -221,7 +221,7 @@ public class DataStoreControllerTest {
                         ColumnSchemaDesc.builder().name("b").type("INT32").build()));
         assertThat("t1",
                 Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                is(List.of(Map.of("k", "1", "b", "2"))));
+                is(List.of(Map.of("k", "00000001", "b", "00000002"))));
         resp = this.controller.scanTable(new ScanTableRequest() {
             {
                 setTables(List.of(new TableDesc() {
@@ -248,7 +248,7 @@ public class DataStoreControllerTest {
                         ColumnSchemaDesc.builder().name("b").type("INT32").build()));
         assertThat("t2",
                 Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                is(List.of(Map.of("k", "3", "b", "2"))));
+                is(List.of(Map.of("k", "00000003", "b", "00000002"))));
     }
 
     @Nested
@@ -269,12 +269,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("0");
+                                    setValue("00000000");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }));
                         }
@@ -465,12 +465,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("0");
+                                    setValue("00000000");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("5");
+                                    setValue("00000005");
                                 }
                             }));
                         }
@@ -479,12 +479,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("4");
+                                    setValue("00000004");
                                 }
                             }, new RecordValueDesc() {
                                 {
@@ -497,17 +497,17 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("2");
+                                    setValue("00000002");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("3");
+                                    setValue("00000003");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("x");
-                                    setValue("9");
+                                    setValue("00000009");
                                 }
                             }));
                         }
@@ -516,12 +516,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("3");
+                                    setValue("00000003");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("2");
+                                    setValue("00000002");
                                 }
                             }));
                         }
@@ -530,12 +530,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("4");
+                                    setValue("00000004");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }));
                         }
@@ -559,11 +559,11 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("x").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "0", "a", "5"),
-                            Map.of("k", "1", "a", "4"),
-                            Map.of("k", "2", "a", "3", "x", "9"),
-                            Map.of("k", "3", "a", "2"),
-                            Map.of("k", "4", "a", "1"))));
+                    is(List.of(Map.of("k", "00000000", "a", "00000005"),
+                            Map.of("k", "00000001", "a", "00000004"),
+                            Map.of("k", "00000002", "a", "00000003", "x", "00000009"),
+                            Map.of("k", "00000003", "a", "00000002"),
+                            Map.of("k", "00000004", "a", "00000001"))));
         }
 
         @Test
@@ -576,15 +576,15 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("b").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "1", "b", "4"),
-                            Map.of("k", "0", "b", "5"))));
+                    is(List.of(Map.of("k", "00000001", "b", "00000004"),
+                            Map.of("k", "00000000", "b", "00000005"))));
 
             this.req.getOrderBy().get(0).setDescending(true);
             resp = DataStoreControllerTest.this.controller.queryTable(this.req);
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "1", "b", "4"),
-                            Map.of("k", "4", "b", "1"))));
+                    is(List.of(Map.of("k", "00000001", "b", "00000004"),
+                            Map.of("k", "00000004", "b", "00000001"))));
 
             this.req.setLimit(1);
             resp = DataStoreControllerTest.this.controller.queryTable(this.req);
@@ -595,7 +595,7 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("b").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "1", "b", "4"))));
+                    is(List.of(Map.of("k", "00000001", "b", "00000004"))));
 
             this.req.setColumns(Lists.concat(this.req.getColumns(), List.of(new ColumnDesc() {
                 {
@@ -614,8 +614,8 @@ public class DataStoreControllerTest {
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(new HashMap<>() {
                         {
-                            put("k", "1");
-                            put("b", "4");
+                            put("k", "00000001");
+                            put("b", "00000004");
                             put("x", null);
                         }
                     })));
@@ -764,13 +764,13 @@ public class DataStoreControllerTest {
             assertThat(Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(new HashMap<>() {
                         {
-                            put("k", "3");
-                            put("b", "2");
+                            put("k", "00000003");
+                            put("b", "00000002");
                         }
                     }, new HashMap<>() {
                         {
-                            put("k", "1");
-                            put("b", "4");
+                            put("k", "00000001");
+                            put("b", "00000004");
                         }
                     })));
 
@@ -801,7 +801,7 @@ public class DataStoreControllerTest {
                                 }
                             }, new TableQueryOperandDesc() {
                                 {
-                                    setStringValue("1");
+                                    setStringValue("00000001");
                                 }
                             }));
                         }
@@ -907,7 +907,7 @@ public class DataStoreControllerTest {
                                 }
                             }, new TableQueryOperandDesc() {
                                 {
-                                    setStringValue("1");
+                                    setStringValue("00000001");
                                 }
                             }));
                         }
@@ -973,7 +973,7 @@ public class DataStoreControllerTest {
                 }
             }, new TableQueryOperandDesc() {
                 {
-                    setStringValue("1");
+                    setStringValue("00000001");
                 }
             }));
             assertThrows(SwValidationException.class,
@@ -1011,8 +1011,8 @@ public class DataStoreControllerTest {
                             setKeepNone(true);
                         }
                     }));
-                    setStart("1");
-                    setEnd("4");
+                    setStart("00000001");
+                    setEnd("00000004");
                     setKeepNone(true);
                 }
             };
@@ -1027,12 +1027,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("0");
+                                    setValue("00000000");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("5");
+                                    setValue("00000005");
                                 }
                             }));
                         }
@@ -1041,12 +1041,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("4");
+                                    setValue("00000004");
                                 }
                             }));
                         }
@@ -1055,12 +1055,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("2");
+                                    setValue("00000002");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("3");
+                                    setValue("00000003");
                                 }
                             }));
                         }
@@ -1069,12 +1069,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("3");
+                                    setValue("00000003");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("2");
+                                    setValue("00000002");
                                 }
                             }));
                         }
@@ -1083,12 +1083,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("4");
+                                    setValue("00000004");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }));
                         }
@@ -1106,12 +1106,12 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("1");
+                                    setValue("00000001");
                                 }
                             }, new RecordValueDesc() {
                                 {
                                     setKey("a");
-                                    setValue("10");
+                                    setValue("00000010");
                                 }
                             }));
                         }
@@ -1120,7 +1120,7 @@ public class DataStoreControllerTest {
                             setValues(List.of(new RecordValueDesc() {
                                 {
                                     setKey("k");
-                                    setValue("2");
+                                    setValue("00000002");
                                 }
                             }, new RecordValueDesc() {
                                 {
@@ -1151,12 +1151,12 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("a").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "0", "a", "5"),
-                            Map.of("k", "1", "a", "4"),
-                            Map.of("k", "2", "a", "3"),
-                            Map.of("k", "3", "a", "2"),
-                            Map.of("k", "4", "a", "1"))));
-            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("4"));
+                    is(List.of(Map.of("k", "00000000", "a", "00000005"),
+                            Map.of("k", "00000001", "a", "00000004"),
+                            Map.of("k", "00000002", "a", "00000003"),
+                            Map.of("k", "00000003", "a", "00000002"),
+                            Map.of("k", "00000004", "a", "00000001"))));
+            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000004"));
         }
 
         @Test
@@ -1170,15 +1170,15 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("b").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "1", "b", "1", "a", "10"),
+                    is(List.of(Map.of("k", "00000001", "b", "00000001", "a", "00000010"),
                             new HashMap<>() {
                                 {
-                                    put("k", "2");
-                                    put("b", "2");
+                                    put("k", "00000002");
+                                    put("b", "00000002");
                                     put("a", null);
                                 }
                             },
-                            Map.of("b", "3", "a", "2"))));
+                            Map.of("b", "00000003", "a", "00000002"))));
 
             this.req.setLimit(1);
             resp = DataStoreControllerTest.this.controller.scanTable(this.req);
@@ -1190,8 +1190,8 @@ public class DataStoreControllerTest {
                             ColumnSchemaDesc.builder().name("b").type("INT32").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                    is(List.of(Map.of("k", "1", "b", "1", "a", "10"))));
-            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("1"));
+                    is(List.of(Map.of("k", "00000001", "b", "00000001", "a", "00000010"))));
+            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
 
             this.req.setRawResult(true);
             resp = DataStoreControllerTest.this.controller.scanTable(this.req);
@@ -1204,7 +1204,7 @@ public class DataStoreControllerTest {
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "1", "b", "1", "a", "16"))));
-            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("1"));
+            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
         }
 
         @Test
