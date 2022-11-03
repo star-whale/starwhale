@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.domain.bundle.base;
 
 import java.util.Date;
-import lombok.Builder;
-import lombok.Data;
 
-@Data
-@Builder
-public class HasTagWrapper implements HasTag {
+public interface HasModifiedTime {
 
-    private Long id;
-
-    private String name;
-
-    private String tag;
-
-    private Date modifiedTime;
+    Date getModifiedTime();
 }
