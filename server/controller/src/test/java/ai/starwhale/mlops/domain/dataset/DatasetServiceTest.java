@@ -42,7 +42,6 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
@@ -59,6 +58,7 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -84,6 +84,7 @@ public class DatasetServiceTest {
     private UserService userService;
     private DsFileGetter dsFileGetter;
     private DataReadManager dataReadManager;
+    private TrashService trashService;
     @Setter
     private BundleManager bundleManager;
 
@@ -131,6 +132,8 @@ public class DatasetServiceTest {
 
         dataReadManager = mock(DataReadManager.class);
 
+        trashService = mock(TrashService.class);
+
         service = new DatasetService(
                 projectManager,
                 datasetMapper,
@@ -143,7 +146,9 @@ public class DatasetServiceTest {
                 new VersionAliasConvertor(),
                 userService,
                 dsFileGetter,
-                dataReadManager);
+                dataReadManager,
+                trashService
+        );
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -187,33 +192,15 @@ public class DatasetServiceTest {
     public void testDeleteDataset() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "d1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteDataset(DatasetQuery.builder().projectUrl("p1").datasetUrl("d1").build());
+            var res = service.deleteDataset(DatasetQuery.builder().projectUrl("p1").datasetUrl("1").build());
             assertThat(res, is(true));
 
-            res = service.deleteDataset(DatasetQuery.builder().projectUrl("p2").datasetUrl("d2").build());
-            assertThat(res, is(false));
-        }
-    }
-
-    @Test
-    public void testRecoverDataset() {
-        RecoverManager recoverManager = mock(RecoverManager.class);
-        given(recoverManager.recoverBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "d1")
-        ))).willReturn(true);
-        try (var mock = mockStatic(RecoverManager.class)) {
-            mock.when(() -> RecoverManager.create(any(), any(), any()))
-                    .thenReturn(recoverManager);
-
-            var res = service.recoverDataset("p1", "d1");
-            assertThat(res, is(true));
-
-            res = service.recoverDataset("p1", "d2");
+            res = service.deleteDataset(DatasetQuery.builder().projectUrl("p2").datasetUrl("2").build());
             assertThat(res, is(false));
         }
     }
