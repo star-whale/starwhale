@@ -93,3 +93,13 @@ class ObjectStoreType(Enum):
 class DataOriginType(Enum):
     NEW = "+"
     INHERIT = "~"
+
+
+@unique
+class DependencyType(Enum):
+    PIP_PKG = "pip_pkg"
+    PIP_REQ_FILE = "pip_req_file"
+    CONDA_PKG = "conda_pkg"
+    CONDA_ENV_FILE = "conda_env_file"
+    WHEEL = "wheel"
+    NATIVE_FILE = "native_file"
