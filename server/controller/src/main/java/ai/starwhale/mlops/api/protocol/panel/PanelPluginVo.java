@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.storage;
+package ai.starwhale.mlops.api.protocol.panel;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Data;
 
-import org.junit.jupiter.api.Test;
+@Data
+@Builder
+public class PanelPluginVo {
+    @JsonProperty("id")
+    private String id;
 
-public class StoragePathCoordinatorTest {
-    @Test
-    public void testAllocatePluginPath() {
-        var sysPath = "/foo";
-        var ins = new StoragePathCoordinator(sysPath);
-        var resp = ins.allocatePluginPath("name1", "version1");
-        assertThat(resp, is("/foo/controller/plugins/panel/name1/version1"));
-    }
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("version")
+    private String version;
 }
