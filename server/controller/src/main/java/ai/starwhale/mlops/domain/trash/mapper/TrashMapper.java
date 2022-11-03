@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.domain.trash.mapper;
 
-import java.util.Date;
-import lombok.Builder;
-import lombok.Data;
+import ai.starwhale.mlops.domain.trash.po.TrashPo;
+import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-@Data
-@Builder
-public class HasTagWrapper implements HasTag {
+@Mapper
+public interface TrashMapper {
 
-    private Long id;
+    int insert(TrashPo po);
 
-    private String name;
+    int delete(Long id);
 
-    private String tag;
+    TrashPo find(Long id);
 
-    private Date modifiedTime;
+    List<TrashPo> list(@Param("projectId") Long projectId, @Param("operatorId") Long operatorId,
+            @Param("name") String name, @Param("type") String type);
 }
