@@ -56,6 +56,7 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -85,6 +86,7 @@ public class JobServiceTest {
     private ModelManager modelManager;
     private DatasetManager datasetManager;
     private RuntimeManager runtimeManager;
+    private TrashService trashService;
 
     @BeforeEach
     public void setUp() {
@@ -121,12 +123,14 @@ public class JobServiceTest {
         modelManager = mock(ModelManager.class);
         datasetManager = mock(DatasetManager.class);
         runtimeManager = mock(RuntimeManager.class);
+        trashService = mock(TrashService.class);
 
         service = new JobService(
                 jobBoConverter, jobMapper, jobDatasetVersionMapper, taskMapper,
                 jobConvertor, runtimeManager, jobSpliterator,
                 hotJobHolder, projectManager, jobManager, jobLoader, modelManager,
-                resultQuerier, datasetManager, storagePathCoordinator, userService, mock(JobUpdateHelper.class));
+                resultQuerier, datasetManager, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
+                trashService);
     }
 
     @Test
@@ -179,6 +183,7 @@ public class JobServiceTest {
     public void testRemoveJob() {
         given(jobMapper.removeJob(same(1L))).willReturn(1);
         given(jobMapper.removeJobByUuid(same("uuid1"))).willReturn(1);
+        given(jobManager.getJobId(same("uuid1"))).willReturn(1L);
 
         var res = service.removeJob("", "1");
         assertThat(res, is(true));
@@ -187,21 +192,6 @@ public class JobServiceTest {
         assertThat(res, is(true));
 
         res = service.removeJob("", "2");
-        assertThat(res, is(false));
-    }
-
-    @Test
-    public void testRecoverJob() {
-        given(jobMapper.recoverJob(same(1L))).willReturn(1);
-        given(jobMapper.recoverJobByUuid(same("uuid1"))).willReturn(1);
-
-        var res = service.recoverJob("", "1");
-        assertThat(res, is(true));
-
-        res = service.recoverJob("", "uuid1");
-        assertThat(res, is(true));
-
-        res = service.recoverJob("", "2");
         assertThat(res, is(false));
     }
 

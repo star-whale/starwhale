@@ -48,37 +48,4 @@ public class RecoverManager {
         log.info("Bundle has been recovered. Name={}", name);
         return res;
     }
-
-//    public Boolean recoverBundle(BundleUrl bundleUrl) throws RecoverException {
-//        Long projectId = projectAccessor.getProjectId(bundleUrl.getProjectUrl());
-//        String name = bundleUrl.getBundleUrl();
-//        Long id;
-//        if (idConvertor.isId(name)) {
-//            id = idConvertor.revert(name);
-//            BundleEntity entity = recoverAccessor.findDeletedBundleById(id);
-//            if (entity == null) {
-//                throw new RecoverException(String.format("Recover error. Bundle can not be found by id [%s]. ", name));
-//            }
-//            name = entity.getName();
-//        } else {
-//            // To restore datasets by name, need to check whether there are duplicate names
-//            List<? extends BundleEntity> list = recoverAccessor.listDeletedBundlesByName(name, projectId);
-//            if (list.size() > 1) {
-//                throw new RecoverException(
-//                        String.format("Recover error. Duplicate names [%s] of deleted bundles. ", name));
-//            } else if (list.size() == 0) {
-//                throw new RecoverException(String.format("Recover error. Can not find deleted bundle [%s].", name));
-//            }
-//            id = list.get(0).getId();
-//        }
-//
-//        // Check for duplicate names
-//        if (recoverAccessor.findByName(name, projectId) != null) {
-//            throw new RecoverException(String.format("Recover error. Model %s already exists.", name));
-//        }
-//
-//        Boolean res = recoverAccessor.recover(id);
-//        log.info("Bundle has been recovered. Name={}", name);
-//        return res;
-//    }
 }
