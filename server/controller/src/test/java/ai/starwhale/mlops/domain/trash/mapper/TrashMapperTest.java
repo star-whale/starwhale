@@ -40,6 +40,7 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .projectId(1L)
                 .objectId(1L)
                 .operatorId(1L)
+                .size(10L)
                 .trashName("model1")
                 .trashType("MODEL")
                 .retention(new Date())
