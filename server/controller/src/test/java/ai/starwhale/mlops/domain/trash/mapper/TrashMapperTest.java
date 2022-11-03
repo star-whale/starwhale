@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.trash.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
 import java.util.Date;
 import java.util.List;
@@ -28,7 +29,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class TrashMapperTest {
+public class TrashMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private TrashMapper trashMapper;
