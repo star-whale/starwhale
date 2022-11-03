@@ -14,21 +14,42 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.domain.trash.po;
 
+import ai.starwhale.mlops.common.BaseEntity;
 import java.util.Date;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class HasTagWrapper implements HasTag {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TrashPo extends BaseEntity {
 
     private Long id;
 
-    private String name;
+    private Long projectId;
 
-    private String tag;
+    private Long objectId;
 
-    private Date modifiedTime;
+    private Long operatorId;
+
+    private String trashName;
+
+    private String trashType;
+
+    private Long size;
+
+    @Builder.Default
+    private Date retention = defaultDate;
+
+    @Builder.Default
+    private Date updatedTime = defaultDate;
+
 }
