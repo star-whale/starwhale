@@ -211,6 +211,7 @@ public class ModelServiceTest {
             assertThat(res, is(false));
         }
     }
+
     @Test
     public void testRevertVersionTo() {
         RevertManager revertManager = mock(RevertManager.class);
