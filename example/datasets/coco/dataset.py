@@ -1,12 +1,12 @@
 import os
-
-import boto3
-from botocore.client import Config as S3Config
 import json
 from pathlib import Path
 
-from starwhale import Link, Image, BoundingBox, MIMEType, S3LinkAuth
-from starwhale.core.dataset.store import S3StorageBackend, S3Connection
+import boto3
+from botocore.client import Config as S3Config
+
+from starwhale import Link, Image, MIMEType, S3LinkAuth, BoundingBox
+from starwhale.core.dataset.store import S3Connection, S3StorageBackend
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
@@ -33,14 +33,14 @@ def do_iter_item():
             segs_info = anno["segments_info"]
             for sg in segs_info:
                 x, y, w, h = sg["bbox"]
-                sg["bbox_view"] = BoundingBox(
-                    x=x, y=y, width=w, height=h
-                )
+                sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
 
             anno["mask"] = Link(
                 auth=None,
                 with_local_fs_data=True,
-                data_type=Image(display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG),
+                data_type=Image(
+                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                ),
                 uri=str(msk_f_pth.absolute()),
             )
             yield Link(
@@ -55,7 +55,9 @@ _ak = os.environ.get("SW_S3_AK", "starwhale")
 _sk = os.environ.get("SW_S3_SK", "starwhale")
 _endpoint = os.environ.get("SW_S3_EDP", "http://10.131.0.1:9000")
 _region = os.environ.get("SW_S3_REGION", "local")
-_auth = S3LinkAuth(name="SW_S3", access_key=_ak, secret=_sk, endpoint=_endpoint, region=_region)
+_auth = S3LinkAuth(
+    name="SW_S3", access_key=_ak, secret=_sk, endpoint=_endpoint, region=_region
+)
 _bucket = "users"
 RUI_ROOT = f"{_bucket}/{PATH_ROOT}"
 
@@ -80,7 +82,11 @@ def do_iter_item_from_remote():
     )
 
     index = json.loads(
-        s3.Object(_bucket, f"{PATH_ROOT}/annotations/panoptic_val2017.json").get()["Body"].read().decode('utf8'))
+        s3.Object(_bucket, f"{PATH_ROOT}/annotations/panoptic_val2017.json")
+        .get()["Body"]
+        .read()
+        .decode("utf8")
+    )
     img_dict = images2dict(index["images"])
     for anno in index["annotations"]:
         img_meta = img_dict[anno["image_id"]]
@@ -90,14 +96,14 @@ def do_iter_item_from_remote():
         segs_info = anno["segments_info"]
         for sg in segs_info:
             x, y, w, h = sg["bbox"]
-            sg["bbox_view"] = BoundingBox(
-                x=x, y=y, width=w, height=h
-            )
+            sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
 
         anno["mask"] = Link(
             auth=None,
             with_local_fs_data=False,
-            data_type=Image(display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG),
+            data_type=Image(
+                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+            ),
             uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
         )
         yield Link(
