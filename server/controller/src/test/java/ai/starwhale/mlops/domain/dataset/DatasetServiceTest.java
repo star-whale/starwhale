@@ -381,10 +381,10 @@ public class DatasetServiceTest {
 
     @Test
     public void testDataOf() {
-        given(dsFileGetter.dataOf(same(1L), anyString(), anyString(), anyString(), anyString()))
+        given(dsFileGetter.dataOf(same(1L), anyString(), anyString(), any(), any()))
                 .willReturn(new byte[1]);
 
-        var res = dsFileGetter.dataOf(1L, "", "", "", "");
+        var res = dsFileGetter.dataOf(1L, "", "", 1L, 1L);
         assertThat(res, notNullValue());
     }
 

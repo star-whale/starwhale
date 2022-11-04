@@ -43,8 +43,8 @@ public class DsFileGetter {
         this.datasetVersionMapper = datasetVersionMapper;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
-            String size) {
+    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
+            Long size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
                 datasetId, uri, authName);
         String path = new StorageUri(uri).getPath();
@@ -60,10 +60,8 @@ public class DsFileGetter {
             DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
             path = versionById.getStoragePath() + "/" + path;
         }
-        long sizeLong = (long) ColumnTypeScalar.INT64.decode(size);
-        long offsetLong = (long) ColumnTypeScalar.INT64.decode(offset);
-        try (InputStream inputStream = validParam(sizeLong, offsetLong) ? storageAccessService.get(path,
-                offsetLong, sizeLong) : storageAccessService.get(path)) {
+        try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
+                offset, size) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);

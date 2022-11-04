@@ -191,7 +191,7 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, String authName, String offset, String size, HttpServletResponse httpResponse) {
+            String uri, String authName, Long offset, Long size, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
                     .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
