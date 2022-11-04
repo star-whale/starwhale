@@ -224,16 +224,13 @@ class EvalExecutor:
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
         logger.debug(f"config:{self.sw_config._current_instance_obj}")
+
         cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
         cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
         cmd.extend(
             [
                 "-e",
                 f"{SWEnv.instance_uri}={self.sw_config._current_instance_obj['uri']}",
-            ]
-        )
-        cmd.extend(
-            [
                 "-e",
                 f"{SWEnv.instance_token}={self.sw_config._current_instance_obj.get('sw_token', '')}",
             ]

@@ -89,7 +89,7 @@ public class ColumnTypeObjectTest {
     @Test
     public void testEncode() {
         assertThat(this.columnTypeObject.encode(Map.of("a", 8, "b", List.of(9, 10, 11)), false),
-                is(Map.of("a", "8", "b", List.of("9", "a", "b"))));
+                is(Map.of("a", "00000008", "b", List.of("00000009", "0000000a", "0000000b"))));
         assertThat(this.columnTypeObject.encode(Map.of("a", 8, "b", List.of(9, 10, 11)), true),
                 is(Map.of("a", "8", "b", List.of("9", "10", "11"))));
     }

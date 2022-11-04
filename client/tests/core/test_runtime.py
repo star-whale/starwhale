@@ -8,7 +8,7 @@ import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.utils import load_yaml
+from starwhale.utils import is_linux, load_yaml
 from starwhale.consts import (
     ENV_VENV,
     SupportArch,
@@ -20,9 +20,10 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import URIType, BundleType, RuntimeLockFileType
+from starwhale.base.type import URIType, BundleType, DependencyType, RuntimeLockFileType
 from starwhale.utils.venv import EnvTarType, get_python_version
 from starwhale.utils.error import (
+    FormatError,
     NoSupportError,
     ConfigFormatError,
     UnExpectedConfigFieldError,
@@ -35,8 +36,10 @@ from starwhale.core.runtime.view import (
 )
 from starwhale.core.runtime.model import (
     Runtime,
+    Dependencies,
     _TEMPLATE_DIR,
     RuntimeConfig,
+    WheelDependency,
     StandaloneRuntime,
 )
 from starwhale.core.runtime.store import RuntimeStorage
@@ -111,8 +114,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _rt_config.name == name
         assert _rt_config.mode == PythonRunEnv.VENV
         assert _rt_config.environment.arch == [SupportArch.NOARCH]
-        assert _rt_config.dependencies.pip_pkgs[0] == "starwhale"
-        assert _rt_config.dependencies.pip_files[0] == RuntimeLockFileType.VENV
+        assert _rt_config.dependencies._pip_pkgs[0] == "starwhale"
+        assert _rt_config.dependencies._pip_files[0] == RuntimeLockFileType.VENV
 
     @patch("starwhale.utils.venv.check_call")
     def test_quickstart_from_ishell_conda(self, m_call: MagicMock) -> None:
@@ -222,7 +225,10 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output", return_value=b"3.7")
     def test_build_venv(
-        self, m_output: MagicMock, m_check_call: MagicMock, m_py_bin: MagicMock
+        self,
+        m_output: MagicMock,
+        m_check_call: MagicMock,
+        m_py_bin: MagicMock,
     ) -> None:
         name = "rttest"
         venv_dir = "/home/starwhale/venv"
@@ -237,18 +243,22 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_config = self.get_runtime_config()
         runtime_config["environment"]["cuda"] = "11.5"
         runtime_config["environment"]["cudnn"] = "8"
-        runtime_config["dependencies"].append(
-            {
-                "files": [
-                    {
-                        "dest": "bin/prepare.sh",
-                        "name": "prepare",
-                        "post": "bash bin/prepare.sh",
-                        "pre": "ls bin/prepare.sh",
-                        "src": "prepare.sh",
-                    }
-                ]
-            }
+        runtime_config["dependencies"].extend(
+            [
+                {
+                    "files": [
+                        {
+                            "dest": "bin/../bin/prepare.sh",
+                            "name": "prepare",
+                            "post": "bash bin/prepare.sh",
+                            "pre": "ls bin/prepare.sh",
+                            "src": "prepare.sh",
+                        }
+                    ]
+                },
+                "conda-env.yaml",
+                {"conda": ["pkg"]},
+            ]
         )
         self.fs.create_file(
             os.path.join(workdir, DefaultYAMLName.RUNTIME),
@@ -287,7 +297,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(bundle_path)
         assert os.path.exists(runtime_workdir)
         assert os.path.exists(os.path.join(runtime_workdir, "wheels", "dummy.whl"))
-        assert os.path.exists(os.path.join(runtime_workdir, "files/bin/prepare.sh"))
+        assert os.path.exists(os.path.join(runtime_workdir, "files/prepare.sh"))
 
         assert "latest" in sr.tag.list()
 
@@ -313,14 +323,40 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["environment"]["lock"]["shell"]["use_venv"]
         assert _manifest["artifacts"]["wheels"] == ["wheels/dummy.whl"]
         assert _manifest["artifacts"]["files"][0] == {
-            "_swrt_dest": "files/bin/prepare.sh",
-            "dest": "bin/prepare.sh",
+            "dest": "bin/../bin/prepare.sh",
             "name": "prepare",
             "post": "bash bin/prepare.sh",
             "pre": "ls bin/prepare.sh",
             "src": "prepare.sh",
         }
-        assert not _manifest["dependencies"]["local_packaged_env"]
+        _deps = _manifest["dependencies"]
+        assert not _deps["local_packaged_env"]
+        assert _deps["conda_files"] == ["conda-env.yaml"]
+        assert _deps["conda_pkgs"] == ["pkg"]
+        assert _deps["pip_files"] == ["requirements.txt", "requirements-sw-lock.txt"]
+        assert _deps["pip_pkgs"] == ["Pillow"]
+        _raw_deps = _deps["raw_deps"]
+        assert len(_raw_deps) == 7
+        assert _raw_deps == [
+            {"deps": "requirements.txt", "kind": "pip_req_file"},
+            {"deps": ["dummy.whl"], "kind": "wheel"},
+            {"deps": ["Pillow"], "kind": "pip_pkg"},
+            {
+                "deps": [
+                    {
+                        "dest": "bin/../bin/prepare.sh",
+                        "name": "prepare",
+                        "post": "bash bin/prepare.sh",
+                        "pre": "ls bin/prepare.sh",
+                        "src": "prepare.sh",
+                    }
+                ],
+                "kind": "native_file",
+            },
+            {"deps": "conda-env.yaml", "kind": "conda_env_file"},
+            {"deps": ["pkg"], "kind": "conda_pkg"},
+            {"deps": "requirements-sw-lock.txt", "kind": "pip_req_file"},
+        ]
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -429,6 +465,30 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not os.path.exists(recover_snapshot_path)
         assert not os.path.exists(swrt_snapshot_path)
 
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        sr.build(
+            Path(workdir),
+            enable_lock=True,
+            env_prefix_path=venv_dir,
+            gen_all_bundles=True,
+        )
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+
+        if is_linux():
+            export_dir = Path(runtime_workdir) / "export"
+            venv_tar_path = export_dir / "venv_env.tar.gz"
+            assert export_dir.exists()
+            assert venv_tar_path.exists(), list(export_dir.iterdir())
+
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.is_venv")
     @patch("starwhale.utils.venv.is_conda")
@@ -469,6 +529,29 @@ class StandaloneRuntimeTestCase(TestCase):
         sr.build(Path(workdir))
         sr.info()
         sr.history()
+
+        sw = SWCliConfigMixed()
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        _deps = _manifest["dependencies"]
+        assert _deps["conda_files"] == ["conda.yaml"]
+        assert len(_deps["conda_pkgs"]) == 0
+        assert _deps["pip_files"] == ["requirements.txt"]
+        assert _deps["pip_pkgs"] == ["Pillow"]
+        assert _deps["raw_deps"] == [
+            {"deps": "requirements.txt", "kind": "pip_req_file"},
+            {"deps": ["dummy.whl"], "kind": "wheel"},
+            {"deps": ["Pillow"], "kind": "pip_pkg"},
+            {"deps": "conda.yaml", "kind": "conda_env_file"},
+        ]
 
     @patch("starwhale.core.runtime.model.get_python_version")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
@@ -605,13 +688,15 @@ class StandaloneRuntimeTestCase(TestCase):
         export_dir = os.path.join(workdir, "export")
         venv_dir = os.path.join(export_dir, "venv")
         dep_dir = os.path.join(workdir, "dependencies")
-        scripts_dir = os.path.join(workdir, "files", "bin")
+        scripts_dir = os.path.join(workdir, "files")
         wheels_dir = os.path.join(workdir, "wheels")
 
         ensure_dir(workdir)
         ensure_dir(scripts_dir)
         ensure_dir(wheels_dir)
-        self.fs.create_file(os.path.join(scripts_dir, "prepare.sh"), contents="")
+        self.fs.create_file(
+            os.path.join(scripts_dir, "scripts", "prepare.sh"), contents=""
+        )
         self.fs.create_file(os.path.join(wheels_dir, "dummy.whl"), contents="")
 
         self.fs.create_file(
@@ -625,6 +710,40 @@ class StandaloneRuntimeTestCase(TestCase):
                     },
                     "dependencies": {
                         "local_packaged_env": False,
+                        "raw_deps": [
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-sw-lock.txt",
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["a", "b"],
+                            },
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-test.txt",
+                            },
+                            {
+                                "kind": "wheel",
+                                "deps": ["dummy.whl"],
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["c", "d"],
+                            },
+                            {
+                                "kind": "native_file",
+                                "deps": [
+                                    {
+                                        "dest": "bin/prepare.sh",
+                                        "name": "prepare",
+                                        "post": "bash bin/prepare.sh",
+                                        "pre": "ls bin/prepare.sh",
+                                        "src": "scripts/prepare.sh",
+                                    }
+                                ],
+                            },
+                        ],
                         "pip_files": [
                             "requirements-sw-lock.txt",
                             "requirements-test.txt",
@@ -633,7 +752,6 @@ class StandaloneRuntimeTestCase(TestCase):
                     "artifacts": {
                         "files": [
                             {
-                                "_swrt_dest": "files/bin/prepare.sh",
                                 "dest": "bin/prepare.sh",
                                 "name": "prepare",
                                 "post": "bash bin/prepare.sh",
@@ -659,28 +777,35 @@ class StandaloneRuntimeTestCase(TestCase):
 
         m_exists.return_value = False
         Runtime.restore(Path(workdir))
-        assert m_call.call_count == 4
 
-        pip_cmds = [
-            m_call.call_args_list[0][0][0][-1],
-            m_call.call_args_list[1][0][0][-1],
+        assert m_call.call_count == 8
+        pip_cmds = [mc[0][0][4:] for mc in m_call.call_args_list]
+        assert pip_cmds == [
+            ["-r", req_lock_fpath],
+            ["a"],
+            ["b"],
+            ["-r", req_fpath],
+            [f"{workdir}/wheels/dummy.whl"],
+            ["c"],
+            ["d"],
+            ["--pre", "starwhale"],
         ]
+
         assert m_venv.call_args[0][0] == [
             venv_dir,
             "--python",
             "3.7",
         ]
-        assert req_fpath in pip_cmds
-        assert req_lock_fpath in pip_cmds
 
-        assert m_call.call_args_list[2][0][0] == [
+        assert m_call.call_args_list[0][0][0] == [
             "/home/starwhale/myproject/export/venv/bin/pip",
             "install",
             "--exists-action",
             "w",
-            os.path.join(wheels_dir, "dummy.whl"),
+            "-r",
+            req_lock_fpath,
         ]
-        assert m_call.call_args_list[3][0][0] == [
+        assert m_call.call_args_list[-1][0][0] == [
             "/home/starwhale/myproject/export/venv/bin/pip",
             "install",
             "--exists-action",
@@ -693,7 +818,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_call.reset_mock()
         m_exists.return_value = True
         Runtime.restore(Path(workdir))
-        assert m_call.call_count == 3
+        assert m_call.call_count == 7
 
         RuntimeTermView.restore(workdir)
 
@@ -730,17 +855,141 @@ class StandaloneRuntimeTestCase(TestCase):
                     },
                     "dependencies": {
                         "local_packaged_env": False,
+                        "raw_deps": [
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-sw-lock.txt",
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["a", "b"],
+                            },
+                            {
+                                "kind": "wheel",
+                                "deps": ["dummy.whl"],
+                            },
+                            {
+                                "kind": "conda_pkg",
+                                "deps": ["c", "d"],
+                            },
+                            {
+                                "kind": "conda_env_file",
+                                "deps": "conda-env.yaml",
+                            },
+                        ],
                     },
                 }
             ),
         )
         ensure_dir(export_dir)
 
+        dep_dir = os.path.join(workdir, "dependencies")
+        req_lock_fpath = os.path.join(dep_dir, "requirements-sw-lock.txt")
+        conda_env_fpath = os.path.join(dep_dir, "conda-env.yaml")
+        wheels_dir = os.path.join(workdir, "wheels")
+        ensure_dir(wheels_dir)
+        wheel_fpath = os.path.join(wheels_dir, "dummy.whl")
+        self.fs.create_file(req_lock_fpath, contents="test2==0.0.1")
+        self.fs.create_file(wheel_fpath, contents="")
+        self.fs.create_file(conda_env_fpath, contents="conda")
+
         with self.assertRaises(UnExpectedConfigFieldError):
             Runtime.restore(Path(workdir))
 
         m_machine.return_value = "arm64"
         Runtime.restore(Path(workdir))
+
+        assert m_call.call_count == 8
+        conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
+        conda_prefix_dir = os.path.join(export_dir, "conda")
+        assert conda_cmds == [
+            [
+                "conda",
+                "create",
+                "--yes",
+                "--prefix",
+                conda_prefix_dir,
+                "python=3.7",
+            ],
+            [
+                "conda",
+                "run",
+                "--prefix",
+                conda_prefix_dir,
+                "python3",
+                "-m",
+                "pip",
+                "install",
+                "--exists-action",
+                "w",
+                "-r",
+                req_lock_fpath,
+            ],
+            [
+                "conda",
+                "run",
+                "--prefix",
+                conda_prefix_dir,
+                "python3",
+                "-m",
+                "pip",
+                "install",
+                "--exists-action",
+                "w",
+                "a",
+            ],
+            [
+                "conda",
+                "run",
+                "--prefix",
+                conda_prefix_dir,
+                "python3",
+                "-m",
+                "pip",
+                "install",
+                "--exists-action",
+                "w",
+                "b",
+            ],
+            [
+                "conda",
+                "run",
+                "--prefix",
+                conda_prefix_dir,
+                "python3",
+                "-m",
+                "pip",
+                "install",
+                "--exists-action",
+                "w",
+                wheel_fpath,
+            ],
+            [
+                "conda",
+                "install",
+                "--prefix",
+                conda_prefix_dir,
+                "--channel",
+                "conda-forge",
+                "--yes",
+                "--override-channels",
+                "'c' 'd'",
+            ],
+            [
+                "conda",
+                "env",
+                "update",
+                "--file",
+                conda_env_fpath,
+                "--prefix",
+                conda_prefix_dir,
+            ],
+            [
+                f"{conda_prefix_dir}/bin/python3",
+                "-c",
+                "import pkg_resources; pkg_resources.get_distribution('starwhale')",
+            ],
+        ]
 
         assert m_call.call_args_list[0][0][0] == [
             "conda",
@@ -757,7 +1006,7 @@ class StandaloneRuntimeTestCase(TestCase):
             yaml.safe_dump(
                 {
                     "environment": {"mode": "conda", "python": "3.7"},
-                    "dependencies": {"local_packaged_env": True},
+                    "dependencies": {"local_packaged_env": True, "raw_deps": []},
                 }
             ),
         )
@@ -904,7 +1153,6 @@ class StandaloneRuntimeTestCase(TestCase):
                 "dependencies": ["dependencies/requirements-sw-lock.txt"],
                 "files": [
                     {
-                        "_swrt_dest": "files/bin/prepare.sh",
                         "dest": "bin/prepare.sh",
                         "name": "prepare",
                         "post": "bash bin/prepare.sh",
@@ -1188,3 +1436,115 @@ class RuntimeProcessTestCase(TestCase):
         uri = "http://1.1.1.1:8081/project/self/runtime/rttest/versoin/123"
         with self.assertRaises(NoSupportError):
             Process.from_runtime_uri(uri, target=lambda x: x).run()
+
+
+class DependenciesTestCase(TestCase):
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    def test_create_dependencies(self) -> None:
+        deps_config = [
+            "requirements.txt",
+            {"pip": ["p1", "p2", "p3"]},
+            {"wheels": ["dummy.whl"]},
+            {"conda": ["cp1", "cp2"]},
+            {
+                "files": [
+                    {
+                        "dest": "bin/prepare.sh",
+                        "name": "prepare",
+                        "post": "bash bin/prepare.sh",
+                        "pre": "ls bin/prepare.sh",
+                        "src": "scripts/prepare.sh",
+                    },
+                    {
+                        "dest": "bin/prepare2.sh",
+                        "name": "prepare2",
+                        "src": "scripts/prepare2.sh",
+                    },
+                ]
+            },
+            {"pip": ["p4", "p5", "p6"]},
+            {"conda": ["cp3", "cp4"]},
+            "conda-env.yaml",
+            "requirements.in",
+            "conda-env.yml",
+        ]
+
+        dep = Dependencies(deps_config)
+        assert len(dep._unparsed) == 0
+        assert len(dep.deps) == 10
+        assert dep._pip_files == ["requirements.txt", "requirements.in"]
+        assert dep._pip_pkgs == ["p1", "p2", "p3", "p4", "p5", "p6"]
+        assert dep._conda_pkgs == ["cp1", "cp2", "cp3", "cp4"]
+        assert dep._conda_files == ["conda-env.yaml", "conda-env.yml"]
+        assert len(dep._files) == 2
+        assert dep._wheels == ["dummy.whl"]
+        expected_kinds = [
+            DependencyType.PIP_REQ_FILE,
+            DependencyType.PIP_PKG,
+            DependencyType.WHEEL,
+            DependencyType.CONDA_PKG,
+            DependencyType.NATIVE_FILE,
+            DependencyType.PIP_PKG,
+            DependencyType.CONDA_PKG,
+            DependencyType.CONDA_ENV_FILE,
+            DependencyType.PIP_REQ_FILE,
+            DependencyType.CONDA_ENV_FILE,
+        ]
+
+        flat_raw_deps = dep.flatten_raw_deps()
+        for idx, (kind, data) in enumerate(zip(expected_kinds, deps_config)):
+            assert kind == dep.deps[idx].kind
+            if isinstance(data, dict):
+                data = list(data.values())[0]
+            assert data == dep.deps[idx].deps  # type: ignore
+            assert flat_raw_deps[idx]["kind"] == kind.value
+            assert flat_raw_deps[idx]["deps"] == data
+
+        r_dict = dep.asdict()
+        assert isinstance(r_dict, dict)
+        assert "_unparsed" not in r_dict
+
+    def test_create_abnormal_dependencies(self) -> None:
+        deps_config = [
+            "requirements",
+            {"not_found": ["p4", "p5", "p6"]},
+            "conda-env.y",
+            "requirements.out",
+        ]
+
+        dep = Dependencies(deps_config)
+        assert len(dep.deps) == 0
+        assert len(dep._unparsed) == 4
+        assert "requirements" in dep._unparsed
+
+        with self.assertRaises(NoSupportError):
+            Dependencies([{"pip": "test"}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"pip": [None, None]}])  # type: ignore
+
+        with self.assertRaises(NoSupportError):
+            Dependencies([{"conda": "test"}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"conda": [None, None]}])  # type: ignore
+
+        with self.assertRaises(NoSupportError):
+            Dependencies([{"wheels": "fsdf"}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"wheels": [None, None]}])  # type: ignore
+
+        with self.assertRaises(NoSupportError):
+            Dependencies([{"files": "fsdf"}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"files": [None, None]}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"files": [{}, {}]}])  # type: ignore
+
+        with self.assertRaises(FormatError):
+            WheelDependency(["d.d"])

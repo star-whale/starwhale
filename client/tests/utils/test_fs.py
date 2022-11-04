@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.utils.fs import copy_file, ensure_dir
+from starwhale.utils.fs import copy_file, ensure_dir, is_within_dir
 from starwhale.utils.error import FormatError, NotFoundError
 
 
@@ -44,3 +44,18 @@ class FsUtilsTestCase(TestCase):
         copy_file(src_file, dest_file)
         assert dest_file.exists() and dest_file.is_file()
         assert contents == dest_file.read_text()
+
+    def test_within_dir(self) -> None:
+        cases = [
+            ("/tmp/1", "/tmp/1/2", True),
+            ("/tmp/1/2", "/tmp/1", False),
+            ("/tmp/1", "/tmp/1/../../", False),
+            (Path("/tmp/1"), "/tmp/1/2", True),
+            ("/tmp/1/2", Path("/tmp/1"), False),
+            (Path("/tmp/1"), Path("/tmp/1/2"), True),
+            ("tmp/1", "tmp2/1/2", False),
+            ("tmp/1", "tmp/1/2", True),
+        ]
+
+        for parent, child, expected in cases:
+            assert expected == is_within_dir(parent, child)

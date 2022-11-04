@@ -19,14 +19,12 @@ from ._impl.dataset import (
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
     UserRawBuildExecutor,
-    get_sharding_data_loader,
 )
 
 # TODO: add dataset build/push/list/info api
 
 
 __all__ = [
-    "get_sharding_data_loader",
     "get_data_loader",
     "Link",
     "DefaultS3LinkAuth",

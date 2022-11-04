@@ -10,13 +10,18 @@ from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
+from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,
     S3StorageBackend,
     LocalFSStorageBackend,
 )
-from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.core.dataset.tabular import (
+    StandaloneTDSC,
+    TabularDatasetRow,
+    get_dataset_consumption,
+)
 from starwhale.api._impl.dataset.loader import SWDSBinDataLoader, UserRawDataLoader
 
 
@@ -28,21 +33,53 @@ class TestDataLoader(TestCase):
         self.fs.add_real_directory(self.swds_dir)
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
+    def test_range_match(self, m_scan_id: MagicMock, m_summary: MagicMock) -> None:
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=True,
+            include_link=False,
+        )
+        m_scan_id.return_value = [{"id": "path/0"}]
+        consumption = get_dataset_consumption(
+            self.dataset_uri,
+            session_id="10",
+            session_start="path/0",
+            session_end=None,
+        )
+        with self.assertRaises(ParameterError):
+            get_data_loader(self.dataset_uri, session_consumption=consumption)
+
+        with self.assertRaises(ParameterError):
+            get_data_loader(
+                self.dataset_uri, session_consumption=consumption, start="path/1"
+            )
+
+        with self.assertRaises(ParameterError):
+            get_data_loader(
+                self.dataset_uri, session_consumption=consumption, end="path/1"
+            )
+
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_user_raw_local_store(
-        self, m_scan: MagicMock, m_summary: MagicMock
+        self, m_scan: MagicMock, m_scan_id: MagicMock, m_summary: MagicMock
     ) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=True,
             include_link=False,
         )
-        loader = get_data_loader(self.dataset_uri)
+        m_scan_id.return_value = [{"id": "path/0"}]
+
+        consumption = get_dataset_consumption(self.dataset_uri, session_id="1")
+        loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
         assert isinstance(loader, UserRawDataLoader)
+        assert isinstance(loader.session_consumption, StandaloneTDSC)
 
         fname = "data"
         m_scan.return_value = [
             TabularDatasetRow(
-                id=0,
+                id="path/0",
                 object_store_type=ObjectStoreType.LOCAL,
                 data_uri=fname,
                 data_offset=16,
@@ -70,7 +107,7 @@ class TestDataLoader(TestCase):
         assert len(rows) == 1
 
         _idx, _data, _annotations = rows[0]
-        assert _idx == 0
+        assert _idx == "path/0"
         assert _annotations["label"] == 0
 
         assert len(_data.to_bytes()) == 28 * 28
@@ -82,13 +119,25 @@ class TestDataLoader(TestCase):
         assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
         assert not loader._stores["local."].key_prefix
 
+        loader = get_data_loader(self.dataset_uri)
+        assert isinstance(loader, UserRawDataLoader)
+        assert loader.session_consumption is None
+        rows = list(loader)
+        assert len(rows) == 1
+
+        _idx, _, _annotations = rows[0]
+        assert _idx == "path/0"
+        assert _annotations["label"] == 0
+
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.store.boto3.resource")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_user_raw_remote_store(
         self,
         m_scan: MagicMock,
+        m_scan_id: MagicMock,
         m_summary: MagicMock,
         m_boto3: MagicMock,
     ) -> None:
@@ -96,6 +145,7 @@ class TestDataLoader(TestCase):
             include_user_raw=True,
             include_link=True,
         )
+        m_scan_id.return_value = [{"id": i} for i in range(0, 4)]
 
         snapshot_workdir = DatasetStorage(self.dataset_uri).snapshot_workdir
         ensure_dir(snapshot_workdir)
@@ -117,8 +167,11 @@ class TestDataLoader(TestCase):
         for k in envs:
             os.environ.pop(k)
 
-        loader = get_data_loader(self.dataset_uri)
+        consumption = get_dataset_consumption(self.dataset_uri, session_id="2")
+        loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
         assert isinstance(loader, UserRawDataLoader)
+        assert isinstance(loader.session_consumption, StandaloneTDSC)
+        assert loader.session_consumption._todo_queue.qsize() == 1
         assert loader.kind == DataFormatType.USER_RAW
         for k in envs:
             assert k in os.environ
@@ -223,25 +276,38 @@ class TestDataLoader(TestCase):
         assert loader._stores["remote.server1"].backend.kind == SWDSBackendType.S3
         assert loader._stores["remote.server1"].bucket == "starwhale"
 
+        loader = get_data_loader(self.dataset_uri)
+        assert isinstance(loader, UserRawDataLoader)
+        assert loader.session_consumption is None
+        assert len(list(loader)) == 4
+
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.store.boto3.resource")
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
+    @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_swds_bin_s3(
-        self, m_scan: MagicMock, m_summary: MagicMock, m_boto3: MagicMock
+        self,
+        m_scan: MagicMock,
+        m_scan_id: MagicMock,
+        m_summary: MagicMock,
+        m_boto3: MagicMock,
     ) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,
             include_link=False,
         )
+        m_scan_id.return_value = [{"id": 0}]
         version = "1122334455667788"
         dataset_uri = URI(
             f"http://127.0.0.1:1234/project/self/dataset/mnist/version/{version}",
             expected_type=URIType.DATASET,
         )
-        loader = get_data_loader(dataset_uri)
+        consumption = get_dataset_consumption(self.dataset_uri, session_id="5")
+        loader = get_data_loader(dataset_uri, session_consumption=consumption)
         assert isinstance(loader, SWDSBinDataLoader)
         assert loader.kind == DataFormatType.SWDS_BIN
+        assert isinstance(loader.session_consumption, StandaloneTDSC)
 
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
