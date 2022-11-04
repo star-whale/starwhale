@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.common.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import org.junit.jupiter.api.Test;
 
 public class TagUtilTest {
@@ -26,7 +28,8 @@ public class TagUtilTest {
     @Test
     public void testAddTags() {
         assertEquals("tag1,tag2,new", TagUtil.addTags("new", "tag1,tag2"));
-        assertEquals("tag1,tag2,new1,new2", TagUtil.addTags("new1,new2", "tag1,tag2"));
+        assertThrows(TagException.class, () -> TagUtil.addTags("new", "tag1,tag2,v1"));
+        assertEquals("tag1,tag2,vv,new1,new2", TagUtil.addTags("new1,new2", "tag1,tag2,vv"));
         assertEquals("tag1,tag2,new1", TagUtil.addTags("new1,tag2", "tag1,tag2"));
         assertEquals("new1,new2", TagUtil.addTags("new1,new2", ""));
         assertEquals("new1,new2", TagUtil.addTags("new1,new2", null));
