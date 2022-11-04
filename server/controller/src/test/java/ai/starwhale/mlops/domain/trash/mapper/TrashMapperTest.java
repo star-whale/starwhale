@@ -62,8 +62,8 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .size(10L)
                 .trashName("model1")
                 .trashType("MODEL")
-                .retention(new Date())
-                .updatedTime(new Date())
+                .retention(new Date(1000))
+                .updatedTime(new Date(1000))
                 .build();
         TrashPo trash2 = TrashPo.builder()
                 .projectId(1L)
@@ -72,8 +72,8 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .size(10L)
                 .trashName("dataset1")
                 .trashType("DATASET")
-                .retention(new Date())
-                .updatedTime(new Date())
+                .retention(new Date(1000))
+                .updatedTime(new Date(1000))
                 .build();
         TrashPo trash3 = TrashPo.builder()
                 .projectId(1L)
@@ -82,8 +82,8 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .size(10L)
                 .trashName("runtime1")
                 .trashType("RUNTIME")
-                .retention(new Date())
-                .updatedTime(new Date())
+                .retention(new Date(1000))
+                .updatedTime(new Date(1000))
                 .build();
         TrashPo trash4 = TrashPo.builder()
                 .projectId(1L)
@@ -92,8 +92,8 @@ public class TrashMapperTest extends MySqlContainerHolder {
                 .size(10L)
                 .trashName("job1")
                 .trashType("EVALUATION")
-                .retention(new Date())
-                .updatedTime(new Date())
+                .retention(new Date(1000))
+                .updatedTime(new Date(1000))
                 .build();
         trashMapper.insert(trash1);
         trashMapper.insert(trash2);
