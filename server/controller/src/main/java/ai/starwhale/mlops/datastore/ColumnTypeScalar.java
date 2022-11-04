@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.Map;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public class ColumnTypeScalar extends ColumnType {
@@ -124,15 +125,18 @@ public class ColumnTypeScalar extends ColumnType {
         } else {
             if (this == BOOL) {
                 return (Boolean) value ? "1" : "0";
-            } else if (this == INT8
-                    || this == INT16
-                    || this == INT32
-                    || this == INT64) {
-                return Long.toHexString(((Number) value).longValue());
+            } else if (this == INT8) {
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).byteValue() & 0xFF), 2, "0");
+            } else if (this == INT16) {
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).shortValue() & 0xFFFF), 4, "0");
+            } else if (this == INT32) {
+                return StringUtils.leftPad(Integer.toHexString(((Number) value).intValue()), 8, "0");
+            } else if (this == INT64) {
+                return StringUtils.leftPad(Long.toHexString(((Number) value).longValue()), 16, "0");
             } else if (this == FLOAT32) {
-                return Integer.toHexString(Float.floatToIntBits((Float) value));
+                return StringUtils.leftPad(Integer.toHexString(Float.floatToIntBits((Float) value)), 8, "0");
             } else if (this == FLOAT64) {
-                return Long.toHexString(Double.doubleToLongBits((Double) value));
+                return StringUtils.leftPad(Long.toHexString(Double.doubleToLongBits((Double) value)), 16, "0");
             } else if (this == STRING) {
                 return (String) value;
             } else if (this == BYTES) {
@@ -161,13 +165,13 @@ public class ColumnTypeScalar extends ColumnType {
                 }
                 throw new IllegalArgumentException("invalid bool value " + value);
             } else if (this == INT8) {
-                return Byte.parseByte((String) value, 16);
+                return (byte) (Integer.parseInt((String) value, 16) & 0xFF);
             } else if (this == INT16) {
-                return Short.parseShort((String) value, 16);
+                return (short) (Integer.parseInt((String) value, 16) & 0xFFFF);
             } else if (this == INT32) {
-                return Integer.parseInt((String) value, 16);
+                return Integer.parseUnsignedInt((String) value, 16);
             } else if (this == INT64) {
-                return Long.parseLong((String) value, 16);
+                return Long.parseUnsignedLong((String) value, 16);
             } else if (this == FLOAT32) {
                 return Float.intBitsToFloat(Integer.parseUnsignedInt((String) value, 16));
             } else if (this == FLOAT64) {
