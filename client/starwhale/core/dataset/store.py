@@ -446,6 +446,8 @@ class S3BufferedFileLike:
             raise FormatError(f"{_r}:{type(_r)} is not bytes or memoryview type")
 
     def _read(self, size: int) -> memoryview:
+        if size <= 0:
+            return self.obj.get()["Body"].read()
         # TODO: use smart_open 3rd lib?
         if (self._current + size) <= len(self._buffer):
             end = self._current + size
