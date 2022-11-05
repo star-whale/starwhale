@@ -7,7 +7,6 @@ import platform
 import tempfile
 from abc import ABCMeta
 from pathlib import Path
-from xml.dom import NotFoundErr
 from collections import defaultdict
 
 import yaml
@@ -15,6 +14,7 @@ import jinja2
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from typing_extensions import Protocol
 
 from starwhale.utils import (
     docker,
@@ -40,17 +40,25 @@ from starwhale.consts import (
     DEFAULT_IMAGE_REPO,
     STANDALONE_INSTANCE,
     SW_DEV_DUMMY_VERSION,
+    WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
+from starwhale.utils.fs import (
+    move_dir,
+    ensure_dir,
+    ensure_file,
+    is_within_dir,
+    get_path_created_time,
+)
 from starwhale.base.type import (
     URIType,
     BundleType,
     InstanceType,
+    DependencyType,
     RuntimeArtifactType,
     RuntimeLockFileType,
 )
@@ -60,16 +68,20 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     is_venv,
     is_conda,
+    venv_setup,
+    conda_setup,
     conda_export,
     get_base_prefix,
     get_conda_pybin,
+    conda_env_update,
+    extract_venv_pkg,
     venv_install_req,
     conda_install_req,
     create_python_env,
+    extract_conda_pkg,
     install_starwhale,
     get_python_version,
     package_python_env,
-    restore_python_env,
     activate_python_env,
     pip_freeze_by_pybin,
     guess_current_py_env,
@@ -115,7 +127,7 @@ class DockerEnv(ASDictMixin):
     def __str__(self) -> str:
         if self.image:
             return f"image:{self.image}"
-        return "emtpy"
+        return "empty"
 
     __repr__ = __str__
 
@@ -177,37 +189,288 @@ class Environment(ASDictMixin):
     __repr__ = __str__
 
 
+class BaseDependency(Protocol):
+    def __init__(self, deps: t.Any) -> None:
+        ...
+
+    @property
+    def kind(self) -> DependencyType:
+        ...
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        ...
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        ...
+
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        ...
+
+
+class NativeFileDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: t.List[t.Dict[str, str]]) -> None:
+        if isinstance(deps, list):
+            for d in deps:
+                if not isinstance(d, dict):
+                    raise FormatError(f"native file must dict type: {d}")
+                if not d.get("src") or not d.get("dest"):
+                    raise FormatError(
+                        "dependencies.file MUST include src and dest fields."
+                    )
+        else:
+            raise NoSupportError(
+                f"native file dependency only support list[dict]: {deps}"
+            )
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.NATIVE_FILE
+
+    def _do_install(self, workdir: Path, mode: str) -> None:
+        # TODO: support native file pre-hook, post-hook
+        for d in self.deps:
+            if in_container():
+                _dest = Path(d["dest"])
+            else:
+                _mode_dir = workdir / "export" / mode
+                _dest = _mode_dir / d["dest"]
+                if not is_within_dir(_mode_dir, _dest):
+                    raise NoSupportError(
+                        f"native files installation does not support the out of base({_mode_dir}) dir relative path({d['dest']}) in the host environment"
+                    )
+
+            _src = workdir / RuntimeArtifactType.FILES / d["src"]
+            console.print(f":baby_chick: copy native files: {_src} -> {_dest}")
+            if _src.is_dir():
+                copy_fs(str(_src), str(_dest))
+            else:
+                ensure_dir(_dest.parent)
+                shutil.copyfile(str(_src), str(_dest))
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._do_install(workdir, PythonRunEnv.CONDA)
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._do_install(workdir, PythonRunEnv.VENV)
+
+
+class WheelDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: t.List[str]) -> None:
+        if isinstance(deps, list):
+            for d in deps:
+                if not isinstance(d, str) or not d.endswith(WHEEL_FILE_EXTENSION):
+                    raise FormatError(f"wheel must str path: {d}")
+        else:
+            raise NoSupportError(f"wheel dependency only support list[str]: {deps}")
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.WHEEL
+
+    def _get_wheels(self, workdir: Path) -> t.Generator[Path, None, None]:
+        for d in self.deps:
+            if not d:
+                continue
+
+            fpath = workdir / RuntimeArtifactType.WHEELS / d
+            if not fpath.exists():
+                raise NotFoundError(f"wheel install: {fpath}")
+
+            yield fpath
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        for wpath in self._get_wheels(workdir):
+            logger.debug(f"conda run pip install: {wpath}")
+            conda_install_req(req=wpath, prefix_path=env_dir, configs=configs)
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        for wpath in self._get_wheels(workdir):
+            logger.debug(f"venv pip install: {wpath}")
+            venv_install_req(
+                env_dir, wpath, pip_config=configs.get("pip")
+            )  # type:ignore
+
+
+class CondaPkgDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: t.List[str]) -> None:
+        if isinstance(deps, list):
+            for d in deps:
+                if not isinstance(d, str):
+                    raise FormatError(f"conda pkg must be str: {d}")
+        else:
+            raise NoSupportError(
+                f"conda dependency only supports str or list[str] format: {deps}"
+            )
+
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.CONDA_PKG
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        _conda_pkgs = " ".join([repr(_p) for _p in self.deps if _p])
+        _conda_pkgs = _conda_pkgs.strip()
+        if _conda_pkgs:
+            logger.debug(f"conda install: {_conda_pkgs}")
+            conda_install_req(
+                req=_conda_pkgs,
+                prefix_path=env_dir,
+                use_pip_install=False,
+                configs=configs,
+            )
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        logger.warning("no support install conda pkg in the venv environment")
+
+
+class CondaEnvFileDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: str) -> None:
+        if isinstance(deps, str):
+            if not deps.endswith((".yaml", ".yml")):
+                raise FormatError(
+                    f"conda env file dependency must be .yaml or .yml file: {deps}"
+                )
+        else:
+            raise NoSupportError(
+                f"conda env file dependency only supports str format: {deps}"
+            )
+
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.CONDA_ENV_FILE
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        env_fpath = workdir / RuntimeArtifactType.DEPEND / self.deps
+        if not env_fpath.exists():
+            raise NotFoundError(f"conda install env file: {env_fpath}")
+
+        # TODO: configs for conda env update?
+        conda_env_update(env_fpath=env_fpath, target_env=env_dir)
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        logger.warning(
+            "no support install/update conda environment file in the venv environment"
+        )
+
+
+class PipPkgDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: t.List[str]) -> None:
+        if isinstance(deps, list):
+            for d in deps:
+                if not isinstance(d, str):
+                    raise FormatError(f"pip pkg must be str: {d}")
+        else:
+            raise NoSupportError(f"pip pkg dependency only supports str format: {deps}")
+
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.PIP_PKG
+
+    def _get_pkgs(self) -> t.Generator[str, None, None]:
+        for d in self.deps:
+            d = d.strip()
+            if d:
+                yield d
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        # TODO: merge deps
+        for pkg in self._get_pkgs():
+            logger.debug(f"conda run pip install: {pkg}")
+            conda_install_req(req=pkg, prefix_path=env_dir, configs=configs)
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        for pkg in self._get_pkgs():
+            logger.debug(f"venv pip install: {pkg}")
+            venv_install_req(env_dir, pkg, pip_config=configs.get("pip"))  # type:ignore
+
+
+class PipReqFileDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: str) -> None:
+        if isinstance(deps, str):
+            if not deps.endswith((".txt", ".in")):
+                raise FormatError(
+                    f"pip requirements file dependency must be .txt or .in file: {deps}"
+                )
+        else:
+            raise NoSupportError(
+                f"pip requirements file dependency only supports str format: {deps}"
+            )
+
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.PIP_REQ_FILE
+
+    def _get_req_path(self, workdir: Path) -> Path:
+        fpath = workdir / RuntimeArtifactType.DEPEND / self.deps
+        if not fpath.exists():
+            raise NotFoundError(f"pip req file: {fpath}")
+        return fpath
+
+    def conda_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        fpath = self._get_req_path(workdir)
+        conda_install_req(req=fpath, prefix_path=env_dir, configs=configs)
+
+    def venv_install(self, workdir: Path, env_dir: Path, configs: t.Dict) -> None:
+        fpath = self._get_req_path(workdir)
+        venv_install_req(env_dir, fpath, pip_config=configs.get("pip"))  # type:ignore
+
+
+dependency_map: t.Dict[DependencyType, t.Type[BaseDependency]] = {
+    DependencyType.WHEEL: WheelDependency,
+    DependencyType.CONDA_ENV_FILE: CondaEnvFileDependency,
+    DependencyType.CONDA_PKG: CondaPkgDependency,
+    DependencyType.PIP_PKG: PipPkgDependency,
+    DependencyType.PIP_REQ_FILE: PipReqFileDependency,
+    DependencyType.NATIVE_FILE: NativeFileDependency,
+}
+
+
 class Dependencies(ASDictMixin):
     def __init__(self, deps: t.Optional[t.List[str]] = None) -> None:
         deps = deps or []
 
-        self.pip_pkgs: t.List[str] = []
-        self.pip_files: t.List[str] = []
-        self.conda_pkgs: t.List[str] = []
-        self.conda_files: t.List[str] = []
-        self.wheels: t.List[str] = []
-        self.files: t.List[t.Dict[str, str]] = []
+        self.deps: t.List[BaseDependency] = []
+
+        self._pip_pkgs: t.List[str] = []
+        self._pip_files: t.List[str] = []
+        self._conda_pkgs: t.List[str] = []
+        self._conda_files: t.List[str] = []
+        self._wheels: t.List[str] = []
+        self._files: t.List[t.Dict[str, str]] = []
         self._unparsed: t.List[t.Any] = []
 
-        _dmap: t.Dict[str, t.List[t.Any]] = {
-            "pip": self.pip_pkgs,
-            "conda": self.conda_pkgs,
-            "wheels": self.wheels,
-            "files": self.files,
+        _dmap: t.Dict[str, t.Tuple[t.Type[BaseDependency], t.List]] = {
+            "pip": (PipPkgDependency, self._pip_pkgs),
+            "conda": (CondaPkgDependency, self._conda_pkgs),
+            "wheels": (WheelDependency, self._wheels),
+            "files": (NativeFileDependency, self._files),
         }
 
         for d in deps:
             if isinstance(d, str):
                 if d.endswith((".txt", ".in")):
-                    self.pip_files.append(d)
+                    self.deps.append(PipReqFileDependency(d))
+                    self._pip_files.append(d)
                 elif d.endswith((".yaml", ".yml")):
-                    self.conda_files.append(d)
+                    self.deps.append(CondaEnvFileDependency(d))
+                    self._conda_files.append(d)
                 else:
                     self._unparsed.append(d)
             elif isinstance(d, dict):
                 for _k, _v in d.items():
                     if _k in _dmap:
-                        _dmap[_k].extend(_v)
+                        _cls, _lst = _dmap[_k]
+                        self.deps.append(_cls(_v))  # type: ignore
+                        _lst.extend(_v)
                     else:
                         self._unparsed.append(d)
             else:
@@ -216,20 +479,26 @@ class Dependencies(ASDictMixin):
         if self._unparsed:
             logger.warning(f"unparsed dependencies:{self._unparsed}")
 
-        self._do_validate()
-
-    def _do_validate(self) -> None:
-        for _f in self.files:
-            if not _f.get("src") or not _f.get("dest"):
-                raise FormatError("dependencies.file MUST include src and dest fields.")
-
     def __str__(self) -> str:
-        return f"Starwhale Runtime Dependencies: pip:{len(self.pip_pkgs + self.pip_files)}, conda:{len(self.conda_pkgs + self.conda_files)}, wheels:{len(self.wheels)}, files:{len(self.files)}"
+        return f"Starwhale Runtime Dependencies: {len(self.deps)}, unparsed: {len(self._unparsed)}"
 
-    __repr__ = __str__
+    def __repr__(self) -> str:
+        return (
+            f"Starwhale Runtime Dependencies: {len(self.deps)}, unparsed: {len(self._unparsed)}, pip pkg:{len(self._pip_pkgs)}"
+            f"pip file:{len(self._pip_files)}, conda pkg:{len(self._conda_pkgs)} conda file:{len(self._conda_files)}"
+            f"wheel: {len(self._wheels)} native file:{len(self._files)}"
+        )
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         return super().asdict(ignore_keys=ignore_keys or ["_unparsed"])
+
+    def flatten_raw_deps(self) -> t.List:
+        rt = []
+        for d in self.deps:
+            info = d.asdict()
+            info["kind"] = d.kind.value
+            rt.append(info)
+        return rt
 
 
 class Hooks(ASDictMixin):
@@ -562,7 +831,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         logger.info("[step:copy-wheels]start to copy wheels...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.WHEELS)
-        for _fname in config.dependencies.wheels:
+        for _fname in config.dependencies._wheels:
             _fpath = workdir / _fname
             if not _fpath.exists():
                 logger.warning(f"not found wheel: {_fpath}")
@@ -579,14 +848,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         logger.info("[step:copy-files]start to copy files...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.FILES)
-        for _f in config.dependencies.files:
+        for _f in config.dependencies._files:
             _src = workdir / _f["src"]
-            _dest = f"{RuntimeArtifactType.FILES}/{_f['dest'].lstrip('/')}"
+            _dest = f"{RuntimeArtifactType.FILES}/{_f['src'].lstrip('/')}"
             if not _src.exists():
                 logger.warning(f"not found src-file: {_src}")
                 continue
 
-            _f["_swrt_dest"] = _dest
             self._manifest["artifacts"][RuntimeArtifactType.FILES].append(_f)
             # TODO: auto mkdir target parent dir?
             if _src.is_dir():
@@ -598,7 +866,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         logger.info("[step:copy-deps]start to copy pip/conda requirement files")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
-        for _fname in config.dependencies.conda_files + config.dependencies.pip_files:
+        for _fname in config.dependencies._conda_files + config.dependencies._pip_files:
             _fpath = workdir / _fname
             if not _fpath.exists():
                 logger.warning(f"not found dependencies: {_fpath}")
@@ -685,11 +953,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         console.print("dump dependencies info...")
         deps = deps or Dependencies()
         self._manifest["dependencies"] = {
-            "pip_pkgs": deps.pip_pkgs,
-            "conda_pkgs": deps.conda_pkgs,
-            "pip_files": deps.pip_files,
-            "conda_files": deps.conda_files,
+            "raw_deps": deps.flatten_raw_deps(),
             "local_packaged_env": False,
+            # compatibility with starwhale <= 0.3.0
+            "pip_pkgs": deps._pip_pkgs,
+            "conda_pkgs": deps._conda_pkgs,
+            "pip_files": deps._pip_files,
+            "conda_files": deps._conda_files,
         }
 
         logger.info("[step:dep]finish dump dep")
@@ -802,7 +1072,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         def _copy_file(src: Path, dest: Path) -> None:
             if not src.exists():
-                raise NotFoundErr(src)
+                raise NotFoundError(src)
 
             if dest.exists() and not force:
                 logger.warning(f"{dest} existed, skip copy")
@@ -812,15 +1082,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         rt_config = RuntimeConfig.create_by_yaml(extract_dir / DefaultYAMLName.RUNTIME)
         wheel_dir = extract_dir / RuntimeArtifactType.WHEELS
-        for _w in rt_config.dependencies.wheels:
+        for _w in rt_config.dependencies._wheels:
             _copy_file(wheel_dir / _w, workdir / _w)
 
         dep_dir = extract_dir / RuntimeArtifactType.DEPEND
-        for _d in rt_config.dependencies.pip_files + rt_config.dependencies.conda_files:
+        for _d in (
+            rt_config.dependencies._pip_files + rt_config.dependencies._conda_files
+        ):
             _copy_file(dep_dir / _d, workdir / _d)
 
         files_dir = extract_dir / RuntimeArtifactType.FILES
-        for _f in rt_config.dependencies.files:
+        for _f in rt_config.dependencies._files:
             _copy_file(files_dir / _f["dest"], files_dir / _f["src"])
 
         runtime_yaml = load_yaml(extract_dir / DefaultYAMLName.RUNTIME)
@@ -1116,7 +1388,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
         isolated_env_dir = isolated_env_dir or workdir / "export" / _env["mode"]
 
-        operations = [
+        operations: t.List[t.Any] = [
             (
                 cls._validate_environment,
                 5,
@@ -1125,61 +1397,136 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     expected_arch=_env.get("arch", []),
                 ),
             ),
-            (
-                restore_python_env,
-                20,
-                "restore python env",
-                dict(
-                    workdir=workdir,
-                    mode=_env["mode"],
-                    python_version=_env["python"],
-                    deps=_manifest["dependencies"],
-                    wheels=_manifest.get("artifacts", {}).get(
-                        RuntimeArtifactType.WHEELS, []
-                    ),
-                    configs=_manifest.get("configs", {}),
-                    isolated_env_dir=isolated_env_dir,
-                ),
-            ),
-            (
-                install_starwhale,
-                10,
-                "install starwhale",
-                dict(
-                    prefix_path=isolated_env_dir,
-                    mode=_env["mode"],
-                    version=_starwhale_version,
-                    force=False,
-                    configs=_manifest.get("configs", {}),
-                ),
-            ),
-            (
-                cls._setup_native_files,
-                10,
-                "setup native files",
-                dict(
-                    workdir=workdir,
-                    mode=_env["mode"],
-                    files=_manifest.get("artifacts", {}).get("files", []),
-                ),
-            ),
-            (
-                render_python_env_activate,
-                5,
-                "render python env activate scripts",
-                dict(
-                    mode=_env["mode"],
-                    prefix_path=isolated_env_dir,
-                    workdir=workdir,
-                    local_packaged_env=_manifest["dependencies"].get(
-                        "local_packaged_env", False
-                    ),
-                    verbose=verbose,
-                ),
-            ),
         ]
 
+        if _manifest["dependencies"].get("local_packaged_env", False):
+            operations.append(
+                (
+                    cls._extract_local_packaged_env,
+                    20,
+                    "extract local packaged env",
+                    dict(
+                        workdir=workdir,
+                        mode=_env["mode"],
+                        isolated_env_dir=isolated_env_dir,
+                    ),
+                )
+            )
+        else:
+            operations.extend(
+                [
+                    (
+                        cls._setup_python_env,
+                        20,
+                        "setup python env",
+                        dict(
+                            workdir=workdir,
+                            mode=_env["mode"],
+                            python_version=_env["python"],
+                            isolated_env_dir=isolated_env_dir,
+                        ),
+                    ),
+                    (
+                        cls._install_dependencies,
+                        50,
+                        "install dependencies",
+                        dict(
+                            workdir=workdir,
+                            mode=_env["mode"],
+                            deps=_manifest["dependencies"],
+                            configs=_manifest.get("configs", {}),
+                            isolated_env_dir=isolated_env_dir,
+                        ),
+                    ),
+                ]
+            )
+
+        operations.extend(
+            [
+                (
+                    install_starwhale,
+                    10,
+                    "install starwhale",
+                    dict(
+                        prefix_path=isolated_env_dir,
+                        mode=_env["mode"],
+                        version=_starwhale_version,
+                        force=False,
+                        configs=_manifest.get("configs", {}),
+                    ),
+                ),
+                (
+                    render_python_env_activate,
+                    5,
+                    "render python env activate scripts",
+                    dict(
+                        mode=_env["mode"],
+                        prefix_path=isolated_env_dir,
+                        workdir=workdir,
+                        local_packaged_env=_manifest["dependencies"].get(
+                            "local_packaged_env", False
+                        ),
+                        verbose=verbose,
+                    ),
+                ),
+            ]
+        )
+
         run_with_progress_bar("runtime restore...", operations)
+
+    @staticmethod
+    def _install_dependencies(
+        workdir: Path,
+        mode: str,
+        deps: t.Dict,
+        configs: t.Dict,
+        isolated_env_dir: t.Optional[Path] = None,
+    ) -> None:
+        if "raw_deps" not in deps:
+            raise NoSupportError(
+                f"not found raw_deps field, please rebuild runtime with the newer swcli({STARWHALE_VERSION}) version"
+            )
+
+        export_dir = workdir / "export"
+        env_dir = isolated_env_dir or export_dir / mode
+
+        for dep in deps["raw_deps"]:
+            kind = DependencyType(dep["kind"])
+            if kind not in dependency_map:
+                raise NoSupportError(f"install dependency:{kind}")
+
+            console.print(
+                f":dango: installing dependencies for [blink bold green]{kind.value}:{dep['deps']}[/] in the {mode} environment"
+            )
+
+            _obj = dependency_map[kind](dep["deps"])
+            _func = (
+                _obj.conda_install if PythonRunEnv.CONDA == mode else _obj.venv_install
+            )
+            _func(workdir, env_dir, configs)
+
+    @staticmethod
+    def _setup_python_env(
+        workdir: Path,
+        mode: str,
+        python_version: str,
+        isolated_env_dir: t.Optional[Path] = None,
+    ) -> None:
+        env_dir = isolated_env_dir or workdir / "export" / mode
+        logger.info(f"setup python({python_version}) env with {mode}...")
+        if mode == PythonRunEnv.CONDA:
+            conda_setup(python_version, prefix=env_dir)
+        else:
+            venv_setup(env_dir, python_version=python_version)
+
+    @staticmethod
+    def _extract_local_packaged_env(
+        workdir: Path,
+        mode: str,
+        isolated_env_dir: t.Optional[Path] = None,
+    ) -> None:
+        f = extract_conda_pkg if mode == PythonRunEnv.CONDA else extract_venv_pkg
+        f(workdir, isolated_env_dir)
 
     @staticmethod
     def _validate_environment(expected_arch: t.List[str]) -> None:
@@ -1208,31 +1555,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         if expected_arch:
             _validate_arch()
-
-    @staticmethod
-    def _setup_native_files(
-        workdir: Path, mode: str, files: t.List[t.Dict[str, str]]
-    ) -> None:
-        # TODO: support native file pre-hook, post-hook
-        for _f in files:
-            if _f["dest"].startswith("/") and in_container():
-                logger.warning(f"NOTICE! dest dir: {_f['dest']}")
-                _dest = Path(_f["dest"])
-            else:
-                if mode in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
-                    _root = workdir / "export" / mode
-                else:
-                    _root = workdir
-                _dest = _root / _f["dest"].lstrip("/")
-
-            _src = workdir / _f["_swrt_dest"]
-
-            console.print(f":baby_chick: copy native files: {_src} -> {_dest}")
-            if _src.is_dir():
-                copy_fs(str(_src), str(_dest))
-            else:
-                ensure_dir(_dest.parent)
-                shutil.copyfile(str(_src), str(_dest))
 
 
 class CloudRuntime(CloudBundleModelMixin, Runtime):

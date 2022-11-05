@@ -1353,31 +1353,31 @@ class TestRemoteDataStore(unittest.TestCase):
                     "records": [
                         {
                             "values": [
-                                {"key": "k", "value": "1"},
+                                {"key": "k", "value": "0000000000000001"},
                                 {"key": "a", "value": "1"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "2"},
+                                {"key": "k", "value": "0000000000000002"},
                                 {"key": "a", "value": "2"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "3"},
+                                {"key": "k", "value": "0000000000000003"},
                                 {"key": "-", "value": "1"},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "4"},
+                                {"key": "k", "value": "0000000000000004"},
                                 {"key": "a", "value": None},
                             ]
                         },
                         {
                             "values": [
-                                {"key": "k", "value": "5"},
+                                {"key": "k", "value": "0000000000000005"},
                                 {"key": "z", "value": "0000000000000000"},
                             ]
                         },
@@ -1536,16 +1536,23 @@ class TestRemoteDataStore(unittest.TestCase):
                     "records": [
                         {
                             "values": [
-                                {"key": "key", "value": "1"},
+                                {"key": "key", "value": "0000000000000001"},
                                 {"key": "b", "value": "1"},
-                                {"key": "c", "value": "1"},
-                                {"key": "d", "value": "1"},
-                                {"key": "e", "value": "1"},
+                                {"key": "c", "value": "01"},
+                                {"key": "d", "value": "0001"},
+                                {"key": "e", "value": "00000001"},
                                 {"key": "f", "value": "3c00"},
                                 {"key": "g", "value": "3f800000"},
                                 {"key": "h", "value": "3ff0000000000000"},
                                 {"key": "i", "value": "MQ=="},
-                                {"key": "j", "value": ["1", "2", "3"]},
+                                {
+                                    "key": "j",
+                                    "value": [
+                                        "0000000000000001",
+                                        "0000000000000002",
+                                        "0000000000000003",
+                                    ],
+                                },
                                 {
                                     "key": "k",
                                     "value": {
@@ -1699,6 +1706,37 @@ class TestRemoteDataStore(unittest.TestCase):
             ),
             "all types",
         )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                            "columns": [{"columnName": "a", "alias": "b"}],
+                            "keepNone": True,
+                        },
+                        {
+                            "tableName": "t2",
+                            "columns": [{"columnName": "a", "alias": "a"}],
+                        },
+                        {
+                            "tableName": "t3",
+                        },
+                    ],
+                    "end": "0000000000000001",
+                    "start": "0000000000000001",
+                    "limit": 1000,
+                    "keepNone": True,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=60,
+        )
         mock_post.return_value.json.side_effect = [
             {
                 "data": {
@@ -1726,37 +1764,6 @@ class TestRemoteDataStore(unittest.TestCase):
             [{"a": i} for i in range(2001)],
             list(self.ds.scan_tables([data_store.TableDesc("t1")])),
             "scan page",
-        )
-        mock_post.assert_any_call(
-            "http://test/api/v1/datastore/scanTable",
-            data=json.dumps(
-                {
-                    "tables": [
-                        {
-                            "tableName": "t1",
-                            "columns": [{"columnName": "a", "alias": "b"}],
-                            "keepNone": True,
-                        },
-                        {
-                            "tableName": "t2",
-                            "columns": [{"columnName": "a", "alias": "a"}],
-                        },
-                        {
-                            "tableName": "t3",
-                        },
-                    ],
-                    "end": "1",
-                    "start": "1",
-                    "limit": 1000,
-                    "keepNone": True,
-                },
-                separators=(",", ":"),
-            ),
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "tt",
-            },
-            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -1973,6 +1980,60 @@ class TestTableWriter(BaseTestCase):
 
         with self.assertRaises(data_store.TableWriterException):
             remote_writer.close()
+
+
+class TestScalarEncodeDecode(BaseTestCase):
+    def test_int8(self) -> None:
+        test_cases = {"ff": -1, "01": 1, "00": 0, "80": -128, "7f": 127}
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT8.encode(tc[1]), f"INT8 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT8.decode(tc[0]), f"INT8 encode {tc[0]} error"
+            )
+
+    def test_int16(self) -> None:
+        test_cases = {"ffff": -1, "0001": 1, "0000": 0, "8000": -32768, "7fff": 32767}
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT16.encode(tc[1]), f"INT16 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT16.decode(tc[0]), f"INT16 encode {tc[0]} error"
+            )
+
+    def test_int32(self) -> None:
+        test_cases = {
+            "ffffffff": -1,
+            "00000001": 1,
+            "00000000": 0,
+            "80000000": -2147483648,
+            "7fffffff": 2147483647,
+        }
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT32.encode(tc[1]), f"INT32 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT32.decode(tc[0]), f"INT32 encode {tc[0]} error"
+            )
+
+    def test_int64(self) -> None:
+        test_cases = {
+            "ffffffffffffffff": -1,
+            "0000000000000001": 1,
+            "0000000000000000": 0,
+            "8000000000000000": -9223372036854775808,
+            "7fffffffffffffff": 9223372036854775807,
+        }
+        for tc in test_cases.items():
+            self.assertEqual(
+                tc[0], data_store.INT64.encode(tc[1]), f"INT64 decode {tc[1]} error"
+            )
+            self.assertEqual(
+                tc[1], data_store.INT64.decode(tc[0]), f"INT64 encode {tc[0]} error"
+            )
 
 
 if __name__ == "__main__":

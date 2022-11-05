@@ -25,6 +25,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class ColumnTypeScalarTest {
@@ -157,18 +158,25 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.BOOL.encode(false, true), is("false"));
         assertThat(ColumnTypeScalar.BOOL.encode(true, false), is("1"));
         assertThat(ColumnTypeScalar.BOOL.encode(true, true), is("true"));
-        assertThat(ColumnTypeScalar.INT8.encode((byte) 10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT8.encode((byte) 10, false), is("0a"));
         assertThat(ColumnTypeScalar.INT8.encode((byte) 10, true), is("10"));
-        assertThat(ColumnTypeScalar.INT16.encode((short) 10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT8.encode(-1, false), is("ff"));
+        assertThat(ColumnTypeScalar.INT16.encode((short) 10, false), is("000a"));
         assertThat(ColumnTypeScalar.INT16.encode((short) 10, true), is("10"));
-        assertThat(ColumnTypeScalar.INT32.encode(10, false), is("a"));
+        assertThat(ColumnTypeScalar.INT16.encode(-1, false), is("ffff"));
+        assertThat(ColumnTypeScalar.INT32.encode(10, false), is("0000000a"));
         assertThat(ColumnTypeScalar.INT32.encode(10, true), is("10"));
-        assertThat(ColumnTypeScalar.INT64.encode(10L, false), is("a"));
+        assertThat(ColumnTypeScalar.INT32.encode(-1, false), is("ffffffff"));
+        assertThat(ColumnTypeScalar.INT64.encode(10L, false), is("000000000000000a"));
         assertThat(ColumnTypeScalar.INT64.encode(10L, true), is("10"));
+        assertThat(ColumnTypeScalar.INT64.encode(-1, false), is("ffffffffffffffff"));
+        assertThat(ColumnTypeScalar.INT64.encode(-1152921504606846977L, false), is("efffffffffffffff"));
         assertThat(ColumnTypeScalar.FLOAT32.encode(1.003f, false),
                 is(Integer.toHexString(Float.floatToIntBits(1.003f))));
         assertThat(ColumnTypeScalar.FLOAT32.encode(1.003f, true), is("1.003"));
         assertThat(ColumnTypeScalar.FLOAT64.encode(1.003, false), is(Long.toHexString(Double.doubleToLongBits(1.003))));
+        assertThat(ColumnTypeScalar.FLOAT64.encode(-1.003, false),
+                is(Long.toHexString(Double.doubleToLongBits(-1.003))));
         assertThat(ColumnTypeScalar.FLOAT64.encode(1.003, true), is("1.003"));
         assertThat(ColumnTypeScalar.STRING.encode("test", false), is("test"));
         assertThat(ColumnTypeScalar.STRING.encode("test", true), is("test"));
@@ -185,9 +193,14 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.BOOL.decode("0"), is(Boolean.FALSE));
         assertThat(ColumnTypeScalar.BOOL.decode("1"), is(true));
         assertThat(ColumnTypeScalar.INT8.decode("a"), is((byte) 10));
+        assertThat(ColumnTypeScalar.INT8.decode("ff"), is((byte) -1));
         assertThat(ColumnTypeScalar.INT16.decode("a"), is((short) 10));
+        assertThat(ColumnTypeScalar.INT16.decode("ffff"), is((short) -1));
         assertThat(ColumnTypeScalar.INT32.decode("a"), is(10));
+        assertThat(ColumnTypeScalar.INT32.decode("ffffffff"), is(-1));
         assertThat(ColumnTypeScalar.INT64.decode("a"), is(10L));
+        assertThat(ColumnTypeScalar.INT64.decode("ffffffffffffffff"), is(-1L));
+        assertThat(ColumnTypeScalar.INT64.decode("efffffffffffffff"), is(-1152921504606846977L));
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(1.003f))), is(1.003f));
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(Float.NaN))),
                 is(Float.NaN));
@@ -200,6 +213,7 @@ public class ColumnTypeScalarTest {
         assertThat(ColumnTypeScalar.FLOAT32.decode(Integer.toHexString(Float.floatToIntBits(Float.MIN_VALUE))),
                 is(Float.MIN_VALUE));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(1.003))), is(1.003));
+        assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(-1.003))), is(-1.003));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(Double.NaN))),
                 is(Double.NaN));
         assertThat(ColumnTypeScalar.FLOAT64.decode(Long.toHexString(Double.doubleToLongBits(Double.POSITIVE_INFINITY))),
@@ -247,6 +261,46 @@ public class ColumnTypeScalarTest {
                         ColumnTypeScalar.BYTES.toWal(0,
                                 ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))).build()),
                 is(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))));
+    }
+
+    @Test
+    public void testEnDeCodeInt8() {
+        Map cases = Map.of("ff", (byte) -1, "01", (byte) 1, "00", (byte) 0, "80", (byte) -128, "7f", (byte) 127);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT8.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT8.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt16() {
+        Map cases = Map.of("ffff", (short) -1, "0001", (short) 1, "0000", (short) 0, "8000", (short) -32768, "7fff",
+                (short) 32767);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT16.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT16.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt32() {
+        Map cases = Map.of("ffffffff", -1, "00000001", 1, "00000000", 0, "80000000", -2147483648, "7fffffff",
+                2147483647);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT32.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT32.encode(v, false), is(k));
+        });
+    }
+
+    @Test
+    public void testEnDeCodeInt64() {
+        Map cases = Map.of("ffffffffffffffff", -1L, "0000000000000001", 1L, "0000000000000000", 0L, "8000000000000000",
+                -9223372036854775808L,
+                "7fffffffffffffff", 9223372036854775807L);
+        cases.forEach((k, v) -> {
+            assertThat(ColumnTypeScalar.INT64.decode(k), is(v));
+            assertThat(ColumnTypeScalar.INT64.encode(v, false), is(k));
+        });
     }
 
 }

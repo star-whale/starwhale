@@ -184,3 +184,14 @@ def copy_file(src: Path, dest: Path) -> None:
 
     ensure_dir(dest.parent)
     shutil.copyfile(str(src.absolute()), str(dest.absolute()))
+
+
+def is_within_dir(parent: t.Union[str, Path], child: t.Union[str, Path]) -> bool:
+    parent = str(parent)
+    child = str(child)
+
+    abs_parent = os.path.abspath(parent)
+    abs_child = os.path.abspath(child)
+
+    prefix = os.path.commonprefix([abs_parent, abs_child])
+    return prefix == abs_parent

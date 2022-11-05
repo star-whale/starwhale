@@ -60,13 +60,19 @@ public class DsFileGetter {
             DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
             path = versionById.getStoragePath() + "/" + path;
         }
-        try (InputStream inputStream = storageAccessService.get(path,
-                (long) ColumnTypeScalar.INT64.decode(offset), (long) ColumnTypeScalar.INT64.decode(size))) {
+        long sizeLong = (long) ColumnTypeScalar.INT64.decode(size);
+        long offsetLong = (long) ColumnTypeScalar.INT64.decode(offset);
+        try (InputStream inputStream = validParam(sizeLong, offsetLong) ? storageAccessService.get(path,
+                offsetLong, sizeLong) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
             throw new SwProcessException(ErrorType.STORAGE).tip(
                     String.format("error while accessing storage : %s", ioException.getMessage()));
         }
+    }
+
+    private static boolean validParam(long sizeLong, long offsetLong) {
+        return sizeLong > 0 && offsetLong >= 0;
     }
 }
