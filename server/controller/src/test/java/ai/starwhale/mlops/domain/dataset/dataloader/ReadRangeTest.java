@@ -118,7 +118,8 @@ public class ReadRangeTest {
         )).willReturn(new RecordList(
                 Map.of(), List.of(
                         Map.of("id", "0000-009"),
-                        Map.of("id", "0000-010")
+                        Map.of("id", "0000-010"),
+                        Map.of("id", "0000-011")
                     ), "0000-010"
         ));
 
@@ -133,13 +134,24 @@ public class ReadRangeTest {
         assertThat("number", dataRanges.size() == 4);
         verify(dataStore, times(2)).scan(any());
 
+        session.setBatchSize(6);
+        dataRanges = dataRangeProvider.returnDataIndex(QueryDataIndexRequest.builder()
+            .tableName(session.getTableName())
+            .batchSize(session.getBatchSize())
+            .start(session.getStart())
+            .startInclusive(session.isStartInclusive())
+            .end(session.getEnd())
+            .endInclusive(session.isEndInclusive())
+            .build());
+
+        assertThat("number", dataRanges.size() == 2);
+        verify(dataStore, times(4)).scan(any());
     }
 
     @Test
     public void testNextDataRange() {
         var sessionId = "1-session";
         var consumerId = "1";
-        var processId = "1-0";
         var request = DataReadRequest.builder()
                     .sessionId(sessionId)
                     .consumerId(consumerId)

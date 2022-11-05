@@ -90,7 +90,7 @@ public class DataStoreIndexProvider implements DataIndexProvider {
         var batchSize = request.getBatchSize();
         var indices = new ArrayList<DataIndex>();
         while (index < keys.size()) {
-            if (index + batchSize <= keys.size()) {
+            if (index + batchSize < keys.size()) {
                 indices.add(DataIndex.builder()
                         .start(keys.get(index))
                         .end(keys.get(index + batchSize))
