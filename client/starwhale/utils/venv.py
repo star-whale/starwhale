@@ -24,7 +24,6 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import RuntimeArtifactType
 from starwhale.utils.error import (
     FormatError,
     ExistedError,
@@ -787,138 +786,36 @@ def install_starwhale(
         raise NoSupportError(f"mode({mode}) install {SW_PYPI_PKG_NAME}")
 
 
-def restore_python_env(
-    workdir: Path,
-    mode: str,
-    python_version: str,
-    wheels: t.Optional[t.List[str]] = None,
-    deps: _DepsT = None,
-    configs: _ConfigsT = None,
-    isolated_env_dir: t.Optional[Path] = None,
-) -> None:
-    deps = deps or {}
-    local_packaged_env = bool(deps.get("local_packaged_env", False))
-
-    console.print(
-        f":bread: restore python:{python_version} {mode}@{workdir}, local packaged env:{local_packaged_env}"
-    )
-    _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(
-        workdir=workdir,
-        python_version=python_version,
-        wheels=wheels,
-        deps=deps,
-        configs=configs,
-        local_packaged_env=local_packaged_env,
-        isolated_env_dir=isolated_env_dir,
-    )
-
-
-def _do_restore_conda(
-    workdir: Path,
-    python_version: str,
-    wheels: t.Optional[t.List[str]],
-    deps: _DepsT,
-    configs: _ConfigsT,
-    local_packaged_env: bool = False,
-    isolated_env_dir: t.Optional[Path] = None,
-) -> None:
+def extract_conda_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
     export_dir = workdir / "export"
     export_tar_fpath = export_dir / EnvTarType.CONDA
     conda_dir = isolated_env_dir or export_dir / "conda"
 
-    if local_packaged_env and export_tar_fpath.exists():
-        empty_dir(conda_dir)
-        ensure_dir(conda_dir)
+    if not export_tar_fpath.exists():
+        raise NotFoundError(f"conda pkg extract: {export_tar_fpath}")
 
-        logger.info(f"extract {export_tar_fpath} ...")
-        with tarfile.open(str(export_tar_fpath)) as f:
-            f.extractall(str(conda_dir))
-        # TODO: conda local bundle restore wheel?
-    else:
-        logger.info("restore conda env ...")
-        conda_setup(python_version, prefix=conda_dir)
+    empty_dir(conda_dir)
+    ensure_dir(conda_dir)
 
-        deps = deps or {}
-
-        for _f in deps.get("conda_files", []):
-            conda_env_update(
-                env_fpath=workdir / RuntimeArtifactType.DEPEND / _f,
-                target_env=conda_dir,
-            )
-
-        for _r in iter_pip_reqs(workdir, wheels, deps):
-            logger.debug(f"conda run pip install: {_r}")
-            conda_install_req(req=_r, prefix_path=conda_dir, configs=configs)
-
-        _conda_pkgs = " ".join([repr(_p) for _p in deps.get("conda_pkgs", []) if _p])
-        _conda_pkgs = _conda_pkgs.strip()
-        if _conda_pkgs:
-            logger.debug(f"conda install: {_conda_pkgs}")
-            conda_install_req(
-                req=_conda_pkgs,
-                prefix_path=conda_dir,
-                use_pip_install=False,
-                configs=configs,
-            )
-        # TODO: check local mode conda export the installed wheel pkgs
+    logger.info(f"extract {export_tar_fpath} ...")
+    with tarfile.open(str(export_tar_fpath)) as f:
+        f.extractall(str(conda_dir))
+    # TODO: conda local bundle restore wheel?
 
 
-def iter_pip_reqs(
-    workdir: Path,
-    wheels: t.Optional[t.List[str]],
-    deps: _DepsT,
-) -> t.Generator[_PipReqT, None, None]:
-    from starwhale.base.type import RuntimeArtifactType
-
-    reqs: t.List[_PipReqT] = []
-    deps = deps or {}
-    for _pf in deps.get("pip_files", []):
-        reqs.append(workdir / RuntimeArtifactType.DEPEND / _pf)
-
-    for _p in deps.get("pip_pkgs", []):
-        _p = _p.strip()
-        if not _p:
-            continue
-        reqs.append(_p)
-
-    for _w in wheels or []:
-        if _w.endswith(WHEEL_FILE_EXTENSION):
-            reqs.append(workdir / _w)
-
-    for _r in reqs:
-        if isinstance(_r, (Path, PosixPath)) and not _r.exists():
-            logger.warning(f"not found: {_r}")
-            continue
-        yield _r
-
-
-def _do_restore_venv(
-    workdir: Path,
-    python_version: str,
-    wheels: t.Optional[t.List[str]],
-    deps: _DepsT,
-    configs: _ConfigsT,
-    local_packaged_env: bool = False,
-    isolated_env_dir: t.Optional[Path] = None,
-) -> None:
+def extract_venv_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
     export_dir = workdir / "export"
     venv_dir = isolated_env_dir or export_dir / "venv"
     export_tar_fpath = export_dir / EnvTarType.VENV
 
-    if not local_packaged_env or not os.path.exists(export_tar_fpath):
-        logger.info(f"setup venv and pip install {venv_dir}")
-        venv_setup(venv_dir, python_version=python_version)
+    if not export_tar_fpath.exists():
+        raise NotFoundError(f"venv pkg extract: {export_tar_fpath}")
 
-        for _r in iter_pip_reqs(workdir, wheels, deps):
-            logger.debug(f"pip install {_r} ...")
-            venv_install_req(venv_dir, _r, pip_config=configs.get("pip"))  # type:ignore
-    else:
-        empty_dir(venv_dir)
-        ensure_dir(venv_dir)
+    empty_dir(venv_dir)
+    ensure_dir(venv_dir)
 
-        with tarfile.open(str(export_tar_fpath)) as f:
-            f.extractall(str(venv_dir))
+    with tarfile.open(str(export_tar_fpath)) as f:
+        f.extractall(str(venv_dir))
 
 
 def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:

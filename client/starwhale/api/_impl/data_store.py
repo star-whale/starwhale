@@ -181,7 +181,14 @@ class SwScalarType(SwType):
         if self is BYTES:
             return base64.b64encode(value).decode()
         if self.name == "int":
-            return f"{value:x}"
+            if self.nbits == 8:
+                return binascii.hexlify(struct.pack(">b", value)).decode()
+            if self.nbits == 16:
+                return binascii.hexlify(struct.pack(">h", value)).decode()
+            if self.nbits == 32:
+                return binascii.hexlify(struct.pack(">i", value)).decode()
+            if self.nbits == 64:
+                return binascii.hexlify(struct.pack(">q", value)).decode()
         if self.name == "float":
             if self.nbits == 16:
                 return binascii.hexlify(struct.pack(">e", value)).decode()
@@ -203,7 +210,15 @@ class SwScalarType(SwType):
         if self is BYTES:
             return base64.b64decode(value)
         if self.name == "int":
-            return int(value, 16)
+            raw = binascii.unhexlify(value.zfill(int(self.nbits / 4)))
+            if self.nbits == 8:
+                return struct.unpack(">b", raw)[0]
+            if self.nbits == 16:
+                return struct.unpack(">h", raw)[0]
+            if self.nbits == 32:
+                return struct.unpack(">i", raw)[0]
+            if self.nbits == 64:
+                return struct.unpack(">q", raw)[0]
         if self.name == "float":
             raw = binascii.unhexlify(value.zfill(int(self.nbits / 4)))
             if self.nbits == 16:

@@ -162,6 +162,7 @@ serviceAccount:
   annotations: {}
   name: ""
   automountServiceAccountToken: false
+  customServiceAccount: foobarbaz
 
 ingress:
   enabled: true

@@ -69,13 +69,13 @@ public class ColumnTypeListTest {
     @Test
     public void testEncode() {
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), false),
-                is(List.of("9", "a", "b")));
+                is(List.of("00000009", "0000000a", "0000000b")));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
                 is(List.of("9", "10", "11")));
         var composite = new ColumnTypeList(
                 new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
         assertThat(composite.encode(List.of(Map.of("a", 9, "b", 10), Map.of("a", 10, "b", 11)), false),
-                is(List.of(Map.of("a", "9", "b", "a"), Map.of("a", "a", "b", "b"))));
+                is(List.of(Map.of("a", "00000009", "b", "0000000a"), Map.of("a", "0000000a", "b", "0000000b"))));
         assertThat(composite.encode(List.of(Map.of("a", 9, "b", 10), Map.of("a", 10, "b", 11)), true),
                 is(List.of(Map.of("a", "9", "b", "10"), Map.of("a", "10", "b", "11"))));
     }

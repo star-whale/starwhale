@@ -18,7 +18,7 @@ testing_ds_paths = [dataset_dir / "testing_list.txt"]
 
 
 class SWDSBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Tuple, None, None]:
         for path in validation_ds_paths:
             with path.open() as f:
                 for item in f.readlines():
@@ -37,7 +37,7 @@ class SWDSBuildExecutor(BuildExecutor):
                         "speaker_id": speaker_id,
                         "utterance_num": int(utterance_num),
                     }
-                    yield data, annotations
+                    yield item, data, annotations
 
 
 class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
@@ -48,7 +48,7 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
     _addr = "10.131.0.1:9000"
     _bucket = "users"
 
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Tuple, None, None]:
         import boto3
         from botocore.client import Config
 
@@ -78,12 +78,12 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
 
             speaker_id, utterance_num = path.stem.split("_nohash_")
             uri = f"s3://{self._addr}@{self._bucket}/{obj.key.lstrip('/')}"
+            idx = f"{command}/{path.name}"
             data = Link(
                 uri,
                 self._auth,
                 size=obj.size,
                 data_type=Audio(
-                    display_name=f"{command}/{path.name}",
                     mime_type=MIMEType.WAV,
                     shape=(1,),
                 ),
@@ -93,4 +93,4 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
                 "speaker_id": speaker_id,
                 "utterance_num": int(utterance_num),
             }
-            yield data, annotations
+            yield idx, data, annotations

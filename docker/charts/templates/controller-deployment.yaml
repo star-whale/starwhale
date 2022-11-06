@@ -23,7 +23,11 @@ spec:
           hostPath:
             path: {{ .Values.storage.agentHostPathRoot }}/controller
             type: DirectoryOrCreate
-      serviceAccountName: {{ include "common.names.fullname" . }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      {{- else }}
+      serviceAccountName: {{ .Values.serviceAccount.customServiceAccount }}
+      {{- end }}
       containers:
         - name: controller
           image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

@@ -99,7 +99,8 @@ def pass_context(func: t.Any) -> t.Any:
     return wrap_func
 
 
-# Runtime concept
+# TODO: support __setattr__, __getattr__ function for Context
+# TODO: use another Context name, such as JobRunContext
 class Context:
     def __init__(
         self,
@@ -119,8 +120,11 @@ class Context:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
 
+    def __str__(self) -> str:
+        return f"step:{self.step}, index:{self.index}/{self.total}"
+
     def __repr__(self) -> str:
-        return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
+        return f"step:{self.step}, index:{self.index}/{self.total}, version:{self.version}, dataset_uris:{self.dataset_uris}"
 
 
 class ParseConfig:

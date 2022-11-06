@@ -25,6 +25,7 @@ import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,18 +34,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface DataStoreApi {
 
     @PostMapping(value = "/datastore/listTables")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<TableNameListVo>> listTables(
             @Valid @RequestBody ListTablesRequest request);
 
     @PostMapping(value = "/datastore/updateTable")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> updateTable(
             @Valid @RequestBody UpdateTableRequest request);
 
     @PostMapping(value = "/datastore/queryTable")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<RecordListVo>> queryTable(
             @Valid @RequestBody QueryTableRequest request);
 
     @PostMapping(value = "/datastore/scanTable")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<RecordListVo>> scanTable(
             @Valid @RequestBody ScanTableRequest request);
 }

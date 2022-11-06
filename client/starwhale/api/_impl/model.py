@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import sys
+import time
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
@@ -19,11 +20,12 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.api.dataset import get_sharding_data_loader
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.dataset.tabular import get_dataset_consumption
+from starwhale.api._impl.dataset.loader import get_data_loader
 
 
 class _LogType:
@@ -155,7 +157,9 @@ class PipelineHandler(metaclass=ABCMeta):
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
-        self._sw_logger.debug("execute ppl exit func...")
+        self._sw_logger.debug(
+            f"execute {self.context.step}-{self.context.index} exit func..."
+        )
         if value:
             print(f"type:{type}, exception:{value}, traceback:{trace}")
 
@@ -178,7 +182,9 @@ class PipelineHandler(metaclass=ABCMeta):
         @wraps(func)  # type: ignore
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             self: PipelineHandler = args[0]
-            self._sw_logger.info(f"start to run {func}...")
+            self._sw_logger.info(
+                f"start to run {func.__name__} function@{self.context.step}-{self.context.index} ..."  # type: ignore
+            )
             self._update_status(STATUS.RUNNING)
             try:
                 func(*args, **kwargs)  # type: ignore
@@ -188,7 +194,6 @@ class PipelineHandler(metaclass=ABCMeta):
                 raise
             else:
                 self._update_status(STATUS.SUCCESS)
-                self._sw_logger.info("finish.")
 
         return _wrapper
 
@@ -214,12 +219,17 @@ class PipelineHandler(metaclass=ABCMeta):
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
         # TODO: support multi dataset uris
-        _data_loader = get_sharding_data_loader(
-            dataset_uri=self.context.dataset_uris[0],
-            sharding_num=self.context.total,
-            sharding_index=self.context.index,
+        # TODO: user custom config batch size, max_retries
+        ds_uri = self.context.dataset_uris[0]
+        consumption = get_dataset_consumption(
+            dataset_uri=ds_uri, session_id=self.context.version
         )
-        for _idx, _data, _annotations in _data_loader:
+        loader = get_data_loader(ds_uri, session_consumption=consumption)
+
+        cnt = 0
+        for _idx, _data, _annotations in loader:
+            cnt += 1
+            _start = time.time()
             result: t.Any = b""
             exception = None
             try:
@@ -233,6 +243,10 @@ class PipelineHandler(metaclass=ABCMeta):
                     raise
             else:
                 exception = None
+
+            self._sw_logger.debug(
+                f"[{_idx}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
+            )
 
             self._timeline_writer.write(
                 {
@@ -248,8 +262,13 @@ class PipelineHandler(metaclass=ABCMeta):
                 result=result,
                 annotations={} if self.ignore_annotations else _annotations,
             )
+
         if self.flush_result:
             result_storage.flush()
+
+        self._sw_logger.info(
+            f"{self.context.step}-{self.context.index} handled {cnt} data items for dataset {self.context.dataset_uris}"
+        )
 
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME

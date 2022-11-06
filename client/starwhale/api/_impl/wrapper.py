@@ -163,7 +163,7 @@ class Dataset(Logger):
         self._data_store = data_store.get_data_store()
         self._init_writers([self._meta_table_name])
 
-    def put(self, data_id: Union[int, str], **kwargs: Any) -> None:
+    def put(self, data_id: Union[str, int], **kwargs: Any) -> None:
         record = {"id": data_id}
         for k, v in kwargs.items():
             record[k.lower()] = v
@@ -172,6 +172,13 @@ class Dataset(Logger):
     def scan(self, start: Any, end: Any) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
             [data_store.TableDesc(self._meta_table_name)], start=start, end=end
+        )
+
+    def scan_id(self, start: Any, end: Any) -> Iterator[Any]:
+        return self._data_store.scan_tables(
+            [data_store.TableDesc(self._meta_table_name, columns=["id"])],
+            start=start,
+            end=end,
         )
 
     def flush(self) -> None:

@@ -48,8 +48,10 @@ public class DsFileGetter {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
                 datasetId, uri, authName);
         String path = checkPath(datasetId, uri, storageAccessService);
-        try (InputStream inputStream = storageAccessService.get(path,
-                (long) ColumnTypeScalar.INT64.decode(offset), (long) ColumnTypeScalar.INT64.decode(size))) {
+        long sizeLong = (long) ColumnTypeScalar.INT64.decode(size);
+        long offsetLong = (long) ColumnTypeScalar.INT64.decode(offset);
+        try (InputStream inputStream = validParam(sizeLong, offsetLong) ? storageAccessService.get(path,
+                offsetLong, sizeLong) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
@@ -86,5 +88,9 @@ public class DsFileGetter {
             path = versionById.getStoragePath() + "/" + path;
         }
         return path;
+    }
+
+    private static boolean validParam(long sizeLong, long offsetLong) {
+        return sizeLong > 0 && offsetLong >= 0;
     }
 }
