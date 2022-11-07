@@ -17,12 +17,17 @@
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
+import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
+import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.converter.DataReadLogConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.converter.SessionConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
@@ -38,7 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -46,18 +51,34 @@ import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@MybatisTest
+@MybatisTest(properties = {
+    "logging.level.root=error",
+    "logging.level.ai.starwhale.mlops=error",
+    "mybatis.configuration.map-underscore-to-camel-case=true",
+    "sw.dataset.processed.timeout.tolerance=100"
+})
+@Import({DataLoader.class, DataReadManager.class,
+        SessionDao.class, SessionConverter.class,
+        DataReadLogDao.class, DataReadLogConverter.class})
+@EnableTransactionManagement
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class MultiConsumerTest extends MySqlContainerHolder {
 
-    private DataReadManager dataReadManager;
+    @Autowired
+    private DataLoader dataLoader;
     @MockBean
     private DataStoreIndexProvider dataRangeProvider;
     @Autowired
     private SessionMapper sessionMapper;
     @Autowired
+    private SessionConverter sessionConverter;
+    @Autowired
     private DataReadLogMapper dataReadLogMapper;
+    @Autowired
+    private DataReadLogConverter dataReadLogConverter;
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
@@ -66,13 +87,6 @@ public class MultiConsumerTest extends MySqlContainerHolder {
             Arguments.of(6, true),
             Arguments.of(10, true)
         );
-    }
-
-    @BeforeEach
-    public void setup() {
-        SessionDao sessionDao = new SessionDao(sessionMapper, new SessionConverter());
-        DataReadLogDao dataReadLogDao = new DataReadLogDao(dataReadLogMapper, new DataReadLogConverter());
-        dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 10);
     }
 
     @ParameterizedTest
@@ -112,11 +126,11 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .endInclusive(true)
                             .build();
                 for (; ; ) {
-                    var dataRange = dataReadManager.next(request);
+                    var dataRange = dataLoader.next(request);
                     if (dataRange == null) {
                         break;
                     }
-                    // System.out.printf("%s get data:%s%n", Thread.currentThread(), JSONUtil.toJsonStr(dataRange));
+
                     // mock error
                     if (retryNum < errorNum) {
                         // mock restart
@@ -190,6 +204,88 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         assertEquals(totalRangesNum + errorNumPerConsumer * 10, totalProcessedNum);
 
         executor.shutdownNow();
+    }
+
+    @Test
+    public void testMapper() {
+        // insert a session
+        var sessionId = "000000000000000001";
+        var session = Session.builder()
+                .id(sessionId)
+                .datasetName("test-dataset")
+                .datasetVersion("0000000001")
+                .tableName("test-table")
+                .batchSize(10)
+                .start("s-start")
+                .startInclusive(false)
+                .end("s-end")
+                .endInclusive(false)
+                .build();
+
+        assertEquals(1, sessionMapper.insert(sessionConverter.convert(session)));
+
+        var result = sessionMapper.selectById(sessionId);
+
+        assertEquals(session.getDatasetName(), result.getDatasetName());
+        assertEquals(session.getDatasetVersion(), result.getDatasetVersion());
+        assertEquals(session.getTableName(), result.getTableName());
+        assertNull(result.getCurrent());
+        assertTrue(result.isCurrentInclusive());
+        assertEquals(session.getStart(), result.getStart());
+        assertEquals(session.isStartInclusive(), result.isStartInclusive());
+        assertEquals(session.getEnd(), result.getEnd());
+        assertEquals(session.getBatchSize(), result.getBatchSize());
+        assertNotNull(session.getCreatedTime());
+
+        // insert a read log
+        var dataReadLog = DataReadLog.builder()
+                .sessionId(sessionId)
+                .start("s-start")
+                .end("e-end")
+                .size(10)
+                .build();
+        dataReadLogMapper.batchInsert(List.of(dataReadLogConverter.convert(dataReadLog)));
+
+        // select top 1 unassigned
+        var top1UnAssigned = dataReadLogMapper.selectTop1UnAssigned(sessionId, Status.DataStatus.UNPROCESSED.name());
+
+        assertNotNull(top1UnAssigned.getId());
+        assertEquals(dataReadLog.getSessionId(), top1UnAssigned.getSessionId());
+        assertEquals(dataReadLog.getStart(), top1UnAssigned.getStart());
+        assertEquals(dataReadLog.isStartInclusive(), top1UnAssigned.isStartInclusive());
+        assertEquals(dataReadLog.getEnd(), top1UnAssigned.getEnd());
+        assertEquals(dataReadLog.isEndInclusive(), top1UnAssigned.isEndInclusive());
+        assertEquals(dataReadLog.getStatus(), top1UnAssigned.getStatus());
+        assertEquals(Status.DataStatus.UNPROCESSED, top1UnAssigned.getStatus());
+        assertEquals(dataReadLog.getAssignedNum(), top1UnAssigned.getAssignedNum());
+        assertEquals(dataReadLog.getSize(), top1UnAssigned.getSize());
+        assertNull(top1UnAssigned.getConsumerId());
+        assertNull(top1UnAssigned.getFinishedTime());
+        assertNull(top1UnAssigned.getAssignedTime());
+        assertNotNull(top1UnAssigned.getCreatedTime());
+
+        var consumerId = "00001";
+        // assign it to consumer
+        var top1UnsignedBo = dataReadLogConverter.revert(top1UnAssigned);
+        top1UnsignedBo.setConsumerId(consumerId);
+
+        assertEquals(1, dataReadLogMapper.updateToAssigned(dataReadLogConverter.convert(top1UnsignedBo)));
+
+        // query data
+        var updated = dataReadLogMapper.selectOne(top1UnAssigned.getId());
+
+        assertEquals(1, updated.getAssignedNum());
+        assertNotNull(updated.getAssignedTime());
+
+        // assign it again
+        var updatedBo = dataReadLogConverter.revert(updated);
+        updatedBo.setConsumerId(consumerId);
+
+        assertEquals(1, dataReadLogMapper.updateToAssigned(dataReadLogConverter.convert(updatedBo)));
+        updated = dataReadLogMapper.selectOne(top1UnAssigned.getId());
+
+        assertEquals(2, updated.getAssignedNum());
+        assertNotNull(updated.getAssignedTime());
     }
 
 }

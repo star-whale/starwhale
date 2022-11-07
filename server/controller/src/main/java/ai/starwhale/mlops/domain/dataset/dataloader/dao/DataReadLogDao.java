@@ -50,7 +50,7 @@ public class DataReadLogDao {
 
 
     public boolean updateToAssigned(DataReadLog dataReadLog) {
-        return mapper.updateToAssignedById(converter.convert(dataReadLog)) > 0;
+        return mapper.updateToAssigned(converter.convert(dataReadLog)) > 0;
     }
 
     public boolean updateToProcessed(String sessionId, String consumerId, String start, String end) {

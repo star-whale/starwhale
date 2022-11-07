@@ -16,16 +16,18 @@
 
 create table if not exists `dataset_read_session`
 (
-    `id`                varchar(255)     NOT NULL,
-    `dataset_name`      varchar(255)     NOT NULL,
-    `dataset_version`   varchar(255)     NOT NULL,
-    `table_name`        varchar(255)     NOT NULL,
-    `start`             varchar(255)     NULL,
-    `start_inclusive`   tinyint unsigned NOT NULL DEFAULT '1',
-    `end`               varchar(255)     NULL,
-    `end_inclusive`     tinyint unsigned NOT NULL DEFAULT '1',
-    `batch_size`        bigint           NOT NULL,
-    `created_time`      datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `id`                    varchar(255)     NOT NULL,
+    `dataset_name`          varchar(255)     NOT NULL,
+    `dataset_version`       varchar(255)     NOT NULL,
+    `table_name`            varchar(255)     NOT NULL,
+    `current`               varchar(255)     NULL,
+    `current_inclusive`     tinyint unsigned NOT NULL DEFAULT '1',
+    `start`                 varchar(255)     NULL,
+    `start_inclusive`       tinyint unsigned NOT NULL DEFAULT '1',
+    `end`                   varchar(255)     NULL,
+    `end_inclusive`         tinyint unsigned NOT NULL DEFAULT '1',
+    `batch_size`            bigint           NOT NULL,
+    `created_time`          datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 );
 

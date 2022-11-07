@@ -38,7 +38,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionConvertor;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConvertor;
-import ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
@@ -86,7 +86,7 @@ public class DatasetService {
     private final VersionAliasConvertor versionAliasConvertor;
     private final UserService userService;
     private final DsFileGetter dsFileGetter;
-    private final DataReadManager dataReadManager;
+    private final DataLoader dataLoader;
     private final TrashService trashService;
     @Setter
     private BundleManager bundleManager;
@@ -95,7 +95,7 @@ public class DatasetService {
             DatasetVersionMapper datasetVersionMapper, DatasetVoConvertor datasetVoConvertor,
             DatasetVersionConvertor versionConvertor, StorageService storageService, DatasetManager datasetManager,
             IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, UserService userService,
-            DsFileGetter dsFileGetter, DataReadManager dataReadManager, TrashService trashService) {
+            DsFileGetter dsFileGetter, DataLoader dataLoader, TrashService trashService) {
         this.projectManager = projectManager;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -107,7 +107,7 @@ public class DatasetService {
         this.versionAliasConvertor = versionAliasConvertor;
         this.userService = userService;
         this.dsFileGetter = dsFileGetter;
-        this.dataReadManager = dataReadManager;
+        this.dataLoader = dataLoader;
         this.trashService = trashService;
         this.bundleManager = new BundleManager(
                 idConvertor,
@@ -300,7 +300,7 @@ public class DatasetService {
     }
 
     public DataIndexDesc nextData(DataReadRequest request) {
-        var dataRange = dataReadManager.next(request);
+        var dataRange = dataLoader.next(request);
         return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
                 .start(dataRange.getStart())
                 .end(dataRange.getEnd())
