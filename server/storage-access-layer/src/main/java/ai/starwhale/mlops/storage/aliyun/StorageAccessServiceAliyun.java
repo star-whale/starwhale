@@ -92,6 +92,9 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
             var etagList = new ArrayList<PartETag>();
             for (int i = 1; ; ++i) {
                 var data = inputStream.readNBytes((int) this.partSize);
+                if (data.length == 0) {
+                    break;
+                }
                 var resp = this.ossClient.uploadPart(new UploadPartRequest(
                         this.bucket,
                         path,
