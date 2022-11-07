@@ -31,7 +31,6 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.env.StorageEnv;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
@@ -39,8 +38,8 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
-import java.io.IOException;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,11 +73,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final int datasetLoadBatchSize;
     final String restartPolicy;
     final int backoffLimit;
-    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
     final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-                            StorageProperties storageProperties,
                             JobTokenConfig jobTokenConfig,
                             RunTimeProperties runTimeProperties,
                             K8sJobTemplate k8sJobTemplate,
@@ -88,8 +85,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                             @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
                             @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
                             @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
-                            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter,
-                            StorageAccessService storageAccessService;) {
+                            StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
@@ -101,7 +97,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
-        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
     }
 
     @Override

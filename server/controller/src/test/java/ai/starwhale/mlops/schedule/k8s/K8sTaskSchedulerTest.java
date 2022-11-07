@@ -103,7 +103,6 @@ public class K8sTaskSchedulerTest {
                 null,
                 "http://instanceUri", 50,
                 "OnFailure", 10,
-                new StorageEnvsPropertiesConverter(storageProperties),
                 storageAccessService);
         return scheduler;
     }
@@ -139,7 +138,6 @@ public class K8sTaskSchedulerTest {
                 50,
                 "OnFailure",
                 10,
-                mock(StorageEnvsPropertiesConverter.class),
                 mock(StorageAccessService.class)
         );
         var task = mockTask();
