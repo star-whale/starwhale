@@ -58,7 +58,8 @@ public class DataStoreTest {
     @BeforeEach
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
+        this.objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath(),
+                ""));
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
     }

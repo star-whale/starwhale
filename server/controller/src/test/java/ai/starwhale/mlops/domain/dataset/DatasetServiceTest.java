@@ -392,5 +392,13 @@ public class DatasetServiceTest {
         assertThat(res, notNullValue());
     }
 
+    @Test
+    public void testLinkOf() {
+        given(dsFileGetter.linkOf(same(1L), anyString(), anyString(), anyLong()))
+                .willReturn("link");
+
+        var res = dsFileGetter.linkOf(1L, "", "", 1L);
+        assertThat(dsFileGetter.linkOf(1L, "", "", 1L), is("link"));
+    }
 
 }

@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SwRunTime;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
@@ -28,10 +27,10 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
@@ -40,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,8 +62,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
-    final StorageProperties storageProperties;
-
     final RunTimeProperties runTimeProperties;
 
     final JobTokenConfig jobTokenConfig;
@@ -75,10 +73,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final int datasetLoadBatchSize;
     final String restartPolicy;
     final int backoffLimit;
-    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
+    final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-                            StorageProperties storageProperties,
                             JobTokenConfig jobTokenConfig,
                             RunTimeProperties runTimeProperties,
                             K8sJobTemplate k8sJobTemplate,
@@ -88,19 +85,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                             @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
                             @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
                             @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
-                            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
+                            StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
-        this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
+        this.storageAccessService = storageAccessService;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
-        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
     }
 
     @Override
@@ -189,11 +185,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
-        dataSets.forEach(ds -> ds.getFileStorageEnvs().values()
-                .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
-
-        coreContainerEnvs.put(StorageEnv.ENV_KEY_PREFIX, dataSet.getPath());
-
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
@@ -227,19 +218,40 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private List<V1EnvVar> getInitContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
-        Map<String, String> initContainerEnvs = new HashMap<>();
-        Map<String, StorageEnv> fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
-        // Ignore keys, we use only one key by now
-        fileStorageEnvs.values().forEach((StorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
 
         List<String> downloads = new ArrayList<>();
-        String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
-        downloads.add(prefix + swJob.getModel().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
-        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
+        try {
+            storageAccessService.list(swJob.getModel().getPath()).forEach(path -> {
+                try {
+                    String modelSignedUrl = storageAccessService.signedUrl(path, 1000 * 60 * 60L);
+                    downloads.add(modelSignedUrl);
+                } catch (IOException e) {
+                    log.error("sign model url failed for {} ", path, e);
+                    throw new SwProcessException(ErrorType.STORAGE).tip("sign model url failed");
+                }
+            });
+        } catch (IOException e) {
+            log.error("list model files failed for {} ", swJob.getModel().getPath(), e);
+            throw new SwProcessException(ErrorType.STORAGE).tip("list model files failed");
+        }
+        try {
+            storageAccessService.list(jobRuntime.getStoragePath()).forEach(path -> {
+                try {
+                    String runtimeSignedUrl = storageAccessService.signedUrl(path,
+                            1000 * 60 * 60L);
+                    downloads.add(runtimeSignedUrl);
+                } catch (IOException e) {
+                    log.error("sign runtime url failed for {} ", path, e);
+                    throw new SwProcessException(ErrorType.STORAGE).tip("sign runtime url failed");
+                }
 
-        return mapToEnv(initContainerEnvs);
+            });
+
+        } catch (IOException e) {
+            log.error("list runtime url failed for {} ", jobRuntime.getStoragePath(), e);
+            throw new SwProcessException(ErrorType.STORAGE).tip("list runtime url failed");
+        }
+        return mapToEnv(Map.of("DOWNLOADS", Strings.join(downloads, ' ')));
     }
 
     @NotNull

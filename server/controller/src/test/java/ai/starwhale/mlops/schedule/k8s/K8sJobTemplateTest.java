@@ -48,7 +48,7 @@ public class K8sJobTemplateTest {
         List<V1Container> initContainerTemplates = k8sJobTemplate.getInitContainerTemplates();
         List<String> initCnames = initContainerTemplates.stream().map(V1Container::getName)
                 .collect(Collectors.toList());
-        Assertions.assertIterableEquals(List.of("data-provider", "untar"), initCnames);
+        Assertions.assertIterableEquals(List.of("data-provider"), initCnames);
 
         List<V1Container> containerTemplates = k8sJobTemplate.getContainersTemplates();
         List<String> cnames = containerTemplates.stream().map(V1Container::getName)

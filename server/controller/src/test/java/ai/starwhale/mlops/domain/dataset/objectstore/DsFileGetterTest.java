@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 public class DsFileGetterTest {
 
     @Test
-    public void testFileGetter() throws IOException {
+    public void testDataOf() throws IOException {
         StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
         StorageAccessService storageAccessService = mock(
                 StorageAccessService.class);
@@ -54,6 +54,24 @@ public class DsFileGetterTest {
                 (String) ColumnTypeScalar.INT64.encode(1, false));
         Assertions.assertEquals("abc", new String(bytes));
 
+    }
+
+    @Test
+    public void testLinkOf() throws IOException {
+        StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
+        StorageAccessService storageAccessService = mock(
+                StorageAccessService.class);
+        when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
+        when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
+        when(storageAccessService.signedUrl(eq("bdc/bdcsd"), anyLong())).thenReturn("abc");
+        when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
+                storageAccessService);
+        DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
+        when(versionMapper.getVersionById(anyLong())).thenReturn(
+                DatasetVersionEntity.builder().storagePath("bdc").build());
+        DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdcsd", "", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", "", 1L));
     }
 
 }

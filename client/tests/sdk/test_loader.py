@@ -1,5 +1,6 @@
 import os
 import shutil
+from http import HTTPStatus
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -14,7 +15,7 @@ from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
     DatasetStorage,
-    S3StorageBackend,
+    SignedUrlBackend,
     LocalFSStorageBackend,
 )
 from starwhale.core.dataset.tabular import (
@@ -114,10 +115,21 @@ class TestDataLoader(TestCase):
         assert isinstance(_data, Image)
 
         assert loader.kind == DataFormatType.USER_RAW
-        assert list(loader._stores.keys()) == ["local."]
-        assert loader._stores["local."].bucket == str(data_dir)
-        assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
-        assert not loader._stores["local."].key_prefix
+        assert list(loader._stores.keys()) == [
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        assert loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].bucket == str(data_dir)
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788."
+            ].backend.kind
+            == SWDSBackendType.LocalFS
+        )
+        assert not loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].key_prefix
 
         loader = get_data_loader(self.dataset_uri)
         assert isinstance(loader, UserRawDataLoader)
@@ -273,8 +285,18 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 28 * 28
         assert isinstance(_data.to_bytes(), bytes)
         assert len(loader._stores) == 3
-        assert loader._stores["remote.server1"].backend.kind == SWDSBackendType.S3
-        assert loader._stores["remote.server1"].bucket == "starwhale"
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+            ].backend.kind
+            == SWDSBackendType.S3
+        )
+        assert (
+            loader._stores[
+                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+            ].bucket
+            == "starwhale"
+        )
 
         loader = get_data_loader(self.dataset_uri)
         assert isinstance(loader, UserRawDataLoader)
@@ -286,8 +308,12 @@ class TestDataLoader(TestCase):
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    @patch("requests.get")
+    @patch("requests.request")
     def test_swds_bin_s3(
         self,
+        m_request: MagicMock,
+        m_get: MagicMock,
         m_scan: MagicMock,
         m_scan_id: MagicMock,
         m_summary: MagicMock,
@@ -332,7 +358,6 @@ class TestDataLoader(TestCase):
         os.environ.update(
             {
                 "SW_S3_BUCKET": "starwhale",
-                "SW_OBJECT_STORE_KEY_PREFIX": f"project/self/dataset/mnist/version/11/{version}",
                 "SW_S3_ENDPOINT": "starwhale.mock:9000",
                 "SW_S3_ACCESS_KEY": "foo",
                 "SW_S3_SECRET": "bar",
@@ -342,6 +367,14 @@ class TestDataLoader(TestCase):
         with open(os.path.join(self.swds_dir, fname), "rb") as f:
             swds_content = f.read(-1)
 
+        m_request.return_value = MagicMock(
+            **{"status_code": HTTPStatus.OK, "data": "a"}
+        )
+        m_get.return_value = MagicMock(
+            **{
+                "content": swds_content,
+            }
+        )
         m_boto3.return_value = MagicMock(
             **{
                 "Object.return_value": MagicMock(
@@ -365,19 +398,26 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 10 * 28 * 28
         assert isinstance(_data, Image)
 
-        assert list(loader._stores.keys()) == ["local."]
-        backend = loader._stores["local."].backend
-        assert isinstance(backend, S3StorageBackend)
-        assert backend.kind == SWDSBackendType.S3
-        assert backend.s3.Object.call_args[0] == (
-            "starwhale",
-            f"project/self/dataset/mnist/version/11/{version}/{fname}",
-        )
+        assert list(loader._stores.keys()) == [
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        backend = loader._stores[
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+        ].backend
+        assert isinstance(backend, SignedUrlBackend)
+        assert backend.kind == SWDSBackendType.SignedUrl
 
-        assert loader._stores["local."].bucket == "starwhale"
         assert (
-            loader._stores["local."].key_prefix
-            == f"project/self/dataset/mnist/version/11/{version}"
+            loader._stores[
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            ].bucket
+            == ""
+        )
+        assert (
+            loader._stores[
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            ].key_prefix
+            == ""
         )
 
     @patch.dict(os.environ, {})
@@ -449,9 +489,17 @@ class TestDataLoader(TestCase):
         assert len(_data.to_bytes()) == 7840
         assert isinstance(_data.to_bytes(), bytes)
 
-        assert list(loader._stores.keys()) == ["local."]
-        backend = loader._stores["local."].backend
+        assert list(loader._stores.keys()) == [
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ]
+        backend = loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
-        assert loader._stores["local."].bucket == str(data_dir)
-        assert not loader._stores["local."].key_prefix
+        assert loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].bucket == str(data_dir)
+        assert not loader._stores[
+            "local/project/self/dataset/mnist/version/1122334455667788."
+        ].key_prefix

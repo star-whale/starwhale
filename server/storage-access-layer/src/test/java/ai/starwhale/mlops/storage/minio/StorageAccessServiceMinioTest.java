@@ -21,6 +21,8 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,6 +98,17 @@ public class StorageAccessServiceMinioTest {
         minio.delete(path);
         objectInfo = minio.head(path);
         Assertions.assertFalse(objectInfo.isExists());
+    }
+
+    @Test
+    public void testSignedUrl() throws IOException {
+        String path = "unit_test/x";
+        String content = "hello word";
+        minio.put(path, content.getBytes(StandardCharsets.UTF_8));
+        String signedUrl = minio.signedUrl(path, 1000 * 60L);
+        try (InputStream inputStream = new URL(signedUrl).openStream()) {
+            Assertions.assertEquals(content, new String(inputStream.readAllBytes()));
+        }
     }
 
 

@@ -23,6 +23,7 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -30,7 +31,13 @@ import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
+import io.minio.errors.InternalException;
+import io.minio.errors.InvalidResponseException;
 import io.minio.errors.MinioException;
+import io.minio.errors.ServerException;
+import io.minio.errors.XmlParserException;
+import io.minio.http.Method;
 import io.minio.messages.Item;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -38,6 +45,7 @@ import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -199,6 +207,24 @@ public class StorageAccessServiceMinio implements StorageAccessService {
             throw new IOException(e);
         } catch (NoSuchAlgorithmException e) {
             log.error("delete object fails", e);
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder().expiry(expTimeMillis.intValue(),
+                TimeUnit.MILLISECONDS).bucket(this.bucket).object(path).method(Method.GET).build();
+        try {
+            return minioClient.getPresignedObjectUrl(request);
+        } catch (MinioException e) {
+            log.error("sin url for object {} fails", path, e);
+            throw new IOException(e);
+        } catch (InvalidKeyException e) {
+            log.error("sin url for object {} fails", path, e);
+            throw new IOException(e);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("sin url for object {} fails", path, e);
             throw new IOException(e);
         }
     }

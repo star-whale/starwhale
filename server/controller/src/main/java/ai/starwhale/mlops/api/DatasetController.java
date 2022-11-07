@@ -237,6 +237,14 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> signLink(String projectUrl, String datasetUrl, String versionUrl,
+            String uri, String authName, Long expTimeMillis) {
+        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(
+                datasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
             String projectUrl, String datasetUrl, String versionUrl, DatasetTagRequest datasetTagRequest) {
         Boolean res = datasetService.modifyDatasetVersion(projectUrl, datasetUrl, versionUrl,

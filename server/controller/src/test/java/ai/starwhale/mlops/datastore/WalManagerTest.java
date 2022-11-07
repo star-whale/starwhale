@@ -66,7 +66,7 @@ public class WalManagerTest {
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
         this.objectStore = new ObjectStore(this.bufferManager,
-                new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
+                new StorageAccessServiceFile(this.rootDir.getAbsolutePath(), "serviceProvider"));
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
     }
 

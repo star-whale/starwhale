@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import json
 import shutil
 import typing as t
@@ -10,11 +11,17 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import boto3
+import requests
 from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
-from starwhale.consts import SWDSBackendType, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    HTTPMethod,
+    SWDSBackendType,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     ensure_dir,
@@ -22,7 +29,8 @@ from starwhale.utils.fs import (
     FilePosition,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.type import URIType, BundleType
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.store import BaseStorage
 from starwhale.utils.error import (
     FormatError,
@@ -270,6 +278,7 @@ class ObjectStore:
         self,
         backend: str,
         bucket: str,
+        dataset_uri: URI = URI(""),
         key_prefix: str = "",
         **kw: t.Any,
     ) -> None:
@@ -279,6 +288,8 @@ class ObjectStore:
         if backend == SWDSBackendType.S3:
             conn = kw.get("conn") or S3Connection.from_env()
             self.backend = S3StorageBackend(conn)
+        elif backend == SWDSBackendType.SignedUrl:
+            self.backend = SignedUrlBackend(dataset_uri)
         else:
             self.backend = LocalFSStorageBackend()
 
@@ -312,16 +323,18 @@ class ObjectStore:
     def from_dataset_uri(cls, dataset_uri: URI) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
+        return cls(
+            backend=SWDSBackendType.LocalFS,
+            bucket=str(DatasetStorage(dataset_uri).data_dir.absolute()),
+        )
 
-        _type = dataset_uri.instance_type
-        if _type == InstanceType.STANDALONE:
-            backend = SWDSBackendType.LocalFS
-            bucket = str(DatasetStorage(dataset_uri).data_dir.absolute())
-        else:
-            backend = SWDSBackendType.S3
-            bucket = os.environ.get("SW_S3_BUCKET", _DEFAULT_S3_BUCKET)
-
-        return cls(backend=backend, bucket=bucket)
+    @classmethod
+    def to_signed_http_backend(cls, dataset_uri: URI, auth_name: str) -> ObjectStore:
+        if dataset_uri.object.typ != URIType.DATASET:
+            raise NoSupportError(f"{dataset_uri} is not dataset uri")
+        return cls(
+            backend=SWDSBackendType.SignedUrl, bucket=auth_name, dataset_uri=dataset_uri
+        )
 
 
 class StorageBackend(metaclass=ABCMeta):
@@ -336,19 +349,10 @@ class StorageBackend(metaclass=ABCMeta):
 
     __repr__ = __str__
 
-    def _parse_key(self, key: str) -> t.Tuple[str, int, int]:
-        # TODO: some builtin method to
-        # TODO: add start end normalize
-        _r = key.split(":")
-        if len(_r) == 1:
-            return _r[0], 0, FilePosition.END
-        elif len(_r) == 2:
-            return _r[0], int(_r[1]), FilePosition.END
-        else:
-            return _r[0], int(_r[1]), int(_r[2])
-
     @abstractmethod
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
         raise NotImplementedError
 
 
@@ -377,9 +381,11 @@ class S3StorageBackend(StorageBackend):
             region_name=conn.region,
         )
 
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
         # TODO: merge connections for s3
-        _key, _start, _end = self._parse_key(key_compose)
+        _key, _start, _end = key_compose
         return S3BufferedFileLike(
             s3=self.s3,
             bucket=bucket,
@@ -393,8 +399,10 @@ class LocalFSStorageBackend(StorageBackend):
     def __init__(self) -> None:
         super().__init__(kind=SWDSBackendType.LocalFS)
 
-    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
-        _key, _start, _end = self._parse_key(key_compose)
+    def _make_file(
+        self, bucket: str, key_compose: t.Tuple[str, int, int]
+    ) -> FileLikeObj:
+        _key, _start, _end = key_compose
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
         )
@@ -406,6 +414,29 @@ class LocalFSStorageBackend(StorageBackend):
         with data_path.open("rb") as f:
             f.seek(_start)
             return io.BytesIO(f.read(_end - _start + 1))
+
+
+class SignedUrlBackend(StorageBackend, CloudRequestMixed):
+    def __init__(self, dataset_uri: URI) -> None:
+        super().__init__(kind=SWDSBackendType.SignedUrl)
+        self.dataset_uri = dataset_uri
+
+    def _make_file(self, auth: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
+        _key, _start, _end = key_compose
+        url = self.sign_uri(_key, auth)
+        headers = {"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"}
+        r = requests.get(url, headers=headers)
+        return io.BytesIO(r.content)
+
+    def sign_uri(self, uri: str, auth_name: str) -> str:
+        r = self.do_http_request(
+            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-link",
+            method=HTTPMethod.GET,
+            instance_uri=self.dataset_uri,
+            params={"uri": uri, "authName": auth_name, "expTimeMillis": 1000 * 60 * 30},
+            use_raise=True,
+        ).json()
+        return r["data"]  # type: ignore
 
 
 # TODO: add mock test
