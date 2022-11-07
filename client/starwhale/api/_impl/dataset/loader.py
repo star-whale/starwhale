@@ -74,12 +74,9 @@ class DataLoader(metaclass=ABCMeta):
     def _get_key_compose(
         self, row: TabularDatasetRow, store: ObjectStore
     ) -> t.Tuple[str, int, int]:
-        if row.object_store_type == ObjectStoreType.REMOTE:
-            data_uri = row.data_uri
-        else:
-            data_uri = row.data_uri
-            if store.key_prefix:
-                data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
+        data_uri = row.data_uri
+        if row.object_store_type != ObjectStoreType.REMOTE and store.key_prefix:
+            data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
 
         if self.kind == DataFormatType.SWDS_BIN:
             offset, size = (

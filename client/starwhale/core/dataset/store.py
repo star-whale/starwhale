@@ -429,12 +429,13 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         r = requests.get(url, headers=headers)
         return io.BytesIO(r.content)
 
-    def sign_uri(self, uri: str, auth_name: str) -> t.Any:
+    def sign_uri(self, uri: str, auth_name: str) -> str:
         r = self.do_http_request(
             f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-link",
             method=HTTPMethod.GET,
             instance_uri=self.dataset_uri,
             params={"uri": uri, "authName": auth_name, "expTimeMillis": 1000 * 60 * 30},
+            use_raise=True,
         ).json()
         return r["data"]
 
