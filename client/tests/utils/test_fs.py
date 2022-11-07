@@ -1,9 +1,10 @@
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.utils.fs import copy_file, ensure_dir, is_within_dir
-from starwhale.utils.error import FormatError, NotFoundError
+from starwhale.utils.fs import copy_file, ensure_dir, extract_tar, is_within_dir
+from starwhale.utils.error import FormatError, ExistedError, NotFoundError
 
 
 class FsUtilsTestCase(TestCase):
@@ -59,3 +60,38 @@ class FsUtilsTestCase(TestCase):
 
         for parent, child, expected in cases:
             assert expected == is_within_dir(parent, child)
+
+    @patch("starwhale.utils.fs.tarfile.open")
+    def test_extract_tar(self, m_open: MagicMock) -> None:
+        root = Path("/home/starwhale")
+        target_dir = root / "target"
+        tar_path = root / "export.tar"
+
+        with self.assertRaises(NotFoundError):
+            extract_tar(tar_path, target_dir)
+
+        ensure_dir(root)
+        self.fs.create_file(str(tar_path), contents="")
+        ensure_dir(target_dir)
+        with self.assertRaises(ExistedError):
+            extract_tar(tar_path, target_dir)
+
+        valid_member = MagicMock()
+        valid_member.configure_mock(name="in")
+
+        invalid_member = MagicMock()
+        invalid_member.configure_mock(name="../../out")
+
+        m_open.return_value.__enter__.return_value.getmembers.return_value = [
+            invalid_member,
+            valid_member,
+        ]
+        with self.assertRaises(Exception):
+            extract_tar(tar_path, target_dir, force=True)
+
+        m_open.reset_mock()
+        m_open.return_value.__enter__.return_value.getmembers.return_value = [
+            valid_member,
+        ]
+        extract_tar(tar_path, target_dir, force=True)
+        assert m_open().__enter__().extractall.call_args[1] == {"path": str(target_dir)}

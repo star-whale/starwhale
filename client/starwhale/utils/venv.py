@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 import typing as t
-import tarfile
 import platform
 import subprocess
 from pathlib import Path, PurePath, PosixPath
@@ -23,7 +22,7 @@ from starwhale.consts import (
     DEFAULT_CONDA_CHANNEL,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
 from starwhale.utils.error import (
     FormatError,
     ExistedError,
@@ -790,16 +789,7 @@ def extract_conda_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) 
     export_dir = workdir / "export"
     export_tar_fpath = export_dir / EnvTarType.CONDA
     conda_dir = isolated_env_dir or export_dir / "conda"
-
-    if not export_tar_fpath.exists():
-        raise NotFoundError(f"conda pkg extract: {export_tar_fpath}")
-
-    empty_dir(conda_dir)
-    ensure_dir(conda_dir)
-
-    logger.info(f"extract {export_tar_fpath} ...")
-    with tarfile.open(str(export_tar_fpath)) as f:
-        f.extractall(str(conda_dir))
+    extract_tar(export_tar_fpath, conda_dir, force=True)
     # TODO: conda local bundle restore wheel?
 
 
@@ -807,15 +797,7 @@ def extract_venv_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) -
     export_dir = workdir / "export"
     venv_dir = isolated_env_dir or export_dir / "venv"
     export_tar_fpath = export_dir / EnvTarType.VENV
-
-    if not export_tar_fpath.exists():
-        raise NotFoundError(f"venv pkg extract: {export_tar_fpath}")
-
-    empty_dir(venv_dir)
-    ensure_dir(venv_dir)
-
-    with tarfile.open(str(export_tar_fpath)) as f:
-        f.extractall(str(venv_dir))
+    extract_tar(export_tar_fpath, venv_dir, force=True)
 
 
 def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:
