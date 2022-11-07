@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
@@ -124,5 +125,10 @@ public class StorageAccessServiceTest {
                 .hugeFileThreshold(10 * 1024 * 1024)
                 .hugeFilePartSize(5 * 1024 * 1024)
                 .build()));
+    }
+
+    @Test
+    public void testMemory() throws Exception {
+        this.run(new StorageAccessServiceMemory());
     }
 }
