@@ -61,7 +61,7 @@ class DataLoader(metaclass=ABCMeta):
 
         _type = self.dataset_uri.instance_type
         if _type == InstanceType.CLOUD:
-            _store = ObjectStore.from_remote_dataset(self.dataset_uri, row.auth_name)
+            _store = ObjectStore.to_signed_http_backend(self.dataset_uri, row.auth_name)
         else:
             if row.object_store_type == ObjectStoreType.REMOTE:
                 _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)

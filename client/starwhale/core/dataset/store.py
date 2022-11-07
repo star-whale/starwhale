@@ -4,6 +4,7 @@ import io
 import os
 import json
 import shutil
+import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -328,7 +329,7 @@ class ObjectStore:
         )
 
     @classmethod
-    def from_remote_dataset(cls, dataset_uri: URI, auth_name: str) -> ObjectStore:
+    def to_signed_http_backend(cls, dataset_uri: URI, auth_name: str) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
         return cls(
@@ -423,9 +424,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
     def _make_file(self, auth: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
         _key, _start, _end = key_compose
         url = self.sign_uri(_key, auth)
-        headers = {}
-        if _start and _end:
-            headers = {"Range": f"bytes={_start}-{_end}"}
+        headers = {"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"}
         r = requests.get(url, headers=headers)
         return io.BytesIO(r.content)
 
