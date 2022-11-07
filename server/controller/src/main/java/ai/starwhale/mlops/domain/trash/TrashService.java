@@ -79,7 +79,6 @@ public class TrashService {
     }
 
     public PageInfo<TrashVo> listTrash(TrashQuery query, PageParams pageParams, OrderParams orderParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
         Long operatorId = null;
         if (StrUtil.isNotEmpty(query.getOperator())) {
@@ -92,6 +91,7 @@ public class TrashService {
                 }
             }
         }
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<TrashPo> poList = trashMapper.list(projectId, operatorId, query.getName(), query.getType());
         return PageUtil.toPageInfo(poList, this::toTrashVo);
     }
@@ -122,6 +122,7 @@ public class TrashService {
                 .projectId(trash.getProjectId())
                 .objectId(bundle.getId())
                 .operatorId(operator.getId())
+                .size(0L)
                 .trashType(trash.getType().name())
                 .trashName(bundle.getName())
                 .updatedTime(bundle.getModifiedTime())
