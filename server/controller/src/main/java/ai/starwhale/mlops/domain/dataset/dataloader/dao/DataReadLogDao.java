@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.dataset.dataloader.Status;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.converter.DataReadLogConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.DataReadLogMapper;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -59,7 +58,7 @@ public class DataReadLogDao {
                 Status.DataStatus.PROCESSED.name()) > 0;
     }
 
-    public boolean updateToUnAssigned(String consumerId) {
+    public boolean updateUnProcessedToUnAssigned(String consumerId) {
         return mapper.updateToUnAssigned(consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
 

@@ -30,6 +30,7 @@ import lombok.NoArgsConstructor;
 public class DataReadRequest {
     private String sessionId;
     private String consumerId;
+    private boolean isSerial = true;
 
     private String datasetName;
     private String datasetVersion;

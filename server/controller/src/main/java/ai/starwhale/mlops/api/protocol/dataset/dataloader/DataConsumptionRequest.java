@@ -25,6 +25,10 @@ import lombok.NoArgsConstructor;
 public class DataConsumptionRequest {
     private String sessionId;
     private String consumerId;
+    /**
+     * Whether serial under the same consumer
+     */
+    private boolean isSerial = true;
 
     private int batchSize;
 
