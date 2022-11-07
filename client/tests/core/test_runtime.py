@@ -823,7 +823,7 @@ class StandaloneRuntimeTestCase(TestCase):
         RuntimeTermView.restore(workdir)
 
     @patch("starwhale.core.runtime.model.platform.machine")
-    @patch("starwhale.utils.venv.tarfile.open")
+    @patch("starwhale.utils.fs.tarfile.open")
     @patch("starwhale.utils.venv.check_call")
     def test_restore_conda(
         self, m_call: MagicMock, m_tar: MagicMock, m_machine: MagicMock
@@ -1015,7 +1015,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         Runtime.restore(Path(workdir))
         assert m_tar.call_count == 1
-        assert m_tar.call_args[0][0] == tar_path
+        assert str(m_tar.call_args[0][0]) == tar_path
 
         RuntimeTermView.restore(uri)
 
