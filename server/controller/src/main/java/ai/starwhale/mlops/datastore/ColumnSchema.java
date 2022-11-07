@@ -59,4 +59,7 @@ public class ColumnSchema {
         this.index = index;
     }
 
+    public ColumnSchema(Wal.ColumnSchema schema) {
+        this(WalManager.parseColumnSchema(schema), schema.getColumnIndex());
+    }
 }

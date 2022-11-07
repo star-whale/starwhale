@@ -17,10 +17,7 @@
 package ai.starwhale.mlops.datastore.impl;
 
 import ai.starwhale.mlops.datastore.ColumnSchema;
-import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
-import ai.starwhale.mlops.datastore.ColumnTypeList;
-import ai.starwhale.mlops.datastore.ColumnTypeObject;
 import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.OrderByDesc;
@@ -35,7 +32,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +51,6 @@ public class MemoryTableImpl implements MemoryTable {
     private TableSchema schema = null;
 
     private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
-
-    // used only for initialization from WAL
-    private final Map<Integer, ColumnSchema> indexMap = new HashMap<>();
 
     private final Lock lock = new ReentrantLock();
 
@@ -81,7 +74,7 @@ public class MemoryTableImpl implements MemoryTable {
     @Override
     public void updateFromWal(Wal.WalEntry entry) {
         if (entry.hasTableSchema()) {
-            var schemaDesc = this.parseTableSchema(entry.getTableSchema());
+            var schemaDesc = WalManager.parseTableSchema(entry.getTableSchema());
             if (this.schema == null) {
                 this.schema = new TableSchema(schemaDesc);
             } else {
@@ -94,49 +87,13 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
-    private TableSchemaDesc parseTableSchema(Wal.TableSchema tableSchema) {
-        var ret = new TableSchemaDesc();
-        var keyColumn = tableSchema.getKeyColumn();
-        if (!keyColumn.isEmpty()) {
-            ret.setKeyColumn(keyColumn);
-        }
-        var columnList = new ArrayList<>(tableSchema.getColumnsList());
-        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
-        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
-        for (var col : columnList) {
-            var colDesc = this.parseColumnSchema(col);
-            columnSchemaList.add(colDesc);
-            this.indexMap.put(col.getColumnIndex(), new ColumnSchema(colDesc, col.getColumnIndex()));
-        }
-        ret.setColumnSchemaList(columnSchemaList);
-        return ret;
-    }
-
-    private ColumnSchemaDesc parseColumnSchema(Wal.ColumnSchema columnSchema) {
-        var ret = ColumnSchemaDesc.builder()
-                .name(columnSchema.getColumnName())
-                .type(columnSchema.getColumnType());
-        if (!columnSchema.getPythonType().isEmpty()) {
-            ret.pythonType(columnSchema.getPythonType());
-        }
-        if (columnSchema.hasElementType()) {
-            ret.elementType(this.parseColumnSchema(columnSchema.getElementType()));
-        }
-        if (columnSchema.getAttributesCount() > 0) {
-            ret.attributes(columnSchema.getAttributesList().stream()
-                    .map(this::parseColumnSchema)
-                    .collect(Collectors.toList()));
-        }
-        return ret.build();
-    }
-
     private Map<String, Object> parseRecord(Wal.Record record) {
         Map<String, Object> ret = new HashMap<>();
         for (var col : record.getColumnsList()) {
             if (col.getIndex() == -1) {
                 ret.put("-", true);
             } else {
-                var colSchema = this.indexMap.get(col.getIndex());
+                var colSchema = this.schema.getColumnSchemaByIndex(col.getIndex());
                 ret.put(colSchema.getName(), colSchema.getType().fromWal(col));
             }
         }
@@ -166,8 +123,7 @@ public class MemoryTableImpl implements MemoryTable {
                 diff = newSchema.merge(schema);
             }
             for (var col : diff) {
-                logSchemaBuilder.addColumns(
-                        MemoryTableImpl.writeColumnSchema(col.getIndex(), col.getName(), col.getType()));
+                logSchemaBuilder.addColumns(WalManager.convertColumnSchema(col));
             }
             logEntryBuilder.setTableSchema(logSchemaBuilder);
         }
@@ -213,25 +169,6 @@ public class MemoryTableImpl implements MemoryTable {
             }
         }
     }
-
-    private static Wal.ColumnSchema.Builder writeColumnSchema(
-            int columnIndex, String columnName, ColumnType columnType) {
-        var ret = Wal.ColumnSchema.newBuilder()
-                .setColumnIndex(columnIndex)
-                .setColumnName(columnName)
-                .setColumnType(columnType.getTypeName());
-        if (columnType instanceof ColumnTypeList) {
-            ret.setElementType(
-                    MemoryTableImpl.writeColumnSchema(0, "", ((ColumnTypeList) columnType).getElementType()));
-        } else if (columnType instanceof ColumnTypeObject) {
-            ret.setPythonType(((ColumnTypeObject) columnType).getPythonType());
-            ret.addAllAttributes(((ColumnTypeObject) columnType).getAttributes().entrySet().stream()
-                    .map(entry -> MemoryTableImpl.writeColumnSchema(0, entry.getKey(), entry.getValue()).build())
-                    .collect(Collectors.toList()));
-        }
-        return ret;
-    }
-
 
     private static Wal.Record.Builder writeRecord(TableSchema schema, Map<String, Object> record) {
         var ret = Wal.Record.newBuilder();

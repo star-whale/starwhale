@@ -16,6 +16,9 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.parquet.ValueSetter;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
@@ -24,7 +27,17 @@ import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.Map;
 import lombok.Getter;
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.PrimitiveConverter;
+import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Type.Repetition;
+import org.apache.parquet.schema.Types;
 
 @Getter
 public class ColumnTypeScalar extends ColumnType {
@@ -138,7 +151,7 @@ public class ColumnTypeScalar extends ColumnType {
             } else if (this == FLOAT64) {
                 return StringUtils.leftPad(Long.toHexString(Double.doubleToLongBits((Double) value)), 16, "0");
             } else if (this == STRING) {
-                return (String) value;
+                return value;
             } else if (this == BYTES) {
                 return Base64.getEncoder().encodeToString(((ByteBuffer) value).array());
             }
@@ -184,7 +197,7 @@ public class ColumnTypeScalar extends ColumnType {
             throw new IllegalArgumentException("invalid type " + this);
         } catch (Exception e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    MessageFormat.format("can not decode value {0} for type {1}: {2}", value, this, e.getMessage()));
+                    MessageFormat.format("can not decode value {0} for type {1}: {2}", value, this, e));
         }
     }
 
@@ -247,5 +260,129 @@ public class ColumnTypeScalar extends ColumnType {
             }
         }
         return ret;
+    }
+
+    @Override
+    public Types.Builder<?, ? extends Type> buildParquetType() {
+        if (this == UNKNOWN || this == BOOL) {
+            return Types.primitive(PrimitiveTypeName.BOOLEAN, Repetition.OPTIONAL);
+        } else if (this == INT8) {
+            return Types.primitive(PrimitiveTypeName.INT32, Repetition.OPTIONAL)
+                    .as(LogicalTypeAnnotation.intType(8, true));
+        } else if (this == INT16) {
+            return Types.primitive(PrimitiveTypeName.INT32, Repetition.OPTIONAL)
+                    .as(LogicalTypeAnnotation.intType(16, true));
+        } else if (this == INT32) {
+            return Types.primitive(PrimitiveTypeName.INT32, Repetition.OPTIONAL);
+        } else if (this == INT64) {
+            return Types.primitive(PrimitiveTypeName.INT64, Repetition.OPTIONAL);
+        } else if (this == FLOAT32) {
+            return Types.primitive(PrimitiveTypeName.FLOAT, Repetition.OPTIONAL);
+        } else if (this == FLOAT64) {
+            return Types.primitive(PrimitiveTypeName.DOUBLE, Repetition.OPTIONAL);
+        } else if (this == STRING) {
+            return Types.primitive(PrimitiveTypeName.BINARY, Repetition.OPTIONAL)
+                    .as(LogicalTypeAnnotation.stringType());
+        } else if (this == BYTES) {
+            return Types.primitive(PrimitiveTypeName.BINARY, Repetition.OPTIONAL);
+        } else {
+            throw new IllegalArgumentException("invalid type " + this);
+        }
+    }
+
+    @Override
+    public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
+        if (this == BOOL) {
+            recordConsumer.addBoolean((Boolean) value);
+        } else if (this == INT8) {
+            recordConsumer.addInteger((Byte) value);
+        } else if (this == INT16) {
+            recordConsumer.addInteger((Short) value);
+        } else if (this == INT32) {
+            recordConsumer.addInteger((Integer) value);
+        } else if (this == INT64) {
+            recordConsumer.addLong((Long) value);
+        } else if (this == FLOAT32) {
+            recordConsumer.addFloat((Float) value);
+        } else if (this == FLOAT64) {
+            recordConsumer.addDouble((Double) value);
+        } else if (this == STRING) {
+            recordConsumer.addBinary(Binary.fromString((String) value));
+        } else if (this == BYTES) {
+            recordConsumer.addBinary(Binary.fromConstantByteBuffer((ByteBuffer) value));
+        } else {
+            throw new IllegalArgumentException("invalid type " + this);
+        }
+    }
+
+    @Override
+    protected Converter getParquetValueConverter(ValueSetter valueSetter) {
+        return new PrimitiveConverter() {
+            @Override
+            public void addBinary(Binary value) {
+                if (ColumnTypeScalar.this == STRING) {
+                    valueSetter.setValue(value.toStringUsingUTF8());
+                } else if (ColumnTypeScalar.this == BYTES) {
+                    valueSetter.setValue(value.toByteBuffer());
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual binary");
+                }
+            }
+
+            @Override
+            public void addBoolean(boolean value) {
+                if (ColumnTypeScalar.this == BOOL) {
+                    valueSetter.setValue(value);
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual boolean");
+                }
+            }
+
+            @Override
+            public void addDouble(double value) {
+                if (ColumnTypeScalar.this == FLOAT64) {
+                    valueSetter.setValue(value);
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual double");
+                }
+            }
+
+            @Override
+            public void addFloat(float value) {
+                if (ColumnTypeScalar.this == FLOAT32) {
+                    valueSetter.setValue(value);
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual float");
+                }
+            }
+
+            @Override
+            public void addInt(int value) {
+                if (ColumnTypeScalar.this == INT8) {
+                    valueSetter.setValue((byte) value);
+                } else if (ColumnTypeScalar.this == INT16) {
+                    valueSetter.setValue((short) value);
+                } else if (ColumnTypeScalar.this == INT32) {
+                    valueSetter.setValue(value);
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual int");
+                }
+            }
+
+            @Override
+            public void addLong(long value) {
+                if (ColumnTypeScalar.this == INT64) {
+                    valueSetter.setValue(value);
+                } else {
+                    throw new SwProcessException(ErrorType.DATASTORE,
+                            "expected " + ColumnTypeScalar.this + ", actual long");
+                }
+            }
+        };
     }
 }
