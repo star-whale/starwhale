@@ -20,11 +20,13 @@ import ai.starwhale.mlops.domain.dataset.dataloader.po.SessionEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface SessionMapper {
 
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     @Insert("INSERT into dataset_read_session ("
             + "id, batch_size, dataset_name, dataset_version, table_name, "
             + "start, start_inclusive, end, end_inclusive) "

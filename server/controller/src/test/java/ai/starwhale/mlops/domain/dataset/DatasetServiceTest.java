@@ -49,7 +49,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionConvertor;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConvertor;
-import ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
@@ -83,7 +83,7 @@ public class DatasetServiceTest {
     private DatasetManager datasetManager;
     private UserService userService;
     private DsFileGetter dsFileGetter;
-    private DataReadManager dataReadManager;
+    private DataLoader dataLoader;
     private TrashService trashService;
     @Setter
     private BundleManager bundleManager;
@@ -130,7 +130,7 @@ public class DatasetServiceTest {
 
         dsFileGetter = mock(DsFileGetter.class);
 
-        dataReadManager = mock(DataReadManager.class);
+        dataLoader = mock(DataLoader.class);
 
         trashService = mock(TrashService.class);
 
@@ -146,7 +146,7 @@ public class DatasetServiceTest {
                 new VersionAliasConvertor(),
                 userService,
                 dsFileGetter,
-                dataReadManager,
+                dataLoader,
                 trashService
         );
         bundleManager = mock(BundleManager.class);

@@ -16,8 +16,9 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
@@ -51,107 +52,87 @@ public class DataReadManager {
         this.timeoutTolerance = timeoutTolerance;
     }
 
-
-    public DataReadLog next(DataReadRequest request) {
-
-        this.handleConsumerData(request);
-
-        return getDataReadIndex(request);
-    }
-
-    @Transactional
+    @Transactional(propagation = REQUIRES_NEW)
     DataReadLog getDataReadIndex(DataReadRequest request) {
         var sessionId = request.getSessionId();
         var consumerId = request.getConsumerId();
-        // use key lock
-        var sessionLock = new KeyLock<>(sessionId);
-        try {
-            sessionLock.lock();
-            var session = sessionDao.selectById(sessionId);
-            if (session == null) {
-                session = Session.builder()
-                        .id(sessionId)
-                        .datasetName(request.getDatasetName())
-                        .datasetVersion(request.getDatasetVersion())
-                        .tableName(request.getTableName())
-                        .start(request.getStart())
-                        .startInclusive(request.isStartInclusive())
-                        .end(request.getEnd())
-                        .endInclusive(request.isEndInclusive())
-                        .batchSize(request.getBatchSize())
-                        .build();
-                // get data index
-                List<DataIndex> dataIndices = dataIndexProvider.returnDataIndex(
-                        QueryDataIndexRequest.builder()
-                            .tableName(session.getTableName())
-                            .batchSize(session.getBatchSize())
-                            .start(session.getStart())
-                            .startInclusive(session.isStartInclusive())
-                            .end(session.getEnd())
-                            .endInclusive(session.isEndInclusive())
-                            .build()
-                );
 
-                Iterables.partition(
-                    dataIndices.stream()
-                        .map(dataIndex -> DataReadLog.builder()
-                                .sessionId(sessionId)
-                                .start(dataIndex.getStart())
-                                .startInclusive(dataIndex.isStartInclusive())
-                                .end(dataIndex.getEnd())
-                                .endInclusive(dataIndex.isEndInclusive())
-                                .size(dataIndex.getSize())
-                                .status(Status.DataStatus.UNPROCESSED)
-                                .build())
-                        .collect(Collectors.toList()),
-                    1000).forEach(dataReadLogDao::batchInsert);
+        var session = sessionDao.selectById(sessionId);
+        if (session == null) {
+            session = Session.builder()
+                    .id(sessionId)
+                    .datasetName(request.getDatasetName())
+                    .datasetVersion(request.getDatasetVersion())
+                    .tableName(request.getTableName())
+                    .start(request.getStart())
+                    .startInclusive(request.isStartInclusive())
+                    .end(request.getEnd())
+                    .endInclusive(request.isEndInclusive())
+                    .batchSize(request.getBatchSize())
+                    .build();
+            // get data index
+            List<DataIndex> dataIndices = dataIndexProvider.returnDataIndex(
+                    QueryDataIndexRequest.builder()
+                        .tableName(session.getTableName())
+                        .batchSize(session.getBatchSize())
+                        .start(session.getStart())
+                        .startInclusive(session.isStartInclusive())
+                        .end(session.getEnd())
+                        .endInclusive(session.isEndInclusive())
+                        .build()
+            );
 
-                // insert session
-                sessionDao.insert(session);
-            }
-            // get first
-            var dataRange = dataReadLogDao.selectTop1UnAssignedData(sessionId);
+            Iterables.partition(
+                dataIndices.stream()
+                    .map(dataIndex -> DataReadLog.builder()
+                            .sessionId(sessionId)
+                            .start(dataIndex.getStart())
+                            .startInclusive(dataIndex.isStartInclusive())
+                            .end(dataIndex.getEnd())
+                            .endInclusive(dataIndex.isEndInclusive())
+                            .size(dataIndex.getSize())
+                            .status(Status.DataStatus.UNPROCESSED)
+                            .build())
+                    .collect(Collectors.toList()),
+                1000).forEach(dataReadLogDao::batchInsert);
 
-            if (Objects.isNull(dataRange)) {
-                // find timeout data to consume
-                var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sessionId);
-                dataRange = dataReadLogDao.selectTop1TimeoutData(
-                        sessionId, maxProcessedTime * timeoutTolerance);
-            }
-
-            if (Objects.nonNull(dataRange)) {
-                dataRange.setConsumerId(consumerId);
-                dataRange.setAssignedNum(dataRange.getAssignedNum() + 1);
-                dataReadLogDao.updateToAssigned(dataRange);
-            }
-            return dataRange;
-        } finally {
-            sessionLock.unlock();
+            // insert session
+            sessionDao.insert(session);
         }
+        // get first
+        var dataRange = dataReadLogDao.selectTop1UnAssignedData(sessionId);
+
+        if (Objects.isNull(dataRange)) {
+            // find timeout data to consume
+            var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sessionId);
+            dataRange = dataReadLogDao.selectTop1TimeoutData(
+                    sessionId, maxProcessedTime * timeoutTolerance);
+        }
+
+        if (Objects.nonNull(dataRange)) {
+            dataRange.setConsumerId(consumerId);
+            dataReadLogDao.updateToAssigned(dataRange);
+        }
+        return dataRange;
     }
 
+    @Transactional(propagation = REQUIRES_NEW)
     void handleConsumerData(DataReadRequest request) {
         var sessionId = request.getSessionId();
         var consumerId = request.getConsumerId();
         var processedData = request.getProcessedData();
-        var lock = new KeyLock<>(consumerId);
-        try {
-            lock.lock();
-            // update processed data
-            if (CollectionUtils.isNotEmpty(processedData)) {
-                for (DataIndexDesc indexDesc : processedData) {
-                    dataReadLogDao.updateToProcessed(
-                            sessionId, consumerId, indexDesc.getStart(), indexDesc.getEnd());
-                }
-            }
-            // Whether to process serially under the same consumer,
-            // if serial is true, unassigned the previous unprocessed data
-            if (request.isSerial()) {
-                dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
-            }
-        } finally {
-            lock.unlock();
-        }
 
+        // update processed data
+        if (CollectionUtils.isNotEmpty(processedData)) {
+            for (DataIndexDesc indexDesc : processedData) {
+                dataReadLogDao.updateToProcessed(
+                        sessionId, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+            }
+        }
+        // Whether to process serially under the same consumer,
+        // if serial is true, unassigned the previous unprocessed data
+        if (request.isSerial()) {
+            dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
+        }
     }
 }
