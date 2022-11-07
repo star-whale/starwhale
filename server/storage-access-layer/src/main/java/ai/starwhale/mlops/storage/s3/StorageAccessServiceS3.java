@@ -141,6 +141,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
             var etagList = new ArrayList<String>();
             for (int i = 1; size > 0; ++i) {
                 var partSize = Math.min(size, this.s3Config.getHugeFilePartSize());
+                log.error("{}", partSize);
                 var resp = this.s3client.uploadPart(UploadPartRequest.builder()
                                 .bucket(this.s3Config.getBucket())
                                 .key(path)
@@ -151,6 +152,57 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                         RequestBody.fromInputStream(inputStream, partSize));
                 size -= partSize;
                 etagList.add(resp.eTag());
+            }
+            this.s3client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                    .bucket(this.s3Config.getBucket())
+                    .key(path)
+                    .uploadId(uploadId)
+                    .multipartUpload(CompletedMultipartUpload.builder()
+                            .parts(IntStream.range(0, etagList.size())
+                                    .mapToObj(i -> CompletedPart.builder()
+                                            .partNumber(i + 1)
+                                            .eTag(etagList.get(i))
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .build())
+                    .build());
+        } catch (Throwable t) {
+            log.error("multipart file upload aborted", t);
+            this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
+                    .bucket(this.s3Config.getBucket())
+                    .key(path)
+                    .uploadId(uploadId)
+                    .build());
+            throw new IOException(t);
+        }
+    }
+
+    @Override
+    public void put(String path, InputStream inputStream) throws IOException {
+        var uploadId = this.s3client.createMultipartUpload(CreateMultipartUploadRequest.builder()
+                        .bucket(this.s3Config.getBucket())
+                        .key(path)
+                        .build())
+                .uploadId();
+        try {
+            var etagList = new ArrayList<String>();
+            for (int i = 1; ; ++i) {
+                var data = inputStream.readNBytes((int) this.s3Config.getHugeFilePartSize());
+                if (data.length == 0) {
+                    break;
+                }
+                var resp = this.s3client.uploadPart(UploadPartRequest.builder()
+                                .bucket(this.s3Config.getBucket())
+                                .key(path)
+                                .uploadId(uploadId)
+                                .partNumber(i)
+                                .contentLength((long) data.length)
+                                .build(),
+                        RequestBody.fromBytes(data));
+                etagList.add(resp.eTag());
+                if (data.length < this.s3Config.getHugeFilePartSize()) {
+                    break;
+                }
             }
             this.s3client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
                     .bucket(this.s3Config.getBucket())

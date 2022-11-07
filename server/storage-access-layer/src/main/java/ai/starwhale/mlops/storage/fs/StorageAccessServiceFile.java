@@ -49,7 +49,7 @@ public class StorageAccessServiceFile implements StorageAccessService {
     private final String serviceProvider;
 
     /**
-     * @param rootDir the root for the storage file
+     * @param rootDir         the root for the storage file
      * @param serviceProvider the service who is serving the pre-signed url
      */
     public StorageAccessServiceFile(@Value("${sw.storage.fs-config.root-dir}") String rootDir,
@@ -75,6 +75,11 @@ public class StorageAccessServiceFile implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
+        this.put(path, inputStream);
+    }
+
+    @Override
+    public void put(String path, InputStream inputStream) throws IOException {
         var f = new File(this.rootDir, path);
         //noinspection ResultOfMethodCallIgnored
         f.getParentFile().mkdirs();
@@ -111,14 +116,10 @@ public class StorageAccessServiceFile implements StorageAccessService {
         if (size == null || size < 0) {
             size = -1L;
         }
-        File f = new File(this.rootDir, path);
-        if (!f.exists()) {
-            throw new FileNotFoundException(f.getAbsolutePath());
-        }
-        RandomAccessFile rf = new RandomAccessFile(f, "r");
-        rf.seek(offset);
+        var f = new RandomAccessFile(new File(this.rootDir, path), "r");
+        f.seek(offset);
         //noinspection UnstableApiUsage
-        var is = ByteStreams.limit(Channels.newInputStream(rf.getChannel()), size);
+        var is = ByteStreams.limit(Channels.newInputStream(f.getChannel()), size);
         return new LengthAbleInputStream(is, size);
     }
 
