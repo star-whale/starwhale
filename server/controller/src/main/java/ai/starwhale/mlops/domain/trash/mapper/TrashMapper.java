@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.trash.mapper;
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
@@ -27,7 +28,7 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface TrashMapper {
 
-    @Select("insert into trash(project_id, object_id, operator_id,"
+    @Insert("insert into trash(project_id, object_id, operator_id,"
             + " trash_name, trash_type, size, retention,updated_time)"
             + " values (#{projectId}, #{objectId}, #{operatorId},"
             + " #{trashName}, #{trashType}, #{size}, #{retention}, #{updatedTime})")
