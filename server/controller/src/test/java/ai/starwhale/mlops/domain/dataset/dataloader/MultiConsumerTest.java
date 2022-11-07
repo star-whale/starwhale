@@ -31,14 +31,17 @@ import ai.starwhale.mlops.domain.dataset.dataloader.mapper.DataReadLogMapper;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.SessionMapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -56,18 +59,29 @@ public class MultiConsumerTest extends MySqlContainerHolder {
     @Autowired
     private DataReadLogMapper dataReadLogMapper;
 
+    public static Stream<Arguments> provideMultiParams() {
+        return Stream.of(
+            Arguments.of(0, true),
+            Arguments.of(2, true),
+            Arguments.of(6, true),
+            Arguments.of(10, true)
+        );
+    }
+
     @BeforeEach
     public void setup() {
         SessionDao sessionDao = new SessionDao(sessionMapper, new SessionConverter());
         DataReadLogDao dataReadLogDao = new DataReadLogDao(dataReadLogMapper, new DataReadLogConverter());
-        dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 5);
+        dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 10);
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 3, 5, 10})
-    public void testMultiConsumerRead(int errorNumPerConsumer) throws InterruptedException, ExecutionException {
-
+    @MethodSource("provideMultiParams")
+    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial)
+            throws InterruptedException, ExecutionException {
         AtomicInteger count = new AtomicInteger(0);
+
+        Random random = new Random();
 
         class ConsumerMock implements Runnable {
             private final String consumerId;
@@ -86,6 +100,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                 var request = DataReadRequest.builder()
                             .sessionId(sessionId)
                             .consumerId(consumerId)
+                            .isSerial(isSerial)
                             .datasetName("test-name")
                             .datasetVersion("test-version")
                             .tableName("test-table-name")
@@ -107,7 +122,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                         // mock restart
                         retryNum++;
                         try {
-                            Thread.sleep(10);
+                            Thread.sleep(random.nextInt(10));
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -129,7 +144,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
-        var sessionId = "session0" + errorNumPerConsumer;
+        var sessionId = "session0" + errorNumPerConsumer + isSerial;
         var batchSize = 10;
         var indices = new ArrayList<DataIndex>();
         var totalRangesNum = 1001;

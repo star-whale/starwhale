@@ -137,6 +137,7 @@ public class DatasetController implements DatasetApi {
                 DataReadRequest.builder()
                     .sessionId(dataRangeRequest.getSessionId())
                     .consumerId(dataRangeRequest.getConsumerId())
+                    .isSerial(dataRangeRequest.isSerial())
                     .datasetName(dataset.getDatasetName())
                     .datasetVersion(dataset.getVersionName())
                     .tableName(dataset.getIndexTable())

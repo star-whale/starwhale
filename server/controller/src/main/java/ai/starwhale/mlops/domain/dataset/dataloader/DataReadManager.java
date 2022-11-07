@@ -134,12 +134,24 @@ public class DataReadManager {
         var sessionId = request.getSessionId();
         var consumerId = request.getConsumerId();
         var processedData = request.getProcessedData();
-        // update processed data
-        if (CollectionUtils.isNotEmpty(processedData)) {
-            for (DataIndexDesc indexDesc : processedData) {
-                dataReadLogDao.updateToProcessed(
-                        sessionId, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+        var lock = new KeyLock<>(consumerId);
+        try {
+            lock.lock();
+            // update processed data
+            if (CollectionUtils.isNotEmpty(processedData)) {
+                for (DataIndexDesc indexDesc : processedData) {
+                    dataReadLogDao.updateToProcessed(
+                            sessionId, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+                }
             }
+            // Whether to process serially under the same consumer,
+            // if serial is true, unassigned the previous unprocessed data
+            if (request.isSerial()) {
+                dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
+            }
+        } finally {
+            lock.unlock();
         }
+
     }
 }
