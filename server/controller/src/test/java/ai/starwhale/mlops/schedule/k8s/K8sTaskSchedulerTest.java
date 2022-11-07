@@ -91,8 +91,8 @@ public class K8sTaskSchedulerTest {
         when(jobTokenConfig.getToken()).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
-        when(storageAccessService.list("path_swmp")).thenReturn(Stream.of("path_swmp"));
-        when(storageAccessService.list("path_rt")).thenReturn(Stream.of("path_rt"));
+        when(storageAccessService.list(eq("path_swmp"))).thenReturn(Stream.of("path_swmp"));
+        when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
         K8sTaskScheduler scheduler = new K8sTaskScheduler(k8sClient,
@@ -232,7 +232,7 @@ public class K8sTaskSchedulerTest {
             Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);
-            ContainerOverwriteSpec ut = containerSpecMap.get("untar");
+            ContainerOverwriteSpec ut = containerSpecMap.get("data-provider");
             initActual = ut.getEnvs().stream().filter(env -> env.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(initEnv, initActual);
