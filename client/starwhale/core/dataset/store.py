@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import json
 import shutil
-import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -436,7 +436,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
             params={"uri": uri, "authName": auth_name, "expTimeMillis": 1000 * 60 * 30},
             use_raise=True,
         ).json()
-        return r["data"]
+        return r["data"]  # type: ignore
 
 
 # TODO: add mock test

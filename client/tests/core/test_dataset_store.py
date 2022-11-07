@@ -24,7 +24,7 @@ class TestDatasetBackend(TestCase):
             }
         )
         dataset_uri = URI(
-            f"http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
             expected_type=URIType.DATASET,
         )
         backend = SignedUrlBackend(dataset_uri)
