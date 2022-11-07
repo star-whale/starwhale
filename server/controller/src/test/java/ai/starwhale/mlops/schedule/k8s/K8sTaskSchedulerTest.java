@@ -95,7 +95,9 @@ public class K8sTaskSchedulerTest {
                 new K8sJobTemplateMock(""),
                 null,
                 null,
-                "http://instanceUri", new StorageEnvsPropertiesConverter(storageProperties));
+                "http://instanceUri", 50,
+                "OnFailure", 10,
+                new StorageEnvsPropertiesConverter(storageProperties));
         return scheduler;
     }
 
@@ -128,6 +130,9 @@ public class K8sTaskSchedulerTest {
                 null,
                 null,
                 "",
+                50,
+                "OnFailure",
+                10,
                 mock(StorageEnvsPropertiesConverter.class)
         );
         var task = mockTask();
@@ -187,7 +192,7 @@ public class K8sTaskSchedulerTest {
         }
 
         @Override
-        public V1Job renderJob(String jobName,
+        public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
                 Map<String, String> nodeSelectors) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
@@ -198,6 +203,7 @@ public class K8sTaskSchedulerTest {
             Map<String, String> expectedEnvs = new HashMap<>() {
             };
             expectedEnvs.put("SW_PROJECT", "project");
+            expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
             expectedEnvs.put("SW_TASK_INDEX", "1");
             expectedEnvs.put("SW_TASK_NUM", "1");
@@ -213,6 +219,7 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put(StorageEnv.ENV_TYPE, "S3");
             expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
             Map<String, String> actualEnv = worker.getEnvs().stream()
+                    .filter(envVar -> envVar.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(expectedEnvs, actualEnv);
 

@@ -318,7 +318,6 @@ lock_s_tdsc = threading.Lock()
 def get_dataset_consumption(
     dataset_uri: t.Union[str, URI],
     session_id: str,
-    max_retries: int = 5,
     batch_size: t.Optional[int] = None,
     session_start: t.Optional[t.Any] = None,
     session_end: t.Optional[t.Any] = None,
@@ -339,7 +338,7 @@ def get_dataset_consumption(
     )
     if _uri is None or _uri == "local":
         global local_standalone_tdsc
-        key = f"{dataset_uri}-{session_id}-{session_start}-{session_end}-{max_retries}-{batch_size}"
+        key = f"{dataset_uri}-{session_id}-{session_start}-{session_end}-{batch_size}"
         with lock_s_tdsc:
             _obj = local_standalone_tdsc.get(key)
             if not _obj:
@@ -362,7 +361,6 @@ def get_dataset_consumption(
             instance_uri=_uri,
             dataset_uri=dataset_uri,
             session_id=session_id,
-            max_retries=max_retries,
             batch_size=batch_size,
             session_start=session_start,
             session_end=session_end,
@@ -473,7 +471,6 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         instance_uri: str,
         dataset_uri: URI,
         session_id: str,
-        max_retries: int = 5,
         batch_size: int = DEFAULT_CONSUMPTION_BATCH_SIZE,
         session_start: t.Optional[t.Any] = None,
         session_end: t.Optional[t.Any] = None,
@@ -482,7 +479,6 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         self.instance_uri = instance_uri
         self.instance_token = instance_token
         self.session_id = session_id
-        self.max_retries = max_retries
         self.batch_size = batch_size
         self.session_start = session_start
         self.session_end = session_end
@@ -512,9 +508,7 @@ class CloudTDSC(TabularDatasetSessionConsumption):
     ) -> t.Optional[t.Tuple[t.Any, t.Any]]:
         post_data = {
             "batchSize": self.batch_size,
-            "maxRetries": self.max_retries,
             "sessionId": self.session_id,
-            "runEnv": self.run_env.value,
             "consumerId": self.consumer_id,
         }
         if processed_keys is not None:
@@ -531,7 +525,7 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         resp = requests.post(
             urllib.parse.urljoin(
                 self.instance_uri,
-                f"api/v1/project/{self.dataset_uri.project}/dataset/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/nextRange",
+                f"api/v1/project/{self.dataset_uri.project}/dataset/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/consume",
             ),
             data=json.dumps(post_data),
             headers={

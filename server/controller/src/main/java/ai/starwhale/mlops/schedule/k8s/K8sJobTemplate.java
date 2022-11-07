@@ -77,7 +77,7 @@ public class K8sJobTemplate {
         return v1Job.getSpec().getTemplate().getSpec().getContainers();
     }
 
-    public V1Job renderJob(String jobName,
+    public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
             Map<String, ContainerOverwriteSpec> containerSpecMap, Map<String, String> nodeSelectors) {
         V1Job job = Yaml.loadAs(template, V1Job.class);
         job.getMetadata().name(jobName);
@@ -87,8 +87,10 @@ public class K8sJobTemplate {
         job.getMetadata().labels(labels);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
+        jobSpec.backoffLimit(backoffLimit);
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
+        podSpec.restartPolicy(restartPolicy);
         if (null != nodeSelectors) {
             Map<String, String> templateSelector = podSpec.getNodeSelector();
             if (null != templateSelector) {
