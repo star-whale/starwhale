@@ -9,7 +9,7 @@ export function useFetchAgents(query: IListQuerySchema) {
 }
 
 export function useFetchSystemVersion() {
-    const info = useQuery('fetchSystemVersion', () => fetchSystemVersion())
+    const info = useQuery('fetchSystemVersion', () => fetchSystemVersion(), { staleTime: Infinity })
     return info
 }
 
