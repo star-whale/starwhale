@@ -68,4 +68,14 @@ public class TrashController implements TrashApi {
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteTrash(String projectUrl, Long trashId) {
+        boolean res = trashService.deleteTrash(projectUrl, trashId);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete trash failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
 }

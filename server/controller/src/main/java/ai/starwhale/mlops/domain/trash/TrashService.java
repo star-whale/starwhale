@@ -99,6 +99,9 @@ public class TrashService {
     @Transactional
     public Boolean recover(String projectUrl, Long trashId) {
         TrashPo trashPo = trashMapper.find(trashId);
+        if (trashPo == null) {
+            throw new SwValidationException(ValidSubject.TRASH, "Can not find trash.");
+        }
         if (!trashPo.getProjectId().equals(projectManager.getProjectId(projectUrl))) {
             throw new SwValidationException(ValidSubject.TRASH, "Project is not match.");
         }
@@ -112,6 +115,17 @@ public class TrashService {
         } catch (RecoverException e) {
             throw new SwValidationException(ValidSubject.TRASH, e.getMessage());
         }
+    }
+
+    public Boolean deleteTrash(String projectUrl, Long trashId) {
+        TrashPo trashPo = trashMapper.find(trashId);
+        if (trashPo == null) {
+            throw new SwValidationException(ValidSubject.TRASH, "Can not find trash.");
+        }
+        if (!trashPo.getProjectId().equals(projectManager.getProjectId(projectUrl))) {
+            throw new SwValidationException(ValidSubject.TRASH, "Project is not match.");
+        }
+        return trashMapper.delete(trashId) > 0;
     }
 
     @Transactional

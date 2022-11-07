@@ -85,4 +85,18 @@ public class TrashControllerTest {
         assertThrows(StarwhaleApiException.class,
                 () -> trashController.recoverTrash("", 2L));
     }
+
+    @Test
+    public void testDelete() {
+        given(trashService.deleteTrash(any(), same(1L)))
+                .willReturn(true);
+        given(trashService.deleteTrash(any(), same(2L)))
+                .willReturn(false);
+
+        var resp = trashController.deleteTrash("p1", 1L);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> trashController.deleteTrash("", 2L));
+    }
 }

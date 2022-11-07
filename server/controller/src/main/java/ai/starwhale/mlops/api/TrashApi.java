@@ -29,6 +29,7 @@ import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -61,6 +62,16 @@ public interface TrashApi {
     @PutMapping(value = "/project/{projectUrl}/trash/{trashId}")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> recoverTrash(
+            @PathVariable(value = "projectUrl") String projectUrl,
+            @PathVariable(value = "trashId") Long trashId
+    );
+
+    @Operation(summary = "Delete trash")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(value = "/project/{projectUrl}/trash/{trashId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteTrash(
             @PathVariable(value = "projectUrl") String projectUrl,
             @PathVariable(value = "trashId") Long trashId
     );

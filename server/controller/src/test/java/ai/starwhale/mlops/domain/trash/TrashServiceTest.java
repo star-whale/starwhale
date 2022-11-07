@@ -267,4 +267,19 @@ public class TrashServiceTest {
         assertThrows(SwValidationException.class, () -> service.recover("1", 4L));
 
     }
+
+    @Test
+    public void testDelete() {
+        given(projectManager.getProjectId(same("1")))
+                .willReturn(1L);
+        given(trashMapper.find(same(1L)))
+                .willReturn(TrashPo.builder().projectId(1L).build());
+        given(trashMapper.delete(same(1L)))
+                .willReturn(1);
+
+        var res = service.deleteTrash("1", 1L);
+        assertThat(res, is(true));
+        assertThrows(SwValidationException.class, () -> service.recover("2", 1L));
+        assertThrows(SwValidationException.class, () -> service.recover("1", 2L));
+    }
 }
