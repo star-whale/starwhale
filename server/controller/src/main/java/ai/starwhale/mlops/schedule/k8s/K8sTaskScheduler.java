@@ -36,9 +36,11 @@ import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
 import java.io.IOException;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,17 +71,25 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
     final String instanceUri;
-
+    final int datasetLoadBatchSize;
+    final String restartPolicy;
+    final int backoffLimit;
+    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
     final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-            JobTokenConfig jobTokenConfig,
-            RunTimeProperties runTimeProperties,
-            K8sJobTemplate k8sJobTemplate,
-            ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode,
-            @Value("${sw.instance-uri}") String instanceUri,
-            StorageAccessService storageAccessService) {
+                            StorageProperties storageProperties,
+                            JobTokenConfig jobTokenConfig,
+                            RunTimeProperties runTimeProperties,
+                            K8sJobTemplate k8sJobTemplate,
+                            ResourceEventHandler<V1Job> eventHandlerJob,
+                            ResourceEventHandler<V1Node> eventHandlerNode,
+                            @Value("${sw.instance-uri}") String instanceUri,
+                            @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
+                            @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
+                            @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
+                            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter,
+                            StorageAccessService storageAccessService;) {
         this.k8sClient = k8sClient;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
@@ -88,6 +98,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
         this.storageAccessService = storageAccessService;
+        this.datasetLoadBatchSize = datasetLoadBatchSize;
+        this.restartPolicy = restartPolicy;
+        this.backoffLimit = backoffLimit;
+        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
     }
 
     @Override
@@ -117,7 +131,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             Map<String, String> nodeSelector =
                     null != task.getStep().getJob().getResourcePool() ? task.getStep().getJob().getResourcePool()
                             .getNodeSelector() : Map.of();
-            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(), buildContainerSpecMap(task), nodeSelector);
+            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(),
+                    this.restartPolicy, this.backoffLimit, buildContainerSpecMap(task), nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             k8sClient.deploy(k8sJob);
         } catch (ApiException k8sE) {
@@ -130,22 +145,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap(Task task) {
-
-        Map<String, String> initContainerEnvs = getInitContainerEnvs(task);
-        // task container envs
-        Map<String, String> coreContainerEnvs = buildCoreContainerEnvs(task);
         // TODO: use task's resource needs
         Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
         k8sJobTemplate.getInitContainerTemplates().forEach(templateContainer -> {
             ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(mapToEnv(initContainerEnvs));
+            containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
             ret.put(templateContainer.getName(), containerOverwriteSpec);
         });
 
         JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
         k8sJobTemplate.getContainersTemplates().forEach(templateContainer -> {
             ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(mapToEnv(coreContainerEnvs));
+            containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
             containerOverwriteSpec.setCmds(List.of("run"));
             containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
             containerOverwriteSpec.setImage(jobRuntime.getImage());
@@ -164,10 +175,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @NotNull
-    private Map<String, String> buildCoreContainerEnvs(Task task) {
+    private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
+        coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // TODO: support multi dataset uris
         // oss env
         List<DataSet> dataSets = swJob.getDataSets();
@@ -195,11 +207,20 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
         }
 
-        return coreContainerEnvs;
+        var envs = mapToEnv(coreContainerEnvs);
+
+        envs.add(
+            new V1EnvVar()
+                .name("SW_POD_NAME")
+                .valueFrom(
+                    new V1EnvVarSource().fieldRef(
+                        new V1ObjectFieldSelector().fieldPath("metadata.name")))
+        );
+        return envs;
     }
 
     @NotNull
-    private Map<String, String> getInitContainerEnvs(Task task) {
+    private List<V1EnvVar> getInitContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
 
@@ -235,8 +256,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             log.error("list runtime url failed for {} ", jobRuntime.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE).tip("list runtime url failed");
         }
-
-        return Map.of("DOWNLOADS", Strings.join(downloads, ' '));
+        return mapToEnv(Map.of("DOWNLOADS", Strings.join(downloads, ' ')));
     }
 
     @NotNull

@@ -101,7 +101,9 @@ public class K8sTaskSchedulerTest {
                 new K8sJobTemplateMock(""),
                 null,
                 null,
-                "http://instanceUri",
+                "http://instanceUri", 50,
+                "OnFailure", 10,
+                new StorageEnvsPropertiesConverter(storageProperties),
                 storageAccessService);
         return scheduler;
     }
@@ -134,7 +136,12 @@ public class K8sTaskSchedulerTest {
                 null,
                 null,
                 "",
-                mock(StorageAccessService.class));
+                50,
+                "OnFailure",
+                10,
+                mock(StorageEnvsPropertiesConverter.class),
+                mock(StorageAccessService.class)
+        );
         var task = mockTask();
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
@@ -192,7 +199,7 @@ public class K8sTaskSchedulerTest {
         }
 
         @Override
-        public V1Job renderJob(String jobName,
+        public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
                 Map<String, String> nodeSelectors) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
@@ -203,6 +210,7 @@ public class K8sTaskSchedulerTest {
             Map<String, String> expectedEnvs = new HashMap<>() {
             };
             expectedEnvs.put("SW_PROJECT", "project");
+            expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
             expectedEnvs.put("SW_TASK_INDEX", "1");
             expectedEnvs.put("SW_TASK_NUM", "1");
@@ -215,6 +223,7 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_TASK_STEP", "cmp");
             expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
             Map<String, String> actualEnv = worker.getEnvs().stream()
+                    .filter(envVar -> envVar.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(expectedEnvs, actualEnv);
 

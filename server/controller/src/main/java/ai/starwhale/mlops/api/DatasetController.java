@@ -23,6 +23,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
 import ai.starwhale.mlops.common.IdConvertor;
@@ -32,6 +34,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -121,6 +124,30 @@ public class DatasetController implements DatasetApi {
                         .build());
 
         return ResponseEntity.ok(Code.success.asResponse(datasetInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(String projectUrl,
+                                                                          String datasetUrl,
+                                                                          String versionUrl,
+                                                                          DataConsumptionRequest dataRangeRequest) {
+        var dataset = datasetService.query(projectUrl, datasetUrl, versionUrl);
+
+        return ResponseEntity.ok(Code.success.asResponse(datasetService.nextData(
+                DataReadRequest.builder()
+                    .sessionId(dataRangeRequest.getSessionId())
+                    .consumerId(dataRangeRequest.getConsumerId())
+                    .datasetName(dataset.getDatasetName())
+                    .datasetVersion(dataset.getVersionName())
+                    .tableName(dataset.getIndexTable())
+                    .start(dataRangeRequest.getStart())
+                    .startInclusive(dataRangeRequest.isStartInclusive())
+                    .batchSize(dataRangeRequest.getBatchSize())
+                    .end(dataRangeRequest.getEnd())
+                    .endInclusive(dataRangeRequest.isEndInclusive())
+                    .processedData(dataRangeRequest.getProcessedData())
+                    .build()
+        )));
     }
 
     @Override

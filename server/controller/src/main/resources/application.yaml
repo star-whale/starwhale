@@ -22,6 +22,9 @@ sw:
     issuer: ${SW_JWT_ISSUER:starwhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
     job-user-id: ${SW_JWT_JOB_USER_ID:1}
+  dataset:
+    load:
+      batchSize: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:
     size: ${SW_TASK_SPLIT_SIZE:1}
     deletionDelayMinutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}

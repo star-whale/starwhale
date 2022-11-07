@@ -651,8 +651,8 @@ class TestDatasetSessionConsumption(TestCase):
         assert ("1000-1000", None) in merged_keys
         assert ("990-990", "1000-1000") in merged_keys
 
-    @patch.dict(os.environ, {})
     @Mocker()
+    @patch.dict(os.environ, {})
     def test_cloud_tdsc(self, rm: Mocker) -> None:
         with self.assertRaises(FieldTypeOrValueError):
             CloudTDSC(
@@ -694,7 +694,7 @@ class TestDatasetSessionConsumption(TestCase):
 
         mock_request = rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/nextRange",
+            "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/consume",
             json={"data": {"start": "path/1", "end": "path/100"}},
         )
 
@@ -702,14 +702,10 @@ class TestDatasetSessionConsumption(TestCase):
         assert range_key == ("path/1", "path/100")
         assert len(mock_request.request_history) == 1  # type: ignore
         request = mock_request.request_history[0]  # type: ignore
-        assert (
-            request.path == "/api/v1/project/test/dataset/mnist/version/123/nextrange"
-        )
+        assert request.path == "/api/v1/project/test/dataset/mnist/version/123/consume"
         assert request.json() == {
             "batchSize": 50,
-            "maxRetries": 5,
             "sessionId": "123",
-            "runEnv": "pod",
             "consumerId": "pod-1",
         }
 
@@ -718,9 +714,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert range_key == ("path/1", "path/100")
         assert mock_request.request_history[1].json() == {  # type: ignore
             "batchSize": 50,
-            "maxRetries": 5,
             "sessionId": "123",
-            "runEnv": "pod",
             "consumerId": "pod-1",
             "processedData": [{"end": 1, "start": 1}],
         }

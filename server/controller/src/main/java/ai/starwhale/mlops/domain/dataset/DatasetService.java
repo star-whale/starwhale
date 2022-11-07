@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.StorageFileVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -39,6 +40,8 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionConvertor;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConvertor;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
@@ -59,6 +62,7 @@ import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +85,7 @@ public class DatasetService {
     private final VersionAliasConvertor versionAliasConvertor;
     private final UserService userService;
     private final DsFileGetter dsFileGetter;
+    private final DataReadManager dataReadManager;
     @Setter
     private BundleManager bundleManager;
 
@@ -88,7 +93,7 @@ public class DatasetService {
             DatasetVersionMapper datasetVersionMapper, DatasetVoConvertor datasetVoConvertor,
             DatasetVersionConvertor versionConvertor, StorageService storageService, DatasetManager datasetManager,
             IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, UserService userService,
-            DsFileGetter dsFileGetter) {
+            DsFileGetter dsFileGetter, DataReadManager dataReadManager) {
         this.projectManager = projectManager;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -100,6 +105,7 @@ public class DatasetService {
         this.versionAliasConvertor = versionAliasConvertor;
         this.userService = userService;
         this.dsFileGetter = dsFileGetter;
+        this.dataReadManager = dataReadManager;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -289,8 +295,16 @@ public class DatasetService {
         return versionEntity;
     }
 
+    public DataIndexDesc nextData(DataReadRequest request) {
+        var dataRange = dataReadManager.next(request);
+        return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
+                .start(dataRange.getStart())
+                .end(dataRange.getEnd())
+                .build();
+    }
+
     public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
-            String size) {
+                         String size) {
         return dsFileGetter.dataOf(datasetId, uri, authName, offset, size);
     }
 

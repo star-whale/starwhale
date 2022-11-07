@@ -6,7 +6,6 @@ spec:
   completions: 1
   parallelism: 1
   completionMode: Indexed
-  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never

@@ -24,6 +24,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
@@ -143,6 +145,23 @@ public interface DatasetApi {
             @Valid
             @RequestParam(value = "versionUrl", required = false)
             String versionUrl);
+
+    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(
+            @Parameter(in = ParameterIn.PATH,
+                description = "Project url",
+                schema = @Schema())
+            @PathVariable("projectUrl")
+            String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("datasetUrl")
+            String datasetUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl")
+            String versionUrl,
+            @RequestBody
+            DataConsumptionRequest dataRangeRequest);
 
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
