@@ -65,6 +65,7 @@ public class SwValidationException extends StarwhaleException {
         DATASTORE("009", "Starwhale Internal DataStore"),
         RESOURCE_POOL("010", "Resource Pool"),
         SETTING("011", "System Setting"),
+        TRASH("012", "TRASH"),
         OBJECT_STORE("012", "Object Store");
         final String code;
         final String tipSubject;

@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.domain.trash;
 
-import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 
-@Data
 @Builder
-public class HasTagWrapper implements HasTag {
+@Data
+public class Trash {
 
-    private Long id;
+    private Type type;
 
-    private String name;
+    private Long objectId;
 
-    private String tag;
+    private Long projectId;
 
-    private Date modifiedTime;
+    public enum Type {
+        MODEL, DATASET, RUNTIME, EVALUATION
+    }
 }

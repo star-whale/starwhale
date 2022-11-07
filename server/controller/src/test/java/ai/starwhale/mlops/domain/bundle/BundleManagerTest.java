@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.StarwhaleException;
+import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,6 +117,8 @@ public class BundleManagerTest {
         private Long id;
         private String name;
 
+        private Date modifiedTime;
+
         @Override
         public Long getId() {
             return id;
@@ -124,6 +127,11 @@ public class BundleManagerTest {
         @Override
         public String getName() {
             return name;
+        }
+
+        @Override
+        public Date getModifiedTime() {
+            return modifiedTime;
         }
     }
 

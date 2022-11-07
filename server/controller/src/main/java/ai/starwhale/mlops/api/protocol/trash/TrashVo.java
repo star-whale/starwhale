@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.api.protocol.trash;
 
-import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class HasTagWrapper implements HasTag {
+public class TrashVo {
 
-    private Long id;
+    private String id;
 
     private String name;
 
-    private String tag;
+    private String type;
 
-    private Date modifiedTime;
+    private Long trashedTime;
+
+    private Long size;
+
+    private String trashedBy;
+
+    private Long lastUpdatedTime;
+
+    private Long retentionTime;
+
+    public static TrashVo empty() {
+        return new TrashVo("", "", "", -1L, 0L, "", -1L, -1L);
+    }
 }
