@@ -11,9 +11,11 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import is_linux, load_yaml
 from starwhale.consts import (
     ENV_VENV,
+    ENV_CONDA,
     SupportArch,
     PythonRunEnv,
     DefaultYAMLName,
+    SW_AUTO_DIRNAME,
     ENV_CONDA_PREFIX,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -24,8 +26,10 @@ from starwhale.base.type import URIType, BundleType, DependencyType, RuntimeLock
 from starwhale.utils.venv import EnvTarType, get_python_version
 from starwhale.utils.error import (
     FormatError,
+    NotFoundError,
     NoSupportError,
     ConfigFormatError,
+    ExclusiveArgsError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
@@ -57,7 +61,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self, m_venv: MagicMock, m_call: MagicMock
     ) -> None:
         workdir = "/home/starwhale/myproject"
-        venv_dir = os.path.join(workdir, ".venv")
+        venv_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "venv")
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-venv"
 
@@ -65,7 +69,7 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.VENV,
-            create_env=True,
+            disable_create_env=False,
             force=True,
             interactive=True,
         )
@@ -106,7 +110,7 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.VENV,
-            create_env=False,
+            disable_create_env=True,
         )
         assert m_venv.call_count == 0
 
@@ -121,13 +125,14 @@ class StandaloneRuntimeTestCase(TestCase):
     def test_quickstart_from_ishell_conda(self, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
+        conda_prefix_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "conda")
         name = "test-conda"
 
         StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
             name=name,
             mode=PythonRunEnv.CONDA,
-            create_env=True,
+            disable_create_env=False,
         )
         assert os.path.exists(os.path.join(workdir, runtime_path))
         _rt_config = load_yaml(runtime_path)
@@ -136,8 +141,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "conda",
             "create",
             "--yes",
-            "--name",
-            name,
+            "--prefix",
+            conda_prefix_dir,
             f"python={get_python_version()}",
         ]
         assert " ".join(m_call.call_args_list[1][0][0]).startswith(
@@ -145,8 +150,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 [
                     "conda",
                     "run",
-                    "--name",
-                    name,
+                    "--prefix",
+                    conda_prefix_dir,
                     "python3",
                     "-m",
                     "pip",
@@ -165,7 +170,7 @@ class StandaloneRuntimeTestCase(TestCase):
         name = "rttest"
         version = "112233"
         cloud_uri = URI(f"http://0.0.0.0:80/project/1/runtime/{name}/version/{version}")
-        extract_dir = workdir / ".extract"
+        extract_dir = workdir / SW_AUTO_DIRNAME / "fork-runtime-extract"
         ensure_dir(extract_dir)
 
         runtime_config = self.get_runtime_config()
@@ -190,11 +195,12 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         ensure_dir(os.path.dirname(bundle_path))
         ensure_file(bundle_path, "")
-        venv_dir = workdir / ".venv"
+        auto_dir = workdir / SW_AUTO_DIRNAME
+        venv_dir = auto_dir / "venv"
         ensure_dir(venv_dir)
 
         assert not (workdir / "dummy.whl").exists()
-        assert not (venv_dir / ".gitignore").exists()
+        assert not (auto_dir / ".gitignore").exists()
         assert not (workdir / "requirements.txt").exists()
 
         RuntimeTermView.quickstart_from_uri(
@@ -202,7 +208,7 @@ class StandaloneRuntimeTestCase(TestCase):
             name=name,
             uri=cloud_uri,
             force=True,
-            restore=True,
+            disable_restore=False,
         )
 
         runtime_path = workdir / DefaultYAMLName.RUNTIME
@@ -214,7 +220,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert runtime_config["dependencies"][1]["wheels"] == ["dummy.whl"]
         assert runtime_config["dependencies"][2]["pip"] == ["Pillow"]
         assert (workdir / "dummy.whl").exists()
-        assert (venv_dir / ".gitignore").exists()
+        assert (auto_dir / ".gitignore").exists()
         assert (workdir / "requirements.txt").exists()
 
         assert m_bundle_copy.call_count == 1
@@ -223,18 +229,20 @@ class StandaloneRuntimeTestCase(TestCase):
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.check_call")
-    @patch("starwhale.utils.venv.subprocess.check_output", return_value=b"3.7")
+    @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_venv(
         self,
         m_output: MagicMock,
         m_check_call: MagicMock,
         m_py_bin: MagicMock,
     ) -> None:
+        m_output.return_value = b"3.7"
         name = "rttest"
         venv_dir = "/home/starwhale/venv"
+        ensure_dir(venv_dir)
         self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
         venv_path = os.path.join(venv_dir, "bin/python3")
-        os.environ[ENV_VENV] = venv_path
+        os.environ[ENV_VENV] = venv_dir
         m_py_bin.return_value = venv_path
         build_version = ""
 
@@ -401,7 +409,8 @@ class StandaloneRuntimeTestCase(TestCase):
         RuntimeTermViewRich.list()
         runtime_term_view.list("myproject")
         RuntimeTermViewRich.list("myproject")
-        runtime_term_view.build(workdir)
+        runtime_term_view.build(workdir, env_use_shell=True)
+
         rts = StandaloneRuntime.list(URI(""))
         assert len(rts[0][name]) == 2
 
@@ -489,6 +498,7 @@ class StandaloneRuntimeTestCase(TestCase):
             assert export_dir.exists()
             assert venv_tar_path.exists(), list(export_dir.iterdir())
 
+    @patch("os.environ", {})
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.is_venv")
     @patch("starwhale.utils.venv.is_conda")
@@ -496,18 +506,21 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_conda(
         self,
-        m_call: MagicMock,
+        m_call_output: MagicMock,
         m_check_call: MagicMock,
         m_conda: MagicMock,
         m_venv: MagicMock,
         m_py_bin: MagicMock,
     ) -> None:
-        m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
+        conda_prefix = "/home/starwhale/anaconda3/envs/starwhale"
+        ensure_dir(os.path.join(conda_prefix, "conda-meta"))
+        m_py_bin.return_value = os.path.join(conda_prefix, "bin/python3")
         m_conda.return_value = True
         m_venv.return_value = False
-        m_call.return_value = b"3.7.13"
+        m_call_output.side_effect = [b"3.7.13", conda_prefix.encode(), b"False"]
 
-        os.environ["CONDA_DEFAULT_ENV"] = "1"
+        os.environ[ENV_CONDA] = "1"
+        os.environ[ENV_CONDA_PREFIX] = conda_prefix
 
         name = "rttest"
         workdir = "/home/starwhale/myproject"
@@ -526,7 +539,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(os.path.join(workdir, "dummy.whl"), contents="")
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir))
+        sr.build(Path(workdir), env_use_shell=True)
         sr.info()
         sr.history()
 
@@ -542,7 +555,7 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         _deps = _manifest["dependencies"]
-        assert _deps["conda_files"] == ["conda.yaml"]
+        assert _deps["conda_files"] == ["conda.yaml", "conda-sw-lock.yaml"]
         assert len(_deps["conda_pkgs"]) == 0
         assert _deps["pip_files"] == ["requirements.txt"]
         assert _deps["pip_pkgs"] == ["Pillow"]
@@ -551,42 +564,65 @@ class StandaloneRuntimeTestCase(TestCase):
             {"deps": ["dummy.whl"], "kind": "wheel"},
             {"deps": ["Pillow"], "kind": "pip_pkg"},
             {"deps": "conda.yaml", "kind": "conda_env_file"},
+            {"deps": "conda-sw-lock.yaml", "kind": "conda_env_file"},
         ]
 
+    @patch("os.environ", {})
     @patch("starwhale.core.runtime.model.get_python_version")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
-    @patch("starwhale.utils.venv.is_venv")
-    @patch("starwhale.utils.venv.is_conda")
+    @patch("starwhale.core.runtime.model.is_venv")
+    @patch("starwhale.core.runtime.model.is_conda")
     @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.utils.venv.check_call")
     def test_build_without_python_version(
         self,
-        m_call: MagicMock,
+        m_check_call: MagicMock,
+        m_call_output: MagicMock,
         m_conda: MagicMock,
         m_venv: MagicMock,
         m_py_bin: MagicMock,
         m_py_ver: MagicMock,
     ) -> None:
-        m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
+        conda_prefix = "/home/starwhale/anaconda3/envs/starwhale"
+        os.environ[ENV_CONDA_PREFIX] = conda_prefix
+        ensure_dir(conda_prefix)
+        ensure_dir(os.path.join(conda_prefix, "conda-meta"))
+
+        m_py_bin.return_value = os.path.join(conda_prefix, "bin/python3")
         m_venv.return_value = False
         m_conda.return_value = True
-        m_call.return_value = b"3.7.13"
+        m_call_output.side_effect = [b"3.7.13", conda_prefix.encode(), b"False"]
         m_py_ver.return_value = "fake.ver"
 
         name = "demo_runtime"
         workdir = "/home/starwhale/myproject"
         self.fs.create_file(
             os.path.join(workdir, DefaultYAMLName.RUNTIME),
-            contents=yaml.safe_dump({"name": name, "mode": "venv"}),
+            contents=yaml.safe_dump({"name": name, "mode": "conda"}),
         )
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         with self.assertRaises(ConfigFormatError):
-            sr.build(Path(workdir))
+            sr.build(Path(workdir), env_use_shell=True)
+
+        assert m_check_call.call_args[0][0][:6] == [
+            "conda",
+            "env",
+            "export",
+            "--prefix",
+            "/home/starwhale/anaconda3/envs/starwhale",
+            "--file",
+        ]
+
+        m_check_call.reset_mock()
+        m_call_output.reset_mock()
+        m_call_output.side_effect = [b"3.7.13", conda_prefix.encode(), b"False"]
+
         m_py_ver.assert_called_once()
 
         m_py_ver.return_value = "3.10"
-        sr.build(Path(workdir))
+        sr.build(Path(workdir), env_use_shell=True)
         m_py_ver.assert_has_calls([call(), call()])
 
         sw = SWCliConfigMixed()
@@ -602,21 +638,28 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         assert _manifest["environment"]["python"] == m_py_ver.return_value
 
+    @patch("os.environ", {})
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
-    @patch("starwhale.utils.venv.is_venv")
-    @patch("starwhale.utils.venv.is_conda")
+    @patch("starwhale.core.runtime.model.is_venv")
+    @patch("starwhale.core.runtime.model.is_conda")
     @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.utils.venv.check_call")
     def test_build_with_docker_image_specified(
         self,
-        m_call: MagicMock,
+        m_check_call: MagicMock,
+        m_call_output: MagicMock,
         m_conda: MagicMock,
         m_venv: MagicMock,
         m_py_bin: MagicMock,
     ) -> None:
+        conda_dir = "/home/starwhale/anaconda3/envs/starwhale"
+        ensure_dir(conda_dir)
+        ensure_dir(os.path.join(conda_dir, "conda-meta"))
+        os.environ[ENV_CONDA_PREFIX] = conda_dir
         m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
         m_venv.return_value = False
         m_conda.return_value = True
-        m_call.return_value = b"3.7.13"
+        m_call_output.return_value = b"3.7.13"
 
         docker_image = "foo.com/bar:latest"
         name = "demo_runtime"
@@ -624,14 +667,14 @@ class StandaloneRuntimeTestCase(TestCase):
 
         yaml_content = {
             "name": name,
-            "mode": "venv",
+            "mode": "conda",
         }
         yaml_file = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir))
+        sr.build(Path(workdir), env_use_shell=True)
 
         sw = SWCliConfigMixed()
         runtime_workdir = os.path.join(
@@ -651,7 +694,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.remove_object(yaml_file)
         self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir))
+        sr.build(Path(workdir), env_use_shell=True)
         runtime_workdir = os.path.join(
             sw.rootdir,
             "self",
@@ -1019,27 +1062,60 @@ class StandaloneRuntimeTestCase(TestCase):
 
         RuntimeTermView.restore(uri)
 
+    @patch("starwhale.utils.venv.virtualenv")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
-    def test_lock_venv(self, m_output: MagicMock, m_call: MagicMock) -> None:
+    def test_lock_venv(
+        self, m_output: MagicMock, m_call: MagicMock, m_venv: MagicMock
+    ) -> None:
         target_dir = "/home/starwhale/workdir"
         ensure_dir(target_dir)
         runtime_fname = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
         lock_fname = os.path.join(target_dir, RuntimeLockFileType.VENV)
+        self.fs.create_file(os.path.join(target_dir, "dummy.whl"))
         self.fs.create_file(
-            runtime_fname, contents=yaml.safe_dump({"name": "test", "mode": "venv"})
+            runtime_fname,
+            contents=yaml.safe_dump(
+                {
+                    "name": "test",
+                    "mode": "venv",
+                    "dependencies": [{"pip": ["a", "b"]}, {"wheels": ["dummy.whl"]}],
+                }
+            ),
         )
 
         venv_dir = "/tmp/venv"
         ensure_dir(venv_dir)
         self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
-        os.environ[ENV_VENV] = venv_dir
 
+        os.environ[ENV_VENV] = venv_dir
         content = load_yaml(runtime_fname)
         assert RuntimeLockFileType.VENV not in content.get("dependencies", [])
-        StandaloneRuntime.lock(target_dir)
+        StandaloneRuntime.lock(target_dir, env_use_shell=True)
 
-        assert m_call.call_args[0][0].startswith(
+        assert m_call.call_args_list[0][0][0] == [
+            f"{venv_dir}/bin/pip",
+            "install",
+            "--exists-action",
+            "w",
+            "a",
+        ]
+        assert m_call.call_args_list[1][0][0] == [
+            f"{venv_dir}/bin/pip",
+            "install",
+            "--exists-action",
+            "w",
+            "b",
+        ]
+
+        assert m_call.call_args_list[2][0][0] == [
+            f"{venv_dir}/bin/pip",
+            "install",
+            "--exists-action",
+            "w",
+            f"{target_dir}/dummy.whl",
+        ]
+        assert m_call.call_args_list[3][0][0].startswith(
             " ".join(
                 [
                     f"{venv_dir}/bin/python3",
@@ -1053,12 +1129,26 @@ class StandaloneRuntimeTestCase(TestCase):
                 ]
             )
         )
+        assert m_output.call_count == 2
+        assert m_output.call_args_list[0][0][0] == [
+            f"{venv_dir}/bin/python3",
+            "-m",
+            "pip",
+            "config",
+            "list",
+            "--user",
+        ]
+        assert m_output.call_args_list[1][0][0] == [
+            f"{venv_dir}/bin/python3",
+            "-c",
+            "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
+        ]
+
         assert os.path.exists(lock_fname)
         content = load_yaml(runtime_fname)
         assert RuntimeLockFileType.VENV == content["dependencies"][-1]
         del os.environ[ENV_VENV]
 
-        os.unlink(lock_fname)
         StandaloneRuntime.lock(target_dir, env_prefix_path=venv_dir)
         assert m_call.call_args[0][0].startswith(
             " ".join(
@@ -1076,6 +1166,77 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         assert os.path.exists(lock_fname)
 
+        m_output.reset_mock()
+        m_call.reset_mock()
+
+        sw_venv_dir = os.path.join(target_dir, SW_AUTO_DIRNAME, "venv")
+        venv_cfg = os.path.join(sw_venv_dir, "pyvenv.cfg")
+        assert not os.path.exists(sw_venv_dir)
+        assert not os.path.exists(venv_cfg)
+
+        def _mock_cli_run(args: t.Any) -> t.Any:
+            ensure_dir(sw_venv_dir)
+            ensure_file(venv_cfg, content="")
+            return MagicMock()
+
+        m_venv.cli_run = _mock_cli_run
+        StandaloneRuntime.lock(target_dir)
+
+        assert m_call.call_count == 5
+        assert m_call.call_args_list[3][0][0] == [
+            f"{sw_venv_dir}/bin/pip",
+            "install",
+            "--exists-action",
+            "w",
+            "-r",
+            f"{target_dir}/requirements-sw-lock.txt",
+        ]
+        assert m_output.call_count == 2
+
+        assert os.path.exists(sw_venv_dir)
+        assert os.path.exists(venv_cfg)
+
+    def test_abnormal_lock(self) -> None:
+        with self.assertRaises(NotFoundError):
+            RuntimeTermView.lock("not-found")
+
+        target_dir = "/home/starwhale/workdir"
+        ensure_dir(target_dir)
+        runtime_fname = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
+        self.fs.create_file(
+            runtime_fname, contents=yaml.safe_dump({"name": "test", "mode": "no-mode"})
+        )
+
+        with self.assertRaises(ExclusiveArgsError):
+            RuntimeTermView.lock(
+                target_dir, env_name="test", env_prefix_path="1", env_use_shell=True
+            )
+
+        with self.assertRaises(ExclusiveArgsError):
+            RuntimeTermView.lock(target_dir, env_name="test", env_prefix_path="1")
+
+        with self.assertRaises(NoSupportError):
+            RuntimeTermView.lock(target_dir, env_prefix_path="test")
+
+        os.unlink(runtime_fname)
+        self.fs.create_file(
+            runtime_fname, contents=yaml.safe_dump({"name": "test", "mode": "venv"})
+        )
+
+        with self.assertRaises(NoSupportError):
+            RuntimeTermView.lock(target_dir, env_name="test")
+
+        with self.assertRaises(FormatError):
+            RuntimeTermView.lock(target_dir, env_prefix_path="1")
+
+        os.unlink(runtime_fname)
+        self.fs.create_file(
+            runtime_fname, contents=yaml.safe_dump({"name": "test", "mode": "conda"})
+        )
+
+        with self.assertRaises(FormatError):
+            RuntimeTermView.lock(target_dir, env_prefix_path="1")
+
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
     def test_lock_conda(self, m_output: MagicMock, m_call: MagicMock) -> None:
@@ -1083,24 +1244,64 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(target_dir)
         runtime_fname = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
         self.fs.create_file(
-            runtime_fname, contents=yaml.safe_dump({"name": "test", "mode": "conda"})
+            runtime_fname,
+            contents=yaml.safe_dump(
+                {
+                    "name": "test",
+                    "mode": "conda",
+                    "dependencies": [{"pip": ["a"]}, {"conda": ["b"]}],
+                }
+            ),
         )
 
         conda_dir = "/tmp/conda"
         ensure_dir(conda_dir)
         ensure_dir(os.path.join(conda_dir, "conda-meta"))
+        m_output.return_value = conda_dir.encode()
 
         content = load_yaml(runtime_fname)
-        assert RuntimeLockFileType.CONDA not in content.get("dependencies", [])
-        RuntimeTermView.lock(target_dir, prefix_path=conda_dir)
+        assert RuntimeLockFileType.CONDA not in content.get("dependencies", {})
+        RuntimeTermView.lock(target_dir, env_prefix_path=conda_dir)
 
-        assert m_call.call_args[0][0][:6] == [
+        assert m_call.call_args_list[0][0][0] == [
+            "conda",
+            "run",
+            "--prefix",
+            conda_dir,
+            "python3",
+            "-m",
+            "pip",
+            "install",
+            "--exists-action",
+            "w",
+            "a",
+        ]
+        assert m_call.call_args_list[1][0][0] == [
+            "conda",
+            "install",
+            "--prefix",
+            conda_dir,
+            "--channel",
+            "conda-forge",
+            "--yes",
+            "--override-channels",
+            "'b'",
+        ]
+
+        assert m_call.call_args_list[2][0][0][:6] == [
             "conda",
             "env",
             "export",
             "--prefix",
-            "/tmp/conda",
+            conda_dir,
             "--file",
+        ]
+
+        assert m_output.call_count == 1
+        assert m_output.call_args_list[0][0][0] == [
+            f"{conda_dir}/bin/python3",
+            "-c",
+            "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
         ]
 
         assert os.path.exists(os.path.join(target_dir, RuntimeLockFileType.CONDA))
@@ -1108,25 +1309,80 @@ class StandaloneRuntimeTestCase(TestCase):
         assert RuntimeLockFileType.CONDA == content["dependencies"][-1]
 
         StandaloneRuntime.lock(target_dir, env_name="conda-env-name")
-        assert m_call.call_args[0][0][:6] == [
-            "conda",
-            "env",
-            "export",
-            "--name",
-            "conda-env-name",
-            "--file",
-        ]
 
-        os.environ[ENV_CONDA_PREFIX] = conda_dir
-        StandaloneRuntime.lock(target_dir)
         assert m_call.call_args[0][0][:6] == [
             "conda",
             "env",
             "export",
             "--prefix",
-            "/tmp/conda",
+            conda_dir,
             "--file",
         ]
+
+        os.environ[ENV_CONDA_PREFIX] = conda_dir
+        StandaloneRuntime.lock(target_dir, env_use_shell=True)
+        assert m_call.call_args[0][0][:6] == [
+            "conda",
+            "env",
+            "export",
+            "--prefix",
+            conda_dir,
+            "--file",
+        ]
+
+        del os.environ[ENV_CONDA_PREFIX]
+        m_output.reset_mock()
+        m_call.reset_mock()
+
+        sw_conda_dir = os.path.join(target_dir, SW_AUTO_DIRNAME, "conda")
+        ensure_dir(sw_conda_dir)
+        ensure_dir(os.path.join(sw_conda_dir, "conda-meta"))
+        StandaloneRuntime.lock(target_dir)
+
+        assert m_call.call_count == 4
+        assert m_call.call_args_list[0][0][0] == [
+            "conda",
+            "run",
+            "--prefix",
+            sw_conda_dir,
+            "python3",
+            "-m",
+            "pip",
+            "install",
+            "--exists-action",
+            "w",
+            "a",
+        ]
+        assert m_call.call_args_list[1][0][0] == [
+            "conda",
+            "install",
+            "--prefix",
+            sw_conda_dir,
+            "--channel",
+            "conda-forge",
+            "--yes",
+            "--override-channels",
+            "'b'",
+        ]
+        assert m_call.call_args_list[2][0][0] == [
+            "conda",
+            "env",
+            "update",
+            "--file",
+            f"{target_dir}/conda-sw-lock.yaml",
+            "--prefix",
+            sw_conda_dir,
+        ]
+
+        assert m_call.call_args_list[3][0][0][:6] == [
+            "conda",
+            "env",
+            "export",
+            "--prefix",
+            sw_conda_dir,
+            "--file",
+        ]
+        assert m_output.call_count == 1
 
     def get_mock_manifest(self) -> t.Dict[str, t.Any]:
         return {

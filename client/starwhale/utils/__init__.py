@@ -192,7 +192,7 @@ def get_current_shell() -> str:
 def make_dir_gitignore(d: Path) -> None:
     from starwhale.utils.fs import ensure_dir, ensure_file
 
-    if not d.is_dir():
+    if d.exists() and not d.is_dir():
         raise NoSupportError(f"{d} is not dir")
 
     ensure_dir(d)

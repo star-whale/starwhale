@@ -77,21 +77,23 @@ class RuntimeTermView(BaseTermView):
         target_dir: str,
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
-        prefix_path: str = "",
+        env_prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
         emit_pip_options: bool = False,
+        env_use_shell: bool = False,
     ) -> None:
         Runtime.lock(
             target_dir,
             yaml_name,
             env_name,
-            prefix_path,
+            env_prefix_path,
             disable_auto_inject,
             stdout,
             include_editable,
             emit_pip_options,
+            env_use_shell,
         )
 
     @classmethod
@@ -103,9 +105,10 @@ class RuntimeTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         gen_all_bundles: bool = False,
         include_editable: bool = False,
-        enable_lock: bool = False,
+        disable_env_lock: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
+        env_use_shell: bool = False,
     ) -> None:
         _config = load_yaml(Path(workdir) / yaml_name)
         _runtime_uri = cls.prepare_build_bundle(
@@ -126,9 +129,10 @@ class RuntimeTermView(BaseTermView):
             yaml_name,
             gen_all_bundles=gen_all_bundles,
             include_editable=include_editable,
-            enable_lock=enable_lock,
+            disable_env_lock=disable_env_lock,
             env_prefix_path=env_prefix_path,
             env_name=env_name,
+            env_use_shell=env_use_shell,
         )
 
     @BaseTermView._only_standalone
@@ -160,7 +164,7 @@ class RuntimeTermView(BaseTermView):
         name: str,
         uri: URI,
         force: bool = False,
-        restore: bool = False,
+        disable_restore: bool = False,
     ) -> None:
         console.print(
             f":construction: quickstart Starwhale Runtime[{name}] environment from runtime URI({uri})..."
@@ -168,7 +172,9 @@ class RuntimeTermView(BaseTermView):
         _sw_config = SWCliConfigMixed()
         if _sw_config.current_instance != STANDALONE_INSTANCE:
             raise NoSupportError(f"{_sw_config.current_instance} quickstart")
-        StandaloneRuntime.quickstart_from_uri(workdir, name, uri, force, restore)
+        StandaloneRuntime.quickstart_from_uri(
+            workdir, name, uri, force, disable_restore
+        )
         console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
@@ -178,7 +184,7 @@ class RuntimeTermView(BaseTermView):
         workdir: t.Union[Path, str],
         name: str,
         mode: str,
-        create_env: bool = False,
+        disable_create_env: bool = False,
         force: bool = False,
         interactive: bool = False,
     ) -> None:
@@ -186,7 +192,7 @@ class RuntimeTermView(BaseTermView):
             f":construction: quickstart Starwhale Runtime[{name}] environment..."
         )
         StandaloneRuntime.quickstart_from_ishell(
-            workdir, name, mode, create_env, force, interactive
+            workdir, name, mode, disable_create_env, force, interactive
         )
         console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
