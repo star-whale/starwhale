@@ -18,18 +18,46 @@ package ai.starwhale.mlops.domain.trash.mapper;
 
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
 import java.util.List;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface TrashMapper {
 
+    @Select("insert into trash(project_id, object_id, operator_id,"
+            + " trash_name, trash_type, size, retention,updated_time)"
+            + " values (#{projectId}, #{objectId}, #{operatorId},"
+            + " #{trashName}, #{trashType}, #{size}, #{retention}, #{updatedTime})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(TrashPo po);
 
+    @Delete("delete from trash where id = #{id}")
     int delete(Long id);
 
+    @Select("select id, project_id, object_id, operator_id, trash_name, trash_type, size, retention,"
+            + " updated_time, created_time, modified_time"
+            + " from trash where id = #{id}")
     TrashPo find(Long id);
 
+    @Select("<script>"
+            + " select id, project_id, object_id, operator_id, trash_name, trash_type, size, retention,"
+            + " updated_time, created_time, modified_time"
+            + " from trash"
+            + " where project_id = #{projectId}"
+            + "    <if test=\"operatorId != null\">"
+            + "      and operator_id = #{operatorId}"
+            + "    </if>"
+            + "    <if test=\"name != null and name != ''\">"
+            + "      and trash_name like concat(#{name}, '%')"
+            + "    </if>"
+            + "    <if test=\"type != null and type != ''\">"
+            + "      and trash.trash_type = #{type}"
+            + "    </if>"
+            + " order by id desc"
+            + "</script>")
     List<TrashPo> list(@Param("projectId") Long projectId, @Param("operatorId") Long operatorId,
             @Param("name") String name, @Param("type") String type);
 }
