@@ -24,9 +24,12 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class StorageAccessParserTest {
@@ -44,16 +47,25 @@ public class StorageAccessParserTest {
 
     DatasetVersionMapper datasetVersionMapper = mock(DatasetVersionMapper.class);
 
+    List<CompatibleStorageAccessServiceBuilder> compilableStorageAccessServiceBuilders;
+
+
+    @BeforeEach
+    public void setup() {
+        CompatibleStorageAccessServiceBuilder builder1 = mock(CompatibleStorageAccessServiceBuilder.class);
+        CompatibleStorageAccessServiceBuilder builder2 = mock(CompatibleStorageAccessServiceBuilder.class);
+        compilableStorageAccessServiceBuilders = List.of(builder1, builder2);
+    }
 
     @Test
     public void testDefaultService() {
         when(datasetVersionMapper.getVersionById(2L)).thenReturn(
                 DatasetVersionEntity.builder().id(2L).storageAuths("").build());
+
         StorageAccessParser storageAccessParser = new StorageAccessParser(defaultStorageAccessService,
-                datasetVersionMapper, null);
-        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(2L,
-                "s3://renyanda/bdc/xyf",
-                "myname");
+                compilableStorageAccessServiceBuilders);
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(
+                "s3://renyanda/bdc/xyf");
         Assertions.assertEquals(defaultStorageAccessService, storageAccessService);
     }
 
@@ -65,13 +77,11 @@ public class StorageAccessParserTest {
         StorageAccessServiceMinio storageAccessServiceMinio = mock(StorageAccessServiceMinio.class);
         when(userStorageAccessServiceBuilder.build(any(), any(), any())).thenReturn(storageAccessServiceMinio);
         StorageAccessParser storageAccessParser = new StorageAccessParser(defaultStorageAccessService,
-                datasetVersionMapper, userStorageAccessServiceBuilder);
+                compilableStorageAccessServiceBuilders);
 
-        StorageAccessService myname = storageAccessParser.getStorageAccessServiceFromAuth(1L, "s3://renyanda/bdc/xyf",
-                "myname");
+        StorageAccessService myname = storageAccessParser.getStorageAccessServiceFromUri("s3://renyanda/bdc/xyf");
         Assertions.assertEquals(storageAccessServiceMinio, myname);
-        myname = storageAccessParser.getStorageAccessServiceFromAuth(1L, "s3://renyanda/bdc/xyfzzz",
-                "myname");
+        myname = storageAccessParser.getStorageAccessServiceFromUri("s3://renyanda/bdc/xyfzzz");
         Assertions.assertEquals(storageAccessServiceMinio, myname);
         verify(userStorageAccessServiceBuilder).build(any(), any(), any());
     }

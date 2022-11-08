@@ -17,11 +17,13 @@
 package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.Data;
 
 @Data
@@ -32,6 +34,8 @@ public class SystemSetting {
     DockerSetting dockerSetting;
 
     List<ResourcePool> resourcePoolSetting = new ArrayList<>();
+
+    Set<StorageConnectionToken> storageSetting = Set.of();
 
     @Data
     public static class DockerSetting {

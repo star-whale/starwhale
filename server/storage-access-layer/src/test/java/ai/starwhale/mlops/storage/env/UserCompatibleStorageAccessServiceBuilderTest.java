@@ -24,7 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.exception.SdkClientException;
 
-public class UserStorageAccessServiceBuilderTest {
+public class UserCompatibleStorageAccessServiceBuilderTest {
 
     private UserStorageAccessServiceBuilder userStorageAccessServiceBuilder;
 

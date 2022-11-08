@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.storage.s3;
 
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +39,16 @@ public class S3Config {
 
     public boolean overWriteEndPoint() {
         return null != endpoint && !endpoint.isBlank();
+    }
+
+    public S3Config(Map<String, String> tokens) {
+        this.bucket = tokens.get("bucket");
+        this.accessKey = tokens.get("ak");
+        this.secretKey = tokens.get("sk");
+        this.region = tokens.get("region");
+        this.endpoint = tokens.get("endpoint");
+        this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
+        this.hugeFilePartSize = Long.parseLong(tokens.get("hugeFilePartSize"));
     }
 
 }

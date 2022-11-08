@@ -44,13 +44,13 @@ public class DsFileGetterTest {
                 new LengthAbleInputStream(new ByteArrayInputStream("abc".getBytes()), 3));
         when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
         when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
-        when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
+        when(storageAccessParser.getStorageAccessServiceFromUri(anyString())).thenReturn(
                 storageAccessService);
         DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "", (String) ColumnTypeScalar.INT64.encode(1, false),
+        byte[] bytes = fileGetter.dataOf(1L, "bdcsd",  (String) ColumnTypeScalar.INT64.encode(1, false),
                 (String) ColumnTypeScalar.INT64.encode(1, false));
         Assertions.assertEquals("abc", new String(bytes));
 
@@ -64,14 +64,14 @@ public class DsFileGetterTest {
         when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
         when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
         when(storageAccessService.signedUrl(eq("bdc/bdcsd"), anyLong())).thenReturn("abc");
-        when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
+        when(storageAccessParser.getStorageAccessServiceFromUri(anyString())).thenReturn(
                 storageAccessService);
         DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdcsd", "", 1L));
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", "", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdcsd", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", 1L));
     }
 
 }

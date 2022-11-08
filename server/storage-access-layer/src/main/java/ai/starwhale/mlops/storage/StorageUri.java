@@ -41,6 +41,8 @@ public class StorageUri {
     String path;
     String bucket;
 
+    String prefixWithoutPath;
+
     static final Pattern URI_PATTERN = Pattern.compile(
             "^((s3|file|ftp|nfs|oss|http|https|sftp)://)?"
                     + "(([a-zA-Z0-9]+:[a-zA-Z0-9]+)@)?"
@@ -66,7 +68,7 @@ public class StorageUri {
         }
         bucket = matcher.group(10);
         path = matcher.group(11);
-
+        prefixWithoutPath = uri.replace(path, "");
     }
 
 }

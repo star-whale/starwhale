@@ -309,10 +309,10 @@ public class DatasetService {
 
     public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
             String size) {
-        return dsFileGetter.dataOf(datasetId, uri, authName, offset, size);
+        return dsFileGetter.dataOf(datasetId, uri, offset, size);
     }
 
     public String signLink(Long id, String uri, String authName, Long expTimeMillis) {
-        return dsFileGetter.linkOf(id, uri, authName, expTimeMillis);
+        return dsFileGetter.linkOf(id, uri, expTimeMillis);
     }
 }

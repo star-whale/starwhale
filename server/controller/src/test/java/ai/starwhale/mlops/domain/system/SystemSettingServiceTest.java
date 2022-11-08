@@ -35,7 +35,7 @@ public class SystemSettingServiceTest {
     public void setUp() throws Exception {
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, listeners);
         systemSettingService.run();
     }
 
@@ -59,7 +59,7 @@ public class SystemSettingServiceTest {
     @Test
     public void testAppStartWithoutSetting() {
         when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, listeners);
         Assertions.assertNull(systemSettingService.getSystemSetting());
 
     }
@@ -74,7 +74,7 @@ public class SystemSettingServiceTest {
     @Test
     public void testUpdateWitouData() {
         when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, listeners);
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
@@ -88,7 +88,7 @@ public class SystemSettingServiceTest {
     @Test
     public void testQueryWithoutData() throws Exception {
         when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, listeners);
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "resourcePoolSetting: []", systemSettingService.querySetting().trim());

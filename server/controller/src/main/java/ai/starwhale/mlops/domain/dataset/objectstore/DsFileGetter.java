@@ -43,10 +43,9 @@ public class DsFileGetter {
         this.datasetVersionMapper = datasetVersionMapper;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
+    public byte[] dataOf(Long datasetId, String uri, String offset,
             String size) {
-        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
-                datasetId, uri, authName);
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(uri);
         String path = checkPath(datasetId, uri, storageAccessService);
         long sizeLong = (long) ColumnTypeScalar.INT64.decode(size);
         long offsetLong = (long) ColumnTypeScalar.INT64.decode(offset);
@@ -60,9 +59,8 @@ public class DsFileGetter {
         }
     }
 
-    public String linkOf(Long datasetId, String uri, String authName, Long expTimeMillis) {
-        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
-                datasetId, uri, authName);
+    public String linkOf(Long datasetId, String uri, Long expTimeMillis) {
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(uri);
         String path = checkPath(datasetId, uri, storageAccessService);
         try {
             return storageAccessService.signedUrl(path, expTimeMillis);

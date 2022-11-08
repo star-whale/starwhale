@@ -45,10 +45,13 @@ public class SystemSettingService implements CommandLineRunner {
 
     private final SystemSettingMapper systemSettingMapper;
 
+    private final List<SystemSettingListener> listeners;
+
     public SystemSettingService(YAMLMapper yamlMapper,
-            SystemSettingMapper systemSettingMapper) {
+            SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners) {
         this.yamlMapper = yamlMapper;
         this.systemSettingMapper = systemSettingMapper;
+        this.listeners = listeners;
     }
 
     public String querySetting() {
@@ -68,6 +71,7 @@ public class SystemSettingService implements CommandLineRunner {
             throw new SwValidationException(ValidSubject.SETTING);
         }
         systemSettingMapper.put(setting);
+        listeners.forEach(l -> l.onUpdate(systemSetting));
         return querySetting();
     }
 
@@ -88,6 +92,7 @@ public class SystemSettingService implements CommandLineRunner {
         if (null != setting) {
             try {
                 systemSetting = yamlMapper.readValue(setting.getContent(), SystemSetting.class);
+                listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
                 log.error("corrupted system setting yaml");
                 throw new SwValidationException(ValidSubject.SETTING);

@@ -16,75 +16,82 @@
 
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
-import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.system.SystemSetting;
+import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageUri;
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
-import ai.starwhale.mlops.storage.env.UserStorageAuthEnv;
+import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
+import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
+import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Component
-public class StorageAccessParser {
+public class StorageAccessParser implements SystemSettingListener {
 
     final StorageAccessService defaultStorageAccessService;
 
-    final DatasetVersionMapper datasetVersionMapper;
+    final List<CompatibleStorageAccessServiceBuilder> compatibleStorageAccessServiceBuilders;
 
-    final UserStorageAccessServiceBuilder userStorageAccessServiceBuilder;
-
+    /**
+     * key: prefixWithoutPath
+     * val: StorageAccessService
+     */
     ConcurrentHashMap<String, StorageAccessService> storageAccessServicePool = new ConcurrentHashMap<>();
 
+    Map<StorageConnectionToken, CompatibleStorageAccessService> storageAccessServicesFromUser
+            = new ConcurrentHashMap<>();
+
     public StorageAccessParser(StorageAccessService defaultStorageAccessService,
-            DatasetVersionMapper datasetVersionMapper,
-            UserStorageAccessServiceBuilder userStorageAccessServiceBuilder) {
+            List<CompatibleStorageAccessServiceBuilder> compatibleStorageAccessServiceBuilders) {
         this.defaultStorageAccessService = defaultStorageAccessService;
-        this.datasetVersionMapper = datasetVersionMapper;
-        this.userStorageAccessServiceBuilder = userStorageAccessServiceBuilder;
+        this.compatibleStorageAccessServiceBuilders = compatibleStorageAccessServiceBuilders;
     }
 
-    public StorageAccessService getStorageAccessServiceFromAuth(Long datasetId, String uri,
-            String authName) {
-        if (StringUtils.hasText(authName)) {
-            authName = authName.toUpperCase(); // env vars are uppercase always
-        } else {
+    public StorageAccessService getStorageAccessServiceFromUri(String uri) {
+        if (!StringUtils.hasText(uri)) {
+            throw new SwValidationException(ValidSubject.DATASET).tip("uri is empty");
+        }
+        StorageUri storageUri = new StorageUri(uri);
+        return storageAccessServicePool.computeIfAbsent(storageUri.getPrefixWithoutPath(), key -> {
+            for (CompatibleStorageAccessService css : storageAccessServicesFromUser.values()) {
+                if (css.compatibleWith(storageUri)) {
+                    return css;
+                }
+            }
             return defaultStorageAccessService;
-        }
-        StorageAccessService cachedStorageAccessService = storageAccessServicePool.get(
-                formatKey(datasetId, authName));
-        if (null != cachedStorageAccessService) {
-            return cachedStorageAccessService;
-        }
-        DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.getVersionById(
-                datasetId);
-        String storageAuthsText = datasetVersionEntity.getStorageAuths();
-        if (!StringUtils.hasText(storageAuthsText)) {
-            return defaultStorageAccessService;
-        }
+        });
 
-        UserStorageAuthEnv storageAuths = new UserStorageAuthEnv(storageAuthsText);
-        StorageEnv env = storageAuths.getEnv(authName);
-        if (null == env) {
-            return defaultStorageAccessService;
-        }
-
-        StorageAccessService storageAccessService = userStorageAccessServiceBuilder.build(env, new StorageUri(uri),
-                authName);
-        if (null == storageAccessService) {
-            throw new SwValidationException(ValidSubject.DATASET).tip(
-                    "file system not supported yet: " + env.getEnvType());
-        }
-        storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), storageAccessService);
-        return storageAccessService;
     }
 
-    String formatKey(Long datasetId, String authName) {
-        return datasetId.toString() + authName;
-    }
+    private Set<StorageConnectionToken> oldConnectionTokens = Set.of();
 
+    @Override
+    public void onUpdate(SystemSetting systemSetting) {
+        Set<StorageConnectionToken> connectionTokens = Set.copyOf(systemSetting.getStorageSetting());
+        if (oldConnectionTokens.equals(connectionTokens)) {
+            return;
+        }
+        connectionTokens.stream().filter(t -> !oldConnectionTokens.contains(t))
+                .forEach(t -> storageAccessServicesFromUser.computeIfAbsent(t, k -> {
+                    for (CompatibleStorageAccessServiceBuilder builder : compatibleStorageAccessServiceBuilders) {
+                        if (builder.couldBuild(k.getType())) {
+                            return builder.build(k.getTokens());
+                        }
+                    }
+                    log.error("no builder  found for storage type {}", t.getType());
+                    return null;
+                }));
+        oldConnectionTokens.stream().filter(t -> !connectionTokens.contains(t))
+                .forEach(t -> storageAccessServicesFromUser.remove(t));
+        oldConnectionTokens = connectionTokens;
+    }
 }
