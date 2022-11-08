@@ -52,7 +52,7 @@ public class TaskTokenValidatorTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = TaskStatus.class, names = {"RUNNING", "PREPARING"})
+    @EnumSource(value = TaskStatus.class, names = {"RUNNING", "READY"})
     public void testWithRunningTask(TaskStatus taskStatus) {
         long taskId = 1L;
         String token = taskTokenValidator.getTaskToken(user, taskId).split(" ")[1];

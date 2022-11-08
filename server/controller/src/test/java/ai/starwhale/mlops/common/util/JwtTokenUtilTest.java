@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import io.jsonwebtoken.Claims;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +69,12 @@ public class JwtTokenUtilTest {
 
     }
 
-    public void testWithClaims(){
-
+    @Test
+    public void testWithClaims() {
+        String accessToken = jwtTokenUtil.generateAccessToken(User.builder().id(1L).name("starwhale").build(),
+                Map.of("a", "b", "c", "d"));
+        Claims claims = jwtTokenUtil.parseJwt(accessToken);
+        Assertions.assertEquals("b", claims.get("a", String.class));
+        Assertions.assertEquals("d", claims.get("c", String.class));
     }
 }

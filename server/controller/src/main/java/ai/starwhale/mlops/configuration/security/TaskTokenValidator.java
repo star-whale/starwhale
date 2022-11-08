@@ -50,7 +50,7 @@ public class TaskTokenValidator implements JwtClaimValidator {
 
     private static final Set<TaskStatus> TOKEN_VALID_STATUSES = Set.of(
             TaskStatus.RUNNING,
-            TaskStatus.PREPARING
+            TaskStatus.READY
     );
 
     @Override
