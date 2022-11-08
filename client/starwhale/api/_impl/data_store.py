@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import json
 import atexit
 import base64
@@ -750,14 +749,6 @@ def _records_to_table(
         {"schema": str(schema)},
     )
     return pa.Table.from_pydict(d, schema=pa_schema)
-
-
-def _get_size(d: Any) -> int:
-    ret = sys.getsizeof(d)
-    if isinstance(d, dict):
-        for v in d.values():
-            ret += sys.getsizeof(v)
-    return ret
 
 
 def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:

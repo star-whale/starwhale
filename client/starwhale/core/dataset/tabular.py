@@ -100,11 +100,11 @@ class TabularDatasetRow(ASDictMixin):
         _annotations = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if not k.startswith(cls.ANNOTATION_PREFIX):
+            if k.startswith(cls.ANNOTATION_PREFIX):
+                _, name = k.split(cls.ANNOTATION_PREFIX, 1)
+                _annotations[name] = v
+            else:
                 _extra_kw[k] = v
-                continue
-            _, name = k.split(cls.ANNOTATION_PREFIX, 1)
-            _annotations[name] = json.loads(v)
 
         return cls(
             id=id,
@@ -115,7 +115,6 @@ class TabularDatasetRow(ASDictMixin):
             data_size=data_size,
             data_origin=DataOriginType(data_origin),
             auth_name=auth_name,
-            # TODO: use protobuf format to store and reflect annotation
             data_type=json.loads(data_type),
             annotations=_annotations,
             **_extra_kw,
@@ -138,6 +137,8 @@ class TabularDatasetRow(ASDictMixin):
 
         if not isinstance(self.annotations, dict) or not self.annotations:
             raise FieldTypeOrValueError("no annotations field")
+
+        # TODO: add annotation items type check
 
         if not self.data_uri:
             raise FieldTypeOrValueError("no raw_data_uri field")
@@ -166,14 +167,9 @@ class TabularDatasetRow(ASDictMixin):
             ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
-        # TODO: use protobuf format to store and reflect annotation
         for k, v in self.annotations.items():
-            v = _do_asdict_convert(v)
-            if getattr(v, "jsonify", None):
-                v = v.jsonify()
-            else:
-                v = json.dumps(v, separators=(",", ":"))
             d[f"{self.ANNOTATION_PREFIX}{k}"] = v
+        # TODO: use data_store SwObject to store data_type
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
         )

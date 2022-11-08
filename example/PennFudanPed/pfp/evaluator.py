@@ -15,7 +15,7 @@ from .utils.coco_eval import CocoEvaluator
 
 class MaskRCnn(PipelineHandler):
     def __init__(self) -> None:
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model = self._load_model(self.device)
         self.iou_types = ["bbox", "segm"]
         super().__init__()
