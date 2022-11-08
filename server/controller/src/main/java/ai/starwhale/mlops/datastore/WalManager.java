@@ -28,10 +28,12 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -83,7 +85,7 @@ public class WalManager extends Thread {
             @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
             @Value("${sw.datastore.walPrefix}") String walPrefix,
             @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
-            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) throws IOException {
+            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) {
         this.objectStore = objectStore;
         this.bufferManager = bufferManager;
         this.walFileSize = walFileSize;
@@ -260,6 +262,72 @@ public class WalManager extends Thread {
                 }
             }
         }
+    }
+
+    public static TableSchemaDesc parseTableSchema(Wal.TableSchema tableSchema) {
+        var ret = new TableSchemaDesc();
+        var keyColumn = tableSchema.getKeyColumn();
+        if (!keyColumn.isEmpty()) {
+            ret.setKeyColumn(keyColumn);
+        }
+        var columnList = new ArrayList<>(tableSchema.getColumnsList());
+        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
+        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
+        for (var col : columnList) {
+            var colDesc = WalManager.parseColumnSchema(col);
+            columnSchemaList.add(colDesc);
+        }
+        ret.setColumnSchemaList(columnSchemaList);
+        return ret;
+    }
+
+    public static ColumnSchemaDesc parseColumnSchema(Wal.ColumnSchema columnSchema) {
+        var ret = ColumnSchemaDesc.builder()
+                .name(columnSchema.getColumnName())
+                .type(columnSchema.getColumnType());
+        if (!columnSchema.getPythonType().isEmpty()) {
+            ret.pythonType(columnSchema.getPythonType());
+        }
+        if (columnSchema.hasElementType()) {
+            ret.elementType(WalManager.parseColumnSchema(columnSchema.getElementType()));
+        }
+        if (columnSchema.getAttributesCount() > 0) {
+            ret.attributes(columnSchema.getAttributesList().stream()
+                    .map(WalManager::parseColumnSchema)
+                    .collect(Collectors.toList()));
+        }
+        return ret.build();
+    }
+
+    public static Wal.TableSchema.Builder convertTableSchema(TableSchema schema) {
+        var builder = Wal.TableSchema.newBuilder();
+        builder.setKeyColumn(schema.getKeyColumn());
+        for (var col : schema.getColumnSchemas()) {
+            builder.addColumns(WalManager.convertColumnSchema(col));
+        }
+        return builder;
+    }
+
+    public static Wal.ColumnSchema.Builder convertColumnSchema(ColumnSchema schema) {
+        return WalManager.newColumnSchema(schema.getIndex(), schema.getName(), schema.getType());
+    }
+
+    private static Wal.ColumnSchema.Builder newColumnSchema(
+            int columnIndex, String columnName, ColumnType columnType) {
+        var ret = Wal.ColumnSchema.newBuilder()
+                .setColumnIndex(columnIndex)
+                .setColumnName(columnName)
+                .setColumnType(columnType.getTypeName());
+        if (columnType instanceof ColumnTypeList) {
+            ret.setElementType(
+                    WalManager.newColumnSchema(0, "", ((ColumnTypeList) columnType).getElementType()));
+        } else if (columnType instanceof ColumnTypeObject) {
+            ret.setPythonType(((ColumnTypeObject) columnType).getPythonType());
+            ret.addAllAttributes(((ColumnTypeObject) columnType).getAttributes().entrySet().stream()
+                    .map(entry -> WalManager.newColumnSchema(0, entry.getKey(), entry.getValue()).build())
+                    .collect(Collectors.toList()));
+        }
+        return ret;
     }
 
     private enum PopulationStatus {

@@ -16,19 +16,26 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 @ToString
 @EqualsAndHashCode
+@Slf4j
 public class TableSchema {
 
     @Getter
@@ -36,6 +43,7 @@ public class TableSchema {
     @Getter
     private final ColumnType keyColumnType;
     private final Map<String, ColumnSchema> columnSchemaMap;
+    private final Map<Integer, ColumnSchema> columnSchemaIndexMap;
     private int maxColumnIndex;
 
     public TableSchema(@NonNull TableSchemaDesc schema) {
@@ -56,6 +64,8 @@ public class TableSchema {
                         "duplicate column name " + col.getName());
             }
         }
+        this.columnSchemaIndexMap = this.columnSchemaMap.values().stream()
+                .collect(Collectors.toMap(ColumnSchema::getIndex, Function.identity()));
         var keyColumnSchema = this.columnSchemaMap.get(keyColumn);
         if (keyColumnSchema == null) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
@@ -72,15 +82,51 @@ public class TableSchema {
         }
     }
 
+
     public TableSchema(@NonNull TableSchema schema) {
         this.keyColumn = schema.keyColumn;
         this.keyColumnType = schema.keyColumnType;
         this.columnSchemaMap = new HashMap<>(schema.columnSchemaMap);
+        this.columnSchemaIndexMap = new HashMap<>(schema.columnSchemaIndexMap);
         this.maxColumnIndex = schema.maxColumnIndex;
+    }
+
+
+    private TableSchema(@NonNull Wal.TableSchema schema) {
+        this.keyColumn = schema.getKeyColumn();
+        this.columnSchemaMap = schema.getColumnsList().stream()
+                .map(ColumnSchema::new)
+                .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
+        this.columnSchemaIndexMap = this.columnSchemaMap.values().stream()
+                .collect(Collectors.toMap(ColumnSchema::getIndex, Function.identity()));
+        this.keyColumnType = this.columnSchemaMap.get(keyColumn).getType();
+        this.maxColumnIndex = this.columnSchemaIndexMap.keySet().stream().mapToInt(v -> v).max().orElse(-1) + 1;
+    }
+
+    public static TableSchema fromJsonString(String schemaStr) {
+        var schemaBuilder = Wal.TableSchema.newBuilder();
+        try {
+            JsonFormat.parser().merge(schemaStr, schemaBuilder);
+        } catch (InvalidProtocolBufferException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to parse schema", e);
+        }
+        return new TableSchema(schemaBuilder.build());
+    }
+
+    public String toJsonString() {
+        try {
+            return JsonFormat.printer().print(WalManager.convertTableSchema(this));
+        } catch (InvalidProtocolBufferException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to print proto", e);
+        }
     }
 
     public ColumnSchema getColumnSchemaByName(@NonNull String name) {
         return this.columnSchemaMap.get(name);
+    }
+
+    public ColumnSchema getColumnSchemaByIndex(int index) {
+        return this.columnSchemaIndexMap.get(index);
     }
 
     public List<ColumnSchema> getColumnSchemas() {
@@ -113,6 +159,9 @@ public class TableSchema {
             }
         }
         this.columnSchemaMap.putAll(columnSchemaMap);
+        for (var col : columnSchemaMap.values()) {
+            this.columnSchemaIndexMap.put(col.getIndex(), col);
+        }
         this.maxColumnIndex = columnIndex;
         return List.copyOf(columnSchemaMap.values());
     }

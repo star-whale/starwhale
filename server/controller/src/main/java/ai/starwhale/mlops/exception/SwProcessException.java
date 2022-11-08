@@ -37,6 +37,12 @@ public class SwProcessException extends StarwhaleException {
         this.tip = PREFIX_TIP + errorType.tipSubject + "\n" + tip;
     }
 
+    public SwProcessException(ErrorType errorType, String tip, Throwable cause) {
+        super(PREFIX_TIP + errorType.tipSubject + "\n" + tip, cause);
+        this.code = PREFIX_CODE + errorType.tipSubject;
+        this.tip = PREFIX_TIP + errorType.tipSubject + "\n" + tip;
+    }
+
     @Override
     public String getCode() {
         return this.code;
