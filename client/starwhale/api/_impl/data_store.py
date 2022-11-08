@@ -10,7 +10,7 @@ import pathlib
 import binascii
 import importlib
 import threading
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
 
@@ -57,7 +57,7 @@ def _check_move(src: str, dest: str) -> bool:
             return False
 
 
-class SwType(ABC):
+class SwType(metaclass=ABCMeta):
     def __init__(self, name: str, pa_type: pa.DataType) -> None:
         self.name = name
         self.pa_type = pa_type
