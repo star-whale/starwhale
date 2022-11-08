@@ -18,6 +18,7 @@ from starwhale.consts import (
 from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.api._impl.data_store import SwObject
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -270,7 +271,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     __repr__ = __str__
 
 
-class Binary(BaseArtifact):
+class Binary(BaseArtifact, SwObject):
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -377,7 +378,7 @@ class Video(BaseArtifact):
             raise NoSupportError(f"Video type: {self.mime_type}")
 
 
-class ClassLabel(ASDictMixin):
+class ClassLabel(ASDictMixin, SwObject):
     def __init__(self, names: t.List[t.Union[int, float, str]]) -> None:
         self.type = "class_label"
         self.names = names
@@ -396,7 +397,7 @@ class ClassLabel(ASDictMixin):
 
 
 # TODO: support other bounding box format
-class BoundingBox(ASDictMixin):
+class BoundingBox(ASDictMixin, SwObject):
     def __init__(self, x: float, y: float, width: float, height: float) -> None:
         self.type = "bounding_box"
         self.x = x
@@ -413,7 +414,7 @@ class BoundingBox(ASDictMixin):
     __repr__ = __str__
 
 
-class Text(BaseArtifact):
+class Text(BaseArtifact, SwObject):
     DEFAULT_ENCODING = "utf-8"
 
     def __init__(self, content: str, encoding: str = DEFAULT_ENCODING) -> None:
@@ -436,7 +437,7 @@ class Text(BaseArtifact):
 
 
 # https://cocodataset.org/#format-data
-class COCOObjectAnnotation(ASDictMixin):
+class COCOObjectAnnotation(ASDictMixin, SwObject):
     def __init__(
         self,
         id: int,
@@ -465,7 +466,7 @@ class COCOObjectAnnotation(ASDictMixin):
         # TODO: iscrowd=0 -> polygons, iscrowd=1 -> RLE validate
 
 
-class Link(ASDictMixin):
+class Link(ASDictMixin, SwObject):
     def __init__(
         self,
         uri: str,
