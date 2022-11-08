@@ -17,6 +17,9 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -24,13 +27,15 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class JobManager {
+public class JobManager implements BundleAccessor, RecoverAccessor {
 
     private final JobMapper jobMapper;
     private final IdConvertor idConvertor;
@@ -70,5 +75,35 @@ public class JobManager {
         } else {
             return Job.builder().uuid(jobUrl).build();
         }
+    }
+
+    @Override
+    public BundleEntity findById(Long id) {
+        return jobMapper.findJobById(id);
+    }
+
+    @Override
+    public BundleEntity findByName(String name, Long projectId) {
+        return jobMapper.findJobByUuid(name);
+    }
+
+    @Override
+    public BundleEntity findDeletedBundleById(Long id) {
+        return jobMapper.findJobById(id);
+    }
+
+    @Override
+    public List<? extends BundleEntity> listDeletedBundlesByName(String name, Long projectId) {
+        List<JobEntity> list = new ArrayList<>();
+        JobEntity job = jobMapper.findJobByUuid(name);
+        if (job != null) {
+            list.add(job);
+        }
+        return list;
+    }
+
+    @Override
+    public Boolean recover(Long id) {
+        return jobMapper.recoverJob(id) > 0;
     }
 }

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -35,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobEntity extends BaseEntity {
+public class JobEntity extends BaseEntity implements BundleEntity {
 
     private Long id;
 
@@ -75,4 +76,9 @@ public class JobEntity extends BaseEntity {
     private String resourcePool;
 
     private String stepSpec;
+
+    @Override
+    public String getName() {
+        return jobUuid;
+    }
 }

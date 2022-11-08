@@ -18,15 +18,25 @@ package ai.starwhale.mlops.common.util;
 
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TagAction.Action;
+import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import cn.hutool.core.util.StrUtil;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class TagUtil {
 
     public static final String SEPARATOR = ",";
 
+    public static final String ALIAS_REGEX = "^v\\d*$";
+
+    public static final Pattern ALIAS_PATTERN = Pattern.compile(ALIAS_REGEX);
+
     public static String getTags(TagAction tagAction, String originTags) {
+        if (!checkTags(tagAction.getTags())) {
+            throw new TagException("Invalid alias or tag.");
+        }
         if (tagAction.getAction() == Action.ADD) {
             return TagUtil.addTags(tagAction.getTags(), originTags);
         } else if (tagAction.getAction() == Action.REMOVE) {
@@ -54,12 +64,30 @@ public class TagUtil {
         return toString(set);
     }
 
+    private static boolean checkTags(String tags) {
+        if (StrUtil.isEmpty(tags)) {
+            return true;
+        }
+        List<String> splits = StrUtil.split(tags, SEPARATOR);
+        for (String split : splits) {
+            if (ALIAS_PATTERN.matcher(split).matches()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static Set<String> toSet(String tags) {
+        List<String> splits = StrUtil.split(tags, SEPARATOR);
+        for (String split : splits) {
+            if (ALIAS_PATTERN.matcher(split).matches()) {
+                throw new TagException("Invalid alias or tag.");
+            }
+        }
         return new LinkedHashSet<>(StrUtil.split(tags, SEPARATOR));
     }
 
     private static String toString(Set<String> set) {
         return StrUtil.join(SEPARATOR, set);
     }
-
 }

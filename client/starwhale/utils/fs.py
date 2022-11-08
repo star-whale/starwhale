@@ -165,6 +165,9 @@ def move_dir(src: Path, dest: Path, force: bool = False) -> t.Tuple[bool, str]:
 
 
 def extract_tar(tar_path: Path, dest_dir: Path, force: bool = False) -> None:
+    if not tar_path.exists():
+        raise NotFoundError(tar_path)
+
     if dest_dir.exists() and not force:
         raise ExistedError(str(dest_dir))
 
@@ -172,6 +175,9 @@ def extract_tar(tar_path: Path, dest_dir: Path, force: bool = False) -> None:
     ensure_dir(dest_dir)
 
     with tarfile.open(tar_path, "r") as tar:
+        for member in tar.getmembers():
+            if not is_within_dir(dest_dir, dest_dir / member.name):
+                raise Exception("Attempted path traversal in tar file")
         tar.extractall(path=str(dest_dir.absolute()))
 
 

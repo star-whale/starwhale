@@ -44,7 +44,6 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -61,6 +60,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -98,6 +98,7 @@ public class RuntimeServiceTest {
     private UserService userService;
     private HotJobHolder jobHolder;
     private ObjectMapper yamlMapper;
+    private TrashService trashService;
     @Setter
     private BundleManager bundleManager;
 
@@ -145,6 +146,8 @@ public class RuntimeServiceTest {
 
         yamlMapper = new ObjectMapper(new YAMLFactory());
 
+        trashService = mock(TrashService.class);
+
         service = new RuntimeService(
                 runtimeMapper,
                 runtimeVersionMapper,
@@ -159,8 +162,8 @@ public class RuntimeServiceTest {
                 jobHolder,
                 userService,
                 new IdConvertor(),
-                new VersionAliasConvertor()
-        );
+                new VersionAliasConvertor(),
+                trashService);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -202,33 +205,15 @@ public class RuntimeServiceTest {
     public void testDeleteRuntime() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("r1").build());
+            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("1").build());
             assertThat(res, is(true));
 
-            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("r2").build());
-            assertThat(res, is(false));
-        }
-    }
-
-    @Test
-    public void testRecoverRuntime() {
-        RecoverManager recoverManager = mock(RecoverManager.class);
-        given(recoverManager.recoverBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
-        ))).willReturn(true);
-        try (var mock = mockStatic(RecoverManager.class)) {
-            mock.when(() -> RecoverManager.create(any(), any(), any()))
-                    .thenReturn(recoverManager);
-
-            var res = service.recoverRuntime("p1", "r1");
-            assertThat(res, is(true));
-
-            res = service.recoverRuntime("p1", "r2");
+            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("2").build());
             assertThat(res, is(false));
         }
     }

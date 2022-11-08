@@ -25,12 +25,17 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSErrorCode;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.AbortMultipartUploadRequest;
+import com.aliyun.oss.model.CompleteMultipartUploadRequest;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
+import com.aliyun.oss.model.InitiateMultipartUploadRequest;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PartETag;
+import com.aliyun.oss.model.UploadPartRequest;
 import com.google.common.collect.Streams;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,12 +46,15 @@ import java.util.stream.Stream;
 
 public class StorageAccessServiceAliyun implements StorageAccessService {
 
-    final String bucket;
+    private final String bucket;
 
-    final OSS ossClient;
+    private final long partSize;
+
+    private final OSS ossClient;
 
     public StorageAccessServiceAliyun(S3Config s3Config) {
         this.bucket = s3Config.getBucket();
+        this.partSize = s3Config.getHugeFilePartSize();
         this.ossClient = new OSSClientBuilder()
                 .build(s3Config.getEndpoint(), s3Config.getAccessKey(), s3Config.getSecretKey());
     }
@@ -74,6 +82,37 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     @Override
     public void put(String path, byte[] body) throws IOException {
         this.ossClient.putObject(this.bucket, path, new ByteArrayInputStream(body));
+    }
+
+    @Override
+    public void put(String path, InputStream inputStream) throws IOException {
+        var uploadId = this.ossClient.initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, path))
+                .getUploadId();
+        try {
+            var etagList = new ArrayList<PartETag>();
+            for (int i = 1; ; ++i) {
+                var data = inputStream.readNBytes((int) this.partSize);
+                if (data.length == 0) {
+                    break;
+                }
+                var resp = this.ossClient.uploadPart(new UploadPartRequest(
+                        this.bucket,
+                        path,
+                        uploadId,
+                        i,
+                        new ByteArrayInputStream(data),
+                        data.length));
+                etagList.add(resp.getPartETag());
+                if (data.length < this.partSize) {
+                    break;
+                }
+            }
+            this.ossClient.completeMultipartUpload(
+                    new CompleteMultipartUploadRequest(this.bucket, path, uploadId, etagList));
+        } catch (Throwable t) {
+            this.ossClient.abortMultipartUpload(new AbortMultipartUploadRequest(this.bucket, path, uploadId));
+            throw new IOException(t);
+        }
     }
 
     @Override

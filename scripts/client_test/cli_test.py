@@ -49,7 +49,7 @@ class TestCli:
         print("building model...")
         _model_uri = f"{model_name}/version/latest"
         assert len(self.model.list()) == 0
-        assert self.model.build(workdir=model_workdir)
+        self.model.build(workdir=model_workdir)
         assert len(self.model.list()) == 1
         swmp = self.model.info(_model_uri)
         assert swmp
@@ -58,7 +58,7 @@ class TestCli:
         print("building dataset...")
         _ds_uri = f"{ds_name}/version/latest"
         assert len(self.dataset.list()) == 0
-        assert self.dataset.build(workdir=ds_workdir)
+        self.dataset.build(workdir=ds_workdir)
         assert len(self.dataset.list()) == 1
         swds = self.dataset.info(_ds_uri)
         assert swds
@@ -67,7 +67,7 @@ class TestCli:
         print("building runtime...")
         _rt_uri = f"{rt_name}/version/latest"
         assert len(self.runtime.list()) == 0
-        assert self.runtime.build(workdir=rt_workdir)
+        self.runtime.build(workdir=rt_workdir)
         assert len(self.runtime.list()) == 1
         swrt = self.runtime.info(_rt_uri)
         assert swrt

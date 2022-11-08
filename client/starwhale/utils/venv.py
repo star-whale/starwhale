@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 import typing as t
-import tarfile
 import platform
 import subprocess
 from pathlib import Path, PurePath, PosixPath
@@ -23,7 +22,7 @@ from starwhale.consts import (
     DEFAULT_CONDA_CHANNEL,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
 from starwhale.utils.error import (
     FormatError,
     ExistedError,
@@ -40,7 +39,6 @@ SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
 _DUMMY_FIELD = -1
 
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
-_DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
 _PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
 _PipReqT = t.Union[str, Path, PosixPath]
 
@@ -401,6 +399,7 @@ def conda_export(
 def conda_env_update(
     env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
 ) -> None:
+    target_env = Path(target_env).resolve()
     cmd = [
         get_conda_bin(),
         "env",
@@ -477,6 +476,16 @@ def _render_sw_activate(
         console.print(" :compass: run cmd:  ")
         console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
         console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
+
+
+def get_conda_prefix_path(name: str = "") -> str:
+    cmd = [get_conda_bin(), "run"]
+    if name:
+        cmd += ["--name", name]
+
+    cmd += ["printenv", "CONDA_PREFIX"]
+    output = subprocess.check_output(cmd)
+    return output.decode().strip()
 
 
 def get_conda_bin() -> str:
@@ -602,22 +611,21 @@ def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
 def create_python_env(
     mode: str,
     name: str,
-    workdir: Path,
+    isolated_env_dir: Path,
     python_version: str,
     force: bool = False,
-) -> str:
+) -> None:
     if mode == PythonRunEnv.VENV:
-        venvdir = workdir / ".venv"
-        if venvdir.exists() and not force:
-            raise ExistedError(str(venvdir))
+        if isolated_env_dir.exists() and not force:
+            raise ExistedError(str(isolated_env_dir))
 
-        logger.info(f"create venv @ {venvdir}...")
-        venv_setup(venvdir, python_version=python_version, prompt=name)
-        return str(venvdir.absolute())
+        logger.info(f"create venv @ {isolated_env_dir}...")
+        venv_setup(isolated_env_dir, python_version=python_version, prompt=name)
     elif mode == PythonRunEnv.CONDA:
-        logger.info(f"create conda {name}:{workdir}, use python {python_version}...")
-        conda_setup(python_version, name=name)
-        return name
+        logger.info(
+            f"create conda {name}:{isolated_env_dir}, use python {python_version}..."
+        )
+        conda_setup(python_version, prefix=isolated_env_dir)
     else:
         raise NoSupportError(mode)
 
@@ -790,16 +798,7 @@ def extract_conda_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) 
     export_dir = workdir / "export"
     export_tar_fpath = export_dir / EnvTarType.CONDA
     conda_dir = isolated_env_dir or export_dir / "conda"
-
-    if not export_tar_fpath.exists():
-        raise NotFoundError(f"conda pkg extract: {export_tar_fpath}")
-
-    empty_dir(conda_dir)
-    ensure_dir(conda_dir)
-
-    logger.info(f"extract {export_tar_fpath} ...")
-    with tarfile.open(str(export_tar_fpath)) as f:
-        f.extractall(str(conda_dir))
+    extract_tar(export_tar_fpath, conda_dir, force=True)
     # TODO: conda local bundle restore wheel?
 
 
@@ -807,15 +806,7 @@ def extract_venv_pkg(workdir: Path, isolated_env_dir: t.Optional[Path] = None) -
     export_dir = workdir / "export"
     venv_dir = isolated_env_dir or export_dir / "venv"
     export_tar_fpath = export_dir / EnvTarType.VENV
-
-    if not export_tar_fpath.exists():
-        raise NotFoundError(f"venv pkg extract: {export_tar_fpath}")
-
-    empty_dir(venv_dir)
-    ensure_dir(venv_dir)
-
-    with tarfile.open(str(export_tar_fpath)) as f:
-        f.extractall(str(venv_dir))
+    extract_tar(export_tar_fpath, venv_dir, force=True)
 
 
 def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:

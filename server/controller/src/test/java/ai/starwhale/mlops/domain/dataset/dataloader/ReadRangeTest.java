@@ -38,8 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ReadRangeTest {
-    private static DataReadManager dataReadManager;
-
+    private static DataLoader dataLoader;
     private static DataStoreIndexProvider dataRangeProvider;
     private static DataStore dataStore;
     private static SessionDao sessionDao;
@@ -51,7 +50,8 @@ public class ReadRangeTest {
         sessionDao = mock(SessionDao.class);
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
-        dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 1);
+        DataReadManager dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 1);
+        dataLoader = new DataLoader(dataReadManager);
     }
 
     @Test
@@ -209,7 +209,7 @@ public class ReadRangeTest {
                 "0000-008"
         ));
 
-        var dataRange = dataReadManager.next(request);
+        var dataRange = dataLoader.next(request);
 
         assertThat("get data range", dataRange,
                     is(DataReadLog.builder()
@@ -219,7 +219,6 @@ public class ReadRangeTest {
                         .start("0000-000").startInclusive(true)
                         .end("0000-001").endInclusive(true)
                         .size(2)
-                        .assignedNum(1)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()
                     ));
@@ -257,7 +256,7 @@ public class ReadRangeTest {
                     .assignedNum(0)
                     .build());
 
-        dataRange = dataReadManager.next(request);
+        dataRange = dataLoader.next(request);
 
         assertThat("get data range", dataRange,
                 is(DataReadLog.builder()
@@ -267,7 +266,6 @@ public class ReadRangeTest {
                     .start("0000-002").startInclusive(true)
                     .end("0000-003").endInclusive(true)
                     .size(2)
-                    .assignedNum(1)
                     .status(Status.DataStatus.UNPROCESSED)
                     .build()));
 

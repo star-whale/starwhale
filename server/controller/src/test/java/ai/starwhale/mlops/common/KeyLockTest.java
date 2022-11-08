@@ -75,12 +75,10 @@ public class KeyLockTest {
     public void testUseSameKeysLock() {
         KeyLock<Object> lock = new KeyLock<>(key1);
         lock.lock();
-        AtomicBoolean anotherThreadWasExecutedBeforeLock = new AtomicBoolean(false);
         AtomicBoolean anotherThreadWasUnExecutedAfterLock = new AtomicBoolean(false);
         try {
             Future<?> x = executor.submit(() -> {
                 KeyLock<Object> anotherLock = new KeyLock<>(key1);
-                anotherThreadWasExecutedBeforeLock.set(true);
                 anotherLock.lock();
                 try {
                     anotherThreadWasUnExecutedAfterLock.set(true);
@@ -92,7 +90,6 @@ public class KeyLockTest {
             Assertions.assertThrows(TimeoutException.class, () -> x.get(1000, TimeUnit.MICROSECONDS));
 
         } finally {
-            Assertions.assertTrue(anotherThreadWasExecutedBeforeLock.get());
             Assertions.assertFalse(anotherThreadWasUnExecutedAfterLock.get());
             lock.unlock();
         }

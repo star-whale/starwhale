@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.dataset.dataloader.mapper;
 
 import ai.starwhale.mlops.domain.dataset.dataloader.po.DataReadLogEntity;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.apache.ibatis.annotations.Insert;
@@ -57,9 +56,9 @@ public interface DataReadLogMapper {
 
     @Update("UPDATE dataset_read_log SET "
             + "consumer_id=#{consumerId}, "
-            + "status=#{status}, assigned_time=CURRENT_TIMESTAMP(), assigned_num=#{assignedNum} "
-            + "WHERE id =#{id}")
-    int updateToAssignedById(DataReadLogEntity dataBlock);
+            + "status=#{status}, assigned_time=CURRENT_TIMESTAMP(), assigned_num=assigned_num+1 "
+            + "WHERE id=#{id}")
+    int updateToAssigned(DataReadLogEntity dataBlock);
 
     class UpdateToProcessedSqlProvider {
         public static String updateToProcessedSql(String sessionId,
@@ -110,6 +109,9 @@ public interface DataReadLogMapper {
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and status=#{status} ")
     List<DataReadLogEntity> selectByStatus(String sessionId, String status);
+
+    @Select("SELECT * from dataset_read_log WHERE id=#{id} ")
+    DataReadLogEntity selectOne(Long id);
 
     @Select("SELECT sum(assigned_num) from dataset_read_log "
             + "WHERE session_id=#{sessionId} ")
