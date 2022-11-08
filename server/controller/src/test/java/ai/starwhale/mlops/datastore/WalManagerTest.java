@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.datastore;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,11 +31,10 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -48,13 +47,9 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 public class WalManagerTest {
-
-    @TempDir
-    private File rootDir;
 
     private SwBufferManager bufferManager;
 
@@ -65,8 +60,11 @@ public class WalManagerTest {
     @BeforeEach
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new ObjectStore(this.bufferManager,
-                new StorageAccessServiceFile(this.rootDir.getAbsolutePath(), "serviceProvider"));
+        this.objectStore = new ObjectStore(this.bufferManager, new StorageAccessServiceMemory());
+        this.createInstance();
+    }
+
+    private void createInstance() {
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
     }
 
@@ -129,7 +127,7 @@ public class WalManagerTest {
 
     @Test
     public void testSimple() throws IOException, InterruptedException {
-        var entries = List.of(
+        var builders = List.of(
                 Wal.WalEntry.newBuilder()
                         .setEntryType(Wal.WalEntry.Type.UPDATE)
                         .setTableName("t1")
@@ -140,8 +138,7 @@ public class WalManagerTest {
                                 Map.of(1, "a", 2, 1),
                                 Map.of(1, "b", 2, 2),
                                 Map.of(1, "c", 2, 3)
-                        )))
-                        .build(),
+                        ))),
                 Wal.WalEntry.newBuilder()
                         .setEntryType(Wal.WalEntry.Type.UPDATE)
                         .setTableName("t2")
@@ -151,8 +148,7 @@ public class WalManagerTest {
                                 Map.of(1, "a", 3, 1),
                                 Map.of(1, "b", 3, 2),
                                 Map.of(1, "c", 3, 3)
-                        )))
-                        .build(),
+                        ))),
                 Wal.WalEntry.newBuilder()
                         .setEntryType(Wal.WalEntry.Type.UPDATE)
                         .setTableName("t2")
@@ -162,8 +158,7 @@ public class WalManagerTest {
                                 Map.of(1, "a", 4, "a".repeat(100)),
                                 Map.of(1, "b", 4, "b".repeat(100)),
                                 Map.of(1, "c", 4, "c".repeat(100))
-                        )))
-                        .build(),
+                        ))),
                 Wal.WalEntry.newBuilder()
                         .setEntryType(Wal.WalEntry.Type.UPDATE)
                         .setTableName("t2")
@@ -173,59 +168,60 @@ public class WalManagerTest {
                                 Map.of(1, "a", 4, "a".repeat(10)),
                                 Map.of(1, "b", 4, "b".repeat(10)),
                                 Map.of(1, "c", 4, "c".repeat(10))
-                        )))
-                        .build());
-        this.walManager.append(entries.get(0));
-        this.walManager.append(entries.get(1));
+                        ))));
+        assertThat(this.walManager.append(builders.get(0)), is(1L));
+        assertThat(this.walManager.append(builders.get(1)), is(2L));
         Thread.sleep(50);
-        this.walManager.append(entries.get(2));
-        Thread.sleep(50);
-        this.walManager.append(entries.get(3));
+        assertThat(this.walManager.append(builders.get(2)), is(3L));
+        Thread.sleep(1000);
+        assertThat(this.walManager.append(builders.get(3)), is(4L));
         this.walManager.terminate();
         assertThat(ImmutableList.copyOf(this.objectStore.list("")), is(List.of("test/wal.log.0", "test/wal.log.1")));
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(entries));
+        this.createInstance();
+        assertThat(ImmutableList.copyOf(this.walManager.readAll()),
+                is(builders.stream().map(Wal.WalEntry.Builder::build).collect(Collectors.toList())));
+        assertThat(this.walManager.append(builders.get(0)), is(5L));
     }
 
     @Test
-    public void testMany() throws IOException {
-        List<Wal.WalEntry> entries = new ArrayList<>();
-        entries.add(Wal.WalEntry.newBuilder()
+    public void testMany() {
+        List<Wal.WalEntry.Builder> builders = new ArrayList<>();
+        builders.add(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
-                .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "STRING"))))
-                .build());
+                .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "STRING")))));
         for (int i = 0; i < 50000; ++i) {
-            entries.add(Wal.WalEntry.newBuilder()
+            builders.add(Wal.WalEntry.newBuilder()
                     .setEntryType(Wal.WalEntry.Type.UPDATE)
                     .setTableName("t")
-                    .addAllRecords(this.createRecords(List.of(Map.of(1, "" + i))))
-                    .build());
+                    .addAllRecords(this.createRecords(List.of(Map.of(1, "" + i)))));
         }
-        for (var entry : entries) {
-            this.walManager.append(entry);
+        for (var builder : builders) {
+            this.walManager.append(builder);
         }
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(entries));
+        this.createInstance();
+        assertThat(ImmutableList.copyOf(this.walManager.readAll()),
+                is(builders.stream().map(Wal.WalEntry.Builder::build).collect(Collectors.toList())));
     }
 
     @Test
-    public void testHugeEntry() throws IOException {
-        var entry = Wal.WalEntry.newBuilder()
+    public void testHugeEntry() {
+        var schema = this.createTableSchema("k", List.of(Triple.of(1, "k", "INT32")));
+        var builder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
-                .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "INT32"))))
+                .setTableSchema(schema)
                 .addAllRecords(this.createRecords(IntStream.range(1, 5000)
                         .mapToObj(i -> Map.of(1, (Object) i))
-                        .collect(Collectors.toList())))
-                .build();
-        this.walManager.append(entry);
+                        .collect(Collectors.toList())));
+
+        var id = this.walManager.append(builder);
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
+        this.createInstance();
         var entries = ImmutableList.copyOf(this.walManager.readAll());
-        assertThat(entries.size(), greaterThan(1));
-        assertThat(entries.get(0).getTableSchema(), is(entry.getTableSchema()));
+        assertThat(entries.size(), is((int) id));
+        assertThat(entries.get(0).getTableSchema(), is(schema));
         int index = 1;
         for (var e : entries) {
             for (var r : e.getRecordsList()) {
@@ -247,8 +243,7 @@ public class WalManagerTest {
                 .setTableSchema(this.createTableSchema("k",
                         IntStream.range(1, 5000)
                                 .mapToObj(i -> Triple.of(1, "" + i, "INT32"))
-                                .collect(Collectors.toList())))
-                .build()));
+                                .collect(Collectors.toList())))));
     }
 
     @Test
@@ -258,21 +253,22 @@ public class WalManagerTest {
                 .setTableName("t")
                 .addAllRecords(this.createRecords(List.of(IntStream.range(1, 5000)
                         .boxed()
-                        .collect(Collectors.toMap(i -> i, i -> i)))))
-                .build()));
+                        .collect(Collectors.toMap(i -> i, i -> i)))))));
     }
 
     @Test
-    public void testAppendSplitSizeCalculation() throws IOException {
-        var builder = Wal.WalEntry.newBuilder()
+    public void testAppendSplitSizeCalculation() {
+        var entry1 = Wal.WalEntry.newBuilder()
+                .setId(1)
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
                 .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "INT32"))))
                 .addAllRecords(this.createRecords(IntStream.range(1, 200)
                         .mapToObj(i -> Map.of(1, (Object) i))
-                        .collect(Collectors.toList())));
-        var entry1 = builder.build();
+                        .collect(Collectors.toList())))
+                .build();
         var entry2 = Wal.WalEntry.newBuilder()
+                .setId(2)
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
                 .addAllRecords(this.createRecords(List.of(Map.of(1, 1))))
@@ -285,11 +281,46 @@ public class WalManagerTest {
                 "test/",
                 10,
                 3);
-        builder.addAllRecords(entry2.getRecordsList());
-        this.walManager.append(builder.build());
+        this.walManager.append(entry1.toBuilder().addAllRecords(entry2.getRecordsList()));
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
+        this.createInstance();
         assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(List.of(entry1, entry2)));
+    }
+
+    @Test
+    public void testRemoveLogFiles() throws Exception {
+        assertThat(this.walManager.append((Wal.WalEntry.newBuilder()
+                        .setEntryType(Wal.WalEntry.Type.UPDATE)
+                        .setTableName("t")
+                        .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "STRING")))))),
+                is(1L));
+        for (long i = 2; i <= 41; ++i) {
+            assertThat(this.walManager.append(Wal.WalEntry.newBuilder()
+                            .setEntryType(Wal.WalEntry.Type.UPDATE)
+                            .setTableName("t")
+                            .addAllRecords(this.createRecords(List.of(Map.of(1, "0".repeat(900) + i))))),
+                    is(i));
+        }
+        Thread.sleep(1000);
+        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+                is(IntStream.range(0, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        for (int i = -1; i <= 5; ++i) {
+            this.walManager.removeWalLogFiles(i);
+            assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+                    is(IntStream.range(0, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        }
+        this.walManager.removeWalLogFiles(6);
+        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+                is(IntStream.range(1, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        this.walManager.terminate();
+        this.createInstance();
+        //noinspection ResultOfMethodCallIgnored
+        ImmutableList.copyOf(walManager.readAll());
+        this.walManager.removeWalLogFiles(14);
+        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+                is(IntStream.range(3, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        this.walManager.removeWalLogFiles(100);
+        assertThat(ImmutableList.copyOf(this.objectStore.list("")), empty());
     }
 
     @Test
@@ -303,8 +334,7 @@ public class WalManagerTest {
         var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
-                .setTableName("t")
-                .build());
+                .setTableName("t"));
         Thread.sleep(1000);
         walManager.terminate();
         verify(objectStore, times(3)).put(eq("test/wal.log.0"), any());

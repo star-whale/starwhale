@@ -41,4 +41,5 @@ message WalEntry {
   string table_name = 2;
   TableSchema table_schema = 3;
   repeated Record records = 4;
+  int64 id = 5;
 }

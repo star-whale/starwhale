@@ -16,8 +16,10 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.collection.CollectionUtil;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -31,23 +33,46 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.unit.DataSize;
 
 @Slf4j
 @Component
 public class DataStore {
 
     private final WalManager walManager;
+    private final StorageAccessService storageAccessService;
 
     private final Map<String, MemoryTable> tables = new ConcurrentHashMap<>();
+    private final String dataRootPath;
+    private final ParquetConfig parquetConfig;
 
-    public DataStore(WalManager walManager) {
+    public DataStore(WalManager walManager,
+            StorageAccessService storageAccessService,
+            @Value("${sw.datastore.dataRootPath:}") String dataRootPath,
+            @Value("${sw.datastore.parquet.compressionCodec:SNAPPY}") String compressionCodec,
+            @Value("${sw.datastore.parquet.rowGroupSize:128MB}") String rowGroupSize,
+            @Value("${sw.datastore.parquet.pageSize:1MB}") String pageSize,
+            @Value("${sw.datastore.parquet.pageRowCountLimit:20000}") int pageRowCountLimit) {
+        this.storageAccessService = storageAccessService;
+        this.dataRootPath = dataRootPath;
+        this.parquetConfig = new ParquetConfig();
+        this.parquetConfig.setCompressionCodec(CompressionCodec.valueOf(compressionCodec));
+        this.parquetConfig.setRowGroupSize(DataSize.parse(rowGroupSize).toBytes());
+        this.parquetConfig.setPageSize((int) DataSize.parse(pageSize).toBytes());
+        this.parquetConfig.setPageRowCountLimit(pageRowCountLimit);
         this.walManager = walManager;
         var it = this.walManager.readAll();
         while (it.hasNext()) {
             var entry = it.next();
             var tableName = entry.getTableName();
-            var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
+            var table = this.tables.computeIfAbsent(tableName,
+                    k -> new MemoryTableImpl(tableName,
+                            this.walManager,
+                            this.storageAccessService,
+                            this.dataRootPath,
+                            this.parquetConfig));
             table.updateFromWal(entry);
         }
     }
@@ -63,7 +88,12 @@ public class DataStore {
     public void update(String tableName,
             TableSchemaDesc schema,
             List<Map<String, Object>> records) {
-        var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
+        var table = this.tables.computeIfAbsent(tableName,
+                k -> new MemoryTableImpl(tableName,
+                        this.walManager,
+                        this.storageAccessService,
+                        this.dataRootPath,
+                        this.parquetConfig));
         table.lock();
         try {
             table.update(schema, records);
@@ -263,7 +293,7 @@ public class DataStore {
                 log.warn("not found table:{}!", tableName);
             } else {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                    "invalid table name " + tableName);
+                        "invalid table name " + tableName);
             }
         }
         return table;
