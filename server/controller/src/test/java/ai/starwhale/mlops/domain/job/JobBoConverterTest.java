@@ -53,6 +53,7 @@ import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -81,6 +82,7 @@ public class JobBoConverterTest {
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
                 .resourcePool("rp")
+                .owner(UserEntity.builder().userName("naf").id(1232L).build())
                 .build();
         JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
         when(jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
@@ -162,6 +164,9 @@ public class JobBoConverterTest {
         Assertions.assertEquals(1L, job.getCurrentStep().getId());
         Assertions.assertEquals(2L, job.getCurrentStep().getNextStep().getId());
         Assertions.assertEquals(2, job.getSteps().size());
+
+        Assertions.assertEquals(jobEntity.getOwner().getId(), job.getOwner().getId());
+        Assertions.assertEquals(jobEntity.getOwner().getUserName(), job.getOwner().getName());
     }
 
 }

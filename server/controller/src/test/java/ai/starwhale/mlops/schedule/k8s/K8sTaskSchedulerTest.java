@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
-import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -87,8 +87,8 @@ public class K8sTaskSchedulerTest {
                         .region(region)
                         .endpoint(endpoint)
                         .build());
-        JobTokenConfig jobTokenConfig = mock(JobTokenConfig.class);
-        when(jobTokenConfig.getToken()).thenReturn("tt");
+        TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
+        when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_swmp"))).thenReturn(Stream.of("path_swmp"));
@@ -96,7 +96,7 @@ public class K8sTaskSchedulerTest {
         when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
         K8sTaskScheduler scheduler = new K8sTaskScheduler(k8sClient,
-                jobTokenConfig,
+                taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
                 null,
@@ -129,7 +129,7 @@ public class K8sTaskSchedulerTest {
         var k8sJobTemplate = new K8sJobTemplate("", "");
         var scheduler = new K8sTaskScheduler(
                 client,
-                mock(JobTokenConfig.class),
+                mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
                 null,

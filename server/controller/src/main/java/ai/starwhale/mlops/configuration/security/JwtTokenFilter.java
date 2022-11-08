@@ -19,14 +19,12 @@ package ai.starwhale.mlops.configuration.security;
 import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
 import ai.starwhale.mlops.api.protocol.Code;
-import ai.starwhale.mlops.common.util.HttpUtil;
-import ai.starwhale.mlops.common.util.HttpUtil.Resources;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import cn.hutool.core.util.StrUtil;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
 import java.util.List;
@@ -50,11 +48,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
 
+    private final List<JwtClaimValidator> jwtClaimValidators;
+
     private static final String AUTH_HEADER = "Authorization";
 
-    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService) {
+    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService,
+            List<JwtClaimValidator> jwtClaimValidators) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
+        this.jwtClaimValidators = jwtClaimValidators;
     }
 
     @Override
@@ -73,13 +75,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
 
         String token = header.split(" ")[1].trim();
-        if (!jwtTokenUtil.validate(token)) {
+        Claims claims;
+        try {
+            claims = jwtTokenUtil.parseJwt(token);
+            jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
+        } catch (SwValidationException e) {
             error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
                     "JWT token is expired or invalid.");
             return;
         }
-
-        Claims claims = jwtTokenUtil.parseJwt(token);
 
         User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
         try {

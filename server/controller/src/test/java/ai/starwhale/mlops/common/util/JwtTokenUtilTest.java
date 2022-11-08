@@ -17,13 +17,14 @@
 package ai.starwhale.mlops.common.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import ai.starwhale.mlops.configuration.security.JwtProperties;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwValidationException;
 import io.jsonwebtoken.Claims;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,18 +48,16 @@ public class JwtTokenUtilTest {
         User guest = User.builder().id(2L).name("guest").build();
         String token1 = jwtTokenUtil.generateAccessToken(starwhale);
         String token2 = jwtTokenUtil.generateAccessToken(guest);
-        String expiredToken = jwtTokenUtil.generateAccessToken(starwhale, -60 * 1000L);
+        String expiredToken = jwtTokenUtil.generateAccessToken(starwhale, -60 * 1000L, Map.of());
 
         assertNotEquals(token1, token2);
         assertNotEquals(token1, expiredToken);
-        assertTrue(jwtTokenUtil.validate(token1));
-        assertTrue(jwtTokenUtil.validate(token2));
-        assertFalse(jwtTokenUtil.validate(expiredToken));
+        assertThrowsExactly(SwValidationException.class, () -> jwtTokenUtil.parseJwt(expiredToken));
 
-        assertFalse(jwtTokenUtil.validate(""));
-        assertFalse(jwtTokenUtil.validate(null));
-        assertFalse(jwtTokenUtil.validate(token1 + "1"));
-        assertFalse(jwtTokenUtil.validate(token2 + "b"));
+        assertThrowsExactly(SwValidationException.class, () -> jwtTokenUtil.parseJwt(""));
+        assertThrowsExactly(SwValidationException.class, () -> jwtTokenUtil.parseJwt(null));
+        assertThrowsExactly(SwValidationException.class, () -> jwtTokenUtil.parseJwt(token1 + "1"));
+        assertThrowsExactly(SwValidationException.class, () -> jwtTokenUtil.parseJwt(token2 + "b"));
 
         Claims claims1 = jwtTokenUtil.parseJwt(token1);
         Claims claims2 = jwtTokenUtil.parseJwt(token2);
@@ -66,6 +65,10 @@ public class JwtTokenUtilTest {
         assertEquals("1", jwtTokenUtil.getUserId(claims1));
         assertEquals("guest", jwtTokenUtil.getUsername(claims2));
         assertEquals("2", jwtTokenUtil.getUserId(claims2));
+
+    }
+
+    public void testWithClaims(){
 
     }
 }
