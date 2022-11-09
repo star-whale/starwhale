@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
@@ -64,7 +64,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     final RunTimeProperties runTimeProperties;
 
-    final JobTokenConfig jobTokenConfig;
+    final TaskTokenValidator taskTokenValidator;
 
     final K8sJobTemplate k8sJobTemplate;
     final ResourceEventHandler<V1Job> eventHandlerJob;
@@ -76,7 +76,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-                            JobTokenConfig jobTokenConfig,
+                            TaskTokenValidator taskTokenValidator,
                             RunTimeProperties runTimeProperties,
                             K8sJobTemplate k8sJobTemplate,
                             ResourceEventHandler<V1Job> eventHandlerJob,
@@ -87,7 +87,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                             @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
                             StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
-        this.jobTokenConfig = jobTokenConfig;
+        this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
@@ -186,7 +186,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         // datastore env
-        coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
+        coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
         coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());

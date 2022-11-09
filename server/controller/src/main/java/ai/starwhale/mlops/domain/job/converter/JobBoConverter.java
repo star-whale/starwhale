@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -147,6 +148,7 @@ public class JobBoConverter {
                 .outputDir(jobEntity.getResultOutputPath())
                 .uuid(jobEntity.getJobUuid())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
+                .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName()).build())
                 .build();
         return fillStepsAndTasks(job);
     }

@@ -21,7 +21,6 @@ sw:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starwhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
-    job-user-id: ${SW_JWT_JOB_USER_ID:1}
   dataset:
     load:
       batchSize: ${DATASET_CONSUMPTION_BATCH_SIZE:50}

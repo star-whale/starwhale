@@ -19,6 +19,7 @@ package ai.starwhale.mlops.configuration.security;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.domain.user.UserService;
+import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -57,6 +58,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Resource
     private JwtTokenUtil jwtTokenUtil;
 
+    @Resource
+    private List<JwtClaimValidator> jwtClaimValidators;
     @Resource
     private AccessDeniedHandler accessDeniedHandler;
 
@@ -116,8 +119,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         jwtLoginFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler);
         jwtLoginFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
 
-        JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtTokenUtil, userService);
-
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(userService);
 
         http.authenticationProvider(jwtAuthenticationProvider)
@@ -127,7 +128,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .formLogin()
                 .and()
                 .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class)
+                .addFilterAfter(new JwtTokenFilter(jwtTokenUtil, userService, jwtClaimValidators), JwtLoginFilter.class)
                 .addFilterBefore(projectDetectionFilter, JwtTokenFilter.class)
                 .addFilterBefore(contentCachingFilter, ProjectDetectionFilter.class)
         ;
