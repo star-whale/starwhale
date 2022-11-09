@@ -6,7 +6,22 @@ import torch
 from PIL import Image as PILImage
 from pycocotools import mask as coco_mask
 
-from starwhale import Image, MIMEType, BoundingBox, BuildExecutor, COCOObjectAnnotation
+from starwhale import (
+    Image,
+    MIMEType,
+    SwObject,
+    BoundingBox,
+    BuildExecutor,
+    COCOObjectAnnotation,
+)
+
+
+class ImageInfo(SwObject):
+    def __init__(self, index=0, height=0, width=0, name="") -> None:
+        self.index = index
+        self.height = height
+        self.width = width
+        self.name = name
 
 
 class PFPDatasetBuildExecutor(BuildExecutor):
@@ -19,16 +34,17 @@ class PFPDatasetBuildExecutor(BuildExecutor):
             mask_fpath = root_dir / "PedMasks" / f"{name}_mask.png"
             height, width = self._get_image_shape(data_fpath)
             coco_annotations = self._make_coco_annotations(mask_fpath, idx)
+            # TODO: use annotation link to store mask
             annotations = {
                 "mask": Image(
-                    mask_fpath,
+                    str(mask_fpath),
                     display_name=name,
                     mime_type=MIMEType.PNG,
                     shape=(height, width, 3),
                     as_mask=True,
                     mask_uri=name,
                 ).carry_raw_data(),
-                "image": {"id": idx, "height": height, "width": width, "name": name},
+                "image": ImageInfo(idx, height, width, name),
                 "object_nums": len(coco_annotations),
                 "annotations": coco_annotations,
             }

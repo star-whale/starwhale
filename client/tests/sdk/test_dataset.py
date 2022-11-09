@@ -7,17 +7,23 @@ import base64
 import struct
 import typing as t
 import threading
+from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
-import jsonlines
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale import Link, MIMEType, UserRawBuildExecutor
-from starwhale.consts import HTTPMethod, ENV_POD_NAME, OBJECT_STORE_DIRNAME
+from starwhale import UserRawBuildExecutor
+from starwhale.consts import (
+    HTTPMethod,
+    ENV_POD_NAME,
+    OBJECT_STORE_DIRNAME,
+    DEFAULT_MANIFEST_NAME,
+    ARCHIVED_SWDS_META_FNAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file, blake2b_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
@@ -28,12 +34,15 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.type import (
+    Link,
     Text,
     Audio,
     Image,
     Video,
     Binary,
+    MIMEType,
     ClassLabel,
     BoundingBox,
     ArtifactType,
@@ -42,6 +51,7 @@ from starwhale.core.dataset.type import (
     COCOObjectAnnotation,
 )
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.api._impl.data_store import Link as DataStoreRawLink
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
@@ -49,7 +59,6 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetRow,
     local_standalone_tdsc,
     get_dataset_consumption,
-    StandaloneTabularDataset,
 )
 from starwhale.api._impl.dataset.builder import (
     _data_magic,
@@ -66,10 +75,34 @@ _mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
 _mnist_data_path = _mnist_dir / "data"
 _mnist_label_path = _mnist_dir / "label"
 
+_TGenItem = t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]
 
-def iter_mnist_swds_bin_item_with_id() -> t.Generator[
-    t.Tuple[t.Any, t.Any, t.Any], None, None
-]:
+
+def iter_complex_annotations() -> _TGenItem:
+    for i in range(0, 15):
+        annotations = {
+            "index": i,
+            "label_str": f"label-{i}",
+            "label_float": i + 0.00000092,
+            "list_int": [j for j in range(0, i + 1)],
+            "bytes": f"label-{i}".encode(),
+            "link": DataStoreRawLink(str(i), f"display-{i}"),
+            "bbox": BoundingBox(i, i, i + 1, i + 2),
+            "list_bbox": [BoundingBox(j, j, i + 1, i + 2) for j in range(i + 2)],
+            "coco": COCOObjectAnnotation(
+                id=i,
+                image_id=i,
+                category_id=i,
+                segmentation=[1, 2, 3, 4],
+                area=i * 10,
+                bbox=BoundingBox(i, i, i + 1, i + 10),
+                iscrowd=1,
+            ),
+        }
+        yield f"idx-{i}", Text(f"data-{i}"), annotations
+
+
+def iter_mnist_swds_bin_item_with_id() -> _TGenItem:
     for data, annotations in iter_mnist_swds_bin_item():
         yield f"mnist-{data.display_name}", data, annotations
 
@@ -143,6 +176,196 @@ class UserRawMNIST(UserRawBuildExecutor):
 class UserRawWithIDMNIST(UserRawBuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
         return iter_mnist_user_raw_item_with_id()
+
+
+class TestDatasetCopy(BaseTestCase):
+    def setUp(self) -> None:
+        return super().setUp()
+
+    @patch("os.environ", {})
+    @Mocker()
+    def test_upload(self, rm: Mocker) -> None:
+        instance_uri = "http://1.1.1.1:8182"
+        dataset_name = "complex_annotations"
+        dataset_version = "123"
+        cloud_project = "project"
+        rm.request(
+            HTTPMethod.POST,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
+            json={"data": {"upload_id": 1}},
+        )
+        rm.request(
+            HTTPMethod.HEAD,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            json={"message": "not found"},
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+        m_update_req = rm.request(
+            HTTPMethod.POST,
+            f"{instance_uri}/api/v1/datastore/updateTable",
+            status_code=HTTPStatus.OK,
+        )
+
+        _cls = create_generic_cls(iter_complex_annotations)
+        workdir = Path(self.local_storage, "user", "workdir")
+
+        dataset_dir = (
+            Path(self.local_storage)
+            / "self"
+            / "dataset"
+            / dataset_name
+            / dataset_version[:2]
+            / f"{dataset_version}.swds"
+        )
+        ensure_dir(dataset_dir)
+        ensure_file(dataset_dir / DEFAULT_MANIFEST_NAME, json.dumps({"signature": []}))
+        ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
+
+        project = "self"
+        with _cls(
+            dataset_name=dataset_name,
+            dataset_version=dataset_version,
+            project_name=project,
+            workdir=workdir,
+            alignment_bytes_size=16,
+            volume_bytes_size=1000,
+        ) as e:
+            e.make_swds()
+
+        os.environ[SWEnv.instance_token] = "1234"
+
+        dc = DatasetCopy(
+            src_uri=f"{dataset_name}/version/{dataset_version}",
+            dest_uri=f"{instance_uri}/project/{cloud_project}",
+            typ=URIType.DATASET,
+        )
+        dc.do()
+
+        content = m_update_req.last_request.json()  # type: ignore
+        assert {
+            "type": "OBJECT",
+            "attributes": [
+                {"type": "STRING", "name": "type"},
+                {"type": "INT64", "name": "x"},
+                {"type": "INT64", "name": "y"},
+                {"type": "INT64", "name": "width"},
+                {"type": "INT64", "name": "height"},
+            ],
+            "pythonType": "starwhale.core.dataset.type.BoundingBox",
+            "name": "_annotation_bbox",
+        } in content["tableSchemaDesc"]["columnSchemaList"]
+        assert {"type": "BYTES", "name": "_annotation_bytes"} in content[
+            "tableSchemaDesc"
+        ]["columnSchemaList"]
+        assert len(content["records"]) > 0
+
+    @patch("os.environ", {})
+    @Mocker()
+    def test_download(self, rm: Mocker) -> None:
+        instance_uri = "http://1.1.1.1:8182"
+        dataset_name = "complex_annotations"
+        dataset_version = "123"
+        cloud_project = "project"
+
+        rm.request(
+            HTTPMethod.HEAD,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
+            json={"signature": []},
+        )
+        rm.request(
+            HTTPMethod.POST,
+            f"{instance_uri}/api/v1/datastore/scanTable",
+            json={
+                "data": {
+                    "columnTypes": [
+                        {"type": "STRING", "name": "id"},
+                        {"type": "STRING", "name": "data_uri"},
+                        {"type": "STRING", "name": "data_format"},
+                        {"type": "INT64", "name": "data_offset"},
+                        {"type": "INT64", "name": "data_size"},
+                        {"type": "STRING", "name": "data_origin"},
+                        {"type": "STRING", "name": "object_store_type"},
+                        {"type": "STRING", "name": "auth_name"},
+                        {"type": "INT64", "name": "_swds_bin_offset"},
+                        {"type": "INT64", "name": "_append_seq_id"},
+                        {
+                            "type": "OBJECT",
+                            "attributes": [
+                                {"type": "STRING", "name": "type"},
+                                {"type": "INT64", "name": "x"},
+                                {"type": "INT64", "name": "y"},
+                                {"type": "INT64", "name": "width"},
+                                {"type": "INT64", "name": "height"},
+                            ],
+                            "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                            "name": "_annotation_bbox",
+                        },
+                        {"type": "STRING", "name": "data_type"},
+                    ],
+                    "records": [
+                        {
+                            "id": "idx-0",
+                            "data_uri": "111",
+                            "data_format": "swds_bin",
+                            "data_offset": "0000000000000080",
+                            "data_size": "0000000000000006",
+                            "data_origin": "+",
+                            "object_store_type": "local",
+                            "auth_name": "",
+                            "_swds_bin_offset": "0000000000000030",
+                            "_append_seq_id": "0000000000000002",
+                            "_annotation_bbox": {
+                                "x": "0000000000000002",
+                                "y": "0000000000000002",
+                                "width": "0000000000000003",
+                                "height": "0000000000000004",
+                            },
+                            "data_type": json.dumps({"type": "text"}),
+                        }
+                    ],
+                }
+            },
+        )
+
+        dataset_dir = (
+            Path(self.local_storage)
+            / "self"
+            / "dataset"
+            / dataset_name
+            / dataset_version[:2]
+            / f"{dataset_version}.swds"
+        )
+
+        assert not dataset_dir.exists()
+        assert not (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
+
+        os.environ[SWEnv.instance_token] = "1234"
+        dc = DatasetCopy(
+            src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            dest_uri="self",
+            typ=URIType.DATASET,
+        )
+        dc.do()
+
+        assert dataset_dir.exists()
+        assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
+
+        tdb = TabularDataset(name=dataset_name, version=dataset_version, project="self")
+        meta_list = list(tdb.scan())
+        assert len(meta_list) == 1
+        assert meta_list[0].id == "idx-0"
+        assert meta_list[0].data_uri == "111"
+        bbox = meta_list[0].annotations["bbox"]
+        assert isinstance(bbox, BoundingBox)
+        assert bbox.x == 2 and bbox.y == 2
+        assert bbox.width == 3 and bbox.height == 4
 
 
 class TestDatasetBuildExecutor(BaseTestCase):
@@ -284,6 +507,31 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert len(ids) == 10
         assert isinstance(ids[9], dict)
         assert ids[9]["id"] == "mnist-link-9"
+
+    def test_complex_annotation(self) -> None:
+        _cls = create_generic_cls(iter_complex_annotations)
+        name = "complex_annotations"
+        version = "123"
+        project = "self"
+        with _cls(
+            dataset_name=name,
+            dataset_version=version,
+            project_name=project,
+            workdir=Path(self.workdir),
+            alignment_bytes_size=16,
+            volume_bytes_size=1000,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 15
+        tdb = TabularDataset(name=name, version=version, project=project)
+        meta_list = list(tdb.scan("idx-0", "idx-1"))
+        assert len(meta_list) > 0
+        annotations = meta_list[0].annotations
+        assert isinstance(annotations["link"], DataStoreRawLink)
+        assert isinstance(annotations["coco"], COCOObjectAnnotation)
+        assert annotations["coco"].bbox == [0, 0, 1, 10]
+        assert isinstance(annotations["list_bbox"][0], BoundingBox)
 
     def test_user_raw_workflow(self) -> None:
         with UserRawMNIST(
@@ -447,30 +695,30 @@ class TestDatasetType(TestCase):
         assert b.astype() == {
             "type": ArtifactType.Binary,
             "mime_type": MIMEType.UNDEFINED,
-            "shape": (1,),
+            "shape": [1],
             "encoding": "",
             "display_name": "",
         }
 
     def test_image(self) -> None:
         fp = io.StringIO("test")
-        img = Image(fp, display_name="t", shape=(28, 28, 3), mime_type=MIMEType.PNG)
+        img = Image(fp, display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG)
         assert img.to_bytes() == b"test"
         _asdict = img.asdict()
         assert not _asdict["as_mask"]
         assert "fp" not in _asdict
         assert "_raw_base64_data" not in _asdict
-        assert _asdict["type"] == "image"
+        assert _asdict["_type"] == "image"
         assert _asdict["display_name"] == "t"
-        assert _asdict["shape"] == (28, 28, 3)
-        assert json.loads(json.dumps(_asdict))["type"] == "image"
+        assert _asdict["shape"] == [28, 28, 3]
+        assert json.loads(json.dumps(_asdict))["_type"] == "image"
 
         fp = io.BytesIO(b"test")
-        img = GrayscaleImage(fp, shape=(28, 28, 1)).carry_raw_data()
+        img = GrayscaleImage(fp, shape=[28, 28, 1]).carry_raw_data()
         assert img.to_bytes() == b"test"
         _asdict = json.loads(json.dumps(img.asdict()))
-        assert _asdict["type"] == "image"
-        assert _asdict["mime_type"] == MIMEType.GRAYSCALE.value
+        assert _asdict["_type"] == "image"
+        assert _asdict["_mime_type"] == MIMEType.GRAYSCALE.value
         assert _asdict["shape"] == [28, 28, 1]
         assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
 
@@ -479,8 +727,8 @@ class TestDatasetType(TestCase):
         self.fs.create_file(fp, contents="test")
         audio = Audio(fp)
         _asdict = json.loads(json.dumps(audio.asdict()))
-        assert _asdict["mime_type"] == MIMEType.WAV.value
-        assert _asdict["type"] == "audio"
+        assert _asdict["_mime_type"] == MIMEType.WAV.value
+        assert _asdict["_type"] == "audio"
         assert audio.to_bytes() == b"test"
 
     def test_video(self) -> None:
@@ -488,8 +736,8 @@ class TestDatasetType(TestCase):
         self.fs.create_file(fp, contents="test")
         video = Video(fp)
         _asdict = json.loads(json.dumps(video.asdict()))
-        assert _asdict["mime_type"] == MIMEType.AVI.value
-        assert _asdict["type"] == "video"
+        assert _asdict["_mime_type"] == MIMEType.AVI.value
+        assert _asdict["_type"] == "video"
         assert video.to_bytes() == b"test"
 
     def test_bbox(self) -> None:
@@ -508,8 +756,9 @@ class TestDatasetType(TestCase):
         assert text.to_bytes() == b"test"
         assert "fp" not in _asdict
         assert _asdict["content"] == "test"
-        assert _asdict["type"] == "text"
-        assert _asdict["mime_type"] == MIMEType.PLAIN.value
+        assert _asdict["_type"] == "text"
+        assert _asdict["_mime_type"] == MIMEType.PLAIN.value
+        assert text.to_str() == "test"
 
     def test_coco(self) -> None:
         coco = COCOObjectAnnotation(
@@ -872,46 +1121,6 @@ class TestTabularDataset(TestCase):
         with self.assertRaises(FieldTypeOrValueError):
             TabularDataset("a123", "", "")
 
-    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset")
-    def test_standalone_tabular_dataset(self, m_ds_wrapper: MagicMock) -> None:
-        m_ds_wrapper.return_value.scan.return_value = [
-            TabularDatasetRow(
-                id="path/1",
-                data_uri="abcdef",
-                data_format=DataFormatType.SWDS_BIN,
-                annotations={"a": 1, "b": {"c": 1}},
-                _append_seq_id=0,
-            ).asdict(),
-            TabularDatasetRow(
-                id="path/2",
-                data_uri="abcdef",
-                data_format=DataFormatType.SWDS_BIN,
-                annotations={"a": 1, "b": {"c": 1}},
-                _append_seq_id=0,
-            ).asdict(),
-        ]
-
-        with StandaloneTabularDataset.from_uri(
-            URI("mnist/version/123456", expected_type=URIType.DATASET)
-        ) as std:
-            ensure_dir(std.store.snapshot_workdir)
-            path = std.dump_meta(True)
-            assert path.exists()
-
-            with jsonlines.open(str(path), "r") as reader:
-                lines = [line for line in reader]
-                assert len(lines) == 2
-                assert lines[0]["id"] == "path/1"
-                assert lines[1]["id"] == "path/2"
-                std.load_meta()
-
-                m_put = m_ds_wrapper.return_value.put
-                assert m_put.call_count == 2
-                assert m_put.call_args_list[0][0][0] == "path/1"
-                assert m_put.call_args_list[1][0][0] == "path/2"
-                assert isinstance(m_put.call_args_list[0][1], dict)
-                assert m_put.call_args_list[0][1]["id"] == "path/1"
-
     def test_row(self) -> None:
         s_row = TabularDatasetRow(id=0, data_uri="abcdef", annotations={"a": 1})
         data_type = {"type": "image", "shape": [1, 2, 3]}
@@ -948,12 +1157,12 @@ class TestTabularDataset(TestCase):
             "object_store_type": "local",
             "auth_name": "",
             "data_type": "{}",
-            "_annotation_a": "1",
+            "_annotation_a": 1,
         }
 
         u_row_dict = u_row.asdict()
-        assert u_row_dict["_annotation_a"] == "1"
-        assert u_row_dict["_annotation_b"] == '{"c":1}'
+        assert u_row_dict["_annotation_a"] == 1
+        assert u_row_dict["_annotation_b"] == {"c": 1}
         assert u_row_dict["data_type"] == json.dumps(data_type, separators=(",", ":"))
         assert l_row.asdict()["id"] == "path/1"
 
