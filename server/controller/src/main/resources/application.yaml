@@ -57,6 +57,12 @@ sw:
     walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
     walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
     ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
+    dataRootPath: ${SW_DATASTORE_DATA_ROOT_PATH:}
+    parquet:
+      compressionCodec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
+      rowGroupSize: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}
+      pageSize: ${SW_DATASTORE_PARQUET_PAGE_SIZE:1MB}
+      pageRowCountLimit: ${SW_DATASTORE_PARQUET_PAGE_ROW_COUNT_LIMIT:20000}
 ---
 #Development
 spring:

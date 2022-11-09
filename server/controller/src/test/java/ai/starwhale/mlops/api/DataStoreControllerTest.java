@@ -40,6 +40,7 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import brave.internal.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +62,14 @@ public class DataStoreControllerTest {
         this.controller = new DataStoreController();
         var walManager = Mockito.mock(WalManager.class);
         given(walManager.readAll()).willReturn(Collections.emptyIterator());
-        this.controller.setDataStore(new DataStore(walManager));
+        this.controller.setDataStore(
+                new DataStore(walManager,
+                        new StorageAccessServiceMemory(),
+                        "",
+                        "SNAPPY",
+                        "1MB",
+                        "1KB",
+                        1000));
     }
 
     @Test

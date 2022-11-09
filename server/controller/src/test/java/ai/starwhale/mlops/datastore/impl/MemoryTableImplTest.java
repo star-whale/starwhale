@@ -29,6 +29,8 @@ import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.ObjectStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
+import ai.starwhale.mlops.datastore.ParquetConfig;
+import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchema;
@@ -37,9 +39,8 @@ import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
-import java.io.File;
-import java.io.FileFilter;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -48,17 +49,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.PrefixFileFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 public class MemoryTableImplTest {
 
@@ -74,29 +71,33 @@ public class MemoryTableImplTest {
                 keepNone);
     }
 
-    @TempDir
-    private File rootDir;
-
     private WalManager walManager;
+    private StorageAccessService storageAccessService;
 
     @BeforeEach
     public void setUp() throws IOException {
         var bufferManager = new SwByteBufferManager();
-        var objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath(),
-                "serviceProvider"));
+        this.storageAccessService = new StorageAccessServiceMemory();
+        var objectStore = new ObjectStore(bufferManager, this.storageAccessService);
         this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
     }
 
     @AfterEach
-    public void tearDown() throws IOException {
+    public void tearDown() {
         walManager.terminate();
-        for (var f : Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir"))
-                .listFiles((FileFilter) new PrefixFileFilter("junit")))) {
-            if (!rootDir.equals(f)) {
-                System.out.println("deleting" + f);
-                FileUtils.deleteDirectory(f);
-            }
-        }
+    }
+
+    public MemoryTableImpl createInstance(String name) {
+        var parquetConfig = new ParquetConfig();
+        parquetConfig.setCompressionCodec(CompressionCodec.SNAPPY);
+        parquetConfig.setRowGroupSize(1024 * 1024);
+        parquetConfig.setPageSize(4096);
+        parquetConfig.setPageRowCountLimit(1000);
+        return new MemoryTableImpl(name,
+                this.walManager,
+                this.storageAccessService,
+                "",
+                parquetConfig);
     }
 
     @Nested
@@ -106,7 +107,7 @@ public class MemoryTableImplTest {
 
         @BeforeEach
         public void setUp() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
         }
 
         @Test
@@ -329,7 +330,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testUpdateAllKeyColumnTypes() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("BOOL").build())),
                     List.of(Map.of("k", "1")));
@@ -337,7 +338,7 @@ public class MemoryTableImplTest {
                     scanAll(this.memoryTable, List.of("k"), false),
                     contains(new MemoryTable.RecordResult(true, Map.of("k", true))));
 
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT8").build())),
                     List.of(Map.of("k", "10")));
@@ -345,7 +346,7 @@ public class MemoryTableImplTest {
                     scanAll(this.memoryTable, List.of("k"), false),
                     contains(new MemoryTable.RecordResult((byte) 16, Map.of("k", (byte) 16))));
 
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT16").build())),
                     List.of(Map.of("k", "1000")));
@@ -354,7 +355,7 @@ public class MemoryTableImplTest {
                     contains(new MemoryTable.RecordResult(Short.parseShort("1000", 16),
                             Map.of("k", Short.parseShort("1000", 16)))));
 
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build())),
                     List.of(Map.of("k", "100000")));
@@ -363,7 +364,7 @@ public class MemoryTableImplTest {
                     contains(new MemoryTable.RecordResult(Integer.parseInt("100000", 16),
                             Map.of("k", Integer.parseInt("100000", 16)))));
 
-            this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT64").build())),
                     List.of(Map.of("k", "10000000")));
@@ -372,7 +373,7 @@ public class MemoryTableImplTest {
                     contains(new MemoryTable.RecordResult(Long.parseLong("10000000", 16),
                             Map.of("k", Long.parseLong("10000000", 16)))));
 
-            this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("FLOAT32").build())),
                     List.of(Map.of("k", Integer.toHexString(Float.floatToIntBits(1.1f)))));
@@ -380,7 +381,7 @@ public class MemoryTableImplTest {
                     contains(new MemoryTable.RecordResult(1.1f,
                             Map.of("k", 1.1f))));
 
-            this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("FLOAT64").build())),
                     List.of(Map.of("k", Long.toHexString(Double.doubleToLongBits(1.1)))));
@@ -388,7 +389,7 @@ public class MemoryTableImplTest {
                     contains(new MemoryTable.RecordResult(1.1,
                             Map.of("k", 1.1))));
 
-            this.memoryTable = new MemoryTableImpl("", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("BYTES").build())),
                     List.of(Map.of("k", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)))));
@@ -449,7 +450,7 @@ public class MemoryTableImplTest {
         }
 
         @Test
-        public void testUpdateFromWal() throws IOException {
+        public void testUpdateFromWal() {
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
                             ColumnSchemaDesc.builder().name("key").type("STRING").build(),
@@ -464,7 +465,28 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build())),
                     null);
             List<Map<String, Object>> records = new ArrayList<>();
-            for (int i = 0; i < 100; ++i) {
+            for (int i = 0; i < 50; ++i) {
+                final int index = i;
+                records.add(new HashMap<>() {
+                    {
+                        put("key", String.format("%03d", index));
+                        put("a", "" + index % 2);
+                        put("b", Integer.toHexString(index + 10));
+                        put("c", Integer.toHexString(index + 1000));
+                        put("d", Integer.toHexString(index + 100000));
+                        put("e", Integer.toHexString(index + 10000000));
+                        put("f", Integer.toHexString(Float.floatToIntBits(index + 0.1f)));
+                        put("g", Long.toHexString(Double.doubleToLongBits(index + 0.1)));
+                        put("h", Base64.getEncoder().encodeToString(
+                                ("test" + index).getBytes(StandardCharsets.UTF_8)));
+                        put("i", null);
+                    }
+                });
+            }
+            this.memoryTable.update(null, records);
+            this.memoryTable.save();
+            records.clear();
+            for (int i = 50; i < 100; ++i) {
                 final int index = i;
                 records.add(new HashMap<>() {
                     {
@@ -485,11 +507,9 @@ public class MemoryTableImplTest {
             this.memoryTable.update(null, records);
             MemoryTableImplTest.this.walManager.terminate();
             SwBufferManager bufferManager = new SwByteBufferManager();
-            var objectStore = new ObjectStore(bufferManager,
-                    new StorageAccessServiceFile(MemoryTableImplTest.this.rootDir.getAbsolutePath(),
-                            "serviceProvider"));
+            var objectStore = new ObjectStore(bufferManager, storageAccessService);
             MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             var it = MemoryTableImplTest.this.walManager.readAll();
             while (it.hasNext()) {
                 this.memoryTable.updateFromWal(it.next());
@@ -581,7 +601,7 @@ public class MemoryTableImplTest {
                     ColumnSchemaDesc.builder().name("h").type("STRING").build(),
                     ColumnSchemaDesc.builder().name("i").type("BYTES").build(),
                     ColumnSchemaDesc.builder().name("z").type("UNKNOWN").build()));
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(schema,
                     records.stream()
                             .map(r -> r.getValues().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
@@ -625,14 +645,14 @@ public class MemoryTableImplTest {
 
         @Test
         public void testQueryInitialEmptyTable() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             var results = this.memoryTable.query(Map.of("a", "a"), null, null, -1, -1, false, false);
             assertThat(results, empty());
         }
 
         @Test
         public void testQueryEmptyTableWithSchema() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));
@@ -2142,14 +2162,14 @@ public class MemoryTableImplTest {
 
         @Test
         public void testScanInitialEmptyTable() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, 1000, false);
             assertThat("empty", results, empty());
         }
 
         @Test
         public void testScanEmptyTableWithSchema() {
-            this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
+            this.memoryTable = createInstance("test");
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));

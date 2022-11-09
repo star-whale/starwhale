@@ -42,15 +42,17 @@ public class SwOutputFile implements OutputFile {
     }
 
     @Override
-    public PositionOutputStream createOrOverwrite(long blockSizeHint) {
+    public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
         var out = new PipedOutputStream();
+        var in = new PipedInputStream(out);
         new Thread(() -> {
             try {
-                this.storageAccessService.put(this.path, new PipedInputStream(out));
+                this.storageAccessService.put(this.path, in);
             } catch (IOException e) {
                 log.error("fail to write the storage", e);
                 try {
                     out.close();
+                    in.close();
                 } catch (IOException ex) {
                     // ignore this
                 }

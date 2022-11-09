@@ -27,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
-import java.io.File;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,16 +40,14 @@ import java.util.Random;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 public class DataStoreTest {
-
-    @TempDir
-    private File rootDir;
 
     private DataStore dataStore;
 
     private SwByteBufferManager bufferManager;
+
+    private StorageAccessService storageAccessService;
 
     private ObjectStore objectStore;
 
@@ -58,10 +56,20 @@ public class DataStoreTest {
     @BeforeEach
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath(),
-                ""));
+        this.storageAccessService = new StorageAccessServiceMemory();
+        this.objectStore = new ObjectStore(bufferManager, this.storageAccessService);
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        this.dataStore = new DataStore(this.walManager);
+        this.createDateStore();
+    }
+
+    private void createDateStore() {
+        this.dataStore = new DataStore(this.walManager,
+                this.storageAccessService,
+                "",
+                "SNAPPY",
+                "1MB",
+                "1KB",
+                1000);
     }
 
     @AfterEach
@@ -84,7 +92,7 @@ public class DataStoreTest {
     }
 
     @Test
-    public void testUpdate() throws IOException {
+    public void testUpdate() {
         this.dataStore.update("t1",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -134,7 +142,7 @@ public class DataStoreTest {
 
         this.dataStore.terminate();
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        this.dataStore = new DataStore(this.walManager);
+        this.createDateStore();
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -327,9 +335,9 @@ public class DataStoreTest {
         assertThat("all columns",
                 recordList.getRecords(),
                 is(List.of(
-                    Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
-                    Map.of("k", "2", "l", "0000000000000000"),
-                    Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333")
+                        Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
+                        Map.of("k", "2", "l", "0000000000000000"),
+                        Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333")
                 )));
         assertThat("all columns", recordList.getLastKey(), is("3"));
 
@@ -584,7 +592,7 @@ public class DataStoreTest {
     public void testMultiThreads() throws Throwable {
         this.dataStore.terminate();
         this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000, 3);
-        this.dataStore = new DataStore(this.walManager);
+        this.createDateStore();
 
         abstract class TestThread extends Thread {
 
@@ -685,11 +693,11 @@ public class DataStoreTest {
             threads.add(new TestThread() {
                 public void execute() {
                     for (int j = 0; j < 100; ++j) {
-                        var records = dataStore.query(DataStoreQueryRequest.builder()
+                        dataStore.query(DataStoreQueryRequest.builder()
                                 .tableName(tableName)
                                 .limit(10)
                                 .rawResult(true)
-                                .build()).getRecords();
+                                .build());
                         try {
                             Thread.sleep(this.random.nextInt(5));
                         } catch (InterruptedException e) {
