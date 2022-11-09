@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.datastore;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,7 +64,7 @@ public class WalManagerTest {
     }
 
     private void createInstance() {
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 4096, 4096, "test/", 10, 3);
     }
 
 
@@ -155,9 +154,9 @@ public class WalManagerTest {
                         .setTableSchema(this.createTableSchema(null,
                                 List.of(Triple.of(4, "y", "STRING"))))
                         .addAllRecords(this.createRecords(List.of(
-                                Map.of(1, "a", 4, "a".repeat(100)),
-                                Map.of(1, "b", 4, "b".repeat(100)),
-                                Map.of(1, "c", 4, "c".repeat(100))
+                                Map.of(1, "a", 4, "a".repeat(1200)),
+                                Map.of(1, "b", 4, "b".repeat(1200)),
+                                Map.of(1, "c", 4, "c".repeat(1200))
                         ))),
                 Wal.WalEntry.newBuilder()
                         .setEntryType(Wal.WalEntry.Type.UPDATE)
@@ -165,9 +164,9 @@ public class WalManagerTest {
                         .setTableSchema(this.createTableSchema(null,
                                 List.of(Triple.of(4, "y", "STRING"))))
                         .addAllRecords(this.createRecords(List.of(
-                                Map.of(1, "a", 4, "a".repeat(10)),
-                                Map.of(1, "b", 4, "b".repeat(10)),
-                                Map.of(1, "c", 4, "c".repeat(10))
+                                Map.of(1, "a", 4, "a".repeat(100)),
+                                Map.of(1, "b", 4, "b".repeat(100)),
+                                Map.of(1, "c", 4, "c".repeat(100))
                         ))));
         assertThat(this.walManager.append(builders.get(0)), is(1L));
         assertThat(this.walManager.append(builders.get(1)), is(2L));
@@ -320,7 +319,7 @@ public class WalManagerTest {
         assertThat(ImmutableList.copyOf(this.objectStore.list("")),
                 is(IntStream.range(3, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
         this.walManager.removeWalLogFiles(100);
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")), empty());
+        assertThat(ImmutableList.copyOf(this.objectStore.list("")), is(List.of("test/wal.log.9")));
     }
 
     @Test
