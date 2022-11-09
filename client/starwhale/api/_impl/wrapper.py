@@ -11,7 +11,9 @@ from . import data_store
 
 
 class Logger:
-    def _init_writers(self, tables: List[str]) -> None:
+    def _init_writers(
+        self, tables: List[str], store: Optional[data_store.DataStore] = None
+    ) -> None:
         self._writers: Dict[str, Optional[data_store.TableWriter]] = {
             table: None for table in tables
         }
@@ -39,7 +41,8 @@ class Logger:
                 self._writers.setdefault(table_name, None)
             writer = self._writers[table_name]
             if writer is None:
-                writer = data_store.TableWriter(table_name)
+                _store = getattr(self, "_data_store", None)
+                writer = data_store.TableWriter(table_name, data_store=_store)
                 self._writers[table_name] = writer
 
         writer.insert(record)
@@ -75,8 +78,8 @@ class Evaluation(Logger):
         self.project = project
         self._results_table_name = self._get_datastore_table_name("results")
         self._summary_table_name = f"project/{self.project}/eval/summary"
-        self._init_writers([self._results_table_name, self._summary_table_name])
         self._data_store = data_store.get_data_store(instance_uri=instance)
+        self._init_writers([self._results_table_name, self._summary_table_name])
 
     def _get_datastore_table_name(self, table_name: str) -> str:
         return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
@@ -150,7 +153,9 @@ class Evaluation(Logger):
 
 
 class Dataset(Logger):
-    def __init__(self, dataset_id: str, project: str) -> None:
+    def __init__(
+        self, dataset_id: str, project: str, instance_uri: str = "", token: str = ""
+    ) -> None:
         if not dataset_id:
             raise RuntimeError("id should not be None")
 
@@ -160,7 +165,7 @@ class Dataset(Logger):
         self.dataset_id = dataset_id
         self.project = project
         self._meta_table_name = f"project/{self.project}/dataset/{self.dataset_id}/meta"
-        self._data_store = data_store.get_data_store()
+        self._data_store = data_store.get_data_store(instance_uri, token)
         self._init_writers([self._meta_table_name])
 
     def put(self, data_id: Union[str, int], **kwargs: Any) -> None:
@@ -185,6 +190,8 @@ class Dataset(Logger):
         self._flush(self._meta_table_name)
 
     def __str__(self) -> str:
-        return f"Dataset Wrapper, table:{self._meta_table_name}"
+        return (
+            f"Dataset Wrapper, table:{self._meta_table_name}, store:{self._data_store}"
+        )
 
     __repr__ = __str__
