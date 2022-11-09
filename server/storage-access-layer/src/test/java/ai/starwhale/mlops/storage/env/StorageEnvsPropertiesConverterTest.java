@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.StorageUri;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
 import ai.starwhale.mlops.storage.s3.S3Config;
+import java.net.URISyntaxException;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,7 @@ import org.junit.jupiter.api.Test;
 public class StorageEnvsPropertiesConverterTest {
 
     @Test
-    public void testUserEnv2Config() {
+    public void testUserEnv2Config() throws URISyntaxException {
         StorageEnvsPropertiesConverter storageEnvsPropertiesConverter = new StorageEnvsPropertiesConverter(null);
         S3Config s3Config = storageEnvsPropertiesConverter.envToS3Config(new StorageEnv(
                 StorageEnvType.S3)
@@ -38,7 +39,7 @@ public class StorageEnvsPropertiesConverterTest {
                 .add("USER.S3.mytest.SECRET", "SCret")
                 .add("USER.S3.mytest.ACCESS_KEY", "ack")
                 .add("USER.S3.mytest.BUCKET", "bkt")
-                .add("USER.S3.MYTEST.REGION", "region"), new StorageUri("s3://renyanda/bdc/xyf"), "mytest");
+                .add("USER.S3.MYTEST.REGION", "region"), new StorageUri("s3://host/renyanda/bdc/xyf"), "mytest");
         Assertions.assertEquals("renyanda", s3Config.getBucket());
         Assertions.assertEquals("ack", s3Config.getAccessKey());
         Assertions.assertEquals("SCret", s3Config.getSecretKey());

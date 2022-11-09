@@ -21,7 +21,9 @@ import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CompatibleStorageAccessServiceBuilderFs implements CompatibleStorageAccessServiceBuilder {
 
     public static final Set<String> TYPES = Set.of("fs", "file");

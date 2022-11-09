@@ -372,20 +372,20 @@ public class DatasetServiceTest {
 
     @Test
     public void testDataOf() {
-        given(dsFileGetter.dataOf(same(1L), anyString(), anyString(), anyString(), anyString()))
+        given(dsFileGetter.dataOf(same(1L), anyString(), anyString(), anyString()))
                 .willReturn(new byte[1]);
 
-        var res = dsFileGetter.dataOf(1L, "", "", "", "");
+        var res = dsFileGetter.dataOf(1L, "", "", "");
         assertThat(res, notNullValue());
     }
 
     @Test
     public void testLinkOf() {
-        given(dsFileGetter.linkOf(same(1L), anyString(), anyString(), anyLong()))
+        given(dsFileGetter.linkOf(same(1L), anyString(), anyLong()))
                 .willReturn("link");
 
-        var res = dsFileGetter.linkOf(1L, "", "", 1L);
-        assertThat(dsFileGetter.linkOf(1L, "", "", 1L), is("link"));
+        var res = dsFileGetter.linkOf(1L, "", 1L);
+        assertThat(dsFileGetter.linkOf(1L, "", 1L), is("link"));
     }
 
 }

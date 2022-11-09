@@ -24,6 +24,7 @@ import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Stream;
+import org.springframework.util.StringUtils;
 
 /**
  * provides file upload/ download /list services Compilable
@@ -34,11 +35,11 @@ public class CompatibleStorageAccessServiceFile extends CompatibleStorageAccessS
 
 
     public boolean compatibleWith(StorageUri uri) {
-        uri.getSchema();
-        uri.getBucket();
-        uri.getHost();
-        uri.getPort();
-        return false;
+        if (!StringUtils.hasText(uri.getSchema()) || !CompatibleStorageAccessServiceBuilderFs.TYPES.contains(
+                uri.getSchema().toLowerCase())) {
+            return false;
+        }
+        return uri.getPath().startsWith(StringUtils.trimTrailingCharacter(rootDir, '/') + "/");
     }
 
     public CompatibleStorageAccessServiceFile(StorageAccessService storageAccessService, String rootDir) {

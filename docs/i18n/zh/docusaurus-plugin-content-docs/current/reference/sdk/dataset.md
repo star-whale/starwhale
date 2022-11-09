@@ -109,7 +109,7 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
                 continue
 
             speaker_id, utterance_num = path.stem.split("_nohash_")
-            uri = f"s3://{self._addr}@{self._bucket}/{obj.key.lstrip('/')}"
+            uri = f"s3://{self._addr}/{self._bucket}/{obj.key.lstrip('/')}"
             data = Link(
                 uri,
                self._auth,

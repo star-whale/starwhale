@@ -23,7 +23,9 @@ import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceS3Lik
 import ai.starwhale.mlops.storage.s3.S3Config;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CompatibleStorageAccessServiceBuilderAliyun implements CompatibleStorageAccessServiceBuilder {
 
     public static final Set<String> TYPES = Set.of("aliyun", "oss");

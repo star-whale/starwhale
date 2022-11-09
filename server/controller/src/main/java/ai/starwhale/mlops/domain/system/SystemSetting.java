@@ -33,9 +33,9 @@ public class SystemSetting {
 
     DockerSetting dockerSetting;
 
-    List<ResourcePool> resourcePoolSetting = new ArrayList<>();
+    List<ResourcePool> resourcePoolSetting;
 
-    Set<StorageConnectionToken> storageSetting = Set.of();
+    Set<StorageConnectionToken> storageSetting;
 
     @Data
     public static class DockerSetting {

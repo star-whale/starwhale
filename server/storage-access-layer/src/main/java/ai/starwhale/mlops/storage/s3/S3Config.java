@@ -45,8 +45,8 @@ public class S3Config {
         this.bucket = tokens.get("bucket");
         this.accessKey = tokens.get("ak");
         this.secretKey = tokens.get("sk");
-        this.region = tokens.get("region");
         this.endpoint = tokens.get("endpoint");
+        this.region = tokens.get("region");
         this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
         this.hugeFilePartSize = Long.parseLong(tokens.get("hugeFilePartSize"));
     }

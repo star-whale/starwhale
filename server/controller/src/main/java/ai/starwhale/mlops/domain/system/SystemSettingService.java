@@ -76,8 +76,9 @@ public class SystemSettingService implements CommandLineRunner {
     }
 
     public ResourcePool queryResourcePool(String rpName) {
-        return this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
-                .orElse(ResourcePool.defaults());
+        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? ResourcePool.defaults() :
+                this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
+                        .orElse(ResourcePool.defaults());
     }
 
     public List<ResourcePool> getResourcePools() {

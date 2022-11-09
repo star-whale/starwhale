@@ -22,7 +22,9 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CompatibleStorageAccessServiceBuilderS3 implements CompatibleStorageAccessServiceBuilder {
 
     public static final String TYPE = "s3";

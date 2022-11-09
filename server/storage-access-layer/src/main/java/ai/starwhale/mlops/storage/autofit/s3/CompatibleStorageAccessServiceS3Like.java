@@ -24,31 +24,59 @@ import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Set;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.ServiceEndpointKey;
+import software.amazon.awssdk.regions.servicemetadata.S3ServiceMetadata;
 
 /**
  * provides file upload/ download /list services Compilable
  */
+@Slf4j
 public class CompatibleStorageAccessServiceS3Like extends CompatibleStorageAccessService {
 
     final S3Config s3Config;
 
     final Set<String> schemas;
 
-    public boolean compatibleWith(StorageUri uri) {
-        uri.getSchema();
-        uri.getBucket();
-        uri.getHost();
-        uri.getPort();
-        return false;
-    }
 
     public CompatibleStorageAccessServiceS3Like(StorageAccessService storageAccessService, S3Config s3Config,
             Set<String> schemas) {
         super(storageAccessService);
         this.s3Config = s3Config;
         this.schemas = schemas;
+    }
+
+    public boolean compatibleWith(StorageUri uri) {
+        if (!StringUtils.hasText(uri.getSchema()) || !this.schemas.contains(uri.getSchema().toLowerCase())) {
+            return false;
+        }
+        if (!s3Config.getBucket().equals(uri.getBucket())) {
+            return false;
+        }
+        URI endpointUri;
+        try {
+            if (StringUtils.hasText(s3Config.getEndpoint())) {
+
+                endpointUri = new URI(s3Config.getEndpoint());
+
+            } else {
+                endpointUri = new URI("https://" + new S3ServiceMetadata().endpointFor(
+                        ServiceEndpointKey.builder().region(Region.of(s3Config.getRegion())).build()).toString());
+            }
+        } catch (URISyntaxException e) {
+            log.error("s3 config error invalid endpoint {}", s3Config.getEndpoint(), e);
+            return false;
+        }
+        if (null != uri.getPort()) {
+            return endpointUri.getPort() == uri.getPort();
+        }
+        return endpointUri.getHost().equals(uri.getHost());
     }
 
     @Override

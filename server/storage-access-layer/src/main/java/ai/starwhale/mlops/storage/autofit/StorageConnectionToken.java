@@ -18,9 +18,13 @@ package ai.starwhale.mlops.storage.autofit;
 
 import java.util.Map;
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class StorageConnectionToken {
 
     String type;
