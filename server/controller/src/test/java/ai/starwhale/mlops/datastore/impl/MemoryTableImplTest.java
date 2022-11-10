@@ -79,7 +79,7 @@ public class MemoryTableImplTest {
         var bufferManager = new SwByteBufferManager();
         this.storageAccessService = new StorageAccessServiceMemory();
         var objectStore = new ObjectStore(bufferManager, this.storageAccessService);
-        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
+        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "wal/", 10, 3);
     }
 
     @AfterEach
@@ -96,7 +96,7 @@ public class MemoryTableImplTest {
         return new MemoryTableImpl(name,
                 this.walManager,
                 this.storageAccessService,
-                "",
+                name,
                 parquetConfig);
     }
 
@@ -508,7 +508,7 @@ public class MemoryTableImplTest {
             MemoryTableImplTest.this.walManager.terminate();
             SwBufferManager bufferManager = new SwByteBufferManager();
             var objectStore = new ObjectStore(bufferManager, storageAccessService);
-            MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
+            MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "wal/", 10, 3);
             this.memoryTable = createInstance("test");
             var it = MemoryTableImplTest.this.walManager.readAll();
             while (it.hasNext()) {

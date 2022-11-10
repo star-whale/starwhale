@@ -86,17 +86,13 @@ public class MemoryTableImpl implements MemoryTable {
     public MemoryTableImpl(String tableName,
             WalManager walManager,
             StorageAccessService storageAccessService,
-            String dataRootPath,
+            String dataPathPrefix,
             ParquetConfig parquetConfig) {
         this.tableName = tableName;
         this.walManager = walManager;
         this.storageAccessService = storageAccessService;
         this.parquetConfig = parquetConfig;
-        var path = dataRootPath;
-        if (!path.isEmpty() && !path.endsWith("/")) {
-            path += "/";
-        }
-        this.dataPathPrefix = path + "snapshots/" + tableName + "_._v0_";
+        this.dataPathPrefix = dataPathPrefix;
         this.dataPathSuffixFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         this.load();
     }

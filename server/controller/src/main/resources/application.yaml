@@ -58,6 +58,8 @@ sw:
     walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
     ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
     dataRootPath: ${SW_DATASTORE_DATA_ROOT_PATH:}
+    dumpInterval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
+    minNoUpdatePeriod: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:1d}
     parquet:
       compressionCodec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
       rowGroupSize: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import org.springframework.stereotype.Component;
 
-@Component
 public class ObjectStore {
 
     private final SwBufferManager bufferManager;

@@ -39,12 +39,9 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.xerial.snappy.Snappy;
 
 @Slf4j
-@Component
 public class WalManager extends Thread {
 
     private final ObjectStore objectStore;
@@ -89,11 +86,11 @@ public class WalManager extends Thread {
 
     public WalManager(ObjectStore objectStore,
             SwBufferManager bufferManager,
-            @Value("${sw.datastore.walFileSize}") int walFileSize,
-            @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-            @Value("${sw.datastore.walPrefix}") String walPrefix,
-            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
-            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) {
+            int walFileSize,
+            int walMaxFileSize,
+            String walPrefix,
+            int walWaitIntervalMillis,
+            int ossMaxAttempts) {
         this.objectStore = objectStore;
         this.bufferManager = bufferManager;
         this.walFileSize = walFileSize;
@@ -225,6 +222,12 @@ public class WalManager extends Thread {
         };
     }
 
+    public long getMaxEntryId() {
+        synchronized (this.entriesToWrite) {
+            return this.maxEntryId;
+        }
+    }
+
     public long append(Wal.WalEntry.Builder builder) {
         synchronized (this.entriesToWrite) {
             if (this.terminated) {
@@ -255,9 +258,21 @@ public class WalManager extends Thread {
         }
     }
 
+    /**
+     * Remove any WAL log files that contain no entry IDs greater than or equal to minWalLogIdToRetain, except the
+     * latest one.
+     *
+     * The latest WAL log file should always be kept so that maxEntryId can be recovered from WAl log files when the
+     * data store starts up.
+     *
+     * @param minWalLogIdToRetain the minimum WAL log id to retain.
+     * @throws IOException if the underlying storage access failed
+     */
     public void removeWalLogFiles(long minWalLogIdToRetain) throws IOException {
+        var minValue = Math.min(this.walLogFileMap.values().stream().mapToLong(v -> v).max().orElse(0),
+                minWalLogIdToRetain);
         for (var logFile : this.walLogFileMap.entrySet().stream()
-                .filter(entry -> entry.getValue() < minWalLogIdToRetain)
+                .filter(entry -> entry.getValue() < minValue)
                 .map(Entry::getKey)
                 .collect(Collectors.toList())) {
             this.objectStore.delete(logFile);
@@ -447,10 +462,10 @@ public class WalManager extends Thread {
         } catch (Throwable e) {
             log.error("data loss: failed to write wal log", e);
         }
+        this.walLogFileMap.put(key, this.maxEntryIdInOutputBuffer);
         if (clearOutput) {
             ++this.logFileIndex;
             this.outputStream = new SwBufferOutputStream(this.outputBuffer);
-            this.walLogFileMap.put(key, this.maxEntryIdInOutputBuffer);
         }
     }
 
