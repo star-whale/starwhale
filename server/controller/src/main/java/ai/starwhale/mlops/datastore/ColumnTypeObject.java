@@ -19,7 +19,6 @@ package ai.starwhale.mlops.datastore;
 import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -110,13 +109,16 @@ public class ColumnTypeObject extends ColumnType {
         if (value == null) {
             return null;
         }
+        var ret = new HashMap<String, Object>();
         //noinspection unchecked
-        return ((Map<String, ?>) value).entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new IllegalArgumentException("invalid attribute " + entry.getKey()))
-                                .encode(entry.getValue(), rawResult)));
+        ((Map<String, ?>) value).forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new IllegalArgumentException("invalid attribute " + k);
+            }
+            ret.put(k, type.encode(v, rawResult));
+        });
+        return ret;
     }
 
     @Override
@@ -127,14 +129,16 @@ public class ColumnTypeObject extends ColumnType {
         if (!(value instanceof Map)) {
             throw new SwValidationException(ValidSubject.DATASTORE, "value should be of type Map");
         }
+        var ret = new HashMap<String, Object>();
         //noinspection unchecked
-        return ((Map<String, ?>) value).entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new SwValidationException(ValidSubject.DATASTORE,
-                                        "invalid attribute " + entry.getKey()))
-                                .decode(entry.getValue())));
+        ((Map<String, ?>) value).forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new SwValidationException(ValidSubject.DATASTORE, "invalid attribute " + k);
+            }
+            ret.put(k, type.decode(v));
+        });
+        return ret;
     }
 
     @Override
