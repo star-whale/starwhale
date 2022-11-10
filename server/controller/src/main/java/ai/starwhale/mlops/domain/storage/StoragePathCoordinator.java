@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.storage;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 /**
  * coordinator all paths in this system
@@ -105,6 +106,14 @@ public class StoragePathCoordinator {
             String bundleVersion, String bundleType) {
         return String.format(STORAGE_PATH_FORMATTER_BUNDLE, prefix, projectName, bundleType, bundleName,
                 bundleVersion);
+    }
+
+    static final String PLUGIN_PREFIX = "plugins";
+    static final String PANEL_PREFIX = "panel";
+
+    public String allocatePluginPath(String name, String version) {
+        var parts = new String[]{prefix, PLUGIN_PREFIX, PANEL_PREFIX, name, version};
+        return StringUtils.arrayToDelimitedString(parts, "/");
     }
 
     private void checkKeyWord(String kw, ValidSubject validSubject) {
