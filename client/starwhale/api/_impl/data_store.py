@@ -84,9 +84,9 @@ class SwType(ABC):
         if isinstance(type, SwObjectType):
             ret = {
                 "type": "OBJECT",
-                "attributes": {
-                    k: SwType.encode_schema(v) for k, v in type.attrs.items()
-                },
+                "attributes": [
+                    dict(SwType.encode_schema(v), name=k) for k, v in type.attrs.items()
+                ],
             }
             if type.raw_type is Link:
                 ret["pythonType"] = "LINK"
@@ -121,14 +121,15 @@ class SwType(ABC):
             attrs = {}
             attr_schemas = schema.get("attributes", None)
             if attr_schemas is not None:
-                if not isinstance(attr_schemas, dict):
-                    raise RuntimeError("attributes should be a dict")
-                for k, v in attr_schemas.items():
-                    if not isinstance(k, str):
+                if not isinstance(attr_schemas, list):
+                    raise RuntimeError("attributes should be a list")
+                for attr in attr_schemas:
+                    name: str = attr["name"]
+                    if not isinstance(name, str):
                         raise RuntimeError(
-                            f"invalid schema, attributes should use strings as keys, actual {type(k)}"
+                            f"invalid schema, attributes should use strings as names, actual {type(name)}"
                         )
-                    attrs[k] = SwType.decode_schema(v)
+                    attrs[name] = SwType.decode_schema(attr)
             return SwObjectType(raw_type, attrs)
         ret = _TYPE_NAME_DICT.get(type_name, None)
         if ret is None:
