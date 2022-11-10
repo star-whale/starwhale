@@ -66,6 +66,10 @@ public class ProjectManagerTest {
         given(projectMapper.findProjectByName(same("p2"))).willReturn(project2);
         given(projectMapper.findProjectByNameForUpdate(same("p1"))).willReturn(project1);
         given(projectMapper.findProjectByNameForUpdate(same("p2"))).willReturn(project2);
+        given(projectMapper.findProjectByNameAndOwnerId(any(), any()))
+                .willReturn(project1);
+        given(projectMapper.findProjectByNameAndOwnerName(any(), any()))
+                .willReturn(project2);
         given(projectMapper.listProjects(anyString(), any(), any(), any()))
                 .willReturn(List.of(project1, project2));
         given(projectMapper.listProjects(same("p1"), any(), any(), any()))
@@ -186,6 +190,12 @@ public class ProjectManagerTest {
         assertThat(res, is(1L));
 
         res = projectManager.getProjectId("p2");
+        assertThat(res, is(2L));
+
+        res = projectManager.getProjectId("1:p1");
+        assertThat(res, is(1L));
+
+        res = projectManager.getProjectId("starwhale:p2");
         assertThat(res, is(2L));
 
         assertThrows(StarwhaleApiException.class,

@@ -49,4 +49,11 @@ public interface ProjectMapper {
     int modifyProject(@Param("project") ProjectEntity project);
 
     List<ProjectObjectCountEntity> listObjectCounts(@Param("projectIds") List<Long> projectIds);
+
+
+    ProjectEntity findProjectByNameAndOwnerId(@NotNull @Param("projectName") String projectName,
+            @NotNull @Param("ownerId") Long ownerId);
+
+    ProjectEntity findProjectByNameAndOwnerName(@NotNull @Param("projectName") String projectName,
+            @NotNull @Param("ownerName") String ownerName);
 }
