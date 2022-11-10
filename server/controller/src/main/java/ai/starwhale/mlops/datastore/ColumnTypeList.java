@@ -19,7 +19,6 @@ package ai.starwhale.mlops.datastore;
 import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;

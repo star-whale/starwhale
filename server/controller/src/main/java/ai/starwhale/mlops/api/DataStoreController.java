@@ -185,7 +185,8 @@ public class DataStoreController implements DataStoreApi {
             operator = TableQueryFilter.Operator.valueOf(input.getOperator());
         } catch (IllegalArgumentException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "invalid operator " + input.getOperator() + ". " + input);
+                    "invalid operator " + input.getOperator() + ". " + input,
+                    e);
         }
         switch (operator) {
             case NOT:

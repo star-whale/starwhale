@@ -554,10 +554,10 @@ public class MemoryTableImpl implements MemoryTable {
                 ret.put(name, columnType.decode(value));
             } catch (Exception e) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        MessageFormat.format("fail to decode value {0} for column {1}: {2}",
+                        MessageFormat.format("failed to decode value {0} for column {1}",
                                 value,
-                                name,
-                                e.getMessage()));
+                                name),
+                        e);
             }
         }
         return ret;

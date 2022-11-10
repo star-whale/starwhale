@@ -54,7 +54,8 @@ public class ColumnSchema {
             this.type = ColumnType.fromColumnSchemaDesc(schema);
         } catch (IllegalArgumentException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "invalid column schema: " + e.getMessage() + "\n schema=" + schema);
+                    "invalid column schema: " + schema,
+                    e);
         }
         this.index = index;
     }

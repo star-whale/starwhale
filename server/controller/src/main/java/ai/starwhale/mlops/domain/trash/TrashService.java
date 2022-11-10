@@ -113,7 +113,7 @@ public class TrashService {
             }
             return res;
         } catch (RecoverException e) {
-            throw new SwValidationException(ValidSubject.TRASH, e.getMessage());
+            throw new SwValidationException(ValidSubject.TRASH, e.getMessage(), e);
         }
     }
 
