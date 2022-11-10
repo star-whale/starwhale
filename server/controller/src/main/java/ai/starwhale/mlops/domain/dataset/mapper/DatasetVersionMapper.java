@@ -59,8 +59,6 @@ public interface DatasetVersionMapper {
 
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
 
-    int updateStorageAuths(@Param("id") Long id, @Param("storageAuths") String storageAuths);
-
     int deleteById(@Param("id") Long id);
 
 }

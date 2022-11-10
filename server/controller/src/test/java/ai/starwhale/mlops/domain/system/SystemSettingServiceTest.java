@@ -31,9 +31,17 @@ import org.junit.jupiter.api.Test;
 
 public class SystemSettingServiceTest {
 
-    private SystemSettingService systemSettingService;
+    static String YAML = "---\n"
+            + "dockerSetting:\n"
+            + "  registry: \"abcd.com\"\n"
+            + "resourcePoolSetting: []";
+    static String YAML2 = "---\n"
+            + "dockerSetting:\n"
+            + "  registry: \"abcd1.com\"\n"
+            + "resourcePoolSetting: []";
     SystemSettingMapper systemSettingMapper;
     SystemSettingListener listener;
+    private SystemSettingService systemSettingService;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -43,16 +51,6 @@ public class SystemSettingServiceTest {
         systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, List.of(listener));
         systemSettingService.run();
     }
-
-    static String YAML = "---\n"
-            + "dockerSetting:\n"
-            + "  registry: \"abcd.com\"\n"
-            + "resourcePoolSetting: []";
-
-    static String YAML2 = "---\n"
-            + "dockerSetting:\n"
-            + "  registry: \"abcd1.com\"\n"
-            + "resourcePoolSetting: []";
 
     @Test
     public void testAppStartWithSetting() {

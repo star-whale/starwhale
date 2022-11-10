@@ -39,14 +39,33 @@ import org.springframework.util.StringUtils;
 @Service
 public class DsFileGetter {
 
+    static final Set<String> SCHEMA_HTTP = Set.of("http", "https");
     final StorageAccessParser storageAccessParser;
-
     final DatasetVersionMapper datasetVersionMapper;
 
     public DsFileGetter(StorageAccessParser storageAccessParser,
             DatasetVersionMapper datasetVersionMapper) {
         this.storageAccessParser = storageAccessParser;
         this.datasetVersionMapper = datasetVersionMapper;
+    }
+
+    @NotNull
+    private static StorageUri getStorageUri(String uri) {
+        if (!StringUtils.hasText(uri)) {
+            throw new SwValidationException(ValidSubject.DATASET).tip("uri is empty");
+        }
+        StorageUri storageUri;
+        try {
+            storageUri = new StorageUri(uri);
+        } catch (URISyntaxException e) {
+            log.error("malformed uri", e);
+            throw new SwValidationException(ValidSubject.DATASET).tip("malformed uri");
+        }
+        return storageUri;
+    }
+
+    private static boolean validParam(long sizeLong, long offsetLong) {
+        return sizeLong > 0 && offsetLong >= 0;
     }
 
     public byte[] dataOf(Long datasetId, String uri, String offset,
@@ -66,26 +85,9 @@ public class DsFileGetter {
         }
     }
 
-    @NotNull
-    private static StorageUri getStorageUri(String uri) {
-        if (!StringUtils.hasText(uri)) {
-            throw new SwValidationException(ValidSubject.DATASET).tip("uri is empty");
-        }
-        StorageUri storageUri;
-        try {
-            storageUri = new StorageUri(uri);
-        } catch (URISyntaxException e) {
-            log.error("malformed uri", e);
-            throw new SwValidationException(ValidSubject.DATASET).tip("malformed uri");
-        }
-        return storageUri;
-    }
-
-    static final Set<String> SCHEMA_HTTP = Set.of("http", "https");
-
     public String linkOf(Long datasetId, String uri, Long expTimeMillis) {
         StorageUri storageUri = getStorageUri(uri);
-        if (SCHEMA_HTTP.contains(storageUri.getSchema())) {
+        if (null != storageUri.getSchema() && SCHEMA_HTTP.contains(storageUri.getSchema())) {
             return uri;
         }
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);
@@ -121,9 +123,5 @@ public class DsFileGetter {
                     + StringUtils.trimLeadingCharacter(path, '/');
         }
         return path;
-    }
-
-    private static boolean validParam(long sizeLong, long offsetLong) {
-        return sizeLong > 0 && offsetLong >= 0;
     }
 }

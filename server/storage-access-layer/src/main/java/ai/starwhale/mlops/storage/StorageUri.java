@@ -18,7 +18,6 @@ package ai.starwhale.mlops.storage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -34,8 +33,9 @@ import org.springframework.util.StringUtils;
 @Getter
 public class StorageUri {
 
+    static final Pattern PATH_PATTERN = Pattern.compile(
+            "^(\\/?([^\\/]+)((\\/(([^\\/]+?)\\/?))*))$");
     URI uri;
-
     /**
      * file/s3/ftp/nfs/oss/http/
      */
@@ -46,14 +46,8 @@ public class StorageUri {
     Integer port;
     String pathAfterBucket;
     String bucket;
-
     String path;
-
     String prefixWithBucket;
-
-
-    static final Pattern PATH_PATTERN = Pattern.compile(
-            "^(\\/?([^\\/]+)((\\/(([^\\/]+?)\\/?))*))$");
 
     public StorageUri(String u) throws URISyntaxException {
         this.uri = new URI(u);

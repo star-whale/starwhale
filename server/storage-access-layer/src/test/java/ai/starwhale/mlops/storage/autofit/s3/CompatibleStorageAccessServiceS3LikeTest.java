@@ -32,7 +32,8 @@ public class CompatibleStorageAccessServiceS3LikeTest {
     public void testCompatibleWithoutEndpoint() throws URISyntaxException {
         CompatibleStorageAccessServiceS3Like compatibleStorageAccessServiceS3Like =
                 new CompatibleStorageAccessServiceS3Like(mock(StorageAccessService.class),
-                S3Config.builder().accessKey("ak").secretKey("sk").bucket("b").region("r").build(), Set.of("s3"));
+                        S3Config.builder().accessKey("ak").secretKey("sk").bucket("b").region("r").build(),
+                        Set.of("s3"));
         Assertions.assertTrue(compatibleStorageAccessServiceS3Like.compatibleWith(
                 new StorageUri("s3://s3.r.amazonaws.com/b/adfa/d")));
         Assertions.assertFalse(compatibleStorageAccessServiceS3Like.compatibleWith(
@@ -44,8 +45,8 @@ public class CompatibleStorageAccessServiceS3LikeTest {
     public void testCompatibleWithEndpoint() throws URISyntaxException {
         CompatibleStorageAccessServiceS3Like compatibleStorageAccessServiceS3Like =
                 new CompatibleStorageAccessServiceS3Like(mock(StorageAccessService.class),
-                S3Config.builder().accessKey("ak").secretKey("sk").bucket("b").region("r")
-                        .endpoint("http://localhost:9001").build(), Set.of("minio"));
+                        S3Config.builder().accessKey("ak").secretKey("sk").bucket("b").region("r")
+                                .endpoint("http://localhost:9001").build(), Set.of("minio"));
         Assertions.assertTrue(
                 compatibleStorageAccessServiceS3Like.compatibleWith(new StorageUri("minio://localhost:9001/b/adfa/d")));
         ;

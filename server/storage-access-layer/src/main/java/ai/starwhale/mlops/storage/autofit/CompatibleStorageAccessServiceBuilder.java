@@ -35,7 +35,7 @@ public interface CompatibleStorageAccessServiceBuilder {
     /**
      * test if this builder adapts to the storage type
      *
-     * @param type  type of the storage
+     * @param type type of the storage
      * @return could build
      */
     boolean couldBuild(String type);

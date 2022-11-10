@@ -35,18 +35,15 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
 
 
-    @Autowired
-    private JobDatasetVersionMapper jobDatasetVersionMapper;
-
-    @Autowired
-    private DatasetMapper datasetMapper;
-
-    @Autowired
-    private DatasetVersionMapper datasetVersionMapper;
-
     DatasetEntity dataset;
     DatasetVersionEntity datasetVersionEntity;
     DatasetVersionEntity datasetVersionEntity2;
+    @Autowired
+    private JobDatasetVersionMapper jobDatasetVersionMapper;
+    @Autowired
+    private DatasetMapper datasetMapper;
+    @Autowired
+    private DatasetVersionMapper datasetVersionMapper;
 
     @BeforeEach
     public void initData() {
@@ -54,10 +51,10 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
         datasetMapper.addDataset(dataset);
 
         datasetVersionEntity = DatasetVersionEntity.builder().datasetId(dataset.getId()).versionName("vn")
-                .filesUploaded("fl").storageAuths("sta").versionTag("vt").versionMeta("vm").indexTable("idt").size(123L)
+                .filesUploaded("fl").versionTag("vt").versionMeta("vm").indexTable("idt").size(123L)
                 .storagePath("stp").ownerId(1L).build();
         datasetVersionEntity2 = DatasetVersionEntity.builder().datasetId(dataset.getId()).versionName("vn2")
-                .filesUploaded("fl2").storageAuths("sta2").versionTag("vt2").versionMeta("vm2").indexTable("idt2")
+                .filesUploaded("fl2").versionTag("vt2").versionMeta("vm2").indexTable("idt2")
                 .size(1223L)
                 .storagePath("stp2").ownerId(1L).build();
         datasetVersionMapper.addNewVersion(datasetVersionEntity);
@@ -91,7 +88,6 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getFilesUploaded(), acutal.getFilesUploaded());
         Assertions.assertEquals(expected.getStoragePath(), acutal.getStoragePath());
         Assertions.assertEquals(expected.getSize(), acutal.getSize());
-        Assertions.assertEquals(expected.getStorageAuths(), acutal.getStorageAuths());
         Assertions.assertEquals(expected.getIndexTable(), acutal.getIndexTable());
         Assertions.assertEquals(0, acutal.getStatus());
     }

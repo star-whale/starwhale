@@ -250,7 +250,7 @@ class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
 
 最后一种数据格式称之为remote-link格式，顾名思义，表示的是一种远程link方式构建的数据集，即数据存在在其他介质上，目前支持存在在Local FS和S3协议的对象存储两种方式。构建出来的Starwhale数据集仅存储数据映射关系，不会存储原始数据，适用于原始数据比较大不放面搬迁的场景。
 
-需要注意的时，由于访问Remote的Minio数据，需要携带连接密钥信息，Starwhale为保证安全性，将密钥信息额外存储在`.auth_env`文件中，当copy dataset到Cloud Instance时候，需要增加`--with-auth`参数，这样Cloud Instance会自动导入该密钥并在运行时合理设置环境变量，保证data loader成功，这一过程对用户是透明的，不需要做其他额外操作。
+需要注意的是，由于访问Remote的Minio数据，需要连接密钥信息，管理员需要在server的system setting中配置必要的秘钥信息。
 
 ## 4.参考资料
 

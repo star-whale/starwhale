@@ -34,17 +34,17 @@ public class CompatibleStorageAccessServiceFile extends CompatibleStorageAccessS
     final String rootDir;
 
 
+    public CompatibleStorageAccessServiceFile(StorageAccessService storageAccessService, String rootDir) {
+        super(storageAccessService);
+        this.rootDir = rootDir;
+    }
+
     public boolean compatibleWith(StorageUri uri) {
         if (!StringUtils.hasText(uri.getSchema()) || !CompatibleStorageAccessServiceBuilderFs.TYPES.contains(
                 uri.getSchema().toLowerCase())) {
             return false;
         }
         return uri.getPath().startsWith(StringUtils.trimTrailingCharacter(rootDir, '/') + "/");
-    }
-
-    public CompatibleStorageAccessServiceFile(StorageAccessService storageAccessService, String rootDir) {
-        super(storageAccessService);
-        this.rootDir = rootDir;
     }
 
     @Override

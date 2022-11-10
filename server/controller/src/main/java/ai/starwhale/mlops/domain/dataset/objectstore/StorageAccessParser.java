@@ -18,14 +18,11 @@ package ai.starwhale.mlops.domain.dataset.objectstore;
 
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingListener;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageUri;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,7 +32,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -53,6 +49,7 @@ public class StorageAccessParser implements SystemSettingListener {
 
     Map<StorageConnectionToken, CompatibleStorageAccessService> storageAccessServicesPool
             = new ConcurrentHashMap<>();
+    private Set<StorageConnectionToken> oldConnectionTokens = Set.of();
 
     public StorageAccessParser(StorageAccessService defaultStorageAccessService,
             List<CompatibleStorageAccessServiceBuilder> compatibleStorageAccessServiceBuilders) {
@@ -77,8 +74,6 @@ public class StorageAccessParser implements SystemSettingListener {
         return storageAccessService == null ? defaultStorageAccessService : storageAccessService;
 
     }
-
-    private Set<StorageConnectionToken> oldConnectionTokens = Set.of();
 
     @Override
     public void onUpdate(SystemSetting systemSetting) {

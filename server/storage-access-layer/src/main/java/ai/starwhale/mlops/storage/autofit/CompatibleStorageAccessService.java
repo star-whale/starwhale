@@ -31,6 +31,10 @@ public abstract class CompatibleStorageAccessService implements StorageAccessSer
 
     protected final StorageAccessService storageAccessService;
 
+    public CompatibleStorageAccessService(StorageAccessService storageAccessService) {
+        this.storageAccessService = storageAccessService;
+    }
+
     /**
      * if it is compatible with an uri
      *
@@ -38,10 +42,6 @@ public abstract class CompatibleStorageAccessService implements StorageAccessSer
      * @return if it is compatible with an uri
      */
     public abstract boolean compatibleWith(StorageUri uri);
-
-    public CompatibleStorageAccessService(StorageAccessService storageAccessService) {
-        this.storageAccessService = storageAccessService;
-    }
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {

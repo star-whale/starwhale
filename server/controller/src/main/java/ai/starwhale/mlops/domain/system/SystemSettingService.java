@@ -39,13 +39,10 @@ import org.springframework.util.CollectionUtils;
 public class SystemSettingService implements CommandLineRunner {
 
     private final YAMLMapper yamlMapper;
-
+    private final SystemSettingMapper systemSettingMapper;
+    private final List<SystemSettingListener> listeners;
     @Getter
     protected SystemSetting systemSetting;
-
-    private final SystemSettingMapper systemSettingMapper;
-
-    private final List<SystemSettingListener> listeners;
 
     public SystemSettingService(YAMLMapper yamlMapper,
             SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners) {

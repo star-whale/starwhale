@@ -283,7 +283,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/1
     ```
 
   - 当原始数据文件已经存在第三方存储上，可以使用Starwhale remote-link格式的dataset，能够避免重复拷贝数据，尤其适合数量量比较大或已经有某种存储格式的数据集的场景。remote-link的dataset构建类需要继承 `UserRawBuildExecutor` 类。
-  - 本例子中使用boto3库从Minio上遍历相关Prefix路径，迭代返回`Link`类型的数据。需要注意的时，由于访问Remote的Minio数据，需要携带连接密钥信息，Starwhale为保证安全性，将密钥信息额外存储在`.auth_env`文件中，当copy dataset到Cloud Instance时候，需要增加`--with-auth`参数，这样Cloud Instance会自动导入该密钥并在运行时合理设置环境变量，保证data loader成功，这一过程对用户是透明的，不需要做其他额外操作。
+  - 本例子中使用boto3库从Minio上遍历相关Prefix路径，迭代返回`Link`类型的数据。需要注意的时，由于访问Remote的Minio数据，需要携带连接密钥信息，Starwhale为保证安全性，需要连接密钥信息，管理员需要在server的system setting中配置必要的秘钥信息。
 
 ### 3.3 模型评测代码
 

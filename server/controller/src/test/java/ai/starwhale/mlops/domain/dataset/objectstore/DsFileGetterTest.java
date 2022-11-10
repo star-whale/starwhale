@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.dataset.objectstore;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -51,7 +50,7 @@ public class DsFileGetterTest {
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd",  (String) ColumnTypeScalar.INT64.encode(1, false),
+        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", (String) ColumnTypeScalar.INT64.encode(1, false),
                 (String) ColumnTypeScalar.INT64.encode(1, false));
         Assertions.assertEquals("abc", new String(bytes));
 

@@ -37,10 +37,6 @@ public class S3Config {
     private long hugeFileThreshold;
     private long hugeFilePartSize;
 
-    public boolean overWriteEndPoint() {
-        return null != endpoint && !endpoint.isBlank();
-    }
-
     public S3Config(Map<String, String> tokens) {
         this.bucket = tokens.get("bucket");
         this.accessKey = tokens.get("ak");
@@ -49,6 +45,10 @@ public class S3Config {
         this.region = tokens.get("region");
         this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
         this.hugeFilePartSize = Long.parseLong(tokens.get("hugeFilePartSize"));
+    }
+
+    public boolean overWriteEndPoint() {
+        return null != endpoint && !endpoint.isBlank();
     }
 
 }

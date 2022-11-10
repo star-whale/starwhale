@@ -16,22 +16,16 @@
 
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageUri;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
-import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
-import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;

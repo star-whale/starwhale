@@ -18,8 +18,6 @@ package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
-import ai.starwhale.mlops.storage.env.UserStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -47,17 +45,6 @@ public class StorageAccessConfig {
     @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "minio", matchIfMissing = true)
     public StorageAccessService minio(StorageProperties storageProperties) {
         return new StorageAccessServiceMinio(storageProperties.getS3Config());
-    }
-
-    @Bean
-    public StorageEnvsPropertiesConverter storageEnvsPropertiesConverter(StorageProperties storageProperties) {
-        return new StorageEnvsPropertiesConverter(storageProperties);
-    }
-
-    @Bean
-    public UserStorageAccessServiceBuilder userStorageAccessServiceBuilder(
-            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
-        return new UserStorageAccessServiceBuilder(storageEnvsPropertiesConverter);
     }
 
 }
