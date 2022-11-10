@@ -41,6 +41,7 @@ public class PanelPluginMapperTest extends MySqlContainerHolder {
     private final String pluginNameNonExist = "baz";
     private final String versionExists = "v1";
     private final String versionNonExist = "v2";
+    private final String storagePath = "/foo";
 
     @BeforeEach
     public void setUp() {
@@ -48,12 +49,14 @@ public class PanelPluginMapperTest extends MySqlContainerHolder {
                 .name(pluginNameExists)
                 .version(versionExists)
                 .meta("{}")
+                .storagePath(storagePath)
                 .build();
         panelPluginMapper.add(entity);
         var deleted = PanelPluginEntity.builder()
                 .name(pluginNameDeleted)
                 .version(versionExists)
                 .meta("{}")
+                .storagePath(storagePath)
                 .build();
         panelPluginMapper.add(deleted);
         panelPluginMapper.remove(deleted.getId());
@@ -64,6 +67,7 @@ public class PanelPluginMapperTest extends MySqlContainerHolder {
         var plugins = panelPluginMapper.list();
         Assertions.assertEquals(1, plugins.size());
         Assertions.assertEquals(entity, plugins.get(0));
+        Assertions.assertEquals(storagePath, plugins.get(0).getStoragePath());
     }
 
     @Test
@@ -71,6 +75,7 @@ public class PanelPluginMapperTest extends MySqlContainerHolder {
         var plugins = panelPluginMapper.get(pluginNameExists);
         Assertions.assertEquals(1, plugins.size());
         Assertions.assertEquals(entity, plugins.get(0));
+        Assertions.assertEquals(storagePath, plugins.get(0).getStoragePath());
 
         List.of(pluginNameNonExist, pluginNameDeleted).forEach(name -> {
             var resp = panelPluginMapper.get(name);
@@ -82,6 +87,7 @@ public class PanelPluginMapperTest extends MySqlContainerHolder {
     public void testGetByNameAndVersion() {
         var plugin = panelPluginMapper.getByNameAndVersion(pluginNameExists, versionExists);
         Assertions.assertEquals(entity, plugin);
+        Assertions.assertEquals(storagePath, plugin.getStoragePath());
         Assertions.assertNull(panelPluginMapper.getByNameAndVersion(pluginNameExists, versionNonExist));
 
         List.of(pluginNameNonExist, pluginNameDeleted).forEach(name -> {

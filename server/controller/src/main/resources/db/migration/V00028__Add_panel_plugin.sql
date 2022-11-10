@@ -20,6 +20,7 @@ create table panel_plugin
     name          varchar(255)                       not null,
     version       varchar(255)                       not null,
     meta          json                               null,
+    storage_path  text                               not null,
     created_time  datetime default CURRENT_TIMESTAMP not null,
     modified_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
     deleted_time  datetime                           null,

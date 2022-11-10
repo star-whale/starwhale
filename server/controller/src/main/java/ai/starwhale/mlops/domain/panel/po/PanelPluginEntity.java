@@ -32,6 +32,7 @@ public class PanelPluginEntity {
     private String name;
     private String version;
     private String meta;
+    private String storagePath;
 
     @Override
     public int hashCode() {

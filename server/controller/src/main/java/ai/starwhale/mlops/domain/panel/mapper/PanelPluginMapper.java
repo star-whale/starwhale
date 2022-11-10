@@ -28,17 +28,19 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface PanelPluginMapper {
 
-    @Select("select id, name, version, meta from panel_plugin where deleted_time is null")
+    @Select("select id, name, version, meta, storage_path from panel_plugin where deleted_time is null")
     List<PanelPluginEntity> list();
 
-    @Insert(value = "insert into panel_plugin(name, version, meta) values (#{name}, #{version}, #{meta})")
+    @Insert(value = "insert into panel_plugin(name, version, meta, storage_path) "
+            + "values (#{name}, #{version}, #{meta}, #{storagePath})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(PanelPluginEntity plugin);
 
-    @Select("select id, name, version, meta from panel_plugin where name=#{name} and deleted_time is null")
+    @Select("select id, name, version, meta, storage_path from panel_plugin where "
+            + "name=#{name} and deleted_time is null")
     List<PanelPluginEntity> get(String name);
 
-    @Select("select id, name, version, meta from panel_plugin where "
+    @Select("select id, name, version, meta, storage_path from panel_plugin where "
             + "name=#{name} and version=#{version} and deleted_time is null")
     PanelPluginEntity getByNameAndVersion(String name, String version);
 

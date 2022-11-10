@@ -25,6 +25,8 @@ import ai.starwhale.mlops.domain.panel.mapper.PanelPluginMapper;
 import ai.starwhale.mlops.domain.panel.po.PanelPluginEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,29 +74,28 @@ public class PluginService {
 
     public void installPlugin(MultipartFile multipartFile) {
         byte[] content;
+        String storagePath;
         PanelPlugin.PluginManifest manifest;
         // 1.save to oss
         try (var input = multipartFile.getInputStream(); var dupIs = multipartFile.getInputStream()) {
             content = TarFileUtil.getContentFromTarFile(dupIs, "", "manifest.json");
             // check manifest
             if (content == null) {
-                throw new StarwhaleApiException(new SwProcessException(SwProcessException.ErrorType.SYSTEM),
-                    HttpStatus.BAD_REQUEST);
+                throw new SwValidationException(ValidSubject.PLUGIN, "manifest is empty");
             }
             manifest = yamlMapper.readValue(content, PanelPlugin.PluginManifest.class);
 
             // check if exists
             var plugin = panelPluginMapper.getByNameAndVersion(manifest.name, manifest.version);
             if (plugin != null) {
-                throw new StarwhaleApiException(new SwProcessException(SwProcessException.ErrorType.DB),
-                    HttpStatus.CONFLICT);
+                throw new SwValidationException(ValidSubject.PLUGIN, "plugin exists");
             }
 
-            var path = storagePathCoordinator.allocatePluginPath(manifest.name, manifest.version);
-            storageAccessService.put(path, input, multipartFile.getSize());
+            storagePath = storagePathCoordinator.allocatePluginPath(manifest.name, manifest.version);
+            storageAccessService.put(storagePath, input, multipartFile.getSize());
         } catch (IOException e) {
-            throw new StarwhaleApiException(new SwProcessException(SwProcessException.ErrorType.STORAGE),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("save plugin tarball to storage fail", e);
+            throw new SwProcessException(SwProcessException.ErrorType.STORAGE);
         }
 
         // 2.update db
@@ -102,6 +103,7 @@ public class PluginService {
                 .name(manifest.name)
                 .version(manifest.version)
                 .meta(new String(content, StandardCharsets.UTF_8))
+                .storagePath(storagePath)
                 .build();
         panelPluginMapper.add(entity);
 
