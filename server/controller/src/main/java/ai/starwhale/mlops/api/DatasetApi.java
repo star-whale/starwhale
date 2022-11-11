@@ -24,6 +24,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
@@ -144,6 +146,23 @@ public interface DatasetApi {
             @RequestParam(value = "versionUrl", required = false)
             String versionUrl);
 
+    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(
+            @Parameter(in = ParameterIn.PATH,
+                description = "Project url",
+                schema = @Schema())
+            @PathVariable("projectUrl")
+            String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("datasetUrl")
+            String datasetUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl")
+            String versionUrl,
+            @RequestBody
+            DataConsumptionRequest dataRangeRequest);
+
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
             value = {
@@ -245,6 +264,24 @@ public interface DatasetApi {
             @Parameter(name = "size", description = "data size")
             @RequestParam(name = "size", required = false) Long size,
             HttpServletResponse httpResponse);
+
+    @Operation(summary = "Sign SWDS uri to get a temporarily accessible link",
+            description = "Sign SWDS uri to get a temporarily accessible link")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-link",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> signLink(
+            @PathVariable(name = "projectName") String projectUrl,
+            @PathVariable(name = "datasetName") String datasetUrl,
+            @PathVariable(name = "version") String versionUrl,
+            @Parameter(name = "uri", description = "uri of the link")
+            @RequestParam(name = "uri", required = true) String uri,
+            @Parameter(name = "authName", description = "auth name the link used")
+            @RequestParam(name = "authName", required = false) String authName,
+            @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
+            @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 
 
     @Operation(summary = "Set the tag of the dataset version")

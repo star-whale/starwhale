@@ -16,16 +16,26 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Types;
 
 @Getter
 @EqualsAndHashCode(callSuper = false)
@@ -99,13 +109,16 @@ public class ColumnTypeObject extends ColumnType {
         if (value == null) {
             return null;
         }
+        var ret = new HashMap<String, Object>();
         //noinspection unchecked
-        return ((Map<String, ?>) value).entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new IllegalArgumentException("invalid attribute " + entry.getKey()))
-                                .encode(entry.getValue(), rawResult)));
+        ((Map<String, ?>) value).forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new IllegalArgumentException("invalid attribute " + k);
+            }
+            ret.put(k, type.encode(v, rawResult));
+        });
+        return ret;
     }
 
     @Override
@@ -116,14 +129,16 @@ public class ColumnTypeObject extends ColumnType {
         if (!(value instanceof Map)) {
             throw new SwValidationException(ValidSubject.DATASTORE, "value should be of type Map");
         }
+        var ret = new HashMap<String, Object>();
         //noinspection unchecked
-        return ((Map<String, ?>) value).entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new SwValidationException(ValidSubject.DATASTORE,
-                                        "invalid attribute " + entry.getKey()))
-                                .decode(entry.getValue())));
+        ((Map<String, ?>) value).forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new SwValidationException(ValidSubject.DATASTORE, "invalid attribute " + k);
+            }
+            ret.put(k, type.decode(v));
+        });
+        return ret;
     }
 
     @Override
@@ -154,5 +169,68 @@ public class ColumnTypeObject extends ColumnType {
                                         "invalid attribute " + entry.getKey()))
                                 .toWal(0, entry.getValue())
                                 .build()))));
+    }
+
+    @Override
+    public Types.Builder<?, ? extends Type> buildParquetType() {
+        var builder = Types.optionalGroup();
+        for (var entry : this.attributes.entrySet()) {
+            builder.addField(entry.getValue().toParquetType(entry.getKey()));
+        }
+        return builder;
+    }
+
+    @Override
+    public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
+        recordConsumer.startGroup();
+        ColumnTypeObject.writeMapValue(recordConsumer, this.attributes, (Map<?, ?>) value);
+        recordConsumer.endGroup();
+    }
+
+    public static void writeMapValue(RecordConsumer recordConsumer,
+            Map<String, ColumnType> schema,
+            Map<?, ?> value) {
+        int index = 0;
+        for (var entry : new TreeMap<>(schema).entrySet()) {
+            var attrType = entry.getValue();
+            var attrValue = value.get(entry.getKey());
+            if (value.containsKey(entry.getKey())) {
+                recordConsumer.startField(entry.getKey(), index);
+                attrType.writeParquetValue(recordConsumer, attrValue);
+                recordConsumer.endField(entry.getKey(), index);
+            }
+            ++index;
+        }
+    }
+
+    @Override
+    protected Converter getParquetValueConverter(ValueSetter valueSetter) {
+        return ColumnTypeObject.getObjectConverter(valueSetter, this.attributes);
+    }
+
+    public static GroupConverter getObjectConverter(ValueSetter valueSetter, Map<String, ColumnType> schema) {
+        var converters = new ArrayList<Converter>();
+        var map = new AtomicReference<Map<String, Object>>();
+        for (var entry : new TreeMap<>(schema).entrySet()) {
+            var name = entry.getKey();
+            var type = entry.getValue();
+            converters.add(type.getParquetConverter(value -> map.get().put(name, value)));
+        }
+        return new GroupConverter() {
+            @Override
+            public Converter getConverter(int i) {
+                return converters.get(i);
+            }
+
+            @Override
+            public void start() {
+                map.set(new HashMap<>());
+            }
+
+            @Override
+            public void end() {
+                valueSetter.setValue(map.get());
+            }
+        };
     }
 }

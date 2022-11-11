@@ -46,8 +46,16 @@ public class StorageAccessServiceFile implements StorageAccessService {
 
     private final File rootDir;
 
-    public StorageAccessServiceFile(@Value("${sw.storage.fs-root-dir}") String rootDir) {
+    private final String serviceProvider;
+
+    /**
+     * @param rootDir         the root for the storage file
+     * @param serviceProvider the service who is serving the pre-signed url
+     */
+    public StorageAccessServiceFile(@Value("${sw.storage.fs-config.root-dir}") String rootDir,
+            @Value("${sw.storage.fs-config.service-provider}") String serviceProvider) {
         this.rootDir = new File(rootDir);
+        this.serviceProvider = serviceProvider;
         if (!this.rootDir.exists()) {
             throw new IllegalArgumentException(rootDir + " does not exist");
         }
@@ -67,6 +75,11 @@ public class StorageAccessServiceFile implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
+        this.put(path, inputStream);
+    }
+
+    @Override
+    public void put(String path, InputStream inputStream) throws IOException {
         var f = new File(this.rootDir, path);
         //noinspection ResultOfMethodCallIgnored
         f.getParentFile().mkdirs();
@@ -103,7 +116,7 @@ public class StorageAccessServiceFile implements StorageAccessService {
         if (size == null || size < 0) {
             size = -1L;
         }
-        var f = new RandomAccessFile(this.rootDir, "r");
+        var f = new RandomAccessFile(new File(this.rootDir, path), "r");
         f.seek(offset);
         //noinspection UnstableApiUsage
         var is = ByteStreams.limit(Channels.newInputStream(f.getChannel()), size);
@@ -133,5 +146,10 @@ public class StorageAccessServiceFile implements StorageAccessService {
                 }
             }
         }
+    }
+
+    @Override
+    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
     }
 }

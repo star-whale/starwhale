@@ -44,7 +44,6 @@ import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -60,6 +59,7 @@ import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -95,6 +95,8 @@ public class ModelServiceTest {
     private ModelManager modelManager;
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
+
+    private TrashService trashService;
 
     @SneakyThrows
     @BeforeEach
@@ -137,6 +139,7 @@ public class ModelServiceTest {
                 .willReturn(2L);
         modelManager = mock(ModelManager.class);
         jobHolder = mock(HotJobHolder.class);
+        trashService = mock(TrashService.class);
 
         service = new ModelService(
                 modelMapper,
@@ -151,8 +154,8 @@ public class ModelServiceTest {
                 storageService,
                 userService,
                 projectManager,
-                jobHolder
-        );
+                jobHolder,
+                trashService);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -196,33 +199,15 @@ public class ModelServiceTest {
     public void testDeleteModel() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteModel(ModelQuery.builder().projectUrl("p1").modelUrl("m1").build());
+            var res = service.deleteModel(ModelQuery.builder().projectUrl("p1").modelUrl("1").build());
             assertThat(res, is(true));
 
-            res = service.deleteModel(ModelQuery.builder().projectUrl("p2").modelUrl("m2").build());
-            assertThat(res, is(false));
-        }
-    }
-
-    @Test
-    public void testRecoverModel() {
-        RecoverManager recoverManager = mock(RecoverManager.class);
-        given(recoverManager.recoverBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
-        ))).willReturn(true);
-        try (var mock = mockStatic(RecoverManager.class)) {
-            mock.when(() -> RecoverManager.create(any(), any(), any()))
-                    .thenReturn(recoverManager);
-
-            var res = service.recoverModel("p1", "m1");
-            assertThat(res, is(true));
-
-            res = service.recoverModel("p1", "m2");
+            res = service.deleteModel(ModelQuery.builder().projectUrl("p2").modelUrl("2").build());
             assertThat(res, is(false));
         }
     }

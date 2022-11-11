@@ -23,7 +23,7 @@ public class SwValidationException extends StarwhaleException {
     static final String PREFIX_TIP = "invalid request on subject ";
 
     private final String code;
-    private String tip;
+    private final String tip;
 
     public SwValidationException(ValidSubject validSubject) {
         super(PREFIX_TIP + validSubject.tipSubject);
@@ -37,6 +37,18 @@ public class SwValidationException extends StarwhaleException {
         this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
     }
 
+    public SwValidationException(ValidSubject validSubject, String tip, Throwable cause) {
+        super(PREFIX_TIP + validSubject.tipSubject + "\n" + tip, cause);
+        this.code = PREFIX_CODE + validSubject.tipSubject;
+        this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
+    }
+
+    public SwValidationException(SwValidationException e, String tip) {
+        super(e.getTip() + "\n" + tip, e.getCause());
+        this.code = e.getCode();
+        this.tip = e.getTip() + "\n" + tip;
+    }
+
     @Override
     public String getCode() {
         return this.code;
@@ -45,12 +57,6 @@ public class SwValidationException extends StarwhaleException {
     @Override
     public String getTip() {
         return this.tip;
-    }
-
-    public SwValidationException tip(String tip) {
-        this.tip += "\n";
-        this.tip += tip;
-        return this;
     }
 
     public enum ValidSubject {
@@ -64,7 +70,10 @@ public class SwValidationException extends StarwhaleException {
         RUNTIME("008", "Starwhale Runtime"),
         DATASTORE("009", "Starwhale Internal DataStore"),
         RESOURCE_POOL("010", "Resource Pool"),
-        SETTING("011", "System Setting");
+        SETTING("011", "System Setting"),
+        TRASH("012", "TRASH"),
+        OBJECT_STORE("013", "Object Store"),
+        PLUGIN("014", "Plugin");
         final String code;
         final String tipSubject;
 

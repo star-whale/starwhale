@@ -6,6 +6,7 @@ import { useQuery } from 'react-query'
 import qs from 'qs'
 import { simulationJump } from '@/utils'
 import { getToken, setToken } from '@/api'
+import { useSearchParam } from 'react-use'
 
 type IAuthContext = {
     token: string | null
@@ -28,9 +29,14 @@ export const useAuth = () => {
 const location = window.location
 
 export const AuthProvider = ({ children }: any) => {
+    const token = useSearchParam('token') ?? ''
+    if (!getToken()) {
+        setToken(token)
+    }
+
     const [currentToken, setCurrentToken] = React.useState(getToken())
 
-    const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: true })
+    const userInfo = useQuery(['currentUser', currentToken], fetchCurrentUser, { staleTime: Infinity })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { setCurrentUser } = useCurrentUser()

@@ -21,7 +21,9 @@ sw:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starwhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
-    job-user-id: ${SW_JWT_JOB_USER_ID:1}
+  dataset:
+    load:
+      batchSize: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:
     size: ${SW_TASK_SPLIT_SIZE:1}
     deletionDelayMinutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
@@ -34,7 +36,9 @@ sw:
   storage:
     type: ${SW_STORAGE_TYPE:minio}
     path-prefix: ${SW_STORAGE_PREFIX:starwhale}
-    fs-root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
+    fs-config:
+      root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
+      service-provider: ${SW_INSTANCE_URI}/obj-store
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
       accessKey: ${SW_STORAGE_ACCESSKEY:starwhale}
@@ -53,6 +57,14 @@ sw:
     walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
     walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
     ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
+    dataRootPath: ${SW_DATASTORE_DATA_ROOT_PATH:}
+    dumpInterval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
+    minNoUpdatePeriod: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:1d}
+    parquet:
+      compressionCodec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
+      rowGroupSize: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}
+      pageSize: ${SW_DATASTORE_PARQUET_PAGE_SIZE:1MB}
+      pageRowCountLimit: ${SW_DATASTORE_PARQUET_PAGE_ROW_COUNT_LIMIT:20000}
 ---
 #Development
 spring:

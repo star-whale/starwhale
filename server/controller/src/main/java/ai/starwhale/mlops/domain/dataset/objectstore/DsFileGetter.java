@@ -47,19 +47,7 @@ public class DsFileGetter {
             Long size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
                 datasetId, uri, authName);
-        String path = new StorageUri(uri).getPath();
-        StorageObjectInfo objectInfo;
-        try {
-            objectInfo = storageAccessService.head(path);
-        } catch (IOException e) {
-            log.error("error while accessing storage ", e);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
-                    String.format("error while accessing storage : %s", e.getMessage()));
-        }
-        if (!objectInfo.isExists()) {
-            DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
-            path = versionById.getStoragePath() + "/" + path;
-        }
+        String path = checkPath(datasetId, uri, storageAccessService);
         try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
                 offset, size) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
@@ -68,6 +56,32 @@ public class DsFileGetter {
             throw new SwProcessException(ErrorType.STORAGE).tip(
                     String.format("error while accessing storage : %s", ioException.getMessage()));
         }
+    }
+
+    public String linkOf(Long datasetId, String uri, String authName, Long expTimeMillis) {
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
+                datasetId, uri, authName);
+        String path = checkPath(datasetId, uri, storageAccessService);
+        try {
+            return storageAccessService.signedUrl(path, expTimeMillis);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
+        }
+    }
+
+    private String checkPath(Long datasetId, String uri, StorageAccessService storageAccessService) {
+        String path = new StorageUri(uri).getPath();
+        StorageObjectInfo objectInfo;
+        try {
+            objectInfo = storageAccessService.head(path);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
+        }
+        if (!objectInfo.isExists()) {
+            DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
+            path = versionById.getStoragePath() + "/" + path;
+        }
+        return path;
     }
 
     private static boolean validParam(long sizeLong, long offsetLong) {

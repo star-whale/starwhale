@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,6 +91,16 @@ public class ColumnTypeObjectTest {
     public void testEncode() {
         assertThat(this.columnTypeObject.encode(Map.of("a", 8, "b", List.of(9, 10, 11)), false),
                 is(Map.of("a", "00000008", "b", List.of("00000009", "0000000a", "0000000b"))));
+        assertThat(this.columnTypeObject.encode(new HashMap<String, Object>() {
+                    {
+                        put("a", null);
+                    }
+                }, false),
+                is(new HashMap<String, Object>() {
+                    {
+                        put("a", null);
+                    }
+                }));
         assertThat(this.columnTypeObject.encode(Map.of("a", 8, "b", List.of(9, 10, 11)), true),
                 is(Map.of("a", "8", "b", List.of("9", "10", "11"))));
     }
@@ -100,6 +111,16 @@ public class ColumnTypeObjectTest {
                 is(Map.of("a", 8, "b", List.of(9, 10, 11))));
         assertThat(this.columnTypeObject.decode(Map.of("a", "8")),
                 is(Map.of("a", 8)));
+        assertThat(this.columnTypeObject.decode(new HashMap<String, Object>() {
+                    {
+                        put("a", null);
+                    }
+                }),
+                is(new HashMap<String, Object>() {
+                    {
+                        put("a", null);
+                    }
+                }));
         assertThrows(SwValidationException.class, () -> this.columnTypeObject.decode("9"));
         assertThrows(SwValidationException.class, () -> this.columnTypeObject.decode(Map.of("c", "8")));
         assertThrows(SwValidationException.class, () -> this.columnTypeObject.decode(Map.of("a", "z")));

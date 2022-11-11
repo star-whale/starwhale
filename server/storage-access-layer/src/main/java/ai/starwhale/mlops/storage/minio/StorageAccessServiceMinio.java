@@ -23,6 +23,7 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -31,28 +32,30 @@ import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
-import io.minio.messages.Item;
+import io.minio.http.Method;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.integration.IntegrationProperties.Error;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 @Slf4j
 public class StorageAccessServiceMinio implements StorageAccessService {
 
-    final String bucket;
+    private final String bucket;
 
-    final MinioClient minioClient;
+    private final long partSize;
+
+    private final MinioClient minioClient;
 
     public StorageAccessServiceMinio(S3Config s3Config) {
         this.bucket = s3Config.getBucket();
+        this.partSize = s3Config.getHugeFilePartSize();
         minioClient =
                 MinioClient.builder()
                         .endpoint(s3Config.getEndpoint())
@@ -73,12 +76,7 @@ public class StorageAccessServiceMinio implements StorageAccessService {
                 log.error("head object fails", e);
                 throw new IOException(e);
             }
-        } catch (MinioException e) {
-            log.error("head object fails", e);
-            throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            return new StorageObjectInfo(false, null, null);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             log.error("head object fails", e);
             throw new IOException(e);
         }
@@ -89,14 +87,23 @@ public class StorageAccessServiceMinio implements StorageAccessService {
         try {
             this.minioClient.putObject(
                     PutObjectArgs.builder().bucket(this.bucket).object(path).stream(inputStream, size, -1).build());
-        } catch (MinioException e) {
-            log.error("head object fails", e);
+        } catch (Exception e) {
+            log.error("put object fails", e);
             throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            log.error("head object fails", e);
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("head object fails", e);
+        }
+    }
+
+    @Override
+    public void put(String path, InputStream inputStream) throws IOException {
+        try {
+            this.minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(this.bucket)
+                            .object(path)
+                            .stream(inputStream, -1, this.partSize)
+                            .build());
+        } catch (Exception e) {
+            log.error("put object fails", e);
             throw new IOException(e);
         }
     }
@@ -107,14 +114,8 @@ public class StorageAccessServiceMinio implements StorageAccessService {
             this.minioClient.putObject(
                     PutObjectArgs.builder().bucket(this.bucket).object(path)
                             .stream(new ByteArrayInputStream(body), body.length, -1).build());
-        } catch (MinioException e) {
-            log.error("head object fails", e);
-            throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            log.error("head object fails", e);
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("head object fails", e);
+        } catch (Exception e) {
+            log.error("put object fails", e);
             throw new IOException(e);
         }
     }
@@ -128,17 +129,10 @@ public class StorageAccessServiceMinio implements StorageAccessService {
                     .object(path)
                     .build());
             return new LengthAbleInputStream(resp, objectInfo.getContentLength());
-        } catch (MinioException e) {
-            log.error("get object fails", e);
-            throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            log.error("get object fails", e);
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             log.error("get object fails", e);
             throw new IOException(e);
         }
-
     }
 
     @Override
@@ -151,13 +145,7 @@ public class StorageAccessServiceMinio implements StorageAccessService {
                     .object(path)
                     .build());
             return new LengthAbleInputStream(resp, size);
-        } catch (MinioException e) {
-            log.error("get object fails", e);
-            throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            log.error("get object fails", e);
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             log.error("get object fails", e);
             throw new IOException(e);
         }
@@ -167,38 +155,43 @@ public class StorageAccessServiceMinio implements StorageAccessService {
     public Stream<String> list(String path) throws IOException {
         var resp = this.minioClient.listObjects(
                 ListObjectsArgs.builder().bucket(this.bucket).prefix(path).recursive(true).build());
-        return StreamSupport.stream(resp.spliterator(), false).map(rt -> {
+        List<String> ret = new ArrayList<>();
+        var it = resp.iterator();
+        while (it.hasNext()) {
             try {
-                return rt.get();
-            } catch (MinioException e) {
+                ret.add(it.next().get().objectName());
+            } catch (Exception e) {
                 log.error("list object fails", e);
-                return null;
-            } catch (InvalidKeyException e) {
-                log.error("list object fails", e);
-                return null;
-            } catch (IOException e) {
-                log.error("list object fails", e);
-                return null;
-            } catch (NoSuchAlgorithmException e) {
-                log.error("list object fails", e);
-                return null;
+                throw new IOException(e);
             }
-
-        }).filter(Objects::nonNull).filter(item -> !item.isDir()).map(Item::objectName);
+        }
+        return ret.stream();
     }
 
     @Override
     public void delete(String path) throws IOException {
         try {
             this.minioClient.removeObject(RemoveObjectArgs.builder().bucket(this.bucket).object(path).build());
-        } catch (MinioException e) {
+        } catch (Exception e) {
             log.error("delete object fails", e);
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder().expiry(expTimeMillis.intValue(),
+                TimeUnit.MILLISECONDS).bucket(this.bucket).object(path).method(Method.GET).build();
+        try {
+            return minioClient.getPresignedObjectUrl(request);
+        } catch (MinioException e) {
+            log.error("sin url for object {} fails", path, e);
             throw new IOException(e);
         } catch (InvalidKeyException e) {
-            log.error("delete object fails", e);
+            log.error("sin url for object {} fails", path, e);
             throw new IOException(e);
         } catch (NoSuchAlgorithmException e) {
-            log.error("delete object fails", e);
+            log.error("sin url for object {} fails", path, e);
             throw new IOException(e);
         }
     }

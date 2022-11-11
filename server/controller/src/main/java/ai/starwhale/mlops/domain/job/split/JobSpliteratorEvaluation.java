@@ -97,7 +97,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     @Transactional
     public List<StepEntity> split(JobEntity job) {
         if (JobStatus.CREATED != job.getJobStatus()) {
-            throw new SwValidationException(ValidSubject.JOB).tip("job has been split already!");
+            throw new SwValidationException(ValidSubject.JOB, "job has been split already!");
         }
         List<StepSpec> stepSpecs;
         try {

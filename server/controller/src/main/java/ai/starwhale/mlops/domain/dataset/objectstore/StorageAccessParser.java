@@ -52,6 +52,8 @@ public class StorageAccessParser {
             String authName) {
         if (StringUtils.hasText(authName)) {
             authName = authName.toUpperCase(); // env vars are uppercase always
+        } else {
+            return defaultStorageAccessService;
         }
         StorageAccessService cachedStorageAccessService = storageAccessServicePool.get(
                 formatKey(datasetId, authName));
@@ -74,8 +76,7 @@ public class StorageAccessParser {
         StorageAccessService storageAccessService = userStorageAccessServiceBuilder.build(env, new StorageUri(uri),
                 authName);
         if (null == storageAccessService) {
-            throw new SwValidationException(ValidSubject.DATASET).tip(
-                    "file system not supported yet: " + env.getEnvType());
+            throw new SwValidationException(ValidSubject.DATASET, "file system not supported yet: " + env.getEnvType());
         }
         storageAccessServicePool.putIfAbsent(formatKey(datasetId, authName), storageAccessService);
         return storageAccessService;

@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.storage;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 /**
  * coordinator all paths in this system
@@ -107,14 +108,20 @@ public class StoragePathCoordinator {
                 bundleVersion);
     }
 
+    static final String PLUGIN_PREFIX = "plugins";
+    static final String PANEL_PREFIX = "panel";
+
+    public String allocatePluginPath(String name, String version) {
+        var parts = new String[]{prefix, PLUGIN_PREFIX, PANEL_PREFIX, name, version};
+        return StringUtils.arrayToDelimitedString(parts, "/");
+    }
+
     private void checkKeyWord(String kw, ValidSubject validSubject) {
         if (null == kw || kw.isBlank()) {
-            throw new SwValidationException(validSubject).tip(
-                    "allocated storage key word can't be empty");
+            throw new SwValidationException(validSubject, "allocated storage key word can't be empty");
         }
         if (kw.length() < 2) {
-            throw new SwValidationException(validSubject).tip(
-                    "allocated storage key word too short");
+            throw new SwValidationException(validSubject, "allocated storage key word too short");
         }
     }
 

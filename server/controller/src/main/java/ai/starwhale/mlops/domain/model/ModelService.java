@@ -30,7 +30,6 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
@@ -48,9 +47,11 @@ import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.trash.Trash;
+import ai.starwhale.mlops.domain.trash.Trash.Type;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -96,6 +97,8 @@ public class ModelService {
     private final ProjectManager projectManager;
     private final ModelManager modelManager;
     private final HotJobHolder jobHolder;
+
+    private final TrashService trashService;
     @Setter
     private BundleManager bundleManager;
 
@@ -103,7 +106,7 @@ public class ModelService {
             IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, ModelConvertor modelConvertor,
             ModelVersionConvertor versionConvertor, StoragePathCoordinator storagePathCoordinator,
             ModelManager modelManager, StorageAccessService storageAccessService, StorageService storageService,
-            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder) {
+            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder, TrashService trashService) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -117,6 +120,7 @@ public class ModelService {
         this.userService = userService;
         this.projectManager = projectManager;
         this.jobHolder = jobHolder;
+        this.trashService = trashService;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -133,19 +137,21 @@ public class ModelService {
         return PageUtil.toPageInfo(entities, modelConvertor::convert);
     }
 
+    @Transactional
     public Boolean deleteModel(ModelQuery query) {
+        BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getModelUrl());
+        Trash trash = Trash.builder()
+                .projectId(projectManager.getProjectId(query.getProjectUrl()))
+                .objectId(bundleManager.getBundleId(bundleUrl))
+                .type(Type.MODEL)
+                .build();
+        trashService.moveToRecycleBin(trash, userService.currentUserDetail());
         return RemoveManager.create(bundleManager, modelManager)
-                .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getModelUrl()));
+                .removeBundle(bundleUrl);
     }
 
     public Boolean recoverModel(String projectUrl, String modelUrl) {
-        try {
-            return RecoverManager.create(projectManager, modelManager, idConvertor)
-                    .recoverBundle(BundleUrl.create(projectUrl, modelUrl));
-        } catch (StarwhaleException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL).tip(e.getMessage()),
-                    HttpStatus.BAD_REQUEST);
-        }
+        throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
     public List<ModelInfoVo> listModelInfo(String project, String name) {
@@ -154,8 +160,9 @@ public class ModelService {
             Long projectId = projectManager.getProjectId(project);
             ModelEntity model = modelMapper.findByName(name, projectId);
             if (model == null) {
-                throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL)
-                        .tip("Unable to find the model with name " + name), HttpStatus.BAD_REQUEST);
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "Unable to find the model with name " + name),
+                        HttpStatus.BAD_REQUEST);
             }
             return listModelInfoOfModel(model);
         }
@@ -189,8 +196,9 @@ public class ModelService {
         Long modelId = bundleManager.getBundleId(bundleUrl);
         ModelEntity model = modelMapper.findModelById(modelId);
         if (model == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL)
-                    .tip("Unable to find model " + query.getModelUrl()), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL, "Unable to find model " + query.getModelUrl()),
+                    HttpStatus.BAD_REQUEST);
         }
 
         ModelVersionEntity versionEntity = null;
@@ -205,8 +213,8 @@ public class ModelService {
             versionEntity = modelVersionMapper.getLatestVersion(model.getId());
         }
         if (versionEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL)
-                    .tip("Unable to find the version of model " + query.getModelUrl()), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
+                    "Unable to find the version of model " + query.getModelUrl()), HttpStatus.BAD_REQUEST);
         }
 
         return toModelInfoVo(model, versionEntity);
@@ -233,9 +241,8 @@ public class ModelService {
                     .build();
 
         } catch (IOException e) {
-            log.error("list model storage", e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
-                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list model storage", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -260,7 +267,8 @@ public class ModelService {
                             BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
                             tagAction);
         } catch (TagException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL).tip(e.getMessage()),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL, "failed to create tag manager", e),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -337,8 +345,8 @@ public class ModelService {
         boolean entityExists = null != modelVersionEntity;
         if (entityExists && !uploadRequest.force()) {
             log.debug("model version checked time use {}", System.currentTimeMillis() - startTime);
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL).tip(
-                    "model version duplicate" + uploadRequest.version()),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL, "model version duplicate" + uploadRequest.version()),
                     HttpStatus.BAD_REQUEST);
         } else if (entityExists && uploadRequest.force()) {
             jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
@@ -346,7 +354,7 @@ public class ModelService {
                         Model model = job.getModel();
                         if (model.getName().equals(uploadRequest.name())
                                 && model.getVersion().equals(uploadRequest.version())) {
-                            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL).tip(
+                            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
                                     "job's are running on model version " + uploadRequest.version()
                                             + " you can't force push now"),
                                     HttpStatus.BAD_REQUEST);
@@ -405,12 +413,12 @@ public class ModelService {
         Long projectId = projectManager.getProjectId(projectUrl);
         ModelEntity modelEntity = modelMapper.findByName(modelUrl, projectId);
         if (null == modelEntity) {
-            throw new SwValidationException(ValidSubject.MODEL).tip("model not found");
+            throw new SwValidationException(ValidSubject.MODEL, "model not found");
         }
         ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(
                 versionUrl, modelEntity.getId());
         if (null == modelVersionEntity) {
-            throw new SwValidationException(ValidSubject.MODEL).tip("model version not found");
+            throw new SwValidationException(ValidSubject.MODEL, "model version not found");
         }
         List<String> files;
         try {
@@ -421,7 +429,7 @@ public class ModelService {
             throw new SwProcessException(ErrorType.STORAGE);
         }
         if (CollectionUtils.isEmpty(files)) {
-            throw new SwValidationException(ValidSubject.MODEL).tip("model version empty folder");
+            throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
         }
         String filePath = files.get(0);
         try (InputStream fileInputStream = storageAccessService.get(filePath);

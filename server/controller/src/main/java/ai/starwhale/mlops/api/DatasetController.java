@@ -23,6 +23,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
+import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
 import ai.starwhale.mlops.common.IdConvertor;
@@ -32,6 +34,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -78,7 +81,7 @@ public class DatasetController implements DatasetApi {
             String modelUrl, RevertDatasetRequest revertRequest) {
         Boolean res = datasetService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Revert dataset version failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert dataset version failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -93,7 +96,7 @@ public class DatasetController implements DatasetApi {
                         .datasetUrl(datasetUrl)
                         .build());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete dataset failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete dataset failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -104,7 +107,7 @@ public class DatasetController implements DatasetApi {
             String datasetUrl) {
         Boolean res = datasetService.recoverDataset(projectUrl, datasetUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover dataset failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover dataset failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -121,6 +124,31 @@ public class DatasetController implements DatasetApi {
                         .build());
 
         return ResponseEntity.ok(Code.success.asResponse(datasetInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            DataConsumptionRequest dataRangeRequest) {
+        var dataset = datasetService.query(projectUrl, datasetUrl, versionUrl);
+
+        return ResponseEntity.ok(Code.success.asResponse(datasetService.nextData(
+                DataReadRequest.builder()
+                        .sessionId(dataRangeRequest.getSessionId())
+                        .consumerId(dataRangeRequest.getConsumerId())
+                        .isSerial(dataRangeRequest.isSerial())
+                        .datasetName(dataset.getDatasetName())
+                        .datasetVersion(dataset.getVersionName())
+                        .tableName(dataset.getIndexTable())
+                        .start(dataRangeRequest.getStart())
+                        .startInclusive(dataRangeRequest.isStartInclusive())
+                        .batchSize(dataRangeRequest.getBatchSize())
+                        .end(dataRangeRequest.getEnd())
+                        .endInclusive(dataRangeRequest.isEndInclusive())
+                        .processedData(dataRangeRequest.getProcessedData())
+                        .build()
+        )));
     }
 
     @Override
@@ -173,8 +201,7 @@ public class DatasetController implements DatasetApi {
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             default:
                 throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.DATASET).tip(
-                                "unknown phase " + uploadRequest.getPhase()),
+                        new SwValidationException(ValidSubject.DATASET, "unknown phase " + uploadRequest.getPhase()),
                         HttpStatus.BAD_REQUEST);
         }
     }
@@ -183,8 +210,9 @@ public class DatasetController implements DatasetApi {
     public void pullDs(String projectUrl, String datasetUrl, String versionUrl,
             String partName, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
-                    .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
+                    HttpStatus.BAD_REQUEST);
         }
         datasetUploader.pull(projectUrl, datasetUrl, versionUrl, partName, httpResponse);
     }
@@ -193,8 +221,9 @@ public class DatasetController implements DatasetApi {
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
             String uri, String authName, Long offset, Long size, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
-                    .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
+                    HttpStatus.BAD_REQUEST);
         }
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
@@ -202,10 +231,17 @@ public class DatasetController implements DatasetApi {
             outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, authName, offset, size));
             outputStream.flush();
         } catch (IOException e) {
-            log.error("error write data to response", e);
-            throw new SwProcessException(ErrorType.NETWORK).tip("error write data to response");
+            throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);
         }
 
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> signLink(String projectUrl, String datasetUrl, String versionUrl,
+            String uri, String authName, Long expTimeMillis) {
+        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(
+                datasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
     }
 
     @Override
@@ -215,7 +251,7 @@ public class DatasetController implements DatasetApi {
                 DatasetVersion.builder().tag(datasetTagRequest.getTag()).build());
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET).tip("Modify dataset failed."),
+                    new SwValidationException(ValidSubject.DATASET, "Modify dataset failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -228,13 +264,14 @@ public class DatasetController implements DatasetApi {
         try {
             ta = TagAction.of(datasetTagRequest.getAction(), datasetTagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET).tip(
-                    String.format("Unknown tag action %s ", datasetTagRequest.getAction())),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET,
+                            String.format("Unknown tag action %s ", datasetTagRequest.getAction())),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = datasetService.manageVersionTag(projectUrl, datasetUrl, versionUrl, ta);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update dataset tag failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update dataset tag failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

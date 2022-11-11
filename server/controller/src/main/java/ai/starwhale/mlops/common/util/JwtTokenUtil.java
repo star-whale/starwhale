@@ -20,6 +20,8 @@ import static java.lang.String.format;
 
 import ai.starwhale.mlops.configuration.security.JwtProperties;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
@@ -29,6 +31,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import java.util.Date;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -41,12 +44,18 @@ public class JwtTokenUtil {
     private final JwtProperties jwtProperties;
 
     public String generateAccessToken(User user) {
-        return generateAccessToken(user, jwtProperties.getExpireMinutes() * 60 * 1000); // 1 week
+        return generateAccessToken(user, jwtProperties.getExpireMinutes() * 60 * 1000, Map.of()); // 1 week
     }
 
-    public String generateAccessToken(User user, Long expireMilliSeconds) {
+
+    public String generateAccessToken(User user, Map<String, Object> claims) {
+        return generateAccessToken(user, jwtProperties.getExpireMinutes() * 60 * 1000, claims);
+    }
+
+    public String generateAccessToken(User user, Long expireMilliSeconds, Map<String, Object> claims) {
         JwtBuilder jwtBuilder = Jwts.builder()
                 .setSubject(format("%s,%s", user.getId(), user.getUsername()))
+                .addClaims(claims)
                 .setIssuer(jwtProperties.getIssuer())
                 .setIssuedAt(new Date())
                 .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret());
@@ -60,9 +69,24 @@ public class JwtTokenUtil {
     // Sample method to validate and read the JWT
     public Claims parseJwt(String token) {
         // This line will throw an exception if it is not a signed JWS (as expected)
-        return Jwts.parser()
-                .setSigningKey(jwtProperties.getSecret())
-                .parseClaimsJws(token).getBody();
+        try {
+            return Jwts.parser().setSigningKey(jwtProperties.getSecret()).parseClaimsJws(token).getBody();
+        } catch (SignatureException ex) {
+            log.error("Invalid JWT signature - {}", ex.getMessage());
+            throw new SwValidationException(ValidSubject.USER);
+        } catch (MalformedJwtException ex) {
+            log.error("Invalid JWT token - {}", ex.getMessage());
+            throw new SwValidationException(ValidSubject.USER);
+        } catch (ExpiredJwtException ex) {
+            log.error("Expired JWT token - {}", ex.getMessage());
+            throw new SwValidationException(ValidSubject.USER);
+        } catch (UnsupportedJwtException ex) {
+            log.error("Unsupported JWT token - {}", ex.getMessage());
+            throw new SwValidationException(ValidSubject.USER);
+        } catch (IllegalArgumentException ex) {
+            log.error("JWT claims string is empty - {}", ex.getMessage());
+            throw new SwValidationException(ValidSubject.USER);
+        }
     }
 
     public String getUserId(Claims claims) {
@@ -75,24 +99,6 @@ public class JwtTokenUtil {
 
     public Date getExpirationDate(Claims claims) {
         return claims.getExpiration();
-    }
-
-    public boolean validate(String token) {
-        try {
-            Jwts.parser().setSigningKey(jwtProperties.getSecret()).parseClaimsJws(token);
-            return true;
-        } catch (SignatureException ex) {
-            log.error("Invalid JWT signature - {}", ex.getMessage());
-        } catch (MalformedJwtException ex) {
-            log.error("Invalid JWT token - {}", ex.getMessage());
-        } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token - {}", ex.getMessage());
-        } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token - {}", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty - {}", ex.getMessage());
-        }
-        return false;
     }
 
 }

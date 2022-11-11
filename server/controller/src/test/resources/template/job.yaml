@@ -6,34 +6,32 @@ spec:
   completions: 1
   parallelism: 1
   completionMode: Indexed
-  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: amazon/aws-cli:2.7.25
+          image: ghcr.io/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
           command: [ "/bin/sh" ]
-          args: [ "-c", "for item in $DOWNLOADS; do SRC=$(echo $item|cut -d';' -f1) && DST=$(echo $item|cut -d';' -f2) && echo $SRC,$DST && mkdir -p $DST && aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST; done" ]
-        - name: untar
-          imagePullPolicy: IfNotPresent
-          image: ghcr.io/star-whale/starwhale:latest
-          volumeMounts:
-            - mountPath: /opt/starwhale
-              name: data
-          command:
-            - sh
+          args:
             - -c
             - >-
-              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \;
+               for item in $DOWNLOADS; do
+                 wget $item -P /opt/starwhale;
+               done;
+               cd /opt/starwhale;
+               mkdir swmp;
+               mkdir swrt;
+               find ./ -type f \( -name \*.swmp\* \) -exec tar -C swmp/ -xf {} \; &&
+               find ./ -type f \( -name \*.swrt\* \) -exec tar -C swrt/ -xf {} \;
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - ppl
           volumeMounts:

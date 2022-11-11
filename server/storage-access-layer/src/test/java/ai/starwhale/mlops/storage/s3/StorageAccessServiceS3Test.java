@@ -25,11 +25,14 @@ import static org.hamcrest.Matchers.is;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
@@ -186,11 +189,19 @@ public class StorageAccessServiceS3Test {
         for (int i = 0; i < count; i++) {
             var path = prefix + "/" + i;
             expectedFiles.add(path);
-            s3.put(path, new byte[] {7});
+            s3.put(path, new byte[]{7});
         }
 
         var resp = s3.list(prefix + "/").collect(Collectors.toList());
         assertThat(resp.size(), is(count));
         assertThat(resp, containsInAnyOrder(expectedFiles.toArray()));
+    }
+
+    @Test
+    public void testSignedUrl() throws IOException {
+        String signedUrl = s3.signedUrl("t1", 1000 * 60L);
+        try (InputStream content = new URL(signedUrl).openStream()) {
+            Assertions.assertEquals("a", new String(content.readAllBytes()));
+        }
     }
 }

@@ -3,6 +3,7 @@ import os
 from setuptools import setup, find_packages
 
 install_requires = [
+    "click-option-group==0.5.5",
     "click>=8.0.4",
     "shellingham>=1.4.0",
     # flake8 require importlib-metadata < 4.3.0

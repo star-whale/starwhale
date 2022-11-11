@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.bundle.tag;
 
+import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,4 +29,6 @@ public class HasTagWrapper implements HasTag {
     private String name;
 
     private String tag;
+
+    private Date modifiedTime;
 }

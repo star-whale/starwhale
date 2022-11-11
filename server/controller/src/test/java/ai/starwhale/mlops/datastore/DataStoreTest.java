@@ -25,10 +25,13 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
-import java.io.File;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,30 +40,77 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import lombok.Builder;
+import lombok.Builder.Default;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 
 public class DataStoreTest {
-
-    @TempDir
-    private File rootDir;
 
     private DataStore dataStore;
 
     private SwByteBufferManager bufferManager;
 
-    private ObjectStore objectStore;
+    private StorageAccessService storageAccessService;
 
-    private WalManager walManager;
+    @Builder
+    private static class DataStoreParams {
+
+        @Default
+        int walFileSize = 256;
+        @Default
+        int walMaxFileSize = 4096;
+        @Default
+        int walWaitIntervalMillis = 10;
+        @Default
+        int ossMaxAttempts = 3;
+        @Default
+        String dataRootPath = "";
+        @Default
+        String dumpInterval = "1h";
+        @Default
+        String minNoUpdatePeriod = "1d";
+        @Default
+        String compressionCodec = "SNAPPY";
+        @Default
+        String rowGroupSize = "1MB";
+        @Default
+        String pageSize = "1KB";
+        @Default
+        int pageRowCountLimit = 1000;
+    }
 
     @BeforeEach
     public void setUp() throws IOException {
+        ((Logger) LoggerFactory.getLogger("org.apache.parquet")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.apache.hadoop")).setLevel(Level.ERROR);
         this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new ObjectStore(bufferManager, new StorageAccessServiceFile(this.rootDir.getAbsolutePath()));
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        this.dataStore = new DataStore(this.walManager);
+        this.storageAccessService = new StorageAccessServiceMemory();
+        this.createDateStore(DataStoreParams.builder().build());
+    }
+
+    private void createDateStore(DataStoreParams params) {
+        this.dataStore = new DataStore(this.storageAccessService,
+                this.bufferManager,
+                params.walFileSize,
+                params.walMaxFileSize,
+                params.walWaitIntervalMillis,
+                params.ossMaxAttempts,
+                params.dataRootPath,
+                params.dumpInterval,
+                params.minNoUpdatePeriod,
+                params.compressionCodec,
+                params.rowGroupSize,
+                params.pageSize,
+                params.pageRowCountLimit);
     }
 
     @AfterEach
@@ -83,7 +133,7 @@ public class DataStoreTest {
     }
 
     @Test
-    public void testUpdate() throws IOException {
+    public void testUpdate() {
         this.dataStore.update("t1",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -132,8 +182,7 @@ public class DataStoreTest {
                 is(List.of(Map.of("k", "3", "x", "00000002"))));
 
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
-        this.dataStore = new DataStore(this.walManager);
+        this.createDateStore(DataStoreParams.builder().build());
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -326,9 +375,9 @@ public class DataStoreTest {
         assertThat("all columns",
                 recordList.getRecords(),
                 is(List.of(
-                    Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
-                    Map.of("k", "2", "l", "0000000000000000"),
-                    Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333")
+                        Map.of("k", "1", "a", "00000004", "l", "3ff6666666666666"),
+                        Map.of("k", "2", "l", "0000000000000000"),
+                        Map.of("k", "3", "a", "00000002", "l", "3ff3333333333333")
                 )));
         assertThat("all columns", recordList.getLastKey(), is("3"));
 
@@ -580,34 +629,122 @@ public class DataStoreTest {
     }
 
     @Test
-    public void testMultiThreads() throws Throwable {
+    public void testSoftReferences() throws Exception {
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000, 3);
-        this.dataStore = new DataStore(this.walManager);
-
-        abstract class TestThread extends Thread {
-
-            protected final Random random = new Random();
-            protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
-            private Throwable throwable;
-
-            public void run() {
-                try {
-                    this.execute();
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                    this.throwable = t;
-                }
+        this.createDateStore(DataStoreParams.builder()
+                .walFileSize(65536)
+                .walMaxFileSize(65536)
+                .dumpInterval("1s")
+                .minNoUpdatePeriod("1ms")
+                .build());
+        try {
+            for (int i = 0; i < 10; ++i) {
+                this.dataStore.update("t" + i,
+                        new TableSchemaDesc("k",
+                                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                        IntStream.range(0, 1024)
+                                .mapToObj(k -> Map.of("k", (Object) String.format("%04d", k)))
+                                .collect(Collectors.toList()));
             }
+            // makes sure tables are dumped
+            while (this.dataStore.hasDirtyTables()) {
+                Thread.sleep(1000);
+            }
+            var buf = new ArrayList<long[]>();
+            for (; ; ) {
+                buf.add(new long[1024 * 1024 * 16]);
+            }
+        } catch (OutOfMemoryError ignored) {
+            // now all soft references are garbage collected.
+        }
+        assertThat(this.storageAccessService.list("wal/").collect(Collectors.toList()), is(List.of("wal/wal.log.1")));
+        for (int i = 0; i < 10; ++i) {
+            assertThat(
+                    this.dataStore.scan(DataStoreScanRequest.builder()
+                            .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                    .tableName("t" + i)
+                                    .build()))
+                            .build()).getRecords(),
+                    is(IntStream.range(0, 1000)
+                            .mapToObj(k -> Map.of("k", String.format("%04d", k)))
+                            .collect(Collectors.toList())));
+        }
 
-            abstract void execute();
+        this.dataStore.stopDump();
 
-            public void checkException() throws Throwable {
-                if (this.throwable != null) {
-                    throw this.throwable;
-                }
+        // make some tables dirty
+        for (int i = 0; i < 5; ++i) {
+            this.dataStore.update("t" + i,
+                    new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                    List.of(Map.of("k", "0")));
+        }
+
+        // restart the datastore
+        this.dataStore.terminate();
+        this.createDateStore(DataStoreParams.builder()
+                .walFileSize(65536)
+                .walMaxFileSize(65536)
+                .build());
+        assertThat(this.dataStore.hasDirtyTables(), is(true));
+        assertThat(this.dataStore.list("t"),
+                is(IntStream.range(0, 10).mapToObj(k -> "t" + k).collect(Collectors.toList())));
+        for (int i = 0; i < 5; ++i) {
+            assertThat(
+                    this.dataStore.scan(DataStoreScanRequest.builder()
+                            .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                    .tableName("t" + i)
+                                    .build()))
+                            .build()).getRecords(),
+                    is(Stream.concat(Stream.of(Map.of("k", "0")),
+                                    IntStream.range(0, 999)
+                                            .mapToObj(k -> Map.of("k", String.format("%04d", k))))
+                            .collect(Collectors.toList())));
+        }
+        for (int i = 6; i < 10; ++i) {
+            assertThat(
+                    this.dataStore.scan(DataStoreScanRequest.builder()
+                            .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                    .tableName("t" + i)
+                                    .build()))
+                            .build()).getRecords(),
+                    is(IntStream.range(0, 1000)
+                            .mapToObj(k -> Map.of("k", String.format("%04d", k)))
+                            .collect(Collectors.toList())));
+        }
+    }
+
+    private abstract static class TestThread extends Thread {
+
+        protected final Random random = new Random();
+        protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
+        private Throwable throwable;
+
+        public void run() {
+            try {
+                this.execute();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                this.throwable = t;
             }
         }
+
+        abstract void execute() throws Exception;
+
+        public void checkException() throws Throwable {
+            if (this.throwable != null) {
+                throw this.throwable;
+            }
+        }
+    }
+
+    @Test
+    public void testMultiThreads() throws Throwable {
+        this.dataStore.terminate();
+        this.createDateStore(DataStoreParams.builder()
+                .walFileSize(65536)
+                .walMaxFileSize(65536 * 1024)
+                .walWaitIntervalMillis(1000)
+                .build());
 
         var threads = new ArrayList<TestThread>();
         for (int i = 0; i < 20; ++i) {
@@ -684,11 +821,11 @@ public class DataStoreTest {
             threads.add(new TestThread() {
                 public void execute() {
                     for (int j = 0; j < 100; ++j) {
-                        var records = dataStore.query(DataStoreQueryRequest.builder()
+                        dataStore.query(DataStoreQueryRequest.builder()
                                 .tableName(tableName)
                                 .limit(10)
                                 .rawResult(true)
-                                .build()).getRecords();
+                                .build());
                         try {
                             Thread.sleep(this.random.nextInt(5));
                         } catch (InterruptedException e) {
@@ -709,6 +846,99 @@ public class DataStoreTest {
                 e.printStackTrace();
             }
             thread.checkException();
+        }
+    }
+
+    @Test
+    public void testRestartWhenUpdating() throws Throwable {
+        this.dataStore.terminate();
+        this.createDateStore(DataStoreParams.builder()
+                .dumpInterval("1s")
+                .minNoUpdatePeriod("1ms")
+                .build());
+
+        var threads = new ArrayList<TestThread>();
+        var stopRestart = new AtomicBoolean();
+        var restartThread = new TestThread() {
+            public void execute() throws Exception {
+                while (!stopRestart.get()) {
+                    Thread.sleep(100);
+                    System.out.printf("%s terminating\n", this.dateFormat.format(new Date()));
+                    dataStore.terminate();
+                    System.out.printf("%s terminated\n", this.dateFormat.format(new Date()));
+                    createDateStore(DataStoreParams.builder()
+                            .walWaitIntervalMillis(1000)
+                            .dumpInterval("1s")
+                            .minNoUpdatePeriod("1ms")
+                            .build());
+                    System.out.printf("%s restarted\n", this.dateFormat.format(new Date()));
+                }
+            }
+        };
+        var inserted = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<String>>();
+        for (int i = 0; i < 20; ++i) {
+            // update
+            var index = i;
+            var tableName = "t" + i;
+            var queue = new ConcurrentLinkedQueue<String>();
+            inserted.put(i, queue);
+            threads.add(new TestThread() {
+                public void execute() throws Exception {
+                    for (int j = 0; j < 100; ++j) {
+                        for (int k = 0; k < 1000; ++k) {
+                            try {
+                                String key = String.format("%06d", j * 1000 + k);
+                                dataStore.update(tableName,
+                                        new TableSchemaDesc("k",
+                                                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                                        List.of(Map.of("k", key)));
+                                queue.add(key);
+                            } catch (SwProcessException ignore) {
+                                Thread.yield();
+                            }
+                        }
+                        Thread.sleep(100);
+                    }
+                    System.out.printf("%s update %d done. %d keys inserted\n", this.dateFormat.format(new Date()),
+                            index,
+                            queue.size());
+                }
+            });
+        }
+        restartThread.start();
+        for (var thread : threads) {
+            thread.start();
+        }
+        for (var thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            thread.checkException();
+        }
+        stopRestart.set(true);
+        restartThread.join();
+        for (int i = 0; i < 20; ++i) {
+            var result = new ArrayList<String>();
+            String key = "";
+            for (; ; ) {
+                var t = this.dataStore.scan(DataStoreScanRequest.builder()
+                                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("t" + i)
+                                        .build()))
+                                .start(key)
+                                .startInclusive(false)
+                                .build()).getRecords().stream()
+                        .map(m -> (String) m.get("k"))
+                        .collect(Collectors.toList());
+                result.addAll(t);
+                if (t.size() < 1000) {
+                    break;
+                }
+                key = t.get(t.size() - 1);
+            }
+            assertThat(result, is(inserted.get(i).stream().sorted().collect(Collectors.toList())));
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -57,4 +58,10 @@ public interface MemoryTable {
     void lock();
 
     void unlock();
+
+    void save();
+
+    long getFirstWalLogId();
+
+    long getLastUpdateTime();
 }

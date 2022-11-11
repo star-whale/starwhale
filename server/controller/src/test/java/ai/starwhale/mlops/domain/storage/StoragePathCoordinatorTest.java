@@ -16,6 +16,17 @@
 
 package ai.starwhale.mlops.domain.storage;
 
-public class StoragePathCoordinatorTest {
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
+import org.junit.jupiter.api.Test;
+
+public class StoragePathCoordinatorTest {
+    @Test
+    public void testAllocatePluginPath() {
+        var sysPath = "/foo";
+        var ins = new StoragePathCoordinator(sysPath);
+        var resp = ins.allocatePluginPath("name1", "version1");
+        assertThat(resp, is("/foo/controller/plugins/panel/name1/version1"));
+    }
 }

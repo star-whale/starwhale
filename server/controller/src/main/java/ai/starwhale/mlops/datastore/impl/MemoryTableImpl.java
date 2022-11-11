@@ -17,59 +17,152 @@
 package ai.starwhale.mlops.datastore.impl;
 
 import ai.starwhale.mlops.datastore.ColumnSchema;
-import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
-import ai.starwhale.mlops.datastore.ColumnTypeList;
-import ai.starwhale.mlops.datastore.ColumnTypeObject;
 import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.OrderByDesc;
+import ai.starwhale.mlops.datastore.ParquetConfig;
+import ai.starwhale.mlops.datastore.TableMeta;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.WalManager;
+import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
+import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
+import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
+import java.io.IOException;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.conf.Configuration;
 
+@Slf4j
 public class MemoryTableImpl implements MemoryTable {
 
     private final String tableName;
 
     private final WalManager walManager;
+    private final StorageAccessService storageAccessService;
+    private final String dataPathPrefix;
+    private final SimpleDateFormat dataPathSuffixFormat = new SimpleDateFormat("yyMMddHHmmss.SSS");
+    private final ParquetConfig parquetConfig;
 
     private TableSchema schema = null;
 
-    private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
+    @Getter
+    private long firstWalLogId = -1;
 
-    // used only for initialization from WAL
-    private final Map<Integer, ColumnSchema> indexMap = new HashMap<>();
+    private long lastWalLogId = -1;
+
+    @Getter
+    private long lastUpdateTime = 0;
+
+    private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
 
     private final Lock lock = new ReentrantLock();
 
-    public MemoryTableImpl(String tableName, WalManager walManager) {
+    public MemoryTableImpl(String tableName,
+            WalManager walManager,
+            StorageAccessService storageAccessService,
+            String dataPathPrefix,
+            ParquetConfig parquetConfig) {
         this.tableName = tableName;
         this.walManager = walManager;
+        this.storageAccessService = storageAccessService;
+        this.parquetConfig = parquetConfig;
+        this.dataPathPrefix = dataPathPrefix;
+        this.dataPathSuffixFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        this.load();
     }
 
+    private void load() {
+        try {
+            var path = this.storageAccessService.list(dataPathPrefix).max(Comparator.naturalOrder()).orElse(null);
+            if (path == null) {
+                return;
+            }
+            var conf = new Configuration();
+            try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
+                for (; ; ) {
+                    var record = reader.read();
+                    if (record == null) {
+                        break;
+                    }
+                    if (this.schema == null) {
+                        this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
+                        var metaBuilder = TableMeta.MetaData.newBuilder();
+                        try {
+                            JsonFormat.parser().merge(conf.get(SwReadSupport.META_DATA_KEY), metaBuilder);
+                        } catch (InvalidProtocolBufferException e) {
+                            throw new SwProcessException(ErrorType.DATASTORE, "failed to parse metadata", e);
+                        }
+                        var metadata = metaBuilder.build();
+                        this.lastWalLogId = metadata.getLastWalLogId();
+                        this.lastUpdateTime = metadata.getLastUpdateTime();
+                    }
+                    this.recordMap.put(record.get(this.schema.getKeyColumn()), record);
+                }
+            }
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
+        }
+    }
+
+    @Override
+    public void save() {
+        String metadata;
+        try {
+            metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
+                    .setLastWalLogId(this.lastWalLogId)
+                    .setLastUpdateTime(this.lastUpdateTime)
+                    .build());
+        } catch (InvalidProtocolBufferException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
+        }
+        try (var writer = new SwParquetWriterBuilder(
+                this.storageAccessService,
+                this.schema,
+                metadata,
+                this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
+                this.parquetConfig)
+                .build()) {
+            for (var record : this.recordMap.values()) {
+                writer.write(record);
+            }
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to save " + this.tableName, e);
+        }
+        this.firstWalLogId = -1;
+    }
+
+    @Override
     public void lock() {
         this.lock.lock();
     }
 
+    @Override
     public void unlock() {
         this.lock.unlock();
     }
@@ -80,8 +173,11 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Override
     public void updateFromWal(Wal.WalEntry entry) {
+        if (entry.getId() <= this.lastWalLogId) {
+            return;
+        }
         if (entry.hasTableSchema()) {
-            var schemaDesc = this.parseTableSchema(entry.getTableSchema());
+            var schemaDesc = WalManager.parseTableSchema(entry.getTableSchema());
             if (this.schema == null) {
                 this.schema = new TableSchema(schemaDesc);
             } else {
@@ -92,42 +188,10 @@ public class MemoryTableImpl implements MemoryTable {
         if (!recordList.isEmpty()) {
             this.insertRecords(recordList.stream().map(this::parseRecord).collect(Collectors.toList()));
         }
-    }
-
-    private TableSchemaDesc parseTableSchema(Wal.TableSchema tableSchema) {
-        var ret = new TableSchemaDesc();
-        var keyColumn = tableSchema.getKeyColumn();
-        if (!keyColumn.isEmpty()) {
-            ret.setKeyColumn(keyColumn);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = entry.getId();
         }
-        var columnList = new ArrayList<>(tableSchema.getColumnsList());
-        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
-        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
-        for (var col : columnList) {
-            var colDesc = this.parseColumnSchema(col);
-            columnSchemaList.add(colDesc);
-            this.indexMap.put(col.getColumnIndex(), new ColumnSchema(colDesc, col.getColumnIndex()));
-        }
-        ret.setColumnSchemaList(columnSchemaList);
-        return ret;
-    }
-
-    private ColumnSchemaDesc parseColumnSchema(Wal.ColumnSchema columnSchema) {
-        var ret = ColumnSchemaDesc.builder()
-                .name(columnSchema.getColumnName())
-                .type(columnSchema.getColumnType());
-        if (!columnSchema.getPythonType().isEmpty()) {
-            ret.pythonType(columnSchema.getPythonType());
-        }
-        if (columnSchema.hasElementType()) {
-            ret.elementType(this.parseColumnSchema(columnSchema.getElementType()));
-        }
-        if (columnSchema.getAttributesCount() > 0) {
-            ret.attributes(columnSchema.getAttributesList().stream()
-                    .map(this::parseColumnSchema)
-                    .collect(Collectors.toList()));
-        }
-        return ret.build();
+        this.lastWalLogId = entry.getId();
     }
 
     private Map<String, Object> parseRecord(Wal.Record record) {
@@ -136,7 +200,7 @@ public class MemoryTableImpl implements MemoryTable {
             if (col.getIndex() == -1) {
                 ret.put("-", true);
             } else {
-                var colSchema = this.indexMap.get(col.getIndex());
+                var colSchema = this.schema.getColumnSchemaByIndex(col.getIndex());
                 ret.put(colSchema.getName(), colSchema.getType().fromWal(col));
             }
         }
@@ -166,8 +230,7 @@ public class MemoryTableImpl implements MemoryTable {
                 diff = newSchema.merge(schema);
             }
             for (var col : diff) {
-                logSchemaBuilder.addColumns(
-                        MemoryTableImpl.writeColumnSchema(col.getIndex(), col.getName(), col.getType()));
+                logSchemaBuilder.addColumns(WalManager.convertColumnSchema(col));
             }
             logEntryBuilder.setTableSchema(logSchemaBuilder);
         }
@@ -193,7 +256,11 @@ public class MemoryTableImpl implements MemoryTable {
                 logEntryBuilder.addRecords(MemoryTableImpl.writeRecord(newSchema, record));
             }
         }
-        this.walManager.append(logEntryBuilder.build());
+        this.lastWalLogId = this.walManager.append(logEntryBuilder);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+        this.lastUpdateTime = System.currentTimeMillis();
         this.schema = newSchema;
         if (decodedRecords != null) {
             this.insertRecords(decodedRecords);
@@ -213,25 +280,6 @@ public class MemoryTableImpl implements MemoryTable {
             }
         }
     }
-
-    private static Wal.ColumnSchema.Builder writeColumnSchema(
-            int columnIndex, String columnName, ColumnType columnType) {
-        var ret = Wal.ColumnSchema.newBuilder()
-                .setColumnIndex(columnIndex)
-                .setColumnName(columnName)
-                .setColumnType(columnType.getTypeName());
-        if (columnType instanceof ColumnTypeList) {
-            ret.setElementType(
-                    MemoryTableImpl.writeColumnSchema(0, "", ((ColumnTypeList) columnType).getElementType()));
-        } else if (columnType instanceof ColumnTypeObject) {
-            ret.setPythonType(((ColumnTypeObject) columnType).getPythonType());
-            ret.addAllAttributes(((ColumnTypeObject) columnType).getAttributes().entrySet().stream()
-                    .map(entry -> MemoryTableImpl.writeColumnSchema(0, entry.getKey(), entry.getValue()).build())
-                    .collect(Collectors.toList()));
-        }
-        return ret;
-    }
-
 
     private static Wal.Record.Builder writeRecord(TableSchema schema, Map<String, Object> record) {
         var ret = Wal.Record.newBuilder();
@@ -502,13 +550,12 @@ public class MemoryTableImpl implements MemoryTable {
                 ret.put(name, columnType.decode(value));
             } catch (Exception e) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        MessageFormat.format("fail to decode value {0} for column {1}: {2}",
+                        MessageFormat.format("failed to decode value {0} for column {1}",
                                 value,
-                                name,
-                                e.getMessage()));
+                                name),
+                        e);
             }
         }
         return ret;
     }
-
 }

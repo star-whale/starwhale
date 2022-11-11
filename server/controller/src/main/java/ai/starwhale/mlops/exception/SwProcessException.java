@@ -23,7 +23,7 @@ public class SwProcessException extends StarwhaleException {
     static final String PREFIX_TIP = "ERROR occurs while dealing with ";
 
     private final String code;
-    private String tip;
+    private final String tip;
 
     public SwProcessException(ErrorType errorType) {
         super(PREFIX_TIP + errorType.tipSubject);
@@ -37,6 +37,12 @@ public class SwProcessException extends StarwhaleException {
         this.tip = PREFIX_TIP + errorType.tipSubject + "\n" + tip;
     }
 
+    public SwProcessException(ErrorType errorType, String tip, Throwable cause) {
+        super(PREFIX_TIP + errorType.tipSubject + "\n" + tip, cause);
+        this.code = PREFIX_CODE + errorType.tipSubject;
+        this.tip = PREFIX_TIP + errorType.tipSubject + "\n" + tip;
+    }
+
     @Override
     public String getCode() {
         return this.code;
@@ -45,12 +51,6 @@ public class SwProcessException extends StarwhaleException {
     @Override
     public String getTip() {
         return this.tip;
-    }
-
-    public SwProcessException tip(String tip) {
-        this.tip += "\n";
-        this.tip += tip;
-        return this;
     }
 
     public enum ErrorType {

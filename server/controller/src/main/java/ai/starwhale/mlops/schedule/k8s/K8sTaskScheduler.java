@@ -16,9 +16,8 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SwRunTime;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
@@ -28,16 +27,19 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,35 +62,41 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
-    final StorageProperties storageProperties;
-
     final RunTimeProperties runTimeProperties;
 
-    final JobTokenConfig jobTokenConfig;
+    final TaskTokenValidator taskTokenValidator;
 
     final K8sJobTemplate k8sJobTemplate;
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
     final String instanceUri;
-    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
+    final int datasetLoadBatchSize;
+    final String restartPolicy;
+    final int backoffLimit;
+    final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-            StorageProperties storageProperties,
-            JobTokenConfig jobTokenConfig,
+            TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
             ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri,
-            StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
+            ResourceEventHandler<V1Node> eventHandlerNode,
+            @Value("${sw.instance-uri}") String instanceUri,
+            @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
+            @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
+            @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
+            StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
-        this.storageProperties = storageProperties;
-        this.jobTokenConfig = jobTokenConfig;
+        this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
-        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
+        this.storageAccessService = storageAccessService;
+        this.datasetLoadBatchSize = datasetLoadBatchSize;
+        this.restartPolicy = restartPolicy;
+        this.backoffLimit = backoffLimit;
     }
 
     @Override
@@ -118,7 +126,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             Map<String, String> nodeSelector =
                     null != task.getStep().getJob().getResourcePool() ? task.getStep().getJob().getResourcePool()
                             .getNodeSelector() : Map.of();
-            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(), buildContainerSpecMap(task), nodeSelector);
+            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(),
+                    this.restartPolicy, this.backoffLimit, buildContainerSpecMap(task), nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             k8sClient.deploy(k8sJob);
         } catch (ApiException k8sE) {
@@ -131,22 +140,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap(Task task) {
-
-        Map<String, String> initContainerEnvs = getInitContainerEnvs(task);
-        // task container envs
-        Map<String, String> coreContainerEnvs = buildCoreContainerEnvs(task);
         // TODO: use task's resource needs
         Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
         k8sJobTemplate.getInitContainerTemplates().forEach(templateContainer -> {
             ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(mapToEnv(initContainerEnvs));
+            containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
             ret.put(templateContainer.getName(), containerOverwriteSpec);
         });
 
         JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
         k8sJobTemplate.getContainersTemplates().forEach(templateContainer -> {
             ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(mapToEnv(coreContainerEnvs));
+            containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
             containerOverwriteSpec.setCmds(List.of("run"));
             containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
             containerOverwriteSpec.setImage(jobRuntime.getImage());
@@ -165,10 +170,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @NotNull
-    private Map<String, String> buildCoreContainerEnvs(Task task) {
+    private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
+        coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // TODO: support multi dataset uris
         // oss env
         List<DataSet> dataSets = swJob.getDataSets();
@@ -179,13 +185,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
-        dataSets.forEach(ds -> ds.getFileStorageEnvs().values()
-                .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
-
-        coreContainerEnvs.put(StorageEnv.ENV_KEY_PREFIX, dataSet.getPath());
-
         // datastore env
-        coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
+        coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
         coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
@@ -201,26 +202,58 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
         }
 
-        return coreContainerEnvs;
+        var envs = mapToEnv(coreContainerEnvs);
+
+        envs.add(
+                new V1EnvVar()
+                        .name("SW_POD_NAME")
+                        .valueFrom(
+                                new V1EnvVarSource().fieldRef(
+                                        new V1ObjectFieldSelector().fieldPath("metadata.name")))
+        );
+        return envs;
     }
 
     @NotNull
-    private Map<String, String> getInitContainerEnvs(Task task) {
+    private List<V1EnvVar> getInitContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
         JobRuntime jobRuntime = swJob.getJobRuntime();
-        Map<String, String> initContainerEnvs = new HashMap<>();
-        Map<String, StorageEnv> fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
-        // Ignore keys, we use only one key by now
-        fileStorageEnvs.values().forEach((StorageEnv env) -> initContainerEnvs.putAll(env.getEnvs()));
 
         List<String> downloads = new ArrayList<>();
-        String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
-        downloads.add(prefix + swJob.getModel().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
-        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
+        try {
+            storageAccessService.list(swJob.getModel().getPath()).forEach(path -> {
+                try {
+                    String modelSignedUrl = storageAccessService.signedUrl(path, 1000 * 60 * 60L);
+                    downloads.add(modelSignedUrl);
+                } catch (IOException e) {
+                    throw new SwProcessException(ErrorType.STORAGE, "sign model url failed for " + path, e);
+                }
+            });
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE,
+                    "list model files failed for " + swJob.getModel().getPath(),
+                    e);
+        }
+        try {
+            storageAccessService.list(jobRuntime.getStoragePath()).forEach(path -> {
+                try {
+                    String runtimeSignedUrl = storageAccessService.signedUrl(path,
+                            1000 * 60 * 60L);
+                    downloads.add(runtimeSignedUrl);
+                } catch (IOException e) {
+                    throw new SwProcessException(ErrorType.STORAGE,
+                            "sign runtime url failed for " + path,
+                            e);
+                }
 
-        return initContainerEnvs;
+            });
+
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE,
+                    "list runtime url failed for " + jobRuntime.getStoragePath(),
+                    e);
+        }
+        return mapToEnv(Map.of("DOWNLOADS", Strings.join(downloads, ' ')));
     }
 
     @NotNull

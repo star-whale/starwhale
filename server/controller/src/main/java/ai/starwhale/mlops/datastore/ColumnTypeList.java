@@ -16,12 +16,21 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Types;
 
 @Getter
 @EqualsAndHashCode(callSuper = false)
@@ -105,5 +114,63 @@ public class ColumnTypeList extends ColumnType {
         return ret.addAllListValue(((List<?>) value).stream()
                 .map(element -> this.elementType.toWal(0, element).build())
                 .collect(Collectors.toList()));
+    }
+
+    @Override
+    public Types.Builder<?, ? extends Type> buildParquetType() {
+        return Types.optionalGroup().addField(
+                Types.repeatedGroup().addField(elementType.toParquetType("element")).named("list"));
+    }
+
+    @Override
+    public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
+        recordConsumer.startField("list", 0);
+        var listValue = (List<?>) value;
+        for (var element : listValue) {
+            recordConsumer.startGroup();
+            recordConsumer.startField("element", 0);
+            this.elementType.writeParquetValue(recordConsumer, element);
+            recordConsumer.endField("element", 0);
+            recordConsumer.endGroup();
+        }
+        recordConsumer.endField("list", 0);
+    }
+
+    @Override
+    protected Converter getParquetValueConverter(ValueSetter valueSetter) {
+        var list = new AtomicReference<List<Object>>();
+        var elementConverter = elementType.getParquetConverter(v -> {
+            list.get().add(v);
+        });
+        var listConverter = new GroupConverter() {
+            @Override
+            public Converter getConverter(int i) {
+                return elementConverter;
+            }
+
+            @Override
+            public void start() {
+            }
+
+            @Override
+            public void end() {
+            }
+        };
+        return new GroupConverter() {
+            @Override
+            public Converter getConverter(int i) {
+                return listConverter;
+            }
+
+            @Override
+            public void start() {
+                list.set(new ArrayList<>());
+            }
+
+            @Override
+            public void end() {
+                valueSetter.setValue(list.get());
+            }
+        };
     }
 }

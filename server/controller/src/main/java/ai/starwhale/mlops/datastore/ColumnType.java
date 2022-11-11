@@ -16,12 +16,22 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
+import lombok.NonNull;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.PrimitiveConverter;
+import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Type.Repetition;
+import org.apache.parquet.schema.Types;
 
 @Getter
 public abstract class ColumnType {
@@ -174,4 +184,59 @@ public abstract class ColumnType {
     public abstract Object fromWal(Wal.Column col);
 
     public abstract Wal.Column.Builder toWal(int columnIndex, Object value);
+
+    public Type toParquetType(String name) {
+        var builder = Types.optionalGroup();
+        builder.addField(Types.primitive(PrimitiveTypeName.BOOLEAN, Repetition.REQUIRED).named("null"));
+        builder.addField(this.buildParquetType().named("value"));
+        return builder.named(name);
+    }
+
+    protected abstract Types.Builder<?, ? extends Type> buildParquetType();
+
+    public void writeParquetValue(RecordConsumer recordConsumer, Object value) {
+        recordConsumer.startGroup();
+        recordConsumer.startField("null", 0);
+        recordConsumer.addBoolean(value == null);
+        recordConsumer.endField("null", 0);
+        if (value != null) {
+            recordConsumer.startField("value", 1);
+            this.writeNonNullParquetValue(recordConsumer, value);
+            recordConsumer.endField("value", 1);
+        }
+        recordConsumer.endGroup();
+    }
+
+    protected abstract void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value);
+
+    public Converter getParquetConverter(ValueSetter valueSetter) {
+        var nullConverter = new PrimitiveConverter() {
+            @Override
+            public void addBoolean(boolean value) {
+                if (value) {
+                    valueSetter.setValue(null);
+                }
+            }
+        };
+        var valueConverter = getParquetValueConverter(valueSetter);
+        return new GroupConverter() {
+            @Override
+            public Converter getConverter(int index) {
+                if (index == 0) {
+                    return nullConverter;
+                }
+                return valueConverter;
+            }
+
+            @Override
+            public void start() {
+            }
+
+            @Override
+            public void end() {
+            }
+        };
+    }
+
+    protected abstract Converter getParquetValueConverter(ValueSetter valueSetter);
 }

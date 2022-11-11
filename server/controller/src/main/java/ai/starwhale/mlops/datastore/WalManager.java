@@ -27,18 +27,21 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.xerial.snappy.Snappy;
 
 @Slf4j
-@Component
 public class WalManager extends Thread {
 
     private final ObjectStore objectStore;
@@ -55,7 +58,7 @@ public class WalManager extends Thread {
 
     private final int walWaitIntervalMillis;
 
-    private final LinkedList<Wal.WalEntry> entries = new LinkedList<>();
+    private final LinkedList<Wal.WalEntry> entriesToWrite = new LinkedList<>();
 
     private SwBufferOutputStream outputStream;
 
@@ -73,17 +76,21 @@ public class WalManager extends Thread {
 
     private int logFileIndex;
 
+    private long maxEntryId;
+
+    private long maxEntryIdInOutputBuffer;
+
     private final int ossMaxAttempts;
 
-    private final List<String> existedLogFiles = new ArrayList<>();
+    private final Map<String, Long> walLogFileMap = new ConcurrentHashMap<>();
 
     public WalManager(ObjectStore objectStore,
             SwBufferManager bufferManager,
-            @Value("${sw.datastore.walFileSize}") int walFileSize,
-            @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-            @Value("${sw.datastore.walPrefix}") String walPrefix,
-            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
-            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) throws IOException {
+            int walFileSize,
+            int walMaxFileSize,
+            String walPrefix,
+            int walWaitIntervalMillis,
+            int ossMaxAttempts) {
         this.objectStore = objectStore;
         this.bufferManager = bufferManager;
         this.walFileSize = walFileSize;
@@ -107,8 +114,7 @@ public class WalManager extends Thread {
                             () -> this.objectStore.list(this.logFilePrefix))
                     .apply();
         } catch (Throwable e) {
-            log.error("fail to read WAL", e);
-            throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
+            throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "fail to read WAL", e);
         }
         while (it.hasNext()) {
             var fn = it.next();
@@ -121,16 +127,21 @@ public class WalManager extends Thread {
         }
         if (!walMap.isEmpty()) {
             this.logFileIndex = walMap.lastKey() + 1;
-            this.existedLogFiles.addAll(walMap.values());
+            for (var key : walMap.values()) {
+                this.walLogFileMap.put(key, -1L);
+            }
         }
         this.start();
     }
 
     public Iterator<Wal.WalEntry> readAll() {
         return new Iterator<>() {
-            private final List<String> files = new ArrayList<>(WalManager.this.existedLogFiles);
+            private final List<String> files = WalManager.this.walLogFileMap.keySet().stream()
+                    .sorted(Comparator.comparingInt(fn -> Integer.parseInt(fn.substring(logFilePrefix.length()))))
+                    .collect(Collectors.toList());
             private final SwBuffer buf = WalManager.this.bufferManager.allocate(WalManager.this.walMaxFileSize);
             private SwBufferInputStream inputStream;
+            private String currentFile;
 
             @Override
             public boolean hasNext() {
@@ -151,16 +162,17 @@ public class WalManager extends Thread {
                     if (this.inputStream.remaining() == 0) {
                         this.inputStream = null;
                     }
+                    maxEntryId = ret.getId();
+                    walLogFileMap.put(this.currentFile, ret.getId());
                     return ret;
                 } catch (IOException e) {
-                    log.error("failed to parse proto", e);
                     this.inputStream = null;
-                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "failed to parse proto", e);
                 }
             }
 
             private void getNext() {
-                var fn = this.files.get(0);
+                this.currentFile = this.files.get(0);
                 this.files.remove(0);
                 SwBuffer data;
                 try {
@@ -170,15 +182,15 @@ public class WalManager extends Thread {
                                             .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
                                                     100, 2.0, 0.5, 10000))
                                             .build()),
-                                    () -> objectStore.get(fn))
+                                    () -> objectStore.get(this.currentFile))
                             .apply();
                 } catch (Throwable e) {
-                    log.error("fail to read from object store", e);
-                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE,
+                            "fail to read from object store", e);
                 }
                 if (data.capacity() < WalManager.this.header.length) {
-                    log.error("corrupted file, size={}", data.capacity());
-                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE,
+                            MessageFormat.format("corrupted file, size={0}", data.capacity()));
                 }
                 int uncompressedSize;
                 var h = new byte[4];
@@ -201,8 +213,7 @@ public class WalManager extends Thread {
                             uncompressedSize = Snappy.uncompress(inBuf, outBuf);
                         }
                     } catch (IOException e) {
-                        log.error("fail to uncompress", e);
-                        throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
+                        throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "fail to uncompress", e);
                     }
                 }
                 WalManager.this.bufferManager.release(data);
@@ -211,33 +222,61 @@ public class WalManager extends Thread {
         };
     }
 
-    public void append(Wal.WalEntry entry) {
-        if (entry.getSerializedSize() > this.walMaxFileSizeNoHeader) {
-            for (var e : this.splitEntry(entry)) {
-                this.append(e);
+    public long getMaxEntryId() {
+        synchronized (this.entriesToWrite) {
+            return this.maxEntryId;
+        }
+    }
+
+    public long append(Wal.WalEntry.Builder builder) {
+        synchronized (this.entriesToWrite) {
+            if (this.terminated) {
+                throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "terminated");
             }
-        } else {
-            synchronized (this.entries) {
-                if (this.terminated) {
-                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "terminated");
-                }
-                this.entries.add(entry);
+            var entry = builder.setId(this.maxEntryId + 1).build();
+            if (entry.getSerializedSize() <= this.walMaxFileSizeNoHeader) {
+                this.entriesToWrite.add(entry);
+                return ++this.maxEntryId;
+            } else {
+                return this.splitEntryAndAppend(entry);
             }
         }
     }
 
     public void terminate() {
-        synchronized (this.entries) {
+        synchronized (this.entriesToWrite) {
             if (this.terminated) {
                 return;
             }
             this.terminated = true;
-            this.entries.notifyAll();
+            this.entriesToWrite.notifyAll();
         }
         try {
             this.join();
         } catch (InterruptedException e) {
             log.warn("interrupted", e);
+        }
+    }
+
+    /**
+     * Remove any WAL log files that contain no entry IDs greater than or equal to minWalLogIdToRetain, except the
+     * latest one.
+     *
+     * The latest WAL log file should always be kept so that maxEntryId can be recovered from WAl log files when the
+     * data store starts up.
+     *
+     * @param minWalLogIdToRetain the minimum WAL log id to retain.
+     * @throws IOException if the underlying storage access failed
+     */
+    public void removeWalLogFiles(long minWalLogIdToRetain) throws IOException {
+        var minValue = Math.min(this.walLogFileMap.values().stream().mapToLong(v -> v).max().orElse(0),
+                minWalLogIdToRetain);
+        for (var logFile : this.walLogFileMap.entrySet().stream()
+                .filter(entry -> entry.getValue() < minValue)
+                .map(Entry::getKey)
+                .collect(Collectors.toList())) {
+            this.objectStore.delete(logFile);
+            this.walLogFileMap.remove(logFile);
         }
     }
 
@@ -262,6 +301,72 @@ public class WalManager extends Thread {
         }
     }
 
+    public static TableSchemaDesc parseTableSchema(Wal.TableSchema tableSchema) {
+        var ret = new TableSchemaDesc();
+        var keyColumn = tableSchema.getKeyColumn();
+        if (!keyColumn.isEmpty()) {
+            ret.setKeyColumn(keyColumn);
+        }
+        var columnList = new ArrayList<>(tableSchema.getColumnsList());
+        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
+        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
+        for (var col : columnList) {
+            var colDesc = WalManager.parseColumnSchema(col);
+            columnSchemaList.add(colDesc);
+        }
+        ret.setColumnSchemaList(columnSchemaList);
+        return ret;
+    }
+
+    public static ColumnSchemaDesc parseColumnSchema(Wal.ColumnSchema columnSchema) {
+        var ret = ColumnSchemaDesc.builder()
+                .name(columnSchema.getColumnName())
+                .type(columnSchema.getColumnType());
+        if (!columnSchema.getPythonType().isEmpty()) {
+            ret.pythonType(columnSchema.getPythonType());
+        }
+        if (columnSchema.hasElementType()) {
+            ret.elementType(WalManager.parseColumnSchema(columnSchema.getElementType()));
+        }
+        if (columnSchema.getAttributesCount() > 0) {
+            ret.attributes(columnSchema.getAttributesList().stream()
+                    .map(WalManager::parseColumnSchema)
+                    .collect(Collectors.toList()));
+        }
+        return ret.build();
+    }
+
+    public static Wal.TableSchema.Builder convertTableSchema(TableSchema schema) {
+        var builder = Wal.TableSchema.newBuilder();
+        builder.setKeyColumn(schema.getKeyColumn());
+        for (var col : schema.getColumnSchemas()) {
+            builder.addColumns(WalManager.convertColumnSchema(col));
+        }
+        return builder;
+    }
+
+    public static Wal.ColumnSchema.Builder convertColumnSchema(ColumnSchema schema) {
+        return WalManager.newColumnSchema(schema.getIndex(), schema.getName(), schema.getType());
+    }
+
+    private static Wal.ColumnSchema.Builder newColumnSchema(
+            int columnIndex, String columnName, ColumnType columnType) {
+        var ret = Wal.ColumnSchema.newBuilder()
+                .setColumnIndex(columnIndex)
+                .setColumnName(columnName)
+                .setColumnType(columnType.getTypeName());
+        if (columnType instanceof ColumnTypeList) {
+            ret.setElementType(
+                    WalManager.newColumnSchema(0, "", ((ColumnTypeList) columnType).getElementType()));
+        } else if (columnType instanceof ColumnTypeObject) {
+            ret.setPythonType(((ColumnTypeObject) columnType).getPythonType());
+            ret.addAllAttributes(((ColumnTypeObject) columnType).getAttributes().entrySet().stream()
+                    .map(entry -> WalManager.newColumnSchema(0, entry.getKey(), entry.getValue()).build())
+                    .collect(Collectors.toList()));
+        }
+        return ret;
+    }
+
     private enum PopulationStatus {
         TERMINATED,
         BUFFER_FULL,
@@ -269,25 +374,25 @@ public class WalManager extends Thread {
     }
 
     private PopulationStatus populateOutput() {
-        synchronized (this.entries) {
-            while (!this.terminated && this.entries.isEmpty()) {
+        synchronized (this.entriesToWrite) {
+            while (!this.terminated && this.entriesToWrite.isEmpty()) {
                 try {
-                    this.entries.wait(this.walWaitIntervalMillis);
+                    this.entriesToWrite.wait(this.walWaitIntervalMillis);
                 } catch (InterruptedException e) {
                     log.warn("interrupted", e);
                 }
             }
-            if (this.terminated && this.entries.isEmpty()) {
+            if (this.terminated && this.entriesToWrite.isEmpty()) {
                 return PopulationStatus.TERMINATED;
             }
         }
         for (; ; ) {
             Wal.WalEntry entry;
-            synchronized (this.entries) {
-                if (this.entries.isEmpty()) {
+            synchronized (this.entriesToWrite) {
+                if (this.entriesToWrite.isEmpty()) {
                     break;
                 }
-                entry = this.entries.getFirst();
+                entry = this.entriesToWrite.getFirst();
             }
             if (CodedOutputStream.computeMessageSizeNoTag(entry) + this.outputStream.getOffset()
                     > this.walMaxFileSizeNoHeader) {
@@ -309,9 +414,10 @@ public class WalManager extends Thread {
                     log.error("data loss: unexpected exception", e);
                 }
             }
-            synchronized (this.entries) {
-                this.entries.removeFirst();
+            synchronized (this.entriesToWrite) {
+                this.entriesToWrite.removeFirst();
             }
+            this.maxEntryIdInOutputBuffer = entry.getId();
         }
         if (this.outputStream.getOffset() >= this.walFileSize) {
             return PopulationStatus.BUFFER_FULL;
@@ -343,6 +449,7 @@ public class WalManager extends Thread {
             this.outputBuffer.copyTo(this.compressedBuffer.slice(4, this.outputStream.getOffset()));
             compressedSize = this.outputStream.getOffset();
         }
+        var key = this.logFilePrefix + this.logFileIndex;
         try {
             int compressedBufferSize = compressedSize + this.header.length;
             Retry.decorateCheckedRunnable(
@@ -350,24 +457,24 @@ public class WalManager extends Thread {
                                     .maxAttempts(this.ossMaxAttempts)
                                     .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
                                     .build()),
-                            () -> this.objectStore.put(this.logFilePrefix + this.logFileIndex,
-                                    this.compressedBuffer.slice(0, compressedBufferSize)))
+                            () -> this.objectStore.put(key, this.compressedBuffer.slice(0, compressedBufferSize)))
                     .run();
         } catch (Throwable e) {
             log.error("data loss: failed to write wal log", e);
         }
+        this.walLogFileMap.put(key, this.maxEntryIdInOutputBuffer);
         if (clearOutput) {
             ++this.logFileIndex;
             this.outputStream = new SwBufferOutputStream(this.outputBuffer);
         }
     }
 
-    private List<Wal.WalEntry> splitEntry(Wal.WalEntry entry) {
-        List<Wal.WalEntry> ret = new ArrayList<>();
+    private long splitEntryAndAppend(Wal.WalEntry entry) {
+        List<Wal.WalEntry> entries = new ArrayList<>();
         var builder = Wal.WalEntry.newBuilder()
+                .setId(this.maxEntryId + 1)
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName(entry.getTableName());
-        int headerSize = builder.build().getSerializedSize();
         if (entry.hasTableSchema()) {
             builder.setTableSchema(entry.getTableSchema());
         }
@@ -383,10 +490,11 @@ public class WalManager extends Thread {
             currentEntrySize += recordSize;
             if (currentEntrySize + CodedOutputStream.computeUInt32SizeNoTag(currentEntrySize)
                     > this.walMaxFileSizeNoHeader) {
-                ret.add(builder.build());
+                entries.add(builder.build());
                 builder.clearTableSchema();
                 builder.clearRecords();
-                currentEntrySize = headerSize + recordSize;
+                builder.setId(this.maxEntryId + entries.size() + 1);
+                currentEntrySize = builder.build().getSerializedSize() + recordSize;
                 if (currentEntrySize + CodedOutputStream.computeUInt32SizeNoTag(currentEntrySize)
                         > this.walMaxFileSizeNoHeader) {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
@@ -396,14 +504,16 @@ public class WalManager extends Thread {
             builder.addRecords(record);
         }
         if (builder.getRecordsCount() > 0) {
-            ret.add(builder.build());
+            entries.add(builder.build());
         }
-        for (var e : ret) {
+        for (var e : entries) {
             if (e.getSerializedSize() > this.walMaxFileSizeNoHeader) {
                 throw new SwProcessException(SwProcessException.ErrorType.DATASTORE,
                         "invalid entry size " + e.getSerializedSize());
             }
         }
-        return ret;
+        this.entriesToWrite.addAll(entries);
+        this.maxEntryId += entries.size();
+        return this.maxEntryId;
     }
 }

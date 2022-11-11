@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 from abc import ABCMeta, abstractmethod
-from urllib.parse import urlparse
 
 import loguru
 from loguru import logger as _logger
@@ -55,26 +54,29 @@ class DataLoader(metaclass=ABCMeta):
             load_dotenv(auth_env_fpath)
 
     def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
-        _k = f"{row.object_store_type.value}.{row.auth_name}"
+        _k = f"{self.dataset_uri}.{row.auth_name}"
         _store = self._stores.get(_k)
         if _store:
             return _store
 
-        if row.object_store_type == ObjectStoreType.REMOTE:
-            _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+        _type = self.dataset_uri.instance_type
+        if _type == InstanceType.CLOUD:
+            _store = ObjectStore.to_signed_http_backend(self.dataset_uri, row.auth_name)
         else:
-            _store = ObjectStore.from_dataset_uri(self.dataset_uri)
+            if row.object_store_type == ObjectStoreType.REMOTE:
+                _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+            else:
+                _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
         self._stores[_k] = _store
         return _store
 
-    def _get_key_compose(self, row: TabularDatasetRow, store: ObjectStore) -> str:
-        if row.object_store_type == ObjectStoreType.REMOTE:
-            data_uri = urlparse(row.data_uri).path
-        else:
-            data_uri = row.data_uri
-            if store.key_prefix:
-                data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
+    def _get_key_compose(
+        self, row: TabularDatasetRow, store: ObjectStore
+    ) -> t.Tuple[str, int, int]:
+        data_uri = row.data_uri
+        if row.object_store_type != ObjectStoreType.REMOTE and store.key_prefix:
+            data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
 
         if self.kind == DataFormatType.SWDS_BIN:
             offset, size = (
@@ -84,8 +86,7 @@ class DataLoader(metaclass=ABCMeta):
         else:
             offset, size = row.data_offset, row.data_size
 
-        _key_compose = f"{data_uri}:{offset}:{offset + size - 1}"
-        return _key_compose
+        return data_uri, offset, offset + size - 1
 
     def _do_iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
@@ -110,7 +111,6 @@ class DataLoader(metaclass=ABCMeta):
             # TODO: tune performance by fetch in batch
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
-
             _file = _store.backend._make_file(_store.bucket, _key_compose)
             for data_content, _ in self._do_iter_data(_file, row):
                 data = BaseArtifact.reflect(data_content, row.data_type)

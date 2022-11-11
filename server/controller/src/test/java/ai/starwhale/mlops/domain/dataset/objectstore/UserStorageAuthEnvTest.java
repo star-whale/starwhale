@@ -27,10 +27,10 @@ public class UserStorageAuthEnvTest {
     @Test
     public void testS3() {
         final String auths = "USER.S3.REGION=region\n"
-                + "USER.S3.ENDPOINT=endpoint\n"
+                + "USER.S3.ENDPOINT=http://10.131.0.1:9000\n"
                 + "USER.S3.SECRET=secret\n"
                 + "USER.S3.ACCESS_KEY=access_key\n"
-                + "USER.S3.myname.ENDPOINT=endpoint1\n"
+                + "USER.S3.myname.ENDPOINT=http://localhost\n"
                 + "USER.S3.myname.SECRET=secret1\n"
                 + "USER.S3.MNIST.SECRET=\n"
                 + "USER.S3.myname.ACCESS_KEY=access_key1\n";
@@ -38,14 +38,14 @@ public class UserStorageAuthEnvTest {
         StorageEnv defaultEnv = storageAuths.getEnv("");
         Assertions.assertEquals(StorageEnvType.S3, defaultEnv.getEnvType());
         Assertions.assertEquals("region", defaultEnv.getEnvs().get("USER.S3.REGION"));
-        Assertions.assertEquals("endpoint", defaultEnv.getEnvs().get("USER.S3.ENDPOINT"));
+        Assertions.assertEquals("http://10.131.0.1:9000", defaultEnv.getEnvs().get("USER.S3.ENDPOINT"));
         Assertions.assertEquals("secret", defaultEnv.getEnvs().get("USER.S3.SECRET"));
         Assertions.assertEquals("access_key", defaultEnv.getEnvs().get("USER.S3.ACCESS_KEY"));
 
         StorageEnv myEnv = storageAuths.getEnv("myname");
         Assertions.assertEquals(StorageEnvType.S3, myEnv.getEnvType());
         Assertions.assertNull(myEnv.getEnvs().get("USER.S3.myname.REGION"));
-        Assertions.assertEquals("endpoint1", myEnv.getEnvs().get("USER.S3.MYNAME.ENDPOINT"));
+        Assertions.assertEquals("http://localhost", myEnv.getEnvs().get("USER.S3.MYNAME.ENDPOINT"));
         Assertions.assertEquals("secret1", myEnv.getEnvs().get("USER.S3.MYNAME.SECRET"));
         Assertions.assertEquals("access_key1", myEnv.getEnvs().get("USER.S3.MYNAME.ACCESS_KEY"));
 

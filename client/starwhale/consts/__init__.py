@@ -21,9 +21,11 @@ DEFAULT_EVALUATION_PIPELINE = "starwhale.core.model.default_handler"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_CONFIG_VERSION = "2.0"
 
+SW_AUTO_DIRNAME = ".starwhale"
+
 # used by the versions before 2.0
 # SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
-DEFAULT_SW_LOCAL_STORAGE = HOMEDIR / ".starwhale"
+DEFAULT_SW_LOCAL_STORAGE = HOMEDIR / SW_AUTO_DIRNAME
 # SW_TMP_DIR_NAME dir is used for storing the processing files
 SW_TMP_DIR_NAME = ".tmp"
 
@@ -89,6 +91,7 @@ VERSION_PREFIX_CNT = 2
 class SWDSBackendType:
     S3 = "s3"
     LocalFS = "local_fs"
+    SignedUrl = "signed_url"
 
 
 class EvalHandlerType:

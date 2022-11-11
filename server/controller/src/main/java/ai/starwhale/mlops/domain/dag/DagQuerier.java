@@ -66,7 +66,7 @@ public class DagQuerier {
 
     private Graph buildGraph(Job job) {
         if (job.getStatus() == JobStatus.CREATED) {
-            throw new SwValidationException(ValidSubject.JOB).tip("Job is still creating");
+            throw new SwValidationException(ValidSubject.JOB, "Job is still creating");
         }
         Graph graph = new Graph();
         AtomicLong idx = new AtomicLong(0);
