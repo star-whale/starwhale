@@ -34,6 +34,8 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.store import RuntimeStorage
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 TMP_FILE_BUFSIZE = 8192
 
@@ -62,8 +64,8 @@ class BundleCopy(CloudRequestMixed):
         force: bool = False,
         **kw: t.Any,
     ) -> None:
-        self.src_uri = URI(src_uri, expected_type=typ)
-        self.dest_uri = URI(dest_uri, expected_type=URIType.PROJECT)
+        self.src_uri = Resource(src_uri, typ=ResourceType[typ]).to_uri()
+        self.dest_uri = Project(dest_uri).to_uri()
         self.typ = typ
         self.force = force
 
