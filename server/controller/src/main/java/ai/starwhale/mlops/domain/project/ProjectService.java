@@ -98,8 +98,9 @@ public class ProjectService {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity projectEntity = projectMapper.findProject(projectId);
         if (projectEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                    .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
+                    HttpStatus.BAD_REQUEST);
         }
         return projectConvertor.convert(projectEntity);
     }
@@ -154,8 +155,10 @@ public class ProjectService {
         Assert.notNull(project.getName(), "Project name must not be null");
         if (projectManager.existProject(project.getName())) {
             //项目存在且未被删除
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                    .tip(String.format("Project %s already exists", project.getName())), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.PROJECT,
+                            String.format("Project %s already exists", project.getName())),
+                    HttpStatus.BAD_REQUEST);
         }
 
         ProjectEntity entity = ProjectEntity.builder()
@@ -182,13 +185,14 @@ public class ProjectService {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = projectMapper.findProject(projectId);
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                    .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
+                    HttpStatus.BAD_REQUEST);
         }
         if (entity.getIsDefault() > 0) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT)
-                            .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
+                    new SwValidationException(ValidSubject.PROJECT, "Default project cannot be deleted."),
+                    HttpStatus.BAD_REQUEST);
         }
         entity.setProjectName(entity.getProjectName() + DELETE_SUFFIX + "." + entity.getId());
         projectMapper.modifyProject(entity);
@@ -205,8 +209,10 @@ public class ProjectService {
             id = idConvertor.revert(projectUrl);
             ProjectEntity entity = projectMapper.findProject(id);
             if (entity == null) {
-                throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                        .tip("Recover project error. Project can not be found. "), HttpStatus.BAD_REQUEST);
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.PROJECT,
+                                "Recover project error. Project can not be found. "),
+                        HttpStatus.BAD_REQUEST);
             }
             projectName = entity.getProjectName().substring(0,
                     entity.getProjectName().lastIndexOf(DELETE_SUFFIX));
@@ -216,13 +222,16 @@ public class ProjectService {
             List<ProjectEntity> deletedProjects = projectMapper.listProjects(projectName + DELETE_SUFFIX, null, 1,
                     null);
             if (deletedProjects.size() > 1) {
-                throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                        .tip(StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ",
-                                projectName)),
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.PROJECT,
+                                StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ",
+                                        projectName)),
                         HttpStatus.BAD_REQUEST);
             } else if (deletedProjects.size() == 0) {
-                throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                        .tip(StrUtil.format("Recover project error. Can not find deleted project [%s].", projectName)),
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.PROJECT,
+                                StrUtil.format("Recover project error. Can not find deleted project [%s].",
+                                        projectName)),
                         HttpStatus.BAD_REQUEST);
             }
             id = deletedProjects.get(0).getId();
@@ -230,8 +239,9 @@ public class ProjectService {
 
         // Check for duplicate names
         if (projectManager.existProject(projectName)) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                    .tip(String.format("Recover project error. Project %s already exists", projectName)),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.PROJECT,
+                            String.format("Recover project error. Project %s already exists", projectName)),
                     HttpStatus.BAD_REQUEST);
         }
         projectMapper.modifyProject(ProjectEntity.builder()
@@ -250,8 +260,10 @@ public class ProjectService {
         if (StrUtil.isNotEmpty(projectName)) {
             ProjectEntity existProject = projectMapper.findProjectByNameForUpdate(projectName);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
-                throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                        .tip(String.format("Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.PROJECT,
+                                String.format("Project %s already exists", projectName)),
+                        HttpStatus.BAD_REQUEST);
             }
         }
         ProjectEntity entity = ProjectEntity.builder()

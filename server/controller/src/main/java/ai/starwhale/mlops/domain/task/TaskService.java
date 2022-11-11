@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -34,6 +33,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -83,8 +83,9 @@ public class TaskService {
                     .map(path -> trimPath(path, logDir))
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            log.error("read logs path from storage failed {}", taskId, e);
-            throw new SwProcessException(ErrorType.DB).tip("read log path from db failed");
+            throw new SwProcessException(ErrorType.DB,
+                    MessageFormat.format("read log path from db failed {0}", taskId),
+                    e);
         }
 
     }
@@ -96,8 +97,9 @@ public class TaskService {
                 logDir + PATH_SPLITERATOR + logFileName)) {
             return new String(inputStream.readAllBytes());
         } catch (IOException e) {
-            log.error("read logs path from storage failed {}", taskId, e);
-            throw new SwProcessException(ErrorType.DB).tip("read log path from db failed");
+            throw new SwProcessException(ErrorType.DB,
+                    MessageFormat.format("read log path from db failed {}", taskId),
+                    e);
         }
 
     }

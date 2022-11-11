@@ -59,7 +59,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVo> {
         List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
                 List.of(jobEntity.getRuntimeVersionId()));
         if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
-            throw new SwProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
+            throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and runtime");
         }
         List<DatasetVersionEntity> dsvEntities = jobDatasetVersionMapper.listDatasetVersionsByJobId(
                 jobEntity.getId());

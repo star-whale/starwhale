@@ -33,6 +33,7 @@ import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +89,7 @@ public class DataStoreController implements DataStoreApi {
             this.dataStore.update(request.getTableName(), request.getTableSchemaDesc(), records);
             return ResponseEntity.ok(Code.success.asResponse("success"));
         } catch (SwValidationException e) {
-            throw e.tip("request=" + request);
+            throw new SwValidationException(e, "request=" + request);
         }
     }
 
@@ -117,7 +118,7 @@ public class DataStoreController implements DataStoreApi {
                     .records(recordList.getRecords())
                     .build()));
         } catch (SwValidationException e) {
-            throw e.tip("request=" + request);
+            throw new SwValidationException(e, "request=" + request);
         }
     }
 
@@ -163,7 +164,7 @@ public class DataStoreController implements DataStoreApi {
                     .lastKey(recordList.getLastKey())
                     .build()));
         } catch (SwValidationException e) {
-            throw e.tip("request=" + request);
+            throw new SwValidationException(e, "request=" + request);
         }
     }
 
@@ -292,13 +293,11 @@ public class DataStoreController implements DataStoreApi {
             ret = new HashMap<>();
             for (var col : columns) {
                 if (col == null) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                            .tip("column should not be null");
+                    throw new SwValidationException(ValidSubject.DATASTORE, "column should not be null");
                 }
                 var name = col.getColumnName();
                 if (name == null) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE)
-                            .tip("column name should not be null. " + col);
+                    throw new SwValidationException(ValidSubject.DATASTORE, "column name should not be null. " + col);
                 }
                 var alias = col.getAlias();
                 if (alias == null) {

@@ -75,7 +75,7 @@ public class RuntimeController implements RuntimeApi {
             String runtimeUrl, RuntimeRevertRequest revertRequest) {
         Boolean res = runtimeService.revertVersionTo(projectUrl, runtimeUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Revert runtime version failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert runtime version failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -91,7 +91,7 @@ public class RuntimeController implements RuntimeApi {
                         .build());
 
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete runtime failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete runtime failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -102,7 +102,7 @@ public class RuntimeController implements RuntimeApi {
             String runtimeUrl) {
         Boolean res = runtimeService.recoverRuntime(projectUrl, runtimeUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover runtime failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover runtime failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -130,7 +130,7 @@ public class RuntimeController implements RuntimeApi {
                         .versionTag(tagRequest.getTag()).build());
 
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Modify runtime failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Modify runtime failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -143,13 +143,15 @@ public class RuntimeController implements RuntimeApi {
         try {
             ta = TagAction.of(tagRequest.getAction(), tagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME).tip(
-                    String.format("Unknown tag action %s ", tagRequest.getAction())),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.RUNTIME,
+                            String.format("Unknown tag action %s ", tagRequest.getAction()),
+                            e),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = runtimeService.manageVersionTag(projectUrl, runtimeUrl, versionUrl, ta);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update runtime tag failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update runtime tag failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

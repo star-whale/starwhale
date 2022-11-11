@@ -76,8 +76,7 @@ public class IndexWriter {
             request.setRecords(records);
             dataStore.updateTable(request);
         } catch (IOException e) {
-            log.error("error while reading _meta.jsonl");
-            throw new SwProcessException(ErrorType.NETWORK).tip("error while reading _meta.jsonl");
+            throw new SwProcessException(ErrorType.NETWORK, "error while reading _meta.jsonl", e);
         } finally {
             try {
                 jsonLine.close();

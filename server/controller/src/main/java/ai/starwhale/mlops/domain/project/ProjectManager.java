@@ -125,8 +125,10 @@ public class ProjectManager implements ProjectAccessor {
             }
         }
         if (projectEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
-                    .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.PROJECT,
+                            String.format("Unable to find project %s", projectUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
         return projectEntity.getId();
     }

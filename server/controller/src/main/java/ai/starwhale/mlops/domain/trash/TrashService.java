@@ -177,8 +177,7 @@ public class TrashService {
     private TrashVo toTrashVo(TrashPo trashPo) {
         UserEntity operator = userMapper.findUser(trashPo.getOperatorId());
         if (operator == null) {
-            throw new SwProcessException(ErrorType.DB)
-                    .tip("Can not find operator. " + trashPo.getOperatorId());
+            throw new SwProcessException(ErrorType.DB, "Can not find operator. " + trashPo.getOperatorId());
         }
         return TrashVo.builder()
                 .id(idConvertor.convert(trashPo.getId()))

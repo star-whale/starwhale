@@ -52,8 +52,9 @@ public class JobManager implements BundleAccessor, RecoverAccessor {
         }
         JobEntity jobEntity = jobMapper.findJobByUuid(job.getUuid());
         if (jobEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-                    .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
         return jobEntity.getId();
     }

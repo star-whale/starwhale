@@ -63,7 +63,7 @@ public class TrashController implements TrashApi {
     public ResponseEntity<ResponseMessage<String>> recoverTrash(String projectUrl, Long trashId) {
         boolean res = trashService.recover(projectUrl, trashId);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover trash failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover trash failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -73,7 +73,7 @@ public class TrashController implements TrashApi {
     public ResponseEntity<ResponseMessage<String>> deleteTrash(String projectUrl, Long trashId) {
         boolean res = trashService.deleteTrash(projectUrl, trashId);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete trash failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete trash failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
