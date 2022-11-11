@@ -68,18 +68,18 @@ public class DsFileGetter {
         return sizeLong > 0 && offsetLong >= 0;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String offset,
-            String size) {
+    public byte[] dataOf(Long datasetId, String uri, Long offset,
+            Long size) {
         StorageAccessService storageAccessService =
                 storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
         String path = checkPath(datasetId, uri, storageAccessService);
-        long sizeLong = (long) ColumnTypeScalar.INT64.decode(size);
-        long offsetLong = (long) ColumnTypeScalar.INT64.decode(offset);
-        try (InputStream inputStream = validParam(sizeLong, offsetLong) ? storageAccessService.get(path,
-                offsetLong, sizeLong) : storageAccessService.get(path)) {
+        try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
+                offset, size) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
+        } catch (IOException ioException) {
+            log.error("error while accessing storage ", ioException);
+            throw new SwProcessException(ErrorType.STORAGE,
+                    String.format("error while accessing storage : %s", ioException.getMessage()));
         }
     }
 

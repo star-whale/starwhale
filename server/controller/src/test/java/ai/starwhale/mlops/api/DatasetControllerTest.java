@@ -259,17 +259,17 @@ public class DatasetControllerTest {
                 });
         given(datasetService.query(anyString(), anyString(), anyString()))
                 .willReturn(DatasetVersionEntity.builder().id(1L).build());
-        given(datasetService.dataOf(same(1L), anyString(), anyString(), anyString()))
+        given(datasetService.dataOf(same(1L), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
-        controller.pullLinkContent("p1", "d1", "v1", "", "", "", response);
+        controller.pullLinkContent("p1", "d1", "v1", "", 1L, 1L, response);
         assertThat(str.toString(), is("100"));
 
         assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "d1", "", "", "", "", response));
+                () -> controller.pullLinkContent("p1", "d1", "", "", 1L, 1L, response));
 
         assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "", "v1", "", "", "", response));
+                () -> controller.pullLinkContent("p1", "", "v1", "", 1L, 1L, response));
     }
 
     @Test
