@@ -73,10 +73,13 @@ public class CompatibleStorageAccessServiceS3Like extends CompatibleStorageAcces
             log.error("s3 config error invalid endpoint {}", s3Config.getEndpoint(), e);
             return false;
         }
+        if (!endpointUri.getHost().equals(uri.getHost())) {
+            return false;
+        }
         if (null != uri.getPort()) {
             return endpointUri.getPort() == uri.getPort();
         }
-        return endpointUri.getHost().equals(uri.getHost());
+        return true;
     }
 
     @Override

@@ -49,9 +49,21 @@ public class CompatibleStorageAccessServiceS3LikeTest {
                                 .endpoint("http://localhost:9001").build(), Set.of("minio"));
         Assertions.assertTrue(
                 compatibleStorageAccessServiceS3Like.compatibleWith(new StorageUri("minio://localhost:9001/b/adfa/d")));
-        ;
         Assertions.assertFalse(
                 compatibleStorageAccessServiceS3Like.compatibleWith(new StorageUri("minio://localhost:9001/c/adfa/d")));
+    }
+
+    @Test
+    public void testCompatibleWithPortSame() throws URISyntaxException {
+        CompatibleStorageAccessServiceS3Like compatibleStorageAccessServiceS3Like =
+                new CompatibleStorageAccessServiceS3Like(mock(StorageAccessService.class),
+                        S3Config.builder().accessKey("ak").secretKey("sk").bucket("b").region("r")
+                                .endpoint("http://localhost:9001").build(), Set.of("minio"));
+        Assertions.assertTrue(
+                compatibleStorageAccessServiceS3Like.compatibleWith(new StorageUri("minio://localhost:9001/b/adfa/d")));
+        Assertions.assertFalse(
+                compatibleStorageAccessServiceS3Like.compatibleWith(
+                        new StorageUri("minio://localhost2:9001/b/adfa/d")));
     }
 
 }
