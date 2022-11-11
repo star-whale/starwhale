@@ -5,6 +5,7 @@ import ImageViewer from '@/components/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
+import VideoViewer from './VideoViewer'
 
 export type IDatasetViewerProps = {
     data?: DatasetObject
@@ -53,6 +54,8 @@ export default function DatasetViewer({ data, isZoom = false, hiddenLabels = new
                 )
             case TYPES.AUDIO:
                 return <AudioViewer data={data} isZoom={isZoom} />
+            case TYPES.VIDEO:
+                return <VideoViewer data={data} isZoom={isZoom} />
             case TYPES.TEXT:
                 return <TextViewer data={data} isZoom={isZoom} />
             default:

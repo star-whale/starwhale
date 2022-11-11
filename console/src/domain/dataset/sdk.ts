@@ -15,6 +15,7 @@ export enum TYPES {
     AUDIO = 'audio',
     TEXT = 'text',
     LINK = 'link',
+    VIDEO = 'video',
 }
 
 export type IDatasetImage = {
@@ -103,7 +104,7 @@ export class DatasetObject {
             const attr = key.replace(/^_annotation?_/, '')
 
             try {
-                const annos = JSON.parse(value, undefined)
+                const annos = String(value).startsWith('{') ? JSON.parse(value, undefined) : value
                 if (Array.isArray(annos)) {
                     annos.forEach((item) => this.setProps(item))
                 } else if (isObject(annos)) {
@@ -114,7 +115,6 @@ export class DatasetObject {
             } catch (e) {
                 // eslint-disable-next-line no-console
                 console.error(e)
-                throw e
             }
         })
 
@@ -130,7 +130,6 @@ export class DatasetObject {
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)
-            throw e
         }
     }
 

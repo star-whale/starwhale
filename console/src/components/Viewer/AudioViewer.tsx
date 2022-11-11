@@ -76,7 +76,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
     if (!isZoom) {
         return (
             <div
-                className='dataset-viewer audio fullsize'
+                className='dataset-viewer audio '
                 style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             >
                 {/* eslint-disable jsx-a11y/media-has-caption */}
