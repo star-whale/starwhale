@@ -21,7 +21,6 @@ import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -62,7 +61,6 @@ public class DataStore {
     private final DumpThread dumpThread;
 
     public DataStore(StorageAccessService storageAccessService,
-            SwBufferManager swBufferManager,
             @Value("${sw.datastore.walFileSize}") int walFileSize,
             @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
             @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
@@ -79,8 +77,7 @@ public class DataStore {
             dataRootPath += "/";
         }
         this.snapshotRootPath = dataRootPath + "snapshot/";
-        this.walManager = new WalManager(new ObjectStore(swBufferManager, this.storageAccessService),
-                swBufferManager,
+        this.walManager = new WalManager(this.storageAccessService,
                 walFileSize,
                 walMaxFileSize,
                 dataRootPath + "wal/",

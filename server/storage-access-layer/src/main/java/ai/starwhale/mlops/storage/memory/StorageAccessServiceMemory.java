@@ -45,7 +45,7 @@ public class StorageAccessServiceMemory implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
-        this.store.put(path, inputStream.readAllBytes());
+        this.store.put(path, inputStream.readNBytes((int) size));
     }
 
     @Override

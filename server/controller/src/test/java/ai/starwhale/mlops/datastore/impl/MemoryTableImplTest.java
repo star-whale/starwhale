@@ -27,7 +27,6 @@ import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
-import ai.starwhale.mlops.datastore.ObjectStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.ParquetConfig;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
@@ -37,8 +36,6 @@ import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.memory.SwBufferManager;
-import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.io.IOException;
@@ -76,10 +73,8 @@ public class MemoryTableImplTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        var bufferManager = new SwByteBufferManager();
         this.storageAccessService = new StorageAccessServiceMemory();
-        var objectStore = new ObjectStore(bufferManager, this.storageAccessService);
-        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "wal/", 10, 3);
+        this.walManager = new WalManager(this.storageAccessService, 256, 4096, "wal/", 10, 3);
     }
 
     @AfterEach
@@ -506,9 +501,12 @@ public class MemoryTableImplTest {
             }
             this.memoryTable.update(null, records);
             MemoryTableImplTest.this.walManager.terminate();
-            SwBufferManager bufferManager = new SwByteBufferManager();
-            var objectStore = new ObjectStore(bufferManager, storageAccessService);
-            MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "wal/", 10, 3);
+            MemoryTableImplTest.this.walManager = new WalManager(MemoryTableImplTest.this.storageAccessService,
+                    256,
+                    4096,
+                    "wal/",
+                    10,
+                    3);
             this.memoryTable = createInstance("test");
             var it = MemoryTableImplTest.this.walManager.readAll();
             while (it.hasNext()) {

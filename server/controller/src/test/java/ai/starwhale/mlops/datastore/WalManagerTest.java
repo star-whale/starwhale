@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -28,20 +29,21 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.memory.SwBufferManager;
-import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,21 +52,17 @@ import org.mockito.Mockito;
 
 public class WalManagerTest {
 
-    private SwBufferManager bufferManager;
-
-    private ObjectStore objectStore;
-
+    private StorageAccessServiceMemory storageAccessService;
     private WalManager walManager;
 
     @BeforeEach
     public void setUp() throws IOException {
-        this.bufferManager = new SwByteBufferManager();
-        this.objectStore = new ObjectStore(this.bufferManager, new StorageAccessServiceMemory());
+        this.storageAccessService = new StorageAccessServiceMemory();
         this.createInstance();
     }
 
     private void createInstance() {
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 4096, 4096, "test/", 10, 3);
+        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 10, 3);
     }
 
 
@@ -175,7 +173,8 @@ public class WalManagerTest {
         Thread.sleep(1000);
         assertThat(this.walManager.append(builders.get(3)), is(4L));
         this.walManager.terminate();
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")), is(List.of("test/wal.log.0", "test/wal.log.1")));
+        assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
+                is(List.of("test/wal.log.0", "test/wal.log.1")));
         this.createInstance();
         assertThat(ImmutableList.copyOf(this.walManager.readAll()),
                 is(builders.stream().map(Wal.WalEntry.Builder::build).collect(Collectors.toList())));
@@ -273,8 +272,7 @@ public class WalManagerTest {
                 .addAllRecords(this.createRecords(List.of(Map.of(1, 1))))
                 .build();
         // make max file size equal the message
-        this.walManager = new WalManager(this.objectStore,
-                this.bufferManager,
+        this.walManager = new WalManager(this.storageAccessService,
                 256,
                 entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 4,
                 "test/",
@@ -301,57 +299,58 @@ public class WalManagerTest {
                     is(i));
         }
         Thread.sleep(1000);
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+        assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                 is(IntStream.range(0, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
         for (int i = -1; i <= 5; ++i) {
             this.walManager.removeWalLogFiles(i);
-            assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+            assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                     is(IntStream.range(0, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
         }
         this.walManager.removeWalLogFiles(6);
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+        assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                 is(IntStream.range(1, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
         this.walManager.terminate();
         this.createInstance();
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         this.walManager.removeWalLogFiles(14);
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")),
+        assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                 is(IntStream.range(3, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
         this.walManager.removeWalLogFiles(100);
-        assertThat(ImmutableList.copyOf(this.objectStore.list("")), is(List.of("test/wal.log.9")));
+        assertThat(this.storageAccessService.list("").collect(Collectors.toList()), is(List.of("test/wal.log.9")));
     }
 
     @Test
     public void testWriteFailureAndRetry() throws Exception {
-        var objectStore = Mockito.mock(ObjectStore.class);
-        given(objectStore.list(anyString())).willReturn(Collections.emptyIterator());
+        var storageAccessService = Mockito.mock(StorageAccessService.class);
+        given(storageAccessService.list(anyString())).willReturn(Stream.empty());
         doThrow(new IOException())
                 .doThrow(new IOException())
                 .doNothing()
-                .when(objectStore).put(anyString(), any());
-        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
+                .when(storageAccessService).put(anyString(), any(), anyLong());
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t"));
         Thread.sleep(1000);
         walManager.terminate();
-        verify(objectStore, times(3)).put(eq("test/wal.log.0"), any());
+        verify(storageAccessService, times(3)).put(eq("test/wal.log.0"), any(), anyLong());
     }
 
     @Test
     public void testReadFailureAndRetry() throws Exception {
-        var objectStore = Mockito.mock(ObjectStore.class);
-        given(objectStore.list(anyString()))
+        var storageAccessService = Mockito.mock(StorageAccessService.class);
+        given(storageAccessService.list(anyString()))
                 .willThrow(new IOException())
-                .willReturn(List.of("test/wal.log.0").iterator());
-        given(objectStore.get(anyString())).willThrow(new IOException())
+                .willReturn(Stream.of("test/wal.log.0"));
+        given(storageAccessService.get(anyString())).willThrow(new IOException())
                 .willThrow(new IOException())
-                .willReturn(this.bufferManager.allocate(10));
-        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
+                .willReturn(new LengthAbleInputStream(
+                        new ByteArrayInputStream(new byte[]{'s', 'w', 'l', 0, 0, 0, 0, 0, 0, 0}), 10));
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         walManager.terminate();
-        verify(objectStore, times(3)).get(eq("test/wal.log.0"));
+        verify(storageAccessService, times(3)).get(eq("test/wal.log.0"));
     }
 }

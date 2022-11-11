@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ch.qos.logback.classic.Level;
@@ -56,8 +55,6 @@ import org.slf4j.LoggerFactory;
 public class DataStoreTest {
 
     private DataStore dataStore;
-
-    private SwByteBufferManager bufferManager;
 
     private StorageAccessService storageAccessService;
 
@@ -92,14 +89,12 @@ public class DataStoreTest {
     public void setUp() throws IOException {
         ((Logger) LoggerFactory.getLogger("org.apache.parquet")).setLevel(Level.ERROR);
         ((Logger) LoggerFactory.getLogger("org.apache.hadoop")).setLevel(Level.ERROR);
-        this.bufferManager = new SwByteBufferManager();
         this.storageAccessService = new StorageAccessServiceMemory();
         this.createDateStore(DataStoreParams.builder().build());
     }
 
     private void createDateStore(DataStoreParams params) {
         this.dataStore = new DataStore(this.storageAccessService,
-                this.bufferManager,
                 params.walFileSize,
                 params.walMaxFileSize,
                 params.walWaitIntervalMillis,
