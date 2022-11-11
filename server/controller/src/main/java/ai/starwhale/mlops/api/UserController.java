@@ -138,7 +138,7 @@ public class UserController implements UserApi {
         Boolean res = projectService.addProjectRole("0", idConvertor.revert(userRoleAddRequest.getUserId()),
                 idConvertor.revert(userRoleAddRequest.getRoleId()));
         if (!res) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.USER).tip("Add user role failed."),
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.USER, "Add user role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -157,7 +157,7 @@ public class UserController implements UserApi {
                         userRoleUpdateRequest.getRoleId()));
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.USER).tip("Update user role failed."),
+                    new SwValidationException(ValidSubject.USER, "Update user role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -174,7 +174,7 @@ public class UserController implements UserApi {
         Boolean res = projectService.deleteProjectRole("0", idConvertor.revert(systemRoleId));
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.USER).tip("Delete user role failed."),
+                    new SwValidationException(ValidSubject.USER, "Delete user role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

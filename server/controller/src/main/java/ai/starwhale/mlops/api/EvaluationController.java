@@ -67,7 +67,7 @@ public class EvaluationController implements EvaluationApi {
     public ResponseEntity<ResponseMessage<String>> createViewConfig(String projectUrl, ConfigRequest configRequest) {
         Boolean res = evaluationService.createViewConfig(projectUrl, configRequest);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Create view config failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Create view config failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

@@ -155,8 +155,9 @@ public class UserService implements UserDetailsService {
         User user = currentUserDetail();
         UserEntity userEntity = userMapper.findUserByName(user.getName());
         if (userEntity == null) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB)
-                    .tip(String.format("Unable to find user by name %s", user.getName())),
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB,
+                            String.format("Unable to find user by name %s", user.getName())),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         UserVo userVo = userConvertor.convert(userEntity);
@@ -203,8 +204,8 @@ public class UserService implements UserDetailsService {
         UserEntity userByName = userMapper.findUserByName(user.getName()); // todo lock this row
         if (null != userByName) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.USER)
-                            .tip("user already exists"), HttpStatus.BAD_REQUEST);
+                    new SwValidationException(ValidSubject.USER, "user already exists"),
+                    HttpStatus.BAD_REQUEST);
         }
         String encodedPwd;
         if (StrUtil.isEmpty(salt)) {
@@ -256,8 +257,9 @@ public class UserService implements UserDetailsService {
         User user = currentUserDetail();
         UserEntity userEntity = userMapper.findUserByName(user.getName());
         if (userEntity == null) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB)
-                    .tip(String.format("Unable to find user by name %s", user.getName())),
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB,
+                            String.format("Unable to find user by name %s", user.getName())),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         PasswordEncoder passwordEncoder = SwPasswordEncoder.getEncoder(userEntity.getUserPwdSalt());
@@ -284,8 +286,9 @@ public class UserService implements UserDetailsService {
         User user = currentUserDetail();
         UserEntity userEntity = userMapper.findUserByName(user.getName());
         if (userEntity == null) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB)
-                    .tip(String.format("Unable to find user by name %s", user.getName())),
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB,
+                            String.format("Unable to find user by name %s", user.getName())),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return listUserRoles(userEntity.getId(), projectUrl);

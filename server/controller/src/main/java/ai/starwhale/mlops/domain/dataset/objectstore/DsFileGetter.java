@@ -78,10 +78,8 @@ public class DsFileGetter {
         try (InputStream inputStream = validParam(sizeLong, offsetLong) ? storageAccessService.get(path,
                 offsetLong, sizeLong) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
-        } catch (IOException ioException) {
-            log.error("error while accessing storage ", ioException);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
-                    String.format("error while accessing storage : %s", ioException.getMessage()));
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
         }
     }
 
@@ -95,9 +93,7 @@ public class DsFileGetter {
         try {
             return storageAccessService.signedUrl(path, expTimeMillis);
         } catch (IOException e) {
-            log.error("error while accessing storage ", e);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
-                    String.format("error while accessing storage : %s", e.getMessage()));
+            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
         }
     }
 
@@ -113,9 +109,7 @@ public class DsFileGetter {
         try {
             objectInfo = storageAccessService.head(path);
         } catch (IOException e) {
-            log.error("error while accessing storage ", e);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
-                    String.format("error while accessing storage : %s", e.getMessage()));
+            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
         }
         if (!objectInfo.isExists()) {
             DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);

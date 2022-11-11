@@ -135,7 +135,7 @@ public class TableSchema {
 
     public List<ColumnSchema> merge(@NonNull TableSchemaDesc schema) {
         if (schema.getKeyColumn() != null && !this.keyColumn.equals(schema.getKeyColumn())) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     MessageFormat.format(
                             "can not merge two schemas with different key columns, expected {0}, actual {1}",
                             this.keyColumn,

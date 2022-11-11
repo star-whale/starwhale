@@ -375,7 +375,7 @@ public class DataStore {
                         if (allowNull) {
                             return null;
                         } else {
-                            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                                     "invalid table name " + tableName);
                         }
                     } else {

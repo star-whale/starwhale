@@ -63,7 +63,7 @@ public class AgentCache implements CommandLineRunner {
             return;
         }
         if (tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE) {
-            throw new SwValidationException(ValidSubject.NODE).tip("you can't remove online agent manually!");
+            throw new SwValidationException(ValidSubject.NODE, "you can't remove online agent manually!");
         }
         agentMapper.deleteById(tobeDeleteAgent.getId());
         agents.remove(agentSerialNumber);

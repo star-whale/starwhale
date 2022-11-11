@@ -63,8 +63,9 @@ public class ModelManager implements BundleAccessor, BundleVersionAccessor, TagA
         }
         ModelVersionEntity entity = versionMapper.findByNameAndModelId(versionUrl, modelId);
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL)
-                    .tip(String.format("Unable to find model %s", versionUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL, String.format("Unable to find model %s", versionUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

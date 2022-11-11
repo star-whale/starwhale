@@ -63,7 +63,7 @@ public class ResultQuerier {
         try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))) {
             return objectMapper.readValue(inputStream, Object.class);
         } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE, "load job ui result failed", e);
         }
     }
 
@@ -75,7 +75,7 @@ public class ResultQuerier {
                     .ignoreReservedCharacters()
                     .flattenAsMap();
         } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE, "load job ui result failed", e);
         }
     }
 
@@ -98,22 +98,22 @@ public class ResultQuerier {
     public String resultPathOfJob(Long jobId) {
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if (null == jobEntity) {
-            throw new SwValidationException(ValidSubject.JOB).tip("unknown jobid");
+            throw new SwValidationException(ValidSubject.JOB, "unknown jobid");
         }
         if (jobEntity.getJobStatus() != JobStatus.SUCCESS) {
-            throw new SwValidationException(ValidSubject.JOB).tip("job is not finished yet");
+            throw new SwValidationException(ValidSubject.JOB, "job is not finished yet");
         }
         try {
             List<String> results = storageAccessService.list(
                     new ResultPath(jobEntity.getResultOutputPath()).resultDir()).collect(
                     Collectors.toList());
             if (null == results || results.isEmpty()) {
-                throw new SwValidationException(ValidSubject.JOB).tip("no result found of job");
+                throw new SwValidationException(ValidSubject.JOB, "no result found of job");
             }
             return results.get(0);
 
         } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+            throw new SwProcessException(ErrorType.STORAGE, "load job ui result failed", e);
         }
     }
 

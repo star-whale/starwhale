@@ -178,7 +178,7 @@ public class DatasetUploader {
         return swDatasetVersionEntityOpt
                 .orElseThrow(
                         () -> new StarwhaleApiException(
-                                new SwValidationException(ValidSubject.DATASET).tip("uploadId invalid"),
+                                new SwValidationException(ValidSubject.DATASET, "uploadId invalid"),
                                 HttpStatus.BAD_REQUEST));
     }
 
@@ -204,14 +204,13 @@ public class DatasetUploader {
             manifest = yamlMapper.readValue(yamlContent, Manifest.class);
             manifest.setRawYaml(yamlContent);
         } catch (JsonProcessingException e) {
-            log.error("read dataset yaml failed {}", fileName, e);
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET).tip("manifest parsing error" + e.getMessage()),
+                    new SwValidationException(ValidSubject.DATASET, "read dataset yaml failed " + fileName, e),
                     HttpStatus.BAD_REQUEST);
         }
         if (null == manifest.getName() || null == manifest.getVersion()) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET).tip("name or version is required in manifest "),
+                    new SwValidationException(ValidSubject.DATASET, "name or version is required in manifest "),
                     HttpStatus.BAD_REQUEST);
         }
         ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
@@ -240,14 +239,14 @@ public class DatasetUploader {
                             .map(DataSet::getId)
                             .collect(Collectors.toSet());
                     if (runningDataSets.contains(datasetVersionEntity.getId())) {
-                        throw new SwValidationException(ValidSubject.DATASET).tip(
+                        throw new SwValidationException(ValidSubject.DATASET,
                                 " dataset version is being hired by running job, force push is not allowed now");
                     } else {
                         datasetVersionMapper.updateStatus(datasetVersionEntity.getId(),
                                 DatasetVersionEntity.STATUS_UN_AVAILABLE);
                     }
                 } else {
-                    throw new SwValidationException(ValidSubject.DATASET).tip(
+                    throw new SwValidationException(ValidSubject.DATASET,
                             " same dataset version can't be uploaded twice");
                 }
 
@@ -310,12 +309,12 @@ public class DatasetUploader {
         Long projectId = projectManager.getProject(project).getId();
         DatasetEntity datasetEntity = datasetMapper.findByName(name, projectId);
         if (null == datasetEntity) {
-            throw new SwValidationException(ValidSubject.DATASET).tip("dataset name doesn't exists");
+            throw new SwValidationException(ValidSubject.DATASET, "dataset name doesn't exists");
         }
         DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.findByDsIdAndVersionName(
                 datasetEntity.getId(), version);
         if (null == datasetVersionEntity) {
-            throw new SwValidationException(ValidSubject.DATASET).tip("dataset version doesn't exists");
+            throw new SwValidationException(ValidSubject.DATASET, "dataset version doesn't exists");
         }
         if (!StringUtils.hasText(partName)) {
             partName = DATASET_MANIFEST;
@@ -328,8 +327,7 @@ public class DatasetUploader {
             httpResponse.addHeader("Content-Length", String.valueOf(length));
             outputStream.flush();
         } catch (IOException e) {
-            log.error("pull file from storage failed", e);
-            throw new SwProcessException(ErrorType.STORAGE).tip("pull file from storage failed: " + e.getMessage());
+            throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);
         }
     }
 
