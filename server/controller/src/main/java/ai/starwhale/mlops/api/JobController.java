@@ -115,8 +115,8 @@ public class JobController implements JobApi {
         try {
             jobActions.invoke(action, jobUrl);
         } catch (UnsupportedOperationException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-                    .tip(e.getMessage()), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "failed to invoke action", e),
+                    HttpStatus.BAD_REQUEST);
         }
 
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
@@ -134,7 +134,7 @@ public class JobController implements JobApi {
         Boolean res = jobService.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
 
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update job comment failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job comment failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -149,7 +149,7 @@ public class JobController implements JobApi {
     public ResponseEntity<ResponseMessage<String>> removeJob(String projectUrl, String jobUrl) {
         Boolean res = jobService.removeJob(projectUrl, jobUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Remove job failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Remove job failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -159,7 +159,7 @@ public class JobController implements JobApi {
     public ResponseEntity<ResponseMessage<String>> recoverJob(String projectUrl, String jobUrl) {
         Boolean res = jobService.recoverJob(projectUrl, jobUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover job failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover job failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

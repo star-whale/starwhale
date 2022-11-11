@@ -118,12 +118,10 @@ public class StoragePathCoordinator {
 
     private void checkKeyWord(String kw, ValidSubject validSubject) {
         if (null == kw || kw.isBlank()) {
-            throw new SwValidationException(validSubject).tip(
-                    "allocated storage key word can't be empty");
+            throw new SwValidationException(validSubject, "allocated storage key word can't be empty");
         }
         if (kw.length() < 2) {
-            throw new SwValidationException(validSubject).tip(
-                    "allocated storage key word too short");
+            throw new SwValidationException(validSubject, "allocated storage key word too short");
         }
     }
 

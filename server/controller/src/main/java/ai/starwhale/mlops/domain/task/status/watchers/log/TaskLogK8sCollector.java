@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,11 +67,11 @@ public class TaskLogK8sCollector implements TaskLogCollector {
             log.debug("logs for task {} is {}...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
         } catch (ApiException e) {
-            log.error("k8s api error {}", e.getResponseBody(), e);
-            throw new SwProcessException(ErrorType.INFRA).tip("k8s api exception" + e.getMessage());
+            throw new SwProcessException(ErrorType.INFRA,
+                    MessageFormat.format("k8s api exception {}", e.getResponseBody()),
+                    e);
         } catch (IOException e) {
-            log.error("connection error ", e);
-            throw new SwProcessException(ErrorType.NETWORK).tip("k8s connection exception" + e.getMessage());
+            throw new SwProcessException(ErrorType.NETWORK, "k8s connection exception", e);
         }
         try {
             String logPath = resolveLogPath(task);
@@ -78,8 +79,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
             storageService.put(logPath, taskLog.getBytes(
                     StandardCharsets.UTF_8));
         } catch (IOException e) {
-            log.error("storage error ", e);
-            throw new SwProcessException(ErrorType.STORAGE).tip("uploading log failed" + e.getMessage());
+            throw new SwProcessException(ErrorType.STORAGE, "uploading log failed", e);
         }
     }
 

@@ -76,16 +76,16 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final StorageAccessService storageAccessService;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-                            TaskTokenValidator taskTokenValidator,
-                            RunTimeProperties runTimeProperties,
-                            K8sJobTemplate k8sJobTemplate,
-                            ResourceEventHandler<V1Job> eventHandlerJob,
-                            ResourceEventHandler<V1Node> eventHandlerNode,
-                            @Value("${sw.instance-uri}") String instanceUri,
-                            @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
-                            @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
-                            @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
-                            StorageAccessService storageAccessService) {
+            TaskTokenValidator taskTokenValidator,
+            RunTimeProperties runTimeProperties,
+            K8sJobTemplate k8sJobTemplate,
+            ResourceEventHandler<V1Job> eventHandlerJob,
+            ResourceEventHandler<V1Node> eventHandlerNode,
+            @Value("${sw.instance-uri}") String instanceUri,
+            @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
+            @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
+            @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
+            StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
@@ -205,11 +205,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         var envs = mapToEnv(coreContainerEnvs);
 
         envs.add(
-            new V1EnvVar()
-                .name("SW_POD_NAME")
-                .valueFrom(
-                    new V1EnvVarSource().fieldRef(
-                        new V1ObjectFieldSelector().fieldPath("metadata.name")))
+                new V1EnvVar()
+                        .name("SW_POD_NAME")
+                        .valueFrom(
+                                new V1EnvVarSource().fieldRef(
+                                        new V1ObjectFieldSelector().fieldPath("metadata.name")))
         );
         return envs;
     }
@@ -226,13 +226,13 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     String modelSignedUrl = storageAccessService.signedUrl(path, 1000 * 60 * 60L);
                     downloads.add(modelSignedUrl);
                 } catch (IOException e) {
-                    log.error("sign model url failed for {} ", path, e);
-                    throw new SwProcessException(ErrorType.STORAGE).tip("sign model url failed");
+                    throw new SwProcessException(ErrorType.STORAGE, "sign model url failed for " + path, e);
                 }
             });
         } catch (IOException e) {
-            log.error("list model files failed for {} ", swJob.getModel().getPath(), e);
-            throw new SwProcessException(ErrorType.STORAGE).tip("list model files failed");
+            throw new SwProcessException(ErrorType.STORAGE,
+                    "list model files failed for " + swJob.getModel().getPath(),
+                    e);
         }
         try {
             storageAccessService.list(jobRuntime.getStoragePath()).forEach(path -> {
@@ -241,15 +241,17 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                             1000 * 60 * 60L);
                     downloads.add(runtimeSignedUrl);
                 } catch (IOException e) {
-                    log.error("sign runtime url failed for {} ", path, e);
-                    throw new SwProcessException(ErrorType.STORAGE).tip("sign runtime url failed");
+                    throw new SwProcessException(ErrorType.STORAGE,
+                            "sign runtime url failed for " + path,
+                            e);
                 }
 
             });
 
         } catch (IOException e) {
-            log.error("list runtime url failed for {} ", jobRuntime.getStoragePath(), e);
-            throw new SwProcessException(ErrorType.STORAGE).tip("list runtime url failed");
+            throw new SwProcessException(ErrorType.STORAGE,
+                    "list runtime url failed for " + jobRuntime.getStoragePath(),
+                    e);
         }
         return mapToEnv(Map.of("DOWNLOADS", Strings.join(downloads, ' ')));
     }

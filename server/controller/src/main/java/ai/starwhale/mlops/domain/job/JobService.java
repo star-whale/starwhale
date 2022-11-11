@@ -132,8 +132,9 @@ public class JobService {
         Job job = jobManager.fromUrl(jobUrl);
         JobEntity entity = jobManager.findJob(job);
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
-                    .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
 
         return jobConvertor.convert(entity);
@@ -237,13 +238,13 @@ public class JobService {
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB).tip("freeze job can't be canceled "),
+                    new SwValidationException(ValidSubject.JOB, "freeze job can't be canceled "),
                     HttpStatus.BAD_REQUEST);
         }
         Job job = jobs.stream().findAny().get();
         if (job.getStatus() != JobStatus.RUNNING
                 && job.getStatus() != JobStatus.PAUSED) {
-            throw new SwValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED job can't be canceled ");
+            throw new SwValidationException(ValidSubject.JOB, "not RUNNING/PAUSED job can't be canceled ");
         }
 
         List<Task> directlyCanceledTasks = tasksOfJob(job)
@@ -269,7 +270,7 @@ public class JobService {
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
-            throw new SwValidationException(ValidSubject.JOB).tip("frozen job can't be paused ");
+            throw new SwValidationException(ValidSubject.JOB, "frozen job can't be paused ");
         }
         Job job = jobs.stream().findAny().get();
         List<Task> notRunningTasks = tasksOfJob(job)
@@ -319,12 +320,12 @@ public class JobService {
         Long jobId = jobManager.getJobId(jobUrl);
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if (null == jobEntity) {
-            throw new SwValidationException(ValidSubject.JOB).tip("job not exists");
+            throw new SwValidationException(ValidSubject.JOB, "job not exists");
         }
         if (jobEntity.getJobStatus() != JobStatus.PAUSED
                 && jobEntity.getJobStatus() != JobStatus.FAIL
                 && jobEntity.getJobStatus() != JobStatus.CANCELED) {
-            throw new SwValidationException(ValidSubject.JOB).tip("only failed/paused/canceled job can be resumed ");
+            throw new SwValidationException(ValidSubject.JOB, "only failed/paused/canceled job can be resumed ");
         }
         Job job = jobBoConverter.fromEntity(jobEntity);
         job = jobLoader.load(job, true);

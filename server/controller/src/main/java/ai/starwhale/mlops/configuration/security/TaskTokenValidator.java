@@ -63,11 +63,11 @@ public class TaskTokenValidator implements JwtClaimValidator {
         try {
             tid = ((Number) taskId).longValue();
         } catch (ClassCastException e) {
-            throw new SwValidationException(ValidSubject.USER).tip("task claim invalid");
+            throw new SwValidationException(ValidSubject.USER, "task claim invalid");
         }
         TaskEntity task = taskMapper.findTaskById(tid);
         if (null == task || !TOKEN_VALID_STATUSES.contains(task.getTaskStatus())) {
-            throw new SwValidationException(ValidSubject.USER).tip("task claim status invalid");
+            throw new SwValidationException(ValidSubject.USER, "task claim status invalid");
         }
     }
 }
