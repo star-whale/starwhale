@@ -63,8 +63,6 @@ export class DatasetObject {
 
     public uri: string
 
-    public authName: string
-
     public src: string
 
     public mimeType: MIMES[keyof MIMES] | string
@@ -87,7 +85,6 @@ export class DatasetObject {
         this.size = Number(data?.data_size ?? 0)
         this.offset = Number(data?.data_offset ?? 0)
         this.uri = data?.data_uri ?? ''
-        this.authName = data?.auth_name ?? ''
         this.id = data?.id ?? ''
         this.mimeType = ''
         this.type = ''
@@ -151,7 +148,6 @@ export class DatasetObject {
     setDataSrc(projectId: string, datasetVersionName: string, datasetVersionVersionName: string, token: string) {
         const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
             uri: this.uri,
-            authName: this.authName,
             offset: this.offset.toString(16),
             size: this.size.toString(16),
             Authorization: token as string,

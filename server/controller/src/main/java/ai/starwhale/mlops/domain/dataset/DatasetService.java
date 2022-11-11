@@ -307,12 +307,12 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
+    public byte[] dataOf(Long datasetId, String uri, String offset,
             String size) {
         return dsFileGetter.dataOf(datasetId, uri, offset, size);
     }
 
-    public String signLink(Long id, String uri, String authName, Long expTimeMillis) {
+    public String signLink(Long id, String uri, Long expTimeMillis) {
         return dsFileGetter.linkOf(id, uri, expTimeMillis);
     }
 }

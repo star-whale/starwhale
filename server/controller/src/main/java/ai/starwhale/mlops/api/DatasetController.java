@@ -128,26 +128,26 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(String projectUrl,
-                                                                          String datasetUrl,
-                                                                          String versionUrl,
-                                                                          DataConsumptionRequest dataRangeRequest) {
+            String datasetUrl,
+            String versionUrl,
+            DataConsumptionRequest dataRangeRequest) {
         var dataset = datasetService.query(projectUrl, datasetUrl, versionUrl);
 
         return ResponseEntity.ok(Code.success.asResponse(datasetService.nextData(
                 DataReadRequest.builder()
-                    .sessionId(dataRangeRequest.getSessionId())
-                    .consumerId(dataRangeRequest.getConsumerId())
-                    .isSerial(dataRangeRequest.isSerial())
-                    .datasetName(dataset.getDatasetName())
-                    .datasetVersion(dataset.getVersionName())
-                    .tableName(dataset.getIndexTable())
-                    .start(dataRangeRequest.getStart())
-                    .startInclusive(dataRangeRequest.isStartInclusive())
-                    .batchSize(dataRangeRequest.getBatchSize())
-                    .end(dataRangeRequest.getEnd())
-                    .endInclusive(dataRangeRequest.isEndInclusive())
-                    .processedData(dataRangeRequest.getProcessedData())
-                    .build()
+                        .sessionId(dataRangeRequest.getSessionId())
+                        .consumerId(dataRangeRequest.getConsumerId())
+                        .isSerial(dataRangeRequest.isSerial())
+                        .datasetName(dataset.getDatasetName())
+                        .datasetVersion(dataset.getVersionName())
+                        .tableName(dataset.getIndexTable())
+                        .start(dataRangeRequest.getStart())
+                        .startInclusive(dataRangeRequest.isStartInclusive())
+                        .batchSize(dataRangeRequest.getBatchSize())
+                        .end(dataRangeRequest.getEnd())
+                        .endInclusive(dataRangeRequest.isEndInclusive())
+                        .processedData(dataRangeRequest.getProcessedData())
+                        .build()
         )));
     }
 
@@ -219,7 +219,7 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, String authName, String offset, String size, HttpServletResponse httpResponse) {
+            String uri, String offset, String size, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
                     .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
@@ -227,7 +227,7 @@ public class DatasetController implements DatasetApi {
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, authName, offset, size));
+            outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, offset, size));
             outputStream.flush();
         } catch (IOException e) {
             log.error("error write data to response", e);
@@ -238,10 +238,10 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> signLink(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, String authName, Long expTimeMillis) {
+            String uri, Long expTimeMillis) {
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(
-                datasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
+                datasetService.signLink(datasetVersionEntity.getId(), uri, expTimeMillis)));
     }
 
     @Override
