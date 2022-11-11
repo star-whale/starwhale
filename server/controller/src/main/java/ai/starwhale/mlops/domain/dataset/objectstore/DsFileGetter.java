@@ -52,14 +52,14 @@ public class DsFileGetter {
     @NotNull
     private static StorageUri getStorageUri(String uri) {
         if (!StringUtils.hasText(uri)) {
-            throw new SwValidationException(ValidSubject.DATASET).tip("uri is empty");
+            throw new SwValidationException(ValidSubject.DATASET, "uri is empty");
         }
         StorageUri storageUri;
         try {
             storageUri = new StorageUri(uri);
         } catch (URISyntaxException e) {
             log.error("malformed uri", e);
-            throw new SwValidationException(ValidSubject.DATASET).tip("malformed uri");
+            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
         }
         return storageUri;
     }
@@ -103,7 +103,7 @@ public class DsFileGetter {
             path = new StorageUri(uri).getPathAfterBucket();
         } catch (URISyntaxException e) {
             log.error("malformed uri {}", uri, e);
-            throw new SwValidationException(ValidSubject.DATASET).tip("malformed uri");
+            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
         }
         StorageObjectInfo objectInfo;
         try {
