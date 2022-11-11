@@ -51,6 +51,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
+from starwhale.api._impl.data_store import STRING, _get_type, SwObjectType
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
@@ -245,7 +246,7 @@ class TestDatasetCopy(BaseTestCase):
         assert {
             "type": "OBJECT",
             "attributes": [
-                {"type": "STRING", "name": "type"},
+                {"type": "STRING", "name": "_type"},
                 {"type": "INT64", "name": "x"},
                 {"type": "INT64", "name": "y"},
                 {"type": "INT64", "name": "width"},
@@ -297,7 +298,7 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "type": "OBJECT",
                             "attributes": [
-                                {"type": "STRING", "name": "type"},
+                                {"type": "STRING", "name": "_type"},
                                 {"type": "INT64", "name": "x"},
                                 {"type": "INT64", "name": "y"},
                                 {"type": "INT64", "name": "width"},
@@ -688,6 +689,41 @@ class TestDatasetType(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
+    def test_annotation_swobj(self) -> None:
+        objs = [
+            ClassLabel([1, 2, 3]),
+            Binary(b"test"),
+            Image(
+                "path/to/file",
+                display_name="t",
+                shape=[28, 28, 3],
+                mime_type=MIMEType.PNG,
+            ),
+            GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]),
+            Audio("test/1.wav"),
+            BoundingBox(1, 2, 3, 4),
+            Text("test"),
+            Link(
+                "path/to/file",
+                with_local_fs_data=True,
+                data_type=Image(display_name="image"),
+            ),
+            COCOObjectAnnotation(
+                id=1,
+                image_id=1,
+                category_id=1,
+                segmentation=["1", "2", "3"],
+                area=100,
+                bbox=BoundingBox(1, 2, 3, 4),
+                iscrowd=1,
+            ),
+        ]
+
+        for obj in objs:
+            typ = _get_type(obj)
+            assert isinstance(typ, SwObjectType)
+            assert typ.attrs["_type"] == STRING
+
     def test_binary(self) -> None:
         b = Binary(b"test")
         assert b.to_bytes() == b"test"
@@ -712,6 +748,16 @@ class TestDatasetType(TestCase):
         assert _asdict["shape"] == [28, 28, 3]
         assert json.loads(json.dumps(_asdict))["_type"] == "image"
 
+        with self.assertRaises(RuntimeError):
+            _get_type(img)
+
+        img = Image(
+            "path/to/file", display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG
+        )
+        typ = _get_type(img)
+        assert isinstance(typ, SwObjectType)
+        assert typ.attrs["mask_uri"] == STRING
+
         fp = io.BytesIO(b"test")
         img = GrayscaleImage(fp, shape=[28, 28, 1]).carry_raw_data()
         assert img.to_bytes() == b"test"
@@ -720,6 +766,14 @@ class TestDatasetType(TestCase):
         assert _asdict["_mime_type"] == MIMEType.GRAYSCALE.value
         assert _asdict["shape"] == [28, 28, 1]
         assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
+        with self.assertRaises(RuntimeError):
+            _get_type(img)
+
+        self.fs.create_file("path/to/file", contents="")
+        img = GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]).carry_raw_data()
+        typ = _get_type(img)
+        assert isinstance(typ, SwObjectType)
+        assert typ.attrs["_raw_base64_data"] == STRING
 
     def test_audio(self) -> None:
         fp = "/test/1.wav"
@@ -729,12 +783,14 @@ class TestDatasetType(TestCase):
         assert _asdict["_mime_type"] == MIMEType.WAV.value
         assert _asdict["_type"] == "audio"
         assert audio.to_bytes() == b"test"
+        typ = _get_type(audio)
+        assert isinstance(typ, SwObjectType)
 
     def test_bbox(self) -> None:
         bbox = BoundingBox(1, 2, 3, 4)
         assert bbox.to_list() == [1, 2, 3, 4]
         _asdict = json.loads(json.dumps(bbox.asdict()))
-        assert _asdict["type"] == "bounding_box"
+        assert _asdict["_type"] == "bounding_box"
         assert _asdict["x"] == 1
         assert _asdict["y"] == 2
         assert _asdict["width"] == 3
@@ -751,24 +807,25 @@ class TestDatasetType(TestCase):
         assert text.to_str() == "test"
 
     def test_coco(self) -> None:
+        # TODO: add segmentation dict test
         coco = COCOObjectAnnotation(
             id=1,
             image_id=1,
             category_id=1,
-            segmentation={"counts": "abcd"},
+            segmentation=["1", "2", "3"],
             area=100,
             bbox=BoundingBox(1, 2, 3, 4),
             iscrowd=1,
         )
         _asdict = json.loads(json.dumps(coco.asdict()))
-        assert _asdict["type"] == "coco_object_annotation"
+        assert _asdict["_type"] == "coco_object_annotation"
 
         with self.assertRaises(FieldTypeOrValueError):
             coco = COCOObjectAnnotation(
                 id=1,
                 image_id=1,
                 category_id=1,
-                segmentation={"counts": "abcd"},
+                segmentation=["1", "2", "3"],
                 area=100,
                 bbox=BoundingBox(1, 2, 3, 4),
                 iscrowd=3,
@@ -777,7 +834,7 @@ class TestDatasetType(TestCase):
     def test_class_label(self) -> None:
         cl = ClassLabel([1, 2, 3])
         _asdict = json.loads(json.dumps(cl.asdict()))
-        assert _asdict["type"] == "class_label"
+        assert _asdict["_type"] == "class_label"
         assert _asdict["names"] == [1, 2, 3]
 
         cl = ClassLabel.from_num_classes(3)

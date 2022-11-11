@@ -1,13 +1,19 @@
 from starwhale import (
     URI,
+    Link,
     Text,
+    Audio,
     URIType,
+    LinkAuth,
+    MIMEType,
     ClassLabel,
     BoundingBox,
+    GrayscaleImage,
     get_data_loader,
     COCOObjectAnnotation,
 )
-from starwhale.api._impl.data_store import Link, _get_type
+from starwhale.api._impl.data_store import Link as PlainLink
+from starwhale.api._impl.data_store import _get_type
 
 
 def iter_simple_bin_item():
@@ -18,7 +24,7 @@ def iter_simple_bin_item():
             "label_float": 0.100092 + i,
             "list_int": [j for j in range(0, i)],
             "bytes": f"label-{i}".encode(),
-            "link": Link(f"uri-{i}", f"display-{i}"),
+            "link": PlainLink(f"uri-{i}", f"display-{i}"),
         }
 
         yield f"idx-{i}", Text(f"data-{i}"), annotations
@@ -33,7 +39,7 @@ def iter_swds_bin_item():
             "list_int": [j for j in range(0, i)],
             "bytes": f"label-{i}".encode(),
             "bbox": BoundingBox(i, i, i + 10, i + 10),
-            "link": Link(f"uri-{i}", f"display-{i}"),
+            "plain_link": PlainLink(f"uri-{i}", f"display-{i}"),
             "list_bbox": [
                 BoundingBox(i, i, i + 10, i + 10),
                 BoundingBox(i, i, i + 20, i + 20),
@@ -48,6 +54,16 @@ def iter_swds_bin_item():
                 iscrowd=1,
             ),
             "dict": {"a": 1, "b": 2, "c": {"d": 1, "e": ClassLabel([1, 2, 3])}},
+            "artifact_local_link": Link(
+                "path/to/file.png",
+                data_type=GrayscaleImage(display_name=f"[{i}]", shape=(28, 28, 1)),
+                with_local_fs_data=True,
+            ),
+            "artifact_s3_link": Link(
+                "s3://bucket/key/file.mp3",
+                auth=LinkAuth("default"),
+                data_type=Audio(display_name=f"{i}-audio", mime_type=MIMEType.MP3),
+            ),
         }
 
         yield f"idx-{i}", Text(f"data-{i}"), annotations
@@ -78,6 +94,12 @@ def load_cloud_dataset():
 
     uri = URI(
         "cloud://pre-tianwei/project/datasets/dataset/test_annotations/version/gnrwgnrtmnrgkzrymftggnjvmu4wo4i",
+        expected_type=URIType.DATASET,
+    )
+    _load_dataset(uri)
+
+    uri = URI(
+        "cloud://pre-tianwei/project/datasets/dataset/complex_annotations/version/ge2dezlfgy4gcmzuhe4tgn3fnu3hm5a",
         expected_type=URIType.DATASET,
     )
     _load_dataset(uri)

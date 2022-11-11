@@ -4,7 +4,7 @@ import io
 import os
 import base64
 import typing as t
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
@@ -15,10 +15,14 @@ from starwhale.consts import (
     SHORT_VERSION_CNT,
     DEFAULT_STARWHALE_API_VERSION,
 )
+from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.api._impl.data_store import SwObject
+
+from .store import ObjectStore
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -35,17 +39,22 @@ class LinkType(Enum):
 _LAType = t.TypeVar("_LAType", bound="LinkAuth")
 
 
-class LinkAuth(metaclass=ABCMeta):
-    def __init__(self, name: str = "", ltype: LinkType = LinkType.UNDEFINED) -> None:
+class LinkAuth(SwObject):
+    def __init__(
+        self, name: str = "", ltype: t.Union[LinkType, str] = LinkType.UNDEFINED
+    ) -> None:
         self.name = name.strip()
-        self.ltype = ltype
+        self._ltype = LinkType(ltype).value
         self._do_validate()
+
+    @property
+    def ltype(self) -> LinkType:
+        return LinkType(self._ltype)
 
     def _do_validate(self) -> None:
         if self.ltype not in LinkType:
             raise NoSupportError(f"Link Type: {self.ltype}")
 
-    @abstractmethod
     def dump_env(self) -> t.List[str]:
         raise NotImplementedError
 
@@ -186,7 +195,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         mime_type: t.Optional[MIMEType] = None,
         encoding: str = "",
     ) -> None:
-        self.fp = fp
+        self.fp = str(fp) if isinstance(fp, Path) else fp
         self._type = ArtifactType(type).value
 
         _fpath = str(fp) if isinstance(fp, (Path, str)) and fp else ""
@@ -363,7 +372,7 @@ class ClassLabel(ASDictMixin, SwObject):
     def __init__(
         self, names: t.Optional[t.List[t.Union[int, float, str]]] = None
     ) -> None:
-        self.type = "class_label"
+        self._type = "class_label"
         self.names = names or []
 
     @classmethod
@@ -384,7 +393,7 @@ class BoundingBox(ASDictMixin, SwObject):
     def __init__(
         self, x: float = 0, y: float = 0, width: float = 0, height: float = 0
     ) -> None:
-        self.type = "bounding_box"
+        self._type = "bounding_box"
         self.x = x
         self.y = y
         self.width = width
@@ -433,7 +442,7 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
         bbox: t.Optional[t.Union[BoundingBox, t.List[float]]] = None,
         iscrowd: int = 0,
     ) -> None:
-        self.type = "coco_object_annotation"
+        self._type = "coco_object_annotation"
         self.id = id
         self.image_id = image_id
         self.category_id = category_id
@@ -454,22 +463,31 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
 class Link(ASDictMixin, SwObject):
     def __init__(
         self,
-        uri: str = "",
-        auth: t.Optional[LinkAuth] = DefaultS3LinkAuth,
-        offset: int = FilePosition.START,
+        uri: t.Union[str, Path] = "",
+        auth: t.Optional[LinkAuth] = None,
+        offset: int = FilePosition.START.value,
         size: int = -1,
         data_type: t.Optional[BaseArtifact] = None,
         with_local_fs_data: bool = False,
     ) -> None:
-        self.type = ArtifactType.Link
-        self.uri = uri.strip()
+        self._type = "link"
+        self.uri = (str(uri)).strip()
         self.offset = offset
         self.size = size
         self.auth = auth
         self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
+        self._local_fs_uri = ""
 
         self.do_validate()
+
+    @property
+    def local_fs_uri(self) -> str:
+        return self._local_fs_uri
+
+    @local_fs_uri.setter
+    def local_fs_uri(self, value: str) -> None:
+        self._local_fs_uri = value
 
     def do_validate(self) -> None:
         if self.offset < 0:
@@ -480,7 +498,7 @@ class Link(ASDictMixin, SwObject):
 
     def astype(self) -> t.Dict[str, t.Any]:
         return {
-            "type": self.type,
+            "type": self._type,
             "data_type": self.data_type.astype() if self.data_type else {},
         }
 
@@ -489,6 +507,19 @@ class Link(ASDictMixin, SwObject):
 
     def __repr__(self) -> str:
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
+
+    def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+        # TODO: auto inject dataset_uri in the loader process
+        if isinstance(dataset_uri, str):
+            dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
+
+        auth_name = self.auth.name if self.auth else ""
+        if dataset_uri.instance_type == InstanceType.CLOUD:
+            store = ObjectStore.to_signed_http_backend(dataset_uri, auth_name)
+        else:
+            store = ObjectStore.from_data_link_uri(self.uri, auth_name)
+        key_compose = self.local_fs_uri or self.uri, 0, 0
+        return store.backend._make_file(store.bucket, key_compose).read(-1)
 
 
 class DatasetSummary(ASDictMixin):

@@ -4,6 +4,7 @@ from starwhale.core.dataset.type import (
     Audio,
     Image,
     Binary,
+    LinkAuth,
     LinkType,
     MIMEType,
     ClassLabel,
@@ -21,6 +22,7 @@ from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 __all__ = [
     "get_data_loader",
     "Link",
+    "LinkAuth",
     "DefaultS3LinkAuth",
     "LocalFSLinkAuth",
     "S3LinkAuth",

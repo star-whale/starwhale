@@ -27,6 +27,7 @@ from starwhale.core.dataset.type import (
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 
 # TODO: tune header size
@@ -371,6 +372,29 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                 data_uri, _ = map_path_sign[_data_fpath]
                 auth = ""
                 object_store_type = ObjectStoreType.LOCAL
+
+                def _travel_link(obj: t.Any) -> None:
+                    if isinstance(obj, dict):
+                        for v in obj.values():
+                            _travel_link(v)
+                    elif isinstance(obj, SwObject):
+                        for v in obj.__dict__.values():
+                            _travel_link(v)
+                    elif isinstance(obj, (list, tuple)):
+                        for v in obj:
+                            _travel_link(v)
+                    elif isinstance(obj, Link):
+                        if not obj.with_local_fs_data:
+                            raise NoSupportError(
+                                f"Local Link only suuports local link annotations: {obj}"
+                            )
+                        if obj.uri not in map_path_sign:
+                            map_path_sign[obj.uri] = DatasetStorage.save_data_file(
+                                obj.uri
+                            )
+                        obj.local_fs_uri, _ = map_path_sign[obj.uri]
+
+                _travel_link(row_annotations)
             else:
                 _remote_link = row_data
                 data_uri = _remote_link.uri

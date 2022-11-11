@@ -41,8 +41,6 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 
-from .type import S3LinkAuth
-
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
 _DEFAULT_S3_ENDPOINT = "localhost:9000"
@@ -217,6 +215,8 @@ class S3Connection:
             - s3://127.0.0.1:8000@bucket/key
             - s3://bucket/key
         """
+        from .type import S3LinkAuth
+
         uri = uri.strip()
         if not uri or not uri.startswith("s3://"):
             raise NoSupportError(
