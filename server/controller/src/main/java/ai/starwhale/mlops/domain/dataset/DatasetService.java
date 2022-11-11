@@ -301,6 +301,7 @@ public class DatasetService {
         return versionEntity;
     }
 
+
     public DataIndexDesc nextData(DataReadRequest request) {
         var dataRange = dataLoader.next(request);
         return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
@@ -309,8 +310,8 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
-            String size) {
+    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
+            Long size) {
         return dsFileGetter.dataOf(datasetId, uri, authName, offset, size);
     }
 

@@ -260,9 +260,9 @@ public interface DatasetApi {
             @Parameter(name = "authName", description = "auth name the link used")
             @RequestParam(name = "authName", required = false) String authName,
             @Parameter(name = "offset", description = "offset in the content")
-            @RequestParam(name = "offset", required = false) String offset,
+            @RequestParam(name = "offset", required = false) Long offset,
             @Parameter(name = "size", description = "data size")
-            @RequestParam(name = "size", required = false) String size,
+            @RequestParam(name = "size", required = false) Long size,
             HttpServletResponse httpResponse);
 
     @Operation(summary = "Sign SWDS uri to get a temporarily accessible link",
