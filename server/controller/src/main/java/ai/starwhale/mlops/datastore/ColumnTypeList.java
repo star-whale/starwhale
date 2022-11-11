@@ -38,7 +38,7 @@ public class ColumnTypeList extends ColumnType {
 
     public static final String TYPE_NAME = "LIST";
 
-    private final ColumnType elementType;
+    protected final ColumnType elementType;
 
     ColumnTypeList(ColumnType elementType) {
         this.elementType = elementType;

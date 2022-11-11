@@ -49,6 +49,19 @@ public class ColumnTypeTest {
                                 .build())
                         .build()),
                 is(new ColumnTypeList(new ColumnTypeList(ColumnTypeScalar.INT32))));
+        assertThat("simple tuple", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
+                        .type("TUPLE")
+                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .build()),
+                is(new ColumnTypeTuple(ColumnTypeScalar.INT32)));
+        assertThat("composite tuple", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
+                        .type("TUPLE")
+                        .elementType(ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .build()),
+                is(new ColumnTypeTuple(new ColumnTypeList(ColumnTypeScalar.INT32))));
         assertThat("object", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
                         .type("OBJECT")
                         .pythonType("t")
@@ -377,6 +390,69 @@ public class ColumnTypeTest {
                         List.of(1, 2, 3),
                         new ColumnTypeList(ColumnTypeScalar.INT8),
                         List.of()),
+                greaterThan(0));
+    }
+
+    @Test
+    public void testCompareTuple() {
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 4)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 3, 0)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 3)),
+                equalTo(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 2)),
+                greaterThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of()),
+                greaterThan(0));
+    }
+
+    @Test
+    public void testCompareListTuple() {
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeList(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 4)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeList(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 4)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeList(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 3)),
+                equalTo(0));
+        assertThat(ColumnType.compare(new ColumnTypeList(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 3)),
+                equalTo(0));
+        assertThat(ColumnType.compare(new ColumnTypeTuple(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeList(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 2)),
+                greaterThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeList(ColumnTypeScalar.INT32),
+                        List.of(1, 2, 3),
+                        new ColumnTypeTuple(ColumnTypeScalar.INT8),
+                        List.of(1, 2, 2)),
                 greaterThan(0));
     }
 
