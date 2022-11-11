@@ -37,6 +37,12 @@ public class SwValidationException extends StarwhaleException {
         this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
     }
 
+    public SwValidationException(ValidSubject validSubject, String tip, Throwable cause) {
+        super(PREFIX_TIP + validSubject.tipSubject + "\n" + tip, cause);
+        this.code = PREFIX_CODE + validSubject.tipSubject;
+        this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
+    }
+
     @Override
     public String getCode() {
         return this.code;
@@ -66,7 +72,8 @@ public class SwValidationException extends StarwhaleException {
         RESOURCE_POOL("010", "Resource Pool"),
         SETTING("011", "System Setting"),
         TRASH("012", "TRASH"),
-        OBJECT_STORE("012", "Object Store");
+        OBJECT_STORE("013", "Object Store"),
+        PLUGIN("014", "Plugin");
         final String code;
         final String tipSubject;
 

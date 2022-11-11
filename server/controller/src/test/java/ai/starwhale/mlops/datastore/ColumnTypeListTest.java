@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,20 @@ public class ColumnTypeListTest {
                 is(List.of("00000009", "0000000a", "0000000b")));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
                 is(List.of("9", "10", "11")));
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(new ArrayList<Integer>() {
+                    {
+                        add(0);
+                        add(null);
+                        add(1);
+                    }
+                }, false),
+                is(new ArrayList<String>() {
+                    {
+                        add("00000000");
+                        add(null);
+                        add("00000001");
+                    }
+                }));
         var composite = new ColumnTypeList(
                 new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
         assertThat(composite.encode(List.of(Map.of("a", 9, "b", 10), Map.of("a", 10, "b", 11)), false),
@@ -84,6 +99,20 @@ public class ColumnTypeListTest {
     public void testDecode() {
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(List.of("9", "a", "b")),
                 is(List.of(9, 10, 11)));
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(new ArrayList<String>() {
+                    {
+                        add("0");
+                        add(null);
+                        add("1");
+                    }
+                }),
+                is(new ArrayList<Integer>() {
+                    {
+                        add(0);
+                        add(null);
+                        add(1);
+                    }
+                }));
         var composite = new ColumnTypeList(
                 new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
         assertThat(composite.decode(List.of(Map.of("a", "9", "b", "a"), Map.of("a", "a", "b", "b"))),

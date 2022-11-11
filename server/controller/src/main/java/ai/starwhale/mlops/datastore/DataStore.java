@@ -18,9 +18,13 @@ package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import cn.hutool.core.collection.CollectionUtil;
+import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,11 +33,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 
@@ -41,69 +48,107 @@ import org.springframework.util.unit.DataSize;
 @Component
 public class DataStore {
 
+    private static final String PATH_SEPARATOR = "_._";
+
     private final WalManager walManager;
     private final StorageAccessService storageAccessService;
 
-    private final Map<String, MemoryTable> tables = new ConcurrentHashMap<>();
-    private final String dataRootPath;
+    private final Map<String, SoftReference<MemoryTable>> tables = new ConcurrentHashMap<>();
+    private final Map<MemoryTable, String> dirtyTables = new ConcurrentHashMap<>();
+    private final String snapshotRootPath;
     private final ParquetConfig parquetConfig;
 
-    public DataStore(WalManager walManager,
-            StorageAccessService storageAccessService,
+    private final Set<String> loadingTables = new HashSet<>();
+    private final DumpThread dumpThread;
+
+    public DataStore(StorageAccessService storageAccessService,
+            SwBufferManager swBufferManager,
+            @Value("${sw.datastore.walFileSize}") int walFileSize,
+            @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
+            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
+            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts,
             @Value("${sw.datastore.dataRootPath:}") String dataRootPath,
+            @Value("${sw.datastore.dumpInterval:1h}") String dumpInterval,
+            @Value("${sw.datastore.minNoUpdatePeriod:1d}") String minNoUpdatePeriod,
             @Value("${sw.datastore.parquet.compressionCodec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.rowGroupSize:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.pageSize:1MB}") String pageSize,
             @Value("${sw.datastore.parquet.pageRowCountLimit:20000}") int pageRowCountLimit) {
         this.storageAccessService = storageAccessService;
-        this.dataRootPath = dataRootPath;
+        if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
+            dataRootPath += "/";
+        }
+        this.snapshotRootPath = dataRootPath + "snapshot/";
+        this.walManager = new WalManager(new ObjectStore(swBufferManager, this.storageAccessService),
+                swBufferManager,
+                walFileSize,
+                walMaxFileSize,
+                dataRootPath + "wal/",
+                walWaitIntervalMillis,
+                ossMaxAttempts);
         this.parquetConfig = new ParquetConfig();
         this.parquetConfig.setCompressionCodec(CompressionCodec.valueOf(compressionCodec));
         this.parquetConfig.setRowGroupSize(DataSize.parse(rowGroupSize).toBytes());
         this.parquetConfig.setPageSize((int) DataSize.parse(pageSize).toBytes());
         this.parquetConfig.setPageRowCountLimit(pageRowCountLimit);
-        this.walManager = walManager;
         var it = this.walManager.readAll();
         while (it.hasNext()) {
             var entry = it.next();
-            var tableName = entry.getTableName();
-            var table = this.tables.computeIfAbsent(tableName,
-                    k -> new MemoryTableImpl(tableName,
-                            this.walManager,
-                            this.storageAccessService,
-                            this.dataRootPath,
-                            this.parquetConfig));
+            var table = this.getTable(entry.getTableName(), true, true);
+            //noinspection ConstantConditions
             table.updateFromWal(entry);
+            if (table.getFirstWalLogId() >= 0) {
+                this.dirtyTables.put(table, "");
+            }
         }
+        this.dumpThread = new DumpThread(DurationStyle.detectAndParse(dumpInterval).toMillis(),
+                DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis());
+        this.dumpThread.start();
     }
 
     public void terminate() {
+        this.dumpThread.terminate();
         this.walManager.terminate();
     }
 
     public List<String> list(String prefix) {
-        return tables.keySet().stream().filter(name -> name.startsWith(prefix)).collect(Collectors.toList());
+        try {
+            return Stream.concat(
+                            this.storageAccessService.list(this.snapshotRootPath + prefix)
+                                    .map(path -> {
+                                        path = path.substring(this.snapshotRootPath.length());
+                                        var index = path.indexOf(PATH_SEPARATOR);
+                                        if (index < 0) {
+                                            return path;
+                                        } else {
+                                            return path.substring(0, index);
+                                        }
+                                    }),
+                            tables.keySet().stream().filter(name -> name.startsWith(prefix)))
+                    .sorted()
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to list", e);
+        }
     }
 
     public void update(String tableName,
             TableSchemaDesc schema,
             List<Map<String, Object>> records) {
-        var table = this.tables.computeIfAbsent(tableName,
-                k -> new MemoryTableImpl(tableName,
-                        this.walManager,
-                        this.storageAccessService,
-                        this.dataRootPath,
-                        this.parquetConfig));
+        var table = this.getTable(tableName, true, true);
+        //noinspection ConstantConditions
         table.lock();
         try {
             table.update(schema, records);
+            this.dirtyTables.put(table, "");
         } finally {
             table.unlock();
         }
     }
 
     public RecordList query(DataStoreQueryRequest req) {
-        var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable());
+        var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {
             return new RecordList(Collections.emptyMap(), Collections.emptyList(), null);
         }
@@ -152,7 +197,7 @@ public class DataStore {
                         .stream()
                         .map(DataStoreScanRequest.TableInfo::getTableName)
                         .sorted() // prevent deadlock
-                        .map(i -> getTable(i, req.isIgnoreNonExistingTable()))
+                        .map(i -> getTable(i, req.isIgnoreNonExistingTable(), false))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
@@ -173,7 +218,7 @@ public class DataStore {
             var tables = req.getTables().stream().map(info -> {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
-                ret.table = this.getTable(info.getTableName(), req.isIgnoreNonExistingTable());
+                ret.table = this.getTable(info.getTableName(), req.isIgnoreNonExistingTable(), false);
                 if (ret.table == null) {
                     return null;
                 }
@@ -183,7 +228,7 @@ public class DataStore {
                 ret.keepNone = info.isKeepNone();
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
-            if (CollectionUtil.isEmpty(tables)) {
+            if (tables.isEmpty()) {
                 return new RecordList(Map.of(), List.of(), null);
             }
             var columnTypeMap = new HashMap<String, ColumnType>();
@@ -286,17 +331,65 @@ public class DataStore {
         }
     }
 
-    private MemoryTable getTable(String tableName, boolean allowNull) {
-        var table = tables.get(tableName);
-        if (table == null) {
-            if (allowNull) {
-                log.warn("not found table:{}!", tableName);
-            } else {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
-                        "invalid table name " + tableName);
+    /**
+     * For unit test only
+     *
+     * @return true if there is any dirty table.
+     */
+    public boolean hasDirtyTables() {
+        return !this.dirtyTables.isEmpty();
+    }
+
+    /**
+     * For unit test only
+     */
+    public void stopDump() {
+        this.dumpThread.terminate();
+    }
+
+    private MemoryTable getTable(String tableName, boolean allowNull, boolean createIfNull) {
+        for (; ; ) {
+            var tableRef = this.tables.get(tableName);
+            var table = tableRef == null ? null : tableRef.get();
+            if (table == null) {
+                synchronized (this.loadingTables) {
+                    if (this.loadingTables.contains(tableName)) {
+                        try {
+                            this.loadingTables.wait();
+                        } catch (InterruptedException e) {
+                            throw new SwProcessException(ErrorType.DATASTORE, "interrupted", e);
+                        }
+                        continue;
+                    }
+                    this.loadingTables.add(tableName);
+                }
+                try {
+                    table = new MemoryTableImpl(tableName,
+                            this.walManager,
+                            this.storageAccessService,
+                            this.snapshotRootPath + tableName + PATH_SEPARATOR,
+                            this.parquetConfig);
+                    if (table.getSchema() != null || createIfNull) {
+                        this.tables.put(tableName, new SoftReference<>(table));
+                    } else if (table.getSchema() == null) {
+                        if (allowNull) {
+                            return null;
+                        } else {
+                            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+                                    "invalid table name " + tableName);
+                        }
+                    } else {
+                        this.tables.put(tableName, new SoftReference<>(table));
+                    }
+                } finally {
+                    synchronized (this.loadingTables) {
+                        this.loadingTables.remove(tableName);
+                        this.loadingTables.notifyAll();
+                    }
+                }
             }
+            return table;
         }
-        return table;
     }
 
     private Map<String, String> getColumnAliases(TableSchema schema, Map<String, String> columns) {
@@ -343,5 +436,94 @@ public class DataStore {
             ret.put(columnName, columnTypeMap.get(columnName).encode(columnValue, rawResult));
         }
         return ret;
+    }
+
+    private boolean saveOneTable(long minNoUpdatePeriodMillis) {
+        for (var table : this.dirtyTables.keySet()) {
+            table.lock();
+            try {
+                var now = System.currentTimeMillis();
+                if ((now - table.getLastUpdateTime()) >= minNoUpdatePeriodMillis) {
+                    table.save();
+                    this.dirtyTables.remove(table);
+                    return true;
+                }
+            } finally {
+                table.unlock();
+            }
+        }
+        return false;
+    }
+
+    private void clearWalLogFiles() {
+        long minWalLogIdToRetain = this.walManager.getMaxEntryId() + 1;
+        for (var tableRef : this.tables.values()) {
+            var table = tableRef.get();
+            if (table == null) {
+                continue;
+            }
+            table.lock();
+            try {
+                if (table.getFirstWalLogId() >= 0 && table.getFirstWalLogId() < minWalLogIdToRetain) {
+                    minWalLogIdToRetain = table.getFirstWalLogId();
+                }
+            } finally {
+                table.unlock();
+            }
+        }
+        try {
+            this.walManager.removeWalLogFiles(minWalLogIdToRetain);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to clear wal log files", e);
+        }
+    }
+
+    private class DumpThread extends Thread {
+
+        private final long dumpIntervalMillis;
+        private final long minNoUpdatePeriodMillis;
+        private transient boolean terminated;
+
+        public DumpThread(long dumpIntervalMillis, long minNoUpdatePeriodMillis) {
+            this.dumpIntervalMillis = dumpIntervalMillis;
+            this.minNoUpdatePeriodMillis = minNoUpdatePeriodMillis;
+        }
+
+        public void run() {
+            while (!this.terminated) {
+                try {
+                    while (saveOneTable(minNoUpdatePeriodMillis)) {
+                        if (this.terminated) {
+                            return;
+                        }
+                    }
+                    clearWalLogFiles();
+                } catch (Throwable t) {
+                    log.error("failed to save table", t);
+                }
+                try {
+                    synchronized (this) {
+                        if (this.terminated) {
+                            return;
+                        }
+                        this.wait(dumpIntervalMillis);
+                    }
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+
+        public void terminate() {
+            synchronized (this) {
+                this.terminated = true;
+                this.notifyAll();
+            }
+            try {
+                this.join();
+            } catch (InterruptedException e) {
+                log.error("interrupted", e);
+            }
+        }
     }
 }

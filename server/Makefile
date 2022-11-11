@@ -6,10 +6,10 @@ build-package:
 	mvn -B clean package -DskipTests
 
 ci-package-with-unit-test:
-	mvn -B clean package
+	mvn -B -e clean package
 
 ci-package-with-unit-test-report:
-	mvn -B clean package jacoco:report
+	mvn -B -e clean package jacoco:report
 
 test:
 	docker volume create --name ${MVN_VOLUME} && \
@@ -19,4 +19,4 @@ test:
 		-v ${MVN_VOLUME}:/var/maven/.m2 \
 		-v $(shell pwd):/app \
 		-w /app ${MVN_IMG} \
-		mvn -Duser.home=/var/maven test
+		mvn -Duser.home=/var/maven -e test

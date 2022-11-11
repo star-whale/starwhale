@@ -1510,11 +1510,11 @@ class TestRemoteDataStore(unittest.TestCase):
                             },
                             {
                                 "type": "OBJECT",
-                                "attributes": {
-                                    "uri": {"type": "STRING"},
-                                    "display_text": {"type": "STRING"},
-                                    "mime_type": {"type": "STRING"},
-                                },
+                                "attributes": [
+                                    {"type": "STRING", "name": "uri"},
+                                    {"type": "STRING", "name": "display_text"},
+                                    {"type": "STRING", "name": "mime_type"},
+                                ],
                                 "pythonType": "LINK",
                                 "name": "k",
                             },
@@ -1522,11 +1522,11 @@ class TestRemoteDataStore(unittest.TestCase):
                                 "type": "LIST",
                                 "elementType": {
                                     "type": "OBJECT",
-                                    "attributes": {
-                                        "uri": {"type": "STRING"},
-                                        "display_text": {"type": "STRING"},
-                                        "mime_type": {"type": "STRING"},
-                                    },
+                                    "attributes": [
+                                        {"type": "STRING", "name": "uri"},
+                                        {"type": "STRING", "name": "display_text"},
+                                        {"type": "STRING", "name": "mime_type"},
+                                    ],
                                     "pythonType": "LINK",
                                 },
                                 "name": "l",
@@ -1615,11 +1615,11 @@ class TestRemoteDataStore(unittest.TestCase):
                         "name": "l",
                         "type": "OBJECT",
                         "pythonType": "LINK",
-                        "attributes": {
-                            "uri": {"type": "STRING"},
-                            "display_text": {"type": "STRING"},
-                            "mime_type": {"type": "STRING"},
-                        },
+                        "attributes": [
+                            {"type": "STRING", "name": "uri"},
+                            {"type": "STRING", "name": "display_text"},
+                            {"type": "STRING", "name": "mime_type"},
+                        ],
                     },
                     {
                         "name": "m",
@@ -1627,11 +1627,11 @@ class TestRemoteDataStore(unittest.TestCase):
                         "elementType": {
                             "type": "OBJECT",
                             "pythonType": "LINK",
-                            "attributes": {
-                                "uri": {"type": "STRING"},
-                                "display_text": {"type": "STRING"},
-                                "mime_type": {"type": "STRING"},
-                            },
+                            "attributes": [
+                                {"type": "STRING", "name": "uri"},
+                                {"type": "STRING", "name": "display_text"},
+                                {"type": "STRING", "name": "mime_type"},
+                            ],
                         },
                     },
                     {"name": "n", "type": "FLOAT16"},

@@ -197,7 +197,8 @@ public class ColumnTypeScalar extends ColumnType {
             throw new IllegalArgumentException("invalid type " + this);
         } catch (Exception e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    MessageFormat.format("can not decode value {0} for type {1}: {2}", value, this, e));
+                    MessageFormat.format("can not decode value {0} for type {1}", value, this),
+                    e);
         }
     }
 
