@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
-import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -39,7 +38,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class DsFileGetter {
 
-    static final Set<String> SCHEMA_HTTP = Set.of("http", "https");
+    static final Set<String> SCHEME_HTTP = Set.of("http", "https");
     final StorageAccessParser storageAccessParser;
     final DatasetVersionMapper datasetVersionMapper;
 
@@ -85,7 +84,7 @@ public class DsFileGetter {
 
     public String linkOf(Long datasetId, String uri, Long expTimeMillis) {
         StorageUri storageUri = getStorageUri(uri);
-        if (null != storageUri.getSchema() && SCHEMA_HTTP.contains(storageUri.getSchema())) {
+        if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
             return uri;
         }
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);

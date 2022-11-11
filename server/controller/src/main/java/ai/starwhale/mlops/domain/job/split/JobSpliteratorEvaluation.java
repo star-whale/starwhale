@@ -66,7 +66,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
     /**
-     * when task amount exceeds 1000, bach insertion will emit an error
+     * when task amount exceeds 1000, batch insertion will emit an error
      */
     @Value("${sw.task.size}")
     Integer amountOfTasks = 256;

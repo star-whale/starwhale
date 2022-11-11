@@ -219,7 +219,6 @@ class S3Connection:
         uri:
             - s3://username:password@127.0.0.1:8000/bucket/key
             - s3://127.0.0.1:8000/bucket/key
-            - s3://bucket/key
         """
         uri = uri.strip()
         if not uri or not uri.startswith("s3://"):
