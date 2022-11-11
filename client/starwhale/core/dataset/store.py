@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import os
-import re
 import sys
 import json
 import shutil
@@ -41,8 +40,6 @@ from starwhale.utils.error import (
     FieldTypeOrValueError,
 )
 from starwhale.utils.config import SWCliConfigMixed
-
-from .type import S3LinkAuth
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
@@ -172,9 +169,6 @@ class FileLikeObj(Protocol):
         ...
 
 
-path_reg = re.compile("^(\/?([^\/]+)((\/(([^\/]+?)\/?))*))$")
-
-
 class S3Connection:
     def __init__(
         self,
@@ -213,15 +207,17 @@ class S3Connection:
     __repr__ = __str__
 
     @classmethod
-    def from_uri(cls, uri: str, auth_name: str) -> S3Connection:
+    def from_uri(cls, uri: str, auth_name: str = "") -> S3Connection:
         """make S3 Connection by uri
 
         uri:
             - s3://username:password@127.0.0.1:8000/bucket/key
             - s3://127.0.0.1:8000/bucket/key
         """
+        from .type import S3LinkAuth
+
         uri = uri.strip()
-        if not uri or not uri.startswith("s3://"):
+        if not uri or not uri.startswith(("s3://", "minio://")):
             raise NoSupportError(
                 f"s3 connection only support s3:// prefix, the actual uri is {uri}"
             )
@@ -232,18 +228,20 @@ class S3Connection:
         access = r.username or link_auth.access_key
         secret = r.password or link_auth.secret
         region = link_auth.region
-        endpoint = r.hostname or link_auth.endpoint
-        match = path_reg.match(r.path)
-        bucket = match.group(2)  # type:ignore
+        endpoint = r.netloc.split("@")[-1] or link_auth.endpoint
+
+        parts = r.path.lstrip("/").split("/", 1)
+        if len(parts) != 2 or parts[0] == "" or parts[1] == "":
+            raise FieldTypeOrValueError(
+                f"{uri} is not a valid s3 uri for bucket and key"
+            )
+        bucket = parts[0]
 
         if not endpoint:
             raise FieldTypeOrValueError("endpoint is empty")
 
         if not access or not secret:
             raise FieldTypeOrValueError("no access_key or secret_key")
-
-        if not bucket:
-            raise FieldTypeOrValueError("bucket is empty")
 
         return cls(
             endpoint=endpoint,
@@ -432,12 +430,11 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         return r["data"]  # type: ignore
 
 
-# TODO: add mock test
 class S3BufferedFileLike:
     # TODO: add s3 typing
     def __init__(self, s3: t.Any, bucket: str, key: str, start: int, end: int) -> None:
-        self.key = key
-        self.obj = s3.Object(bucket, key)
+        self.key = self._format_key(key, bucket)
+        self.obj = s3.Object(bucket, self.key)
         self.start = start
         self.end = end
 
@@ -446,6 +443,17 @@ class S3BufferedFileLike:
         self._s3_eof = False
         self._current_s3_start = start
         self._iter_lines = None
+
+    def _format_key(self, key: str, bucket: str) -> str:
+        r = urlparse(key)
+        path = r.path.lstrip("/")
+        if r.netloc:
+            _flag = f"{bucket}/"
+            if not path.startswith(_flag):
+                raise FormatError(f"{key} does not contain bucket({bucket}) prefix")
+            return path.split(_flag, 1)[-1]
+        else:
+            return path
 
     def tell(self) -> int:
         return self._current
