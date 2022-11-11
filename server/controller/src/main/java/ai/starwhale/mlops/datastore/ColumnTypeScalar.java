@@ -204,6 +204,10 @@ public class ColumnTypeScalar extends ColumnType {
     }
 
     @Override
+    public void fillWalColumnSchema(Wal.ColumnSchema.Builder builder) {
+    }
+
+    @Override
     public Object fromWal(Wal.Column col) {
         if (col.getNullValue()) {
             return null;

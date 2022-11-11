@@ -285,6 +285,11 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("m")
                                     .type("TUPLE")
                                     .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build(),
+                            ColumnSchemaDesc.builder().name("n")
+                                    .type("MAP")
+                                    .keyType(ColumnSchemaDesc.builder().type("INT8").build())
+                                    .valueType(ColumnSchemaDesc.builder().type("INT16").build())
                                     .build())),
 
                     List.of(new HashMap<>() {
@@ -303,11 +308,12 @@ public class MemoryTableImplTest {
                             put("k", Map.of("a", "b", "b", "c"));
                             put("l", Long.toHexString(Double.doubleToLongBits(0.0)));
                             put("m", List.of("b"));
+                            put("n", Map.of("1", "2"));
                         }
                     }));
             assertThat("all types",
                     scanAll(this.memoryTable,
-                            List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"),
+                            List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"),
                             false),
                     contains(new MemoryTable.RecordResult("x",
                             new HashMap<>() {
@@ -325,6 +331,7 @@ public class MemoryTableImplTest {
                                     put("k", Map.of("a", 11, "b", 12));
                                     put("l", 0.0);
                                     put("m", List.of(11));
+                                    put("n", Map.of((byte) 1, (short) 2));
                                 }
                             })));
         }
@@ -571,9 +578,7 @@ public class MemoryTableImplTest {
                                 if (data[2][i] != null) {
                                     values.put("c", data[2][i]);
                                 }
-                                if (data[3][i] != null) {
-                                    values.put("d", data[3][i]);
-                                }
+                                values.put("d", data[3][i]);
                                 if (data[4][i] != null) {
                                     values.put("e", data[4][i]);
                                 }
@@ -608,14 +613,18 @@ public class MemoryTableImplTest {
             this.memoryTable = createInstance("test");
             this.memoryTable.update(schema,
                     records.stream()
-                            .map(r -> r.getValues().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                                    entry -> ColumnTypeScalar.getColumnTypeByName(
-                                                    schema.getColumnSchemaList().stream()
-                                                            .filter(col -> col.getName().equals(entry.getKey()))
-                                                            .findFirst()
-                                                            .orElseThrow()
-                                                            .getType())
-                                            .encode(entry.getValue(), false))))
+                            .map(r -> {
+                                var record = new HashMap<String, Object>();
+                                r.getValues().forEach((k, v) -> record.put(k,
+                                        ColumnTypeScalar.getColumnTypeByName(
+                                                        schema.getColumnSchemaList().stream()
+                                                                .filter(col -> col.getName().equals(k))
+                                                                .findFirst()
+                                                                .orElseThrow()
+                                                                .getType())
+                                                .encode(v, false)));
+                                return record;
+                            })
                             .collect(Collectors.toList()));
         }
 
@@ -2144,22 +2153,22 @@ public class MemoryTableImplTest {
 
         @Test
         public void testQueryKeepNone() {
-            var columns = Map.of("a", "a");
+            var columns = Map.of("d", "d");
             var results = this.memoryTable.query(
                     columns,
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(0)))
+                            .operands(List.of(new TableQueryFilter.Column("b"), createConstant(7)))
                             .build(),
                     -1,
                     -1,
                     true,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(0, new HashMap<>() {
+                    is(List.of(new MemoryTable.RecordResult(7, new HashMap<>() {
                         {
-                            put("a", null);
+                            put("d", null);
                         }
                     }))));
         }

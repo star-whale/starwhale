@@ -89,6 +89,8 @@ public class ColumnTypeObjectTest {
 
     @Test
     public void testEncode() {
+        assertThat(this.columnTypeObject.encode(null, false), nullValue());
+        assertThat(this.columnTypeObject.encode(null, true), nullValue());
         assertThat(this.columnTypeObject.encode(Map.of("a", 8, "b", List.of(9, 10, 11)), false),
                 is(Map.of("a", "00000008", "b", List.of("00000009", "0000000a", "0000000b"))));
         assertThat(this.columnTypeObject.encode(new HashMap<String, Object>() {
@@ -107,6 +109,7 @@ public class ColumnTypeObjectTest {
 
     @Test
     public void testDecode() {
+        assertThat(this.columnTypeObject.decode(null), nullValue());
         assertThat(this.columnTypeObject.decode(Map.of("a", "8", "b", List.of("9", "a", "b"))),
                 is(Map.of("a", 8, "b", List.of(9, 10, 11))));
         assertThat(this.columnTypeObject.decode(Map.of("a", "8")),
@@ -127,6 +130,26 @@ public class ColumnTypeObjectTest {
     }
 
     @Test
+    public void testNewWalColumnSchema() {
+        var schema = this.columnTypeObject.newWalColumnSchema(1, "t").build();
+        assertThat(schema.getColumnIndex(), is(1));
+        assertThat(schema.getColumnName(), is("t"));
+        assertThat(schema.getColumnType(), is("OBJECT"));
+        assertThat(schema.getPythonType(), is("test"));
+        System.out.println(schema.getAttributesList());
+        assertThat(schema.getAttributesList(), containsInAnyOrder(
+                Wal.ColumnSchema.newBuilder()
+                        .setColumnName("a")
+                        .setColumnType("INT32")
+                        .build(),
+                Wal.ColumnSchema.newBuilder()
+                        .setColumnName("b")
+                        .setColumnType("LIST")
+                        .setElementType(Wal.ColumnSchema.newBuilder().setColumnType("INT32"))
+                        .build()));
+    }
+
+    @Test
     public void testFromAndToWal() {
         assertThat(this.columnTypeObject.toWal(-1, Map.of("a", 8, "b", List.of(9, 10, 11))).getIndex(), is(-1));
         assertThat(this.columnTypeObject.toWal(10, Map.of("a", 8, "b", List.of(9, 10, 11))).getIndex(), is(10));
@@ -135,6 +158,10 @@ public class ColumnTypeObjectTest {
         assertThat(this.columnTypeObject.fromWal(
                         this.columnTypeObject.toWal(0, Map.of("a", 8, "b", List.of(9, 10, 11))).build()),
                 is(Map.of("a", 8, "b", List.of(9, 10, 11))));
+        var nullMap = new HashMap<String, Integer>();
+        nullMap.put("a", null);
+        nullMap.put("b", null);
+        assertThat(this.columnTypeObject.fromWal(this.columnTypeObject.toWal(0, nullMap).build()), is(nullMap));
     }
 
 }

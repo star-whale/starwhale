@@ -365,9 +365,12 @@ public class MemoryTableImpl implements MemoryTable {
         return results.subList(start, end).stream().map(record -> {
             var r = new HashMap<String, Object>();
             for (var entry : columns.entrySet()) {
-                var value = record.get(entry.getKey());
-                if (keepNone || value != null) {
-                    r.put(entry.getValue(), value);
+                var key = entry.getKey();
+                if (record.containsKey(key)) {
+                    var value = record.get(entry.getKey());
+                    if (keepNone || value != null) {
+                        r.put(entry.getValue(), value);
+                    }
                 }
             }
             return new RecordResult(record.get(this.schema.getKeyColumn()), r);
@@ -413,9 +416,11 @@ public class MemoryTableImpl implements MemoryTable {
             for (var entry : columns.entrySet()) {
                 var columnName = entry.getKey();
                 var alias = entry.getValue();
-                var value = record.get(columnName);
-                if (keepNone || value != null) {
-                    values.put(alias, value);
+                if (record.containsKey(columnName)) {
+                    var value = record.get(columnName);
+                    if (keepNone || value != null) {
+                        values.put(alias, value);
+                    }
                 }
             }
             records.add(new RecordResult(record.get(keyColumn), values));

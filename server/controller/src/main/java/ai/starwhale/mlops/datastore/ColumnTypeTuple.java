@@ -34,7 +34,6 @@ public class ColumnTypeTuple extends ColumnTypeList {
         return "(" + elementType + ")";
     }
 
-
     @Override
     public String getTypeName() {
         return ColumnTypeTuple.TYPE_NAME;

@@ -9,6 +9,8 @@ message ColumnSchema {
   string python_type = 4;
   ColumnSchema element_type = 5;
   repeated ColumnSchema attributes = 6;
+  ColumnSchema key_type = 7;
+  ColumnSchema value_type = 8;
 }
 
 message TableSchema {
@@ -27,6 +29,11 @@ message Column {
   bytes bytes_value = 8;
   repeated Column list_value = 9;
   map<string, Column> object_value = 10;
+  message MapEntry {
+    Column key = 1;
+    Column value = 2;
+  }
+  repeated MapEntry map_value = 11;
 }
 
 message Record {

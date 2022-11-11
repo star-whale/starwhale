@@ -72,6 +72,8 @@ public class ColumnTypeTupleTest {
 
     @Test
     public void testEncode() {
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(null, false), nullValue());
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(null, true), nullValue());
         assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), false),
                 is(List.of("00000009", "0000000a", "0000000b")));
         assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
@@ -100,6 +102,7 @@ public class ColumnTypeTupleTest {
 
     @Test
     public void testDecode() {
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(null), nullValue());
         assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(List.of("9", "a", "b")),
                 is(List.of(9, 10, 11)));
         assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(new ArrayList<String>() {
@@ -137,6 +140,13 @@ public class ColumnTypeTupleTest {
         assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).fromWal(
                         new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(0, List.of(9, 10, 11)).build()),
                 is(List.of(9, 10, 11)));
+        var nullList = new ArrayList<Integer>();
+        nullList.add(9);
+        nullList.add(null);
+        nullList.add(11);
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).fromWal(
+                        new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(0, nullList).build()),
+                is(nullList));
     }
 
 }

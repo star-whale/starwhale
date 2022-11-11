@@ -62,6 +62,21 @@ public class ColumnTypeTest {
                                 .build())
                         .build()),
                 is(new ColumnTypeTuple(new ColumnTypeList(ColumnTypeScalar.INT32))));
+        assertThat("simple map", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                        .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .build()),
+                is(new ColumnTypeMap(ColumnTypeScalar.STRING, ColumnTypeScalar.INT32)));
+        assertThat("composite map", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                        .valueType(ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .build()),
+                is(new ColumnTypeMap(ColumnTypeScalar.STRING, new ColumnTypeList(ColumnTypeScalar.INT32))));
         assertThat("object", ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder()
                         .type("OBJECT")
                         .pythonType("t")
@@ -453,6 +468,60 @@ public class ColumnTypeTest {
                         List.of(1, 2, 3),
                         new ColumnTypeTuple(ColumnTypeScalar.INT8),
                         List.of(1, 2, 2)),
+                greaterThan(0));
+    }
+
+    @Test
+    public void testCompareMap() {
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of()),
+                equalTo(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 1),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of()),
+                greaterThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 1)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 4),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 5)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 4),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 4, 4, 0)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 4),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 2, 0, 3, 4)),
+                lessThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 4),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 4)),
+                equalTo(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 5),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 4)),
+                greaterThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 3, 4, 4, 0),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 4)),
+                greaterThan(0));
+        assertThat(ColumnType.compare(new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT32),
+                        Map.of(1, 2, 2, 0, 3, 4),
+                        new ColumnTypeMap(ColumnTypeScalar.INT32, ColumnTypeScalar.INT8),
+                        Map.of(1, 2, 3, 4)),
                 greaterThan(0));
     }
 
