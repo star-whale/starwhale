@@ -12,17 +12,10 @@ ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
 
 
-def images2dict(imgs):
-    _dict = {}
-    for img in imgs:
-        _dict[img["id"]] = img
-    return _dict
-
-
 def do_iter_item():
     with (DATA_DIR / "annotations" / "panoptic_val2017.json").open("r") as f:
         index = json.load(f)
-        img_dict = images2dict(index["images"])
+        img_dict = {img["id"]: img for img in index["images"]}
         for anno in index["annotations"]:
             img_meta = img_dict[anno["image_id"]]
             img_name = img_meta["file_name"]
