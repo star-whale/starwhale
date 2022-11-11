@@ -5,8 +5,8 @@ from pathlib import Path
 import boto3
 from botocore.client import Config as S3Config
 
-from starwhale import Link, Image, MIMEType, S3LinkAuth, BoundingBox
-from starwhale.core.dataset.store import S3Connection, S3StorageBackend
+from starwhale import Link, Image, MIMEType, S3LinkAuth, BoundingBox  # noqa: F401
+from starwhale.core.dataset.store import S3Connection, S3StorageBackend  # noqa: F401
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"

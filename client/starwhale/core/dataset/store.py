@@ -478,7 +478,7 @@ class S3BufferedFileLike:
 
     def _read(self, size: int) -> memoryview:
         if size <= 0:
-            return self.obj.get()["Body"].read()
+            return self.obj.get()["Body"].read()  # type:ignore
         # TODO: use smart_open 3rd lib?
         if (self._current + size) <= len(self._buffer):
             end = self._current + size

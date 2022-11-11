@@ -53,7 +53,7 @@ public class DsFileGetter {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
-            throw new SwProcessException(ErrorType.STORAGE).tip(
+            throw new SwProcessException(ErrorType.STORAGE,
                     String.format("error while accessing storage : %s", ioException.getMessage()));
         }
     }
