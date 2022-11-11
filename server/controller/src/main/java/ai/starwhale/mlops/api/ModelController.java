@@ -90,7 +90,7 @@ public class ModelController implements ModelApi {
             RevertModelVersionRequest revertRequest) {
         Boolean res = modelService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Revert model version failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert model version failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -103,7 +103,7 @@ public class ModelController implements ModelApi {
                 .modelUrl(modelUrl)
                 .build());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete model failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete model failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -113,7 +113,7 @@ public class ModelController implements ModelApi {
     public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
         Boolean res = modelService.recoverModel(projectUrl, modelUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover model failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover model failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -154,7 +154,7 @@ public class ModelController implements ModelApi {
         Boolean res = modelService.modifyModelVersion(projectUrl, modelUrl, versionUrl,
                 ModelVersion.builder().tag(modelTagRequest.getTag()).build());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update model failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -167,13 +167,15 @@ public class ModelController implements ModelApi {
         try {
             ta = TagAction.of(modelTagRequest.getAction(), modelTagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL).tip(
-                    String.format("Unknown tag action %s ", modelTagRequest.getAction())),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL,
+                            String.format("Unknown tag action %s ", modelTagRequest.getAction()),
+                            e),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = modelService.manageVersionTag(projectUrl, modelUrl, versionUrl, ta);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update model tag failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model tag failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

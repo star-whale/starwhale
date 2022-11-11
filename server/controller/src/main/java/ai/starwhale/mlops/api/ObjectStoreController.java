@@ -45,7 +45,7 @@ public class ObjectStoreController implements ObjectStoreApi {
     @Override
     public void getObjectContent(String path, String range, Long expTimeMillis, HttpServletResponse httpResponse) {
         if (expTimeMillis < System.currentTimeMillis()) {
-            throw new SwValidationException(ValidSubject.OBJECT_STORE).tip("link expired");
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
         }
         Long start = 0L;
         Long end = 0L;

@@ -56,7 +56,7 @@ public class DatasetVersionWithMetaConverter {
             versionMeta = new VersionMeta(manifest, filesUploaded);
         } catch (JsonProcessingException e) {
             log.error("version meta read failed for {}", entity.getId(), e);
-            throw new SwValidationException(ValidSubject.DATASET).tip("version meta read failed");
+            throw new SwValidationException(ValidSubject.DATASET, "version meta read failed");
         }
         if (null == versionMeta.getUploadedFileBlake2bs()) {
             versionMeta.setUploadedFileBlake2bs(new HashMap<>());

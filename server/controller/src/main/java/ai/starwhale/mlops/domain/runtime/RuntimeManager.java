@@ -63,8 +63,10 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
         }
         RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeId);
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME)
-                    .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.RUNTIME,
+                            String.format("Unable to find Runtime %s", versionUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

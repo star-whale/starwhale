@@ -100,7 +100,7 @@ public class ProjectController implements ProjectApi {
     public ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(String projectUrl) {
         Boolean res = projectService.deleteProject(projectUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Delete project failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete project failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -128,7 +128,7 @@ public class ProjectController implements ProjectApi {
                 updateProjectRequest.getPrivacy()
         );
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update project failed."),
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update project failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -147,7 +147,7 @@ public class ProjectController implements ProjectApi {
                 idConvertor.revert(roleId));
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT).tip("Add project role failed."),
+                    new SwValidationException(ValidSubject.PROJECT, "Add project role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -159,7 +159,7 @@ public class ProjectController implements ProjectApi {
         Boolean res = projectService.deleteProjectRole(projectUrl, idConvertor.revert(projectRoleId));
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT).tip("Delete project role failed."),
+                    new SwValidationException(ValidSubject.PROJECT, "Delete project role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
@@ -172,7 +172,7 @@ public class ProjectController implements ProjectApi {
                 idConvertor.revert(roleId));
         if (!res) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT).tip("Modify project role failed."),
+                    new SwValidationException(ValidSubject.PROJECT, "Modify project role failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

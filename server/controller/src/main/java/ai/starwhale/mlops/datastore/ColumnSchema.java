@@ -38,7 +38,7 @@ public class ColumnSchema {
     public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
         this.name = schema.getName();
         if (this.name == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "column name should not be null");
         }
         if (!ColumnSchema.COLUMN_NAME_PATTERN.matcher(this.name).matches()) {
@@ -47,7 +47,7 @@ public class ColumnSchema {
                             + "slash(/), colon(:), and space are allowed.");
         }
         if (schema.getType() == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE).tip(
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "column type should not be null");
         }
         try {

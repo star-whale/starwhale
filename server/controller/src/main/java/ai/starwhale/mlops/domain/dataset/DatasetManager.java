@@ -63,8 +63,10 @@ public class DatasetManager implements BundleAccessor, BundleVersionAccessor, Ta
         }
         DatasetVersionEntity entity = datasetVersionMapper.findByDsIdAndVersionName(datasetId, versionUrl);
         if (entity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL)
-                    .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL,
+                            String.format("Unable to find Runtime %s", versionUrl)),
+                    HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

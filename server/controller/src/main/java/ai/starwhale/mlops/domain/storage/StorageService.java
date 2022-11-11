@@ -68,9 +68,8 @@ public class StorageService {
                         .build();
             }).collect(Collectors.toList());
         } catch (IOException e) {
-            log.error("list swmp storage", e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
-                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list swmp storage", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -93,9 +92,8 @@ public class StorageService {
             });
             return length.get();
         } catch (IOException e) {
-            log.error("list swmp storage", e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
-                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list swmp storage", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

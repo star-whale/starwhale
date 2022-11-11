@@ -154,8 +154,9 @@ public class DatasetService {
         Long datasetId = bundleManager.getBundleId(bundleUrl);
         DatasetEntity ds = datasetMapper.findDatasetById(datasetId);
         if (ds == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
-                    .tip("Unable to find dataset " + query.getDatasetUrl()), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET, "Unable to find dataset " + query.getDatasetUrl()),
+                    HttpStatus.BAD_REQUEST);
         }
 
         DatasetVersionEntity versionEntity = null;
@@ -168,8 +169,9 @@ public class DatasetService {
             versionEntity = datasetVersionMapper.getLatestVersion(ds.getId());
         }
         if (versionEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET)
-                    .tip("Unable to find the latest version of dataset " + query.getDatasetUrl()),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET,
+                            "Unable to find the latest version of dataset " + query.getDatasetUrl()),
                     HttpStatus.BAD_REQUEST);
         }
         return toSwDatasetInfoVo(ds, versionEntity);
@@ -195,9 +197,9 @@ public class DatasetService {
                     .build();
 
         } catch (IOException e) {
-            log.error("list dataset storage", e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
-                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.STORAGE, "list dataset storage", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -224,7 +226,8 @@ public class DatasetService {
                             BundleVersionUrl.create(projectUrl, datasetUrl, versionUrl),
                             tagAction);
         } catch (TagException e) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET).tip(e.getMessage()),
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.DATASET, "failed to create tag manager", e),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -258,8 +261,7 @@ public class DatasetService {
             Long projectId = projectManager.getProjectId(project);
             DatasetEntity ds = datasetMapper.findByName(name, projectId);
             if (null == ds) {
-                throw new SwValidationException(ValidSubject.DATASET)
-                        .tip("Unable to find the dataset with name " + name);
+                throw new SwValidationException(ValidSubject.DATASET, "Unable to find the dataset with name " + name);
             }
             return swDatasetInfoOfDs(ds);
         }
