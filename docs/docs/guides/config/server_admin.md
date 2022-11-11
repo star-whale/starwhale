@@ -49,8 +49,8 @@ storageSetting:
         sk: scret_key
         endpoint: http://mybucket.s3.region.amazonaws.com
         region: region of the service
-        hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
-        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+        hugeFileThreshold: 10485760
+        hugeFilePartSize: 5242880
   - type: minio
     tokens: 
       - bucket: starwhale
@@ -58,8 +58,8 @@ storageSetting:
         sk: scret_key
         endpoint: http://10.131.0.1:9000
         region: local
-        hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
-        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+        hugeFileThreshold: 10485760
+        hugeFilePartSize: 5242880
 
 
 ```
@@ -115,4 +115,11 @@ storageSetting:
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
 
 ```
-`endpoint` is required when `type` in (`aliyun`,`minio`), `region` is required when `type` is `s3` and `endpoint` is empty. `fs` type is not well supported for pre-signed url.
+Every `storageSetting` item has a corresponding implementation of `StorageAccessService` interface. Starwhale has four build-in implementations:
+- `StorageAccessServiceAliyun` matches `type` in (`aliyun`,`oss`)
+- `StorageAccessServiceMinio` matches `type` in (`minio`)
+- `StorageAccessServiceS3` matches `type` in (`s3`)
+- `StorageAccessServiceFile` matches `type` in (`fs`, `file`)
+
+Each of the implementations has different requirements for `tokens`. `endpoint` is required when `type` in (`aliyun`,`minio`), `region` is required when `type` is `s3` and `endpoint` is empty. While `fs/file` type requires tokens has name `rootDir` and `serviceProvider`.
+Please refer the code for more details.
