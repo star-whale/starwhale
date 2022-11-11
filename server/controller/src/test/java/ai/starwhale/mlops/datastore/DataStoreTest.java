@@ -32,8 +32,10 @@ import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -935,5 +937,100 @@ public class DataStoreTest {
             }
             assertThat(result, is(inserted.get(i).stream().sorted().collect(Collectors.toList())));
         }
+    }
+
+    @Test
+    public void testAllTypes() throws Exception {
+        Map<String, Object> record = new HashMap<>() {
+            {
+                put("key", "x");
+                put("a", "1");
+                put("b", "10");
+                put("c", "1000");
+                put("d", "00100000");
+                put("e", "0000000010000000");
+                put("f", Integer.toHexString(Float.floatToIntBits(1.1f)));
+                put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
+                put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
+                put("i", null);
+                put("j", List.of("0000000a"));
+                put("k", Map.of("a", "0000000b", "b", "0000000c"));
+                put("l", List.of("0000000b"));
+                put("complex", Map.of("a", List.of(List.of("00000001")), "b", List.of(List.of("00000002"))));
+            }
+        };
+        var nullRecord = new HashMap<String, Object>();
+        record.forEach((k, v) -> {
+            if (k.equals("key")) {
+                nullRecord.put(k, "y");
+            } else {
+                nullRecord.put(k, null);
+            }
+        });
+        var columnTypeMap = new HashMap<String, ColumnType>() {
+            {
+                put("key", ColumnTypeScalar.STRING);
+                put("a", ColumnTypeScalar.BOOL);
+                put("b", ColumnTypeScalar.INT8);
+                put("c", ColumnTypeScalar.INT16);
+                put("d", ColumnTypeScalar.INT32);
+                put("e", ColumnTypeScalar.INT64);
+                put("f", ColumnTypeScalar.FLOAT32);
+                put("g", ColumnTypeScalar.FLOAT64);
+                put("h", ColumnTypeScalar.BYTES);
+                put("i", ColumnTypeScalar.UNKNOWN);
+                put("j", new ColumnTypeList(ColumnTypeScalar.INT32));
+                put("k", new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
+                put("l", new ColumnTypeTuple(ColumnTypeScalar.INT32));
+                put("complex", new ColumnTypeObject("tt", Map.of(
+                        "a", new ColumnTypeList(new ColumnTypeTuple(ColumnTypeScalar.INT32)),
+                        "b", new ColumnTypeTuple(new ColumnTypeList(ColumnTypeScalar.INT32))
+                )));
+            }
+        };
+        var expected = new RecordList(columnTypeMap, List.of(record, nullRecord), "y");
+        this.dataStore.update("t",
+                new TableSchemaDesc("key",
+                        columnTypeMap.entrySet().stream()
+                                .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
+                                .collect(Collectors.toList())),
+                List.of(record, nullRecord));
+        assertThat(this.dataStore.scan(DataStoreScanRequest.builder()
+                        .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t")
+                                .keepNone(true)
+                                .build()))
+                        .keepNone(true)
+                        .build()),
+                is(expected));
+
+        // check WAL
+        this.dataStore.terminate();
+        this.createDateStore(DataStoreParams.builder()
+                .dumpInterval("1s")
+                .minNoUpdatePeriod("1ms")
+                .build());
+        assertThat(this.dataStore.scan(DataStoreScanRequest.builder()
+                        .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t")
+                                .keepNone(true)
+                                .build()))
+                        .keepNone(true)
+                        .build()),
+                is(expected));
+        // check parquet
+        while (this.dataStore.hasDirtyTables()) {
+            Thread.sleep(100);
+        }
+        this.dataStore.terminate();
+        this.createDateStore(DataStoreParams.builder().build());
+        assertThat(this.dataStore.scan(DataStoreScanRequest.builder()
+                        .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t")
+                                .keepNone(true)
+                                .build()))
+                        .keepNone(true)
+                        .build()),
+                is(expected));
     }
 }

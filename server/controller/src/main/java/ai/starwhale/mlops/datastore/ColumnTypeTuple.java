@@ -16,18 +16,27 @@
 
 package ai.starwhale.mlops.datastore;
 
-import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class RecordList {
+@EqualsAndHashCode(callSuper = true)
+public class ColumnTypeTuple extends ColumnTypeList {
 
-    private Map<String, ColumnType> columnTypeMap;
-    private List<Map<String, Object>> records;
-    private String lastKey;
+    public static final String TYPE_NAME = "TUPLE";
+
+    ColumnTypeTuple(ColumnType elementType) {
+        super(elementType);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + elementType + ")";
+    }
+
+
+    @Override
+    public String getTypeName() {
+        return ColumnTypeTuple.TYPE_NAME;
+    }
 }

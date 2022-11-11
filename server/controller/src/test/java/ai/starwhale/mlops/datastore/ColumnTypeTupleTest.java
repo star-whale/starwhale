@@ -27,19 +27,19 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class ColumnTypeListTest {
+public class ColumnTypeTupleTest {
 
     @Test
     public void testGetTypeName() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).getTypeName(), is("LIST"));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).getTypeName(), is("TUPLE"));
     }
 
     @Test
     public void testToColumnSchemaDesc() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).toColumnSchemaDesc("t"),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).toColumnSchemaDesc("t"),
                 is(ColumnSchemaDesc.builder()
                         .name("t")
-                        .type("LIST")
+                        .type("TUPLE")
                         .elementType(ColumnSchemaDesc.builder()
                                 .type("INT32")
                                 .build())
@@ -54,29 +54,29 @@ public class ColumnTypeListTest {
 
     @Test
     public void testIsComparableWith() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(ColumnTypeScalar.UNKNOWN), is(true));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(ColumnTypeScalar.INT32), is(false));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(
-                        new ColumnTypeList(ColumnTypeScalar.INT32)),
-                is(true));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(
-                        new ColumnTypeList(ColumnTypeScalar.FLOAT64)),
-                is(true));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(
-                        new ColumnTypeList(ColumnTypeScalar.STRING)),
-                is(false));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).isComparableWith(
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(ColumnTypeScalar.UNKNOWN), is(true));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(ColumnTypeScalar.INT32), is(false));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(
                         new ColumnTypeTuple(ColumnTypeScalar.INT32)),
+                is(true));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(
+                        new ColumnTypeTuple(ColumnTypeScalar.FLOAT64)),
+                is(true));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(
+                        new ColumnTypeTuple(ColumnTypeScalar.STRING)),
+                is(false));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).isComparableWith(
+                        new ColumnTypeList(ColumnTypeScalar.INT32)),
                 is(true));
     }
 
     @Test
     public void testEncode() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), false),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), false),
                 is(List.of("00000009", "0000000a", "0000000b")));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
                 is(List.of("9", "10", "11")));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(new ArrayList<Integer>() {
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).encode(new ArrayList<Integer>() {
                     {
                         add(0);
                         add(null);
@@ -90,7 +90,7 @@ public class ColumnTypeListTest {
                         add("00000001");
                     }
                 }));
-        var composite = new ColumnTypeList(
+        var composite = new ColumnTypeTuple(
                 new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
         assertThat(composite.encode(List.of(Map.of("a", 9, "b", 10), Map.of("a", 10, "b", 11)), false),
                 is(List.of(Map.of("a", "00000009", "b", "0000000a"), Map.of("a", "0000000a", "b", "0000000b"))));
@@ -100,9 +100,9 @@ public class ColumnTypeListTest {
 
     @Test
     public void testDecode() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(List.of("9", "a", "b")),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(List.of("9", "a", "b")),
                 is(List.of(9, 10, 11)));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(new ArrayList<String>() {
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(new ArrayList<String>() {
                     {
                         add("0");
                         add(null);
@@ -116,26 +116,26 @@ public class ColumnTypeListTest {
                         add(1);
                     }
                 }));
-        var composite = new ColumnTypeList(
+        var composite = new ColumnTypeTuple(
                 new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
         assertThat(composite.decode(List.of(Map.of("a", "9", "b", "a"), Map.of("a", "a", "b", "b"))),
                 is(List.of(Map.of("a", 9, "b", 10), Map.of("a", 10, "b", 11))));
 
-        assertThrows(SwValidationException.class, () -> new ColumnTypeList(ColumnTypeScalar.INT32).decode("9"));
+        assertThrows(SwValidationException.class, () -> new ColumnTypeTuple(ColumnTypeScalar.INT32).decode("9"));
         assertThrows(SwValidationException.class,
-                () -> new ColumnTypeList(ColumnTypeScalar.INT32).decode(List.of("z")));
+                () -> new ColumnTypeTuple(ColumnTypeScalar.INT32).decode(List.of("z")));
     }
 
     @Test
     public void testFromAndToWal() {
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).toWal(-1, List.of(9, 10, 11)).getIndex(), is(-1));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).toWal(10, List.of(9, 10, 11)).getIndex(), is(10));
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).fromWal(
-                        new ColumnTypeList(ColumnTypeScalar.INT32).toWal(0, null).build()),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(-1, List.of(9, 10, 11)).getIndex(), is(-1));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(10, List.of(9, 10, 11)).getIndex(), is(10));
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).fromWal(
+                        new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(0, null).build()),
                 nullValue());
 
-        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).fromWal(
-                        new ColumnTypeList(ColumnTypeScalar.INT32).toWal(0, List.of(9, 10, 11)).build()),
+        assertThat(new ColumnTypeTuple(ColumnTypeScalar.INT32).fromWal(
+                        new ColumnTypeTuple(ColumnTypeScalar.INT32).toWal(0, List.of(9, 10, 11)).build()),
                 is(List.of(9, 10, 11)));
     }
 

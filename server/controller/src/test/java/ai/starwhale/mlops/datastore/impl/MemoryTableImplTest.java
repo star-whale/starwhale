@@ -281,7 +281,11 @@ public class MemoryTableImplTest {
                                     .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
                                             ColumnSchemaDesc.builder().name("b").type("INT32").build()))
                                     .build(),
-                            ColumnSchemaDesc.builder().name("l").type("FLOAT64").build())),
+                            ColumnSchemaDesc.builder().name("l").type("FLOAT64").build(),
+                            ColumnSchemaDesc.builder().name("m")
+                                    .type("TUPLE")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build())),
 
                     List.of(new HashMap<>() {
                         {
@@ -298,11 +302,12 @@ public class MemoryTableImplTest {
                             put("j", List.of("a"));
                             put("k", Map.of("a", "b", "b", "c"));
                             put("l", Long.toHexString(Double.doubleToLongBits(0.0)));
+                            put("m", List.of("b"));
                         }
                     }));
             assertThat("all types",
                     scanAll(this.memoryTable,
-                            List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"),
+                            List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"),
                             false),
                     contains(new MemoryTable.RecordResult("x",
                             new HashMap<>() {
@@ -319,6 +324,7 @@ public class MemoryTableImplTest {
                                     put("j", List.of(10));
                                     put("k", Map.of("a", 11, "b", 12));
                                     put("l", 0.0);
+                                    put("m", List.of(11));
                                 }
                             })));
         }

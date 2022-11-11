@@ -153,7 +153,8 @@ public class ColumnTypeScalar extends ColumnType {
             } else if (this == STRING) {
                 return value;
             } else if (this == BYTES) {
-                return Base64.getEncoder().encodeToString(((ByteBuffer) value).array());
+                var base64 = Base64.getEncoder().encode(((ByteBuffer) value).duplicate());
+                return StandardCharsets.UTF_8.decode(base64).toString();
             }
         }
         throw new IllegalArgumentException("invalid type " + this);
