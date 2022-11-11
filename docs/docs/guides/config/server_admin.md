@@ -82,7 +82,7 @@ The `resourcePoolSetting` allows you to manage your cluster in a group manner. I
 
 ### 3. The `storageSetting`
 
-The `storageSetting` allows you to manage the storages the server could access. 
+The `storageSetting` allows you to manage the storages the server could access.
 
 ```yaml
 storageSetting:
@@ -115,7 +115,9 @@ storageSetting:
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
 
 ```
+
 Every `storageSetting` item has a corresponding implementation of `StorageAccessService` interface. Starwhale has four build-in implementations:
+
 - `StorageAccessServiceAliyun` matches `type` in (`aliyun`,`oss`)
 - `StorageAccessServiceMinio` matches `type` in (`minio`)
 - `StorageAccessServiceS3` matches `type` in (`s3`)

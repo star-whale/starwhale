@@ -108,7 +108,9 @@ storageSetting:
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
 
 ```
+
 每一个 `storageSetting` 条目都应该有一个`StorageAccessService`接口的实现. Starwhale目前有四个内置的实现:
+
 - `StorageAccessServiceAliyun` 可以处理 `type` 是 `aliyun` 或者 `oss` 的条目
 - `StorageAccessServiceMinio` 可以处理`type` 是 `minio` 的条目
 - `StorageAccessServiceS3` 可以处理 `type` 是 `s3` 的条目
