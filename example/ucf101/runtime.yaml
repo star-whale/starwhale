@@ -1,0 +1,13 @@
+api_version: '1.1'
+dependencies:
+- requirements-sw-lock.txt
+- pip:
+  - starwhale==0.3.1
+- wheels:
+  - starwhale-0.0.0.dev0-py3-none-any.whl
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  python: '3.9'
+mode: venv
+name: ucf101

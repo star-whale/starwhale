@@ -117,6 +117,7 @@ class MIMEType(Enum):
     AVIF = "image/avif"
     MP4 = "video/mp4"
     AVI = "video/avi"
+    WEBM = "video/webm"
     WAV = "audio/wav"
     MP3 = "audio/mp3"
     PLAIN = "text/plain"
@@ -145,6 +146,7 @@ class MIMEType(Enum):
             ".mp4": cls.MP4,
             ".avif": cls.AVIF,
             ".avi": cls.AVI,
+            ".webm": cls.WEBM,
             ".wav": cls.WAV,
             ".csv": cls.CSV,
             ".txt": cls.PLAIN,
@@ -219,6 +221,10 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             )
         elif dtype == ArtifactType.Audio.value:
             return Audio(
+                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
+            )
+        elif dtype == ArtifactType.Video.value:
+            return Video(
                 raw_data, mime_type=mime_type, shape=shape, display_name=display_name
             )
         elif not dtype or dtype == ArtifactType.Binary.value:
@@ -348,6 +354,27 @@ class Audio(BaseArtifact):
             MIMEType.UNDEFINED,
         ):
             raise NoSupportError(f"Audio type: {self.mime_type}")
+
+
+class Video(BaseArtifact):
+    def __init__(
+        self,
+        fp: _TArtifactFP = "",
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+        mime_type: t.Optional[MIMEType] = None,
+    ) -> None:
+        shape = shape or (None,)
+        super().__init__(fp, ArtifactType.Video, display_name, shape, mime_type)
+
+    def _do_validate(self) -> None:
+        if self.mime_type not in (
+            MIMEType.MP4,
+            MIMEType.AVI,
+            MIMEType.WEBM,
+            MIMEType.UNDEFINED,
+        ):
+            raise NoSupportError(f"Video type: {self.mime_type}")
 
 
 class ClassLabel(ASDictMixin):

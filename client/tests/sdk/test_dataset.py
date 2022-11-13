@@ -32,6 +32,7 @@ from starwhale.core.dataset.type import (
     Text,
     Audio,
     Image,
+    Video,
     Binary,
     ClassLabel,
     BoundingBox,
@@ -481,6 +482,15 @@ class TestDatasetType(TestCase):
         assert _asdict["mime_type"] == MIMEType.WAV.value
         assert _asdict["type"] == "audio"
         assert audio.to_bytes() == b"test"
+
+    def test_video(self) -> None:
+        fp = "/test/1.avi"
+        self.fs.create_file(fp, contents="test")
+        video = Video(fp)
+        _asdict = json.loads(json.dumps(video.asdict()))
+        assert _asdict["mime_type"] == MIMEType.AVI.value
+        assert _asdict["type"] == "video"
+        assert video.to_bytes() == b"test"
 
     def test_bbox(self) -> None:
         bbox = BoundingBox(1, 2, 3, 4)
