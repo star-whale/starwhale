@@ -80,7 +80,7 @@ def do_iter_item_from_remote():
         .read()
         .decode("utf8")
     )
-    img_dict = images2dict(index["images"])
+    img_dict = {img["id"]: img for img in index["images"]}
     for anno in index["annotations"]:
         img_meta = img_dict[anno["image_id"]]
         img_name = img_meta["file_name"]
