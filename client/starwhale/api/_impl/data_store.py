@@ -81,6 +81,11 @@ class SwType(metaclass=ABCMeta):
                 "type": "LIST",
                 "elementType": SwType.encode_schema(type.element_type),
             }
+        if isinstance(type, SwTupleType):
+            return {
+                "type": "TUPLE",
+                "elementType": SwType.encode_schema(type.element_type),
+            }
         if isinstance(type, SwObjectType):
             ret = {
                 "type": "OBJECT",
@@ -107,6 +112,11 @@ class SwType(metaclass=ABCMeta):
             if element_type is None:
                 raise RuntimeError("no element type found for type LIST")
             return SwListType(SwType.decode_schema(element_type))
+        if type_name == "TUPLE":
+            element_type = schema.get("elementType", None)
+            if element_type is None:
+                raise RuntimeError("no element type found for type TUPLE")
+            return SwTupleType(SwType.decode_schema(element_type))
         if type_name == "OBJECT":
             raw_type_name = schema.get("pythonType", None)
             if raw_type_name is None:
@@ -286,6 +296,44 @@ class SwListType(SwCompositeType):
         return False
 
 
+class SwTupleType(SwCompositeType):
+    def __init__(self, element_type: SwType) -> None:
+        super().__init__("tuple")
+        self.element_type = element_type
+
+    def merge(self, type: SwType) -> SwType:
+        if isinstance(type, SwTupleType):
+            t = self.element_type.merge(type.element_type)
+            if t is self.element_type:
+                return self
+            if t is type.element_type:
+                return type
+            return SwTupleType(t)
+        raise RuntimeError(f"conflicting type {self} and {type}")
+
+    def encode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, tuple):
+            return tuple([self.element_type.encode(element) for element in value])
+        raise RuntimeError(f"value should be a tuple: {value}")
+
+    def decode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return tuple([self.element_type.decode(element) for element in value])
+        raise RuntimeError(f"value should be a list: {value}")
+
+    def __str__(self) -> str:
+        return f"({self.element_type})"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, SwTupleType):
+            return self.element_type == other.element_type
+        return False
+
+
 class SwObjectType(SwCompositeType):
     def __init__(self, raw_type: Type, attrs: Dict[str, SwType]) -> None:
         super().__init__("object")
@@ -387,11 +435,15 @@ _TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
 
 
 def _get_type(obj: Any) -> SwType:
+    element_type: SwType = UNKNOWN
     if isinstance(obj, list):
-        element_type: SwType = UNKNOWN
         for element in obj:
             element_type = element_type.merge(_get_type(element))
         return SwListType(element_type)
+    if isinstance(obj, tuple):
+        for element in obj:
+            element_type = element_type.merge(_get_type(element))
+        return SwTupleType(element_type)
     if isinstance(obj, SwObject):
         attrs = {}
         for k, v in obj.__dict__.items():
