@@ -623,6 +623,31 @@ class TestBasicFunctions(BaseTestCase):
             "(int64) 3",
         )
         self.assertEqual(
+            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN),
+            data_store._get_type({}),
+            "{unknown:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
+            data_store._get_type({0: None}),
+            "{int64:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.INT64),
+            data_store._get_type({0: 1}),
+            "{int64:int64} 1",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.INT64),
+            data_store._get_type({0: None, 1: 2}),
+            "{int64:int64} 2",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.INT64),
+            data_store._get_type({0: 1, 1: None}),
+            "{int64:int64} 3",
+        )
+        self.assertEqual(
             data_store.SwObjectType(
                 data_store.Link,
                 {
@@ -673,6 +698,21 @@ class TestBasicFunctions(BaseTestCase):
             ),
             data_store._get_type((data_store.Link("1", "2", "3"),)),
             "({})",
+        )
+        self.assertEqual(
+            data_store.SwMapType(
+                data_store.STRING,
+                data_store.SwObjectType(
+                    data_store.Link,
+                    {
+                        "uri": data_store.STRING,
+                        "display_text": data_store.STRING,
+                        "mime_type": data_store.STRING,
+                    },
+                ),
+            ),
+            data_store._get_type({"t": data_store.Link("1", "2", "3")}),
+            "{" ":{}}",
         )
 
     def test_type_merge(self) -> None:
@@ -751,6 +791,63 @@ class TestBasicFunctions(BaseTestCase):
             data_store.SwTupleType(data_store.INT64).merge(data_store.INT64)
         with self.assertRaises(RuntimeError, msg="scalar and tuple"):
             data_store.INT64.merge(data_store.SwTupleType(data_store.INT64))
+        self.assertEqual(
+            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN),
+            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
+                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
+            ),
+            "{unknown:unknown} and {unknown:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
+            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
+                data_store.SwMapType(data_store.UNKNOWN, data_store.INT64)
+            ),
+            "{unknown:unknown} and {unknown:int64}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
+            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64).merge(
+                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
+            ),
+            "{unknown:int64} and {unknown:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
+            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64).merge(
+                data_store.SwMapType(data_store.UNKNOWN, data_store.INT64)
+            ),
+            "{unknown:int64} and {unknown:int64}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
+            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
+                data_store.SwMapType(data_store.INT64, data_store.UNKNOWN)
+            ),
+            "{unknown:unknown} and {int64:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN).merge(
+                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
+            ),
+            "{int64:unknown} and {unknown:unknown}",
+        )
+        self.assertEqual(
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
+            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN).merge(
+                data_store.SwMapType(data_store.INT64, data_store.UNKNOWN)
+            ),
+            "{int64:unknown} and {int64:unknown}",
+        )
+        with self.assertRaises(RuntimeError, msg="map and scalar"):
+            data_store.SwMapType(data_store.INT64, data_store.INT64).merge(
+                data_store.INT64
+            )
+        with self.assertRaises(RuntimeError, msg="scalar and map"):
+            data_store.INT64.merge(
+                data_store.SwMapType(data_store.INT64, data_store.INT64)
+            )
         self.assertEqual(
             data_store.SwObjectType(
                 data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
@@ -1023,6 +1120,9 @@ class TestLocalDataStore(BaseTestCase):
                         "xx", data_store.SwTupleType(data_store.INT64)
                     ),
                     data_store.ColumnSchema(
+                        "xxx", data_store.SwMapType(data_store.STRING, data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
                         "y", data_store._get_type(data_store.Link("a", "b", "c"))
                     ),
                     data_store.ColumnSchema(
@@ -1037,6 +1137,13 @@ class TestLocalDataStore(BaseTestCase):
                             data_store._get_type(data_store.Link("a", "b", "c"))
                         ),
                     ),
+                    data_store.ColumnSchema(
+                        "zzz",
+                        data_store.SwMapType(
+                            data_store.STRING,
+                            data_store._get_type(data_store.Link("a", "b", "c")),
+                        ),
+                    ),
                 ],
             ),
             [
@@ -1044,6 +1151,7 @@ class TestLocalDataStore(BaseTestCase):
                     "k": 0,
                     "x": [1, 2, 3],
                     "xx": (1, 2, 3),
+                    "xxx": {"a": 1, "b": 2},
                     "y": data_store.Link("a", "b", "c"),
                     "z": [
                         data_store.Link("1", "1", "1"),
@@ -1055,6 +1163,7 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "zzz": {"t": data_store.Link("1", "1", "1")},
                 },
             ],
         )
@@ -1064,6 +1173,7 @@ class TestLocalDataStore(BaseTestCase):
                     "k": 0,
                     "x": [1, 2, 3],
                     "xx": (1, 2, 3),
+                    "xxx": {"a": 1, "b": 2},
                     "y": data_store.Link("a", "b", "c"),
                     "z": [
                         data_store.Link("1", "1", "1"),
@@ -1075,6 +1185,7 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "zzz": {"t": data_store.Link("1", "1", "1")},
                 },
                 {"k": 1, "a": "1", "b": "1"},
                 {"k": 2, "b": "2"},
@@ -1171,6 +1282,9 @@ class TestLocalDataStore(BaseTestCase):
                         "xx", data_store.SwTupleType(data_store.INT64)
                     ),
                     data_store.ColumnSchema(
+                        "xxx", data_store.SwMapType(data_store.STRING, data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
                         "y", data_store._get_type(data_store.Link("a", "b", "c"))
                     ),
                     data_store.ColumnSchema(
@@ -1185,6 +1299,13 @@ class TestLocalDataStore(BaseTestCase):
                             data_store._get_type(data_store.Link("a", "b", "c"))
                         ),
                     ),
+                    data_store.ColumnSchema(
+                        "zzz",
+                        data_store.SwMapType(
+                            data_store.STRING,
+                            data_store._get_type(data_store.Link("a", "b", "c")),
+                        ),
+                    ),
                 ],
             ),
             [
@@ -1192,6 +1313,7 @@ class TestLocalDataStore(BaseTestCase):
                     "k": 0,
                     "x": [1, 2, 3],
                     "xx": (1, 2, 3),
+                    "xxx": {"a": 1, "b": 2},
                     "y": data_store.Link("a", "b", "c"),
                     "z": [
                         data_store.Link("1", "1", "1"),
@@ -1203,6 +1325,7 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "zzz": {"t": data_store.Link("1", "1", "1")},
                 }
             ],
         )
@@ -1297,6 +1420,7 @@ class TestLocalDataStore(BaseTestCase):
                     "k": 0,
                     "x": [1, 2, 3],
                     "xx": (1, 2, 3),
+                    "xxx": {"a": 1, "b": 2},
                     "y": data_store.Link("a", "b", "c"),
                     "z": [
                         data_store.Link("1", "1", "1"),
@@ -1308,6 +1432,7 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "zzz": {"t": data_store.Link("1", "1", "1")},
                 }
             ],
             list(
@@ -1316,7 +1441,15 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.TableDesc("1", {"k": "k"}, False),
                         data_store.TableDesc(
                             "7",
-                            {"x": "x", "xx": "xx", "y": "y", "z": "z", "zz": "zz"},
+                            {
+                                "x": "x",
+                                "xx": "xx",
+                                "xxx": "xxx",
+                                "y": "y",
+                                "z": "z",
+                                "zz": "zz",
+                                "zzz": "zzz",
+                            },
                             False,
                         ),
                     ],
@@ -1350,6 +1483,7 @@ class TestLocalDataStore(BaseTestCase):
                     "b": "0",
                     "x": [1, 2, 3],
                     "xx": (1, 2, 3),
+                    "xxx": {"a": 1, "b": 2},
                     "y": data_store.Link("a", "b", "c"),
                     "z": [
                         data_store.Link("1", "1", "1"),
@@ -1361,6 +1495,7 @@ class TestLocalDataStore(BaseTestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "zzz": {"t": data_store.Link("1", "1", "1")},
                 },
                 {"k": 1, "a": "1", "b": "1"},
                 {"k": 2, "b": "2"},
@@ -1561,6 +1696,9 @@ class TestRemoteDataStore(unittest.TestCase):
                         "jj", data_store.SwTupleType(data_store.INT64)
                     ),
                     data_store.ColumnSchema(
+                        "jjj", data_store.SwMapType(data_store.STRING, data_store.INT64)
+                    ),
+                    data_store.ColumnSchema(
                         "k",
                         data_store.SwObjectType(
                             data_store.Link,
@@ -1597,6 +1735,20 @@ class TestRemoteDataStore(unittest.TestCase):
                             )
                         ),
                     ),
+                    data_store.ColumnSchema(
+                        "lll",
+                        data_store.SwMapType(
+                            data_store.STRING,
+                            data_store.SwObjectType(
+                                data_store.Link,
+                                {
+                                    "uri": data_store.STRING,
+                                    "display_text": data_store.STRING,
+                                    "mime_type": data_store.STRING,
+                                },
+                            ),
+                        ),
+                    ),
                 ],
             ),
             [
@@ -1612,6 +1764,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     "i": b"1",
                     "j": [1, 2, 3],
                     "jj": (1, 2, 3),
+                    "jjj": {"a": 1, "b": 2},
                     "k": data_store.Link("a", "b", "c"),
                     "l": [
                         data_store.Link("1", "1", "1"),
@@ -1623,6 +1776,7 @@ class TestRemoteDataStore(unittest.TestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "lll": {"t": data_store.Link("1", "1", "1")},
                 }
             ],
         )
@@ -1652,6 +1806,12 @@ class TestRemoteDataStore(unittest.TestCase):
                                 "type": "TUPLE",
                                 "elementType": {"type": "INT64"},
                                 "name": "jj",
+                            },
+                            {
+                                "type": "MAP",
+                                "keyType": {"type": "STRING"},
+                                "valueType": {"type": "INT64"},
+                                "name": "jjj",
                             },
                             {
                                 "type": "OBJECT",
@@ -1689,6 +1849,20 @@ class TestRemoteDataStore(unittest.TestCase):
                                 },
                                 "name": "ll",
                             },
+                            {
+                                "type": "MAP",
+                                "keyType": {"type": "STRING"},
+                                "valueType": {
+                                    "type": "OBJECT",
+                                    "attributes": [
+                                        {"type": "STRING", "name": "uri"},
+                                        {"type": "STRING", "name": "display_text"},
+                                        {"type": "STRING", "name": "mime_type"},
+                                    ],
+                                    "pythonType": "LINK",
+                                },
+                                "name": "lll",
+                            },
                         ],
                     },
                     "records": [
@@ -1718,6 +1892,13 @@ class TestRemoteDataStore(unittest.TestCase):
                                         "0000000000000002",
                                         "0000000000000003",
                                     ],
+                                },
+                                {
+                                    "key": "jjj",
+                                    "value": {
+                                        "a": "0000000000000001",
+                                        "b": "0000000000000002",
+                                    },
                                 },
                                 {
                                     "key": "k",
@@ -1767,6 +1948,16 @@ class TestRemoteDataStore(unittest.TestCase):
                                         },
                                     ],
                                 },
+                                {
+                                    "key": "lll",
+                                    "value": {
+                                        "t": {
+                                            "uri": "1",
+                                            "display_text": "1",
+                                            "mime_type": "1",
+                                        }
+                                    },
+                                },
                             ]
                         }
                     ],
@@ -1798,6 +1989,12 @@ class TestRemoteDataStore(unittest.TestCase):
                     {"name": "j", "type": "BYTES"},
                     {"name": "k", "type": "LIST", "elementType": {"type": "INT64"}},
                     {"name": "kk", "type": "TUPLE", "elementType": {"type": "INT64"}},
+                    {
+                        "name": "kkk",
+                        "type": "MAP",
+                        "keyType": {"type": "STRING"},
+                        "valueType": {"type": "INT64"},
+                    },
                     {
                         "name": "l",
                         "type": "OBJECT",
@@ -1834,6 +2031,20 @@ class TestRemoteDataStore(unittest.TestCase):
                             ],
                         },
                     },
+                    {
+                        "name": "mmm",
+                        "type": "MAP",
+                        "keyType": {"type": "STRING"},
+                        "valueType": {
+                            "type": "OBJECT",
+                            "pythonType": "LINK",
+                            "attributes": [
+                                {"type": "STRING", "name": "uri"},
+                                {"type": "STRING", "name": "display_text"},
+                                {"type": "STRING", "name": "mime_type"},
+                            ],
+                        },
+                    },
                     {"name": "n", "type": "FLOAT16"},
                     {"name": "o", "type": "FLOAT32"},
                     {"name": "p", "type": "FLOAT64"},
@@ -1853,6 +2064,7 @@ class TestRemoteDataStore(unittest.TestCase):
                         "j": "MQ==",
                         "k": ["1", "2", "3"],
                         "kk": ["1", "2", "3"],
+                        "kkk": {"a": "1", "b": "2"},
                         "l": {"uri": "a", "display_text": "b", "mime_type": "c"},
                         "m": [
                             {"uri": "1", "display_text": "1", "mime_type": "1"},
@@ -1864,6 +2076,9 @@ class TestRemoteDataStore(unittest.TestCase):
                             {"uri": "2", "display_text": "2", "mime_type": "2"},
                             {"uri": "3", "display_text": "3", "mime_type": "3"},
                         ],
+                        "mmm": {
+                            "t": {"uri": "1", "display_text": "1", "mime_type": "1"}
+                        },
                         "n": "0",  # client(python):0000, server(java):0
                         "o": "0",  # client(python):00000000, server(java):0
                         "p": "0",  # client(python):0000000000000000, server(java):0
@@ -1887,6 +2102,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     "j": b"1",
                     "k": [1, 2, 3],
                     "kk": (1, 2, 3),
+                    "kkk": {"a": 1, "b": 2},
                     "l": data_store.Link("a", "b", "c"),
                     "m": [
                         data_store.Link("1", "1", "1"),
@@ -1898,6 +2114,7 @@ class TestRemoteDataStore(unittest.TestCase):
                         data_store.Link("2", "2", "2"),
                         data_store.Link("3", "3", "3"),
                     ),
+                    "mmm": {"t": data_store.Link("1", "1", "1")},
                     "n": 0.0,
                     "o": 0.0,
                     "p": 0.0,
