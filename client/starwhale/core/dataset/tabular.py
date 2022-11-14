@@ -240,6 +240,21 @@ class TabularDataset:
                 _d[k] = v(_d[k])
             yield TabularDatasetRow.from_datastore(**_d)
 
+    def scan_btch(
+        self,
+        start: t.Optional[t.Any] = None,
+        end: t.Optional[t.Any] = None,
+        batch_size: int = 32,
+    ) -> t.Generator[TabularDatasetRow, None, None]:
+        batch = []
+        for r in self.scan(start, end):
+            batch.append(r)
+            if len(batch) % batch_size == 0:
+                yield batch
+                batch = []
+        if len(batch):
+            yield batch
+
     def close(self) -> None:
         self._ds_wrapper.close()
 
