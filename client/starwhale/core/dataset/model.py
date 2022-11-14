@@ -32,11 +32,11 @@ from starwhale.utils.load import import_object
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.base.bundle_copy import BundleCopy
 
+from .copy import DatasetCopy
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
-from .tabular import TabularDataset, StandaloneTabularDataset
+from .tabular import TabularDataset
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -56,21 +56,11 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return _cls(uri)
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force)
-        if bc.src_uri.instance_type == InstanceType.STANDALONE:
-            with StandaloneTabularDataset.from_uri(bc.src_uri) as tds:
-                tds.dump_meta(force)
-
-        bc.do()
-
-        if bc.src_uri.instance_type == InstanceType.CLOUD:
-            with StandaloneTabularDataset(
-                name=bc.bundle_name,
-                version=bc.bundle_version,
-                project=bc.dest_uri.project,
-            ) as tds:
-                tds.load_meta()
+    def copy(
+        cls, src_uri: str, dest_uri: str, force: bool = False
+    ) -> None:
+        dc = DatasetCopy(src_uri, dest_uri, URIType.DATASET, force)
+        dc.do()
 
     @classmethod
     def _get_cls(  # type: ignore

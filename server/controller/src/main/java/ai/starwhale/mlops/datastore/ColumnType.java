@@ -38,12 +38,16 @@ public abstract class ColumnType {
 
     public static ColumnType fromColumnSchemaDesc(ColumnSchemaDesc schema) {
         var typeName = schema.getType().toUpperCase();
-        if (typeName.equals(ColumnTypeList.TYPE_NAME)) {
+        if (typeName.equals(ColumnTypeList.TYPE_NAME) || typeName.equals(ColumnTypeTuple.TYPE_NAME)) {
             var elementType = schema.getElementType();
             if (elementType == null) {
-                throw new IllegalArgumentException("elementType should not be null for LIST");
+                throw new IllegalArgumentException("elementType should not be null for " + typeName);
             }
-            return new ColumnTypeList(ColumnType.fromColumnSchemaDesc(elementType));
+            if (typeName.equals(ColumnTypeList.TYPE_NAME)) {
+                return new ColumnTypeList(ColumnType.fromColumnSchemaDesc(elementType));
+            } else {
+                return new ColumnTypeTuple(ColumnType.fromColumnSchemaDesc(elementType));
+            }
         } else if (typeName.equals(ColumnTypeObject.TYPE_NAME)) {
             var attributes = schema.getAttributes();
             if (attributes == null || attributes.isEmpty()) {

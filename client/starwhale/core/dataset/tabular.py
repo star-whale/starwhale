@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import json
 import typing as t
 import urllib
@@ -10,21 +9,14 @@ from copy import deepcopy
 from enum import Enum, unique
 from queue import Queue
 from types import TracebackType
-from pathlib import Path
 from collections import defaultdict
 
 import requests
-import jsonlines
 from loguru import logger
 from typing_extensions import Protocol
 
-from starwhale.utils import console, validate_obj_name
-from starwhale.consts import (
-    ENV_POD_NAME,
-    VERSION_PREFIX_CNT,
-    STANDALONE_INSTANCE,
-    DUMPED_SWDS_META_FNAME,
-)
+from starwhale.utils import validate_obj_name
+from starwhale.consts import ENV_POD_NAME, VERSION_PREFIX_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import (
     URIType,
@@ -37,7 +29,6 @@ from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
     FormatError,
-    NotFoundError,
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
@@ -100,11 +91,11 @@ class TabularDatasetRow(ASDictMixin):
         _annotations = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if not k.startswith(cls.ANNOTATION_PREFIX):
+            if k.startswith(cls.ANNOTATION_PREFIX):
+                _, name = k.split(cls.ANNOTATION_PREFIX, 1)
+                _annotations[name] = v
+            else:
                 _extra_kw[k] = v
-                continue
-            _, name = k.split(cls.ANNOTATION_PREFIX, 1)
-            _annotations[name] = json.loads(v)
 
         return cls(
             id=id,
@@ -115,7 +106,6 @@ class TabularDatasetRow(ASDictMixin):
             data_size=data_size,
             data_origin=DataOriginType(data_origin),
             auth_name=auth_name,
-            # TODO: use protobuf format to store and reflect annotation
             data_type=json.loads(data_type),
             annotations=_annotations,
             **_extra_kw,
@@ -138,6 +128,8 @@ class TabularDatasetRow(ASDictMixin):
 
         if not isinstance(self.annotations, dict) or not self.annotations:
             raise FieldTypeOrValueError("no annotations field")
+
+        # TODO: add annotation items type check
 
         if not self.data_uri:
             raise FieldTypeOrValueError("no raw_data_uri field")
@@ -166,14 +158,9 @@ class TabularDatasetRow(ASDictMixin):
             ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
-        # TODO: use protobuf format to store and reflect annotation
         for k, v in self.annotations.items():
-            v = _do_asdict_convert(v)
-            if getattr(v, "jsonify", None):
-                v = v.jsonify()
-            else:
-                v = json.dumps(v, separators=(",", ":"))
             d[f"{self.ANNOTATION_PREFIX}{k}"] = v
+        # TODO: use data_store SwObject to store data_type
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
         )
@@ -197,12 +184,16 @@ class TabularDataset:
         project: str,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
+        instance_uri: str = "",
+        token: str = "",
     ) -> None:
         self.name = name
         self.version = version
         self.project = project
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
-        self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
+        self._ds_wrapper = DatastoreWrapperDataset(
+            self.table_name, project, instance_uri=instance_uri, token=token
+        )
 
         self.start = start
         self.end = end
@@ -294,7 +285,14 @@ class TabularDataset:
             _store = DatasetStorage(uri)
             _version = _store.id
 
-        return cls(uri.object.name, _version, uri.project, start=start, end=end)
+        return cls(
+            uri.object.name,
+            _version,
+            uri.project,
+            start=start,
+            end=end,
+            instance_uri=uri.instance,
+        )
 
 
 @unique
@@ -336,7 +334,7 @@ def get_dataset_consumption(
             DEFAULT_CONSUMPTION_BATCH_SIZE,
         )
     )
-    if _uri is None or _uri == "local":
+    if _uri is None or _uri == STANDALONE_INSTANCE:
         global local_standalone_tdsc
         key = f"{dataset_uri}-{session_id}-{session_start}-{session_end}-{batch_size}"
         with lock_s_tdsc:
@@ -551,62 +549,3 @@ class CloudTDSC(TabularDatasetSessionConsumption):
             f"range-[{self.session_start},{self.session_end}], consumer:{self.consumer_id}@{self.run_env}, "
             f"batch-{self.batch_size}, dataset-{self.dataset_uri}"
         )
-
-
-class StandaloneTabularDataset(TabularDataset):
-    class _BytesEncoder(json.JSONEncoder):
-        def default(self, obj: t.Any) -> t.Any:
-            if isinstance(obj, bytes):
-                return obj.decode()
-            return json.JSONEncoder.default(self, obj)
-
-    def __init__(
-        self,
-        name: str,
-        version: str,
-        project: str,
-        start: int = 0,
-        end: int = sys.maxsize,
-    ) -> None:
-        super().__init__(name, version, project, start, end)
-
-        self.uri = URI.capsulate_uri(
-            instance=STANDALONE_INSTANCE,
-            project=project,
-            obj_type=URIType.DATASET,
-            obj_name=name,
-            obj_ver=version,
-        )
-        self.store = DatasetStorage(self.uri)
-
-    def dump_meta(self, force: bool = False) -> Path:
-        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
-
-        if fpath.exists() and not force:
-            console.print(f":blossom: {fpath} existed, skip dump meta")
-            return fpath
-
-        console.print(":bear_face: dump dataset meta from data store")
-
-        with jsonlines.open(
-            str(fpath), mode="w", dumps=self._BytesEncoder(separators=(",", ":")).encode
-        ) as writer:
-            for row in self.scan():
-                writer.write(row.asdict())
-
-        return fpath
-
-    def load_meta(self) -> None:
-        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
-
-        if not fpath.exists():
-            raise NotFoundError(fpath)
-
-        console.print(":bird: load dataset meta to standalone data store")
-        with jsonlines.open(
-            str(fpath),
-            mode="r",
-        ) as reader:
-            for line in reader:
-                row = TabularDatasetRow.from_datastore(**line)
-                self.put(row)

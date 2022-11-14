@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+drop index unq_project_name on project_info;
 
-import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class RecordList {
-
-    private Map<String, ColumnType> columnTypeMap;
-    private List<Map<String, Object>> records;
-    private String lastKey;
-}
+create unique index unq_project_name_owner
+    on project_info (project_name, owner_id);

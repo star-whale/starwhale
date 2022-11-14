@@ -37,6 +37,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectManager implements ProjectAccessor {
 
+    public static final String PROJECT_SEPERATOR = ":";
+
     private final ProjectMapper projectMapper;
 
     private final IdConvertor idConvertor;
@@ -98,19 +100,7 @@ public class ProjectManager implements ProjectAccessor {
 
     @Override
     public ProjectEntity getProject(@NotNull String projectUrl) {
-        ProjectEntity projectEntity;
-        if (idConvertor.isId(projectUrl)) {
-            projectEntity = projectMapper.findProject(Long.valueOf(projectUrl));
-        } else {
-            projectEntity = projectMapper.findProjectByName(projectUrl);
-        }
-        if (projectEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT,
-                            String.format("Unable to find project %s", projectUrl)),
-                    HttpStatus.BAD_REQUEST);
-        }
-        return projectEntity;
+        return findById(getProjectId(projectUrl));
     }
 
     public Long getProjectId(@NotNull String projectUrl) {
@@ -122,7 +112,17 @@ public class ProjectManager implements ProjectAccessor {
             }
             projectEntity = projectMapper.findProject(id);
         } else {
-            projectEntity = projectMapper.findProjectByName(projectUrl);
+            if (projectUrl.contains(PROJECT_SEPERATOR)) {
+                // OWNER:PROJECT
+                String[] arr = projectUrl.split(PROJECT_SEPERATOR);
+                if (idConvertor.isId(arr[0])) {
+                    projectEntity = projectMapper.findProjectByNameAndOwnerId(arr[1], idConvertor.revert(arr[0]));
+                } else {
+                    projectEntity = projectMapper.findProjectByNameAndOwnerName(arr[1], arr[0]);
+                }
+            } else {
+                projectEntity = projectMapper.findProjectByName(projectUrl);
+            }
         }
         if (projectEntity == null) {
             throw new StarwhaleApiException(

@@ -10,7 +10,6 @@ from starwhale.consts import (
     HTTPMethod,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DUMPED_SWDS_META_FNAME,
     ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
@@ -124,7 +123,6 @@ class TestBundleCopy(TestCase):
 
         hash_name = "27a43c91b7a1a9a9c8e51b1d796691dd"
         ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
-        ensure_file(dataset_dir / DUMPED_SWDS_META_FNAME, " ")
         ensure_file(
             dataset_dir / DEFAULT_MANIFEST_NAME,
             json.dumps(

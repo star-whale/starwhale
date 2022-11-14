@@ -18,6 +18,7 @@ from starwhale.consts import (
 from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.api._impl.data_store import SwObject
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -117,6 +118,7 @@ class MIMEType(Enum):
     AVIF = "image/avif"
     MP4 = "video/mp4"
     AVI = "video/avi"
+    WEBM = "video/webm"
     WAV = "audio/wav"
     MP3 = "audio/mp3"
     PLAIN = "text/plain"
@@ -145,6 +147,7 @@ class MIMEType(Enum):
             ".mp4": cls.MP4,
             ".avif": cls.AVIF,
             ".avi": cls.AVI,
+            ".webm": cls.WEBM,
             ".wav": cls.WAV,
             ".csv": cls.CSV,
             ".txt": cls.PLAIN,
@@ -179,24 +182,32 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def __init__(
         self,
         fp: _TArtifactFP,
-        type: ArtifactType,
+        type: t.Union[ArtifactType, str],
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
         encoding: str = "",
     ) -> None:
         self.fp = fp
-        self.type = ArtifactType(type)
+        self._type = ArtifactType(type).value
 
         _fpath = str(fp) if isinstance(fp, (Path, str)) and fp else ""
         self.display_name = display_name or os.path.basename(_fpath)
-        self.mime_type = mime_type or MIMEType.create_by_file_suffix(_fpath)
-        self.shape = shape
+        self._mime_type = (mime_type or MIMEType.create_by_file_suffix(_fpath)).value
+        self.shape = list(shape) if shape else shape
         self.encoding = encoding
         self._do_validate()
 
     def _do_validate(self) -> None:
         ...
+
+    @property
+    def type(self) -> ArtifactType:
+        return ArtifactType(self._type)
+
+    @property
+    def mime_type(self) -> MIMEType:
+        return MIMEType(self._mime_type)
 
     @classmethod
     def reflect(cls, raw_data: bytes, data_type: t.Dict[str, t.Any]) -> BaseArtifact:
@@ -219,6 +230,10 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             )
         elif dtype == ArtifactType.Audio.value:
             return Audio(
+                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
+            )
+        elif dtype == ArtifactType.Video.value:
+            return Video(
                 raw_data, mime_type=mime_type, shape=shape, display_name=display_name
             )
         elif not dtype or dtype == ArtifactType.Binary.value:
@@ -264,16 +279,16 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     __repr__ = __str__
 
 
-class Binary(BaseArtifact):
+class Binary(BaseArtifact, SwObject):
     def __init__(
         self,
-        fp: _TArtifactFP,
+        fp: _TArtifactFP = b"",
         mime_type: MIMEType = MIMEType.UNDEFINED,
     ) -> None:
         super().__init__(fp, ArtifactType.Binary, "", (1,), mime_type)
 
 
-class Image(BaseArtifact):
+class Image(BaseArtifact, SwObject):
     def __init__(
         self,
         fp: _TArtifactFP = "",
@@ -330,7 +345,7 @@ class GrayscaleImage(Image):
 # TODO: support Video type
 
 
-class Audio(BaseArtifact):
+class Audio(BaseArtifact, SwObject):
     def __init__(
         self,
         fp: _TArtifactFP = "",
@@ -350,10 +365,33 @@ class Audio(BaseArtifact):
             raise NoSupportError(f"Audio type: {self.mime_type}")
 
 
-class ClassLabel(ASDictMixin):
-    def __init__(self, names: t.List[t.Union[int, float, str]]) -> None:
+class Video(BaseArtifact):
+    def __init__(
+        self,
+        fp: _TArtifactFP = "",
+        display_name: str = "",
+        shape: t.Optional[_TShape] = None,
+        mime_type: t.Optional[MIMEType] = None,
+    ) -> None:
+        shape = shape or (None,)
+        super().__init__(fp, ArtifactType.Video, display_name, shape, mime_type)
+
+    def _do_validate(self) -> None:
+        if self.mime_type not in (
+            MIMEType.MP4,
+            MIMEType.AVI,
+            MIMEType.WEBM,
+            MIMEType.UNDEFINED,
+        ):
+            raise NoSupportError(f"Video type: {self.mime_type}")
+
+
+class ClassLabel(ASDictMixin, SwObject):
+    def __init__(
+        self, names: t.Optional[t.List[t.Union[int, float, str]]] = None
+    ) -> None:
         self.type = "class_label"
-        self.names = names
+        self.names = names or []
 
     @classmethod
     def from_num_classes(cls, num: int) -> ClassLabel:
@@ -369,8 +407,10 @@ class ClassLabel(ASDictMixin):
 
 
 # TODO: support other bounding box format
-class BoundingBox(ASDictMixin):
-    def __init__(self, x: float, y: float, width: float, height: float) -> None:
+class BoundingBox(ASDictMixin, SwObject):
+    def __init__(
+        self, x: float = 0, y: float = 0, width: float = 0, height: float = 0
+    ) -> None:
         self.type = "bounding_box"
         self.x = x
         self.y = y
@@ -386,10 +426,10 @@ class BoundingBox(ASDictMixin):
     __repr__ = __str__
 
 
-class Text(BaseArtifact):
+class Text(BaseArtifact, SwObject):
     DEFAULT_ENCODING = "utf-8"
 
-    def __init__(self, content: str, encoding: str = DEFAULT_ENCODING) -> None:
+    def __init__(self, content: str = "", encoding: str = DEFAULT_ENCODING) -> None:
         # TODO: add encoding validate
         self.content = content
         super().__init__(
@@ -409,16 +449,16 @@ class Text(BaseArtifact):
 
 
 # https://cocodataset.org/#format-data
-class COCOObjectAnnotation(ASDictMixin):
+class COCOObjectAnnotation(ASDictMixin, SwObject):
     def __init__(
         self,
-        id: int,
-        image_id: int,
-        category_id: int,
-        segmentation: t.Union[t.List, t.Dict],
-        area: t.Union[float, int],
-        bbox: t.Union[BoundingBox, t.List[float]],
-        iscrowd: int,
+        id: int = 0,
+        image_id: int = 0,
+        category_id: int = 0,
+        segmentation: t.Optional[t.Union[t.List, t.Dict]] = None,
+        area: t.Union[float, int] = 0,
+        bbox: t.Optional[t.Union[BoundingBox, t.List[float]]] = None,
+        iscrowd: int = 0,
     ) -> None:
         self.type = "coco_object_annotation"
         self.id = id
@@ -438,10 +478,10 @@ class COCOObjectAnnotation(ASDictMixin):
         # TODO: iscrowd=0 -> polygons, iscrowd=1 -> RLE validate
 
 
-class Link(ASDictMixin):
+class Link(ASDictMixin, SwObject):
     def __init__(
         self,
-        uri: str,
+        uri: str = "",
         auth: t.Optional[LinkAuth] = DefaultS3LinkAuth,
         offset: int = FilePosition.START,
         size: int = -1,

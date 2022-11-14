@@ -8,6 +8,7 @@ from starwhale.api.dataset import (
     Text,
     Audio,
     Image,
+    Video,
     Binary,
     LinkType,
     MIMEType,
@@ -24,6 +25,7 @@ from starwhale.api.dataset import (
     UserRawBuildExecutor,
 )
 from starwhale.api.evaluation import Evaluation
+from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import get_dataset_consumption
 
 __all__ = [
@@ -33,6 +35,7 @@ __all__ = [
     "URI",
     "URIType",
     "step",
+    "SwObject",
     "pass_context",
     "Context",
     "Evaluation",
@@ -49,6 +52,7 @@ __all__ = [
     "Binary",
     "Text",
     "Audio",
+    "Video",
     "Image",
     "ClassLabel",
     "BoundingBox",

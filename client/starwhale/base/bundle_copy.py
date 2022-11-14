@@ -1,5 +1,5 @@
+import os
 import typing as t
-import os.path
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
@@ -22,7 +22,6 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
-    DUMPED_SWDS_META_FNAME,
     ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
@@ -43,6 +42,8 @@ _query_param_map = {
     URIType.MODEL: "swmp",
     URIType.RUNTIME: "runtime",
 }
+
+_UPLOAD_ID_KEY = "X-SW-UPLOAD-ID"
 
 
 class _UploadPhase:
@@ -68,6 +69,8 @@ class BundleCopy(CloudRequestMixed):
 
         self.bundle_name = self.src_uri.object.name
         self.bundle_version = self._guess_bundle_version()
+        self.field_flag = _query_param_map[self.typ]
+        self.field_value = f"{self.bundle_name}:{self.bundle_version}"
 
         self.kw = kw
 
@@ -151,7 +154,7 @@ class BundleCopy(CloudRequestMixed):
             file_path=file_path,
             instance_uri=self.dest_uri,
             fields={
-                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
+                self.field_flag: self.field_value,
                 "project": self.dest_uri.project,
                 "force": "1" if self.force else "0",
             },
@@ -170,7 +173,7 @@ class BundleCopy(CloudRequestMixed):
             dest_path=file_path,
             instance_uri=self.src_uri,
             params={
-                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
+                self.field_flag: self.field_value,
                 "project": self.src_uri.project,
             },
             progress=progress,
@@ -223,29 +226,24 @@ class BundleCopy(CloudRequestMixed):
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()
 
-    def _do_upload_bundle_dir(
+    def _do_ubd_prepare(
         self,
         progress: Progress,
-        add_data_uri_header: bool = False,
-    ) -> None:
-        workdir: Path = self._get_target_path(self.src_uri)
+        workdir: Path,
+        url_path: str,
+    ) -> str:
         manifest_path = workdir / DEFAULT_MANIFEST_NAME
-        key = _query_param_map[self.typ]
-        name = f"{self.bundle_name}:{self.bundle_version}"
-        url_path = self._get_remote_instance_rc_url()
-
         task_id = progress.add_task(
             f":arrow_up: {manifest_path.name}",
             total=manifest_path.stat().st_size,
         )
-
         # TODO: use rich progress
         r = self.do_multipart_upload_file(
             url_path=url_path,
             file_path=manifest_path,
             instance_uri=self.dest_uri,
             fields={
-                key: name,
+                self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
                 "project": self.dest_uri.project,
                 "force": "1" if self.force else "0",
@@ -254,11 +252,21 @@ class BundleCopy(CloudRequestMixed):
             progress=progress,
             task_id=task_id,
         )
-        upload_id = r.json().get("data", {}).get("upload_id")
+        upload_id: str = r.json().get("data", {}).get("upload_id", "")
         if not upload_id:
             raise Exception("get invalid upload_id")
-        _headers = {"X-SW-UPLOAD-ID": str(upload_id)}
-        _manifest = load_yaml(manifest_path)
+        return upload_id
+
+    def _do_ubd_blobs(
+        self,
+        progress: Progress,
+        workdir: Path,
+        upload_id: str,
+        url_path: str,
+        add_data_uri_header: bool = False,
+    ) -> None:
+        _headers = {_UPLOAD_ID_KEY: str(upload_id)}
+        _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
 
         # TODO: add retry deco
         def _upload_blob(_fp: Path, _tid: TaskID, _data_uri: str = "") -> None:
@@ -276,7 +284,7 @@ class BundleCopy(CloudRequestMixed):
                 file_path=_fp,
                 instance_uri=self.dest_uri,
                 fields={
-                    key: name,
+                    self.field_flag: self.field_value,
                     "phase": _UploadPhase.BLOB,
                 },
                 headers=_upload_headers,
@@ -285,72 +293,85 @@ class BundleCopy(CloudRequestMixed):
                 task_id=_tid,
             )
 
+        _p_map = {}
+
+        for _k in _manifest["signature"]:
+            _size, _, _hash = _k.split(":")
+
+            # TODO: head object by hash name at first
+            _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
+            _tid = progress.add_task(
+                f":arrow_up: {_path.name}",
+                total=float(_size),
+                visible=False,
+            )
+            _p_map[_tid] = (_path, _hash)
+
+        _meta_names = [ARCHIVED_SWDS_META_FNAME]
+
+        for _n in _meta_names:
+            _path = workdir / _n
+            _tid = progress.add_task(
+                f":arrow_up: {_path.name}",
+                total=_path.stat().st_size,
+                visible=False,
+            )
+            _p_map[_tid] = (_path, "")
+
+        with ThreadPoolExecutor(
+            max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
+        ) as executor:
+            futures = [
+                executor.submit(_upload_blob, _p, _tid, _data_uri)
+                for _tid, (_p, _data_uri) in _p_map.items()
+            ]
+            wait(futures)
+
+    def _do_ubd_end(self, upload_id: str, url_path: str, ok: bool) -> None:
+        phase = _UploadPhase.END if ok else _UploadPhase.CANCEL
+        self.do_http_request(
+            path=url_path,
+            method=HTTPMethod.POST,
+            instance_uri=self.dest_uri,
+            headers={_UPLOAD_ID_KEY: str(upload_id)},
+            data={
+                self.field_flag: self.field_value,
+                "project": self.dest_uri.project,
+                "phase": phase,
+            },
+            use_raise=True,
+            disable_default_content_type=True,
+        )
+
+    def _do_upload_bundle_dir(
+        self,
+        progress: Progress,
+        add_data_uri_header: bool = False,
+    ) -> None:
+        workdir: Path = self._get_target_path(self.src_uri)
+        url_path = self._get_remote_instance_rc_url()
+
+        upload_id = self._do_ubd_prepare(
+            progress=progress,
+            workdir=workdir,
+            url_path=url_path,
+        )
         try:
-            _p_map = {}
-
-            for _k in _manifest["signature"]:
-                _size, _, _hash = _k.split(":")
-
-                # TODO: head object by hash name at first
-                _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
-                _tid = progress.add_task(
-                    f":arrow_up: {_path.name}",
-                    total=float(_size),
-                    visible=False,
-                )
-                _p_map[_tid] = (_path, _hash)
-
-            _meta_names = [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]
-
-            for _n in _meta_names:
-                _path = workdir / _n
-                _tid = progress.add_task(
-                    f":arrow_up: {_path.name}",
-                    total=_path.stat().st_size,
-                    visible=False,
-                )
-                _p_map[_tid] = (_path, "")
-
-            with ThreadPoolExecutor(
-                max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
-            ) as executor:
-                futures = [
-                    executor.submit(_upload_blob, _p, _tid, _data_uri)
-                    for _tid, (_p, _data_uri) in _p_map.items()
-                ]
-                wait(futures)
-
+            self._do_ubd_blobs(
+                progress=progress,
+                workdir=workdir,
+                upload_id=upload_id,
+                url_path=url_path,
+                add_data_uri_header=add_data_uri_header,
+            )
         except Exception as e:
             console.print(
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
             )
-            self.do_http_request(
-                path=url_path,
-                method=HTTPMethod.POST,
-                instance_uri=self.dest_uri,
-                headers=_headers,
-                data={
-                    key: name,
-                    "project": self.dest_uri.project,
-                    "phase": _UploadPhase.CANCEL,
-                },
-                use_raise=True,
-                disable_default_content_type=True,
-            )
+            self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=False)
+            raise
         else:
-            self.do_http_request(
-                path=url_path,
-                method=HTTPMethod.POST,
-                instance_uri=self.dest_uri,
-                headers=_headers,
-                data={
-                    key: name,
-                    "project": self.dest_uri.project,
-                    "phase": _UploadPhase.END,
-                },
-                use_raise=True,
-                disable_default_content_type=True,
-            )
+            self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=True)
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         _workdir = self._get_target_path(self.dest_uri)
@@ -394,7 +415,6 @@ class BundleCopy(CloudRequestMixed):
                 _dest
             )
 
-        # FIXME: copy .auth_env from controller? security issue
-        for _f in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
+        for _f in (ARCHIVED_SWDS_META_FNAME,):
             _tid = progress.add_task(f":arrow_down: {_f}")
             _download(_workdir / _f, _f, _tid)
