@@ -61,8 +61,6 @@ export default function VideoViewer({ isZoom = false, data }: IImageViewerProps)
         }
     }, [src, mimeType])
 
-    console.log(source)
-
     if (!isZoom) {
         return (
             <div
