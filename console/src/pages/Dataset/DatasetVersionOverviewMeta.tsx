@@ -4,7 +4,7 @@ import yaml from 'js-yaml'
 import { JSONTree } from 'react-json-tree'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 
-const theme = {
+export const theme = {
     scheme: 'bright',
     author: 'chris kempson (http://chriskempson.com)',
     base00: '#000000',

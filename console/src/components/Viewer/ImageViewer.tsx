@@ -29,7 +29,18 @@ export default function ImageViewer({ isZoom = false, data, masks = [], cocos = 
 
     if (!isZoom) {
         return (
-            <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
+            <div
+                className='dataset-viewer image-overlay fullsize'
+                style={
+                    {
+                        // height: '100%',
+                        // backgroundImage: `url(${data.src})`,
+                        // backgroundSize: 'cover',
+                        // backgroundRepeat: 'no-repeat',
+                        // backgroundPosition: 'center',
+                    }
+                }
+            >
                 <img src={data.src} width='auto' height='100%' alt='dataset view' />
             </div>
         )
