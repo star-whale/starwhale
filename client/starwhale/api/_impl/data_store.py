@@ -435,7 +435,6 @@ _TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
 
 
 def _get_type(obj: Any) -> SwType:
-    print(obj)
     element_type: SwType = UNKNOWN
     if isinstance(obj, list):
         for element in obj:
