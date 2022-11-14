@@ -71,9 +71,11 @@ public class StorageAccessServiceTest {
         for (int i = 0; i < data.length; ++i) {
             data[i] = (byte) i;
         }
-        storageAccessService.put("h1", new ByteArrayInputStream(data), data.length);
+        storageAccessService.put("h1", new ByteArrayInputStream(data), data.length - 1);
         storageAccessService.put("h2", new ByteArrayInputStream(data));
-        for (var fn : List.of("h1")) {
+        assertThat(storageAccessService.head("h1").getContentLength(), is((long) data.length - 1));
+        assertThat(storageAccessService.head("h2").getContentLength(), is((long) data.length));
+        for (var fn : List.of("h1", "h2")) {
             try (var in = storageAccessService.get(fn, (long) (data.length - off5m), 100L)) {
                 assertThat(in.readAllBytes(),
                         is(Arrays.copyOfRange(data, data.length - off5m, data.length - off5m + 100)));

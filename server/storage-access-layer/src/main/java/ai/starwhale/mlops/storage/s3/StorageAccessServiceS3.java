@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.BoundedInputStream;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -118,7 +119,6 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         } catch (NoSuchKeyException e) {
             return new StorageObjectInfo(false, 0L, null);
         }
-
     }
 
 
@@ -141,7 +141,6 @@ public class StorageAccessServiceS3 implements StorageAccessService {
             var etagList = new ArrayList<String>();
             for (int i = 1; size > 0; ++i) {
                 var partSize = Math.min(size, this.s3Config.getHugeFilePartSize());
-                log.error("{}", partSize);
                 var resp = this.s3client.uploadPart(UploadPartRequest.builder()
                                 .bucket(this.s3Config.getBucket())
                                 .key(path)
@@ -149,7 +148,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                                 .partNumber(i)
                                 .contentLength(partSize)
                                 .build(),
-                        RequestBody.fromInputStream(inputStream, partSize));
+                        RequestBody.fromInputStream(new BoundedInputStream(inputStream, partSize), partSize));
                 size -= partSize;
                 etagList.add(resp.eTag());
             }
