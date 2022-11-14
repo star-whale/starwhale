@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.env;
+package ai.starwhale.mlops.storage.autofit;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
-import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AliyunEnvTest extends S3EnvTest {
+public class StorageConnectionTokenTest {
+
     @Test
-    public void testSet() {
-        var aliyunEnv = new AliyunEnv();
-        assertThat(aliyunEnv.getEnvType(), is(StorageEnvType.ALIYUN));
-        var conf = randomString();
-        aliyunEnv.setExtraS3Configs(conf);
-        assertThat(mapContains(aliyunEnv.getEnvs(), AliyunEnv.ENV_EXTRA_S3_CONFIGS, conf), is(true));
+    public void testEqual() {
+        StorageConnectionToken storageConnectionToken = new StorageConnectionToken("ftp",
+                Map.of("a", "a1", "b", "b1", "c", "c1"));
+        StorageConnectionToken storageConnectionToken2 = new StorageConnectionToken("ftp",
+                Map.of("b", "b1", "a", "a1", "c", "c1"));
+        Assertions.assertEquals(storageConnectionToken, storageConnectionToken2);
     }
+
 }

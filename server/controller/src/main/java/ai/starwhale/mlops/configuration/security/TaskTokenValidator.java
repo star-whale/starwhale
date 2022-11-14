@@ -20,7 +20,6 @@ import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -32,11 +31,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class TaskTokenValidator implements JwtClaimValidator {
 
-    final JwtTokenUtil jwtTokenUtil;
-
-    final TaskMapper taskMapper;
-
     private static final String CLAIM_TASK_ID = "taskId";
+    private static final Set<TaskStatus> TOKEN_VALID_STATUSES = Set.of(
+            TaskStatus.RUNNING,
+            TaskStatus.READY
+    );
+    final JwtTokenUtil jwtTokenUtil;
+    final TaskMapper taskMapper;
 
     public TaskTokenValidator(JwtTokenUtil jwtTokenUtil, TaskMapper taskMapper) {
         this.jwtTokenUtil = jwtTokenUtil;
@@ -47,11 +48,6 @@ public class TaskTokenValidator implements JwtClaimValidator {
         String jwtToken = jwtTokenUtil.generateAccessToken(owner, Map.of(CLAIM_TASK_ID, taskId));
         return String.format("Bearer %s", jwtToken);
     }
-
-    private static final Set<TaskStatus> TOKEN_VALID_STATUSES = Set.of(
-            TaskStatus.RUNNING,
-            TaskStatus.READY
-    );
 
     @Override
     public void validClaims(Claims claims) throws SwValidationException {

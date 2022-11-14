@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,13 +44,13 @@ public class DsFileGetterTest {
                 new LengthAbleInputStream(new ByteArrayInputStream("abc".getBytes()), 3));
         when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
         when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
-        when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
+        when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
         DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "", 1L, 1L);
+        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", 1L, 1L);
         Assertions.assertEquals("abc", new String(bytes));
 
     }
@@ -60,17 +60,17 @@ public class DsFileGetterTest {
         StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
         StorageAccessService storageAccessService = mock(
                 StorageAccessService.class);
-        when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
+        when(storageAccessService.head("/bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
         when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
         when(storageAccessService.signedUrl(eq("bdc/bdcsd"), anyLong())).thenReturn("abc");
-        when(storageAccessParser.getStorageAccessServiceFromAuth(anyLong(), anyString(), anyString())).thenReturn(
+        when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
         DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.getVersionById(anyLong())).thenReturn(
                 DatasetVersionEntity.builder().storagePath("bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdcsd", "", 1L));
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", "", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "/bdcsd", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", 1L));
     }
 
 }

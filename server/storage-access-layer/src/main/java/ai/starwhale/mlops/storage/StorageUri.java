@@ -16,13 +16,16 @@
 
 package ai.starwhale.mlops.storage;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
+import org.springframework.util.StringUtils;
 
 /**
- * s3://username:password@127.0.0.1:29000@starwhale/project/2/dataset/11/x
- * s3://localhsot@starwhale/project/2/dataset/11/s
+ * s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/x
+ * s3://localhsot/starwhale/project/2/dataset/11/s
  * s3://starwhale/project/2/dataset/11/s
  * /starwhale/project/2/dataset/11/d
  * starwhale/project/2/dataset/11/ab
@@ -30,6 +33,9 @@ import lombok.Getter;
 @Getter
 public class StorageUri {
 
+    static final Pattern PATH_PATTERN = Pattern.compile(
+            "^(\\/?([^\\/]+)((\\/(([^\\/]+?)\\/?))*))$");
+    URI uri;
     /**
      * file/s3/ftp/nfs/oss/http/
      */
@@ -38,35 +44,61 @@ public class StorageUri {
     String password;
     String host;
     Integer port;
-    String path;
+    String pathAfterBucket;
     String bucket;
+    String path;
+    String prefixWithBucket;
 
-    static final Pattern URI_PATTERN = Pattern.compile(
-            "^((s3|file|ftp|nfs|oss|http|https|sftp)://)?"
-                    + "(([a-zA-Z0-9]+:[a-zA-Z0-9]+)@)?"
-                    + "(([a-z0-9.]+)(:(\\d{2,5}))?@)?"
-                    + "(/?([^/]+)/(.*?([^/]+)/?))$");
-
-    public StorageUri(String uri) {
-        Matcher matcher = URI_PATTERN.matcher(uri);
-        if (!matcher.matches()) {
-            this.path = uri;
-            return;
+    public StorageUri(String u) throws URISyntaxException {
+        this.uri = new URI(u);
+        schema = uri.getScheme();
+        path = uri.getPath();
+        if (null == path) {
+            throw new URISyntaxException(u, "path is null", 0);
         }
-        schema = matcher.group(2);
-        String up = matcher.group(4);
+        String up = uri.getUserInfo();
         if (null != up) {
             String[] split = up.split(":");
             username = split[0];
             password = split[1];
         }
-        host = matcher.group(6);
-        if (null != matcher.group(8)) {
-            port = Integer.valueOf(matcher.group(8));
+        host = uri.getHost();
+        port = uri.getPort();
+        if (port == -1) {
+            port = null;
         }
-        bucket = matcher.group(10);
-        path = matcher.group(11);
+
+        if (null == schema) {
+            bucket = null;
+            pathAfterBucket = path;
+            prefixWithBucket = null;
+        } else {
+            Matcher matcher = PATH_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String group3 = matcher.group(3);
+                bucket = StringUtils.hasText(group3) ? matcher.group(2) : null;
+                pathAfterBucket = StringUtils.hasText(group3) ? group3 : path;
+                prefixWithBucket = StringUtils.hasText(group3) ? u.replace(pathAfterBucket, "") : path;
+            }
+        }
+
 
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        StorageUri that = (StorageUri) o;
+        return this.uri.equals(that.uri);
+    }
+
+    @Override
+    public int hashCode() {
+        return uri.hashCode();
+    }
 }

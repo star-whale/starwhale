@@ -196,7 +196,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://127.0.0.1:9000@starwhale/project/2/dataset/11/{version}",
+                data_uri=f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 0},
@@ -211,7 +211,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=1,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://127.0.0.1:19000@starwhale/project/2/dataset/11/{version}",
+                data_uri=f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},
@@ -241,7 +241,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=3,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://username:password@127.0.0.1:29000@starwhale/project/2/dataset/11/{version}",
+                data_uri=f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},

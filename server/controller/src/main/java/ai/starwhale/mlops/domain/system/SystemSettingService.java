@@ -39,16 +39,16 @@ import org.springframework.util.CollectionUtils;
 public class SystemSettingService implements CommandLineRunner {
 
     private final YAMLMapper yamlMapper;
-
+    private final SystemSettingMapper systemSettingMapper;
+    private final List<SystemSettingListener> listeners;
     @Getter
     protected SystemSetting systemSetting;
 
-    private final SystemSettingMapper systemSettingMapper;
-
     public SystemSettingService(YAMLMapper yamlMapper,
-            SystemSettingMapper systemSettingMapper) {
+            SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners) {
         this.yamlMapper = yamlMapper;
         this.systemSettingMapper = systemSettingMapper;
+        this.listeners = listeners;
     }
 
     public String querySetting() {
@@ -68,12 +68,14 @@ public class SystemSettingService implements CommandLineRunner {
             throw new SwValidationException(ValidSubject.SETTING);
         }
         systemSettingMapper.put(setting);
+        listeners.forEach(l -> l.onUpdate(systemSetting));
         return querySetting();
     }
 
     public ResourcePool queryResourcePool(String rpName) {
-        return this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
-                .orElse(ResourcePool.defaults());
+        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? ResourcePool.defaults() :
+                this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
+                        .orElse(ResourcePool.defaults());
     }
 
     public List<ResourcePool> getResourcePools() {
@@ -88,6 +90,7 @@ public class SystemSettingService implements CommandLineRunner {
         if (null != setting) {
             try {
                 systemSetting = yamlMapper.readValue(setting.getContent(), SystemSetting.class);
+                listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
                 log.error("corrupted system setting yaml");
                 throw new SwValidationException(ValidSubject.SETTING);

@@ -19,7 +19,6 @@ from rich.progress import (
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
-    AUTH_ENV_FNAME,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
@@ -309,8 +308,6 @@ class BundleCopy(CloudRequestMixed):
             _p_map[_tid] = (_path, _hash)
 
         _meta_names = [ARCHIVED_SWDS_META_FNAME]
-        if self.kw.get("with_auth") and (workdir / AUTH_ENV_FNAME).exists():
-            _meta_names.append(AUTH_ENV_FNAME)
 
         for _n in _meta_names:
             _path = workdir / _n

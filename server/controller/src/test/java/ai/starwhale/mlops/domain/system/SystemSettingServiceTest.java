@@ -17,50 +17,46 @@
 package ai.starwhale.mlops.domain.system;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class SystemSettingServiceTest {
 
-    private SystemSettingService systemSettingService;
+    static String YAML = "---\n"
+            + "dockerSetting:\n"
+            + "  registry: \"abcd.com\"\n"
+            + "resourcePoolSetting: []";
+    static String YAML2 = "---\n"
+            + "dockerSetting:\n"
+            + "  registry: \"abcd1.com\"\n"
+            + "resourcePoolSetting: []";
     SystemSettingMapper systemSettingMapper;
+    SystemSettingListener listener;
+    private SystemSettingService systemSettingService;
 
     @BeforeEach
     public void setUp() throws Exception {
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+        listener = mock(SystemSettingListener.class);
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, List.of(listener));
         systemSettingService.run();
     }
-
-    static String YAML = "---\n"
-            + "dockerSetting:\n"
-            + "  registry: \"abcd.com\"\n"
-            + "resourcePoolSetting: []";
-
-    static String YAML2 = "---\n"
-            + "dockerSetting:\n"
-            + "  registry: \"abcd1.com\"\n"
-            + "resourcePoolSetting: []";
 
     @Test
     public void testAppStartWithSetting() {
         Assertions.assertEquals("abcd.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
-
-    }
-
-    @Test
-    public void testAppStartWithoutSetting() {
-        when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
-        Assertions.assertNull(systemSettingService.getSystemSetting());
+        verify(listener).onUpdate(systemSettingService.getSystemSetting());
 
     }
 
@@ -69,15 +65,15 @@ public class SystemSettingServiceTest {
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+        verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
     @Test
-    public void testUpdateWitouData() {
-        when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+    public void testUpdateWithData() {
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+        verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
     @Test
@@ -86,12 +82,13 @@ public class SystemSettingServiceTest {
     }
 
     @Test
-    public void testQueryWithoutData() throws Exception {
-        when(systemSettingMapper.get()).thenReturn(null);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper);
+    public void testStartWithoutData() throws Exception {
+        SystemSettingService systemSettingService =
+                new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class), List.of(listener));
         systemSettingService.run();
-        Assertions.assertEquals("---\n"
-                + "resourcePoolSetting: []", systemSettingService.querySetting().trim());
+        Assertions.assertEquals("--- {}", systemSettingService.querySetting().trim());
+        ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
+        Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
 
 

@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset.bo;
 
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -62,8 +60,4 @@ public class DataSet {
      */
     String indexTable;
 
-    /**
-     * the necessary information to access to file storages key: storage name value: envs
-     */
-    Map<String, StorageEnv> fileStorageEnvs;
 }

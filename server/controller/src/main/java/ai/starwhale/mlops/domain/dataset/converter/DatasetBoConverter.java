@@ -18,39 +18,18 @@ package ai.starwhale.mlops.domain.dataset.converter;
 
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.StorageEnvsPropertiesConverter;
-import ai.starwhale.mlops.storage.env.UserStorageAuthEnv;
-import java.util.Map;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 @Component
 public class DatasetBoConverter {
 
-    final StorageEnvsPropertiesConverter storageEnvsPropertiesConverter;
-
-    public DatasetBoConverter(StorageEnvsPropertiesConverter storageEnvsPropertiesConverter) {
-        this.storageEnvsPropertiesConverter = storageEnvsPropertiesConverter;
-    }
-
     public DataSet fromEntity(DatasetVersionEntity datasetVersionEntity) {
-        Map<String, StorageEnv> fileStorageEnvs;
-        if (StringUtils.hasText(datasetVersionEntity.getStorageAuths())) {
-            UserStorageAuthEnv storageAuths = new UserStorageAuthEnv(datasetVersionEntity.getStorageAuths());
-            fileStorageEnvs = storageAuths.allEnvs();
-        } else {
-            fileStorageEnvs = storageEnvsPropertiesConverter.propertiesToEnvs();
-        }
-        fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(StorageEnv.ENV_KEY_PREFIX,
-                datasetVersionEntity.getStoragePath()));
         return DataSet.builder()
                 .id(datasetVersionEntity.getId())
                 .name(datasetVersionEntity.getDatasetName())
                 .version(datasetVersionEntity.getVersionName())
                 .size(datasetVersionEntity.getSize())
                 .path(datasetVersionEntity.getStoragePath())
-                .fileStorageEnvs(fileStorageEnvs)
                 .indexTable(datasetVersionEntity.getIndexTable())
                 .build();
     }

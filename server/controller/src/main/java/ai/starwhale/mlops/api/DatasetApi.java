@@ -257,8 +257,6 @@ public interface DatasetApi {
             @PathVariable(name = "versionUrl") String versionUrl,
             @Parameter(name = "uri", description = "uri of the link")
             @RequestParam(name = "uri", required = true) String uri,
-            @Parameter(name = "authName", description = "auth name the link used")
-            @RequestParam(name = "authName", required = false) String authName,
             @Parameter(name = "offset", description = "offset in the content")
             @RequestParam(name = "offset", required = false) Long offset,
             @Parameter(name = "size", description = "data size")
@@ -278,8 +276,6 @@ public interface DatasetApi {
             @PathVariable(name = "version") String versionUrl,
             @Parameter(name = "uri", description = "uri of the link")
             @RequestParam(name = "uri", required = true) String uri,
-            @Parameter(name = "authName", description = "auth name the link used")
-            @RequestParam(name = "authName", required = false) String authName,
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 

@@ -259,17 +259,17 @@ public class DatasetControllerTest {
                 });
         given(datasetService.query(anyString(), anyString(), anyString()))
                 .willReturn(DatasetVersionEntity.builder().id(1L).build());
-        given(datasetService.dataOf(same(1L), anyString(), anyString(), any(), any()))
+        given(datasetService.dataOf(same(1L), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
-        controller.pullLinkContent("p1", "d1", "v1", "", "", 1L, 1L, response);
+        controller.pullLinkContent("p1", "d1", "v1", "", 1L, 1L, response);
         assertThat(str.toString(), is("100"));
 
         assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "d1", "", "", "", 1L, 1L, response));
+                () -> controller.pullLinkContent("p1", "d1", "", "", 1L, 1L, response));
 
         assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "", "v1", "", "", 1L, 1L, response));
+                () -> controller.pullLinkContent("p1", "", "v1", "", 1L, 1L, response));
     }
 
     @Test
@@ -360,10 +360,9 @@ public class DatasetControllerTest {
         String ds = "ds";
         String v = "v";
         String uri = "uri";
-        String auth = "auth";
         when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersionEntity.builder().id(1L).build());
         String signUrl = "sign-url";
-        when(datasetService.signLink(1L, uri, auth, 100L)).thenReturn(signUrl);
-        Assertions.assertEquals(signUrl, controller.signLink(pj, ds, v, uri, auth, 100L).getBody().getData());
+        when(datasetService.signLink(1L, uri, 100L)).thenReturn(signUrl);
+        Assertions.assertEquals(signUrl, controller.signLink(pj, ds, v, uri, 100L).getBody().getData());
     }
 }

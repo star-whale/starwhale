@@ -70,7 +70,6 @@ Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的dataset，指定该参数后执行copy命令就会强制覆盖。|
-|`--with-auth`||❌|Boolean|False|当构建remote-link形态的dataset时，一般会使用 `starwhale.S3LinkAuth` 存储密钥信息，`swcli dataset build` 执行后，会在对应的swds目录中产生一个 `.auth-env` 文件。当指定 `--with-auth` 参数时，若从standalone instance向cloud instance 分发数据集，则会携带有敏感信息的`.auth-env`文件，cloud Instance的controller会自动对该文件进行处理，确保运行评测任务加载数据集时建立安全、合法的连接。目前不支持从cloud instance到standalone instance分发数据集时指定 `--with-auth` 参数，即无法下载cloud instance中的密钥文件。|
 
 ## 4. 对比数据集
 

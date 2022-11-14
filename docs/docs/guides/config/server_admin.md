@@ -40,7 +40,27 @@ resourcePoolSetting:
       - name: cpu
         max: 2
         min: 1
-        defaults: 1
+        defaults: 
+storageSetting:
+  - type: s3
+    tokens: 
+      - bucket: starwhale
+        ak: access_key
+        sk: scret_key
+        endpoint: http://mybucket.s3.region.amazonaws.com
+        region: region of the service
+        hugeFileThreshold: 10485760
+        hugeFilePartSize: 5242880
+  - type: minio
+    tokens: 
+      - bucket: starwhale
+        ak: access_key
+        sk: scret_key
+        endpoint: http://10.131.0.1:9000
+        region: local
+        hugeFileThreshold: 10485760
+        hugeFilePartSize: 5242880
+
 
 ```
 
@@ -59,3 +79,49 @@ The priority of the system setting is the highest. Fine-grained setting is not p
 ### 2. The `resourcePoolSetting`
 
 The `resourcePoolSetting` allows you to manage your cluster in a group manner. It is currently implemented by K8S `nodeSelector`, you could label your machines in K8S cluster and make them a `resourcePool` in Starwhale.
+
+### 3. The `storageSetting`
+
+The `storageSetting` allows you to manage the storages the server could access.
+
+```yaml
+storageSetting:
+  - type: s3
+    tokens: 
+      - bucket: starwhale # required
+        ak: access_key # required
+        sk: scret_key # required
+        endpoint: http://s3.region.amazonaws.com # optional
+        region: region of the service # required when endpoint is empty
+        hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
+        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+  - type: minio
+    tokens: 
+      - bucket: starwhale # required
+        ak: access_key # required
+        sk: scret_key # required
+        endpoint: http://10.131.0.1:9000 # required
+        region: local # optional
+        hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
+        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+  - type: aliyun
+    tokens: 
+      - bucket: starwhale # required
+        ak: access_key # required
+        sk: scret_key # required
+        endpoint: http://10.131.0.2:9000 # required
+        region: local # optional
+        hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
+        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+
+```
+
+Every `storageSetting` item has a corresponding implementation of `StorageAccessService` interface. Starwhale has four build-in implementations:
+
+- `StorageAccessServiceAliyun` matches `type` in (`aliyun`,`oss`)
+- `StorageAccessServiceMinio` matches `type` in (`minio`)
+- `StorageAccessServiceS3` matches `type` in (`s3`)
+- `StorageAccessServiceFile` matches `type` in (`fs`, `file`)
+
+Each of the implementations has different requirements for `tokens`. `endpoint` is required when `type` in (`aliyun`,`minio`), `region` is required when `type` is `s3` and `endpoint` is empty. While `fs/file` type requires tokens has name `rootDir` and `serviceProvider`.
+Please refer the code for more details.

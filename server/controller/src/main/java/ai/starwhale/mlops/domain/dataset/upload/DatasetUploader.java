@@ -66,34 +66,24 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class DatasetUploader {
 
-    final HotDatasetHolder hotDatasetHolder;
-
-    final DatasetMapper datasetMapper;
-
-    final DatasetVersionMapper datasetVersionMapper;
-
-    final StoragePathCoordinator storagePathCoordinator;
-
-    final StorageAccessService storageAccessService;
-
-    final UserService userService;
-
     /**
      * prefix + / + fileName
      */
     static final String FORMATTER_STORAGE_PATH = "%s/%s";
-
+    static final String INDEX_FILE_NAME = "_meta.jsonl";
+    static final Pattern PATTERN_SIGNATURE = Pattern.compile("\\d+:blake2b:(.*)");
+    static final String DATASET_MANIFEST = "_manifest.yaml";
+    final HotDatasetHolder hotDatasetHolder;
+    final DatasetMapper datasetMapper;
+    final DatasetVersionMapper datasetVersionMapper;
+    final StoragePathCoordinator storagePathCoordinator;
+    final StorageAccessService storageAccessService;
+    final UserService userService;
     final YAMLMapper yamlMapper;
-
     final HotJobHolder jobHolder;
     final ProjectManager projectManager;
-
     final DataStoreTableNameHelper dataStoreTableNameHelper;
-
     final IndexWriter indexWriter;
-
-    static final String INDEX_FILE_NAME = "_meta.jsonl";
-    static final String AUTH_FILE_NAME = ".auth_env";
 
     public DatasetUploader(HotDatasetHolder hotDatasetHolder, DatasetMapper datasetMapper,
             DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator,
@@ -151,12 +141,6 @@ public class DatasetUploader {
                             anotherInputStream);
                 }
             }
-            if (AUTH_FILE_NAME.equals(filename)) {
-                try (InputStream anotherInputStream = file.getInputStream()) {
-                    datasetVersionMapper.updateStorageAuths(swDatasetVersionWithMeta.getDatasetVersionEntity()
-                            .getId(), new String(anotherInputStream.readAllBytes()));
-                }
-            }
             final String storagePath = String.format(FORMATTER_STORAGE_PATH,
                     swDatasetVersionWithMeta.getDatasetVersionEntity().getStoragePath(),
                     StringUtils.hasText(uri) ? uri : filename);
@@ -181,8 +165,6 @@ public class DatasetUploader {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    static final Pattern PATTERN_SIGNATURE = Pattern.compile("\\d+:blake2b:(.*)");
 
     private boolean fileUploaded(DatasetVersionWithMeta datasetVersionWithMeta, String filename,
             String digest) {
@@ -214,7 +196,6 @@ public class DatasetUploader {
         }
         uploadManifest(datasetVersionEntity, fileName, bytes);
     }
-
 
     @Transactional
     public String create(String yamlContent, String fileName, UploadRequest uploadRequest) {
@@ -283,7 +264,6 @@ public class DatasetUploader {
         return datasetVersionEntity.getVersionName();
     }
 
-
     private DatasetVersionEntity from(String projectName, DatasetEntity datasetEntity, Manifest manifest) {
         return DatasetVersionEntity.builder().datasetId(datasetEntity.getId())
                 .ownerId(getOwner())
@@ -318,15 +298,12 @@ public class DatasetUploader {
         return currentUserDetail.getIdTableKey();
     }
 
-
     public void end(String uploadId) {
         final DatasetVersionWithMeta datasetVersionWithMeta = getDatasetVersion(uploadId);
         datasetVersionMapper.updateStatus(datasetVersionWithMeta.getDatasetVersionEntity().getId(),
                 DatasetVersionEntity.STATUS_AVAILABLE);
         hotDatasetHolder.end(uploadId);
     }
-
-    static final String DATASET_MANIFEST = "_manifest.yaml";
 
     public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
         Long projectId = projectManager.getProject(project).getId();

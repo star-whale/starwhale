@@ -523,7 +523,7 @@ class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
             offset = 16
             image_size = 28 * 28
 
-            uri = f"s3://{self._endpoint}@{self._bucket}/dataset/mnist/t10k-images-idx3-ubyte"
+            uri = f"s3://{self._endpoint}/{self._bucket}/dataset/mnist/t10k-images-idx3-ubyte"
             for i in range(label_number):
                 _data = Link(
                     f"{uri}",

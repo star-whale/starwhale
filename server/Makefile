@@ -3,13 +3,13 @@ MVN_IMG=maven:3.8.5-openjdk-11
 MVN_VOLUME=maven-repo
 
 build-package:
-	mvn -B package -DskipTests
+	mvn -B clean package -DskipTests
 
 ci-package-with-unit-test:
-	mvn -B -e package
+	mvn -B -e clean package
 
 ci-package-with-unit-test-report:
-	mvn -B -e package jacoco:report
+	mvn -B -e clean package jacoco:report
 
 test:
 	docker volume create --name ${MVN_VOLUME} && \

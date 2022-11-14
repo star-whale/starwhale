@@ -16,25 +16,30 @@
 
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
-import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.StorageUri;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
 public class DsFileGetter {
 
+    static final Set<String> SCHEME_HTTP = Set.of("http", "https");
     final StorageAccessParser storageAccessParser;
-
     final DatasetVersionMapper datasetVersionMapper;
 
     public DsFileGetter(StorageAccessParser storageAccessParser,
@@ -43,10 +48,29 @@ public class DsFileGetter {
         this.datasetVersionMapper = datasetVersionMapper;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
+    @NotNull
+    private static StorageUri getStorageUri(String uri) {
+        if (!StringUtils.hasText(uri)) {
+            throw new SwValidationException(ValidSubject.DATASET, "uri is empty");
+        }
+        StorageUri storageUri;
+        try {
+            storageUri = new StorageUri(uri);
+        } catch (URISyntaxException e) {
+            log.error("malformed uri", e);
+            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
+        }
+        return storageUri;
+    }
+
+    private static boolean validParam(long sizeLong, long offsetLong) {
+        return sizeLong > 0 && offsetLong >= 0;
+    }
+
+    public byte[] dataOf(Long datasetId, String uri, Long offset,
             Long size) {
-        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
-                datasetId, uri, authName);
+        StorageAccessService storageAccessService =
+                storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
         String path = checkPath(datasetId, uri, storageAccessService);
         try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
                 offset, size) : storageAccessService.get(path)) {
@@ -58,9 +82,12 @@ public class DsFileGetter {
         }
     }
 
-    public String linkOf(Long datasetId, String uri, String authName, Long expTimeMillis) {
-        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
-                datasetId, uri, authName);
+    public String linkOf(Long datasetId, String uri, Long expTimeMillis) {
+        StorageUri storageUri = getStorageUri(uri);
+        if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
+            return uri;
+        }
+        StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);
         String path = checkPath(datasetId, uri, storageAccessService);
         try {
             return storageAccessService.signedUrl(path, expTimeMillis);
@@ -70,7 +97,13 @@ public class DsFileGetter {
     }
 
     private String checkPath(Long datasetId, String uri, StorageAccessService storageAccessService) {
-        String path = new StorageUri(uri).getPath();
+        String path;
+        try {
+            path = new StorageUri(uri).getPathAfterBucket();
+        } catch (URISyntaxException e) {
+            log.error("malformed uri {}", uri, e);
+            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
+        }
         StorageObjectInfo objectInfo;
         try {
             objectInfo = storageAccessService.head(path);
@@ -79,12 +112,9 @@ public class DsFileGetter {
         }
         if (!objectInfo.isExists()) {
             DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
-            path = versionById.getStoragePath() + "/" + path;
+            path = StringUtils.trimTrailingCharacter(versionById.getStoragePath(), '/') + "/"
+                    + StringUtils.trimLeadingCharacter(path, '/');
         }
         return path;
-    }
-
-    private static boolean validParam(long sizeLong, long offsetLong) {
-        return sizeLong > 0 && offsetLong >= 0;
     }
 }

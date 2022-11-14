@@ -56,16 +56,20 @@ import org.springframework.util.StringUtils;
 @Service
 public class JobSpliteratorEvaluation implements JobSpliterator {
 
+    /**
+     * prevent send packet greater than @@GLOBAL.max_allowed_packet
+     */
+    static final Integer MAX_MYSQL_INSERTION_SIZE = 500;
     private final StoragePathCoordinator storagePathCoordinator;
-
     private final TaskMapper taskMapper;
-
     private final JobMapper jobMapper;
-
-
     private final StepMapper stepMapper;
-
     private final JobSpecParser jobSpecParser;
+    /**
+     * when task amount exceeds 1000, batch insertion will emit an error
+     */
+    @Value("${sw.task.size}")
+    Integer amountOfTasks = 256;
 
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
@@ -77,17 +81,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         this.stepMapper = stepMapper;
         this.jobSpecParser = jobSpecParser;
     }
-
-    /**
-     * when task amount exceeds 1000, bach insertion will emit an error
-     */
-    @Value("${sw.task.size}")
-    Integer amountOfTasks = 256;
-
-    /**
-     * prevent send packet greater than @@GLOBAL.max_allowed_packet
-     */
-    static final Integer MAX_MYSQL_INSERTION_SIZE = 500;
 
     /**
      * split job into two steps transactional jobStatus->READY firstStepTaskStatus->READY

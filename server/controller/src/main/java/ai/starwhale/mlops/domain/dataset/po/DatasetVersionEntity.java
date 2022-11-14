@@ -32,41 +32,25 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class DatasetVersionEntity extends BaseEntity implements BundleVersionEntity {
 
+    public static final Integer STATUS_AVAILABLE = 1;
+    public static final Integer STATUS_UN_AVAILABLE = 0;
     private Long id;
-
     private Long datasetId;
-
     private Long versionOrder;
-
     private String datasetName;
-
     private Long ownerId;
-
     private UserEntity owner;
-
     private String versionName;
-
     private String versionTag;
-
     private String versionMeta;
-
     private String filesUploaded;
-
     private String storagePath;
-
     private Long size;
-
-    private String storageAuths;
-
     private String indexTable;
-
     /**
      * 0 - unavailable 1 - available
      */
     private Integer status = STATUS_UN_AVAILABLE;
-
-    public static final Integer STATUS_AVAILABLE = 1;
-    public static final Integer STATUS_UN_AVAILABLE = 0;
 
     @Override
     public String getName() {

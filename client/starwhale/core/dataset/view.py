@@ -168,10 +168,8 @@ class DatasetTermView(BaseTermView):
             ds.build(Path(workdir), config=config)
 
     @classmethod
-    def copy(
-        cls, src_uri: str, dest_uri: str, force: bool = False, with_auth: bool = False
-    ) -> None:
-        Dataset.copy(src_uri, dest_uri, force, with_auth)
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        Dataset.copy(src_uri, dest_uri, force)
         console.print(":clap: copy done")
 
     @BaseTermView._header

@@ -56,10 +56,8 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return _cls(uri)
 
     @classmethod
-    def copy(
-        cls, src_uri: str, dest_uri: str, force: bool = False, with_auth: bool = False
-    ) -> None:
-        dc = DatasetCopy(src_uri, dest_uri, URIType.DATASET, force, with_auth=with_auth)
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        dc = DatasetCopy(src_uri, dest_uri, URIType.DATASET, force)
         dc.do()
 
     @classmethod

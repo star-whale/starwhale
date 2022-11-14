@@ -219,7 +219,7 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, String authName, Long offset, Long size, HttpServletResponse httpResponse) {
+            String uri, Long offset, Long size, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
@@ -228,7 +228,7 @@ public class DatasetController implements DatasetApi {
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, authName, offset, size));
+            outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, offset, size));
             outputStream.flush();
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);
@@ -238,10 +238,10 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> signLink(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, String authName, Long expTimeMillis) {
+            String uri, Long expTimeMillis) {
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(
-                datasetService.signLink(datasetVersionEntity.getId(), uri, authName, expTimeMillis)));
+                datasetService.signLink(datasetVersionEntity.getId(), uri, expTimeMillis)));
     }
 
     @Override

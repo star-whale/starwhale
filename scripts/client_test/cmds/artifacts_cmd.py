@@ -235,15 +235,11 @@ class Dataset(BaseArtifact):
         _res, _err = invoke([CLI, "-o", "json", self.name, "summary", uri])
         return json.loads(_res) if not _err else {}
 
-    def copy(
-        self, src_uri: str, target_project: str, with_auth: bool, force: bool
-    ) -> bool:
+    def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
         _valid_str = "copy done"
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        if with_auth:
-            _args.append("--with-auth")
         _res, _err = invoke(_args)
         return not _err and _valid_str in _res
 

@@ -178,7 +178,7 @@ cli() {
     echo "pypi repo used is http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple"
     echo "runtime base image  used is $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION"
     echo "run docker to try swcli you just built: docker run -it --entrypoint /bin/bash $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION"
-    echo "do not forget to set env : export SW_IMAGE_REPO=$NEXUS_HOSTNAME:$PORT_NEXUS before you use swcli"
+    echo "do not forget to set env : export SW_IMAGE_REPO=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER before you use swcli"
   }
   -s() {
     pushd ../../client

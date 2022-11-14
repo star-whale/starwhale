@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import sys
 import json
 import shutil
@@ -171,6 +172,9 @@ class FileLikeObj(Protocol):
         ...
 
 
+path_reg = re.compile("^(\/?([^\/]+)((\/(([^\/]+?)\/?))*))$")
+
+
 class S3Connection:
     def __init__(
         self,
@@ -213,9 +217,8 @@ class S3Connection:
         """make S3 Connection by uri
 
         uri:
-            - s3://username:password@127.0.0.1:8000@bucket/key
-            - s3://127.0.0.1:8000@bucket/key
-            - s3://bucket/key
+            - s3://username:password@127.0.0.1:8000/bucket/key
+            - s3://127.0.0.1:8000/bucket/key
         """
         uri = uri.strip()
         if not uri or not uri.startswith("s3://"):
@@ -224,24 +227,14 @@ class S3Connection:
             )
 
         r = urlparse(uri)
-        netloc = r.netloc
 
         link_auth = S3LinkAuth.from_env(auth_name)
-        access = link_auth.access_key
-        secret = link_auth.secret
+        access = r.username or link_auth.access_key
+        secret = r.password or link_auth.secret
         region = link_auth.region
-
-        _nl = netloc.split("@")
-        if len(_nl) == 1:
-            endpoint = link_auth.endpoint
-            bucket = _nl[0]
-        elif len(_nl) == 2:
-            endpoint, bucket = _nl
-        elif len(_nl) == 3:
-            _key, endpoint, bucket = _nl
-            access, secret = _key.split(":", 1)
-        else:
-            raise FormatError(netloc)
+        endpoint = r.hostname or link_auth.endpoint
+        match = path_reg.match(r.path)
+        bucket = match.group(2)  # type:ignore
 
         if not endpoint:
             raise FieldTypeOrValueError("endpoint is empty")

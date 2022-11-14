@@ -40,10 +40,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.env.StorageEnv;
-import ai.starwhale.mlops.storage.env.StorageEnv.StorageEnvType;
-import ai.starwhale.mlops.storage.s3.S3Config;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -62,12 +58,6 @@ import org.mockito.ArgumentCaptor;
 
 public class K8sTaskSchedulerTest {
 
-    public static final String bucket = "bucket";
-    public static final String accessKey = "accessKey";
-    public static final String secretKey = "secretKey";
-    public static final String region = "region";
-    public static final String endpoint = "endpoint";
-
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
@@ -78,15 +68,6 @@ public class K8sTaskSchedulerTest {
 
     @NotNull
     private K8sTaskScheduler buildK8sSheduler(K8sClient k8sClient) throws IOException {
-        StorageProperties storageProperties = new StorageProperties();
-        storageProperties.setS3Config(
-                S3Config.builder()
-                        .bucket(bucket)
-                        .accessKey(accessKey)
-                        .secretKey(secretKey)
-                        .region(region)
-                        .endpoint(endpoint)
-                        .build());
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
@@ -121,10 +102,6 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var s3Config = new S3Config();
-        s3Config.setBucket("");
-        var storageProperties = new StorageProperties();
-        storageProperties.setS3Config(s3Config);
         var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
         var k8sJobTemplate = new K8sJobTemplate("", "");
         var scheduler = new K8sTaskScheduler(
@@ -165,8 +142,7 @@ public class K8sTaskSchedulerTest {
                 .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
-                                .size(300L).fileStorageEnvs(Map.of("FS",
-                                        new StorageEnv(StorageEnvType.S3).add("envS4", "envS4V"))).build()))
+                                .size(300L).build()))
                 .stepSpec("")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").build())

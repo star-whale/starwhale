@@ -99,7 +99,6 @@ class TestCli:
         assert self.dataset.copy(
             src_uri=_ds_uri,
             target_project=f"cloud://cloud/project/{cloud_project}",
-            with_auth=True,
             force=True,
         )
         assert self.runtime.copy(
