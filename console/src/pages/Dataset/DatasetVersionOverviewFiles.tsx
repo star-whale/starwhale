@@ -51,8 +51,10 @@ const useCardStyles = createUseStyles({
         'overflow': 'hidden',
     },
     cardImg: {
-        position: 'relative',
-        minHeight: '90px',
+        'minHeight': '90px',
+        '& > div': {
+            margin: 'auto',
+        },
     },
     cardLabel: {
         padding: '9px 9px 0px',
@@ -152,7 +154,9 @@ export default function DatasetVersionFiles() {
         datasetId: string
         datasetVersionId: string
     }>()
-    const layoutKey = useSearchParam('layout') as string
+    // @FIXME layoutParam missing when build
+    const layoutParam = useSearchParam('layout') as string
+    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '1')
     const [page, setPage] = usePage()
     const { token } = useAuth()
     const history = useHistory()
@@ -233,7 +237,7 @@ export default function DatasetVersionFiles() {
 
                     switch (row.type) {
                         case TYPES.IMAGE:
-                            wrapperStyle = { minHeight: '90px' }
+                            wrapperStyle = { minHeight: '90px', maxWidth: '100px' }
                             break
                         case TYPES.AUDIO:
                             wrapperStyle = { minHeight: '90px' }
@@ -281,30 +285,7 @@ export default function DatasetVersionFiles() {
             ...Object.entries(summary).map(([key]) => ({
                 label: key,
                 renderItem: (row: any) => {
-                    return (
-                        <div className={styles.tableCell}>
-                            {row?.summary?.[key]}
-                            <div
-                                className={styles.cardFullscreen}
-                                role='button'
-                                tabIndex={0}
-                                onClick={() => {
-                                    setIsFullscreen(true)
-                                    setPreview(row.id)
-                                    history.push(
-                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
-                                            {
-                                                ...page,
-                                                layout: layoutKey,
-                                            }
-                                        )}`
-                                    )
-                                }}
-                            >
-                                <IconFont type='fullscreen' />
-                            </div>
-                        </div>
-                    )
+                    return <div className={styles.tableCell}>{row?.summary?.[key]}</div>
                 },
             })),
         ]
@@ -324,25 +305,6 @@ export default function DatasetVersionFiles() {
                             <div className={styles.card} key={index}>
                                 <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
                                 <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
-                                {/* <div
-                                    className={styles.cardFullscreen}
-                                    role='button'
-                                    tabIndex={0}
-                                    onClick={() => {
-                                        setIsFullscreen(true)
-                                        setPreview(row.id)
-                                        history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
-                                                {
-                                                    ...page,
-                                                    layout: layoutKey,
-                                                }
-                                            )}`
-                                        )
-                                    }}
-                                >
-                                    <IconFont type='fullscreen' />
-                                </div> */}
                             </div>
                         )
                     })}
@@ -411,6 +373,7 @@ export default function DatasetVersionFiles() {
                     value={layoutKey}
                     onChange={(key) => {
                         const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
+                        setLayoutKey(key)
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
