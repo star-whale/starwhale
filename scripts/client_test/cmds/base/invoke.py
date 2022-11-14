@@ -9,6 +9,8 @@ def invoke(args: List[str]) -> Tuple[str, str]:
     )
     if process.stderr:
         print(f"args:{args}, error is:{process.stderr}")
+    print(process.stdout)
+    print(process.stderr)
     return process.stdout, process.stderr
 
 
