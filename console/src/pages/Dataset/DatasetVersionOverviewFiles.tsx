@@ -7,14 +7,13 @@ import { getMetaRow } from '@/domain/dataset/utils'
 import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
-import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { getReadableStorageQuantityStr } from '@/utils'
 import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import { DatasetObject } from '@/domain/dataset/sdk'
+import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
@@ -32,9 +31,11 @@ const useCardStyles = createUseStyles({
         right: 0,
     },
     card: {
-        'flexBasis': '161px',
-        'width': '161px',
-        'height': '137px',
+        // 'flexBasis': '161px',
+        // 'width': '161px',
+        // 'height': '137px',
+        'width': '100%',
+        'height': '100%',
         'border': '1px solid #E2E7F0',
         'display': 'flex',
         'flexDirection': 'column',
@@ -47,10 +48,11 @@ const useCardStyles = createUseStyles({
         '&:hover $cardFullscreen': {
             display: 'grid',
         },
+        'overflow': 'hidden',
     },
     cardImg: {
         position: 'relative',
-        height: '90px',
+        minHeight: '90px',
     },
     cardLabel: {
         padding: '9px 9px 0px',
@@ -73,6 +75,13 @@ const useCardStyles = createUseStyles({
         'placeItems': 'center',
         '&:hover': {
             backgroundColor: '#5181E0',
+        },
+    },
+    tableCell: {
+        'position': 'relative',
+        'textAlign': 'left',
+        '&:hover $cardFullscreen': {
+            display: 'grid',
         },
     },
 })
@@ -202,7 +211,6 @@ export default function DatasetVersionFiles() {
                 overrides: {
                     TableHeadCell: {
                         style: {
-                            textAlign: 'center',
                             backgroundColor: 'var(--color-brandTableHeaderBackground)',
                             borderBottomWidth: '0',
                             fontWeight: 'bold',
@@ -216,29 +224,52 @@ export default function DatasetVersionFiles() {
                             paddingTop: '4px',
                             paddingBottom: '4px',
                             position: 'relative',
-                            height: '60px',
+                            // height: '60px',
                         },
                     },
                 },
                 renderItem: (row: any) => {
+                    let wrapperStyle = {}
+
+                    switch (row.type) {
+                        case TYPES.IMAGE:
+                            wrapperStyle = { minHeight: '90px' }
+                            break
+                        case TYPES.AUDIO:
+                            wrapperStyle = { minHeight: '90px' }
+                            break
+                        case TYPES.VIDEO:
+                            wrapperStyle = { maxWidth: '300px' }
+                            break
+                        default:
+                        case TYPES.TEXT:
+                            wrapperStyle = { minHeight: '60px' }
+                            break
+                    }
+
                     return (
-                        <Button
-                            as='link'
-                            onClick={() => {
-                                setIsFullscreen(true)
-                                setPreview(row.id)
-                                history.push(
-                                    `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
-                                        {
-                                            ...page,
-                                            layout: layoutKey,
-                                        }
-                                    )}`
-                                )
-                            }}
-                        >
+                        <div className={styles.tableCell} style={wrapperStyle}>
                             <DatasetViewer data={row} />
-                        </Button>
+                            <div
+                                className={styles.cardFullscreen}
+                                role='button'
+                                tabIndex={0}
+                                onClick={() => {
+                                    setIsFullscreen(true)
+                                    setPreview(row.id)
+                                    history.push(
+                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                                            {
+                                                ...page,
+                                                layout: layoutKey,
+                                            }
+                                        )}`
+                                    )
+                                }}
+                            >
+                                <IconFont type='fullscreen' />
+                            </div>
+                        </div>
                     )
                 },
             },
@@ -249,7 +280,32 @@ export default function DatasetVersionFiles() {
             },
             ...Object.entries(summary).map(([key]) => ({
                 label: key,
-                renderItem: (row: any) => row?.summary?.[key],
+                renderItem: (row: any) => {
+                    return (
+                        <div className={styles.tableCell}>
+                            {row?.summary?.[key]}
+                            <div
+                                className={styles.cardFullscreen}
+                                role='button'
+                                tabIndex={0}
+                                onClick={() => {
+                                    setIsFullscreen(true)
+                                    setPreview(row.id)
+                                    history.push(
+                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                                            {
+                                                ...page,
+                                                layout: layoutKey,
+                                            }
+                                        )}`
+                                    )
+                                }}
+                            >
+                                <IconFont type='fullscreen' />
+                            </div>
+                        </div>
+                    )
+                },
             })),
         ]
 
@@ -259,7 +315,7 @@ export default function DatasetVersionFiles() {
                     style={{
                         display: 'grid',
                         gap: '9px',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 200px))',
                         placeItems: 'center',
                     }}
                 >
@@ -268,7 +324,7 @@ export default function DatasetVersionFiles() {
                             <div className={styles.card} key={index}>
                                 <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
                                 <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
-                                <div
+                                {/* <div
                                     className={styles.cardFullscreen}
                                     role='button'
                                     tabIndex={0}
@@ -286,7 +342,7 @@ export default function DatasetVersionFiles() {
                                     }}
                                 >
                                     <IconFont type='fullscreen' />
-                                </div>
+                                </div> */}
                             </div>
                         )
                     })}
@@ -330,6 +386,7 @@ export default function DatasetVersionFiles() {
                             paddingRight: '20px',
                             lineHeight: '44px',
                             verticalAlign: 'middle',
+                            textAlign: 'left',
                         },
                     },
                     // ...overrides,

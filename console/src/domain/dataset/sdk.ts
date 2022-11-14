@@ -104,7 +104,10 @@ export class DatasetObject {
             const attr = key.replace(/^_annotation?_/, '')
 
             try {
-                const annos = String(value).startsWith('{') ? JSON.parse(value, undefined) : value
+                const annos =
+                    String(value).startsWith('{') || String(value).startsWith('[')
+                        ? JSON.parse(value, undefined)
+                        : value
                 if (Array.isArray(annos)) {
                     annos.forEach((item) => this.setProps(item))
                 } else if (isObject(annos)) {

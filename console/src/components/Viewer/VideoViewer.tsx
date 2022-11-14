@@ -59,7 +59,7 @@ export default function VideoViewer({ isZoom = false, data }: IImageViewerProps)
                 },
             ],
         }
-    }, [src])
+    }, [src, mimeType])
 
     console.log(source)
 
