@@ -76,7 +76,7 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     public void put(String path, InputStream inputStream, long size) throws IOException {
         var meta = new ObjectMetadata();
         meta.setContentLength(size);
-        this.ossClient.putObject(this.bucket, path, inputStream);
+        this.ossClient.putObject(this.bucket, path, inputStream, meta);
     }
 
     @Override

@@ -36,6 +36,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.compress.utils.BoundedInputStream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -75,7 +76,7 @@ public class StorageAccessServiceFile implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
-        this.put(path, inputStream);
+        this.put(path, new BoundedInputStream(inputStream, size));
     }
 
     @Override
