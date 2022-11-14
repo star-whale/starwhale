@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 
 def invoke(args: List[str]) -> Tuple[str, str]:
+    print(args)
     process = subprocess.run(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
     )
