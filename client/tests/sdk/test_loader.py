@@ -11,6 +11,7 @@ from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
+from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
@@ -18,6 +19,7 @@ from starwhale.core.dataset.store import (
     SignedUrlBackend,
     LocalFSStorageBackend,
 )
+from starwhale.api._impl.data_store import RemoteDataStore
 from starwhale.core.dataset.tabular import (
     StandaloneTDSC,
     TabularDatasetRow,
@@ -329,11 +331,16 @@ class TestDataLoader(TestCase):
             f"http://127.0.0.1:1234/project/self/dataset/mnist/version/{version}",
             expected_type=URIType.DATASET,
         )
+
+        os.environ[SWEnv.instance_token] = "123"
         consumption = get_dataset_consumption(self.dataset_uri, session_id="5")
         loader = get_data_loader(dataset_uri, session_consumption=consumption)
         assert isinstance(loader, SWDSBinDataLoader)
         assert loader.kind == DataFormatType.SWDS_BIN
         assert isinstance(loader.session_consumption, StandaloneTDSC)
+        assert isinstance(
+            loader.tabular_dataset._ds_wrapper._data_store, RemoteDataStore
+        )
 
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [

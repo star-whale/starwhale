@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import json
 import atexit
 import base64
@@ -10,7 +9,7 @@ import pathlib
 import binascii
 import importlib
 import threading
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
 
@@ -22,6 +21,7 @@ import pyarrow.parquet as pq  # type: ignore
 from loguru import logger
 from typing_extensions import Protocol
 
+from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
@@ -57,7 +57,7 @@ def _check_move(src: str, dest: str) -> bool:
             return False
 
 
-class SwType(ABC):
+class SwType(metaclass=ABCMeta):
     def __init__(self, name: str, pa_type: pa.DataType) -> None:
         self.name = name
         self.pa_type = pa_type
@@ -752,14 +752,6 @@ def _records_to_table(
     return pa.Table.from_pydict(d, schema=pa_schema)
 
 
-def _get_size(d: Any) -> int:
-    ret = sys.getsizeof(d)
-    if isinstance(d, dict):
-        for v in d.values():
-            ret += sys.getsizeof(v)
-    return ret
-
-
 def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
     new_schema = schema.copy()
     for col, value in record.items():
@@ -921,6 +913,11 @@ class LocalDataStore:
     _instance = None
     _lock = threading.Lock()
 
+    def __str__(self) -> str:
+        return f"LocalDataStore, root:{self.root_path}"
+
+    __repr__ = __str__
+
     @staticmethod
     def get_instance() -> "LocalDataStore":
         with LocalDataStore._lock:
@@ -967,6 +964,7 @@ class LocalDataStore:
             raise RuntimeError(
                 f"invalid key column, expected {table.schema.key_column}, actual {schema.key_column}"
             )
+
         for r in records:
             key = r.get(schema.key_column, None)
             if key is None:
@@ -1057,7 +1055,6 @@ class LocalDataStore:
                         )
                     )
             else:
-                logger.debug(f"scan by disk table{info.name}")
                 iters.append(
                     _scan_table(
                         table_path,
@@ -1090,6 +1087,11 @@ class RemoteDataStore:
 
         self.instance_uri = instance_uri
         self.token = token
+
+    def __str__(self) -> str:
+        return f"RemoteDataStore for {self.instance_uri}"
+
+    __repr__ = __str__
 
     @http_retry
     def update_table(
@@ -1219,7 +1221,7 @@ class DataStore(Protocol):
 
 def get_data_store(instance_uri: str = "", token: str = "") -> DataStore:
     _instance_uri = instance_uri or os.getenv(SWEnv.instance_uri)
-    if _instance_uri is None or _instance_uri == "local":
+    if _instance_uri is None or _instance_uri == STANDALONE_INSTANCE:
         return LocalDataStore.get_instance()
     else:
         token = (
