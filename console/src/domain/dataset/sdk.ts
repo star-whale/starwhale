@@ -150,8 +150,8 @@ export class DatasetObject {
     setDataSrc(projectId: string, datasetVersionName: string, datasetVersionVersionName: string, token: string) {
         const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
             uri: this.uri,
-            offset: this.offset.toString(16),
-            size: this.size.toString(16),
+            offset: this.offset,
+            size: this.size,
             Authorization: token as string,
         })
         this.src = src
