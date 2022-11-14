@@ -27,6 +27,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -146,7 +148,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         }
         projectUrl = HttpUtil.getResourceUrlFromPath(request.getRequestURI(), Resources.PROJECT);
         if (!StrUtil.isEmpty(projectUrl)) {
-            return Set.of(projectUrl);
+            return Set.of(URLDecoder.decode(projectUrl, Charset.defaultCharset()));
         }
         return Set.of(SYSTEM_PROJECT);
     }

@@ -194,6 +194,15 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     }
 
+    @Test
+    public void testFindProjectByNameAndOwner() {
+        ProjectEntity res = projectMapper.findProjectByNameAndOwnerId("pjn", user.getId());
+        validProject(project, user, res);
+
+        res = projectMapper.findProjectByNameAndOwnerName("pxn2", "un12");
+        validProject(project2, user, res);
+    }
+
     private void validProject(ProjectEntity expected, UserEntity user, ProjectEntity actual) {
         Assertions.assertEquals(expected.getId(), actual.getId());
         Assertions.assertEquals(expected.getOwnerId(), actual.getOwnerId());
