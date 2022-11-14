@@ -163,8 +163,6 @@ export default function DatasetVersionFiles() {
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
 
-    console.log('layout', layoutKey)
-
     const [preview, setPreview] = React.useState('')
 
     const $page = React.useMemo(() => {
