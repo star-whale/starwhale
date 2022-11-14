@@ -22,8 +22,6 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -127,7 +125,8 @@ public class ColumnTypeObject extends ColumnType {
             return null;
         }
         if (!(value instanceof Map)) {
-            throw new SwValidationException(ValidSubject.DATASTORE, "value should be of type Map");
+            throw new SwValidationException(ValidSubject.DATASTORE,
+                    "value should be of type Map, but is " + value.getClass());
         }
         var ret = new HashMap<String, Object>();
         //noinspection unchecked
@@ -142,16 +141,27 @@ public class ColumnTypeObject extends ColumnType {
     }
 
     @Override
+    public void fillWalColumnSchema(Wal.ColumnSchema.Builder builder) {
+        builder.setPythonType(this.pythonType)
+                .addAllAttributes(this.attributes.entrySet().stream()
+                        .map(entry -> entry.getValue().newWalColumnSchema(0, entry.getKey()).build())
+                        .collect(Collectors.toList()));
+    }
+
+    @Override
     public Object fromWal(Wal.Column col) {
         if (col.getNullValue()) {
             return null;
         }
-        return col.getObjectValueMap().entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new IllegalArgumentException("invalid attribute " + entry.getKey()))
-                                .fromWal(entry.getValue())));
+        var ret = new HashMap<>();
+        col.getObjectValueMap().forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new IllegalArgumentException("invalid attribute " + k);
+            }
+            ret.put(k, type.fromWal(v));
+        });
+        return ret;
     }
 
     @Override
@@ -161,14 +171,14 @@ public class ColumnTypeObject extends ColumnType {
             return ret.setNullValue(true);
         }
         //noinspection unchecked
-        return ret.putAllObjectValue((((Map<String, ?>) value).entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> Optional.ofNullable(this.attributes.get(entry.getKey()))
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                        "invalid attribute " + entry.getKey()))
-                                .toWal(0, entry.getValue())
-                                .build()))));
+        ((Map<String, ?>) value).forEach((k, v) -> {
+            var type = this.attributes.get(k);
+            if (type == null) {
+                throw new IllegalArgumentException("invalid attribute " + k);
+            }
+            ret.putObjectValue(k, type.toWal(0, v).build());
+        });
+        return ret;
     }
 
     @Override

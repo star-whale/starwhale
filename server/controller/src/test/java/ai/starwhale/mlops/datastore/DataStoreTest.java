@@ -471,7 +471,12 @@ public class DataStoreTest {
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
                                 ColumnSchemaDesc.builder().name("a").type("INT32").build())),
-                List.of(Map.of("k", "2")));
+                List.of(new HashMap<>() {
+                    {
+                        put("k", "2");
+                        put("a", null);
+                    }
+                }));
         this.dataStore.update("t4",
                 new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
@@ -941,32 +946,56 @@ public class DataStoreTest {
 
     @Test
     public void testAllTypes() throws Exception {
-        Map<String, Object> record = new HashMap<>() {
-            {
-                put("key", "x");
-                put("a", "1");
-                put("b", "10");
-                put("c", "1000");
-                put("d", "00100000");
-                put("e", "0000000010000000");
-                put("f", Integer.toHexString(Float.floatToIntBits(1.1f)));
-                put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
-                put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
-                put("i", null);
-                put("j", List.of("0000000a"));
-                put("k", Map.of("a", "0000000b", "b", "0000000c"));
-                put("l", List.of("0000000b"));
-                put("complex", Map.of("a", List.of(List.of("00000001")), "b", List.of(List.of("00000002"))));
-            }
-        };
-        var nullRecord = new HashMap<String, Object>();
-        record.forEach((k, v) -> {
-            if (k.equals("key")) {
-                nullRecord.put(k, "y");
-            } else {
-                nullRecord.put(k, null);
-            }
-        });
+        List<Map<String, Object>> records = List.of(
+                new HashMap<>() {
+                    {
+                        put("key", "x");
+                        put("a", "1");
+                        put("b", "10");
+                        put("c", "1000");
+                        put("d", "00100000");
+                        put("e", "0000000010000000");
+                        put("f", Integer.toHexString(Float.floatToIntBits(1.1f)));
+                        put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
+                        put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
+                        put("i", null);
+                        put("j", List.of("0000000a"));
+                        put("k", Map.of("a", "0000000b", "b", "0000000c"));
+                        put("l", List.of("0000000b"));
+                        put("m", Map.of("01", "0002"));
+                        put("complex", Map.of("a", List.of(List.of("00000001")),
+                                "b", List.of(List.of("00000002")),
+                                "c", Map.of("t", List.of("00000004"))));
+                    }
+                },
+                new HashMap<>() {
+                    {
+                        put("key", "y");
+                        put("a", null);
+                        put("j", new ArrayList<String>() {
+                            {
+                                add(null);
+                            }
+                        });
+                        put("k", new HashMap<String, String>() {
+                            {
+                                put("a", null);
+                                put("b", null);
+                            }
+                        });
+                        put("l", new ArrayList<String>() {
+                            {
+                                add(null);
+                            }
+                        });
+                        put("m", new HashMap<String, String>() {
+                            {
+                                put("01", null);
+                                put("02", null);
+                            }
+                        });
+                    }
+                });
         var columnTypeMap = new HashMap<String, ColumnType>() {
             {
                 put("key", ColumnTypeScalar.STRING);
@@ -982,19 +1011,21 @@ public class DataStoreTest {
                 put("j", new ColumnTypeList(ColumnTypeScalar.INT32));
                 put("k", new ColumnTypeObject("t", Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32)));
                 put("l", new ColumnTypeTuple(ColumnTypeScalar.INT32));
+                put("m", new ColumnTypeMap(ColumnTypeScalar.INT8, ColumnTypeScalar.INT16));
                 put("complex", new ColumnTypeObject("tt", Map.of(
                         "a", new ColumnTypeList(new ColumnTypeTuple(ColumnTypeScalar.INT32)),
-                        "b", new ColumnTypeTuple(new ColumnTypeList(ColumnTypeScalar.INT32))
+                        "b", new ColumnTypeTuple(new ColumnTypeList(ColumnTypeScalar.INT32)),
+                        "c", new ColumnTypeMap(ColumnTypeScalar.STRING, new ColumnTypeList(ColumnTypeScalar.INT32))
                 )));
             }
         };
-        var expected = new RecordList(columnTypeMap, List.of(record, nullRecord), "y");
+        var expected = new RecordList(columnTypeMap, records, "y");
         this.dataStore.update("t",
                 new TableSchemaDesc("key",
                         columnTypeMap.entrySet().stream()
                                 .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
                                 .collect(Collectors.toList())),
-                List.of(record, nullRecord));
+                records);
         assertThat(this.dataStore.scan(DataStoreScanRequest.builder()
                         .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                                 .tableName("t")

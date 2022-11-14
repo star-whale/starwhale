@@ -54,6 +54,8 @@ public class ColumnSchemaDesc {
      * <li>STRING</li>
      * <li>BYTES</li>
      * <li>LIST</li>
+     * <li>TUPLE</li>
+     * <li>MAP</li>
      * <li>OBJECT</li>
      * </ul>
      */
@@ -66,10 +68,22 @@ public class ColumnSchemaDesc {
     private String pythonType;
 
     /**
-     * This field represents the type of elements in array. It is only used when type is ARRAY. The name field of
+     * This field represents the type of elements in the list. It is only used when type is LIST. The name field of
      * elementType is never used.
      */
     private ColumnSchemaDesc elementType;
+
+    /**
+     * This field represents the type of keys in the map. It is only used when type is MAP. The name field of
+     * keyType is never used.
+     */
+    private ColumnSchemaDesc keyType;
+
+    /**
+     * This field represents the type of values in map. It is only used when type is MAP. The name field of
+     * valueType is never used.
+     */
+    private ColumnSchemaDesc valueType;
 
     /**
      * This field describes the attributes of object type.

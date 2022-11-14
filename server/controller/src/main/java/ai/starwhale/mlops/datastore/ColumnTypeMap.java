@@ -19,10 +19,9 @@ package ai.starwhale.mlops.datastore;
 import ai.starwhale.mlops.datastore.parquet.ValueSetter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -34,24 +33,27 @@ import org.apache.parquet.schema.Types;
 
 @Getter
 @EqualsAndHashCode(callSuper = false)
-public class ColumnTypeList extends ColumnType {
+public class ColumnTypeMap extends ColumnType {
 
-    public static final String TYPE_NAME = "LIST";
+    public static final String TYPE_NAME = "MAP";
 
-    protected final ColumnType elementType;
+    private final ColumnType keyType;
 
-    ColumnTypeList(ColumnType elementType) {
-        this.elementType = elementType;
+    private final ColumnType valueType;
+
+    ColumnTypeMap(ColumnType keyType, ColumnType valueType) {
+        this.keyType = keyType;
+        this.valueType = valueType;
     }
 
     @Override
     public String toString() {
-        return "[" + elementType + "]";
+        return "{" + this.keyType + ":" + this.valueType + "}";
     }
 
     @Override
     public String getTypeName() {
-        return ColumnTypeList.TYPE_NAME;
+        return ColumnTypeMap.TYPE_NAME;
     }
 
     @Override
@@ -59,7 +61,8 @@ public class ColumnTypeList extends ColumnType {
         return ColumnSchemaDesc.builder()
                 .name(name)
                 .type(this.getTypeName())
-                .elementType(this.getElementType().toColumnSchemaDesc(null))
+                .keyType(this.keyType.toColumnSchemaDesc(null))
+                .valueType(this.valueType.toColumnSchemaDesc(null))
                 .build();
     }
 
@@ -68,8 +71,9 @@ public class ColumnTypeList extends ColumnType {
         if (other == ColumnTypeScalar.UNKNOWN) {
             return true;
         }
-        return other instanceof ColumnTypeList
-                && this.elementType.isComparableWith(((ColumnTypeList) other).elementType);
+        return other instanceof ColumnTypeMap
+                && this.keyType.equals(((ColumnTypeMap) other).keyType)
+                && this.valueType.isComparableWith(((ColumnTypeMap) other).keyType);
     }
 
     @Override
@@ -77,9 +81,10 @@ public class ColumnTypeList extends ColumnType {
         if (value == null) {
             return null;
         }
-        return ((List<?>) value).stream()
-                .map(element -> this.elementType.encode(element, rawResult))
-                .collect(Collectors.toList());
+        var ret = new HashMap<>();
+        ((Map<?, ?>) value).forEach(
+                (k, v) -> ret.put(this.keyType.encode(k, rawResult), this.valueType.encode(v, rawResult)));
+        return ret;
     }
 
     @Override
@@ -87,18 +92,20 @@ public class ColumnTypeList extends ColumnType {
         if (value == null) {
             return null;
         }
-        if (!(value instanceof List)) {
+        if (!(value instanceof Map)) {
             throw new SwValidationException(ValidSubject.DATASTORE,
-                    "value should be of type List, but is " + value.getClass());
+                    "value should be of type Map, but is " + value.getClass());
         }
-        return ((List<?>) value).stream()
-                .map(this.elementType::decode)
-                .collect(Collectors.toList());
+        var ret = new HashMap<>();
+        ((Map<?, ?>) value).forEach(
+                (k, v) -> ret.put(this.keyType.decode(k), this.valueType.decode(v)));
+        return ret;
     }
 
     @Override
     public void fillWalColumnSchema(Wal.ColumnSchema.Builder builder) {
-        builder.setElementType(this.elementType.newWalColumnSchema(0, ""));
+        builder.setKeyType(this.keyType.newWalColumnSchema(0, ""))
+                .setValueType(this.valueType.newWalColumnSchema(0, ""));
     }
 
     @Override
@@ -106,9 +113,10 @@ public class ColumnTypeList extends ColumnType {
         if (col.getNullValue()) {
             return null;
         }
-        return col.getListValueList().stream()
-                .map(this.elementType::fromWal)
-                .collect(Collectors.toList());
+        var ret = new HashMap<>();
+        col.getMapValueList().forEach(mapEntry -> ret.put(this.keyType.fromWal(mapEntry.getKey()),
+                this.valueType.fromWal(mapEntry.getValue())));
+        return ret;
     }
 
     @Override
@@ -117,41 +125,54 @@ public class ColumnTypeList extends ColumnType {
         if (value == null) {
             return ret.setNullValue(true);
         }
-        return ret.addAllListValue(((List<?>) value).stream()
-                .map(element -> this.elementType.toWal(0, element).build())
-                .collect(Collectors.toList()));
+        ((Map<?, ?>) value).forEach((k, v) -> ret.addMapValue(
+                Wal.Column.MapEntry.newBuilder().setKey(this.keyType.toWal(0, k))
+                        .setValue(this.valueType.toWal(0, v))));
+        return ret;
     }
 
     @Override
     public Types.Builder<?, ? extends Type> buildParquetType() {
         return Types.optionalGroup().addField(
-                Types.repeatedGroup().addField(elementType.toParquetType("element")).named("list"));
+                Types.repeatedGroup()
+                        .addField(this.keyType.toParquetType("key"))
+                        .addField(this.valueType.toParquetType("value"))
+                        .named("map"));
     }
 
     @Override
     public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
-        recordConsumer.startField("list", 0);
-        var listValue = (List<?>) value;
-        for (var element : listValue) {
+        recordConsumer.startField("map", 0);
+        var mapValue = (Map<?, ?>) value;
+        mapValue.forEach((k, v) -> {
             recordConsumer.startGroup();
-            recordConsumer.startField("element", 0);
-            this.elementType.writeParquetValue(recordConsumer, element);
-            recordConsumer.endField("element", 0);
+            recordConsumer.startField("key", 0);
+            this.keyType.writeParquetValue(recordConsumer, k);
+            recordConsumer.endField("key", 0);
+            recordConsumer.startField("value", 1);
+            this.valueType.writeParquetValue(recordConsumer, v);
+            recordConsumer.endField("value", 1);
             recordConsumer.endGroup();
-        }
-        recordConsumer.endField("list", 0);
+        });
+        recordConsumer.endField("map", 0);
     }
 
     @Override
     protected Converter getParquetValueConverter(ValueSetter valueSetter) {
-        var list = new AtomicReference<List<Object>>();
-        var elementConverter = elementType.getParquetConverter(v -> {
-            list.get().add(v);
-        });
-        var listConverter = new GroupConverter() {
+        var map = new AtomicReference<Map<Object, Object>>();
+        var mapConverter = new GroupConverter() {
+            private Object key;
+            private Object value;
+            private final Converter keyConverter = keyType.getParquetConverter(v -> key = v);
+            private final Converter valueConverter = valueType.getParquetConverter(v -> value = v);
+
             @Override
             public Converter getConverter(int i) {
-                return elementConverter;
+                if (i == 0) {
+                    return keyConverter;
+                } else {
+                    return valueConverter;
+                }
             }
 
             @Override
@@ -160,22 +181,23 @@ public class ColumnTypeList extends ColumnType {
 
             @Override
             public void end() {
+                map.get().put(this.key, this.value);
             }
         };
         return new GroupConverter() {
             @Override
             public Converter getConverter(int i) {
-                return listConverter;
+                return mapConverter;
             }
 
             @Override
             public void start() {
-                list.set(new ArrayList<>());
+                map.set(new HashMap<>());
             }
 
             @Override
             public void end() {
-                valueSetter.setValue(list.get());
+                valueSetter.setValue(map.get());
             }
         };
     }

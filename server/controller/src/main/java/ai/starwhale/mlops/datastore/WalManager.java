@@ -331,6 +331,12 @@ public class WalManager extends Thread {
         if (columnSchema.hasElementType()) {
             ret.elementType(WalManager.parseColumnSchema(columnSchema.getElementType()));
         }
+        if (columnSchema.hasKeyType()) {
+            ret.keyType(WalManager.parseColumnSchema(columnSchema.getKeyType()));
+        }
+        if (columnSchema.hasValueType()) {
+            ret.valueType(WalManager.parseColumnSchema(columnSchema.getValueType()));
+        }
         if (columnSchema.getAttributesCount() > 0) {
             ret.attributes(columnSchema.getAttributesList().stream()
                     .map(WalManager::parseColumnSchema)
@@ -349,25 +355,7 @@ public class WalManager extends Thread {
     }
 
     public static Wal.ColumnSchema.Builder convertColumnSchema(ColumnSchema schema) {
-        return WalManager.newColumnSchema(schema.getIndex(), schema.getName(), schema.getType());
-    }
-
-    private static Wal.ColumnSchema.Builder newColumnSchema(
-            int columnIndex, String columnName, ColumnType columnType) {
-        var ret = Wal.ColumnSchema.newBuilder()
-                .setColumnIndex(columnIndex)
-                .setColumnName(columnName)
-                .setColumnType(columnType.getTypeName());
-        if (columnType instanceof ColumnTypeList) {
-            ret.setElementType(
-                    WalManager.newColumnSchema(0, "", ((ColumnTypeList) columnType).getElementType()));
-        } else if (columnType instanceof ColumnTypeObject) {
-            ret.setPythonType(((ColumnTypeObject) columnType).getPythonType());
-            ret.addAllAttributes(((ColumnTypeObject) columnType).getAttributes().entrySet().stream()
-                    .map(entry -> WalManager.newColumnSchema(0, entry.getKey(), entry.getValue()).build())
-                    .collect(Collectors.toList()));
-        }
-        return ret;
+        return schema.getType().newWalColumnSchema(schema.getIndex(), schema.getName());
     }
 
     private enum PopulationStatus {

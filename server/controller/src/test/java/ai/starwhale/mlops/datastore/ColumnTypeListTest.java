@@ -72,6 +72,8 @@ public class ColumnTypeListTest {
 
     @Test
     public void testEncode() {
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(null, false), nullValue());
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(null, true), nullValue());
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), false),
                 is(List.of("00000009", "0000000a", "0000000b")));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).encode(List.of(9, 10, 11), true),
@@ -100,6 +102,7 @@ public class ColumnTypeListTest {
 
     @Test
     public void testDecode() {
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(null), nullValue());
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(List.of("9", "a", "b")),
                 is(List.of(9, 10, 11)));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).decode(new ArrayList<String>() {
@@ -127,16 +130,33 @@ public class ColumnTypeListTest {
     }
 
     @Test
+    public void testNewWalColumnSchema() {
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).newWalColumnSchema(1, "t").build(),
+                is(Wal.ColumnSchema.newBuilder()
+                        .setColumnIndex(1)
+                        .setColumnName("t")
+                        .setColumnType("LIST")
+                        .setElementType(Wal.ColumnSchema.newBuilder().setColumnType("INT32"))
+                        .build()));
+    }
+
+    @Test
     public void testFromAndToWal() {
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).toWal(-1, List.of(9, 10, 11)).getIndex(), is(-1));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).toWal(10, List.of(9, 10, 11)).getIndex(), is(10));
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).fromWal(
                         new ColumnTypeList(ColumnTypeScalar.INT32).toWal(0, null).build()),
                 nullValue());
-
         assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).fromWal(
                         new ColumnTypeList(ColumnTypeScalar.INT32).toWal(0, List.of(9, 10, 11)).build()),
                 is(List.of(9, 10, 11)));
+        var nullList = new ArrayList<Integer>();
+        nullList.add(9);
+        nullList.add(null);
+        nullList.add(11);
+        assertThat(new ColumnTypeList(ColumnTypeScalar.INT32).fromWal(
+                        new ColumnTypeList(ColumnTypeScalar.INT32).toWal(0, nullList).build()),
+                is(nullList));
     }
 
 }

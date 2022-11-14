@@ -242,6 +242,16 @@ public class ColumnTypeScalarTest {
     }
 
     @Test
+    public void testNewWalColumnSchema() {
+        assertThat(ColumnTypeScalar.INT32.newWalColumnSchema(1, "t").build(),
+                is(Wal.ColumnSchema.newBuilder()
+                        .setColumnIndex(1)
+                        .setColumnName("t")
+                        .setColumnType("INT32")
+                        .build()));
+    }
+
+    @Test
     public void testFromAndToWal() {
         assertThat(ColumnTypeScalar.INT32.toWal(-1, 9).getIndex(), is(-1));
         assertThat(ColumnTypeScalar.INT32.toWal(10, 9).getIndex(), is(10));
