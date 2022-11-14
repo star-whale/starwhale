@@ -61,7 +61,7 @@ public interface DataReadLogMapper {
     int updateToAssigned(DataReadLogEntity dataBlock);
 
     class UpdateToProcessedSqlProvider {
-        public static String updateToProcessedSql(String sessionId,
+        public static String updateToProcessedSql(Long sessionId,
                                                   String consumerId,
                                                   String start,
                                                   String end,
@@ -81,39 +81,40 @@ public interface DataReadLogMapper {
     }
 
     @UpdateProvider(value = UpdateToProcessedSqlProvider.class, method = "updateToProcessedSql")
-    int updateToProcessed(String sessionId, String consumerId, String start,
+    int updateToProcessed(Long sessionId, String consumerId, String start,
                           String end, String status);
 
     @Update("UPDATE dataset_read_log SET "
             + "consumer_id=null "
-            + "WHERE consumer_id=#{consumerId} and status=#{status}")
-    int updateToUnAssigned(String consumerId, String status);
+            + "WHERE session_id=#{sessionId} and consumer_id=#{consumerId} and status=#{status}")
+    int updateToUnAssigned(Long sessionId, String consumerId, String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and (consumer_id is null or consumer_id = '') and status=#{status} "
             + "ORDER BY id "
             + "LIMIT 1")
-    DataReadLogEntity selectTop1UnAssigned(String sessionId, String status);
+    DataReadLogEntity selectTop1UnAssigned(Long sessionId, String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and status=#{status} and consumer_id is not null "
             + "and TIMESTAMPDIFF(MICROSECOND, assigned_time, SYSDATE()) > #{microsecondTimeout} "
             + "ORDER BY id "
             + "LIMIT 1")
-    DataReadLogEntity selectTop1TimeoutData(String sessionId, String status, long microsecondTimeout);
+    DataReadLogEntity selectTop1TimeoutData(Long sessionId, String status, long microsecondTimeout);
 
     @Select("SELECT MAX(TIMESTAMPDIFF(MICROSECOND, assigned_time, finished_time)) from dataset_read_log "
             + "WHERE session_id=#{sessionId} and status=#{status} ")
-    long selectMaxProcessedMicrosecondTime(String sessionId, String status);
+    long selectMaxProcessedMicrosecondTime(Long sessionId, String status);
 
     @Select("SELECT * from dataset_read_log "
-            + "WHERE session_id=#{sessionId} and status=#{status} ")
+            + "WHERE session_id in "
+            + "(SELECT id from dataset_read_session where session_id=#{sessionId}) and status=#{status} ")
     List<DataReadLogEntity> selectByStatus(String sessionId, String status);
 
     @Select("SELECT * from dataset_read_log WHERE id=#{id} ")
     DataReadLogEntity selectOne(Long id);
 
     @Select("SELECT sum(assigned_num) from dataset_read_log "
-            + "WHERE session_id=#{sessionId} ")
+            + "WHERE session_id in (SELECT id from dataset_read_session where session_id=#{sessionId})")
     int totalAssignedNum(String sessionId);
 }

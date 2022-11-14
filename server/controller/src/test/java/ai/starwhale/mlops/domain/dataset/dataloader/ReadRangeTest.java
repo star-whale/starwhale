@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 public class ReadRangeTest {
     private static DataLoader dataLoader;
@@ -50,18 +51,16 @@ public class ReadRangeTest {
         sessionDao = mock(SessionDao.class);
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
-        DataReadManager dataReadManager = new DataReadManager(sessionDao, dataReadLogDao, dataRangeProvider, 1);
+        DataReadManager dataReadManager = new DataReadManager(
+                sessionDao, dataReadLogDao, dataRangeProvider, 1);
         dataLoader = new DataLoader(dataReadManager);
     }
 
     @Test
     public void testGenerateRange() {
         dataRangeProvider.setMaxBatchSize(9);
-        var sessionId = "1-mock";
-        var session = Session.builder()
-                .id(sessionId)
-                .datasetName("test-name")
-                .datasetVersion("test-version")
+
+        var request = QueryDataIndexRequest.builder()
                 .tableName("test-table-name")
                 .start("0000-000")
                 .startInclusive(true)
@@ -123,26 +122,12 @@ public class ReadRangeTest {
                     ), "0000-010"
         ));
 
-        var dataRanges = dataRangeProvider.returnDataIndex(QueryDataIndexRequest.builder()
-                    .tableName(session.getTableName())
-                    .batchSize(session.getBatchSize())
-                    .start(session.getStart())
-                    .startInclusive(session.isStartInclusive())
-                    .end(session.getEnd())
-                    .endInclusive(session.isEndInclusive())
-                    .build());
+        var dataRanges = dataRangeProvider.returnDataIndex(request);
         assertThat("number", dataRanges.size() == 4);
         verify(dataStore, times(2)).scan(any());
 
-        session.setBatchSize(6);
-        dataRanges = dataRangeProvider.returnDataIndex(QueryDataIndexRequest.builder()
-            .tableName(session.getTableName())
-            .batchSize(session.getBatchSize())
-            .start(session.getStart())
-            .startInclusive(session.isStartInclusive())
-            .end(session.getEnd())
-            .endInclusive(session.isEndInclusive())
-            .build());
+        request.setBatchSize(6);
+        dataRanges = dataRangeProvider.returnDataIndex(request);
 
         assertThat("number", dataRanges.size() == 2);
         verify(dataStore, times(4)).scan(any());
@@ -150,14 +135,18 @@ public class ReadRangeTest {
 
     @Test
     public void testNextDataRange() {
+        var sid = 2L;
         var sessionId = "1-session";
+        var datasetName = "test-name";
+        var datasetVersion = "test-version";
+        var tableName = "test-table-name";
         var consumerId = "1";
         var request = DataReadRequest.builder()
                     .sessionId(sessionId)
                     .consumerId(consumerId)
-                    .datasetName("test-name")
-                    .datasetVersion("test-version")
-                    .tableName("test-table-name")
+                    .tableName(tableName)
+                    .datasetName(datasetName)
+                    .datasetVersion(datasetVersion)
                     .processedData(List.of())
                     .batchSize(2)
                     .start("0000-000")
@@ -167,12 +156,17 @@ public class ReadRangeTest {
                     .build();
 
         // case 1: generate
-        given(sessionDao.selectById(sessionId))
+        given(sessionDao.selectOne(sessionId, datasetName, datasetVersion))
                 .willReturn(null);
-        given(dataReadLogDao.selectTop1UnAssignedData(sessionId))
+        given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
+            var session = invocation.getArgument(0, Session.class);
+            session.setId(sid);
+            return true;
+        });
+        given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()
                     .id(1L)
-                    .sessionId(sessionId)
+                    .sessionId(sid)
                     .start("0000-000").startInclusive(true)
                     .end("0000-001").endInclusive(true)
                     .size(2)
@@ -214,7 +208,7 @@ public class ReadRangeTest {
         assertThat("get data range", dataRange,
                     is(DataReadLog.builder()
                         .id(1L)
-                        .sessionId(sessionId)
+                        .sessionId(sid)
                         .consumerId(consumerId) // update consumer id
                         .start("0000-000").startInclusive(true)
                         .end("0000-001").endInclusive(true)
@@ -233,7 +227,7 @@ public class ReadRangeTest {
                     DataIndexDesc.builder().start("0000-000").end("0000-001").build()
         ));
         var session = Session.builder()
-                .id(sessionId)
+                .id(sid)
                 .datasetName("test-name")
                 .datasetVersion("test-version")
                 .tableName("test-table-name")
@@ -244,12 +238,12 @@ public class ReadRangeTest {
                 .batchSize(2)
                 .build();
 
-        given(sessionDao.selectById(sessionId))
+        given(sessionDao.selectOne(sessionId, datasetName, datasetVersion))
                 .willReturn(session);
-        given(dataReadLogDao.selectTop1UnAssignedData(sessionId))
+        given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()
                     .id(2L)
-                    .sessionId(sessionId)
+                    .sessionId(sid)
                     .start("0000-002").startInclusive(true)
                     .end("0000-003").endInclusive(true)
                     .size(2)
@@ -261,7 +255,7 @@ public class ReadRangeTest {
         assertThat("get data range", dataRange,
                 is(DataReadLog.builder()
                     .id(2L)
-                    .sessionId(sessionId)
+                    .sessionId(sid)
                     .consumerId(consumerId)
                     .start("0000-002").startInclusive(true)
                     .end("0000-003").endInclusive(true)
@@ -272,7 +266,7 @@ public class ReadRangeTest {
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
         verify(dataReadLogDao, times(1))
-                .updateToProcessed(sessionId,  consumerId, "0000-000", "0000-001");
+                .updateToProcessed(sid,  consumerId, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());
     }
 }

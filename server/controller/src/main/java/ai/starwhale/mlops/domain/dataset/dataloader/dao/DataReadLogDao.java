@@ -53,26 +53,26 @@ public class DataReadLogDao {
         return mapper.updateToAssigned(converter.convert(dataReadLog)) > 0;
     }
 
-    public boolean updateToProcessed(String sessionId, String consumerId, String start, String end) {
-        return mapper.updateToProcessed(sessionId, consumerId, start, end,
+    public boolean updateToProcessed(Long sid, String consumerId, String start, String end) {
+        return mapper.updateToProcessed(sid, consumerId, start, end,
                 Status.DataStatus.PROCESSED.name()) > 0;
     }
 
-    public boolean updateUnProcessedToUnAssigned(String consumerId) {
-        return mapper.updateToUnAssigned(consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
+    public boolean updateUnProcessedToUnAssigned(Long sid, String consumerId) {
+        return mapper.updateToUnAssigned(sid, consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
 
-    public DataReadLog selectTop1UnAssignedData(String sessionId) {
-        var entity = mapper.selectTop1UnAssigned(sessionId, Status.DataStatus.UNPROCESSED.name());
+    public DataReadLog selectTop1UnAssignedData(Long sid) {
+        var entity = mapper.selectTop1UnAssigned(sid, Status.DataStatus.UNPROCESSED.name());
         return entity == null ? null : converter.revert(entity);
     }
 
-    public DataReadLog selectTop1TimeoutData(String sessionId, long secondTimeout) {
-        var entity = mapper.selectTop1TimeoutData(sessionId, Status.DataStatus.UNPROCESSED.name(), secondTimeout);
+    public DataReadLog selectTop1TimeoutData(Long sid, long secondTimeout) {
+        var entity = mapper.selectTop1TimeoutData(sid, Status.DataStatus.UNPROCESSED.name(), secondTimeout);
         return entity == null ? null : converter.revert(entity);
     }
 
-    public long getMaxProcessedMicrosecondTime(String sessionId) {
-        return mapper.selectMaxProcessedMicrosecondTime(sessionId, Status.DataStatus.PROCESSED.name());
+    public long getMaxProcessedMicrosecondTime(Long sid) {
+        return mapper.selectMaxProcessedMicrosecondTime(sid, Status.DataStatus.PROCESSED.name());
     }
 }

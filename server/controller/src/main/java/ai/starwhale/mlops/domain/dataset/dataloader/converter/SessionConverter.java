@@ -29,6 +29,7 @@ public class SessionConverter implements Convertor<Session, SessionEntity> {
     public SessionEntity convert(Session session) throws ConvertException {
         return SessionEntity.builder()
             .id(session.getId())
+            .sessionId(session.getSessionId())
             .batchSize(session.getBatchSize())
             .datasetName(session.getDatasetName())
             .datasetVersion(session.getDatasetVersion())
@@ -45,6 +46,7 @@ public class SessionConverter implements Convertor<Session, SessionEntity> {
     public Session revert(SessionEntity session) throws ConvertException {
         return Session.builder()
             .id(session.getId())
+            .sessionId(session.getSessionId())
             .batchSize(session.getBatchSize())
             .datasetName(session.getDatasetName())
             .datasetVersion(session.getDatasetVersion())

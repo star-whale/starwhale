@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, List
 
 from . import CLI
 from .base.invoke import invoke
@@ -11,7 +11,7 @@ class Evaluation:
     def run(
         self,
         model: str,
-        dataset: str,
+        datasets: List[str],
         project: str = "self",
         version: str = "",
         runtime: str = "",
@@ -28,7 +28,7 @@ class Evaluation:
         :param project:
         :param version: Evaluation job version
         :param model: model uri or model.yaml dir path  [required]
-        :param dataset: dataset uri, one or more  [required]
+        :param datasets: dataset uri, one or more  [required]
         :param runtime: runtime uri
         :param name: job name
         :param desc: job description
@@ -40,7 +40,9 @@ class Evaluation:
         :param resource_pool: [ONLY Cloud] which nodes should job run on
         :return:
         """
-        _args = [CLI, self._cmd, "run", "--model", model, "--dataset", dataset]
+        _args = [CLI, self._cmd, "run", "--model", model]
+        for ds in datasets:
+            _args.extend(["--dataset", ds])
         if version:
             _args.extend(["--version", version])
         if runtime:
