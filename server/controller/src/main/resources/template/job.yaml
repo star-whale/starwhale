@@ -12,7 +12,7 @@ spec:
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: ghcr.io/star-whale/base:latest
+          image: docker-registry.starwhale.cn/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
