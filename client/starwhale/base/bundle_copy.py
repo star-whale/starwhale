@@ -29,12 +29,11 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, InstanceType, get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.store import RuntimeStorage
-from starwhale.base.uricomponents.project import Project
 from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 TMP_FILE_BUFSIZE = 8192
@@ -65,7 +64,7 @@ class BundleCopy(CloudRequestMixed):
         **kw: t.Any,
     ) -> None:
         self.src_uri = Resource(src_uri, typ=ResourceType[typ]).to_uri()
-        self.dest_uri = Project(dest_uri).to_uri()
+        self.dest_uri = Resource(dest_uri, typ=ResourceType[typ]).to_uri()
         self.typ = typ
         self.force = force
 
@@ -101,14 +100,13 @@ class BundleCopy(CloudRequestMixed):
         if self.bundle_version == "":
             raise Exception(f"must specify version src:({self.bundle_version})")
 
-    def _check_cloud_obj_existed(self, uri: URI) -> bool:
+    def _check_cloud_obj_existed(self, instance_uri: URI) -> bool:
         # TODO: add more params for project
         # TODO: tune controller api, use unified params name
-        url = self._get_remote_instance_rc_url(True)
         ok, _ = self.do_http_request_simple_ret(
-            path=url,
+            path=self._get_remote_instance_rc_url(for_head=True),
             method=HTTPMethod.HEAD,
-            instance_uri=uri,
+            instance_uri=instance_uri,
             ignore_status_codes=[HTTPStatus.NOT_FOUND],
         )
         return ok
@@ -117,11 +115,12 @@ class BundleCopy(CloudRequestMixed):
         if uri.instance_type != InstanceType.STANDALONE:
             raise NoSupportError(f"{uri} to get target dir path")
 
+        resource_name = uri.object.name or self.bundle_name
         return (
             self._sw_config.rootdir
             / uri.project
             / self.typ
-            / self.bundle_name
+            / resource_name
             / self.bundle_version[:VERSION_PREFIX_CNT]
             / f"{self.bundle_version}{get_bundle_type_by_uri(self.typ)}"
         )
@@ -133,11 +132,25 @@ class BundleCopy(CloudRequestMixed):
             return self._get_target_path(uri).exists()
 
     def _get_remote_instance_rc_url(self, for_head: bool = False) -> str:
-        _obj = self.src_uri.object
-        project = self.dest_uri.project
+        version = self.src_uri.object.version
+        if not version:
+            raise FieldTypeOrValueError(
+                f"cannot fetch version from src uri:{self.src_uri}"
+            )
+
         if self.src_uri.instance_type == InstanceType.CLOUD:
             project = self.src_uri.project
-        base = [f"/project/{project}/{self.typ}/{_obj.name}/version/{_obj.version}"]
+            resource_name = self.src_uri.object.name
+        else:
+            project = self.dest_uri.project
+            resource_name = self.dest_uri.object.name or self.src_uri.object.name
+
+        if not resource_name:
+            raise FieldTypeOrValueError(
+                f"cannot fetch {self.typ} resource name from src_uri({self.src_uri}) or dest_uri({self.dest_uri})"
+            )
+
+        base = [f"/project/{project}/{self.typ}/{resource_name}/version/{version}"]
         if not for_head:
             # uri for head request contains no 'file'
             base.append("file")
