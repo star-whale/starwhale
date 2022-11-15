@@ -52,6 +52,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
+from starwhale.api._impl.data_store import STRING, _get_type, SwObjectType
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
@@ -78,7 +79,7 @@ _mnist_label_path = _mnist_dir / "label"
 _TGenItem = t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]
 
 
-def iter_complex_annotations() -> _TGenItem:
+def iter_complex_annotations_swds() -> _TGenItem:
     for i in range(0, 15):
         annotations = {
             "index": i,
@@ -97,6 +98,10 @@ def iter_complex_annotations() -> _TGenItem:
                 area=i * 10,
                 bbox=BoundingBox(i, i, i + 1, i + 10),
                 iscrowd=1,
+            ),
+            "artifact_s3_link": Link(
+                f"s3://admin:123@localhost:9000/users/{i}_mask.png",
+                data_type=Image(display_name=f"{i}_mask", mime_type=MIMEType.PNG),
             ),
         }
         yield f"idx-{i}", Text(f"data-{i}"), annotations
@@ -164,7 +169,16 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
                 with_local_fs_data=True,
             )
             _label = struct.unpack(">B", label_file.read(1))[0]
-            yield _data, {"label": _label}
+            _local_link = Link(
+                uri=_mnist_label_path,
+                with_local_fs_data=True,
+            )
+            yield _data, {
+                "label": _label,
+                "link": _local_link,
+                "list_link": [_local_link],
+                "dict_link": {"key": _local_link},
+            }
             offset += image_size
 
 
@@ -207,7 +221,7 @@ class TestDatasetCopy(BaseTestCase):
             status_code=HTTPStatus.OK,
         )
 
-        _cls = create_generic_cls(iter_complex_annotations)
+        _cls = create_generic_cls(iter_complex_annotations_swds)
         workdir = Path(self.local_storage, "user", "workdir")
 
         dataset_dir = (
@@ -246,7 +260,7 @@ class TestDatasetCopy(BaseTestCase):
         assert {
             "type": "OBJECT",
             "attributes": [
-                {"type": "STRING", "name": "type"},
+                {"type": "STRING", "name": "_type"},
                 {"type": "INT64", "name": "x"},
                 {"type": "INT64", "name": "y"},
                 {"type": "INT64", "name": "width"},
@@ -298,7 +312,7 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "type": "OBJECT",
                             "attributes": [
-                                {"type": "STRING", "name": "type"},
+                                {"type": "STRING", "name": "_type"},
                                 {"type": "INT64", "name": "x"},
                                 {"type": "INT64", "name": "y"},
                                 {"type": "INT64", "name": "width"},
@@ -378,6 +392,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
         self.data_file_sign = blake2b_file(_mnist_data_path)
+        self.label_file_sign = blake2b_file(_mnist_label_path)
 
     def test_user_raw_with_id_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_user_raw_item_with_id)
@@ -509,7 +524,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert ids[9]["id"] == "mnist-link-9"
 
     def test_complex_annotation(self) -> None:
-        _cls = create_generic_cls(iter_complex_annotations)
+        _cls = create_generic_cls(iter_complex_annotations_swds)
         name = "complex_annotations"
         version = "123"
         project = "self"
@@ -532,6 +547,8 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert isinstance(annotations["coco"], COCOObjectAnnotation)
         assert annotations["coco"].bbox == [0, 0, 1, 10]
         assert isinstance(annotations["list_bbox"][0], BoundingBox)
+        assert isinstance(annotations["artifact_s3_link"], Link)
+        assert isinstance(annotations["artifact_s3_link"].data_type, Image)
 
     def test_user_raw_workflow(self) -> None:
         with UserRawMNIST(
@@ -555,6 +572,13 @@ class TestDatasetBuildExecutor(BaseTestCase):
         )
         assert link_path.exists()
 
+        label_link_path = (
+            Path(self.workdir)
+            / "data"
+            / self.label_file_sign[: DatasetStorage.short_sign_cnt]
+        )
+        assert label_link_path.exists()
+
         data_path = (
             Path(self.object_store_dir) / self.data_file_sign[:2] / self.data_file_sign
         ).resolve()
@@ -567,6 +591,9 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.id == 0
         assert meta.data_offset == 16
         assert meta.data_uri == self.data_file_sign
+        link: Link = meta.annotations["link"]
+        assert link.uri == str(_mnist_label_path)
+        assert link.local_fs_uri == self.label_file_sign
 
     def test_swds_bin_id_workflow(self) -> None:
         with MNISTBuildWithIDExecutor(
@@ -689,6 +716,42 @@ class TestDatasetType(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
+    def test_annotation_swobj(self) -> None:
+        objs = [
+            ClassLabel([1, 2, 3]),
+            Binary(b"test"),
+            Image(
+                "path/to/file",
+                display_name="t",
+                shape=[28, 28, 3],
+                mime_type=MIMEType.PNG,
+            ),
+            GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]),
+            Audio("test/1.wav"),
+            Video("test/1.avi"),
+            BoundingBox(1, 2, 3, 4),
+            Text("test"),
+            Link(
+                "path/to/file",
+                with_local_fs_data=True,
+                data_type=Image(display_name="image"),
+            ),
+            COCOObjectAnnotation(
+                id=1,
+                image_id=1,
+                category_id=1,
+                segmentation=["1", "2", "3"],
+                area=100,
+                bbox=BoundingBox(1, 2, 3, 4),
+                iscrowd=1,
+            ),
+        ]
+
+        for obj in objs:
+            typ = _get_type(obj)
+            assert isinstance(typ, SwObjectType)
+            assert typ.attrs["_type"] == STRING
+
     def test_binary(self) -> None:
         b = Binary(b"test")
         assert b.to_bytes() == b"test"
@@ -713,6 +776,16 @@ class TestDatasetType(TestCase):
         assert _asdict["shape"] == [28, 28, 3]
         assert json.loads(json.dumps(_asdict))["_type"] == "image"
 
+        with self.assertRaises(RuntimeError):
+            _get_type(img)
+
+        img = Image(
+            "path/to/file", display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG
+        )
+        typ = _get_type(img)
+        assert isinstance(typ, SwObjectType)
+        assert typ.attrs["mask_uri"] == STRING
+
         fp = io.BytesIO(b"test")
         img = GrayscaleImage(fp, shape=[28, 28, 1]).carry_raw_data()
         assert img.to_bytes() == b"test"
@@ -721,6 +794,14 @@ class TestDatasetType(TestCase):
         assert _asdict["_mime_type"] == MIMEType.GRAYSCALE.value
         assert _asdict["shape"] == [28, 28, 1]
         assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
+        with self.assertRaises(RuntimeError):
+            _get_type(img)
+
+        self.fs.create_file("path/to/file", contents="")
+        img = GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]).carry_raw_data()
+        typ = _get_type(img)
+        assert isinstance(typ, SwObjectType)
+        assert typ.attrs["_raw_base64_data"] == STRING
 
     def test_audio(self) -> None:
         fp = "/test/1.wav"
@@ -730,6 +811,8 @@ class TestDatasetType(TestCase):
         assert _asdict["_mime_type"] == MIMEType.WAV.value
         assert _asdict["_type"] == "audio"
         assert audio.to_bytes() == b"test"
+        typ = _get_type(audio)
+        assert isinstance(typ, SwObjectType)
 
     def test_video(self) -> None:
         fp = "/test/1.avi"
@@ -744,7 +827,7 @@ class TestDatasetType(TestCase):
         bbox = BoundingBox(1, 2, 3, 4)
         assert bbox.to_list() == [1, 2, 3, 4]
         _asdict = json.loads(json.dumps(bbox.asdict()))
-        assert _asdict["type"] == "bounding_box"
+        assert _asdict["_type"] == "bounding_box"
         assert _asdict["x"] == 1
         assert _asdict["y"] == 2
         assert _asdict["width"] == 3
@@ -761,24 +844,25 @@ class TestDatasetType(TestCase):
         assert text.to_str() == "test"
 
     def test_coco(self) -> None:
+        # TODO: add segmentation dict test
         coco = COCOObjectAnnotation(
             id=1,
             image_id=1,
             category_id=1,
-            segmentation={"counts": "abcd"},
+            segmentation=["1", "2", "3"],
             area=100,
             bbox=BoundingBox(1, 2, 3, 4),
             iscrowd=1,
         )
         _asdict = json.loads(json.dumps(coco.asdict()))
-        assert _asdict["type"] == "coco_object_annotation"
+        assert _asdict["_type"] == "coco_object_annotation"
 
         with self.assertRaises(FieldTypeOrValueError):
             coco = COCOObjectAnnotation(
                 id=1,
                 image_id=1,
                 category_id=1,
-                segmentation={"counts": "abcd"},
+                segmentation=["1", "2", "3"],
                 area=100,
                 bbox=BoundingBox(1, 2, 3, 4),
                 iscrowd=3,
@@ -787,7 +871,7 @@ class TestDatasetType(TestCase):
     def test_class_label(self) -> None:
         cl = ClassLabel([1, 2, 3])
         _asdict = json.loads(json.dumps(cl.asdict()))
-        assert _asdict["type"] == "class_label"
+        assert _asdict["_type"] == "class_label"
         assert _asdict["names"] == [1, 2, 3]
 
         cl = ClassLabel.from_num_classes(3)
@@ -820,6 +904,63 @@ class TestDatasetType(TestCase):
             b"link", data_type={"type": "link", "data_type": {"type": "audio"}}
         )
         assert isinstance(link_audio, Audio)
+
+        video = BaseArtifact.reflect(b"video", data_type={"type": "video"})
+        assert isinstance(video, Video)
+
+    @patch("starwhale.core.dataset.store.boto3.resource")
+    def test_link_standalone(self, m_boto3: MagicMock) -> None:
+        link = Link(
+            uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
+            data_type=Image(display_name="test"),
+        )
+        as_type = link.astype()
+        assert as_type["type"] == "link"
+        assert as_type["data_type"]["type"] == ArtifactType.Image
+        assert as_type["data_type"]["display_name"] == "test"
+
+        raw_content = b"123"
+        m_boto3.return_value = MagicMock(
+            **{
+                "Object.return_value": MagicMock(
+                    **{
+                        "get.return_value": {
+                            "Body": MagicMock(**{"read.return_value": raw_content}),
+                            "ContentLength": len(raw_content),
+                        }
+                    }
+                )
+            }
+        )
+
+        content = link.to_bytes("mnist/version/latest")
+        assert content == raw_content
+
+    @Mocker()
+    def test_link_cloud(self, rm: Mocker) -> None:
+        link = Link(
+            uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
+            data_type=Image(display_name="test"),
+        )
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/version/latest/sign-link",
+            json={"data": "http://127.0.0.1:9001/signed_url"},
+        )
+
+        raw_content = b"123"
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:9001/signed_url",
+            content=raw_content,
+        )
+
+        content = link.to_bytes(
+            "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
+        )
+        assert content == raw_content
 
 
 class TestDatasetSessionConsumption(TestCase):

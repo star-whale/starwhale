@@ -7,54 +7,56 @@ from PIL import Image as PILImage
 from pycocotools import mask as coco_mask
 
 from starwhale import (
+    Link,
     Image,
     MIMEType,
-    SwObject,
     BoundingBox,
-    BuildExecutor,
     COCOObjectAnnotation,
+    UserRawBuildExecutor,
 )
 
 
-class ImageInfo(SwObject):
-    def __init__(self, index=0, height=0, width=0, name="") -> None:
-        self.index = index
-        self.height = height
-        self.width = width
-        self.name = name
-
-
-class PFPDatasetBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+class PFPDatasetBuildExecutor(UserRawBuildExecutor):
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
         self.object_id = 1
         for idx, name in enumerate(sorted(names)):
-            data_fpath = root_dir / "PNGImages" / f"{name}.png"
-            mask_fpath = root_dir / "PedMasks" / f"{name}_mask.png"
+            data_fname = f"PNGImages/{name}.png"
+            mask_fname = f"PedMasks/{name}_mask.png"
+            mask_fpath = root_dir / mask_fname
+            data_fpath = root_dir / data_fname
             height, width = self._get_image_shape(data_fpath)
             coco_annotations = self._make_coco_annotations(mask_fpath, idx)
-            # TODO: use annotation link to store mask
             annotations = {
-                "mask": Image(
-                    str(mask_fpath),
-                    display_name=name,
-                    mime_type=MIMEType.PNG,
-                    shape=(height, width, 3),
-                    as_mask=True,
-                    mask_uri=name,
-                ).carry_raw_data(),
-                "image": ImageInfo(idx, height, width, name),
+                "mask": Link(
+                    mask_fpath,
+                    with_local_fs_data=True,
+                    data_type=Image(
+                        display_name=name,
+                        mime_type=MIMEType.PNG,
+                        shape=(height, width, 3),
+                        as_mask=True,
+                        mask_uri=name,
+                    ),
+                ),
+                "image_index": idx,
+                "image_height": height,
+                "image_widht": width,
+                "image_name": name,
                 "object_nums": len(coco_annotations),
                 "annotations": coco_annotations,
             }
-            data = Image(
+            data = Link(
                 data_fpath,
-                display_name=name,
-                mime_type=MIMEType.PNG,
-                shape=(height, width, 3),
+                with_local_fs_data=True,
+                data_type=Image(
+                    display_name=name,
+                    mime_type=MIMEType.PNG,
+                    shape=(height, width, 3),
+                ),
             )
-            yield data, annotations
+            yield data_fname, data, annotations
 
     def _get_image_shape(self, fpath: Path) -> t.Tuple[int, int]:
         with PILImage.open(str(fpath)) as f:

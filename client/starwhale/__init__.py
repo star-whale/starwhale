@@ -10,6 +10,7 @@ from starwhale.api.dataset import (
     Image,
     Video,
     Binary,
+    LinkAuth,
     LinkType,
     MIMEType,
     ClassLabel,
@@ -25,7 +26,6 @@ from starwhale.api.dataset import (
     UserRawBuildExecutor,
 )
 from starwhale.api.evaluation import Evaluation
-from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import get_dataset_consumption
 
 __all__ = [
@@ -35,12 +35,12 @@ __all__ = [
     "URI",
     "URIType",
     "step",
-    "SwObject",
     "pass_context",
     "Context",
     "Evaluation",
     "get_data_loader",
     "Link",
+    "LinkAuth",
     "DefaultS3LinkAuth",
     "LocalFSLinkAuth",
     "S3LinkAuth",

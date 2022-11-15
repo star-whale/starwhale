@@ -226,7 +226,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=2,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://starwhale/project/2/dataset/11/{version}",
+                data_uri=f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},
