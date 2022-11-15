@@ -81,6 +81,15 @@ _TGenItem = t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]
 
 def iter_complex_annotations_swds() -> _TGenItem:
     for i in range(0, 15):
+        coco = COCOObjectAnnotation(
+            id=i,
+            image_id=i,
+            category_id=i,
+            area=i * 10,
+            bbox=BoundingBox(i, i, i + 1, i + 10),
+            iscrowd=1,
+        )
+        coco.segmentation = [1, 2, 3, 4]
         annotations = {
             "index": i,
             "label_str": f"label-{i}",
@@ -90,15 +99,7 @@ def iter_complex_annotations_swds() -> _TGenItem:
             "link": DataStoreRawLink(str(i), f"display-{i}"),
             "bbox": BoundingBox(i, i, i + 1, i + 2),
             "list_bbox": [BoundingBox(j, j, i + 1, i + 2) for j in range(i + 2)],
-            "coco": COCOObjectAnnotation(
-                id=i,
-                image_id=i,
-                category_id=i,
-                segmentation=[1, 2, 3, 4],
-                area=i * 10,
-                bbox=BoundingBox(i, i, i + 1, i + 10),
-                iscrowd=1,
-            ),
+            "coco": coco,
             "artifact_s3_link": Link(
                 f"s3://admin:123@localhost:9000/users/{i}_mask.png",
                 data_type=Image(display_name=f"{i}_mask", mime_type=MIMEType.PNG),
@@ -740,7 +741,6 @@ class TestDatasetType(TestCase):
                 id=1,
                 image_id=1,
                 category_id=1,
-                segmentation=["1", "2", "3"],
                 area=100,
                 bbox=BoundingBox(1, 2, 3, 4),
                 iscrowd=1,
@@ -844,25 +844,43 @@ class TestDatasetType(TestCase):
         assert text.to_str() == "test"
 
     def test_coco(self) -> None:
-        # TODO: add segmentation dict test
         coco = COCOObjectAnnotation(
             id=1,
             image_id=1,
             category_id=1,
-            segmentation=["1", "2", "3"],
             area=100,
             bbox=BoundingBox(1, 2, 3, 4),
             iscrowd=1,
         )
+        polygon = ["1", "2", "3", "4"]
+        assert coco.segmentation is None
+        coco.segmentation = polygon
         _asdict = json.loads(json.dumps(coco.asdict()))
         assert _asdict["_type"] == "coco_object_annotation"
+        assert coco.segmentation == coco._segmentation_polygon == polygon
+
+        coco_dict = COCOObjectAnnotation(
+            id=2,
+            image_id=2,
+            category_id=2,
+            area=100,
+            bbox=BoundingBox(1, 2, 3, 4),
+            iscrowd=1,
+        )
+        rle = {"size": [100, 200], "counts": "abcd"}
+        assert coco_dict.segmentation is None
+        coco_dict.segmentation = rle
+        _asdict = json.loads(json.dumps(coco.asdict()))
+        assert _asdict["_type"] == "coco_object_annotation"
+        assert coco_dict.segmentation == rle
+        assert coco_dict._segmentation_rle_counts == rle["counts"]
+        assert coco_dict._segmentation_rle_size == rle["size"]
 
         with self.assertRaises(FieldTypeOrValueError):
             coco = COCOObjectAnnotation(
                 id=1,
                 image_id=1,
                 category_id=1,
-                segmentation=["1", "2", "3"],
                 area=100,
                 bbox=BoundingBox(1, 2, 3, 4),
                 iscrowd=3,

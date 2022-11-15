@@ -92,10 +92,27 @@ def make_coco_evaluator(
     categories = set()
     annotations = []
     for _anno in ann_list:
-        images.append(_anno["image"])
+        images.append(
+            {
+                "id": _anno["image_id"],
+                "height": _anno["image_height"],
+                "width": _anno["image_width"],
+                "name": _anno["image_name"],
+            }
+        )
         for _a in _anno["annotations"]:
-            categories.add(_a["category_id"])
-            annotations.append(_a)
+            categories.add(_a.category_id)
+            annotations.append(
+                {
+                    "id": _a.id,
+                    "image_id": _a.image_id,
+                    "category_id": _a.category_id,
+                    "area": _a.area,
+                    "bbox": _a.bbox,
+                    "iscrowd": _a.iscrowd,
+                    "segmentation": _a.segmentation,
+                }
+            )
 
     coco = COCO()
     coco.dataset = {
