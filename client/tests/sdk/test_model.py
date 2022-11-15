@@ -22,7 +22,7 @@ from starwhale.base.type import (
 )
 from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
+from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary, Link
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
 from starwhale.api._impl.dataset.loader import UserRawDataLoader
@@ -176,7 +176,7 @@ class TestModelPipelineHandler(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -263,7 +263,7 @@ class TestModelPipelineHandler(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,

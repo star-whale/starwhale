@@ -9,6 +9,8 @@ from enum import Enum, unique
 from pathlib import Path
 from functools import partial
 
+import requests
+
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
     LATEST_TAG,
@@ -23,6 +25,7 @@ from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.api._impl.data_store import SwObject
 
 from .store import ObjectStore
+from ...utils.retry import http_retry
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -502,6 +505,7 @@ class Link(ASDictMixin, SwObject):
         self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
+        self._signed_uri = ""
 
         self.do_validate()
 
@@ -511,7 +515,16 @@ class Link(ASDictMixin, SwObject):
 
     @local_fs_uri.setter
     def local_fs_uri(self, value: str) -> None:
-        self._local_fs_uri = value
+        self._local_fs_uri = value\
+
+
+    @property
+    def signed_uri(self) -> str:
+        return self._signed_uri
+
+    @signed_uri.setter
+    def signed_uri(self, value: str) -> None:
+        self._signed_uri = value
 
     def do_validate(self) -> None:
         if self.offset < 0:
@@ -529,7 +542,11 @@ class Link(ASDictMixin, SwObject):
     def __repr__(self) -> str:
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
 
+    @http_retry
     def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+        if self.signed_uri:
+            r = requests.get(self.signed_uri, timeout=10)
+            return r.content
         # TODO: auto inject dataset_uri in the loader process
         if isinstance(dataset_uri, str):
             dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
@@ -539,7 +556,7 @@ class Link(ASDictMixin, SwObject):
             store = ObjectStore.to_signed_http_backend(dataset_uri, auth_name)
         else:
             store = ObjectStore.from_data_link_uri(self.uri, auth_name)
-        key_compose = self.local_fs_uri or self.uri, 0, 0
+        key_compose = Link(self.local_fs_uri) or self, 0, 0
         return store.backend._make_file(store.bucket, key_compose).read(-1)
 
 

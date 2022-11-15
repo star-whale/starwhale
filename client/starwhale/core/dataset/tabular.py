@@ -15,6 +15,7 @@ import requests
 from loguru import logger
 from typing_extensions import Protocol
 
+from starwhale import Link
 from starwhale.utils import validate_obj_name
 from starwhale.consts import ENV_POD_NAME, VERSION_PREFIX_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
@@ -48,7 +49,7 @@ class TabularDatasetRow(ASDictMixin):
     def __init__(
         self,
         id: t.Union[str, int],
-        data_uri: str,
+        data_uri: Link,
         data_format: DataFormatType = DataFormatType.SWDS_BIN,
         object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
@@ -60,7 +61,7 @@ class TabularDatasetRow(ASDictMixin):
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.data_uri = data_uri.strip()
+        self.data_uri = data_uri
         self.data_format = data_format
         self.data_offset = data_offset
         self.data_size = data_size
@@ -78,7 +79,7 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        data_uri: str,
+        data_uri: Link,
         data_format: str = DataFormatType.SWDS_BIN.value,
         object_store_type: str = ObjectStoreType.LOCAL.value,
         data_offset: int = 0,

@@ -1224,20 +1224,20 @@ class TestTabularDataset(TestCase):
     def test_tabular_dataset(self, m_ds_wrapper: MagicMock) -> None:
         m_ds_wrapper.return_value.scan.return_value = [
             TabularDatasetRow(
-                id="path/1",
+                id=Link(uri="path/1"),
                 data_uri="abcdef",
                 data_format=DataFormatType.SWDS_BIN,
                 annotations={"a": 1, "b": {"c": 1}},
                 _append_seq_id=0,
             ).asdict(),
             TabularDatasetRow(
-                id="path/2",
+                id=Link(uri="path/2"),
                 data_uri="abcefg",
                 annotations={"a": 2, "b": {"c": 2}},
                 _append_seq_id=1,
             ).asdict(),
             TabularDatasetRow(
-                id="path/3",
+                id=Link(uri="path/3"),
                 data_uri="abcefg",
                 annotations={"a": 2, "b": {"c": 2}},
                 _append_seq_id=2,
@@ -1263,25 +1263,25 @@ class TestTabularDataset(TestCase):
             TabularDataset("a123", "", "")
 
     def test_row(self) -> None:
-        s_row = TabularDatasetRow(id=0, data_uri="abcdef", annotations={"a": 1})
+        s_row = TabularDatasetRow(id=0, data_uri=Link("abcdef"), annotations={"a": 1})
         data_type = {"type": "image", "shape": [1, 2, 3]}
         u_row = TabularDatasetRow(
             id="path/1",
-            data_uri="abcdef",
+            data_uri=Link("abcdef"),
             data_format=DataFormatType.USER_RAW,
             data_type=data_type,
             annotations={"a": 1, "b": {"c": 1}},
         )
         l_row = TabularDatasetRow(
             id="path/1",
-            data_uri="s3://a/b/c",
+            data_uri=Link("s3://a/b/c"),
             data_format=DataFormatType.USER_RAW,
             object_store_type=ObjectStoreType.REMOTE,
             annotations={"a": 1},
         )
         s2_row = TabularDatasetRow(
             id=0,
-            data_uri="abcdef",
+            data_uri=Link("abcdef"),
             data_origin=DataOriginType.INHERIT,
             annotations={"a": 1},
         )
@@ -1308,25 +1308,25 @@ class TestTabularDataset(TestCase):
         assert l_row.asdict()["id"] == "path/1"
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id="", data_uri="")
+            TabularDatasetRow(id="", data_uri=Link(""))
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id=1.1, data_uri="")  # type: ignore
+            TabularDatasetRow(id=1.1, data_uri=Link(""))  # type: ignore
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id="1", data_uri="", annotations=[])  # type: ignore
+            TabularDatasetRow(id="1", data_uri=Link(""), annotations=[])  # type: ignore
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id=1, data_uri="")
+            TabularDatasetRow(id=1, data_uri=Link(""))
 
         with self.assertRaises(NoSupportError):
-            TabularDatasetRow(id="1", data_uri="123", annotations={"a": 1}, data_format="1")  # type: ignore
+            TabularDatasetRow(id="1", data_uri=Link("123"), annotations={"a": 1}, data_format="1")  # type: ignore
 
         with self.assertRaises(NoSupportError):
-            TabularDatasetRow(id="1", data_uri="123", annotations={"a": 1}, data_origin="1")  # type: ignore
+            TabularDatasetRow(id="1", data_uri=Link("123"), annotations={"a": 1}, data_origin="1")  # type: ignore
 
         with self.assertRaises(NoSupportError):
-            TabularDatasetRow(id="1", data_uri="123", annotations={"a": 1}, object_store_type="1")  # type: ignore
+            TabularDatasetRow(id="1", data_uri=Link("123"), annotations={"a": 1}, object_store_type="1")  # type: ignore
 
         for r in (s_row, u_row, l_row):
             copy_r = TabularDatasetRow.from_datastore(**r.asdict())

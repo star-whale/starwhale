@@ -238,7 +238,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=str(fno),
+                    data_uri=Link(str(fno)),
                     data_format=self.data_format_type,
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=_bin_section.raw_data_offset,
@@ -411,7 +411,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=data_uri,
+                    data_uri=Link(data_uri),
                     data_format=self.data_format_type,
                     object_store_type=object_store_type,
                     data_offset=row_data.offset,

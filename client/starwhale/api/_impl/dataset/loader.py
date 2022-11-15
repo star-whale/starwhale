@@ -7,12 +7,14 @@ from abc import ABCMeta, abstractmethod
 import loguru
 from loguru import logger as _logger
 
+from starwhale.api._impl.data_store import SwObject
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils import load_dotenv
-from starwhale.consts import AUTH_ENV_FNAME
+from starwhale.consts import AUTH_ENV_FNAME, HTTPMethod
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import BaseArtifact
+from starwhale.core.dataset.type import BaseArtifact, Link
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import (
     TabularDataset,
@@ -60,7 +62,7 @@ class DataLoader(metaclass=ABCMeta):
             return _store
 
         if self.dataset_uri.instance_type == InstanceType.CLOUD:
-            _store = ObjectStore.to_signed_http_backend(self.dataset_uri, row.auth_name)
+            _store = ObjectStore.to_signed_http_backend(self.dataset_uri)
         else:
             if row.object_store_type == ObjectStoreType.REMOTE:
                 _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
@@ -72,10 +74,10 @@ class DataLoader(metaclass=ABCMeta):
 
     def _get_key_compose(
         self, row: TabularDatasetRow, store: ObjectStore
-    ) -> t.Tuple[str, int, int]:
+    ) -> t.Tuple[Link, int, int]:
         data_uri = row.data_uri
         if row.object_store_type != ObjectStoreType.REMOTE and store.key_prefix:
-            data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
+            data_uri = Link(os.path.join(store.key_prefix, data_uri.uri.lstrip("/")))
 
         if self.kind == DataFormatType.SWDS_BIN:
             offset, size = (
@@ -92,6 +94,34 @@ class DataLoader(metaclass=ABCMeta):
             for row in self.tabular_dataset.scan():
                 yield row
         else:
+            def _travel_link(obj: t.Any) -> t.List[Link]:
+                _lks = []
+                if isinstance(obj, Link):
+                    _lks.append(obj)
+                elif isinstance(obj, dict):
+                    for v in obj.values():
+                        _lks.extend(_travel_link(v))
+                elif isinstance(obj, (list, tuple)):
+                    for v in obj:
+                        _lks.extend(_travel_link(v))
+                elif isinstance(obj, SwObject):
+                    for v in obj.__dict__.values():
+                        _lks.extend(_travel_link(v))
+                return _lks
+
+            def sign_uris(uris: t.List[str]) -> str:
+                r = CloudRequestMixed().do_http_request(
+                    f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
+                    method=HTTPMethod.GET,
+                    instance_uri=self.dataset_uri,
+                    params={"uris": uris,
+                            "expTimeMillis":
+                                int(os.environ.get("SW_MODEL_UNIT_TIME",
+                                                   "60000")) * self.session_consumption.batch_size},
+                    use_raise=True,
+                ).json()
+                return r["data"]  # type: ignore
+
             while True:
                 # TODO: multithread for get meta, get data and ppl process
                 pk = [self.last_processed_range] if self.last_processed_range else None
@@ -100,8 +130,17 @@ class DataLoader(metaclass=ABCMeta):
                 if rt is None:
                     break
 
-                for row in self.tabular_dataset.scan(rt[0], rt[1]):
-                    yield row
+                for btch in self.tabular_dataset.scan_btch(rt[0], rt[1], self.session_consumption.batch_size):
+                    _links = []
+                    for row in btch:
+                        _links.append(row.data_uri)
+                        _links.extend(_travel_link(row.annotations))
+                    uri_dict = sign_uris([lk.uri for lk in _links])
+                    for lk in _links:
+                        lk.signed_uri = uri_dict.get(lk.uri) or ""
+
+                    for row in btch:
+                        yield row
 
     def __iter__(
         self,

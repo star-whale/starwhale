@@ -13,7 +13,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary
+from starwhale.core.dataset.type import Image, ArtifactType, DatasetSummary, Link
 from starwhale.core.dataset.store import (
     DatasetStorage,
     SignedUrlBackend,
@@ -84,7 +84,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id="path/0",
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 0},
@@ -196,7 +196,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}",
+                data_uri=Link(f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}"),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 0},
@@ -211,7 +211,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=1,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}",
+                data_uri=Link(f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}"),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},
@@ -226,7 +226,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=2,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}",
+                data_uri=Link(f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}"),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},
@@ -241,7 +241,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=3,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}",
+                data_uri=Link(f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}"),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 1},
@@ -347,7 +347,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -446,7 +446,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -463,7 +463,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=1,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=fname,
+                data_uri=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,

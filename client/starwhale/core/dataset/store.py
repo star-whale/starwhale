@@ -16,6 +16,7 @@ from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
+from starwhale import Link
 from starwhale.consts import (
     HTTPMethod,
     SWDSBackendType,
@@ -40,6 +41,7 @@ from starwhale.utils.error import (
     FieldTypeOrValueError,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.retry import http_retry
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
@@ -320,11 +322,11 @@ class ObjectStore:
         )
 
     @classmethod
-    def to_signed_http_backend(cls, dataset_uri: URI, auth_name: str) -> ObjectStore:
+    def to_signed_http_backend(cls, dataset_uri: URI) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
         return cls(
-            backend=SWDSBackendType.SignedUrl, bucket=auth_name, dataset_uri=dataset_uri
+            backend=SWDSBackendType.SignedUrl, dataset_uri=dataset_uri
         )
 
 
@@ -373,14 +375,14 @@ class S3StorageBackend(StorageBackend):
         )
 
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[str, int, int]
+        self, bucket: str, key_compose: t.Tuple[Link, int, int]
     ) -> FileLikeObj:
         # TODO: merge connections for s3
         _key, _start, _end = key_compose
         return S3BufferedFileLike(
             s3=self.s3,
             bucket=bucket,
-            key=_key,
+            key=_key.uri,
             start=_start,
             end=_end,
         )
@@ -391,9 +393,10 @@ class LocalFSStorageBackend(StorageBackend):
         super().__init__(kind=SWDSBackendType.LocalFS)
 
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[str, int, int]
+        self, bucket: str, key_compose: t.Tuple[Link, int, int]
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
+        _key = _key.uri
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
         )
@@ -412,19 +415,20 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         super().__init__(kind=SWDSBackendType.SignedUrl)
         self.dataset_uri = dataset_uri
 
-    def _make_file(self, auth: str, key_compose: t.Tuple[str, int, int]) -> FileLikeObj:
+    @http_retry
+    def _make_file(self, auth: str, key_compose: t.Tuple[Link, int, int]) -> FileLikeObj:
         _key, _start, _end = key_compose
-        url = self.sign_uri(_key, auth)
+        url = _key.signed_uri or self.sign_uri(_key.uri)
         headers = {"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"}
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=10)
         return io.BytesIO(r.content)
 
-    def sign_uri(self, uri: str, auth_name: str) -> str:
+    def sign_uri(self, uri: str) -> str:
         r = self.do_http_request(
             f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-link",
             method=HTTPMethod.GET,
             instance_uri=self.dataset_uri,
-            params={"uri": uri, "authName": auth_name, "expTimeMillis": 1000 * 60 * 30},
+            params={"uri": uri, "expTimeMillis": 1000 * 60 * 30},
             use_raise=True,
         ).json()
         return r["data"]  # type: ignore
