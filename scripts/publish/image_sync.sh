@@ -64,19 +64,27 @@ else
   sudo docker pull "$source_registry"/"$source_repo_name"/server:"$release_version"
   sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:"$release_version"
   sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
+  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:latest
+  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:latest
   sudo docker push "$target_registry"/"$target_repo_name1"/server:"$release_version"
   sudo docker push "$target_registry"/"$target_repo_name2"/server:"$release_version"
-  remove_image rm "$source_registry"/"$source_repo_name"/server:"$last_version""$suf"
-  remove_image rm "$target_registry"/"$target_repo_name1"/server:"$last_version""$suf"
-  remove_image rm "$target_registry"/"$target_repo_name2"/server:"$last_version""$suf"
+  sudo docker push "$target_registry"/"$target_repo_name1"/server:latest
+  sudo docker push "$target_registry"/"$target_repo_name2"/server:latest
+  remove_image "$source_registry"/"$source_repo_name"/server:"$last_version"
+  remove_image "$target_registry"/"$target_repo_name1"/server:"$last_version"
+  remove_image "$target_registry"/"$target_repo_name2"/server:"$last_version"
 
   for suf in "${starwhale_image_suffix[@]}"
     do
       sudo docker pull "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf"
       sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
       sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:latest"$suf"
+      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:latest"$suf"
       sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
       sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
+      sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:latest"$suf"
+      sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:latest"$suf"
       remove_image "$target_registry"/"$target_repo_name1"/starwhale:"$last_version""$suf"
       remove_image "$target_registry"/"$target_repo_name2"/starwhale:"$last_version""$suf"
       remove_image "$source_registry"/"$source_repo_name"/starwhale:"$last_version""$suf"
