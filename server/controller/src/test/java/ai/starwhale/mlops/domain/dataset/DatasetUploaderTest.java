@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -102,8 +101,11 @@ public class DatasetUploaderTest {
                 hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetManager, idConvertor,
                 versionAliasConvertor);
 
-        datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", new UploadRequest());
+        UploadRequest uploadRequest = new UploadRequest();
+        String dsName = "testds3";
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
+        uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadBody(
                 dsVersionId,
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
@@ -115,12 +117,11 @@ public class DatasetUploaderTest {
         verify(storageAccessService).put(anyString(), any(InputStream.class), anyLong());
         verify(datasetVersionMapper).updateStatus(null, DatasetVersionEntity.STATUS_AVAILABLE);
         verify(datasetVersionMapper).addNewVersion(any(DatasetVersionEntity.class));
-        String dsName = "testds3";
         verify(datasetMapper).findByName(eq(dsName), anyLong());
         verify(datasetMapper).addDataset(any(DatasetEntity.class));
 
         when(storageAccessService.list(anyString())).thenReturn(Stream.of("a", "b"));
-        datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", new UploadRequest());
+        datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.cancel(dsVersionId);
         verify(datasetVersionMapper).deleteById(null);
         verify(storageAccessService).list(anyString());
@@ -171,19 +172,17 @@ public class DatasetUploaderTest {
         datasetUploader.pull("project", dsName, dsVersionId, "index.jsonl", httpResponse);
 
         Assertions.assertThrowsExactly(SwValidationException.class,
-                () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", new UploadRequest()));
+                () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest));
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
         hotJobHolder.adopt(mockJob);
-        UploadRequest uploadRequest = new UploadRequest();
         uploadRequest.setForce("1");
         Assertions.assertThrowsExactly(SwValidationException.class,
                 () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest));
         hotJobHolder.remove(mockJob.getId());
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         verify(datasetVersionMapper, times(1)).updateStatus(1L, DatasetVersionEntity.STATUS_UN_AVAILABLE);
-
 
     }
 
@@ -203,4 +202,3 @@ public class DatasetUploaderTest {
             + " * limitations under the License.\n"
             + " */";
 }
-
