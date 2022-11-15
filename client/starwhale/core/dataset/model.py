@@ -161,7 +161,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
             _r.append(
                 dict(
-                    name=_manifest["name"],
+                    name=self.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
@@ -216,7 +216,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
             rs[_bf.name].append(
                 dict(
-                    name=_manifest["name"],
+                    name=_bf.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],

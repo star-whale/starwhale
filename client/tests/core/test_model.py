@@ -82,7 +82,7 @@ class StandaloneModelTestCase(TestCase):
         assert (snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
-        assert _manifest["name"] == self.name
+        assert "name" not in _manifest
         assert _manifest["version"] == build_version
 
         assert m_copy_file.call_count == 3

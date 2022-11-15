@@ -1023,6 +1023,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             # TODO: add more manifest info
             rs[_bf.name].append(
                 {
+                    "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
                     "created_at": get_path_created_time(_bf.path),

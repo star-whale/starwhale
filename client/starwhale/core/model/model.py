@@ -406,7 +406,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             rs[_bf.name].append(
                 {
-                    "name": _manifest["name"],
+                    "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
                     "size": _bf.path.stat().st_size,
