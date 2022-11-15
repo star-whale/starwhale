@@ -49,6 +49,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
@@ -242,6 +244,14 @@ public class DatasetController implements DatasetApi {
         DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(
                 datasetService.signLink(datasetVersionEntity.getId(), uri, expTimeMillis)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<Map>> signLinks(String projectUrl, String datasetUrl, String versionUrl,
+            Set<String> uris, Long expTimeMillis) {
+        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(
+                datasetService.signLinks(datasetVersionEntity.getId(), uris, expTimeMillis)));
     }
 
     @Override

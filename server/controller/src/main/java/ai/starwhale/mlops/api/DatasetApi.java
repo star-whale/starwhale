@@ -37,6 +37,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
@@ -279,6 +281,21 @@ public interface DatasetApi {
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 
+
+    @Operation(summary = "Sign SWDS uris to get a batch of temporarily accessible links",
+            description = "Sign SWDS uris to get a batch of temporarily accessible links")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-links",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectUrl,
+            @PathVariable(name = "datasetName") String datasetUrl,
+            @PathVariable(name = "version") String versionUrl,
+            @Parameter(name = "uris", description = "a batch of uris")
+            @RequestParam(name = "uris", required = true) Set<String> uris,
+            @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
+            @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

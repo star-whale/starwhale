@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -64,10 +65,13 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -385,7 +389,21 @@ public class DatasetServiceTest {
                 .willReturn("link");
 
         var res = dsFileGetter.linkOf(1L, "", 1L);
-        assertThat(dsFileGetter.linkOf(1L, "", 1L), is("link"));
+        assertThat(service.signLink(1L, "", 1L), is("link"));
+    }
+
+    @Test
+    public void testLinksOf() {
+        given(dsFileGetter.linkOf(same(1L), eq("a"), anyLong()))
+                .willReturn("link1");
+
+        given(dsFileGetter.linkOf(same(1L), eq("b"), anyLong()))
+                .willReturn("link2");
+        given(dsFileGetter.linkOf(same(1L), eq("x"), anyLong()))
+                .willThrow(SwValidationException.class);
+
+        Assertions.assertEquals(Map.of("a", "link1", "b", "link2", "x", ""),
+                service.signLinks(1L, Set.of("a", "b", "x"), 1L));
     }
 
 }
