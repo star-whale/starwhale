@@ -78,7 +78,8 @@ pre_check() {
 }
 
 set_python() {
-    _MANIFEST_RUNTIME=$(yq -r .environment.python ${SWRT_DIR}/_manifest.yaml) || exit 1
+	# yq only installed for py3.8
+    _MANIFEST_RUNTIME=$(python3.8 yq -r .environment.python ${SWRT_DIR}/_manifest.yaml) || exit 1
     _RUNTIME="python${_MANIFEST_RUNTIME}"
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
