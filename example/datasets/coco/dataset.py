@@ -19,11 +19,11 @@ class SegInfo(SwObject):
         sg: dict,
     ) -> None:
         self.id = sg.get("id")
-        self.category_id = sg.get('category_id')
-        self.iscrowd = sg.get('iscrowd')
-        self.bbox = sg.get('bbox')
-        self.area = sg.get('area')
-        self.bbox_view = sg.get('bbox_view')
+        self.category_id = sg.get("category_id")
+        self.iscrowd = sg.get("iscrowd")
+        self.bbox = sg.get("bbox")
+        self.area = sg.get("area")
+        self.bbox_view = sg.get("bbox_view")
 
 
 def seg_dict_2_object(sg: dict):
@@ -52,14 +52,16 @@ def do_iter_item():
                 uri=str(img_pth.absolute()),
                 data_type=Image(display_name=img_name, shape=img_shape),
                 with_local_fs_data=True,
-            ), {"mask": Link(
-                auth=None,
-                with_local_fs_data=True,
-                data_type=Image(
-                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
-                ),
-                uri=str(msk_f_pth.absolute()),
-            )}
+            ), {
+                "mask": Link(
+                    auth=None,
+                    with_local_fs_data=True,
+                    data_type=Image(
+                        display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                    ),
+                    uri=str(msk_f_pth.absolute()),
+                )
+            }
 
 
 PATH_ROOT = "dataset/coco/extracted"
@@ -116,11 +118,13 @@ def do_iter_item_from_remote():
             uri=f"s3://{RUI_ROOT}/val2017/{img_name}",
             data_type=Image(display_name=img_name, shape=img_shape),
             with_local_fs_data=False,
-        ), {"mask": Link(
-            auth=_auth,
-            with_local_fs_data=False,
-            data_type=Image(
-                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
-            ),
-            uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
-        )}
+        ), {
+            "mask": Link(
+                auth=_auth,
+                with_local_fs_data=False,
+                data_type=Image(
+                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                ),
+                uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
+            )
+        }

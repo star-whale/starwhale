@@ -314,7 +314,22 @@ class TestDatasetCopy(BaseTestCase):
                 "data": {
                     "columnTypes": [
                         {"type": "STRING", "name": "id"},
-                        {"type": "STRING", "name": "data_uri"},
+                        {
+                            "name": "data_uri",
+                            "type": "OBJECT",
+                            "pythonType": "starwhale.core.dataset.type.Link",
+                            "attributes": [
+                                {"name": "_local_fs_uri", "type": "STRING"},
+                                {"name": "_signed_uri", "type": "STRING"},
+                                {"name": "offset", "type": "INT64"},
+                                {"name": "size", "type": "INT64"},
+                                {"name": "auth", "type": "UNKNOWN"},
+                                {"name": "with_local_fs_data", "type": "BOOL"},
+                                {"name": "_type", "type": "STRING"},
+                                {"name": "data_type", "type": "UNKNOWN"},
+                                {"name": "uri", "type": "STRING"},
+                            ],
+                        },
                         {"type": "STRING", "name": "data_format"},
                         {"type": "INT64", "name": "data_offset"},
                         {"type": "INT64", "name": "data_size"},
@@ -340,7 +355,17 @@ class TestDatasetCopy(BaseTestCase):
                     "records": [
                         {
                             "id": "idx-0",
-                            "data_uri": "111",
+                            "data_uri": {
+                                "_local_fs_uri": "",
+                                "_signed_uri": "",
+                                "offset": "0",
+                                "size": "1",
+                                "auth": None,
+                                "with_local_fs_data": "false",
+                                "_type": "link",
+                                "data_type": None,
+                                "uri": "111",
+                            },
                             "data_format": "swds_bin",
                             "data_offset": "0000000000000080",
                             "data_size": "0000000000000006",
@@ -402,7 +427,7 @@ class TestDatasetCopy(BaseTestCase):
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
-        assert meta_list[0].data_uri == "111"
+        assert meta_list[0].data_uri.uri == "111"
         bbox = meta_list[0].annotations["bbox"]
         assert isinstance(bbox, BoundingBox)
         assert bbox.x == 2 and bbox.y == 2
@@ -617,7 +642,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         meta = list(tdb.scan(start=0, end=1))[0]
         assert meta.id == 0
         assert meta.data_offset == 16
-        assert meta.data_uri == self.data_file_sign
+        assert meta.data_uri.uri == self.data_file_sign
         link: Link = meta.annotations["link"]
         assert link.uri == str(_mnist_label_path)
         assert link.local_fs_uri == self.label_file_sign
@@ -708,7 +733,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.id == 0
         assert meta.data_offset == 32
         assert meta.extra_kw["_swds_bin_offset"] == 0
-        assert meta.data_uri in data_files_sign
+        assert meta.data_uri.uri in data_files_sign
         assert meta.data_type["type"] == ArtifactType.Image.value
         assert meta.data_type["mime_type"] == MIMEType.GRAYSCALE.value
         assert meta.data_type["shape"] == [28, 28, 1]
@@ -1251,21 +1276,21 @@ class TestTabularDataset(TestCase):
     def test_tabular_dataset(self, m_ds_wrapper: MagicMock) -> None:
         m_ds_wrapper.return_value.scan.return_value = [
             TabularDatasetRow(
-                id=Link(uri="path/1"),
-                data_uri="abcdef",
+                id="path/1",
+                data_uri=Link("abcdef"),
                 data_format=DataFormatType.SWDS_BIN,
                 annotations={"a": 1, "b": {"c": 1}},
                 _append_seq_id=0,
             ).asdict(),
             TabularDatasetRow(
-                id=Link(uri="path/2"),
-                data_uri="abcefg",
+                id="path/2",
+                data_uri=Link(uri="abcefg"),
                 annotations={"a": 2, "b": {"c": 2}},
                 _append_seq_id=1,
             ).asdict(),
             TabularDatasetRow(
-                id=Link(uri="path/3"),
-                data_uri="abcefg",
+                id="path/3",
+                data_uri=Link(uri="abcefg"),
                 annotations={"a": 2, "b": {"c": 2}},
                 _append_seq_id=2,
             ).asdict(),
@@ -1317,7 +1342,7 @@ class TestTabularDataset(TestCase):
         assert s_row != u_row
         assert s_row.asdict() == {
             "id": 0,
-            "data_uri": "abcdef",
+            "data_uri": Link("abcdef"),
             "data_format": "swds_bin",
             "data_offset": 0,
             "data_size": 0,

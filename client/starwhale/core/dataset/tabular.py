@@ -13,7 +13,6 @@ from collections import defaultdict
 
 import requests
 from loguru import logger
-from starwhale.core.dataset.type import Link
 from typing_extensions import Protocol
 
 from starwhale.utils import validate_obj_name
@@ -37,6 +36,7 @@ from starwhale.utils.error import (
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import DatasetStorage
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
@@ -156,7 +156,8 @@ class TabularDatasetRow(ASDictMixin):
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         d = super().asdict(
-            ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type", "data_uri"]
+            ignore_keys=ignore_keys
+            or ["annotations", "extra_kw", "data_type", "data_uri"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
         for k, v in self.annotations.items():
@@ -215,7 +216,9 @@ class TabularDataset:
 
     __repr__ = __str__
 
-    def update(self, row_id: t.Union[str, int], **kw: t.Union[int, str, bytes]) -> None:
+    def update(
+        self, row_id: t.Union[str, int], **kw: t.Union[int, str, bytes, Link]
+    ) -> None:
         self._ds_wrapper.put(row_id, **kw)
 
     def put(self, row: TabularDatasetRow) -> None:
@@ -247,7 +250,7 @@ class TabularDataset:
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         batch_size: int = 32,
-    ) -> t.Generator[TabularDatasetRow, None, None]:
+    ) -> t.Generator[t.List[TabularDatasetRow], None, None]:
         batch = []
         for r in self.scan(start, end):
             batch.append(r)

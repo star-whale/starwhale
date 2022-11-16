@@ -14,7 +14,6 @@ import boto3
 import requests
 from loguru import logger
 from botocore.client import Config as S3Config
-from starwhale.core.dataset.type import Link
 from typing_extensions import Protocol
 
 from starwhale.consts import (
@@ -40,8 +39,9 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.dataset.type import Link
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
@@ -324,9 +324,7 @@ class ObjectStore:
     def to_signed_http_backend(cls, dataset_uri: URI) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
-        return cls(
-            backend=SWDSBackendType.SignedUrl, dataset_uri=dataset_uri
-        )
+        return cls(backend=SWDSBackendType.SignedUrl, dataset_uri=dataset_uri)
 
 
 class StorageBackend(metaclass=ABCMeta):
@@ -343,7 +341,7 @@ class StorageBackend(metaclass=ABCMeta):
 
     @abstractmethod
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[str, int, int]
+        self, bucket: str, key_compose: t.Tuple[Link, int, int]
     ) -> FileLikeObj:
         raise NotImplementedError
 
@@ -394,8 +392,8 @@ class LocalFSStorageBackend(StorageBackend):
     def _make_file(
         self, bucket: str, key_compose: t.Tuple[Link, int, int]
     ) -> FileLikeObj:
-        _key, _start, _end = key_compose
-        _key = _key.uri
+        _key_l, _start, _end = key_compose
+        _key = _key_l.uri
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
         )
@@ -415,7 +413,9 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         self.dataset_uri = dataset_uri
 
     @http_retry
-    def _make_file(self, auth: str, key_compose: t.Tuple[Link, int, int]) -> FileLikeObj:
+    def _make_file(
+        self, auth: str, key_compose: t.Tuple[Link, int, int]
+    ) -> FileLikeObj:
         _key, _start, _end = key_compose
         url = _key.signed_uri or self.sign_uri(_key.uri)
         headers = {"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"}

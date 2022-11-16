@@ -7,15 +7,15 @@ from abc import ABCMeta, abstractmethod
 import loguru
 from loguru import logger as _logger
 
-from starwhale.api._impl.data_store import SwObject
-from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils import load_dotenv
-from starwhale.consts import AUTH_ENV_FNAME, HTTPMethod
+from starwhale.consts import HTTPMethod, AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import BaseArtifact, Link
+from starwhale.core.dataset.type import Link, BaseArtifact
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
+from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
@@ -94,6 +94,7 @@ class DataLoader(metaclass=ABCMeta):
             for row in self.tabular_dataset.scan():
                 yield row
         else:
+
             def _travel_link(obj: t.Any) -> t.List[Link]:
                 _lks = []
                 if isinstance(obj, Link):
@@ -110,16 +111,23 @@ class DataLoader(metaclass=ABCMeta):
                 return _lks
 
             def sign_uris(uris: t.List[str]) -> str:
-                r = CloudRequestMixed().do_http_request(
-                    f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
-                    method=HTTPMethod.GET,
-                    instance_uri=self.dataset_uri,
-                    params={"uris": uris,
-                            "expTimeMillis":
-                                int(os.environ.get("SW_MODEL_UNIT_TIME",
-                                                   "60000")) * self.session_consumption.batch_size},
-                    use_raise=True,
-                ).json()
+                r = (
+                    CloudRequestMixed()
+                    .do_http_request(
+                        f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
+                        method=HTTPMethod.GET,
+                        instance_uri=self.dataset_uri,
+                        params={
+                            "uris": uris,
+                            "expTimeMillis": int(
+                                os.environ.get("SW_MODEL_UNIT_TIME", "60000")
+                            )
+                            * self.session_consumption.batch_size,  # type: ignore
+                        },
+                        use_raise=True,
+                    )
+                    .json()
+                )
                 return r["data"]  # type: ignore
 
             while True:
@@ -130,16 +138,22 @@ class DataLoader(metaclass=ABCMeta):
                 if rt is None:
                     break
 
-                for btch in self.tabular_dataset.scan_btch(rt[0], rt[1], self.session_consumption.batch_size):
-                    _links = []
-                    for row in btch:
-                        _links.append(row.data_uri)
-                        _links.extend(_travel_link(row.annotations))
-                    uri_dict = sign_uris([lk.uri for lk in _links])
-                    for lk in _links:
-                        lk.signed_uri = uri_dict.get(lk.uri) or ""
+                if self.dataset_uri.instance_type == InstanceType.CLOUD:
+                    for btch in self.tabular_dataset.scan_btch(
+                        rt[0], rt[1], self.session_consumption.batch_size  # type: ignore
+                    ):
+                        _links = []
+                        for row in btch:
+                            _links.append(row.data_uri)
+                            _links.extend(_travel_link(row.annotations))
+                        uri_dict = sign_uris([lk.uri for lk in _links])
+                        for lk in _links:
+                            lk.signed_uri = uri_dict.get(lk.uri) or ""  # type: ignore
 
-                    for row in btch:
+                        for row in btch:
+                            yield row
+                else:
+                    for row in self.tabular_dataset.scan(rt[0], rt[1]):
                         yield row
 
     def __iter__(

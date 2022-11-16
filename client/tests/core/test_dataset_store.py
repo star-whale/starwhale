@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 
 from starwhale import URI, URIType
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import (
     S3Connection,
     S3StorageBackend,
@@ -35,7 +36,7 @@ class TestDatasetBackend(TestCase):
             expected_type=URIType.DATASET,
         )
         backend = SignedUrlBackend(dataset_uri)
-        file = backend._make_file("", ("a", 0, -1))
+        file = backend._make_file("", (Link("a"), 0, -1))
         self.assertEqual(file.read(-1), _content)
 
     @patch("os.environ", {})
@@ -101,7 +102,7 @@ class TestDatasetBackend(TestCase):
         assert conn.bucket == "users"
 
     def test_s3_backend(self) -> None:
-        uri = "s3://username:password@127.0.0.1:8000/bucket/key"
+        uri = Link("s3://username:password@127.0.0.1:8000/bucket/key")
         conn = S3Connection.from_uri("s3://username:password@127.0.0.1:8000/bucket/key")
         backend = S3StorageBackend(conn)
         s3_file: S3BufferedFileLike = backend._make_file("bucket", (uri, 0, -1))  # type: ignore
@@ -109,5 +110,5 @@ class TestDatasetBackend(TestCase):
         assert s3_file.start == 0
         assert s3_file.end == -1
 
-        s3_file: S3BufferedFileLike = backend._make_file("bucket", ("/path/key2", 0, -1))  # type: ignore
+        s3_file: S3BufferedFileLike = backend._make_file("bucket", (Link("/path/key2"), 0, -1))  # type: ignore
         assert s3_file.key == "path/key2"

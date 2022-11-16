@@ -22,7 +22,7 @@ from starwhale.base.type import (
 )
 from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary, Link
+from starwhale.core.dataset.type import Link, MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
 from starwhale.api._impl.dataset.loader import UserRawDataLoader

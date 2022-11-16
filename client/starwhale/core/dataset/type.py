@@ -515,8 +515,7 @@ class Link(ASDictMixin, SwObject):
 
     @local_fs_uri.setter
     def local_fs_uri(self, value: str) -> None:
-        self._local_fs_uri = value\
-
+        self._local_fs_uri = value
 
     @property
     def signed_uri(self) -> str:
@@ -545,6 +544,7 @@ class Link(ASDictMixin, SwObject):
     @http_retry
     def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
         from .store import ObjectStore
+
         if self.signed_uri:
             r = requests.get(self.signed_uri, timeout=10)
             return r.content
@@ -557,14 +557,21 @@ class Link(ASDictMixin, SwObject):
             key_compose = self, 0, 0
             store = ObjectStore.to_signed_http_backend(dataset_uri)
         else:
-            r = urlparse(self.uri)
-            if r.scheme:
-                key_compose = Link(self.local_fs_uri) if self.local_fs_uri else self, 0, 0
+            _up = urlparse(self.uri)
+            if _up.scheme:
+                key_compose = (
+                    Link(self.local_fs_uri) if self.local_fs_uri else self,
+                    0,
+                    0,
+                )
                 store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
             else:
-                key_compose = Link(self.local_fs_uri) if self.local_fs_uri else self, 0, -2
+                key_compose = (
+                    Link(self.local_fs_uri) if self.local_fs_uri else self,
+                    0,
+                    -2,
+                )
                 store = ObjectStore.from_dataset_uri(dataset_uri)
-
 
         return store.backend._make_file(store.bucket, key_compose).read(-1)
 
