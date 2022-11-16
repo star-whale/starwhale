@@ -13,9 +13,9 @@ from collections import defaultdict
 
 import requests
 from loguru import logger
+from starwhale.core.dataset.type import Link
 from typing_extensions import Protocol
 
-from starwhale import Link
 from starwhale.utils import validate_obj_name
 from starwhale.consts import ENV_POD_NAME, VERSION_PREFIX_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
@@ -156,7 +156,7 @@ class TabularDatasetRow(ASDictMixin):
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         d = super().asdict(
-            ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type"]
+            ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type", "data_uri"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
         for k, v in self.annotations.items():
@@ -165,6 +165,7 @@ class TabularDatasetRow(ASDictMixin):
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
         )
+        d["data_uri"] = self.data_uri
         return d
 
 

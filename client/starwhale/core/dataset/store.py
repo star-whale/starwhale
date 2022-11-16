@@ -14,9 +14,9 @@ import boto3
 import requests
 from loguru import logger
 from botocore.client import Config as S3Config
+from starwhale.core.dataset.type import Link
 from typing_extensions import Protocol
 
-from starwhale import Link
 from starwhale.consts import (
     HTTPMethod,
     SWDSBackendType,
@@ -295,15 +295,14 @@ class ObjectStore:
         return f"ObjectStored:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
-    def from_data_link_uri(cls, data_uri: str, auth_name: str) -> ObjectStore:
-        data_uri = data_uri.strip()
+    def from_data_link_uri(cls, data_uri: Link, auth_name: str) -> ObjectStore:
         if not data_uri:
             raise FieldTypeOrValueError("data_uri is empty")
 
         # TODO: support other uri type
-        if data_uri.startswith("s3://"):
+        if data_uri.uri.startswith("s3://"):
             backend = SWDSBackendType.S3
-            conn = S3Connection.from_uri(data_uri, auth_name)
+            conn = S3Connection.from_uri(data_uri.uri, auth_name)
             bucket = conn.bucket
         else:
             backend = SWDSBackendType.LocalFS

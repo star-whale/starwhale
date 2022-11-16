@@ -8,6 +8,7 @@ from abc import ABCMeta
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
+from urllib.parse import urlparse
 
 import requests
 
@@ -24,7 +25,6 @@ from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.api._impl.data_store import SwObject
 
-from .store import ObjectStore
 from ...utils.retry import http_retry
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
@@ -544,6 +544,7 @@ class Link(ASDictMixin, SwObject):
 
     @http_retry
     def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+        from .store import ObjectStore
         if self.signed_uri:
             r = requests.get(self.signed_uri, timeout=10)
             return r.content
@@ -555,8 +556,15 @@ class Link(ASDictMixin, SwObject):
         if dataset_uri.instance_type == InstanceType.CLOUD:
             store = ObjectStore.to_signed_http_backend(dataset_uri, auth_name)
         else:
-            store = ObjectStore.from_data_link_uri(self.uri, auth_name)
-        key_compose = Link(self.local_fs_uri) or self, 0, 0
+            r = urlparse(self.uri)
+            if r.scheme:
+                key_compose = Link(self.local_fs_uri) if self.local_fs_uri else self, 0, 0
+                store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
+            else:
+                key_compose = Link(self.local_fs_uri) if self.local_fs_uri else self, 0, -2
+                store = ObjectStore.from_dataset_uri(dataset_uri)
+
+
         return store.backend._make_file(store.bucket, key_compose).read(-1)
 
 
