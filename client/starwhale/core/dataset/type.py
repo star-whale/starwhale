@@ -554,7 +554,8 @@ class Link(ASDictMixin, SwObject):
 
         auth_name = self.auth.name if self.auth else ""
         if dataset_uri.instance_type == InstanceType.CLOUD:
-            store = ObjectStore.to_signed_http_backend(dataset_uri, auth_name)
+            key_compose = self, 0, 0
+            store = ObjectStore.to_signed_http_backend(dataset_uri)
         else:
             r = urlparse(self.uri)
             if r.scheme:

@@ -270,7 +270,7 @@ class ObjectStore:
     def __init__(
         self,
         backend: str,
-        bucket: str,
+        bucket: str = "",
         dataset_uri: URI = URI(""),
         key_prefix: str = "",
         **kw: t.Any,
