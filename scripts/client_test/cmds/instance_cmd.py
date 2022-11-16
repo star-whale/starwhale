@@ -24,8 +24,7 @@ class Instance:
             res is:login http://console.pre.intra.starwhale.ai successfully
                 or: anything else
         """
-        _valid_str = "successfully"
-        _res, _err = invoke(
+        _ret_code, _res = invoke(
             [
                 CLI,
                 self.instance_cmd,
@@ -39,7 +38,7 @@ class Instance:
                 url,
             ]
         )
-        return not _err and _valid_str in _res
+        return bool(_ret_code == 0)
 
     def info(self, instance: str = "") -> Any:
         """
@@ -64,8 +63,10 @@ class Instance:
                     "version": "0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52"
                 }
         """
-        res, err = invoke([CLI, self.instance_cmd, "-o", "json", "info", instance])
-        return json.loads(res) if not err else {}
+        _ret_code, _res = invoke(
+            [CLI, self.instance_cmd, "-o", "json", "info", instance]
+        )
+        return json.loads(_res) if _ret_code == 0 else {}
 
     def list(self) -> Any:
         """
@@ -101,8 +102,8 @@ class Instance:
                 ...
             ]
         """
-        res, err = invoke([CLI, "-o", "json", self.instance_cmd, "list"])
-        return json.loads(res) if not err else []
+        _ret_code, _res = invoke([CLI, "-o", "json", self.instance_cmd, "list"])
+        return json.loads(_res) if _ret_code == 0 else []
 
     def logout(self, instance: str = "") -> bool:
         """
@@ -113,9 +114,10 @@ class Instance:
                 or:skip local instance logout
                 or:
         """
-        _valid_str = "bye"
-        _res, _err = invoke_with_react([CLI, self.instance_cmd, "logout", instance])
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke_with_react(
+            [CLI, self.instance_cmd, "logout", instance]
+        )
+        return bool(_ret_code == 0)
 
     def select(self, instance: str) -> bool:
         """
@@ -124,6 +126,5 @@ class Instance:
             res is:select local instance
                 or:failed to select local2, reason: need to login instance local2
         """
-        _failed_str = "failed"
-        _res, _err = invoke([CLI, self.instance_cmd, "select", instance])
-        return not _err and _failed_str not in _res
+        _ret_code, _res = invoke([CLI, self.instance_cmd, "select", instance])
+        return bool(_ret_code == 0)

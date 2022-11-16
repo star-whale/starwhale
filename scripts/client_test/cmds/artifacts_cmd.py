@@ -35,8 +35,8 @@ class BaseArtifact:
                 "version": "mvswkodbgnrtsnrtmftdgyjznrxg65y"
             }
         """
-        _res, _err = invoke([CLI, "-o", "json", self.name, "info", uri])
-        return json.loads(_res) if not _err else {}
+        _ret_code, _res = invoke([CLI, "-o", "json", self.name, "info", uri])
+        return json.loads(_res) if _ret_code == 0 else {}
 
     def list(
         self,
@@ -64,24 +64,22 @@ class BaseArtifact:
         if show_removed:
             _args.append("--show-removed")
 
-        _res, _err = invoke(_args)
-        return json.loads(_res) if not _err else []
+        _ret_code, _res = invoke(_args)
+        return json.loads(_res) if _ret_code == 0 else []
 
     def remove(self, uri: str, force: bool) -> bool:
-        _valid_str = "do successfully"
         _args = [CLI, self.name, "remove", uri]
         if force:
             _args.append("--force")
-        _res, _err = invoke_with_react(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke_with_react(_args)
+        return bool(_ret_code == 0)
 
     def recover(self, uri: str, force: bool) -> bool:
-        _valid_str = "do successfully"
         _args = [CLI, self.name, "remove", uri]
         if force:
             _args.append("--force")
-        _res, _err = invoke_with_react(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke_with_react(_args)
+        return bool(_ret_code == 0)
 
     def history(self, name: str, fullname: bool = False) -> Any:
         """
@@ -109,8 +107,8 @@ class BaseArtifact:
         if fullname:
             _args.append("--fullname")
         _args.append(name)
-        _res, _err = invoke(_args)
-        return json.loads(_res) if not _err else []
+        _ret_code, _res = invoke(_args)
+        return json.loads(_res) if _ret_code == 0 else []
 
     def tag(self, uri: str, tags: List[str], remove: bool, quiet: bool) -> bool:
         _args = [CLI, self.name, "tag", uri]
@@ -119,8 +117,8 @@ class BaseArtifact:
         if quiet:
             _args.extend("--quiet")
         _args.extend(tags)
-        _res, _err = invoke(_args)
-        return not _err
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
 
 
 class Model(BaseArtifact):
@@ -142,17 +140,16 @@ class Model(BaseArtifact):
         if runtime_uri:
             _args.extend(["--runtime", runtime_uri])
         _args.append(workdir)
-        _res, _err = invoke(_args)
+        _ret_code, _res = invoke(_args)
         # TODO use version match
-        return not _err
+        return bool(_ret_code == 0)
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
-        _valid_str = "copy done"
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
 
     def extract(self) -> Any:
         return invoke([CLI, self.name, "extract"])
@@ -168,7 +165,6 @@ class Model(BaseArtifact):
         runtime_uri: str = "",
         dataset_uri: str = "",
     ) -> bool:
-        _valid_str = "finish run, success"
         _args = [CLI, self.name, "eval"]
         if project:
             _args.extend(["--project", project])
@@ -183,8 +179,8 @@ class Model(BaseArtifact):
         if dataset_uri:
             _args.extend(["--dataset", dataset_uri])
         _args.append(workdir)
-        _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
 
 
 class Dataset(BaseArtifact):
@@ -212,9 +208,9 @@ class Dataset(BaseArtifact):
             _args.extend(["--runtime", runtime_uri])
 
         _args.append(workdir)
-        _res, _err = invoke(_args)
+        _ret_code, _res = invoke(_args)
         # TODO use version match
-        return not _err
+        return bool(_ret_code == 0)
 
     def summary(self, uri: str) -> Any:
         """
@@ -232,16 +228,15 @@ class Dataset(BaseArtifact):
                 ]
             }
         """
-        _res, _err = invoke([CLI, "-o", "json", self.name, "summary", uri])
-        return json.loads(_res) if not _err else {}
+        _ret_code, _res = invoke([CLI, "-o", "json", self.name, "summary", uri])
+        return json.loads(_res) if _ret_code == 0 else {}
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
-        _valid_str = "copy done"
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
 
     def diff(self, base_uri: str, compare_uri: str) -> Any:
         """
@@ -290,10 +285,10 @@ class Dataset(BaseArtifact):
                 }
             }
         """
-        _res, _err = invoke(
+        _ret_code, _res = invoke(
             [CLI, "-o", "json", self.name, "diff", base_uri, compare_uri]
         )
-        return json.loads(_res) if not _err else {}
+        return json.loads(_res) if _ret_code == 0 else {}
 
 
 class Runtime(BaseArtifact):
@@ -332,9 +327,9 @@ class Runtime(BaseArtifact):
 
         _args.append(workdir)
 
-        _res, _err = invoke(_args)
+        _ret_code, _res = invoke(_args)
         # TODO use version match
-        return not _err
+        return bool(_ret_code == 0)
 
     def activate(self, uri: str, path: str) -> Any:
         """
@@ -346,12 +341,11 @@ class Runtime(BaseArtifact):
         return invoke([CLI, self.name, "activate", "--uri", uri, "--path", path])
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
-        _valid_str = "copy done"
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
 
     def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Any:
         """

@@ -13,9 +13,8 @@ class Project:
         :param name:
         :return:
         """
-        _valid_str = "do successfully"
-        res, err = invoke([CLI, self.project_cmd, "create", name])
-        return not err and _valid_str in res
+        _ret_code, _res = invoke([CLI, self.project_cmd, "create", name])
+        return bool(_ret_code == 0)
 
     def info(self, project: str) -> Any:
         """
@@ -35,8 +34,8 @@ class Project:
                 "name": "starwhale"
             }
         """
-        res, err = invoke([CLI, "-o", "json", self.project_cmd, "info", project])
-        return json.loads(res) if not err else {}
+        _ret_code, _res = invoke([CLI, "-o", "json", self.project_cmd, "info", project])
+        return json.loads(_res) if _ret_code == 0 else {}
 
     def list(self, instance: str = "local") -> Any:
         """
@@ -59,8 +58,10 @@ class Project:
                 }
             ]
         """
-        res, err = invoke([CLI, "-o", "json", self.project_cmd, "list", "-i", instance])
-        return json.loads(res) if not err else []
+        _ret_code, _res = invoke(
+            [CLI, "-o", "json", self.project_cmd, "list", "-i", instance]
+        )
+        return json.loads(_res) if _ret_code == 0 else []
 
     def remove(self, project: str) -> bool:
         """
@@ -69,9 +70,9 @@ class Project:
                 or: remove project oooooo, you can recover it, don't panic.
             whether removed
         """
-        res, err = invoke([CLI, self.project_cmd, "remove", project])
+        _ret_code, _res = invoke([CLI, self.project_cmd, "remove", project])
         _p = self.info(project)
-        return not err and not _p
+        return _ret_code == 0 and not _p
 
     def recover(self, project: str) -> bool:
         """
@@ -80,9 +81,9 @@ class Project:
             res is:failed to recover project ***, reason: dest:/home/**/.starwhale/*** existed
                 or:recover project ***
         """
-        res, err = invoke([CLI, self.project_cmd, "recover", project])
+        _ret_code, _res = invoke([CLI, self.project_cmd, "recover", project])
         _p = self.info(project)
-        return not err and _p
+        return _ret_code == 0 and bool(_p)
 
     def select(self, project: str) -> bool:
         """
@@ -91,6 +92,5 @@ class Project:
             res is:select instance:local, project:self successfully
                 or:failed to select self2, reason: need to create project self2
         """
-        _valid_str = "successfully"
-        res, err = invoke([CLI, self.project_cmd, "select", project])
-        return not err and _valid_str in res
+        _ret_code, _res = invoke([CLI, self.project_cmd, "select", project])
+        return bool(_ret_code == 0)

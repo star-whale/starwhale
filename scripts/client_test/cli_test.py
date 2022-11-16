@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 import tempfile
 from time import sleep
 from typing import Any, Optional
@@ -14,6 +15,8 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class TestCli:
@@ -41,12 +44,12 @@ class TestCli:
         step_spec_file: str,
     ) -> None:
         # use local instance
-        print("select local")
+        logging.info("select local")
         self.instance.select("local")
         assert self.project.select("self")
 
         # 1.model build
-        print("building model...")
+        logging.info("building model...")
         _model_uri = f"{model_name}/version/latest"
         assert len(self.model.list()) == 0
         self.model.build(workdir=model_workdir)
@@ -55,7 +58,7 @@ class TestCli:
         assert swmp
 
         # 2.dataset build
-        print("building dataset...")
+        logging.info("building dataset...")
         _ds_uri = f"{ds_name}/version/latest"
         assert len(self.dataset.list()) == 0
         self.dataset.build(workdir=ds_workdir)
@@ -64,7 +67,7 @@ class TestCli:
         assert swds
 
         # 3.runtime build
-        print("building runtime...")
+        logging.info("building runtime...")
         _rt_uri = f"{rt_name}/version/latest"
         assert len(self.runtime.list()) == 0
         self.runtime.build(workdir=rt_workdir)
@@ -73,7 +76,7 @@ class TestCli:
         assert swrt
 
         # 4.run evaluation on local instance
-        print("running evaluation at local...")
+        logging.info("running evaluation at local...")
         assert len(self.evaluation.list()) == 0
         assert self.evaluation.run(model=_model_uri, dataset=_ds_uri)
         _eval_list = self.evaluation.list()
@@ -82,15 +85,16 @@ class TestCli:
         eval_info = self.evaluation.info(_eval_list[0]["manifest"]["version"])
         assert eval_info
         assert eval_info["manifest"]["status"] == "success"
+        logging.info("finish run evaluation at standalone.")
 
         if mode != RunMode.CLOUD:
             return
         # 5.login to cloud
-        print(f"login to cloud {cloud_uri} ...")
+        logging.info(f"login to cloud {cloud_uri} ...")
         assert self.instance.login(url=cloud_uri)
 
         # 6.copy local artifacts to cloud
-        print("copy local artifacts to cloud...")
+        logging.info("copy local artifacts to cloud...")
         assert self.model.copy(
             src_uri=_model_uri,
             target_project=f"cloud://cloud/project/{cloud_project}",
@@ -115,7 +119,7 @@ class TestCli:
 
         # 8.start an evaluation
 
-        print("running evaluation at cloud...")
+        logging.info("running evaluation at cloud...")
         assert self.evaluation.run(
             model=swmp["version"],
             dataset=swds["version"],
@@ -145,13 +149,12 @@ class TestCli:
                 cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id
             )
             if _job_status:
-                print(f"job status is:{_job_status}")
+                logging.info(f"job status is:{_job_status}")
             else:
-                print("job status api occur some error!now will exit")
+                logging.info("job status api occur some error!now will exit")
                 break
 
-        # assert _job_status == "SUCCESS"
-
+        logging.info(f"finish run evaluation at cloud, status is:{_job_status}.")
         # 10.reset instance to local
         self.instance.select("local")
 
@@ -203,7 +206,7 @@ class TestCli:
 
 def init_run_environment(work_dir: str) -> None:
     # prepare environment
-    print(f"work-dir is:{work_dir}")
+    logging.info(f"work-dir is:{work_dir}")
 
     os.environ["SW_CLI_CONFIG"] = f"{work_dir}/config.yaml"
     os.environ["SW_LOCAL_STORAGE"] = f"{work_dir}/data"
@@ -213,10 +216,12 @@ def init_run_environment(work_dir: str) -> None:
     invoke(["cp", "-rf", f"{ROOT_DIR}/README.md", f"{work_dir}/README.md"])
 
     # install sw at current session
-    print(f"env PYPI_RELEASE_VERSION is:{os.environ.get('PYPI_RELEASE_VERSION')}")
+    logging.info(
+        f"env PYPI_RELEASE_VERSION is:{os.environ.get('PYPI_RELEASE_VERSION')}"
+    )
     invoke(["python3", "-m", "pip", "install", "-e", f"{work_dir}/client"])
     _res, _err = invoke(["swcli", "--version"])
-    print(f"pytest use swcli version is:{_res}")
+    logging.info(f"pytest use swcli version is:{_res}")
 
 
 class RunMode:
@@ -236,4 +241,4 @@ if __name__ == "__main__":
         elif example == "simple":
             test_cli.test_simple(_cloud_url)
         else:
-            print("there is nothing to run!")
+            logging.warning("there is nothing to run!")
