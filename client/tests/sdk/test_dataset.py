@@ -17,6 +17,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
 from starwhale import UserRawBuildExecutor
+from starwhale.utils import config
 from starwhale.consts import (
     HTTPMethod,
     ENV_POD_NAME,
@@ -249,12 +250,25 @@ class TestDatasetCopy(BaseTestCase):
 
         os.environ[SWEnv.instance_token] = "1234"
 
-        dc = DatasetCopy(
-            src_uri=f"{dataset_name}/version/{dataset_version}",
-            dest_uri=f"{instance_uri}/project/{cloud_project}",
-            typ=URIType.DATASET,
-        )
-        dc.do()
+        origin_conf = config.load_swcli_config().copy()
+        # patch config to pass instance alias check
+        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
+            origin_conf.update(
+                {
+                    "current_instance": "local",
+                    "instances": {
+                        "foo": {"uri": "http://1.1.1.1:8182"},
+                        "local": {"uri": "local", "current_project": "self"},
+                    },
+                }
+            )
+            mock_conf.return_value = origin_conf
+            dc = DatasetCopy(
+                src_uri=f"{dataset_name}/version/{dataset_version}",
+                dest_uri=f"{instance_uri}/project/{cloud_project}",
+                typ=URIType.DATASET,
+            )
+            dc.do()
 
         content = m_update_req.last_request.json()  # type: ignore
         assert {
@@ -361,12 +375,25 @@ class TestDatasetCopy(BaseTestCase):
         assert not (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
         os.environ[SWEnv.instance_token] = "1234"
-        dc = DatasetCopy(
-            src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
-            dest_uri="self",
-            typ=URIType.DATASET,
-        )
-        dc.do()
+        origin_conf = config.load_swcli_config().copy()
+        # patch config to pass instance alias check
+        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
+            origin_conf.update(
+                {
+                    "current_instance": "local",
+                    "instances": {
+                        "foo": {"uri": "http://1.1.1.1:8182"},
+                        "local": {"uri": "local"},
+                    },
+                }
+            )
+            mock_conf.return_value = origin_conf
+            dc = DatasetCopy(
+                src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+                dest_uri="self",
+                typ=URIType.DATASET,
+            )
+            dc.do()
 
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
