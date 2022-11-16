@@ -1,3 +1,4 @@
+import logging
 from os.path import exists
 
 from .invoke import invoke, invoke_with_react
@@ -18,7 +19,7 @@ class EnvironmentPrepare:
                 f"{self.work_dir}/example/mnist/requirements-sw-lock.txt",
             ]
         )
-        print(f"install package info:{_res}, err is:{_err}")
+        logging.info(f"install package info:{_res}, err is:{_err}")
 
     def download(self, package: str) -> None:
         if not exists(f"{self.work_dir}/example/mnist/data/{package}"):
