@@ -121,7 +121,7 @@ public class PluginServiceTest {
                 .build();
 
         given(panelPluginMapper.list()).willReturn(List.of(plugin));
-        var resp = new byte[]{1,2,3};
+        var resp = new byte[] {1, 2, 3};
         var ossResp = new LengthAbleInputStream(new ByteArrayInputStream(resp), resp.length);
         given(storageAccessService.get(anyString())).willReturn(ossResp);
 
