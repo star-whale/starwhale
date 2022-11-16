@@ -41,6 +41,7 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
@@ -80,6 +81,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -168,17 +170,31 @@ public class RuntimeServiceTest {
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
                     BundleUrl bundleUrl = invocation.getArgument(0);
-                    return Long.valueOf(bundleUrl.getBundleUrl());
+                    switch (bundleUrl.getBundleUrl()) {
+                        case "r1":
+                            return 1L;
+                        case "r2":
+                            return 2L;
+                        case "r3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
+
         given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
-                .willAnswer(invocation -> {
+                .willAnswer((Answer<Long>) invocation -> {
                     BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
-                });
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class), anyLong()))
-                .willAnswer(invocation -> {
-                    BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
+                    switch (url.getVersionUrl()) {
+                        case "v1":
+                            return 1L;
+                        case "v2":
+                            return 2L;
+                        case "v3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
         service.setBundleManager(bundleManager);
     }
@@ -205,15 +221,15 @@ public class RuntimeServiceTest {
     public void testDeleteRuntime() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "r1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("1").build());
+            var res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p1").runtimeUrl("r1").build());
             assertThat(res, is(true));
 
-            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("2").build());
+            res = service.deleteRuntime(RuntimeQuery.builder().projectUrl("p2").runtimeUrl("r2").build());
             assertThat(res, is(false));
         }
     }
@@ -276,15 +292,18 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("3").build()));
+                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("r3").build()));
 
         given(runtimeVersionMapper.findVersionById(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
 
+        given(runtimeVersionMapper.getLatestVersion(same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
+
         var res = service.getRuntimeInfo(RuntimeQuery.builder()
-                .projectUrl("1")
-                .runtimeUrl("1")
-                .runtimeVersionUrl("1")
+                .projectUrl("p1")
+                .runtimeUrl("r1")
+                .runtimeVersionUrl("v1")
                 .build());
 
         assertThat(res, allOf(
@@ -296,8 +315,8 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         res = service.getRuntimeInfo(RuntimeQuery.builder()
-                .projectUrl("1")
-                .runtimeUrl("1")
+                .projectUrl("p1")
+                .runtimeUrl("r1")
                 .build());
 
         assertThat(res, allOf(
@@ -305,7 +324,7 @@ public class RuntimeServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(BundleException.class,
                 () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build()));
     }
 
@@ -314,10 +333,10 @@ public class RuntimeServiceTest {
         given(runtimeVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifyRuntimeVersion("1", "1", "1", RuntimeVersion.builder().build());
+        var res = service.modifyRuntimeVersion("1", "1", "v1", RuntimeVersion.builder().build());
         assertThat(res, is(true));
 
-        res = service.modifyRuntimeVersion("1", "1", "2", RuntimeVersion.builder().build());
+        res = service.modifyRuntimeVersion("1", "1", "v2", RuntimeVersion.builder().build());
         assertThat(res, is(false));
     }
 
@@ -328,7 +347,7 @@ public class RuntimeServiceTest {
         var res = service.listRuntimeVersionHistory(
                 RuntimeVersionQuery.builder()
                         .projectUrl("1")
-                        .runtimeUrl("1")
+                        .runtimeUrl("r1")
                         .versionName("v1")
                         .versionTag("tag1")
                         .build(),
@@ -399,22 +418,16 @@ public class RuntimeServiceTest {
 
     @Test
     public void testPull() throws IOException {
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        given(runtimeMapper.findByName(same("r1"), same(1L)))
-                .willReturn(RuntimeEntity.builder().id(1L).build());
-        assertThrows(SwValidationException.class,
-                () -> service.pull("2", "r2", "v2", response));
-
-        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v1"), same(1L)))
+        given(runtimeVersionMapper.findVersionById(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().storagePath("path1").build());
-        assertThrows(SwValidationException.class,
-                () -> service.pull("1", "r1", "v4", response));
-
-        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v2"), same(1L)))
+        given(runtimeVersionMapper.findVersionById(same(2L)))
                 .willReturn(RuntimeVersionEntity.builder().storagePath("path2").build());
-
-        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v3"), same(1L)))
+        given(runtimeVersionMapper.findVersionById(same(3L)))
                 .willReturn(RuntimeVersionEntity.builder().storagePath("path3").build());
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        assertThrows(BundleException.class,
+                () -> service.pull("1", "r1", "v4", response));
 
         given(storageAccessService.list(anyString())).willThrow(IOException.class);
         given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
@@ -437,20 +450,17 @@ public class RuntimeServiceTest {
 
     @Test
     public void testQuery() {
-        given(runtimeMapper.findByName(same("r1"), same(1L)))
-                .willReturn(RuntimeEntity.builder().id(1L).build());
-
-        given(runtimeVersionMapper.findByNameAndRuntimeId(same("v1"), same(1L)))
+        given(runtimeVersionMapper.findVersionById(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionName("").build());
 
         var res = service.query("1", "r1", "v1");
         assertThat(res, is(""));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "r2", "v1"));
+                () -> service.query("p1", "r2", "v2"));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "r1", "v2"));
+                () -> service.query("p1", "r1", "v3"));
 
     }
 

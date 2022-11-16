@@ -115,6 +115,11 @@ public class ModelManager implements BundleAccessor, BundleVersionAccessor, TagA
     }
 
     @Override
+    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+        return versionMapper.getLatestVersion(bundleId);
+    }
+
+    @Override
     public Boolean revertTo(Long bundleId, Long bundleVersionId) {
         return versionMapper.revertTo(bundleId, bundleVersionId) > 0;
     }

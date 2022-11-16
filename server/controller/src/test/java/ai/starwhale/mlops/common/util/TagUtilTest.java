@@ -28,7 +28,9 @@ public class TagUtilTest {
     @Test
     public void testAddTags() {
         assertEquals("tag1,tag2,new", TagUtil.addTags("new", "tag1,tag2"));
-        assertThrows(TagException.class, () -> TagUtil.addTags("new", "tag1,tag2,v1"));
+        assertEquals("tag1,tag2,latest", TagUtil.addTags("latest", "tag1,tag2"));
+        assertEquals("tag1,tag2,LATEST", TagUtil.addTags("LATEST", "tag1,tag2"));
+        assertEquals("tag1,tag2,v1", TagUtil.addTags("v1", "tag1,tag2"));
         assertEquals("tag1,tag2,vv,new1,new2", TagUtil.addTags("new1,new2", "tag1,tag2,vv"));
         assertEquals("tag1,tag2,new1", TagUtil.addTags("new1,tag2", "tag1,tag2"));
         assertEquals("new1,new2", TagUtil.addTags("new1,new2", ""));
@@ -47,13 +49,18 @@ public class TagUtilTest {
 
     @Test
     public void testGetTags() {
-        TagAction tagAction = TagAction.of("add", "tag3");
-        assertEquals("tag1,tag2,tag3", TagUtil.getTags(tagAction, "tag1,tag2"));
+        TagAction tagAction = TagAction.of("add", "vv");
+        assertEquals("tag1,tag2,vv", TagUtil.manageTags(tagAction, "tag1,tag2"));
 
         tagAction = TagAction.of("remove", "tag2");
-        assertEquals("tag1,tag3", TagUtil.getTags(tagAction, "tag1,tag2,tag3"));
+        assertEquals("tag1,tag3", TagUtil.manageTags(tagAction, "tag1,tag2,tag3"));
 
         tagAction = TagAction.of("set", "tag2");
-        assertEquals("tag2", TagUtil.getTags(tagAction, "tag1,tag2,tag3"));
+        assertEquals("tag2", TagUtil.manageTags(tagAction, "tag1,tag2,tag3"));
+
+        assertThrows(TagException.class, () -> TagUtil.manageTags(TagAction.of("add", "latest"), "tag1,tag2"));
+        assertThrows(TagException.class, () -> TagUtil.manageTags(TagAction.of("add", "LATEST"), "tag1,tag2"));
+        assertThrows(TagException.class, () -> TagUtil.manageTags(TagAction.of("set", "v1"), "tag1,tag2"));
+        assertThrows(TagException.class, () -> TagUtil.manageTags(TagAction.of("set", "Latest"), "tag1,tag2"));
     }
 }

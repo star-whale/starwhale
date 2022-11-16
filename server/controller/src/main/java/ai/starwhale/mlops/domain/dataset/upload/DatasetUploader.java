@@ -17,6 +17,11 @@
 package ai.starwhale.mlops.domain.dataset.upload;
 
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleManager;
+import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
+import ai.starwhale.mlops.domain.dataset.DatasetManager;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
@@ -84,6 +89,9 @@ public class DatasetUploader {
     final ProjectManager projectManager;
     final DataStoreTableNameHelper dataStoreTableNameHelper;
     final IndexWriter indexWriter;
+    final DatasetManager datasetManager;
+    final IdConvertor idConvertor;
+    final VersionAliasConvertor versionAliasConvertor;
 
     public DatasetUploader(HotDatasetHolder hotDatasetHolder, DatasetMapper datasetMapper,
             DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator,
@@ -91,7 +99,8 @@ public class DatasetUploader {
             YAMLMapper yamlMapper,
             HotJobHolder jobHolder,
             ProjectManager projectManager, DataStoreTableNameHelper dataStoreTableNameHelper,
-            IndexWriter indexWriter) {
+            IndexWriter indexWriter,
+            DatasetManager datasetManager, IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor) {
         this.hotDatasetHolder = hotDatasetHolder;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -103,6 +112,9 @@ public class DatasetUploader {
         this.projectManager = projectManager;
         this.dataStoreTableNameHelper = dataStoreTableNameHelper;
         this.indexWriter = indexWriter;
+        this.datasetManager = datasetManager;
+        this.idConvertor = idConvertor;
+        this.versionAliasConvertor = versionAliasConvertor;
     }
 
     public void cancel(String uploadId) {
@@ -306,13 +318,10 @@ public class DatasetUploader {
     }
 
     public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProject(project).getId();
-        DatasetEntity datasetEntity = datasetMapper.findByName(name, projectId);
-        if (null == datasetEntity) {
-            throw new SwValidationException(ValidSubject.DATASET, "dataset name doesn't exists");
-        }
-        DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.findByDsIdAndVersionName(
-                datasetEntity.getId(), version);
+        BundleManager bundleManager = new BundleManager(idConvertor, versionAliasConvertor,
+                projectManager, datasetManager, datasetManager);
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(project, name, version));
+        DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.getVersionById(versionId);
         if (null == datasetVersionEntity) {
             throw new SwValidationException(ValidSubject.DATASET, "dataset version doesn't exists");
         }

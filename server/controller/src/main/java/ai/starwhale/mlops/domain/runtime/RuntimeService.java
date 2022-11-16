@@ -178,7 +178,8 @@ public class RuntimeService {
         RuntimeVersionEntity versionEntity = null;
         if (!StrUtil.isEmpty(runtimeQuery.getRuntimeVersionUrl())) {
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(bundleUrl, runtimeQuery.getRuntimeVersionUrl()), runtimeId);
+                    .create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl(),
+                            runtimeQuery.getRuntimeVersionUrl()));
             versionEntity = runtimeVersionMapper.findVersionById(versionId);
         }
         if (versionEntity == null) {
@@ -254,7 +255,14 @@ public class RuntimeService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeVersionEntity> entities = runtimeVersionMapper.listVersions(
                 runtimeId, query.getVersionName(), query.getVersionTag());
-        return PageUtil.toPageInfo(entities, versionConvertor::convert);
+        RuntimeVersionEntity latest = runtimeVersionMapper.getLatestVersion(runtimeId);
+        return PageUtil.toPageInfo(entities, entity -> {
+            RuntimeVersionVo vo = versionConvertor.convert(entity);
+            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+                vo.setAlias("latest");
+            }
+            return vo;
+        });
     }
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
@@ -401,13 +409,8 @@ public class RuntimeService {
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
-        if (null == runtimeEntity) {
-            throw new SwValidationException(ValidSubject.RUNTIME, "Runtime not found");
-        }
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl,
-                runtimeEntity.getId());
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(versionId);
         if (null == runtimeVersionEntity) {
             throw new SwValidationException(ValidSubject.RUNTIME, "Runtime version not found");
         }
@@ -438,13 +441,8 @@ public class RuntimeService {
     }
 
     public String query(String projectUrl, String runtimeUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        RuntimeEntity entity = runtimeMapper.findByName(runtimeUrl, projectId);
-        if (null == entity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME), HttpStatus.NOT_FOUND);
-        }
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(
-                versionUrl, entity.getId());
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(versionId);
         if (null == runtimeVersionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME), HttpStatus.NOT_FOUND);
         }

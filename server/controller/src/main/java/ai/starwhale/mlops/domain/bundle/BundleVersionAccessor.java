@@ -25,4 +25,6 @@ public interface BundleVersionAccessor {
     BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId);
 
     BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId);
+
+    BundleVersionEntity findLatestVersionByBundleId(Long bundleId);
 }

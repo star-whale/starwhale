@@ -242,7 +242,14 @@ public class DatasetService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<DatasetVersionEntity> entities = datasetVersionMapper.listVersions(
                 datasetId, query.getVersionName(), query.getVersionTag());
-        return PageUtil.toPageInfo(entities, versionConvertor::convert);
+        DatasetVersionEntity latest = datasetVersionMapper.getLatestVersion(datasetId);
+        return PageUtil.toPageInfo(entities, entity -> {
+            DatasetVersionVo vo = versionConvertor.convert(entity);
+            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+                vo.setAlias("latest");
+            }
+            return vo;
+        });
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
@@ -289,12 +296,9 @@ public class DatasetService {
     }
 
     public DatasetVersionEntity query(String projectUrl, String datasetUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        DatasetEntity entity = datasetMapper.findByName(datasetUrl, projectId);
-        if (null == entity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET), HttpStatus.NOT_FOUND);
-        }
-        DatasetVersionEntity versionEntity = datasetVersionMapper.findByDsIdAndVersionName(entity.getId(), versionUrl);
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
+                .create(projectUrl, datasetUrl, versionUrl));
+        DatasetVersionEntity versionEntity = datasetVersionMapper.getVersionById(versionId);
         if (null == versionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET), HttpStatus.NOT_FOUND);
         }
