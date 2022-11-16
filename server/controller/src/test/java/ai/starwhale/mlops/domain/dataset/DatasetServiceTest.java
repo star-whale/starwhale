@@ -39,6 +39,7 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
@@ -70,6 +71,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 public class DatasetServiceTest {
 
@@ -153,18 +155,31 @@ public class DatasetServiceTest {
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
                     BundleUrl bundleUrl = invocation.getArgument(0);
-                    return Long.valueOf(bundleUrl.getBundleUrl());
-                });
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
-                .willAnswer(invocation -> {
-                    BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
+                    switch (bundleUrl.getBundleUrl()) {
+                        case "d1":
+                            return 1L;
+                        case "d2":
+                            return 2L;
+                        case "d3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
 
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class), anyLong()))
-                .willAnswer(invocation -> {
+        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
+                .willAnswer((Answer<Long>) invocation -> {
                     BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
+                    switch (url.getVersionUrl()) {
+                        case "v1":
+                            return 1L;
+                        case "v2":
+                            return 2L;
+                        case "v3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
 
         service.setBundleManager(bundleManager);
@@ -192,21 +207,21 @@ public class DatasetServiceTest {
     public void testDeleteDataset() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "d1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteDataset(DatasetQuery.builder().projectUrl("p1").datasetUrl("1").build());
+            var res = service.deleteDataset(DatasetQuery.builder().projectUrl("p1").datasetUrl("d1").build());
             assertThat(res, is(true));
 
-            res = service.deleteDataset(DatasetQuery.builder().projectUrl("p2").datasetUrl("2").build());
+            res = service.deleteDataset(DatasetQuery.builder().projectUrl("p2").datasetUrl("d2").build());
             assertThat(res, is(false));
         }
     }
 
     @Test
-    public void testGetModelInfo() {
+    public void testGetDatasetInfo() {
         given(datasetMapper.findDatasetById(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
@@ -214,15 +229,18 @@ public class DatasetServiceTest {
                 .willReturn(DatasetEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("3").build()));
+                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
 
         given(datasetVersionMapper.getVersionById(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
 
+        given(datasetVersionMapper.getLatestVersion(same(1L)))
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+
         var res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
-                .datasetUrl("1")
-                .datasetVersionUrl("1")
+                .datasetUrl("d1")
+                .datasetVersionUrl("v1")
                 .build());
 
         assertThat(res, allOf(
@@ -235,7 +253,7 @@ public class DatasetServiceTest {
 
         res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
-                .datasetUrl("1")
+                .datasetUrl("d1")
                 .build());
 
         assertThat(res, allOf(
@@ -244,7 +262,7 @@ public class DatasetServiceTest {
         ));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("2").build()));
+                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d2").build()));
     }
 
     @Test
@@ -252,10 +270,10 @@ public class DatasetServiceTest {
         given(datasetVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifyDatasetVersion("1", "1", "1", new DatasetVersion());
+        var res = service.modifyDatasetVersion("1", "d1", "v1", new DatasetVersion());
         assertThat(res, is(true));
 
-        res = service.modifyDatasetVersion("1", "1", "2", new DatasetVersion());
+        res = service.modifyDatasetVersion("1", "d1", "v2", new DatasetVersion());
         assertThat(res, is(false));
     }
 
@@ -287,7 +305,7 @@ public class DatasetServiceTest {
         var res = service.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
                         .projectUrl("1")
-                        .datasetUrl("1")
+                        .datasetUrl("d1")
                         .versionName("v1")
                         .versionTag("tag1")
                         .build(),
@@ -353,17 +371,10 @@ public class DatasetServiceTest {
 
     @Test
     public void testQuery() {
-        given(datasetMapper.findByName(same("d1"), same(1L)))
-                .willReturn(DatasetEntity.builder().id(1L).build());
-
-        given(datasetVersionMapper.findByDsIdAndVersionName(same(1L), same("v1")))
+        given(datasetVersionMapper.getVersionById(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).build());
-
         var res = service.query("1", "d1", "v1");
         assertThat(res, hasProperty("id", is(1L)));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "d2", "v1"));
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.query("1", "d1", "v2"));
