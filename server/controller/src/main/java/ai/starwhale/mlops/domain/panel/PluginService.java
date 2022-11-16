@@ -27,22 +27,29 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageInfo;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 
 @Slf4j
 @Service
-public class PluginService {
+public class PluginService implements CommandLineRunner {
 
     private final StorageAccessService storageAccessService;
 
@@ -56,13 +63,16 @@ public class PluginService {
 
     private final ObjectMapper yamlMapper;
 
+    private final String cachePath;
+
     PluginService(
             StorageAccessService storageAccessService,
             StoragePathCoordinator storagePathCoordinator,
             @Qualifier("yamlMapper") ObjectMapper yamlMapper,
             PanelPluginMapper panelPluginMapper,
             PanelPluginConvertor panelPluginConvertor,
-            IdConvertor idConvertor
+            IdConvertor idConvertor,
+            @Value("${spring.web.resources.static-locations}") String[] staticLocations
     ) {
         this.storageAccessService = storageAccessService;
         this.storagePathCoordinator = storagePathCoordinator;
@@ -70,6 +80,10 @@ public class PluginService {
         this.panelPluginMapper = panelPluginMapper;
         this.panelPluginConvertor = panelPluginConvertor;
         this.idConvertor = idConvertor;
+        // find the first local filesystem location
+        var path = Arrays.stream(staticLocations).filter(i -> i.startsWith("file:")).findFirst().orElse("");
+        this.cachePath = path.replaceFirst("^file:", "");
+        log.debug("use {} as plugin cache path", this.cachePath);
     }
 
     public void installPlugin(MultipartFile multipartFile) {
@@ -98,7 +112,14 @@ public class PluginService {
             throw new SwProcessException(SwProcessException.ErrorType.STORAGE);
         }
 
-        // 2.update db
+        // 2. make cache in local filesystem
+        try (var tar = multipartFile.getInputStream()) {
+            initPluginCache(tar, manifest.name);
+        } catch (IOException | ArchiveException e) {
+            throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, "can not extract plugin", e);
+        }
+
+        // 3.update db
         var entity = PanelPluginEntity.builder()
                 .name(manifest.name)
                 .version(manifest.version)
@@ -106,8 +127,6 @@ public class PluginService {
                 .storagePath(storagePath)
                 .build();
         panelPluginMapper.add(entity);
-
-        // TODO make cache in static resource path
     }
 
     public void uninstallPlugin(String idStr) {
@@ -120,5 +139,35 @@ public class PluginService {
 
     public PageInfo<PanelPluginVo> listPlugin() {
         return PageUtil.toPageInfo(panelPluginMapper.list(), panelPluginConvertor::convert);
+    }
+
+    public void initPluginCache(InputStream is, String subPath) throws IOException, ArchiveException {
+        if (cachePath.isEmpty()) {
+            log.warn("cache path is empty");
+            return;
+        }
+        TarFileUtil.extract(is, Paths.get(cachePath, subPath).toString());
+    }
+
+    public void initPluginCaches() {
+        panelPluginMapper.list().forEach(plugin -> {
+            try {
+                var is = Retry.decorateCheckedSupplier(
+                        Retry.of("get plugin", RetryConfig.custom()
+                                .maxAttempts(3)
+                                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
+                                .build()),
+                        () -> this.storageAccessService.get(plugin.getStoragePath())).apply();
+                initPluginCache(is, plugin.getName());
+                is.close();
+            } catch (Throwable e) {
+                log.error("can not init plugin {}@{}, err {}", plugin.getName(), plugin.getVersion(), e.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        initPluginCaches();
     }
 }

@@ -57,13 +57,15 @@ public class PluginServiceTest {
         var yamlMapper = new ObjectMapper(new YAMLFactory());
         var idConvertor = new IdConvertor();
         var panelPluginConvertor = new PanelPluginConvertor(idConvertor);
+        var locations = new String[]{"file:/opt/starwhale.static"};
         service = new PluginService(
             storageAccessService,
             storagePathCoordinator,
             yamlMapper,
             panelPluginMapper,
             panelPluginConvertor,
-            idConvertor
+            idConvertor,
+            locations
         );
     }
 
