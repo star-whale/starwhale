@@ -317,11 +317,11 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
         # TODO: tune performance scan after put in a second
         for row in self.tabular_dataset.scan():
-            if row.data_uri not in map_fno_sign:
+            if row.data_uri.uri not in map_fno_sign:
                 continue
 
             self.tabular_dataset.update(
-                row_id=row.id, data_uri=map_fno_sign[row.data_uri]
+                row_id=row.id, data_uri=Link(map_fno_sign[row.data_uri.uri])
             )
 
 
