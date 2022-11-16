@@ -45,7 +45,7 @@ public class SwOutputFile implements OutputFile {
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
         var out = new PipedOutputStream();
         var in = new PipedInputStream(out);
-        new Thread(() -> {
+        var t = new Thread(() -> {
             try {
                 this.storageAccessService.put(this.path, in);
             } catch (IOException e) {
@@ -57,7 +57,8 @@ public class SwOutputFile implements OutputFile {
                     // ignore this
                 }
             }
-        }).start();
+        });
+        t.start();
         return new PositionOutputStream() {
             private long pos;
 
@@ -81,6 +82,11 @@ public class SwOutputFile implements OutputFile {
             @Override
             public void close() throws IOException {
                 out.close();
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    throw new IOException(e);
+                }
             }
         };
     }
