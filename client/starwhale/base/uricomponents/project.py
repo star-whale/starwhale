@@ -46,7 +46,7 @@ class Project:
         # TODO check if project exists for local and remote
 
     @classmethod
-    def parse(cls, uri: str) -> "Project":
+    def parse(cls, uri: str, ignore_rc_type: bool) -> "Project":
         """
         Parse project from full uri.
         we do not parse instance and project info from uri less than 5 parts.
@@ -54,8 +54,13 @@ class Project:
         the second is difficult to write correctly at once and the semantics are not very clear.
         and the long uri usually copied from the website.
         """
+        # TODO ignore '//' if uri like https://foo.com/bar/xxx
         parts = uri.split("/")
         exp = len("local/project/self/dataset/mnist".split("/"))
+        if ignore_rc_type:
+            # ignore type in uri like dataset
+            exp = exp - 1
+
         if len(parts) < exp:
             raise UriTooShortException(
                 exp, len(parts), f"can not parse project info from {uri}"

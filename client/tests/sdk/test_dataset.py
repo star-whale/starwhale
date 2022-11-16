@@ -391,7 +391,8 @@ class TestDatasetCopy(BaseTestCase):
             mock_conf.return_value = origin_conf
             dc = DatasetCopy(
                 src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
-                dest_uri="self",
+                dest_uri="",
+                project="self",
                 typ=URIType.DATASET,
             )
             dc.do()

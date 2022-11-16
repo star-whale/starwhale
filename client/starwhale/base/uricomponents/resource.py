@@ -80,7 +80,7 @@ class Resource:
             self.project = project
         else:
             try:
-                self.project = Project.parse(uri)
+                self.project = Project.parse(uri, ignore_rc_type=typ is not None)
                 uri = self.project.path
             except UriTooShortException:
                 self.project = Project()

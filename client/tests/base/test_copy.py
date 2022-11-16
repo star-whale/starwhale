@@ -86,7 +86,8 @@ class TestBundleCopy(TestCase):
 
         bc = BundleCopy(
             src_uri=f"cloud://pre-bare/project/1/model/mnist/version/{version}",
-            dest_uri="self",
+            dest_uri="",
+            project="self",
             typ=URIType.MODEL,
         )
         bc.do()
@@ -164,7 +165,8 @@ class TestBundleCopy(TestCase):
         )
         bc = BundleCopy(
             src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
-            dest_uri="self",
+            dest_uri="",
+            project="self",
             typ=URIType.DATASET,
         )
         bc.do()

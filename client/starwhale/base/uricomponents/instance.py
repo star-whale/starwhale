@@ -19,6 +19,8 @@ def _find_alias_by_url(url: str) -> Tuple[str, str]:
     """parse url and return instance alias and path from url"""
     if not url:
         return _get_default_instance_alias(), ""
+    if url.startswith("local/"):
+        return "local", url[len("local") :]
     p = urlparse(url)
     # use host as alias when url starts with cloud
     if p.scheme == "cloud":
