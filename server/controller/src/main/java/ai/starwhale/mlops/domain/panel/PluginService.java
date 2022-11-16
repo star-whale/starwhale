@@ -159,9 +159,8 @@ public class PluginService implements CommandLineRunner {
                                 .build()),
                         () -> this.storageAccessService.get(plugin.getStoragePath())).apply();
                 initPluginCache(is, plugin.getName());
-                is.close();
             } catch (Throwable e) {
-                log.error("can not init plugin {}@{}, err {}", plugin.getName(), plugin.getVersion(), e.getMessage());
+                log.error("can not init plugin {}@{}, err {}", plugin.getName(), plugin.getVersion(), e.getStackTrace());
             }
         });
     }
