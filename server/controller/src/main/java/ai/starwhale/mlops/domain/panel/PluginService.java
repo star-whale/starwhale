@@ -141,7 +141,7 @@ public class PluginService implements CommandLineRunner {
         return PageUtil.toPageInfo(panelPluginMapper.list(), panelPluginConvertor::convert);
     }
 
-    public void initPluginCache(InputStream is, String subPath) throws IOException, ArchiveException {
+    private void initPluginCache(InputStream is, String subPath) throws IOException, ArchiveException {
         if (cachePath.isEmpty()) {
             log.warn("cache path is empty");
             return;
@@ -149,7 +149,7 @@ public class PluginService implements CommandLineRunner {
         TarFileUtil.extract(is, Paths.get(cachePath, subPath).toString());
     }
 
-    public void initPluginCaches() {
+    private void initPluginCaches() {
         panelPluginMapper.list().forEach(plugin -> {
             try {
                 var is = Retry.decorateCheckedSupplier(

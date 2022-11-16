@@ -110,4 +110,11 @@ public class PluginServiceTest {
         service.uninstallPlugin(id);
         verify(panelPluginMapper).remove(42L);
     }
+
+    @Test
+    public void testRun() throws Exception {
+        try (var tar = mockStatic(TarFileUtil.class)) {
+            service.run();
+        }
+    }
 }
