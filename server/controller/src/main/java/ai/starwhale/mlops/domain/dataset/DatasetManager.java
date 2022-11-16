@@ -98,6 +98,11 @@ public class DatasetManager implements BundleAccessor, BundleVersionAccessor, Ta
     }
 
     @Override
+    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+        return datasetVersionMapper.getLatestVersion(bundleId);
+    }
+
+    @Override
     public HasTag findObjectWithTagById(Long id) {
         DatasetVersionEntity entity = datasetVersionMapper.getVersionById(id);
         return HasTagWrapper.builder()

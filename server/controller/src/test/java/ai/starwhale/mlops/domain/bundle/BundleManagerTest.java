@@ -87,6 +87,8 @@ public class BundleManagerTest {
                 .willReturn(VersionEntityWrapper.builder().id(2L).name("byAlias").build());
         given(bundleVersionAccessor.findVersionByNameAndBundleId(anyString(), anyLong()))
                 .willReturn(VersionEntityWrapper.builder().id(3L).name("byName").build());
+        given(bundleVersionAccessor.findLatestVersionByBundleId(anyLong()))
+                .willReturn(VersionEntityWrapper.builder().id(4L).name("byLatest").build());
 
         var res = bundleManager.getBundleVersionId(
                 BundleVersionUrl.create("1", "1", "1"));
@@ -103,6 +105,10 @@ public class BundleManagerTest {
         res = bundleManager.getBundleVersionId(
                 BundleVersionUrl.create("", "", "vName"), 1L);
         assertThat(res, is(3L));
+
+        res = bundleManager.getBundleVersionId(
+                BundleVersionUrl.create("", "", "latest"), 1L);
+        assertThat(res, is(4L));
 
         assertThrows(StarwhaleException.class,
                 () -> bundleManager.getBundleVersionId(BundleVersionUrl.create("", "", "2"), 1L));

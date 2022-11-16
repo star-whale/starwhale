@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.VersionAliasConvertor;
 import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
@@ -91,9 +93,14 @@ public class DatasetUploaderTest {
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
+        DatasetManager datasetManager = mock(DatasetManager.class);
+        IdConvertor idConvertor = new IdConvertor();
+        VersionAliasConvertor versionAliasConvertor = new VersionAliasConvertor();
+
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService, yamlMapper,
-                hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter);
+                hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetManager, idConvertor,
+                versionAliasConvertor);
 
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", new UploadRequest());
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
@@ -130,12 +137,17 @@ public class DatasetUploaderTest {
                 .build();
         when(datasetVersionMapper.findByDsIdAndVersionNameForUpdate(1L, dsVersionId)).thenReturn(mockedEntity);
         when(datasetVersionMapper.findByDsIdAndVersionName(1L, dsVersionId)).thenReturn(mockedEntity);
+        when(datasetVersionMapper.getVersionById(1L)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(
                 new LengthAbleInputStream(
                         new ByteArrayInputStream(index_file_content.getBytes()),
                         index_file_content.getBytes().length
                 )
         );
+        when(datasetManager.findByName(anyString(), anyLong()))
+                .thenReturn(DatasetEntity.builder().id(1L).build());
+        when(datasetManager.findVersionByNameAndBundleId(dsVersionId, 1L))
+                .thenReturn(mockedEntity);
         HttpServletResponse httpResponse = mock(HttpServletResponse.class);
         ServletOutputStream mockOutPutStream = new ServletOutputStream() {
 
