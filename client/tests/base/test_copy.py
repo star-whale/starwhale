@@ -1,7 +1,9 @@
 import json
 from http import HTTPStatus
 
+import yaml
 from requests_mock import Mocker
+from requests_mock.exceptions import NoMockAddress
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import get_predefined_config_yaml
@@ -31,6 +33,562 @@ class TestBundleCopy(TestCase):
         self.fs.create_file(path, contents=_existed_config_contents)
         self._sw_config = SWCliConfigMixed()
         self._sw_config.select_current_default("local", "self")
+
+    @Mocker()
+    def test_runtime_copy_c2l(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}/file",
+            content=b"pytorch content",
+        )
+
+        cloud_uri = (
+            f"cloud://pre-bare/project/myproject/runtime/pytorch/version/{version}"
+        )
+
+        cases = [
+            {
+                "dest_uri": "pytorch-alias",
+                "dest_local_project_uri": None,
+                "path": "self/runtime/pytorch-alias",
+            },
+            {
+                "dest_uri": "pytorch-alias",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/runtime/pytorch-alias",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": None,
+                "path": "self/runtime/pytorch",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/runtime/pytorch",
+            },
+            {
+                "dest_uri": "local/project/self/pytorch-new-alias",
+                "dest_local_project_uri": None,
+                "path": "self/runtime/pytorch-new-alias",
+            },
+        ]
+
+        for case in cases:
+            swrt_path = (
+                self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swrt"
+            )
+            assert not swrt_path.exists()
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri=case["dest_uri"],
+                typ=URIType.RUNTIME,
+                dest_local_project_uri=case["dest_local_project_uri"],
+            ).do()
+            assert swrt_path.is_file()
+
+        with self.assertRaises(Exception):
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri="local/project/self/pytorch-new-alias",
+                typ=URIType.RUNTIME,
+                dest_local_project_uri="myproject",
+            ).do()
+
+    @Mocker()
+    def test_runtime_copy_l2c(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        swrt_path = (
+            self._sw_config.rootdir
+            / "self"
+            / "runtime"
+            / "mnist"
+            / version[:2]
+            / f"{version}.swrt"
+        )
+        tag_manifest_path = (
+            self._sw_config.rootdir / "self" / "runtime" / "mnist" / "_manifest.yaml"
+        )
+        ensure_dir(swrt_path.parent)
+        ensure_file(swrt_path, "")
+        ensure_file(
+            tag_manifest_path,
+            yaml.safe_dump(
+                {
+                    "fast_tag_seq": 0,
+                    "name": "mnist",
+                    "typ": "runtime",
+                    "tags": {"latest": version, "v1": version},
+                    "versions": {version: {"latest": True, "v1": True}},
+                }
+            ),
+        )
+
+        cases = [
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/runtime/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": "mnist",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias",
+                "dest_runtime": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
+                "dest_runtime": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/123",
+                "dest_runtime": "mnist-new-alias",
+            },
+        ]
+
+        for case in cases:
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{case['dest_runtime']}/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{case['dest_runtime']}/version/{version}/file",
+            )
+            BundleCopy(
+                src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.RUNTIME
+            ).do()
+            assert head_request.call_count == 1
+            assert upload_request.call_count == 1
+
+        # TODO: support the flowing case
+        with self.assertRaises(NoMockAddress):
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}/file",
+            )
+            BundleCopy(
+                src_uri="mnist/v1",
+                dest_uri="cloud://pre-bare/project/mnist/runtime/mnist-alias",
+                typ=URIType.RUNTIME,
+            ).do()
+
+    @Mocker()
+    def test_model_copy_c2l(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file",
+            content=b"mnist model content",
+        )
+
+        cloud_uri = f"cloud://pre-bare/project/myproject/model/mnist/version/{version}"
+
+        cases = [
+            {
+                "dest_uri": "mnist-alias",
+                "dest_local_project_uri": None,
+                "path": "self/model/mnist-alias",
+            },
+            {
+                "dest_uri": "mnist-alias",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/model/mnist-alias",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": None,
+                "path": "self/model/mnist",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/model/mnist",
+            },
+            {
+                "dest_uri": "local/project/self/mnist-new-alias",
+                "dest_local_project_uri": None,
+                "path": "self/model/mnist-new-alias",
+            },
+        ]
+
+        for case in cases:
+            swmp_path = (
+                self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swmp"
+            )
+            assert not swmp_path.exists()
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri=case["dest_uri"],
+                typ=URIType.MODEL,
+                dest_local_project_uri=case["dest_local_project_uri"],
+            ).do()
+            assert swmp_path.exists()
+            assert swmp_path.is_file()
+
+        with self.assertRaises(Exception):
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri="local/project/self/mnist-new-alias",
+                typ=URIType.MODEL,
+                dest_local_project_uri="myproject",
+            ).do()
+
+    @Mocker()
+    def test_model_copy_l2c(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        swmp_path = (
+            self._sw_config.rootdir
+            / "self"
+            / "model"
+            / "mnist"
+            / version[:2]
+            / f"{version}.swmp"
+        )
+        tag_manifest_path = (
+            self._sw_config.rootdir / "self" / "model" / "mnist" / "_manifest.yaml"
+        )
+        ensure_dir(swmp_path.parent)
+        ensure_file(swmp_path, "")
+        ensure_file(
+            tag_manifest_path,
+            yaml.safe_dump(
+                {
+                    "fast_tag_seq": 0,
+                    "name": "mnist",
+                    "typ": "model",
+                    "tags": {"latest": version, "v1": version},
+                    "versions": {version: {"latest": True, "v1": True}},
+                }
+            ),
+        )
+
+        cases = [
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/model/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": "mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias",
+                "dest_model": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
+                "dest_model": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/123",
+                "dest_model": "mnist-new-alias",
+            },
+        ]
+
+        for case in cases:
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
+            )
+            BundleCopy(
+                src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.MODEL
+            ).do()
+            assert head_request.call_count == 1
+            assert upload_request.call_count == 1
+
+        # TODO: support the flowing case
+        with self.assertRaises(NoMockAddress):
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
+            )
+            BundleCopy(
+                src_uri="mnist/v1",
+                dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
+                typ=URIType.MODEL,
+            ).do()
+
+    @Mocker()
+    def test_dataset_copy_c2l(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file",
+            json={
+                "signature": [],
+            },
+        )
+
+        cloud_uri = (
+            f"cloud://pre-bare/project/myproject/dataset/mnist/version/{version}"
+        )
+
+        cases = [
+            {
+                "dest_uri": "mnist-alias",
+                "dest_local_project_uri": None,
+                "path": "self/dataset/mnist-alias",
+            },
+            {
+                "dest_uri": "mnist-alias",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/dataset/mnist-alias",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": None,
+                "path": "self/dataset/mnist",
+            },
+            {
+                "dest_uri": ".",
+                "dest_local_project_uri": "myproject",
+                "path": "myproject/dataset/mnist",
+            },
+            {
+                "dest_uri": "local/project/self/mnist-new-alias",
+                "dest_local_project_uri": None,
+                "path": "self/dataset/mnist-new-alias",
+            },
+        ]
+
+        for case in cases:
+            swds_path = (
+                self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swds"
+            )
+            assert not swds_path.exists()
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri=case["dest_uri"],
+                typ=URIType.DATASET,
+                dest_local_project_uri=case["dest_local_project_uri"],
+            ).do()
+            assert swds_path.exists()
+            assert swds_path.is_dir()
+
+        with self.assertRaises(Exception):
+            BundleCopy(
+                src_uri=cloud_uri,
+                dest_uri="local/project/self/mnist-new-alias",
+                typ=URIType.DATASET,
+                dest_local_project_uri="myproject",
+            ).do()
+
+    @Mocker()
+    def test_dataset_copy_l2c(self, rm: Mocker) -> None:
+        version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        swds_path = (
+            self._sw_config.rootdir
+            / "self"
+            / "dataset"
+            / "mnist"
+            / version[:2]
+            / f"{version}.swds"
+        )
+        tag_manifest_path = (
+            self._sw_config.rootdir / "self" / "dataset" / "mnist" / "_manifest.yaml"
+        )
+        hash_name = "27a43c91b7a1a9a9c8e51b1d796691dd"
+        ensure_dir(swds_path)
+        ensure_file(swds_path / ARCHIVED_SWDS_META_FNAME, " ")
+        ensure_file(
+            swds_path / DEFAULT_MANIFEST_NAME,
+            json.dumps(
+                {"signature": [f"1:{DatasetStorage.object_hash_algo}:{hash_name}"]}
+            ),
+        )
+        ensure_dir(swds_path / "data")
+        data_path = DatasetStorage._get_object_store_path(hash_name)
+        ensure_dir(data_path.parent)
+        ensure_file(data_path, "")
+
+        ensure_file(
+            tag_manifest_path,
+            yaml.safe_dump(
+                {
+                    "fast_tag_seq": 0,
+                    "name": "mnist",
+                    "typ": "dataset",
+                    "tags": {"latest": version, "v1": version},
+                    "versions": {version: {"latest": True, "v1": True}},
+                }
+            ),
+        )
+
+        cases = [
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/dataset/mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": "mnist",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"mnist/version/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/123",
+                "dest_dataset": "mnist-new-alias",
+            },
+        ]
+
+        for case in cases:
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
+                json={"data": {"upload_id": 1}},
+            )
+            BundleCopy(
+                src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
+            ).do()
+            assert head_request.call_count == 1
+            assert upload_request.call_count == 3
+
+        # TODO: support the flowing case
+        with self.assertRaises(NoMockAddress):
+            head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}",
+                json={"message": "not found"},
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+            upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}/file",
+                json={"data": {"upload_id": 1}},
+            )
+            BundleCopy(
+                src_uri="mnist/v1",
+                dest_uri="cloud://pre-bare/project/mnist/dataset/mnist-alias",
+                typ=URIType.DATASET,
+            ).do()
 
     @Mocker()
     def test_upload_bundle_file(self, rm: Mocker) -> None:
@@ -87,7 +645,7 @@ class TestBundleCopy(TestCase):
         bc = BundleCopy(
             src_uri=f"cloud://pre-bare/project/1/model/mnist/version/{version}",
             dest_uri="",
-            project="self",
+            local_project_uri="self",
             typ=URIType.MODEL,
         )
         bc.do()
@@ -166,7 +724,7 @@ class TestBundleCopy(TestCase):
         bc = BundleCopy(
             src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
             dest_uri="",
-            project="self",
+            local_project_uri="self",
             typ=URIType.DATASET,
         )
         bc.do()

@@ -50,22 +50,23 @@ def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy model")
-def _copy(src: str, dest: str, force: bool) -> None:
-    ModelTermView.copy(src, dest, force)
+@click.option("-dlp", "--dest-local-project", help="dest local project uri")
+def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    ModelTermView.copy(src, dest, force, dest_local_project)
 
 
 @model_cmd.command("info", help="Show model details")
 @click.argument("model")
-@click.option("--fullname", is_flag=True, help="Show version fullname")
+@click.option("-f", "--fullname", is_flag=True, help="Show version fullname")
 @click.pass_obj
 def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
     view(model).info(fullname)
 
 
 @model_cmd.command("list", aliases=["ls"], help="List Model")
-@click.option("--project", default="", help="Project URI")
-@click.option("--fullname", is_flag=True, help="Show fullname of model version")
-@click.option("--show-removed", is_flag=True, help="Show removed model")
+@click.option("-p", "--project", default="", help="Project URI")
+@click.option("-f", "--fullname", is_flag=True, help="Show fullname of model version")
+@click.option("-sr", "--show-removed", is_flag=True, help="Show removed model")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for model list"
 )

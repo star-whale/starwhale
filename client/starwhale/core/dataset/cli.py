@@ -119,9 +119,8 @@ def _diff(
 
 @dataset_cmd.command("list", aliases=["ls"], help="List dataset")
 @click.option("-p", "--project", default="", help="Project URI")
-@click.option("--fullname", is_flag=True, help="Show fullname of dataset version")
-@click.option("--show-removed", is_flag=True, help="Show removed datasets")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("-f", "--fullname", is_flag=True, help="Show fullname of dataset version")
+@click.option("-sr", "--show-removed", is_flag=True, help="Show removed datasets")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for dataset list"
 )
@@ -203,9 +202,9 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
-@click.pass_obj
-def _copy(view: t.Type[DatasetTermView], src: str, dest: str, force: bool) -> None:
-    view.copy(src, dest, force)
+@click.option("-dlp", "--dest-local-project", help="dest local project uri")
+def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    DatasetTermView.copy(src, dest, force, dest_local_project)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")

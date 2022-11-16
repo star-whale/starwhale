@@ -64,15 +64,20 @@ class BundleCopy(CloudRequestMixed):
         force: bool = False,
         **kw: t.Any,
     ) -> None:
-        p = kw.get("project")
-        project = p and Project(p) or None
         self.src_uri = Resource(src_uri, typ=ResourceType[typ]).to_uri()
+        if self.src_uri.instance_type == InstanceType.CLOUD:
+            p = kw.get("dest_local_project_uri")
+            project = p and Project(p) or None
+            dest_uri = self.src_uri.object.name if dest_uri.strip() == "." else dest_uri
+        else:
+            project = None
+
         self.dest_uri = Resource(
             dest_uri, typ=ResourceType[typ], project=project
         ).to_uri()
+
         self.typ = typ
         self.force = force
-
         self.bundle_name = self.src_uri.object.name
         self.bundle_version = self._guess_bundle_version()
         self.field_flag = _query_param_map[self.typ]
@@ -241,7 +246,7 @@ class BundleCopy(CloudRequestMixed):
                     instance=STANDALONE_INSTANCE,
                     project=self.dest_uri.project,
                     obj_type=self.typ,
-                    obj_name=self.bundle_name,
+                    obj_name=self.dest_uri.object.name or self.bundle_name,
                     obj_ver=self.bundle_version,
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()

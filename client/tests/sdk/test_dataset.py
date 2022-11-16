@@ -392,7 +392,7 @@ class TestDatasetCopy(BaseTestCase):
             dc = DatasetCopy(
                 src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
                 dest_uri="",
-                project="self",
+                dest_local_project_uri="self",
                 typ=URIType.DATASET,
             )
             dc.do()

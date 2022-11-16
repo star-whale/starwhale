@@ -251,15 +251,15 @@ def _restore(target: str) -> None:
     """
     [Only Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
 
-    TARGET: runtime uri or runtice workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    TARGET: runtime uri or runtime workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     RuntimeTermView.restore(target)
 
 
 @runtime_cmd.command("list", aliases=["ls"], help="List runtime")
-@click.option("--project", default="", help="Project URI")
-@click.option("--fullname", is_flag=True, help="Show fullname of runtime version")
-@click.option("--show-removed", is_flag=True, help="Show removed runtime")
+@click.option("-p", "--project", default="", help="Project URI")
+@click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
+@click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
 )
@@ -296,8 +296,9 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
-def _copy(src: str, dest: str, force: bool) -> None:
-    RuntimeTermView.copy(src, dest, force)
+@click.option("-dlp", "--dest-local-project", help="dest local project uri")
+def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    RuntimeTermView.copy(src, dest, force, dest_local_project)
 
 
 @runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
