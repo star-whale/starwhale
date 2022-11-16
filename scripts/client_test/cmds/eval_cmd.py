@@ -40,7 +40,6 @@ class Evaluation:
         :param resource_pool: [ONLY Cloud] which nodes should job run on
         :return:
         """
-        _valid_str = "success to create job"
         _args = [CLI, self._cmd, "run", "--model", model, "--dataset", dataset]
         if version:
             _args.extend(["--version", version])
@@ -63,8 +62,9 @@ class Evaluation:
             _args.extend(["--step", step, "--task-index", str(task_index)])
 
         _args.extend(["--project", project])
-        _res, _err = invoke(_args)
-        return _valid_str in _res
+        _ret_code, _ = invoke(_args, raise_err=True)
+
+        return bool(_ret_code == 0)
 
     def info(self, version: str) -> Any:
         """
@@ -220,8 +220,8 @@ class Evaluation:
                     ]
                 }
         """
-        _res, _err = invoke([CLI, "-o", "json", self._cmd, "info", version])
-        return json.loads(_res) if not _err else {}
+        _ret_code, _res = invoke([CLI, "-o", "json", self._cmd, "info", version])
+        return json.loads(_res) if _ret_code == 0 else {}
 
     def list(
         self,
@@ -279,14 +279,14 @@ class Evaluation:
         if show_removed:
             _args.append("--show-removed")
 
-        _res, _err = invoke(_args)
-        return json.loads(_res) if not _err else []
+        _ret_code, _res = invoke(_args)
+        return json.loads(_res) if _ret_code == 0 else []
 
     def cancel(self, uri: str, force: bool = False) -> bool:
         return self._operate("cancel", uri=uri, force=force)
 
     def compare(self, base_uri: str, compare_uri: str) -> Any:
-        _res, _err = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
+        _ret_code, _res = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
         return _res
 
     def pause(self, uri: str, force: bool = False) -> bool:
@@ -307,9 +307,8 @@ class Evaluation:
         :param force: bool
         :return:
         """
-        _valid_str = "successfully"
         _args = [CLI, self._cmd, name, uri]
         if force:
             _args.append("--force")
-        _res, _err = invoke(_args)
-        return not _err and _valid_str in _res
+        _ret_code, _res = invoke(_args)
+        return bool(_ret_code == 0)
