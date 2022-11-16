@@ -7,29 +7,9 @@ from botocore.client import Config as S3Config
 
 from starwhale import Link, Image, MIMEType, S3LinkAuth, BoundingBox  # noqa: F401
 from starwhale.core.dataset.store import S3Connection, S3StorageBackend  # noqa: F401
-from starwhale.api._impl.data_store import SwObject
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
-
-
-class SegInfo(SwObject):
-    def __init__(
-        self,
-        sg: dict,
-    ) -> None:
-        self.id = sg.get("id")
-        self.category_id = sg.get("category_id")
-        self.iscrowd = sg.get("iscrowd")
-        self.bbox = sg.get("bbox")
-        self.area = sg.get("area")
-        self.bbox_view = sg.get("bbox_view")
-
-
-def seg_dict_2_object(sg: dict):
-    x, y, w, h = sg["bbox"]
-    sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
-    return SegInfo(sg)
 
 
 def do_iter_item():
