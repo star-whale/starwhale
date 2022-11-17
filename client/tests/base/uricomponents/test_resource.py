@@ -1,3 +1,5 @@
+from typing import Optional
+from dataclasses import dataclass
 from unittest.mock import Mock, patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -94,3 +96,52 @@ class TestResource(TestCase):
         # name only will be treated as a version
         with self.assertRaises(NoMatchException):
             Resource("mnist")
+
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_parsing_browser_url(self, load_conf: MagicMock):
+        @dataclass
+        class Expect:
+            instance: str
+            project: str
+            typ: ResourceType
+            name: Optional[str] = None
+            version: Optional[str] = None
+
+            def __eq__(self, other: Resource):
+                return (
+                    other.instance.alias == self.instance
+                    and other.project.name == self.project
+                    and other.typ == self.typ
+                    and other.name == self.name
+                    and other.version == self.version
+                )
+
+        load_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "https://foo.com"},
+                "bar": {"uri": "https://bar.com"},
+            },
+        }
+        tests = {
+            "https://foo.com/projects/1/models": Expect("foo", "1", ResourceType.model),
+            "https://foo.com/projects/2/runtimes": Expect(
+                "foo", "2", ResourceType.runtime
+            ),
+            "https://foo.com/projects/3/datasets": Expect(
+                "foo", "3", ResourceType.dataset
+            ),
+            "https://foo.com/projects/4/evaluations": Expect(
+                "foo", "4", ResourceType.evaluation
+            ),
+            "https://foo.com/projects/5/models/1/versions": Expect(
+                "foo", "5", ResourceType.model, "1"
+            ),
+            "https://foo.com/projects/5/models/1/versions/2/files": Expect(
+                "foo", "5", ResourceType.model, "1", "2"
+            ),
+        }
+        for url, expect in tests.items():
+            assert expect == Resource(url)
+
+        with self.assertRaises(Exception):
+            Resource("https://foo.com/projects/1/model")  # model missing the tail 's'
