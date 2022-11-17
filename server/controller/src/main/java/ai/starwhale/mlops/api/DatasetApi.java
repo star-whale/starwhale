@@ -285,15 +285,14 @@ public interface DatasetApi {
     @Operation(summary = "Sign SWDS uris to get a batch of temporarily accessible links",
             description = "Sign SWDS uris to get a batch of temporarily accessible links")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
+    @PostMapping(
             value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectUrl,
             @PathVariable(name = "datasetName") String datasetUrl,
             @PathVariable(name = "version") String versionUrl,
-            @Parameter(name = "uris", description = "a batch of uris")
-            @RequestParam(name = "uris", required = true) Set<String> uris,
+            @RequestBody Set<String> uris,
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 

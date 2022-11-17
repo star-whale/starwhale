@@ -115,15 +115,15 @@ class DataLoader(metaclass=ABCMeta):
                     CloudRequestMixed()
                     .do_http_request(
                         f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
-                        method=HTTPMethod.GET,
+                        method=HTTPMethod.POST,
                         instance_uri=self.dataset_uri,
                         params={
-                            "uris": uris,
                             "expTimeMillis": int(
-                                os.environ.get("SW_MODEL_UNIT_TIME", "60000")
+                                os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
                             )
                             * self.session_consumption.batch_size,  # type: ignore
                         },
+                        json=uris,
                         use_raise=True,
                     )
                     .json()

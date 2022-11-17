@@ -647,9 +647,15 @@ class TestDataLoader(TestCase):
         loader = get_data_loader(
             dataset_uri, start="a", end="b", session_consumption=tdsc
         )
+        _dict_got = {}
         for idx, data, annotations in loader:
             self.assertEqual(_content, data.fp)
+            _dict_got[annotations["label"].uri] = annotations["label"]._signed_uri
             self.assertEqual(
                 annotations["label"]._signed_uri,
                 _uri_dict.get(annotations["label"].uri),
             )
+        self.assertDictEqual(
+            {"l1": "l1-sign", "l2": "l2-sign", "l3": "l3-sign", "l4": "l4-sign"},
+            _dict_got,
+        )
