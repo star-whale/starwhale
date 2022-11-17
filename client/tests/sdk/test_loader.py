@@ -518,3 +518,138 @@ class TestDataLoader(TestCase):
         assert not loader._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
+
+    @patch.dict(os.environ, {"SW_TOKEN": "a", "SW_POD_NAME": "b"})
+    @patch("starwhale.core.dataset.model.CloudDataset.summary")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan_btch")
+    @patch("requests.get")
+    @patch("requests.request")
+    @patch("starwhale.core.dataset.tabular.TabularDatasetSessionConsumption")
+    def test_remote_batch_sign(
+        self,
+        m_sc: MagicMock,
+        m_request: MagicMock,
+        m_get: MagicMock,
+        m_scan_btch: MagicMock,
+        m_summary: MagicMock,
+    ) -> None:
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=True,
+            include_link=False,
+        )
+        tdsc = m_sc()
+        tdsc.get_scan_range.side_effect = [["a", "b"], None]
+        tdsc.batch_size = 10
+        tdsc.session_start = "a"
+        tdsc.session_end = "b"
+        dataset_uri = URI(
+            "http://localhost/project/x/dataset/mnist/version/1122334455667788",
+            URIType.DATASET,
+        )
+
+        _content = b"abcd"
+        m_get.return_value = MagicMock(
+            **{
+                "content": _content,
+            }
+        )
+
+        m_scan_btch.return_value = [
+            [
+                TabularDatasetRow(
+                    id=0,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_uri=Link("l11"),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": Link("l1")},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ),
+                TabularDatasetRow(
+                    id=1,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_uri=Link("l12"),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": Link("l2")},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ),
+            ],
+            [
+                TabularDatasetRow(
+                    id=2,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_uri=Link("l13"),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": Link("l3")},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ),
+                TabularDatasetRow(
+                    id=3,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_uri=Link("l14"),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": Link("l4")},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ),
+            ],
+        ]
+
+        _uri_dict = {
+            "l1": "l1-sign",
+            "l2": "l2-sign",
+            "l3": "l3-sign",
+            "l4": "l4-sign",
+            "l11": "l11-sign",
+            "l12": "l12-sign",
+            "l13": "l13-sign",
+            "l14": "l14-sign",
+        }
+
+        mock = MagicMock(**{"status_code": HTTPStatus.OK})
+        mock.json = lambda: {"data": _uri_dict}
+        m_request.return_value = mock
+
+        loader = get_data_loader(
+            dataset_uri, start="a", end="b", session_consumption=tdsc
+        )
+        for idx, data, annotations in loader:
+            self.assertEqual(_content, data.fp)
+            self.assertEqual(
+                annotations["label"]._signed_uri,
+                _uri_dict.get(annotations["label"].uri),
+            )
