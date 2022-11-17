@@ -32,9 +32,11 @@ import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.domain.panel.mapper.PanelPluginMapper;
 import ai.starwhale.mlops.domain.panel.po.PanelPluginEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -57,13 +59,15 @@ public class PluginServiceTest {
         var yamlMapper = new ObjectMapper(new YAMLFactory());
         var idConvertor = new IdConvertor();
         var panelPluginConvertor = new PanelPluginConvertor(idConvertor);
+        var locations = new String[] {"file:/opt/starwhale.static"};
         service = new PluginService(
-            storageAccessService,
-            storagePathCoordinator,
-            yamlMapper,
-            panelPluginMapper,
-            panelPluginConvertor,
-            idConvertor
+                storageAccessService,
+                storagePathCoordinator,
+                yamlMapper,
+                panelPluginMapper,
+                panelPluginConvertor,
+                idConvertor,
+                locations
         );
     }
 
@@ -107,5 +111,22 @@ public class PluginServiceTest {
         var id = "42";
         service.uninstallPlugin(id);
         verify(panelPluginMapper).remove(42L);
+    }
+
+    @Test
+    public void testRun() throws Exception {
+        var plugin = PanelPluginEntity.builder()
+                .name("foo")
+                .version("bar")
+                .build();
+
+        given(panelPluginMapper.list()).willReturn(List.of(plugin));
+        var resp = new byte[] {1, 2, 3};
+        var ossResp = new LengthAbleInputStream(new ByteArrayInputStream(resp), resp.length);
+        given(storageAccessService.get(anyString())).willReturn(ossResp);
+
+        try (var tar = mockStatic(TarFileUtil.class)) {
+            service.run();
+        }
     }
 }
