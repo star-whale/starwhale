@@ -596,7 +596,8 @@ class Link(ASDictMixin, SwObject):
                 )
                 store = ObjectStore.from_dataset_uri(dataset_uri)
 
-        return store.backend._make_file(store.bucket, key_compose).read(-1)
+        with store.backend._make_file(store.bucket, key_compose) as f:
+            return f.read(-1)  # type: ignore
 
 
 class DatasetSummary(ASDictMixin):

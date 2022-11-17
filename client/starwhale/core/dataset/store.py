@@ -7,12 +7,12 @@ import json
 import shutil
 import typing as t
 from abc import ABCMeta, abstractmethod
+from types import TracebackType
 from pathlib import Path
 from urllib.parse import urlparse
 
 import boto3
 import requests
-from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
@@ -163,11 +163,25 @@ class S3Uri(t.NamedTuple):
     endpoint: str = _DEFAULT_S3_ENDPOINT
 
 
-class FileLikeObj(Protocol):
-    def readline(self) -> bytes:
+_TFLType = t.TypeVar("_TFLType", covariant=True)
+
+
+class FileLikeObj(Protocol[_TFLType]):
+    def __enter__(self) -> _TFLType:
+        ...
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
         ...
 
     def read(self, size: int) -> bytes:
+        ...
+
+    def close(self) -> None:
         ...
 
 
@@ -417,10 +431,11 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         self, auth: str, key_compose: t.Tuple[Link, int, int]
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
-        url = _key.signed_uri or self.sign_uri(_key.uri)
-        headers = {"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"}
-        r = requests.get(url, headers=headers, timeout=10)
-        return io.BytesIO(r.content)
+        return HttpBufferedFileLike(
+            url=_key.signed_uri or self.sign_uri(_key.uri),
+            headers={"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"},
+            timeout=90,
+        )
 
     def sign_uri(self, uri: str) -> str:
         r = self.do_http_request(
@@ -438,19 +453,150 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         return r["data"].get(uri, "")  # type: ignore
 
 
-class S3BufferedFileLike:
+_BFType = t.TypeVar("_BFType", bound="BaseBufferedFileLike")
+
+
+class BaseBufferedFileLike(metaclass=ABCMeta):
+    def __init__(self, buffer_size: int) -> None:
+        self._read_buffer = BytesBuffer(buffer_size)
+
+    def __enter__(self: _BFType) -> _BFType:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            print(f"type:{type}, exception:{value}, traceback:{trace}")
+
+        self.close()
+
+    def read(self, size: int) -> bytes:
+        ret = self._read(size)
+        if isinstance(ret, memoryview):
+            return ret.tobytes()
+        elif isinstance(ret, bytes):
+            return ret
+        else:
+            raise FormatError(f"{ret}:{type(ret)} is not bytes or memoryview type")
+
+    def _read(self, size: int) -> t.Union[memoryview, bytes]:
+        if size == 0:
+            return b""
+        elif size < 0:
+            return self._read_buffer.read() + self._read_exhausted_raw()
+        else:
+            while len(self._read_buffer) < size:
+                fill_size = self._fill_new_bytes()
+                if fill_size == 0:
+                    return self._read_buffer.read()
+
+            return self._read_buffer.read(size)
+
+    def _read_exhausted_raw(self) -> bytes:
+        raise NotImplementedError
+
+    def _fill_new_bytes(self) -> int:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        self._read_buffer.close()
+
+
+class HttpBufferedFileLike(BaseBufferedFileLike):
+    def __init__(
+        self,
+        url: str,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        timeout: int = 90,
+        buffer_size: int = 256 * 1024,
+    ) -> None:
+        super().__init__(buffer_size)
+        if headers is None:
+            self.headers = {"Accept-Encoding": "identity"}
+        else:
+            self.headers = headers
+
+        self.buffer_size = buffer_size
+        self.resp = requests.get(
+            url,
+            stream=True,
+            headers=self.headers,
+            timeout=timeout,
+        )
+
+        if not self.resp.ok:
+            self.resp.raise_for_status()
+
+        self._read_iter = self.resp.iter_content(buffer_size)
+
+    def read(self, size: int) -> bytes:
+        if size == 0:
+            return b""
+        elif size < 0:
+            # urllib3 resp read does not support to read -1
+            return self.resp.raw.read()  # type: ignore
+        else:
+            return self.resp.raw.read(size)  # type: ignore
+
+    def close(self) -> None:
+        self.resp.close()
+        return super().close()
+
+
+class BytesBuffer:
+    def __init__(self, size: int = io.DEFAULT_BUFFER_SIZE) -> None:
+        self._size = size
+        self._pos = 0
+        self._buffer = bytearray(0)
+
+    def __str__(self) -> str:
+        return f"buffer size: {self._size}, pos: {self._pos}, length: {len(self)}"
+
+    __repr__ = __str__
+
+    def close(self) -> None:
+        self._buffer = bytearray(0)
+
+    def __len__(self) -> int:
+        return len(self._buffer) - self._pos
+
+    def read(self, size: int = -1) -> bytes:
+        if size < 0 or size > len(self):
+            size = len(self)
+
+        ret = self._buffer[self._pos : self._pos + size]
+        self._pos += size
+        return bytes(ret)
+
+    def write(self, new_bytes: bytes) -> int:
+        self._buffer = self._buffer[self._pos :] + new_bytes
+        self._pos = 0
+        return len(new_bytes)
+
+    def write_from_iter(self, source: t.Any) -> int:
+        # TODO: add iterable check for source
+        new_bytes = bytearray()
+        for c in source:
+            new_bytes += c
+            if len(new_bytes) >= self._size:
+                break
+        return self.write(new_bytes)
+
+
+class S3BufferedFileLike(BaseBufferedFileLike):
     # TODO: add s3 typing
     def __init__(self, s3: t.Any, bucket: str, key: str, start: int, end: int) -> None:
+        super().__init__(_CHUNK_SIZE)
         self.key = self._format_key(key, bucket)
         self.obj = s3.Object(bucket, self.key)
-        self.start = start
-        self.end = end
 
-        self._buffer = memoryview(bytearray(0))
-        self._current = 0
+        self.end = end
         self._s3_eof = False
         self._current_s3_start = start
-        self._iter_lines = None
 
     def _format_key(self, key: str, bucket: str) -> str:
         r = urlparse(key)
@@ -463,64 +609,12 @@ class S3BufferedFileLike:
         else:
             return path
 
-    def tell(self) -> int:
-        return self._current
+    def _read_exhausted_raw(self) -> bytes:
+        return self.obj.get()["Body"].read()  # type: ignore
 
-    def readline(self) -> bytes:
-        if self._iter_lines is None:
-            self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)
-
-        try:
-            line: bytes = next(self._iter_lines)  # type: ignore
-        except StopIteration:
-            line = b""
-        return line
-
-    def read(self, size: int) -> bytes:
-        _r = self._read(size)
-        if isinstance(_r, memoryview):
-            return _r.tobytes()
-        elif isinstance(_r, bytes):
-            return _r
-        else:
-            raise FormatError(f"{_r}:{type(_r)} is not bytes or memoryview type")
-
-    def _read(self, size: int) -> memoryview:
-        if size <= 0:
-            return self.obj.get()["Body"].read()  # type:ignore
-        # TODO: use smart_open 3rd lib?
-        if (self._current + size) <= len(self._buffer):
-            end = self._current + size
-            out = self._buffer[self._current : end]
-            self._current = end
-            return out
-        else:
-            data, _ = self._next_data()
-            _release_buffer = self._buffer
-            self._buffer = memoryview(self._buffer[self._current :].tobytes() + data)
-            _release_buffer.release()
-            self._current = 0
-
-            if len(self._buffer) == 0:
-                return memoryview(bytearray(0))  # EOF
-            elif (self._current + size) > len(self._buffer):
-                # TODO: maybe ignore this error?
-                raise Exception(
-                    f"{self.key} file cannot read {size} data, error format"
-                )
-            else:
-                end = self._current + size
-                out = self._buffer[self._current : end]
-                self._current = end
-                return out
-
-    def close(self) -> None:
-        # TODO: cleanup stream and open
-        self.obj = None
-        try:
-            self._buffer.release()
-        except Exception as e:
-            logger.warning(f"skip _buffer(memoryview) release exception:{e}")
+    def _fill_new_bytes(self) -> int:
+        new_bytes, _ = self._next_data()
+        return self._read_buffer.write(new_bytes)
 
     def _next_data(self) -> t.Tuple[bytes, int]:
         end = _CHUNK_SIZE + self._current_s3_start - 1

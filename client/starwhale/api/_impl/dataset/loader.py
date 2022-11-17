@@ -169,11 +169,11 @@ class DataLoader(metaclass=ABCMeta):
             # TODO: tune performance by fetch in batch
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
-            _file = _store.backend._make_file(_store.bucket, _key_compose)
-            for data_content, _ in self._do_iter_data(_file, row):
-                data = BaseArtifact.reflect(data_content, row.data_type)
-                # TODO: refactor annotation origin type
-                yield row.id, data, row.annotations
+            with _store.backend._make_file(_store.bucket, _key_compose) as _file:
+                for data_content, _ in self._do_iter_data(_file, row):
+                    data = BaseArtifact.reflect(data_content, row.data_type)
+                    # TODO: refactor annotation origin type
+                    yield row.id, data, row.annotations
 
     @abstractmethod
     def _do_iter_data(

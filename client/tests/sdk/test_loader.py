@@ -1,13 +1,13 @@
 import os
 import shutil
-from http import HTTPStatus
 from unittest.mock import patch, MagicMock
 
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
 from starwhale import MIMEType, S3LinkAuth, get_data_loader
-from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
+from starwhale.consts import HTTPMethod, AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
@@ -313,21 +313,16 @@ class TestDataLoader(TestCase):
         assert loader.session_consumption is None
         assert len(list(loader)) == 4
 
-    @patch.dict(os.environ, {})
-    @patch("starwhale.core.dataset.store.boto3.resource")
+    @Mocker()
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
-    @patch("requests.get")
-    @patch("requests.request")
     def test_swds_bin_s3(
         self,
-        m_request: MagicMock,
-        m_get: MagicMock,
+        rm: Mocker,
         m_scan: MagicMock,
         m_scan_id: MagicMock,
         m_summary: MagicMock,
-        m_boto3: MagicMock,
     ) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,
@@ -382,26 +377,16 @@ class TestDataLoader(TestCase):
         with open(os.path.join(self.swds_dir, fname), "rb") as f:
             swds_content = f.read(-1)
 
-        m_request.return_value = MagicMock(
-            **{"status_code": HTTPStatus.OK, "data": "a"}
+        signed_url = "http://minio/signed/path/file"
+        rm.post(
+            "http://127.0.0.1:1234/api/v1/project/self/dataset/mnist/version/1122334455667788/sign-links",
+            json={"data": {fname: signed_url}},
         )
-        m_get.return_value = MagicMock(
-            **{
-                "content": swds_content,
-            }
+        rm.get(
+            signed_url,
+            content=swds_content,
         )
-        m_boto3.return_value = MagicMock(
-            **{
-                "Object.return_value": MagicMock(
-                    **{
-                        "get.return_value": {
-                            "Body": MagicMock(**{"read.return_value": swds_content}),
-                            "ContentLength": len(swds_content),
-                        }
-                    }
-                )
-            }
-        )
+
         assert loader._stores == {}
 
         rows = list(loader)
@@ -519,18 +504,16 @@ class TestDataLoader(TestCase):
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
+    @Mocker()
     @patch.dict(os.environ, {"SW_TOKEN": "a", "SW_POD_NAME": "b"})
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan_batch")
-    @patch("requests.get")
-    @patch("requests.request")
     @patch("starwhale.core.dataset.tabular.TabularDatasetSessionConsumption")
     def test_remote_batch_sign(
         self,
+        rm: Mocker,
         m_sc: MagicMock,
-        m_request: MagicMock,
-        m_get: MagicMock,
-        m_scan_btch: MagicMock,
+        m_scan_batch: MagicMock,
         m_summary: MagicMock,
     ) -> None:
         m_summary.return_value = DatasetSummary(
@@ -538,26 +521,18 @@ class TestDataLoader(TestCase):
             include_link=False,
         )
         tdsc = m_sc()
-        tdsc.get_scan_range.side_effect = [["a", "b"], None]
-        tdsc.batch_size = 10
+        tdsc.get_scan_range.side_effect = [["a", "d"], None]
+        tdsc.batch_size = 20
         tdsc.session_start = "a"
-        tdsc.session_end = "b"
+        tdsc.session_end = "d"
         dataset_uri = URI(
-            "http://localhost/project/x/dataset/mnist/version/1122334455667788",
+            "http://localhost/project/x/dataset/mnist/version/1122",
             URIType.DATASET,
         )
-
-        _content = b"abcd"
-        m_get.return_value = MagicMock(
-            **{
-                "content": _content,
-            }
-        )
-
-        m_scan_btch.return_value = [
+        m_scan_batch.return_value = [
             [
                 TabularDatasetRow(
-                    id=0,
+                    id="a",
                     object_store_type=ObjectStoreType.LOCAL,
                     data_link=Link("l11"),
                     data_offset=32,
@@ -574,7 +549,7 @@ class TestDataLoader(TestCase):
                     auth_name="",
                 ),
                 TabularDatasetRow(
-                    id=1,
+                    id="b",
                     object_store_type=ObjectStoreType.LOCAL,
                     data_link=Link("l12"),
                     data_offset=32,
@@ -593,7 +568,7 @@ class TestDataLoader(TestCase):
             ],
             [
                 TabularDatasetRow(
-                    id=2,
+                    id="c",
                     object_store_type=ObjectStoreType.LOCAL,
                     data_link=Link("l13"),
                     data_offset=32,
@@ -610,7 +585,7 @@ class TestDataLoader(TestCase):
                     auth_name="",
                 ),
                 TabularDatasetRow(
-                    id=3,
+                    id="d",
                     object_store_type=ObjectStoreType.LOCAL,
                     data_link=Link("l14"),
                     data_offset=32,
@@ -630,32 +605,34 @@ class TestDataLoader(TestCase):
         ]
 
         _uri_dict = {
-            "l1": "l1-sign",
-            "l2": "l2-sign",
-            "l3": "l3-sign",
-            "l4": "l4-sign",
-            "l11": "l11-sign",
-            "l12": "l12-sign",
-            "l13": "l13-sign",
-            "l14": "l14-sign",
+            "l1": "http://l1/get-file",
+            "l2": "http://l2/get-file",
+            "l3": "http://l3/get-file",
+            "l4": "http://l4/get-file",
+            "l11": "http://l11/get-file",
+            "l12": "http://l12/get-file",
+            "l13": "http://l13/get-file",
+            "l14": "http://l14/get-file",
         }
 
-        mock = MagicMock(**{"status_code": HTTPStatus.OK})
-        mock.json = lambda: {"data": _uri_dict}
-        m_request.return_value = mock
+        raw_content = b"abcdefg"
+        req_get_file = rm.register_uri(HTTPMethod.GET, "/get-file", content=raw_content)
+        rm.post(
+            "http://localhost/api/v1/project/x/dataset/mnist/version/1122/sign-links",
+            json={"data": _uri_dict},
+        )
 
         loader = get_data_loader(
-            dataset_uri, start="a", end="b", session_consumption=tdsc
+            dataset_uri, start="a", end="d", session_consumption=tdsc
         )
-        _dict_got = {}
-        for idx, data, annotations in loader:
-            self.assertEqual(_content, data.fp)
-            _dict_got[annotations["label"].uri] = annotations["label"]._signed_uri
+        _label_uris_map = {}
+        for _, data, annotations in loader:
+            self.assertEqual(raw_content, data.to_bytes())
+            _label_uris_map[annotations["label"].uri] = annotations["label"]._signed_uri
             self.assertEqual(
                 annotations["label"]._signed_uri,
                 _uri_dict.get(annotations["label"].uri),
             )
-        self.assertDictEqual(
-            {"l1": "l1-sign", "l2": "l2-sign", "l3": "l3-sign", "l4": "l4-sign"},
-            _dict_got,
-        )
+
+        self.assertEqual(req_get_file.call_count, 4)
+        self.assertEqual(len(_label_uris_map), 4)

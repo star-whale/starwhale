@@ -69,7 +69,7 @@ def _load_dataset(uri):
     print("-" * 20)
     print(uri)
     for idx, data, annotations in get_data_loader(uri, "idx-0", "idx-2"):
-        print(f"---->[{idx}] {data}")
+        print(f"---->[{idx}] {data} data-length:{len(data.to_bytes())}")
         ats = "\n".join(
             [f"\t{k}-{v}-{type(v)}-{_get_type(v)}" for k, v in annotations.items()]
         )
