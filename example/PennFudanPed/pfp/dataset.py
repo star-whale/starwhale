@@ -27,10 +27,11 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
             mask_fpath = root_dir / mask_fname
             data_fpath = root_dir / data_fname
             height, width = self._get_image_shape(data_fpath)
-            coco_annotations = self._make_coco_annotations(mask_fpath, idx)
+            coco_annotations = self._make_coco_annotations(mask_fpath, data_fname)
             annotations = {
                 "mask": Link(
                     mask_fpath,
+                    size=mask_fpath.stat().st_size,
                     with_local_fs_data=True,
                     data_type=Image(
                         display_name=name,
@@ -40,15 +41,16 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
                         mask_uri=name,
                     ),
                 ),
-                "image_index": idx,
+                "image_id": data_fname,
                 "image_height": height,
-                "image_widht": width,
+                "image_width": width,
                 "image_name": name,
                 "object_nums": len(coco_annotations),
                 "annotations": coco_annotations,
             }
             data = Link(
                 data_fpath,
+                size=data_fpath.stat().st_size,
                 with_local_fs_data=True,
                 data_type=Image(
                     display_name=name,
@@ -63,7 +65,7 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
             return f.height, f.width
 
     def _make_coco_annotations(
-        self, mask_fpath: Path, image_id: int
+        self, mask_fpath: Path, image_id: t.Union[int, str]
     ) -> t.List[COCOObjectAnnotation]:
         mask_img = PILImage.open(str(mask_fpath))
 
@@ -88,17 +90,16 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
             rle: t.Dict = coco_mask.encode(binary_mask_tensor[i].numpy())  # type: ignore
             rle["counts"] = rle["counts"].decode("utf-8")
 
-            coco_annotations.append(
-                COCOObjectAnnotation(
-                    id=self.object_id,
-                    image_id=image_id,
-                    category_id=1,  # PennFudan Dataset only has one class-PASPersonStanding
-                    segmentation=rle,
-                    area=_bbox.width * _bbox.height,
-                    bbox=_bbox,
-                    iscrowd=0,  # suppose all instances are not crowd
-                )
+            coco_obj = COCOObjectAnnotation(
+                id=self.object_id,
+                image_id=image_id,
+                category_id=1,  # PennFudan Dataset only has one class-PASPersonStanding
+                area=_bbox.width * _bbox.height,
+                bbox=_bbox,
+                iscrowd=0,  # suppose all instances are not crowd
             )
+            coco_obj.segmentation = rle
+            coco_annotations.append(coco_obj)
             self.object_id += 1
 
         return coco_annotations

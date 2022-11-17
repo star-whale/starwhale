@@ -459,9 +459,8 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
     def __init__(
         self,
         id: int = 0,
-        image_id: int = 0,
+        image_id: t.Union[int, str] = 0,
         category_id: int = 0,
-        segmentation: t.Optional[t.Union[t.List, t.Dict]] = None,
         area: t.Union[float, int] = 0,
         bbox: t.Optional[t.Union[BoundingBox, t.List[float]]] = None,
         iscrowd: int = 0,
@@ -471,7 +470,6 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
         self.image_id = image_id
         self.category_id = category_id
         self.bbox = bbox.to_list() if isinstance(bbox, BoundingBox) else bbox
-        self.segmentation = segmentation
         self.area = area
         self.iscrowd = iscrowd
 
@@ -481,7 +479,33 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
         if self.iscrowd not in (0, 1):
             raise FieldTypeOrValueError(f"iscrowd({self.iscrowd}) only accepts 0 or 1")
 
-        # TODO: iscrowd=0 -> polygons, iscrowd=1 -> RLE validate
+    @property
+    def segmentation(self) -> t.Optional[t.Union[t.List, t.Dict]]:
+        if getattr(self, "_segmentation_polygon", None):
+            return self._segmentation_polygon
+        elif getattr(self, "_segmentation_rle_size", None) and getattr(
+            self, "_segmentation_rle_counts", None
+        ):
+            return {
+                "size": self._segmentation_rle_size,
+                "counts": self._segmentation_rle_counts,
+            }
+        else:
+            return None
+
+    @segmentation.setter
+    def segmentation(self, value: t.Union[t.List, t.Dict]) -> None:
+        # hack for datastore dict type unify value type
+        # TODO: datastore support pythonic dict type
+        if isinstance(value, list):
+            self._segmentation_polygon = value
+        elif isinstance(value, dict):
+            self._segmentation_rle_size = value["size"]
+            self._segmentation_rle_counts = value["counts"]
+        else:
+            raise NoSupportError(
+                f"segmentation only supports list(polygon) and dict(rle) format: {value}"
+            )
 
 
 class Link(ASDictMixin, SwObject):
