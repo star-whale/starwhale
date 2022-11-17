@@ -13,29 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+TRUNCATE TABLE dataset_read_session;
+ALTER TABLE dataset_read_session MODIFY COLUMN id BIGINT auto_increment NOT NULL COMMENT 'PK';
+ALTER TABLE dataset_read_session ADD session_id varchar(255) NOT NULL;
+ALTER TABLE dataset_read_session ADD CONSTRAINT dataset_read_session_UN UNIQUE KEY (session_id,dataset_name,dataset_version);
 
-package ai.starwhale.mlops.domain.dataset.dataloader.bo;
-
-import java.util.Date;
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
-public class Session {
-    private Long id;
-    private String sessionId;
-    private int batchSize;
-    private String tableName;
-    private String datasetName;
-    private String datasetVersion;
-
-    private String start;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private boolean endInclusive;
-
-    @Builder.Default
-    private Date createdTime = new Date(-1);
-}
+TRUNCATE TABLE dataset_read_log;
+ALTER TABLE dataset_read_log DROP KEY session_readrange;
+ALTER TABLE dataset_read_log MODIFY COLUMN session_id BIGINT NOT NULL;
+ALTER TABLE dataset_read_log ADD CONSTRAINT dataset_read_log_UK UNIQUE KEY (session_id,`start`,`end`);

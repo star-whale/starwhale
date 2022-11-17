@@ -13,12 +13,13 @@ from functools import wraps
 import loguru
 import jsonlines
 
+from starwhale import URI
 from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.api.job import Context
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
-from starwhale.base.type import RunSubDirType
+from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
@@ -218,50 +219,52 @@ class PipelineHandler(metaclass=ABCMeta):
 
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
-        # TODO: support multi dataset uris
+
         # TODO: user custom config batch size, max_retries
-        ds_uri = self.context.dataset_uris[0]
-        consumption = get_dataset_consumption(
-            dataset_uri=ds_uri, session_id=self.context.version
-        )
-        loader = get_data_loader(ds_uri, session_consumption=consumption)
+        for ds_uri in self.context.dataset_uris:
+            _uri = URI(ds_uri, expected_type=URIType.DATASET)
+            consumption = get_dataset_consumption(
+                dataset_uri=_uri, session_id=self.context.version
+            )
+            loader = get_data_loader(_uri, session_consumption=consumption)
 
-        cnt = 0
-        for _idx, _data, _annotations in loader:
-            cnt += 1
-            _start = time.time()
-            result: t.Any = b""
-            exception = None
-            try:
-                # TODO: inspect profiling
-                result = self.ppl(_data, annotations=_annotations, index=_idx)
-            except Exception as e:
-                exception = e
-                self._sw_logger.exception(f"[{_idx}] data handle -> failed")
-                if not self.ignore_error:
-                    self._update_status(STATUS.FAILED)
-                    raise
-            else:
+            cnt = 0
+            for _idx, _data, _annotations in loader:
+                cnt += 1
+                _start = time.time()
+                result: t.Any = b""
                 exception = None
+                _unique_id = f"{_uri.object}_{_idx}"
+                try:
+                    # TODO: inspect profiling
+                    result = self.ppl(_data, annotations=_annotations, index=_unique_id)
+                except Exception as e:
+                    exception = e
+                    self._sw_logger.exception(f"[{_unique_id}] data handle -> failed")
+                    if not self.ignore_error:
+                        self._update_status(STATUS.FAILED)
+                        raise
+                else:
+                    exception = None
 
-            self._sw_logger.debug(
-                f"[{_idx}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
-            )
+                self._sw_logger.debug(
+                    f"[{_unique_id}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
+                )
 
-            self._timeline_writer.write(
-                {
-                    "time": now_str(),
-                    "status": exception is None,
-                    "exception": str(exception),
-                    "index": _idx,
-                }
-            )
+                self._timeline_writer.write(
+                    {
+                        "time": now_str(),
+                        "status": exception is None,
+                        "exception": str(exception),
+                        "index": f"{_unique_id}",
+                    }
+                )
 
-            result_storage.save(
-                data_id=_idx,
-                result=result,
-                annotations={} if self.ignore_annotations else _annotations,
-            )
+                result_storage.save(
+                    data_id=f"{_unique_id}",
+                    result=result,
+                    annotations={} if self.ignore_annotations else _annotations,
+                )
 
         if self.flush_result:
             result_storage.flush()

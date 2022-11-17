@@ -28,19 +28,20 @@ public interface SessionMapper {
 
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     @Insert("INSERT into dataset_read_session ("
-            + "id, batch_size, dataset_name, dataset_version, table_name, "
+            + "session_id, batch_size, dataset_name, dataset_version, table_name, "
             + "start, start_inclusive, end, end_inclusive) "
             + "VALUES("
-            + "#{id}, #{batchSize}, #{datasetName}, #{datasetVersion}, #{tableName}, "
+            + "#{sessionId}, #{batchSize}, #{datasetName}, #{datasetVersion}, #{tableName}, "
             + "#{start}, #{startInclusive}, #{end}, #{endInclusive}) "
             )
     int insert(SessionEntity session);
 
-    @Select("SELECT * from dataset_read_session WHERE id=#{id}")
-    SessionEntity selectById(String id);
+    @Select("SELECT * from dataset_read_session "
+            + "WHERE session_id=#{sessionId} and dataset_name=#{datasetName} and dataset_version=#{datasetVersion}")
+    SessionEntity selectOne(String sessionId, String datasetName, String datasetVersion);
 
     @Select("SELECT * from dataset_read_session WHERE id=#{id} FOR UPDATE")
-    SessionEntity selectForUpdate(String id);
+    SessionEntity selectForUpdate(Long id);
 
     @Select("SELECT * from dataset_read_session")
     List<SessionEntity> select();

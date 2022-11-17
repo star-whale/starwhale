@@ -28,7 +28,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SessionEntity {
-    private String id;
+    private Long id;
+    private String sessionId;
     private int batchSize;
     private String datasetName;
     private String datasetVersion;

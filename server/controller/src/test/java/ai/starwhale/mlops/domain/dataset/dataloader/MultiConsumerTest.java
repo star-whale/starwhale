@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
@@ -43,6 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -57,6 +60,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MybatisTest(properties = {
     "logging.level.root=error",
     "logging.level.ai.starwhale.mlops=error",
+    "logging.level.ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager=debug",
     "mybatis.configuration.map-underscore-to-camel-case=true",
     "sw.dataset.processed.timeout.tolerance=100"
 })
@@ -82,31 +86,46 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-            Arguments.of(0, true),
-            Arguments.of(2, true),
-            Arguments.of(6, true),
-            Arguments.of(10, true)
+            Arguments.of(0, true, 1),
+            Arguments.of(2, true, 1),
+            Arguments.of(6, true, 1),
+            Arguments.of(10, true, 1),
+            Arguments.of(0, true, 2),
+            Arguments.of(2, true, 2),
+            Arguments.of(6, true, 2),
+            Arguments.of(10, true, 2)
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideMultiParams")
-    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial)
+    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial, int datasetNum)
             throws InterruptedException, ExecutionException {
+
+        var sessionId = "session" + errorNumPerConsumer + isSerial + datasetNum;
+        var datasetName = "test-name";
+        var datasetVersion = "test-version";
+        var batchSize = 10;
+
         AtomicInteger count = new AtomicInteger(0);
+        AtomicInteger indexCount = new AtomicInteger(0);
 
         Random random = new Random();
 
         class ConsumerMock implements Runnable {
             private final String consumerId;
-            private final String sessionId;
+            private final String datasetName;
+            private final String datasetVersion;
             private final int errorNum;
+            private final int datasetNum;
             private int retryNum = 0;
 
-            ConsumerMock(String consumerId, String sessionId, int errorNum) {
+            ConsumerMock(String consumerId, String datasetName, String datasetVersion, int errorNum, int datasetNum) {
                 this.consumerId = consumerId;
-                this.sessionId = sessionId;
+                this.datasetName = datasetName;
+                this.datasetVersion = datasetVersion;
                 this.errorNum = errorNum;
+                this.datasetNum = datasetNum;
             }
 
             @Override
@@ -115,53 +134,94 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .sessionId(sessionId)
                             .consumerId(consumerId)
                             .isSerial(isSerial)
-                            .datasetName("test-name")
-                            .datasetVersion("test-version")
+                            .datasetName(datasetName)
+                            .datasetVersion(datasetVersion)
                             .tableName("test-table-name")
                             .processedData(List.of())
-                            .batchSize(10)
+                            .batchSize(batchSize)
                             .start(null)
                             .startInclusive(true)
                             .end(null)
                             .endInclusive(true)
                             .build();
-                for (; ; ) {
-                    var dataRange = dataLoader.next(request);
-                    if (dataRange == null) {
-                        break;
-                    }
-
-                    // mock error
-                    if (retryNum < errorNum) {
-                        // mock restart
-                        retryNum++;
-                        try {
-                            Thread.sleep(random.nextInt(10));
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                for (int i = 0; i < datasetNum; i++) {
+                    // mock multi datasets
+                    request.setDatasetVersion(datasetVersion + i);
+                    // TODO
+                    request.setProcessedData(null);
+                    for (; ; ) {
+                        var dataRange = dataLoader.next(request);
+                        if (dataRange == null) {
+                            break;
                         }
-                        request.setProcessedData(null);
-                    } else {
-                        count.addAndGet(dataRange.getSize());
-                        // data processed
-                        request.setProcessedData(List.of(
-                                DataIndexDesc.builder()
-                                    .start(dataRange.getStart())
-                                    .end(dataRange.getEnd())
-                                    .build()
-                        ));
+
+                        // mock error
+                        if (retryNum < errorNum) {
+                            // mock restart
+                            retryNum++;
+                            try {
+                                Thread.sleep(random.nextInt(10));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            request.setProcessedData(null);
+                        } else {
+                            indexCount.addAndGet(1);
+                            count.addAndGet(dataRange.getSize());
+                            // data processed
+                            request.setProcessedData(List.of(
+                                    DataIndexDesc.builder()
+                                        .start(dataRange.getStart())
+                                        .end(dataRange.getEnd())
+                                        .build()
+                            ));
+                        }
+
                     }
-
                 }
-
             }
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
-        var sessionId = "session0" + errorNumPerConsumer + isSerial;
-        var batchSize = 10;
-        var indices = new ArrayList<DataIndex>();
+
         var totalRangesNum = 1001;
+        var consumerNum = 10;
+
+        ArrayList<DataIndex> indices = getDataIndices(batchSize, totalRangesNum);
+
+        given(dataRangeProvider.returnDataIndex(any()))
+                .willReturn(indices);
+
+        List<Future<?>> futures = new ArrayList<>();
+        for (int i = 0; i < consumerNum; i++) {
+            futures.add(executor.submit(
+                new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+        }
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
+
+        verify(dataRangeProvider, times(datasetNum)).returnDataIndex(any());
+
+        var datasetSize = (totalRangesNum - 1) * batchSize + 8;
+        assertEquals(datasetSize * datasetNum, count.get());
+
+        var processedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.PROCESSED.name());
+        var unprocessedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.UNPROCESSED.name());
+        var totalProcessedNum = dataReadLogMapper.totalAssignedNum(sessionId);
+
+        assertEquals(totalRangesNum * datasetNum, processedData.size());
+        assertEquals(0, unprocessedData.size());
+        assertEquals((totalRangesNum) * datasetNum + errorNumPerConsumer * consumerNum, totalProcessedNum);
+
+        executor.shutdownNow();
+    }
+
+    @NotNull
+    private static ArrayList<DataIndex> getDataIndices(int batchSize, int totalRangesNum) {
+        var indices = new ArrayList<DataIndex>();
+
         for (int i = 1; i < totalRangesNum; i++) {
             indices.add(DataIndex.builder()
                     .start(String.valueOf((i - 1) * batchSize))
@@ -177,43 +237,19 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                     .size(8)
                     .build()
         );
-
-        given(dataRangeProvider.returnDataIndex(any()))
-                .willReturn(indices);
-
-        List<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            futures.add(executor.submit(
-                new ConsumerMock(String.valueOf(i), sessionId, errorNumPerConsumer)));
-        }
-
-        for (Future<?> future : futures) {
-            future.get();
-        }
-
-        var totalDataSize = (totalRangesNum - 1) * batchSize + 8;
-        assertEquals(totalDataSize, count.get());
-
-
-        var processedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.PROCESSED.name());
-        var unprocessedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.UNPROCESSED.name());
-        var totalProcessedNum = dataReadLogMapper.totalAssignedNum(sessionId);
-
-        assertEquals(totalRangesNum, processedData.size());
-        assertEquals(0, unprocessedData.size());
-        assertEquals(totalRangesNum + errorNumPerConsumer * 10, totalProcessedNum);
-
-        executor.shutdownNow();
+        return indices;
     }
 
     @Test
     public void testMapper() {
         // insert a session
         var sessionId = "000000000000000001";
+        var datasetName = "test-name";
+        var datasetVersion = "test-version";
         var session = Session.builder()
-                .id(sessionId)
-                .datasetName("test-dataset")
-                .datasetVersion("0000000001")
+                .sessionId(sessionId)
+                .datasetName(datasetName)
+                .datasetVersion(datasetVersion)
                 .tableName("test-table")
                 .batchSize(10)
                 .start("s-start")
@@ -224,7 +260,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         assertEquals(1, sessionMapper.insert(sessionConverter.convert(session)));
 
-        var result = sessionMapper.selectById(sessionId);
+        var result = sessionMapper.selectOne(sessionId, datasetName, datasetVersion);
 
         assertEquals(session.getDatasetName(), result.getDatasetName());
         assertEquals(session.getDatasetVersion(), result.getDatasetVersion());
@@ -239,7 +275,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         // insert a read log
         var dataReadLog = DataReadLog.builder()
-                .sessionId(sessionId)
+                .sessionId(result.getId())
                 .start("s-start")
                 .end("e-end")
                 .size(10)
@@ -247,7 +283,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         dataReadLogMapper.batchInsert(List.of(dataReadLogConverter.convert(dataReadLog)));
 
         // select top 1 unassigned
-        var top1UnAssigned = dataReadLogMapper.selectTop1UnAssigned(sessionId, Status.DataStatus.UNPROCESSED.name());
+        var top1UnAssigned = dataReadLogMapper.selectTop1UnAssigned(
+                result.getId(), Status.DataStatus.UNPROCESSED.name());
 
         assertNotNull(top1UnAssigned.getId());
         assertEquals(dataReadLog.getSessionId(), top1UnAssigned.getSessionId());

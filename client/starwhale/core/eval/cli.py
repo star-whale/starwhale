@@ -61,9 +61,11 @@ def _list(
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
 # TODO:support multi dataset
 @click.option(
+    "datasets",
     "--dataset",
     required=True,
     envvar=SWEnv.dataset_uri,
+    multiple=True,
     help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
 @click.option("--runtime", default="", help="runtime uri")
@@ -93,7 +95,7 @@ def _run(
     project: str,
     version: str,
     model: str,
-    dataset: str,
+    datasets: list,
     runtime: str,
     name: str,
     desc: str,
@@ -109,7 +111,7 @@ def _run(
         project_uri=project,
         version=version,
         model_uri=model,
-        dataset_uris=[dataset],
+        dataset_uris=datasets,
         runtime_uri=runtime,
         name=name,
         desc=desc,

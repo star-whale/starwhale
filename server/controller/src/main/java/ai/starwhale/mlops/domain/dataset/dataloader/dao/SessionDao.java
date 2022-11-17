@@ -34,11 +34,14 @@ public class SessionDao {
     }
 
     public boolean insert(Session session) {
-        return mapper.insert(converter.convert(session)) > 0;
+        var entity = converter.convert(session);
+        var rows = mapper.insert(entity);
+        session.setId(entity.getId());
+        return rows > 0;
     }
 
-    public Session selectById(String sessionId) {
-        var entity = mapper.selectById(sessionId);
+    public Session selectOne(String sessionId, String datasetName, String datasetVersion) {
+        var entity = mapper.selectOne(sessionId, datasetName, datasetVersion);
         return entity != null ? converter.revert(entity) : null;
     }
 

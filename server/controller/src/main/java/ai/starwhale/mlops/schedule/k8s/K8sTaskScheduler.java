@@ -175,12 +175,16 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
-        // TODO: support multi dataset uris
-        // oss env
-        List<DataSet> dataSets = swJob.getDataSets();
-        DataSet dataSet = dataSets.get(0);
-        coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET, instanceUri,
-                swJob.getProject().getName(), dataSet.getName(), dataSet.getVersion()));
+        // support multi dataset uris
+        var datasetUri = swJob.getDataSets().stream()
+                    .map(dataSet -> String.format(
+                            FORMATTER_URI_DATASET,
+                            instanceUri,
+                            swJob.getProject().getName(),
+                            dataSet.getName(),
+                            dataSet.getVersion())
+                    ).collect(Collectors.joining(" "));
+        coreContainerEnvs.put("SW_DATASET_URI", datasetUri);
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());

@@ -236,7 +236,12 @@ class EvalExecutor:
             ]
         )
         # TODO: support multi dataset
-        cmd.extend(["-e", f"{SWEnv.dataset_uri}={self.dataset_uris[0].full_uri}"])
+        cmd.extend(
+            [
+                "-e",
+                f"{SWEnv.dataset_uri}={' '.join([ds.full_uri for ds in self.dataset_uris])}",
+            ]
+        )
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")

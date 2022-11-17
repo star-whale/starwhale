@@ -65,6 +65,10 @@ class TestCli:
         assert len(self.dataset.list()) == 1
         swds = self.dataset.info(_ds_uri)
         assert swds
+        self.dataset.build(workdir=ds_workdir)
+        assert len(self.dataset.list()) == 2
+        swds2 = self.dataset.info(_ds_uri)
+        assert swds2
 
         # 3.runtime build
         logging.info("building runtime...")
@@ -78,7 +82,13 @@ class TestCli:
         # 4.run evaluation on local instance
         logging.info("running evaluation at local...")
         assert len(self.evaluation.list()) == 0
-        assert self.evaluation.run(model=_model_uri, dataset=_ds_uri)
+        assert self.evaluation.run(
+            model=_model_uri,
+            datasets=[
+                f'{ds_name}/version/{swds["version"]}',
+                f'{ds_name}/version/{swds2["version"]}',
+            ],
+        )
         _eval_list = self.evaluation.list()
         assert len(_eval_list) == 1
 
@@ -101,7 +111,12 @@ class TestCli:
             force=True,
         )
         assert self.dataset.copy(
-            src_uri=_ds_uri,
+            src_uri=f'{ds_name}/version/{swds["version"]}',
+            target_project=f"cloud://cloud/project/{cloud_project}",
+            force=True,
+        )
+        assert self.dataset.copy(
+            src_uri=f'{ds_name}/version/{swds2["version"]}',
             target_project=f"cloud://cloud/project/{cloud_project}",
             force=True,
         )
@@ -122,7 +137,7 @@ class TestCli:
         logging.info("running evaluation at cloud...")
         assert self.evaluation.run(
             model=swmp["version"],
-            dataset=swds["version"],
+            datasets=[swds["version"], swds2["version"]],
             runtime=swrt["version"],
             project=cloud_project,
             step_spec=step_spec_file,

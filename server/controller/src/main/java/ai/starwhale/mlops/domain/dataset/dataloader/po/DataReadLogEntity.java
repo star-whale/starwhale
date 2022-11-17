@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DataReadLogEntity {
     private Long id;
-    private String sessionId;
+    private Long sessionId;
     private String consumerId;
 
     private String start;

@@ -26,7 +26,7 @@ import lombok.Data;
 public class DataReadLog {
 
     private Long id;
-    private String sessionId;
+    private Long sessionId;
     private String consumerId;
     private String start;
     @Builder.Default

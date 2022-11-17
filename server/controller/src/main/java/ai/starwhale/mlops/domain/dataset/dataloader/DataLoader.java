@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
-import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import org.springframework.stereotype.Service;
 
@@ -29,24 +28,12 @@ public class DataLoader {
     }
 
     public DataReadLog next(DataReadRequest request) {
-        var sessionId = request.getSessionId();
         var consumerId = request.getConsumerId();
+        var session = dataReadManager.getOrGenerateSession(request);
 
-        var lock = new KeyLock<>(consumerId);
-        try {
-            lock.lock();
-            dataReadManager.handleConsumerData(request);
-        } finally {
-            lock.unlock();
-        }
+        dataReadManager.handleConsumerData(consumerId,
+                request.isSerial(), request.getProcessedData(), session);
 
-        // ensure serially in the same session
-        var sessionLock = new KeyLock<>(sessionId);
-        try {
-            sessionLock.lock();
-            return dataReadManager.getDataReadIndex(request);
-        } finally {
-            sessionLock.unlock();
-        }
+        return dataReadManager.assignmentData(consumerId, session);
     }
 }

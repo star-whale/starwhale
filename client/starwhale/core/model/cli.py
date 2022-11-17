@@ -156,9 +156,11 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 )
 @click.option("--runtime", default="", help="runtime uri")
 @click.option(
+    "datasets",
     "--dataset",
     required=True,
     envvar=SWEnv.dataset_uri,
+    multiple=True,
     help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
 def _eval(
@@ -166,7 +168,7 @@ def _eval(
     target: str,
     model_yaml: str,
     version: str,
-    dataset: str,
+    datasets: list,
     step: str,
     task_index: int,
     override_task_num: int,
@@ -186,5 +188,5 @@ def _eval(
         step=step,
         task_index=task_index,
         task_num=override_task_num,
-        dataset_uris=[dataset],
+        dataset_uris=datasets,
     )
