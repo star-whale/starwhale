@@ -13,6 +13,7 @@ import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
+import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -68,20 +69,24 @@ export default function RuntimeVersionListCard() {
                             </TextLink>,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             runtime.owner && <User user={runtime.owner} />,
-                            i ? (
-                                <WithCurrentAuth id='runtime.version.revert'>
-                                    <Button
-                                        size='mini'
-                                        as='link'
-                                        key={runtime.id}
-                                        onClick={() => handleRevert(runtime)}
-                                    >
-                                        {t('Revert')}
-                                    </Button>
-                                </WithCurrentAuth>
-                            ) : (
-                                ''
-                            ),
+                            <>
+                                {i ? (
+                                    <WithCurrentAuth id='runtime.version.revert'>
+                                        <Button
+                                            size='mini'
+                                            as='link'
+                                            key={runtime.id}
+                                            onClick={() => handleRevert(runtime)}
+                                        >
+                                            {t('Revert')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                ) : null}
+                                &nbsp;&nbsp;
+                                <CopyToClipboard
+                                    content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
+                                />
+                            </>,
                         ]
                     }) ?? []
                 }

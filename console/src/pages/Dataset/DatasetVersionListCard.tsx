@@ -14,6 +14,7 @@ import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { toaster } from 'baseui/toast'
 import { ButtonLink, TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -58,20 +59,23 @@ export default function DatasetVersionListCard() {
                                 datasetVersion.alias,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
-                                i ? (
-                                    <WithCurrentAuth id='dataset.version.revert'>
-                                        <ButtonLink
-                                            key={datasetVersion.id}
-                                            onClick={() => {
-                                                handleAction(datasetVersion.id)
-                                            }}
-                                        >
-                                            {t('Revert')}
-                                        </ButtonLink>
-                                    </WithCurrentAuth>
-                                ) : (
-                                    ''
-                                ),
+                                <>
+                                    {i ? (
+                                        <WithCurrentAuth id='dataset.version.revert'>
+                                            <ButtonLink
+                                                key={datasetVersion.id}
+                                                onClick={() => {
+                                                    handleAction(datasetVersion.id)
+                                                }}
+                                            >
+                                                {t('Revert')}
+                                            </ButtonLink>
+                                        </WithCurrentAuth>
+                                    ) : null}
+                                    <CopyToClipboard
+                                        content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
+                                    />
+                                </>,
                             ]
                         }) ?? []
                     }
