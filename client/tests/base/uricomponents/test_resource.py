@@ -59,24 +59,44 @@ class TestResource(TestCase):
         assert r.typ == ResourceType.dataset
         assert mock_parse.call_args(uri)
 
-    @patch("starwhale.base.uricomponents.resource.Project.parse")
-    def test_with_full_uri_no_version(self, mock_parse: MagicMock) -> None:
-        ins = mock_parse.return_value
-        ins.path = "dataset/mnist"
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_with_full_uri_no_version(self, mock_conf: MagicMock) -> None:
+        mock_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": "/root"},
+        }
         uri = "local/project/self/dataset/mnist"
         r = Resource(uri)
         assert r.name == "mnist"
         assert r.version is None
         assert r.typ == ResourceType.dataset
-        assert mock_parse.call_args(uri)
 
     @patch("starwhale.base.uricomponents.resource.glob")
-    def test_version_only_with_project(self, mock_glob: MagicMock) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_version_only(self, mock_conf: MagicMock, mock_glob: MagicMock) -> None:
+        mock_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+        }
         mock_glob.return_value = ["/root/project/self/runtime/mnist/fo/foo"]
+
+        # with project
         project = Mock(spec=Project)
         project.instance = MockLocalInstance()
         project.name = "self"
         r = Resource("foo", project=project)
+        assert r.name == "mnist"
+        assert r.version == "foo"
+        assert r.typ == ResourceType.runtime
+        assert r.to_uri().raw == "local/project/self/runtime/mnist/version/foo"
+
+        # without project
+        r = Resource("foo")
         assert r.name == "mnist"
         assert r.version == "foo"
         assert r.typ == ResourceType.runtime
@@ -146,8 +166,21 @@ class TestResource(TestCase):
         with self.assertRaises(Exception):
             Resource("https://foo.com/projects/1/model")  # model missing the tail 's'
 
-    def test_short_uri(self) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_short_uri(self, load_conf: MagicMock) -> None:
+        load_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "https://foo.com"},
+                "bar": {"uri": "https://bar.com"},
+                "local": {"uri": "local"},
+            },
+        }
         p = Resource("local/project/self/mnist", typ=ResourceType.runtime)
         assert p.name == "mnist"
         assert p.project.name == "self"
         assert p.instance.alias == "local"
+
+        p = Resource("cloud://bar/project/self/mnist", typ=ResourceType.runtime)
+        assert p.name == "mnist"
+        assert p.project.name == "self"
+        assert p.instance.alias == "bar"

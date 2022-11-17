@@ -112,7 +112,11 @@ class Resource:
             raise Exception(f"invalid uri {uri} when parse with type {typ}")
 
         if len(parts) == 1:
-            self.name = parts[0]
+            try:
+                # try version first
+                self._parse_by_version(parts[0])
+            except NoMatchException:
+                self.name = parts[0]
         elif len(parts) == 2:
             if parts[0] != "version":
                 # name/version
@@ -146,7 +150,8 @@ class Resource:
                 raise NoMatchException(ver, list(m))
         else:
             # TODO use api to check if it is a name or version
-            ...
+            # assume is is name for now
+            self.name = ver
 
     @property
     def instance(self) -> Instance:
