@@ -1,6 +1,7 @@
+import re
 from enum import Enum
 from glob import glob
-from typing import Optional
+from typing import Dict, Optional
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -13,11 +14,22 @@ from starwhale.base.uricomponents.exceptions import (
     UriTooShortException,
 )
 
+url_regex = re.compile(
+    r"(?P<scheme>https*)://"
+    r"(?P<host>.*)/projects/"
+    r"(?P<project>\d+)/"
+    r"(?P<rc_type>models|datasets|runtimes|evaluations)"
+    r"(/(?P<rc_id>\d+)/versions)?"  # optional
+    r"(/(?P<rc_version>\d+)/.*)?",  # optional
+    re.UNICODE,
+)
+
 
 class ResourceType(Enum):
     runtime = "runtime"
     model = "model"
     dataset = "dataset"
+    evaluation = "evaluation"
 
 
 @dataclass
@@ -28,7 +40,7 @@ class Resource:
 
     typ: ResourceType
     project: Project
-    name: str
+    name: Optional[str] = None
     version: Optional[str] = None
 
     def __init__(
@@ -52,6 +64,17 @@ class Resource:
         :param project: project which the resource belongs to (optional)
         :return: Resource instance
         """
+
+        # check if it is url from console
+        m = url_regex.match(uri)
+        if m is not None:
+            info: Dict[str, str] = m.groupdict()
+            ins = Instance(f'{info["scheme"]}://{info["host"]}')
+            self.project = Project(name=info["project"], instance=ins)
+            self.typ = ResourceType(info["rc_type"][:-1])  # remove the last 's'
+            self.name = info.get("rc_id")
+            self.version = info.get("rc_version")
+            return
 
         if project:
             self.project = project
@@ -134,7 +157,7 @@ class Resource:
             instance=str(self.instance),
             project=self.project.name,
             obj_type=self.typ.name,
-            obj_name=self.name,
+            obj_name=self.name or "",
             obj_ver=self.version or "latest",
         )
 
