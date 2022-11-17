@@ -119,7 +119,9 @@ class DataLoader(metaclass=ABCMeta):
                         instance_uri=self.dataset_uri,
                         params={
                             "expTimeMillis": int(
-                                os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
+                                os.environ.get(
+                                    "SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000"
+                                )
                             )
                             * self.session_consumption.batch_size,  # type: ignore
                         },
