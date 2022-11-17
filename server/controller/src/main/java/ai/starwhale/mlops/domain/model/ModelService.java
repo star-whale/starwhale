@@ -289,7 +289,7 @@ public class ModelService {
             ModelVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
                 //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
-                vo.setAlias("latest");
+                vo.setAlias(VersionAliasConvertor.LATEST);
             }
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;

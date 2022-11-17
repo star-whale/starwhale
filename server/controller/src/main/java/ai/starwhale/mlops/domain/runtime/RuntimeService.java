@@ -259,7 +259,7 @@ public class RuntimeService {
         return PageUtil.toPageInfo(entities, entity -> {
             RuntimeVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias("latest");
+                vo.setAlias(VersionAliasConvertor.LATEST);
             }
             return vo;
         });
