@@ -292,12 +292,53 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
     RuntimeTermView(runtime).extract(force, target_dir)
 
 
-@runtime_cmd.command("copy", aliases=["cp"], help="Copy runtime, standalone <--> cloud")
+@runtime_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
 def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    """
+    Copy Runtime between Standalone Instance and Cloud Instance
+
+    SRC: runtime uri with version
+
+    DEST: project uri or runtime uri with name.
+
+    Example:
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with a new runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq local/project/myproject/mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local default project(self) with the cloud instance runtime name 'mnist-cloud'
+            swcli runtime cp cloud://pre-k8s/project/runtime/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq .
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with the cloud instance runtime name 'mnist-cloud'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq . -dlp myproject
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local default project(self) with a runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/runtime/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with a runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local -dlp myproject
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with a new runtime name 'mnist-cloud'
+            swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist/mnist-cloud
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
+            swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
+            swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
+    """
     RuntimeTermView.copy(src, dest, force, dest_local_project)
 
 

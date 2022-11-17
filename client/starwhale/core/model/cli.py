@@ -46,12 +46,53 @@ def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     ModelTermView(model).tag(tags, remove, quiet)
 
 
-@model_cmd.command("copy", aliases=["cp"], help="Copy model, standalone <--> cloud")
+@model_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy model")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
 def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    """
+    Copy Model between Standalone Instance and Cloud Instance
+
+    SRC: model uri with version
+
+    DEST: project uri or model uri with name.
+
+    Example:
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud model to local project(myproject) with a new model name 'mnist-local'
+            swcli model cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq local/project/myproject/mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud model to local default project(self) with the cloud instance model name 'mnist-cloud'
+            swcli model cp cloud://pre-k8s/project/model/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq .
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud model to local project(myproject) with the cloud instance model name 'mnist-cloud'
+            swcli model cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq . -dlp myproject
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud model to local default project(self) with a model name 'mnist-local'
+            swcli model cp cloud://pre-k8s/project/model/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud model to local project(myproject) with a model name 'mnist-local'
+            swcli model cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local -dlp myproject
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local model to cloud instance(pre-k8s) mnist project with a new model name 'mnist-cloud'
+            swcli model cp mnist-local/version/latest cloud://pre-k8s/project/mnist/mnist-cloud
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local model to cloud instance(pre-k8s) mnist project with standalone instance model name 'mnist-local'
+            swcli model cp mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy standalone instance(local) project(myproject)'s mnist-local model to cloud instance(pre-k8s) mnist project with standalone instance model name 'mnist-local'
+            swcli model cp local/project/myproject/model/mnist-local/version/latest cloud://pre-k8s/project/mnist
+    """
     ModelTermView.copy(src, dest, force, dest_local_project)
 
 

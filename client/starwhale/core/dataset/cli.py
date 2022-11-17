@@ -198,12 +198,53 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     view(dataset).summary()
 
 
-@dataset_cmd.command("copy", aliases=["cp"], help="Copy dataset, standalone <--> cloud")
+@dataset_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
 def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    """
+    Copy Dataset between Standalone Instance and Cloud Instance
+
+    SRC: dataset uri with version
+
+    DEST: project uri or dataset uri with name.
+
+    Example:
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud dataset to local project(myproject) with a new dataset name 'mnist-local'
+            swcli dataset cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq local/project/myproject/mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud dataset to local default project(self) with the cloud instance dataset name 'mnist-cloud'
+            swcli dataset cp cloud://pre-k8s/project/dataset/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq .
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud dataset to local project(myproject) with the cloud instance dataset name 'mnist-cloud'
+            swcli dataset cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq . -dlp myproject
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud dataset to local default project(self) with a dataset name 'mnist-local'
+            swcli dataset cp cloud://pre-k8s/project/dataset/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud dataset to local project(myproject) with a dataset name 'mnist-local'
+            swcli dataset cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local -dlp myproject
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with a new dataset name 'mnist-cloud'
+            swcli dataset cp mnist-local/version/latest cloud://pre-k8s/project/mnist/mnist-cloud
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
+            swcli dataset cp mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
+            swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
+    """
     DatasetTermView.copy(src, dest, force, dest_local_project)
 
 

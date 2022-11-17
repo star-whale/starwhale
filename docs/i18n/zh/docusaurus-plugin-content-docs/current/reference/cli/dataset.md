@@ -61,7 +61,7 @@ swcli dataset build [OPTIONS] WORKDIR
 swcli dataset copy [OPTIONS] SRC DEST
 ```
 
-`dataset copy` 命令能对构建好的数据集实现高效的分发，既可以从Standalone Instance上传数据集到Cloud Instance，又可以从Cloud Instance上下载数据到本地的Standalone Instance，目前不支持Cloud A 到 Cloud B， Standalone A到Standalone B这种层面的数据集分发。`SRC` 参数为 `Dataset URI` 格式，`DEST` 参数为 `Project URI`格式。
+`dataset copy` 命令能对构建好的数据集实现高效的分发，既可以从Standalone Instance上传数据集到Cloud Instance，又可以从Cloud Instance上下载数据到本地的Standalone Instance，目前不支持Cloud A 到 Cloud B， Standalone A到Standalone B这种层面的数据集分发。`SRC` 参数为 `Dataset URI` 格式，`DEST` 参数为 `Project URI` 或 `Dataset URI`（忽略version部分）格式。
 
 Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝数据集中的内容，可避免重复拷贝。当发生重复拷贝且需强制覆盖时，可以使用 `--force` 参数。
 
@@ -70,6 +70,7 @@ Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的dataset，指定该参数后执行copy命令就会强制覆盖。|
+|`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝数据集时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
 ## 4. 对比数据集
 
