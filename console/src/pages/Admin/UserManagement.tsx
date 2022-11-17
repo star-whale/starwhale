@@ -33,7 +33,7 @@ export default function UserManagement() {
     const $page = React.useMemo(() => {
         return {
             ...page,
-            pageSize: 1000,
+            pageSize: 99999,
         }
     }, [page])
     const users = useFetchUsers($page)

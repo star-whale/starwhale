@@ -1,7 +1,6 @@
 import { Select, SIZE } from 'baseui/select'
 import React from 'react'
 import { useFetchUsers } from '@user/hooks/useUser'
-import { usePage } from '@/hooks/usePage'
 
 export interface IUserSelectorProps {
     value?: string
@@ -12,8 +11,7 @@ export interface IUserSelectorProps {
 export default function UserSelector({ value, onChange, ignoreIds }: IUserSelectorProps) {
     const ignores = ignoreIds ?? []
     // TODO make user searchable by backend
-    const [page] = usePage()
-    const users = useFetchUsers(page)
+    const users = useFetchUsers({ pageNum: 1, pageSize: 99999 /* do not support pagination for now */ })
 
     return (
         <Select
