@@ -14,6 +14,7 @@ import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -53,15 +54,23 @@ export default function ModelVersionListCard() {
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
-                            i ? (
-                                <WithCurrentAuth id='model.version.revert'>
-                                    <Button as='link' size='mini' key={model.id} onClick={() => handleAction(model.id)}>
-                                        {t('Revert')}
-                                    </Button>
-                                </WithCurrentAuth>
-                            ) : (
-                                ''
-                            ),
+                            <>
+                                {i ? (
+                                    <WithCurrentAuth id='model.version.revert'>
+                                        <Button
+                                            as='link'
+                                            size='mini'
+                                            key={model.id}
+                                            onClick={() => handleAction(model.id)}
+                                        >
+                                            {t('Revert')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                ) : null}
+                                <CopyToClipboard
+                                    content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
+                                />
+                            </>,
                         ]
                     }) ?? []
                 }

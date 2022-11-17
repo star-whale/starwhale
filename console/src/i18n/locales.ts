@@ -174,6 +174,9 @@ const locales0 = {
     'Copy': {
         en: 'Copy',
     },
+    'Copy Link': {
+        en: 'Copy Link',
+    },
     'User List': {
         en: 'User List',
     },
