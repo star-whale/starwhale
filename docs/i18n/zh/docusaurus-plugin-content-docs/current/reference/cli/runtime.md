@@ -99,13 +99,14 @@ swcli runtime build [OPTIONS] WORKDIR
 swcli runtime copy [OPTIONS] SRC DEST
 ```
 
-`runtime copy` 命令能对构建好的Starwhale Runtime实现分发，既可以从Standalone Instance上传Runtime到Cloud Instance，又可以从Cloud Instance上下载Runtime到本地的Standalone Instance，目前不支持Cloud A 到 Cloud B， Standalone A到Standalone B这种层面的Starwhale Runtime分发。`SRC` 参数为 `Runtime URI` 格式，`DEST` 参数为 `Project URI`格式。
+`runtime copy` 命令能对构建好的Starwhale Runtime实现分发，既可以从Standalone Instance上传Runtime到Cloud Instance，又可以从Cloud Instance上下载Runtime到本地的Standalone Instance，目前不支持Cloud A 到 Cloud B， Standalone A到Standalone B这种层面的Starwhale Runtime分发。`SRC` 参数为 `Runtime URI` 格式，`DEST` 参数为 `Project URI` 或 `Runtime URI`（忽略version部分） 格式。
 
 `runtime copy` 命令参数如下：
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的Runtime，指定该参数后执行copy命令就会强制覆盖。|
+|`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝Runtime时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
 ## 5. 制作Runtime的Docker Image
 

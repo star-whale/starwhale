@@ -115,7 +115,6 @@ class LocalStorageBundleMixin:
         self._manifest: t.Dict[str, t.Any] = {}
 
     def _render_manifest(self) -> None:
-        self._manifest["name"] = self.name  # type: ignore
         self._manifest["build"] = dict(
             os=platform.system(),
             sw_version=STARWHALE_VERSION,

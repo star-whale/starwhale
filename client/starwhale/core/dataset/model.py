@@ -56,8 +56,20 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return _cls(uri)
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        dc = DatasetCopy(src_uri, dest_uri, URIType.DATASET, force)
+    def copy(
+        cls,
+        src_uri: str,
+        dest_uri: str,
+        force: bool = False,
+        dest_local_project_uri: str = "",
+    ) -> None:
+        dc = DatasetCopy(
+            src_uri,
+            dest_uri,
+            URIType.DATASET,
+            force,
+            dest_local_project_uri=dest_local_project_uri,
+        )
         dc.do()
 
     @classmethod
@@ -161,7 +173,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
             _r.append(
                 dict(
-                    name=_manifest["name"],
+                    name=self.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
@@ -216,7 +228,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
             rs[_bf.name].append(
                 dict(
-                    name=_manifest["name"],
+                    name=_bf.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],

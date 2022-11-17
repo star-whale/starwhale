@@ -19,6 +19,7 @@ class TestInstance(TestCase):
                 "foo": {"uri": "https://foo.com"},
                 "bar": {"uri": "https://bar.com"},
                 "baz": {"uri": "https://foo.com"},
+                "local": {"uri": "local"},
             },
         }
 
@@ -54,6 +55,6 @@ class TestInstance(TestCase):
         assert ins.alias == "foo"
         assert ins.path == "baz"
 
-        ins = Instance(uri="https://bar.com/baz/foo")
-        assert ins.alias == "bar"
+        ins = Instance(uri="local/baz/foo")
+        assert ins.alias == "local"
         assert ins.path == "baz/foo"

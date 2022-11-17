@@ -251,15 +251,15 @@ def _restore(target: str) -> None:
     """
     [Only Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
 
-    TARGET: runtime uri or runtice workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    TARGET: runtime uri or runtime workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     RuntimeTermView.restore(target)
 
 
 @runtime_cmd.command("list", aliases=["ls"], help="List runtime")
-@click.option("--project", default="", help="Project URI")
-@click.option("--fullname", is_flag=True, help="Show fullname of runtime version")
-@click.option("--show-removed", is_flag=True, help="Show removed runtime")
+@click.option("-p", "--project", default="", help="Project URI")
+@click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
+@click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
 )
@@ -292,12 +292,54 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
     RuntimeTermView(runtime).extract(force, target_dir)
 
 
-@runtime_cmd.command("copy", aliases=["cp"], help="Copy runtime, standalone <--> cloud")
+@runtime_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
-def _copy(src: str, dest: str, force: bool) -> None:
-    RuntimeTermView.copy(src, dest, force)
+@click.option("-dlp", "--dest-local-project", help="dest local project uri")
+def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+    """
+    Copy Runtime between Standalone Instance and Cloud Instance
+
+    SRC: runtime uri with version
+
+    DEST: project uri or runtime uri with name.
+
+    Example:
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with a new runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq local/project/myproject/mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local default project(self) with the cloud instance runtime name 'mnist-cloud'
+            swcli runtime cp cloud://pre-k8s/project/runtime/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq .
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with the cloud instance runtime name 'mnist-cloud'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq . -dlp myproject
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local default project(self) with a runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/runtime/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local
+
+        \b
+        - copy cloud instance(pre-k8s) mnist project's mnist-cloud runtime to local project(myproject) with a runtime name 'mnist-local'
+            swcli runtime cp cloud://pre-k8s/project/mnist/mnist-cloud/version/ge3tkylgha2tenrtmftdgyjzni3dayq mnist-local -dlp myproject
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with a new runtime name 'mnist-cloud'
+            swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist/mnist-cloud
+
+        \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
+            swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
+            swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
+    """
+    RuntimeTermView.copy(src, dest, force, dest_local_project)
 
 
 @runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")

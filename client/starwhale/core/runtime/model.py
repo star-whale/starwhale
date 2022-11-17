@@ -633,8 +633,20 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Runtime: {self.uri}"
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        bc = BundleCopy(src_uri, dest_uri, URIType.RUNTIME, force)
+    def copy(
+        cls,
+        src_uri: str,
+        dest_uri: str,
+        force: bool = False,
+        dest_local_project_uri: str = "",
+    ) -> None:
+        bc = BundleCopy(
+            src_uri,
+            dest_uri,
+            URIType.RUNTIME,
+            force,
+            dest_local_project_uri=dest_local_project_uri,
+        )
         bc.do()
 
     @classmethod
@@ -1023,6 +1035,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             # TODO: add more manifest info
             rs[_bf.name].append(
                 {
+                    "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
                     "created_at": get_path_created_time(_bf.path),

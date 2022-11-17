@@ -243,7 +243,8 @@ class StandaloneDatasetTestCase(TestCase):
         assert (snapshot_workdir / "src").exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
-        assert _manifest["name"] == name
+        assert _manifest["version"] == build_version
+        assert "name" not in _manifest
 
         dataset_uri = URI(
             f"mnist/version/{build_version}", expected_type=URIType.DATASET

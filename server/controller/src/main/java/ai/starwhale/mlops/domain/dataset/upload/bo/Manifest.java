@@ -40,12 +40,10 @@ public class Manifest {
     String mode;
     String process;
     String version;
-    String name;
     @JsonProperty("dataset_summary")
     DatasetSummary datasetSummary;
     List<String> signature;
     String rawYaml;
-
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -138,5 +136,3 @@ public class Manifest {
         boolean localGenEnv;
     }
 }
-
-

@@ -156,8 +156,20 @@ class Model(BaseBundle, metaclass=ABCMeta):
             raise NoSupportError(f"model uri:{uri}")
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        bc = BundleCopy(src_uri, dest_uri, URIType.MODEL, force)
+    def copy(
+        cls,
+        src_uri: str,
+        dest_uri: str,
+        force: bool = False,
+        dest_local_project_uri: str = "",
+    ) -> None:
+        bc = BundleCopy(
+            src_uri,
+            dest_uri,
+            URIType.MODEL,
+            force,
+            dest_local_project_uri=dest_local_project_uri,
+        )
         bc.do()
 
 
@@ -406,7 +418,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             rs[_bf.name].append(
                 {
-                    "name": _manifest["name"],
+                    "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
                     "size": _bf.path.stat().st_size,

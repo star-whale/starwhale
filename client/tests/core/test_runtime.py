@@ -1448,7 +1448,6 @@ class StandaloneRuntimeTestCase(TestCase):
         image = "docker.io/t1/t2"
         uri = URI(f"{name}/version/{version}", expected_type=URIType.RUNTIME)
         manifest = self.get_mock_manifest()
-        manifest["name"] = name
         manifest["version"] = version
         manifest["configs"]["docker"]["image"] = image
 
@@ -1525,7 +1524,6 @@ class StandaloneRuntimeTestCase(TestCase):
             / version
         )
         manifest = self.get_mock_manifest()
-        manifest["name"] = name
         manifest["version"] = version
         ensure_dir(snapshot_dir)
         ensure_file(snapshot_dir / DEFAULT_MANIFEST_NAME, yaml.safe_dump(manifest))

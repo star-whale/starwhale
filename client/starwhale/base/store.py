@@ -186,15 +186,15 @@ class BaseStorage(metaclass=ABCMeta):
             if not _path.name.endswith(bundle_type):
                 continue
 
-            _rt_name = _path.parent.parent.name
-            if _rt_name not in _tags_map:
-                _manifest = StandaloneTag.get_manifest_by_dir(_obj_dir / _rt_name)
-                _tags_map[_rt_name] = _manifest.get("versions", {})
+            _resource_name = _path.parent.parent.name
+            if _resource_name not in _tags_map:
+                _manifest = StandaloneTag.get_manifest_by_dir(_obj_dir / _resource_name)
+                _tags_map[_resource_name] = _manifest.get("versions", {})
 
             _rt_version = _path.name.split(bundle_type)[0]
-            _tags = _tags_map.get(_rt_name, {}).get(_rt_version, {}).keys()
+            _tags = _tags_map.get(_resource_name, {}).get(_rt_version, {}).keys()
             yield BundleField(
-                name=_rt_name,
+                name=_resource_name,
                 version=_rt_version,
                 tags=list(_tags),
                 path=_path,

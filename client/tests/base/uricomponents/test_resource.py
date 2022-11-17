@@ -145,3 +145,9 @@ class TestResource(TestCase):
 
         with self.assertRaises(Exception):
             Resource("https://foo.com/projects/1/model")  # model missing the tail 's'
+
+    def test_short_uri(self) -> None:
+        p = Resource("local/project/self/mnist", typ=ResourceType.runtime)
+        assert p.name == "mnist"
+        assert p.project.name == "self"
+        assert p.instance.alias == "local"

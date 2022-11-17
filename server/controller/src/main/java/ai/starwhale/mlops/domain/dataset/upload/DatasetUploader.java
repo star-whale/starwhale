@@ -220,29 +220,29 @@ public class DatasetUploader {
                     new SwValidationException(ValidSubject.DATASET, "read dataset yaml failed " + fileName, e),
                     HttpStatus.BAD_REQUEST);
         }
-        if (null == manifest.getName() || null == manifest.getVersion()) {
+        if (null == manifest.getVersion()) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET, "name or version is required in manifest "),
+                    new SwValidationException(ValidSubject.DATASET, "version is required in manifest "),
                     HttpStatus.BAD_REQUEST);
         }
         ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
         Long projectId = projectEntity.getId();
-        DatasetEntity datasetEntity = datasetMapper.findByName(manifest.getName(), projectId);
+        DatasetEntity datasetEntity = datasetMapper.findByName(uploadRequest.name(), projectId);
         if (null == datasetEntity) {
-            //create
-            datasetEntity = from(manifest, uploadRequest.getProject());
+            // create
+            datasetEntity = from(manifest, uploadRequest.getProject(), uploadRequest.name());
             datasetMapper.addDataset(datasetEntity);
         }
         DatasetVersionEntity datasetVersionEntity = datasetVersionMapper
                 .findByDsIdAndVersionNameForUpdate(datasetEntity.getId(), manifest.getVersion());
         if (null == datasetVersionEntity) {
-            //create
+            // create
             datasetVersionEntity = from(projectEntity.getProjectName(), datasetEntity, manifest);
             datasetVersionMapper.addNewVersion(datasetVersionEntity);
             datasetVersionMapper.revertTo(datasetVersionEntity.getDatasetId(), datasetVersionEntity.getId());
             uploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
         } else {
-            //dataset version create dup
+            // dataset version create dup
             if (datasetVersionEntity.getStatus().equals(DatasetVersionEntity.STATUS_AVAILABLE)) {
                 if (uploadRequest.force()) {
                     Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
@@ -265,7 +265,7 @@ public class DatasetUploader {
             }
             if (!yamlContent.equals(datasetVersionEntity.getVersionMeta())) {
                 datasetVersionEntity.setVersionMeta(yamlContent);
-                //if manifest(signature) change, all files should be re-uploaded
+                // if manifest(signature) change, all files should be re-uploaded
                 datasetVersionEntity.setFilesUploaded("");
                 clearDatasetStorageData(datasetVersionEntity);
                 datasetVersionMapper.updateFilesUploaded(datasetVersionEntity);
@@ -284,17 +284,17 @@ public class DatasetUploader {
                 .versionMeta(manifest.getRawYaml())
                 .versionName(manifest.getVersion())
                 .size(manifest.getDatasetSummary().getRows())
-                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName, manifest.getName(),
+                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName, datasetEntity.getDatasetName(),
                         manifest.getVersion()))
                 .filesUploaded(DatasetVersionWithMetaConverter.EMPTY_YAML)
                 .build();
     }
 
-    private DatasetEntity from(Manifest manifest, String project) {
+    private DatasetEntity from(Manifest manifest, String project, String datasetName) {
         ProjectEntity projectEntity = projectManager.findByNameOrDefault(project,
                 userService.currentUserDetail().getIdTableKey());
         return DatasetEntity.builder()
-                .datasetName(manifest.getName())
+                .datasetName(datasetName)
                 .isDeleted(0)
                 .ownerId(getOwner())
                 .projectId(projectEntity == null ? null : projectEntity.getId())

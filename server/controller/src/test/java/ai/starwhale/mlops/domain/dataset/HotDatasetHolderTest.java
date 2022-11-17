@@ -100,8 +100,7 @@ public class HotDatasetHolderTest {
             + "5a26a33248d5dec608dc0602e8b3d86b0508293eda16922b8d3\n"
             + "  - 471888:blake2b:e1966727c307b611efacf19194e0a6a1099f09cab65b51ff81425967cf6d10cf77dfbc4855ac7"
             + "f117bfd4c7e753124cb2b83c6672b9820b42601a73e009e561f\n"
-            + "version: mizwkzrqgqzdemjwmrtdmmjummzxczi3\n"
-            + "name: testds3\n";
+            + "version: mizwkzrqgqzdemjwmrtdmmjummzxczi3\n";
 
     @Test
     public void testHotSwdsHolder() throws JsonProcessingException {
