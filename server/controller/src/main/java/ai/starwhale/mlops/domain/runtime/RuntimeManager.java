@@ -98,6 +98,11 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     }
 
     @Override
+    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+        return runtimeVersionMapper.getLatestVersion(bundleId);
+    }
+
+    @Override
     public HasTag findObjectWithTagById(Long id) {
         RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(id);
         return HasTagWrapper.builder()

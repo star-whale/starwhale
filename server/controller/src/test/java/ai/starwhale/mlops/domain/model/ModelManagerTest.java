@@ -158,6 +158,18 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void testFindLatestVersionByBundleId() {
+        given(versionMapper.getLatestVersion(same(1L)))
+                .willReturn(ModelVersionEntity.builder().id(1L).build());
+
+        var res = manager.findLatestVersionByBundleId(1L);
+        assertThat(res, hasProperty("id", is(1L)));
+
+        res = manager.findLatestVersionByBundleId(2L);
+        assertThat(res, nullValue());
+    }
+
+    @Test
     public void testRevertTo() {
         given(versionMapper.revertTo(same(1L), same(2L)))
                 .willReturn(1);

@@ -41,6 +41,7 @@ import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
@@ -77,6 +78,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -160,18 +162,31 @@ public class ModelServiceTest {
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
                     BundleUrl bundleUrl = invocation.getArgument(0);
-                    return Long.valueOf(bundleUrl.getBundleUrl());
-                });
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
-                .willAnswer(invocation -> {
-                    BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
+                    switch (bundleUrl.getBundleUrl()) {
+                        case "m1":
+                            return 1L;
+                        case "m2":
+                            return 2L;
+                        case "m3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
 
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class), anyLong()))
-                .willAnswer(invocation -> {
+        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
+                .willAnswer((Answer<Long>) invocation -> {
                     BundleVersionUrl url = invocation.getArgument(0);
-                    return Long.valueOf(url.getVersionUrl());
+                    switch (url.getVersionUrl()) {
+                        case "v1":
+                            return 1L;
+                        case "v2":
+                            return 2L;
+                        case "v3":
+                            return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
                 });
 
         service.setBundleManager(bundleManager);
@@ -199,15 +214,15 @@ public class ModelServiceTest {
     public void testDeleteModel() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "1")
+                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
         ))).willReturn(true);
         try (var mock = mockStatic(RemoveManager.class)) {
             mock.when(() -> RemoveManager.create(any(), any()))
                     .thenReturn(removeManager);
-            var res = service.deleteModel(ModelQuery.builder().projectUrl("p1").modelUrl("1").build());
+            var res = service.deleteModel(ModelQuery.builder().projectUrl("p1").modelUrl("m1").build());
             assertThat(res, is(true));
 
-            res = service.deleteModel(ModelQuery.builder().projectUrl("p2").modelUrl("2").build());
+            res = service.deleteModel(ModelQuery.builder().projectUrl("p2").modelUrl("m2").build());
             assertThat(res, is(false));
         }
     }
@@ -270,15 +285,18 @@ public class ModelServiceTest {
                 .willReturn(ModelEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("3").build()));
+                () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m3").build()));
 
         given(modelVersionMapper.findVersionById(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
+        given(modelVersionMapper.getLatestVersion(same(1L)))
+                .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
+
         var res = service.getModelInfo(ModelQuery.builder()
-                .projectUrl("1")
-                .modelUrl("1")
-                .modelVersionUrl("1")
+                .projectUrl("p1")
+                .modelUrl("m1")
+                .modelVersionUrl("v1")
                 .build());
 
         assertThat(res, allOf(
@@ -290,8 +308,8 @@ public class ModelServiceTest {
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         res = service.getModelInfo(ModelQuery.builder()
-                .projectUrl("1")
-                .modelUrl("1")
+                .projectUrl("p1")
+                .modelUrl("m1")
                 .build());
 
         assertThat(res, allOf(
@@ -299,7 +317,7 @@ public class ModelServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(BundleException.class,
                 () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("2").build()));
     }
 
@@ -308,10 +326,10 @@ public class ModelServiceTest {
         given(modelVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifyModelVersion("1", "1", "1", new ModelVersion());
+        var res = service.modifyModelVersion("1", "1", "v1", new ModelVersion());
         assertThat(res, is(true));
 
-        res = service.modifyModelVersion("1", "1", "2", new ModelVersion());
+        res = service.modifyModelVersion("1", "1", "v2", new ModelVersion());
         assertThat(res, is(false));
     }
 
@@ -322,7 +340,7 @@ public class ModelServiceTest {
         var res = service.listModelVersionHistory(
                 ModelVersionQuery.builder()
                         .projectUrl("1")
-                        .modelUrl("1")
+                        .modelUrl("m1")
                         .versionName("v1")
                         .versionTag("tag1")
                         .build(),
@@ -401,22 +419,18 @@ public class ModelServiceTest {
 
     @Test
     public void testPull() throws IOException {
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        given(modelMapper.findByName(same("m1"), same(1L)))
-                .willReturn(ModelEntity.builder().id(1L).build());
-        assertThrows(SwValidationException.class,
-                () -> service.pull("2", "m2", "v2", response));
-
-        given(modelVersionMapper.findByNameAndModelId(same("v1"), same(1L)))
+        given(modelVersionMapper.findVersionById(same(1L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path1").build());
-        assertThrows(SwValidationException.class,
-                () -> service.pull("1", "m1", "v4", response));
 
-        given(modelVersionMapper.findByNameAndModelId(same("v2"), same(1L)))
+        given(modelVersionMapper.findVersionById(same(2L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path2").build());
 
-        given(modelVersionMapper.findByNameAndModelId(same("v3"), same(1L)))
+        given(modelVersionMapper.findVersionById(same(3L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path3").build());
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        assertThrows(BundleException.class,
+                () -> service.pull("1", "m1", "v4", response));
 
         given(storageAccessService.list(anyString())).willThrow(IOException.class);
         given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
@@ -438,20 +452,17 @@ public class ModelServiceTest {
 
     @Test
     public void testQuery() {
-        given(modelMapper.findByName(same("m1"), same(1L)))
-                .willReturn(ModelEntity.builder().id(1L).build());
-
-        given(modelVersionMapper.findByNameAndModelId(same("v1"), same(1L)))
+        given(modelVersionMapper.findVersionById(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).build());
 
-        var res = service.query("1", "m1", "v1");
+        var res = service.query("p1", "m1", "v1");
         assertThat(res, is(""));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "m2", "v1"));
+                () -> service.query("p1", "m2", "v2"));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "m1", "v2"));
+                () -> service.query("p1", "m1", "v3"));
 
     }
 

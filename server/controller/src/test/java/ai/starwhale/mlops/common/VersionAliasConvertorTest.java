@@ -82,5 +82,14 @@ public class VersionAliasConvertorTest {
 
         res = versionAliasConvertor.isVersionAlias("v2");
         assertThat(res, is(true));
+
+        res = versionAliasConvertor.isLatest("v2");
+        assertThat(res, is(false));
+
+        res = versionAliasConvertor.isLatest("latest");
+        assertThat(res, is(true));
+
+        res = versionAliasConvertor.isLatest("LATEST");
+        assertThat(res, is(true));
     }
 }

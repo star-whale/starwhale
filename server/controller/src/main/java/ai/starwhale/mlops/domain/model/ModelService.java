@@ -205,7 +205,7 @@ public class ModelService {
         if (!StrUtil.isEmpty(query.getModelVersionUrl())) {
             // find version by versionId
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(bundleUrl, query.getModelVersionUrl()), modelId);
+                    .create(query.getProjectUrl(), query.getModelUrl(), query.getModelVersionUrl()));
             versionEntity = modelVersionMapper.findVersionById(versionId);
         }
         if (versionEntity == null) {
@@ -284,8 +284,13 @@ public class ModelService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ModelVersionEntity> entities = modelVersionMapper.listVersions(
                 modelId, query.getVersionName(), query.getVersionTag());
+        ModelVersionEntity latest = modelVersionMapper.getLatestVersion(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVersionVo vo = versionConvertor.convert(entity);
+            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+                //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
+                vo.setAlias(VersionAliasConvertor.LATEST);
+            }
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
         });
@@ -410,13 +415,8 @@ public class ModelService {
     }
 
     public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ModelEntity modelEntity = modelMapper.findByName(modelUrl, projectId);
-        if (null == modelEntity) {
-            throw new SwValidationException(ValidSubject.MODEL, "model not found");
-        }
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(
-                versionUrl, modelEntity.getId());
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.findVersionById(versionId);
         if (null == modelVersionEntity) {
             throw new SwValidationException(ValidSubject.MODEL, "model version not found");
         }
@@ -447,13 +447,8 @@ public class ModelService {
     }
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ModelEntity entity = modelMapper.findByName(modelUrl, projectId);
-        if (null == entity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL), HttpStatus.NOT_FOUND);
-        }
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(versionUrl,
-                entity.getId());
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.findVersionById(versionId);
         if (null == modelVersionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL), HttpStatus.NOT_FOUND);
         }

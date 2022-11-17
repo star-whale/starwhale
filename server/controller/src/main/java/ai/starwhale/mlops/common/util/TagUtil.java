@@ -29,11 +29,11 @@ public class TagUtil {
 
     public static final String SEPARATOR = ",";
 
-    public static final String ALIAS_REGEX = "^v\\d*$";
+    public static final String ALIAS_REGEX = "(^v\\d*$)|^(?i)latest$";
 
     public static final Pattern ALIAS_PATTERN = Pattern.compile(ALIAS_REGEX);
 
-    public static String getTags(TagAction tagAction, String originTags) {
+    public static String manageTags(TagAction tagAction, String originTags) {
         if (!checkTags(tagAction.getTags())) {
             throw new TagException("Invalid alias or tag.");
         }
@@ -78,12 +78,6 @@ public class TagUtil {
     }
 
     private static Set<String> toSet(String tags) {
-        List<String> splits = StrUtil.split(tags, SEPARATOR);
-        for (String split : splits) {
-            if (ALIAS_PATTERN.matcher(split).matches()) {
-                throw new TagException("Invalid alias or tag.");
-            }
-        }
         return new LinkedHashSet<>(StrUtil.split(tags, SEPARATOR));
     }
 

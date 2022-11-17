@@ -23,6 +23,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class VersionAliasConvertor implements Convertor<Long, String> {
 
+    public static final String LATEST = "latest";
+
     @Override
     public String convert(Long order) throws ConvertException {
         if (order == null) {
@@ -46,5 +48,9 @@ public class VersionAliasConvertor implements Convertor<Long, String> {
     public boolean isVersionAlias(String alias) {
         return alias != null
                 && Pattern.compile("v\\d+").matcher(alias).matches();
+    }
+
+    public boolean isLatest(String alias) {
+        return LATEST.equalsIgnoreCase(alias);
     }
 }

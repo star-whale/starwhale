@@ -78,6 +78,8 @@ public class BundleManager {
             entity = bundleVersionAccessor.findVersionById(idConvertor.revert(versionUrl));
         } else if (versionAliasConvertor.isVersionAlias(versionUrl)) {
             entity = bundleVersionAccessor.findVersionByAliasAndBundleId(versionUrl, bundleId);
+        } else if (versionAliasConvertor.isLatest(versionUrl)) {
+            entity = bundleVersionAccessor.findLatestVersionByBundleId(bundleId);
         } else {
             entity = bundleVersionAccessor.findVersionByNameAndBundleId(versionUrl, bundleId);
         }
