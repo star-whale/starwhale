@@ -176,7 +176,7 @@ class TestModelPipelineHandler(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -263,7 +263,7 @@ class TestModelPipelineHandler(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,

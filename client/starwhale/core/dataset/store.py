@@ -295,14 +295,14 @@ class ObjectStore:
         return f"ObjectStored:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
-    def from_data_link_uri(cls, data_uri: Link, auth_name: str) -> ObjectStore:
-        if not data_uri:
-            raise FieldTypeOrValueError("data_uri is empty")
+    def from_data_link_uri(cls, data_link: Link, auth_name: str) -> ObjectStore:
+        if not data_link:
+            raise FieldTypeOrValueError("data_link is empty")
 
         # TODO: support other uri type
-        if data_uri.uri.startswith("s3://"):
+        if data_link.uri.startswith("s3://"):
             backend = SWDSBackendType.S3
-            conn = S3Connection.from_uri(data_uri.uri, auth_name)
+            conn = S3Connection.from_uri(data_link.uri, auth_name)
             bucket = conn.bucket
         else:
             backend = SWDSBackendType.LocalFS
@@ -424,13 +424,18 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
 
     def sign_uri(self, uri: str) -> str:
         r = self.do_http_request(
-            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-link",
-            method=HTTPMethod.GET,
+            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
+            method=HTTPMethod.POST,
             instance_uri=self.dataset_uri,
-            params={"uri": uri, "expTimeMillis": 1000 * 60 * 30},
+            params={
+                "expTimeMillis": int(
+                    os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
+                ),
+            },
+            json=[uri],
             use_raise=True,
         ).json()
-        return r["data"]  # type: ignore
+        return r["data"].get(uri, "")  # type: ignore
 
 
 class S3BufferedFileLike:

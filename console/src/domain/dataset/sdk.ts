@@ -85,7 +85,7 @@ export class DatasetObject {
         this.src = data?.src ?? 0
         this.size = Number(data?.data_size ?? 0)
         this.offset = Number(data?.data_offset ?? 0)
-        this.uri = data?.data_uri?.uri ?? ''
+        this.uri = data?.data_link?.uri ?? ''
         this.id = data?.id ?? ''
         this.mimeType = ''
         this.type = ''

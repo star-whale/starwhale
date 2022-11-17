@@ -238,7 +238,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=Link(str(fno)),
+                    data_link=Link(str(fno)),
                     data_format=self.data_format_type,
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=_bin_section.raw_data_offset,
@@ -317,11 +317,11 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
         # TODO: tune performance scan after put in a second
         for row in self.tabular_dataset.scan():
-            if row.data_uri.uri not in map_fno_sign:
+            if row.data_link.uri not in map_fno_sign:
                 continue
 
             self.tabular_dataset.update(
-                row_id=row.id, data_uri=Link(map_fno_sign[row.data_uri.uri])
+                row_id=row.id, data_link=Link(map_fno_sign[row.data_link.uri])
             )
 
 
@@ -411,7 +411,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=Link(data_uri),
+                    data_link=Link(data_uri),
                     data_format=self.data_format_type,
                     object_store_type=object_store_type,
                     data_offset=row_data.offset,

@@ -49,7 +49,7 @@ class TabularDatasetRow(ASDictMixin):
     def __init__(
         self,
         id: t.Union[str, int],
-        data_uri: Link,
+        data_link: Link,
         data_format: DataFormatType = DataFormatType.SWDS_BIN,
         object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
@@ -61,7 +61,7 @@ class TabularDatasetRow(ASDictMixin):
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.data_uri = data_uri
+        self.data_link = data_link
         self.data_format = data_format
         self.data_offset = data_offset
         self.data_size = data_size
@@ -79,7 +79,7 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        data_uri: Link,
+        data_link: Link,
         data_format: str = DataFormatType.SWDS_BIN.value,
         object_store_type: str = ObjectStoreType.LOCAL.value,
         data_offset: int = 0,
@@ -100,7 +100,7 @@ class TabularDatasetRow(ASDictMixin):
 
         return cls(
             id=id,
-            data_uri=data_uri,
+            data_link=data_link,
             data_format=DataFormatType(data_format),
             object_store_type=ObjectStoreType(object_store_type),
             data_offset=data_offset,
@@ -132,8 +132,8 @@ class TabularDatasetRow(ASDictMixin):
 
         # TODO: add annotation items type check
 
-        if not self.data_uri:
-            raise FieldTypeOrValueError("no raw_data_uri field")
+        if not self.data_link:
+            raise FieldTypeOrValueError("no raw_data_link field")
 
         if not isinstance(self.data_format, DataFormatType):
             raise NoSupportError(f"data format: {self.data_format}")
@@ -145,11 +145,11 @@ class TabularDatasetRow(ASDictMixin):
             raise NoSupportError(f"object store {self.object_store_type}")
 
     def __str__(self) -> str:
-        return f"row-{self.id}, data-{self.data_uri}, origin-[{self.data_origin}]"
+        return f"row-{self.id}, data-{self.data_link}, origin-[{self.data_origin}]"
 
     def __repr__(self) -> str:
         return (
-            f"row-{self.id}, data-{self.data_uri}(offset:{self.data_offset}, size:{self.data_size},"
+            f"row-{self.id}, data-{self.data_link}(offset:{self.data_offset}, size:{self.data_size},"
             f"format:{self.data_format}, meta type:{self.data_type}), "
             f"origin-[{self.data_origin}], object store-{self.object_store_type}"
         )
@@ -157,7 +157,7 @@ class TabularDatasetRow(ASDictMixin):
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         d = super().asdict(
             ignore_keys=ignore_keys
-            or ["annotations", "extra_kw", "data_type", "data_uri"]
+            or ["annotations", "extra_kw", "data_type", "data_link"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
         for k, v in self.annotations.items():
@@ -166,7 +166,7 @@ class TabularDatasetRow(ASDictMixin):
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
         )
-        d["data_uri"] = self.data_uri
+        d["data_link"] = self.data_link
         return d
 
 
@@ -245,7 +245,7 @@ class TabularDataset:
                 _d[k] = v(_d[k])
             yield TabularDatasetRow.from_datastore(**_d)
 
-    def scan_btch(
+    def scan_batch(
         self,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
@@ -257,7 +257,7 @@ class TabularDataset:
             if len(batch) % batch_size == 0:
                 yield batch
                 batch = []
-        if len(batch):
+        if batch:
             yield batch
 
     def close(self) -> None:

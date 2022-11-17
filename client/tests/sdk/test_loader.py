@@ -84,7 +84,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id="path/0",
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=16,
                 data_size=784,
                 annotations={"label": 0},
@@ -196,7 +196,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=Link(
+                data_link=Link(
                     f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}"
                 ),
                 data_offset=16,
@@ -213,7 +213,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=1,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=Link(
+                data_link=Link(
                     f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}"
                 ),
                 data_offset=16,
@@ -230,7 +230,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=2,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=Link(
+                data_link=Link(
                     f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}"
                 ),
                 data_offset=16,
@@ -247,7 +247,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=3,
                 object_store_type=ObjectStoreType.REMOTE,
-                data_uri=Link(
+                data_link=Link(
                     f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}"
                 ),
                 data_offset=16,
@@ -355,7 +355,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -454,7 +454,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -471,7 +471,7 @@ class TestDataLoader(TestCase):
             TabularDatasetRow(
                 id=1,
                 object_store_type=ObjectStoreType.LOCAL,
-                data_uri=Link(fname),
+                data_link=Link(fname),
                 data_offset=32,
                 data_size=784,
                 _swds_bin_offset=0,
@@ -521,7 +521,7 @@ class TestDataLoader(TestCase):
 
     @patch.dict(os.environ, {"SW_TOKEN": "a", "SW_POD_NAME": "b"})
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan_btch")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan_batch")
     @patch("requests.get")
     @patch("requests.request")
     @patch("starwhale.core.dataset.tabular.TabularDatasetSessionConsumption")
@@ -559,7 +559,7 @@ class TestDataLoader(TestCase):
                 TabularDatasetRow(
                     id=0,
                     object_store_type=ObjectStoreType.LOCAL,
-                    data_uri=Link("l11"),
+                    data_link=Link("l11"),
                     data_offset=32,
                     data_size=784,
                     _swds_bin_offset=0,
@@ -576,7 +576,7 @@ class TestDataLoader(TestCase):
                 TabularDatasetRow(
                     id=1,
                     object_store_type=ObjectStoreType.LOCAL,
-                    data_uri=Link("l12"),
+                    data_link=Link("l12"),
                     data_offset=32,
                     data_size=784,
                     _swds_bin_offset=0,
@@ -595,7 +595,7 @@ class TestDataLoader(TestCase):
                 TabularDatasetRow(
                     id=2,
                     object_store_type=ObjectStoreType.LOCAL,
-                    data_uri=Link("l13"),
+                    data_link=Link("l13"),
                     data_offset=32,
                     data_size=784,
                     _swds_bin_offset=0,
@@ -612,7 +612,7 @@ class TestDataLoader(TestCase):
                 TabularDatasetRow(
                     id=3,
                     object_store_type=ObjectStoreType.LOCAL,
-                    data_uri=Link("l14"),
+                    data_link=Link("l14"),
                     data_offset=32,
                     data_size=784,
                     _swds_bin_offset=0,

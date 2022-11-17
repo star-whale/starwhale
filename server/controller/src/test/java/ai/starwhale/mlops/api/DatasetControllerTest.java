@@ -54,7 +54,9 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -355,14 +357,15 @@ public class DatasetControllerTest {
     }
 
     @Test
-    public void testSignLink() {
+    public void testSignLinks() {
         String pj = "pj";
         String ds = "ds";
         String v = "v";
         String uri = "uri";
         when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersionEntity.builder().id(1L).build());
         String signUrl = "sign-url";
-        when(datasetService.signLink(1L, uri, 100L)).thenReturn(signUrl);
-        Assertions.assertEquals(signUrl, controller.signLink(pj, ds, v, uri, 100L).getBody().getData());
+        when(datasetService.signLinks(1L, Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
+        Assertions.assertEquals(Map.of(uri, signUrl),
+                controller.signLinks(pj, ds, v, Set.of(uri), 100L).getBody().getData());
     }
 }
