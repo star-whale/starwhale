@@ -11,7 +11,12 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pyfakefs.fake_filesystem_unittest import Patcher
 
-from starwhale.utils import load_dotenv, pretty_merge_list, validate_obj_name
+from starwhale.utils import (
+    load_dotenv,
+    gen_uniq_version,
+    pretty_merge_list,
+    validate_obj_name,
+)
 from starwhale.consts import HTTPMethod, ENV_LOG_LEVEL
 from starwhale.utils.debug import init_logger
 from starwhale.utils.retry import http_retry
@@ -75,6 +80,17 @@ def test_pretty_merge_list() -> None:
 
     for in_lst, expected_str in _cases:
         assert pretty_merge_list(in_lst) == expected_str
+
+
+def test_gen_uniq_version() -> None:
+    cnt = 10000
+    versions = [gen_uniq_version() for i in range(cnt)]
+    assert len(versions[0]) == 40
+    assert len(set(versions)) == cnt
+    len_versions = [len(v) for v in versions]
+    assert len(set(len_versions)) == 1
+    short_versions = [v[:5] for v in versions]
+    assert len(set(short_versions)) >= cnt * 0.99
 
 
 class TestRetry(TestCase):

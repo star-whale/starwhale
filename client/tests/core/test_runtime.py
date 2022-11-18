@@ -282,7 +282,7 @@ class StandaloneRuntimeTestCase(TestCase):
         sr = StandaloneRuntime(uri)
         sr.build(Path(workdir), enable_lock=True, env_prefix_path=venv_dir)
         assert sr.uri.object.version != ""
-        assert len(sr._version) == 31
+        assert len(sr._version) == 40
         build_version = sr._version
 
         runtime_dir = os.path.join(sw.rootdir, "self", "runtime")

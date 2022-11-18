@@ -6,7 +6,6 @@ import base64
 import random
 import string
 import typing as t
-import hashlib
 import platform
 from pathlib import Path
 from datetime import datetime
@@ -30,14 +29,15 @@ def timestamp_to_datatimestr(timestamp: float) -> str:
     return time.strftime(FMT_DATETIME, ts)
 
 
-def gen_uniq_version(feature: str = "") -> str:
-    # version = ${timestamp:8} + ${feature:8} + ${randstr:4}
-    timestamp = "".join(str(uuid.uuid1()).split("-")[0])
-    feature = hashlib.sha256((feature or random_str()).encode()).hexdigest()[:7]
-    randstr = random_str(cnt=4)
-    bstr = base64.b32encode(f"{timestamp}{feature}{randstr}".encode()).decode("ascii")
-    # TODO: add test for uniq and number
-    return bstr.lower().strip("=")
+def gen_uniq_version() -> str:
+    uuid_bytes = bytearray(uuid.uuid1().bytes)
+    rand_bytes = os.urandom(17)
+    # ref: https://docs.python.org/3.9/library/uuid.html
+    # uuid1: 32-bit time_low, 16-bit time_mid, 16-bit time_hi_version, 8-bit clock_seq_hi_variant, 8-bit clock_seq_low, 48-bit node
+    # uuid only keeps time_low, time_mid, clock_seq_hi_variant and clock_seq_low
+    ver_bytes = uuid_bytes[:6] + uuid_bytes[8:10] + rand_bytes
+    random.shuffle(ver_bytes)
+    return base64.b32encode(ver_bytes).decode("ascii").lower().strip("=")
 
 
 def random_str(cnt: int = 8) -> str:
