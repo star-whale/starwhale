@@ -10,20 +10,19 @@ import WidgetRenderTree from './Widget/WidgetRenderTree'
 import { EventBusSrv } from './events/events'
 
 // log.enableAll()
+registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
     return function EditorLoader(props: any) {
-        const [registred, setRegistred] = React.useState(false)
-
-        useEffect(() => {
-            registerWidgets().then((module) => {
-                setRegistred(true)
-            })
-        }, [])
-
-        if (!registred) {
-            return <BusyPlaceholder type='spinner' />
-        }
+        // const [registred, setRegistred] = React.useState(false)
+        // useEffect(() => {
+        //     // registerRemoteWidgets().then((module) => {
+        //     //     setRegistred(true)
+        //     // })
+        // }, [])
+        // if (!registred) {
+        //     return <BusyPlaceholder type='spinner' />
+        // }
         log.debug('WidgetFactory', WidgetFactory.widgetMap)
 
         return <EditorApp {...props} />
