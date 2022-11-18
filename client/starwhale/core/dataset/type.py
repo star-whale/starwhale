@@ -8,6 +8,9 @@ from abc import ABCMeta
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
+from urllib.parse import urlparse
+
+import requests
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
@@ -20,9 +23,8 @@ from starwhale.utils.fs import FilePosition
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject
-
-from .store import ObjectStore
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -526,6 +528,7 @@ class Link(ASDictMixin, SwObject):
         self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
+        self._signed_uri = ""
 
         self.do_validate()
 
@@ -536,6 +539,14 @@ class Link(ASDictMixin, SwObject):
     @local_fs_uri.setter
     def local_fs_uri(self, value: str) -> None:
         self._local_fs_uri = value
+
+    @property
+    def signed_uri(self) -> str:
+        return self._signed_uri
+
+    @signed_uri.setter
+    def signed_uri(self, value: str) -> None:
+        self._signed_uri = value
 
     def do_validate(self) -> None:
         if self.offset < 0:
@@ -553,17 +564,38 @@ class Link(ASDictMixin, SwObject):
     def __repr__(self) -> str:
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
 
+    @http_retry
     def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+        from .store import ObjectStore
+
+        if self.signed_uri:
+            r = requests.get(self.signed_uri, timeout=10)
+            return r.content
         # TODO: auto inject dataset_uri in the loader process
         if isinstance(dataset_uri, str):
             dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
 
         auth_name = self.auth.name if self.auth else ""
         if dataset_uri.instance_type == InstanceType.CLOUD:
-            store = ObjectStore.to_signed_http_backend(dataset_uri, auth_name)
+            key_compose = self, 0, 0
+            store = ObjectStore.to_signed_http_backend(dataset_uri)
         else:
-            store = ObjectStore.from_data_link_uri(self.uri, auth_name)
-        key_compose = self.local_fs_uri or self.uri, 0, 0
+            _up = urlparse(self.uri)
+            if _up.scheme:
+                key_compose = (
+                    Link(self.local_fs_uri) if self.local_fs_uri else self,
+                    0,
+                    0,
+                )
+                store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
+            else:
+                key_compose = (
+                    Link(self.local_fs_uri) if self.local_fs_uri else self,
+                    0,
+                    -2,
+                )
+                store = ObjectStore.from_dataset_uri(dataset_uri)
+
         return store.backend._make_file(store.bucket, key_compose).read(-1)
 
 

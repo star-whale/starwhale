@@ -96,3 +96,4 @@ logging:
   level:
     root: info
     ai.starwhale.mlops: debug
+    org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:DEBUG}

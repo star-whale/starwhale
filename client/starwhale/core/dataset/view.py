@@ -107,9 +107,9 @@ class DatasetTermView(BaseTermView):
 
         def _str_row(row: t.Dict) -> str:
             data_uri = (
-                row["data_uri"][:SHORT_VERSION_CNT]
+                row["data_link"].uri[:SHORT_VERSION_CNT]
                 if row["object_store_type"] == "local"
-                else row["data_uri"]
+                else row["data_link"].uri
             )
             return f"{row['id']}:offset-{row['data_offset']}:size-{row['data_size']}:uri-{data_uri}"
 

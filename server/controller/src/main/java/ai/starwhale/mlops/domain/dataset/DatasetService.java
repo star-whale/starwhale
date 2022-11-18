@@ -63,7 +63,9 @@ import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -321,5 +323,15 @@ public class DatasetService {
 
     public String signLink(Long id, String uri, Long expTimeMillis) {
         return dsFileGetter.linkOf(id, uri, expTimeMillis);
+    }
+
+    public Map<String, String> signLinks(Long id, Set<String> uris, Long expTimeMillis) {
+        return uris.stream().collect(Collectors.toMap(u -> u, u -> {
+            try {
+                return signLink(id, u, expTimeMillis);
+            } catch (Exception e) {
+                return "";
+            }
+        }));
     }
 }

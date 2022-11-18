@@ -28,31 +28,33 @@ def do_iter_item():
                 x, y, w, h = sg["bbox"]
                 sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
 
-            anno["mask"] = Link(
-                auth=None,
-                with_local_fs_data=True,
-                data_type=Image(
-                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
-                ),
-                uri=str(msk_f_pth.absolute()),
-            )
             yield Link(
                 uri=str(img_pth.absolute()),
                 data_type=Image(display_name=img_name, shape=img_shape),
                 with_local_fs_data=True,
-            ), anno
+            ), {
+                "mask": Link(
+                    auth=None,
+                    with_local_fs_data=True,
+                    data_type=Image(
+                        display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                    ),
+                    uri=str(msk_f_pth.absolute()),
+                )
+            }
 
 
 PATH_ROOT = "dataset/coco/extracted"
 _ak = os.environ.get("SW_S3_AK", "starwhale")
 _sk = os.environ.get("SW_S3_SK", "starwhale")
-_endpoint = os.environ.get("SW_S3_EDP", "http://10.131.0.1:9000")
+_host_p = os.environ.get("SW_S3_HOST", "10.131.0.1:9000")
+_endpoint = os.environ.get("SW_S3_EDP", f"http://{_host_p}")
 _region = os.environ.get("SW_S3_REGION", "local")
 _auth = S3LinkAuth(
     name="SW_S3", access_key=_ak, secret=_sk, endpoint=_endpoint, region=_region
 )
 _bucket = "users"
-RUI_ROOT = f"{_bucket}/{PATH_ROOT}"
+RUI_ROOT = f"{_host_p}/{_bucket}/{PATH_ROOT}"
 
 
 def do_iter_item_from_remote():
@@ -91,17 +93,18 @@ def do_iter_item_from_remote():
             x, y, w, h = sg["bbox"]
             sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
 
-        anno["mask"] = Link(
-            auth=None,
-            with_local_fs_data=False,
-            data_type=Image(
-                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
-            ),
-            uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
-        )
         yield Link(
             auth=_auth,
             uri=f"s3://{RUI_ROOT}/val2017/{img_name}",
             data_type=Image(display_name=img_name, shape=img_shape),
             with_local_fs_data=False,
-        ), anno
+        ), {
+            "mask": Link(
+                auth=_auth,
+                with_local_fs_data=False,
+                data_type=Image(
+                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                ),
+                uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
+            )
+        }

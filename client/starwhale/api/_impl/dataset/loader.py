@@ -8,15 +8,18 @@ import loguru
 from loguru import logger as _logger
 
 from starwhale.utils import load_dotenv
-from starwhale.consts import AUTH_ENV_FNAME
+from starwhale.consts import HTTPMethod, AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import BaseArtifact
+from starwhale.core.dataset.type import Link, BaseArtifact
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
+from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
+    DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
 
@@ -60,10 +63,10 @@ class DataLoader(metaclass=ABCMeta):
             return _store
 
         if self.dataset_uri.instance_type == InstanceType.CLOUD:
-            _store = ObjectStore.to_signed_http_backend(self.dataset_uri, row.auth_name)
+            _store = ObjectStore.to_signed_http_backend(self.dataset_uri)
         else:
             if row.object_store_type == ObjectStoreType.REMOTE:
-                _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+                _store = ObjectStore.from_data_link_uri(row.data_link, row.auth_name)
             else:
                 _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
@@ -72,10 +75,10 @@ class DataLoader(metaclass=ABCMeta):
 
     def _get_key_compose(
         self, row: TabularDatasetRow, store: ObjectStore
-    ) -> t.Tuple[str, int, int]:
-        data_uri = row.data_uri
+    ) -> t.Tuple[Link, int, int]:
+        data_link = row.data_link
         if row.object_store_type != ObjectStoreType.REMOTE and store.key_prefix:
-            data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
+            data_link = Link(os.path.join(store.key_prefix, data_link.uri.lstrip("/")))
 
         if self.kind == DataFormatType.SWDS_BIN:
             offset, size = (
@@ -85,7 +88,47 @@ class DataLoader(metaclass=ABCMeta):
         else:
             offset, size = row.data_offset, row.data_size
 
-        return data_uri, offset, offset + size - 1
+        return data_link, offset, offset + size - 1
+
+    def _travel_link(self, obj: t.Any) -> t.List[Link]:
+        _lks = []
+        if isinstance(obj, Link):
+            _lks.append(obj)
+        elif isinstance(obj, dict):
+            for v in obj.values():
+                _lks.extend(self._travel_link(v))
+        elif isinstance(obj, (list, tuple)):
+            for v in obj:
+                _lks.extend(self._travel_link(v))
+        elif isinstance(obj, SwObject):
+            for v in obj.__dict__.values():
+                _lks.extend(self._travel_link(v))
+        return _lks
+
+    def sign_uris(self, uris: t.List[str]) -> dict:
+        _batch_size = (
+            self.session_consumption.batch_size
+            if self.session_consumption
+            else DEFAULT_CONSUMPTION_BATCH_SIZE
+        )
+        r = (
+            CloudRequestMixed()
+            .do_http_request(
+                f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
+                method=HTTPMethod.POST,
+                instance_uri=self.dataset_uri,
+                params={
+                    "expTimeMillis": int(
+                        os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
+                    )
+                    * _batch_size,
+                },
+                json=uris,
+                use_raise=True,
+            )
+            .json()
+        )
+        return r["data"]  # type: ignore
 
     def _do_iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
@@ -100,8 +143,24 @@ class DataLoader(metaclass=ABCMeta):
                 if rt is None:
                     break
 
-                for row in self.tabular_dataset.scan(rt[0], rt[1]):
-                    yield row
+                if self.dataset_uri.instance_type == InstanceType.CLOUD:
+                    for rows in self.tabular_dataset.scan_batch(
+                        rt[0], rt[1], self.session_consumption.batch_size
+                    ):
+                        _links = []
+                        for row in rows:
+                            _links.extend(
+                                [row.data_link] + self._travel_link(row.annotations)
+                            )
+                        uri_dict = self.sign_uris([lk.uri for lk in _links])
+                        for lk in _links:
+                            lk.signed_uri = uri_dict.get(lk.uri, "")
+
+                        for row in rows:
+                            yield row
+                else:
+                    for row in self.tabular_dataset.scan(rt[0], rt[1]):
+                        yield row
 
     def __iter__(
         self,
