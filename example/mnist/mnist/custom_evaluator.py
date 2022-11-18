@@ -8,9 +8,11 @@ from loguru import logger
 from torchvision import transforms
 
 from starwhale import (
+    URI,
     step,
     Image,
     Context,
+    URIType,
     pass_context,
     get_data_loader,
     PPLResultStorage,
@@ -35,29 +37,31 @@ class CustomPipelineHandler:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
         ppl_result_storage = PPLResultStorage(context)
 
-        ds_uri = context.dataset_uris[0]
-        consumption = get_dataset_consumption(
-            dataset_uri=ds_uri, session_id=context.version
-        )
-        loader = get_data_loader(ds_uri, session_consumption=consumption)
+        for ds_uri in context.dataset_uris:
+            _uri = URI(ds_uri, expected_type=URIType.DATASET)
+            consumption = get_dataset_consumption(
+                dataset_uri=_uri, session_id=context.version
+            )
+            loader = get_data_loader(_uri, session_consumption=consumption)
 
-        for _idx, _data, _annotations in loader:
-            try:
-                data_tensor = self._pre(_data)
-                output = self.model(data_tensor)
+            for _idx, _data, _annotations in loader:
+                _unique_id = f"{_uri.object}_{_idx}"
+                try:
+                    data_tensor = self._pre(_data)
+                    output = self.model(data_tensor)
 
-                pred_value = output.argmax(1).flatten().tolist()
-                probability_matrix = np.exp(output.tolist()).tolist()
+                    pred_value = output.argmax(1).flatten().tolist()
+                    probability_matrix = np.exp(output.tolist()).tolist()
 
-                ppl_result_storage.save(
-                    data_id=_idx,
-                    result=pred_value,
-                    probability_matrix=probability_matrix,
-                    annotations=_annotations,
-                )
-            except Exception:
-                logger.error(f"[{_idx}] data handle -> failed")
-                raise
+                    ppl_result_storage.save(
+                        data_id=_unique_id,
+                        result=pred_value,
+                        probability_matrix=probability_matrix,
+                        annotations=_annotations,
+                    )
+                except Exception:
+                    logger.error(f"[{_unique_id}] data handle -> failed")
+                    raise
 
     @step(needs=["run_ppl"])
     @multi_classification(
