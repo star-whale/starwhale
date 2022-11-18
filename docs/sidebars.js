@@ -40,6 +40,15 @@ module.exports = {
                         "guides/config/swignore",
                     ]
                 },
+                {
+                    type: 'category',
+                    label: "Heterogeneous-devices",
+                    collapsed: true,
+                    items: [
+                        "guides/heterogeneous/node-able",
+                        "guides/heterogeneous/virtual-node",
+                    ]
+                },
                 "guides/faq",
             ],
             "Reference": {

@@ -144,5 +144,5 @@ NVIDIA 为它的 GPU 提供了自己的 [k8s device plugin](https://github.com/N
 
 #### 制作和使用自定义镜像
 
-文章前面提到的 l4t-jetpack 镜像可以满足我们一般的使用, 如果我们需要自己定制更加精简或者更多功能的镜像, 可以基于 l4t-base 来制作
+文章前面提到的 l4t-jetpack 镜像可以满足我们一般的使用, 如果我们需要自己定制更加精简或者更多功能的镜像, 可以基于 l4t-base 来制作  
 相关 Dockerfile 可以参考 [Starwhale为mnist制作的镜像](https://github.com/star-whale/starwhale/tree/main/docker/devices/jetson)
