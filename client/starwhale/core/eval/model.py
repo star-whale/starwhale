@@ -107,7 +107,7 @@ class EvaluationJob(metaclass=ABCMeta):
 
         if kind == MetricKind.MultiClassification.value:
             ret["labels"] = {
-                str(i): l for i, l in enumerate(list(evaluation.get("labels")))
+                item["id"]: item for item in list(evaluation.get("labels"))
             }
             ret["confusion_matrix"] = {
                 "binarylabel": list(evaluation.get("confusion_matrix/binarylabel"))

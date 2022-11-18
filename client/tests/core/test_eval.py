@@ -91,6 +91,25 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert info["manifest"]["model"] == "mnist:meydczbrmi2g"
         assert info["report"]["kind"] == "multi_classification"
 
+    @patch("starwhale.core.eval.view.console.print")
+    @patch("starwhale.core.eval.view.Table.add_column")
+    def test_render_with_limit(self, m_table_add_col: MagicMock, m_console: MagicMock):
+        report = {
+            "kind": "multi_classification",
+            "labels": {
+                "1": {"id": "1", "Precision": 1.00, "Recall": 1.00, "F1-score": 1.00},
+                "2": {"id": "2", "Precision": 1.00, "Recall": 1.00, "F1-score": 1.00},
+                "3": {"id": "3", "Precision": 1.00, "Recall": 1.00, "F1-score": 1.00},
+            },
+        }
+
+        JobTermView(self.job_name)._render_multi_classification_job_report(
+            report=report, max_report_cols=2
+        )
+
+        # 1(common col:"Label") + 2(max count) + 1(ignore col:"...")
+        assert m_table_add_col.call_count == 4
+
     def test_remove(self):
         uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name[:6]}")
         job = StandaloneEvaluationJob(uri)
