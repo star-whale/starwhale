@@ -15,6 +15,7 @@ import Routes from './routes'
 import { AuthProvider } from './api/Auth'
 
 apiInit()
+
 const engine = new Styletron()
 const queryClient = new QueryClient()
 export default function App(): any {

@@ -6,6 +6,34 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "32592454",
+      "name": "Add above",
+      "font_class": "a-Addabove",
+      "unicode": "e654",
+      "unicode_decimal": 58964
+    },
+    {
+      "icon_id": "32592455",
+      "name": "Add below",
+      "font_class": "a-Addbelow",
+      "unicode": "e655",
+      "unicode_decimal": 58965
+    },
+    {
+      "icon_id": "32592456",
+      "name": "drag",
+      "font_class": "drag",
+      "unicode": "e656",
+      "unicode_decimal": 58966
+    },
+    {
+      "icon_id": "32511315",
+      "name": "arrow2",
+      "font_class": "arrow2",
+      "unicode": "e653",
+      "unicode_decimal": 58963
+    },
+    {
       "icon_id": "32097292",
       "name": "dataset",
       "font_class": "dataset",
@@ -382,20 +410,6 @@
       "font_class": "setting",
       "unicode": "e61d",
       "unicode_decimal": 58909
-    },
-    {
-      "icon_id": "29795139",
-      "name": "arrow2_down",
-      "font_class": "arrow2_down",
-      "unicode": "e601",
-      "unicode_decimal": 58881
-    },
-    {
-      "icon_id": "29795140",
-      "name": "arrow2_right",
-      "font_class": "arrow2_right",
-      "unicode": "e602",
-      "unicode_decimal": 58882
     },
     {
       "icon_id": "29795141",

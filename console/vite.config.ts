@@ -21,11 +21,17 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: false,
             },
+            '/plugins': {
+                target: 'http://127.0.0.1:8080/',
+                changeOrigin: true,
+                secure: false,
+            },
         },
     },
     build: {
         outDir: 'build',
         manifest: true,
+        // minify: true,
     },
     resolve: {
         alias: {
@@ -40,7 +46,7 @@ export default defineConfig({
         },
     },
     plugins: [
-        eslint(),
+        // eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),

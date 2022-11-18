@@ -64,6 +64,10 @@ const iconTypes = [
     'grid',
     'fullscreen',
     'token',
+    'drag',
+    'a-Addabove',
+    'a-Addbelow',
+    'arrow2',
 ]
 
 interface IIconFontProps {
