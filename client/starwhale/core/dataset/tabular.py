@@ -323,6 +323,8 @@ class _RunEnvType(Enum):
 
 
 class TabularDatasetSessionConsumption(Protocol):
+    batch_size: int
+
     def get_scan_range(
         self, processed_keys: t.Optional[t.List[t.Tuple[t.Any, t.Any]]] = None
     ) -> t.Optional[t.Tuple[t.Any, t.Any]]:

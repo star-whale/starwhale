@@ -19,6 +19,7 @@ from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
+    DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
 
@@ -105,6 +106,11 @@ class DataLoader(metaclass=ABCMeta):
         return _lks
 
     def sign_uris(self, uris: t.List[str]) -> dict:
+        _batch_size = (
+            self.session_consumption.batch_size
+            if self.session_consumption
+            else DEFAULT_CONSUMPTION_BATCH_SIZE
+        )
         r = (
             CloudRequestMixed()
             .do_http_request(
@@ -115,7 +121,7 @@ class DataLoader(metaclass=ABCMeta):
                     "expTimeMillis": int(
                         os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
                     )
-                    * self.session_consumption.batch_size,  # type: ignore
+                    * _batch_size,
                 },
                 json=uris,
                 use_raise=True,
@@ -139,7 +145,7 @@ class DataLoader(metaclass=ABCMeta):
 
                 if self.dataset_uri.instance_type == InstanceType.CLOUD:
                     for rows in self.tabular_dataset.scan_batch(
-                        rt[0], rt[1], self.session_consumption.batch_size  # type: ignore
+                        rt[0], rt[1], self.session_consumption.batch_size
                     ):
                         _links = []
                         for row in rows:
