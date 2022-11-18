@@ -28,5 +28,8 @@
   },
   "sidebar.mainSidebar.category.Configurations": {
     "message": "配置文件"
+  },
+  "sidebar.mainSidebar.category.Heterogeneous-devices": {
+    "message": "异构设备"
   }
 }
