@@ -1,11 +1,21 @@
 import random
-from unittest import TestCase
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from pyfakefs.fake_filesystem_unittest import TestCase
+
+from starwhale.api._impl.job import Context, context_holder
 from starwhale.api._impl.metric import multi_classification
 
 
 class TestMultiClassificationMetric(TestCase):
+    def setUp(self) -> None:
+        context_holder.context = Context(
+            workdir=Path("/home/starwhale"),
+            version="12345",
+            project="self",
+        )
+
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     def test_multi_classification_metric(self, log_metric_mock: MagicMock) -> None:
         def _cmp(handler, data):

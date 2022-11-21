@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 import yaml
+from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.base.cloud import CloudRequestMixed
 
