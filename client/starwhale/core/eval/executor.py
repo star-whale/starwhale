@@ -72,7 +72,7 @@ class EvalExecutor:
 
         if not version:
             logger.info("[step:init]create eval job version...")
-            self._version = gen_uniq_version(self.name)
+            self._version = gen_uniq_version()
             logger.info(f"[step:init]eval job version is {self._version}")
         else:
             self._version = version

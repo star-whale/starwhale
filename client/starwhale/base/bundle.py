@@ -128,7 +128,7 @@ class LocalStorageBundleMixin:
     def _gen_version(self) -> None:
         logger.info("[step:version]create version...")
         if not getattr(self, "_version", ""):
-            self._version = gen_uniq_version(self.name)  # type: ignore
+            self._version = gen_uniq_version()
 
         self.uri.object.version = self._version  # type:ignore
         self._manifest["version"] = self._version  # type: ignore
