@@ -11,6 +11,9 @@ import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../WidgetForm/WidgetFormModel'
 import { useFetchPanelSetting } from '../../../domain/panel/hooks/useSettings'
 import { WidgetProps } from './const'
+import { PanelAddEvent } from '../events/common'
+import { BusEvent, BusEventType } from '../events/types'
+import { PanelEditEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path } = props
@@ -41,7 +44,7 @@ export function WidgetRenderTree() {
     const { store, eventBus } = useEditorContext()
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
-    const [editWidget, setEditWidget] = useState<{ type: PanelEditAction; payload: any }>(null)
+    const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
     // const key = job?.modelName ? `modelName-${job?.modelName}` : ''
     const key = jobId ? `evaluation-${jobId}` : ''
@@ -101,7 +104,7 @@ export function WidgetRenderTree() {
     useEffect(() => {
         const subscription = new Subscription()
         subscription.add(
-            eventBus.getStream({ type: 'add-panel' }).subscribe({
+            eventBus.getStream(PanelAddEvent).subscribe({
                 next: (evt) => {
                     console.log(evt)
                     setisPanelModalOpen(true)
@@ -110,7 +113,7 @@ export function WidgetRenderTree() {
             })
         )
         subscription.add(
-            eventBus.getStream({ type: 'edit-panel' }).subscribe({
+            eventBus.getStream(PanelEditEvent).subscribe({
                 next: (evt) => {
                     console.log(evt)
                     setisPanelModalOpen(true)
@@ -119,7 +122,7 @@ export function WidgetRenderTree() {
             })
         )
         subscription.add(
-            eventBus.getStream({ type: 'add-section' }).subscribe({
+            eventBus.getStream(SectionAddEvent).subscribe({
                 next: (evt) => {
                     console.log(evt)
                     handleAddSection(evt.payload)
@@ -127,7 +130,7 @@ export function WidgetRenderTree() {
             })
         )
         subscription.add(
-            eventBus.getStream({ type: 'save' }).subscribe({
+            eventBus.getStream(PanelSaveEvent).subscribe({
                 next: async (evt) => {
                     store.setState({
                         key,

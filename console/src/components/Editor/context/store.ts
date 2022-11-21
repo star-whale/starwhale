@@ -32,18 +32,6 @@ export type WidgetStoreState = {
     onWidgetChange: any
 }
 
-// const transformWidget = (node) => {
-//     // console.log(node)
-//     if (!node?.id) node.id = generateId(node.type)
-//     const defaultConfig = WidgetFactory.widgetConfigMap.get(node.type) ?? {}
-//     const config = WidgetFactory.widgetConfigMap.get(node.type) ?? {}
-//     return {
-//         node,
-//         defaultConfig,
-//         config,
-//     }
-// }
-
 export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
     console.log('store init')
     const name = 'widgets'

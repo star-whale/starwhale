@@ -2,7 +2,7 @@ import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { useParseConfusionMatrix } from '@/domain/datastore/hooks/useParseDatastore'
 import React from 'react'
-import { WidgetConfig, WidgetRendererProps } from '../../Widget/const'
+import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '../../Widget/const'
 import WidgetPlugin from '../../Widget/WidgetPlugin'
 
 const PlotlyVisualizer = React.lazy(
@@ -10,9 +10,9 @@ const PlotlyVisualizer = React.lazy(
 )
 
 export const CONFIG: WidgetConfig = {
-    type: 'ui:panel:heatmap',
-    group: 'panel',
-    name: 'Heatmap',
+    type: 'ui:panel:confusion_matrix',
+    group: WidgetGroupType.PANEL,
+    name: 'Confusion Matrix',
 }
 
 function PanelHeatmapWidget(props: WidgetRendererProps<any, any>) {

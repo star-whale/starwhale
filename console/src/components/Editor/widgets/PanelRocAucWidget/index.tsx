@@ -2,7 +2,7 @@ import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { getRocAucConfig } from '@/components/Indicator/utils'
 import { useParseRocAuc } from '@/domain/datastore/hooks/useParseDatastore'
 import React from 'react'
-import { WidgetConfig, WidgetRendererProps } from '../../Widget/const'
+import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '../../Widget/const'
 import WidgetPlugin from '../../Widget/WidgetPlugin'
 
 const PlotlyVisualizer = React.lazy(
@@ -11,7 +11,7 @@ const PlotlyVisualizer = React.lazy(
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:rocauc',
-    group: 'panel',
+    group: WidgetGroupType.PANEL,
     name: 'Roc Auc',
 }
 

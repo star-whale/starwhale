@@ -3,16 +3,18 @@ import React, { useMemo, useState } from 'react'
 import IconFont from '@/components/IconFont'
 import Button from '@/components/Button'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { WidgetRendererProps } from '../../Widget/const'
+import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '../../Widget/const'
 import WidgetPlugin from '../../Widget/WidgetPlugin'
 import { GridLayout } from './component/GridBasicLayout'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
+import { PanelAddEvent, PanelEditEvent } from '../../events/app'
 
-export const CONFIG = {
+export const CONFIG: WidgetConfig = {
     type: 'ui:section',
     name: 'test',
-    group: 'section',
+    group: WidgetGroupType.LIST,
+    description: 'ui layout for dynamic grid view',
     optionConfig: {
         title: 'Section',
         isExpaned: true,
@@ -66,12 +68,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         setIsModelOpen(false)
     }
     const handleEditPanel = (id: string) => {
-        eventBus.publish({
-            type: 'edit-panel',
-            payload: {
-                id,
-            },
-        })
+        eventBus.publish(new PanelEditEvent({ id }))
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -93,12 +90,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 onExpanded={handleExpanded}
                 onPanelAdd={() =>
                     // @FIXME abatract events
-                    eventBus.publish({
-                        type: 'add-panel',
-                        payload: {
+                    eventBus.publish(
+                        new PanelAddEvent({
                             path: props.path,
-                        },
-                    })
+                        })
+                    )
                 }
                 onSectionRename={() => {
                     setIsModelOpen(true)
@@ -123,7 +119,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     containerPadding={[20, 0]}
                     margin={[20, 20]}
                 >
-                    {children?.map((child: React.ReactChild, i: number) => (
+                    {React.Children.map(children, (child: React.ReactChild, i: number) => (
                         <div
                             key={i}
                             style={{

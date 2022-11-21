@@ -1,11 +1,11 @@
 import React from 'react'
-import { WidgetRendererProps, WidgetConfig } from '../../Widget/const'
+import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '../../Widget/const'
 import WidgetPlugin from '../../Widget/WidgetPlugin'
 import PanelTable from './component/Table'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
-    group: 'panel',
+    group: WidgetGroupType.PANEL,
     name: 'table',
 }
 

@@ -1,12 +1,13 @@
 import Button from '@/components/Button'
 import React from 'react'
-import { WidgetConfig, WidgetRendererProps } from '../../Widget/const'
+import { PanelSaveEvent, SectionAddEvent } from '../../events/app'
+import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '../../Widget/const'
 import WidgetPlugin from '../../Widget/WidgetPlugin'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
     name: 'Dragging Section',
-    group: 'layout',
+    group: WidgetGroupType.LIST,
 }
 
 function DNDListWidget(props: WidgetRendererProps) {
@@ -42,25 +43,16 @@ function DNDListWidget(props: WidgetRendererProps) {
                 {children}
             </DNDList> */}
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>Save</Button>
                 <Button
                     onClick={() =>
-                        eventBus.publish({
-                            type: 'save',
-                        })
-                    }
-                >
-                    Save
-                </Button>
-                <Button
-                    onClick={() =>
-                        eventBus.publish({
-                            type: 'add-section',
-                            payload: {
+                        eventBus.publish(
+                            new SectionAddEvent({
                                 path: props.path,
                                 // @FIXME type const shouldn't be here
                                 type: 'ui:section',
-                            },
-                        })
+                            })
+                        )
                     }
                 >
                     Add Section

@@ -36,6 +36,7 @@ export interface WidgetBaseConfig {
     type: WidgetType
     name: string
     group?: WidgetGroupType
+    description?: string
     meta?: WidgetMeta
 }
 
@@ -111,7 +112,12 @@ export type WidgetRendererType<C extends object = any, F extends object = any> =
 
 // -----------WidgetGroup---------------
 
-type WidgetGroupType = 'panel' | 'layout' | string
+// type WidgetGroupType = 'PANEL' | 'LIST' | string
+
+export enum WidgetGroupType {
+    PANEL = 'PANEL',
+    LIST = 'LIST',
+}
 
 type PanelTableProps = WidgetBaseConfig
 

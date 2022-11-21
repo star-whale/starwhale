@@ -1,5 +1,5 @@
 import React from 'react'
-import { WidgetProps } from './const'
+import { WidgetGroupType, WidgetProps } from './const'
 import WidgetPlugin from './WidgetPlugin'
 import { generateId } from '../utils/generators'
 
@@ -29,7 +29,7 @@ class WidgetFactory {
 
     static getPanels() {
         return Array.from(this.widgetMap.values())
-            .filter((plugin) => plugin.defaults?.group === 'panel')
+            .filter((plugin) => plugin.defaults?.group === WidgetGroupType.PANEL)
             .map((plugin) => plugin.defaults)
     }
 
