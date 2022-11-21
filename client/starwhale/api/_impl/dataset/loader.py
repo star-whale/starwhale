@@ -23,6 +23,8 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetSessionConsumption,
 )
 
+_LDType = t.Tuple[t.Union[str, int], t.Any, t.Dict]
+
 
 class DataLoader(metaclass=ABCMeta):
     def __init__(
@@ -105,7 +107,7 @@ class DataLoader(metaclass=ABCMeta):
                 _lks.extend(self._travel_link(v))
         return _lks
 
-    def sign_uris(self, uris: t.List[str]) -> dict:
+    def _sign_uris(self, uris: t.List[str]) -> dict:
         _batch_size = (
             self.session_consumption.batch_size
             if self.session_consumption
@@ -130,7 +132,7 @@ class DataLoader(metaclass=ABCMeta):
         )
         return r["data"]  # type: ignore
 
-    def _do_iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
+    def _iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
             for row in self.tabular_dataset.scan():
                 yield row
@@ -152,7 +154,7 @@ class DataLoader(metaclass=ABCMeta):
                             _links.extend(
                                 [row.data_link] + self._travel_link(row.annotations)
                             )
-                        uri_dict = self.sign_uris([lk.uri for lk in _links])
+                        uri_dict = self._sign_uris([lk.uri for lk in _links])
                         for lk in _links:
                             lk.signed_uri = uri_dict.get(lk.uri, "")
 
@@ -162,23 +164,25 @@ class DataLoader(metaclass=ABCMeta):
                     for row in self.tabular_dataset.scan(rt[0], rt[1]):
                         yield row
 
+    def _unpack_row(self, row: TabularDatasetRow) -> _LDType:
+        store = self._get_store(row)
+        key_compose = self._get_key_compose(row, store)
+        file = store.backend._make_file(store.bucket, key_compose)
+        data_content, _ = self._read_data(file, row)
+        data = BaseArtifact.reflect(data_content, row.data_type)
+        return row.id, data, row.annotations
+
     def __iter__(
         self,
-    ) -> t.Generator[t.Tuple[t.Union[str, int], t.Any, t.Dict], None, None]:
-        for row in self._do_iter_row():
+    ) -> t.Generator[_LDType, None, None]:
+        for row in self._iter_row():
             # TODO: tune performance by fetch in batch
-            _store = self._get_store(row)
-            _key_compose = self._get_key_compose(row, _store)
-            with _store.backend._make_file(_store.bucket, _key_compose) as _file:
-                for data_content, _ in self._do_iter_data(_file, row):
-                    data = BaseArtifact.reflect(data_content, row.data_type)
-                    # TODO: refactor annotation origin type
-                    yield row.id, data, row.annotations
+            yield self._unpack_row(row)
 
     @abstractmethod
-    def _do_iter_data(
+    def _read_data(
         self, file: FileLikeObj, row: TabularDatasetRow
-    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
+    ) -> t.Tuple[bytes, int]:
         raise NotImplementedError
 
     def __str__(self) -> str:
@@ -197,12 +201,12 @@ class UserRawDataLoader(DataLoader):
     def kind(self) -> DataFormatType:
         return DataFormatType.USER_RAW
 
-    def _do_iter_data(
+    def _read_data(
         self,
         file: FileLikeObj,
         row: TabularDatasetRow,
-    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
-        yield file.read(row.data_size), row.data_size
+    ) -> t.Tuple[bytes, int]:
+        return file.read(row.data_size), row.data_size
 
 
 class SWDSBinDataLoader(DataLoader):
@@ -210,9 +214,9 @@ class SWDSBinDataLoader(DataLoader):
     def kind(self) -> DataFormatType:
         return DataFormatType.SWDS_BIN
 
-    def _do_iter_data(
+    def _read_data(
         self, file: FileLikeObj, row: TabularDatasetRow
-    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
+    ) -> t.Tuple[bytes, int]:
         from .builder import _header_size, _header_struct
 
         size: int
@@ -220,7 +224,7 @@ class SWDSBinDataLoader(DataLoader):
         header: bytes = file.read(_header_size)
         _, _, _, size, padding_size, _, _ = _header_struct.unpack(header)
         data: bytes = file.read(size + padding_size)
-        yield data[:size], size
+        return data[:size], size
 
 
 def get_data_loader(

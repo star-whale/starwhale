@@ -26,6 +26,7 @@ dataset包含如下子命令：
 |remove|rm|✅|✅|
 |summary||✅|✅|
 |tag||✅|❌|
+|head||✅|✅|
 
 ## 2. 构建数据集
 
@@ -182,3 +183,16 @@ swcli dataset tag [OPTIONS] DATASET [TAGS]...
 |`--quiet`|`-q`|❌|Boolean|False|忽略标签操作中的错误，例如删除不存在的标签，添加不合法的标签等|
 
 ![dataset-tags.png](../../img/dataset-tags.png)
+
+## 12. 显示数据集前几条数据信息
+
+```bash
+swcli dataset head [OPTIONS] DATASET
+```
+
+`dataset head` 命令类似head命令，可以展示数据集前几条数据的基本信息。`DATASET` 参数为Dataset URI，既可以是Standalone Instance的Dataset URI，也可以是Cloud Instance的Dataset URI。
+
+|参数|参数别名|必要性|类型|默认值|说明|
+|------|--------|-------|-----------|-----|-----------|
+|`--rows`|`-n`|❌|Integer|5|显示前N条数据|
+|`--show-raw-data`|`-d`|❌|Boolean|False|获取Data的数据内容，为bytes类型|

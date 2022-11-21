@@ -267,3 +267,22 @@ def _tag(
     quiet: bool,
 ) -> None:
     view(dataset).tag(tags, remove, quiet)
+
+
+@dataset_cmd.command("head", help="Print the first 10 rows of the dataset")
+@click.argument("dataset")
+@click.option("-n", "--rows", default=5, help="Print the first NUM rows of the dataset")
+@click.option(
+    "-d",
+    "--show-raw-data",
+    is_flag=True,
+    help="Fetch raw data content",
+)
+@click.pass_obj
+def _head(
+    view: t.Type[DatasetTermView],
+    dataset: str,
+    rows: int,
+    show_raw_data: bool,
+) -> None:
+    view(dataset).head(rows, show_raw_data)

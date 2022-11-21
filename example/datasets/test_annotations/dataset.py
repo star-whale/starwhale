@@ -34,6 +34,15 @@ def iter_simple_bin_item():
 
 def iter_swds_bin_item():
     for i in range(1, 9):
+        coco = COCOObjectAnnotation(
+            id=i,
+            image_id=i,
+            category_id=i,
+            area=i * 10,
+            bbox=BoundingBox(i, i, i + 1, i + 10),
+            iscrowd=1,
+        )
+        coco.segmentation = [1, 2, 3, 4]
         annotations = {
             "index": i,
             "label": f"label-{i}",
@@ -46,15 +55,7 @@ def iter_swds_bin_item():
                 BoundingBox(i, i, i + 10, i + 10),
                 BoundingBox(i, i, i + 20, i + 20),
             ],
-            "coco": COCOObjectAnnotation(
-                id=i,
-                image_id=i,
-                category_id=i,
-                segmentation=[1, 2, 3, 4],
-                area=i * 10,
-                bbox=BoundingBox(i, i, i + 1, i + 10),
-                iscrowd=1,
-            ),
+            "coco": coco,
             "dict": {"a": 1, "b": 2, "c": {"d": 1, "e": ClassLabel([1, 2, 3])}},
             "artifact_s3_link": Link(
                 f"s3://minioadmin:minioadmin@10.131.0.1:9000/users/dataset/PennFudanPed/PedMasks/FudanPed0000{i}_mask.png",
