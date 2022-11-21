@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+from starwhale.core.instance.view import InstanceTermView
+
 from . import CLI
 from .base.invoke import invoke, invoke_with_react
 
@@ -24,21 +26,9 @@ class Instance:
             res is:login http://console.pre.intra.starwhale.ai successfully
                 or: anything else
         """
-        _ret_code, _res = invoke(
-            [
-                CLI,
-                self.instance_cmd,
-                "login",
-                "--username",
-                user,
-                "--password",
-                password,
-                "--alias",
-                alias,
-                url,
-            ]
-        )
-        return bool(_ret_code == 0)
+        kw = {"username": user, "password": password}
+        InstanceTermView().login(url, alias, **kw)
+        return True
 
     def info(self, instance: str = "") -> Any:
         """
@@ -126,5 +116,5 @@ class Instance:
             res is:select local instance
                 or:failed to select local2, reason: need to login instance local2
         """
-        _ret_code, _res = invoke([CLI, self.instance_cmd, "select", instance])
-        return bool(_ret_code == 0)
+        InstanceTermView().select(instance)
+        return True

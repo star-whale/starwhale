@@ -1,0 +1,10 @@
+#name: speech_command
+#handler: sc.dataset:SWDSBuildExecutor
+
+name: speech_commands_validation
+handler: sc.dataset:LinkRawDatasetBuildExecutor
+
+desc: SpeechCommands data and label test dataset
+attr:
+  alignment_size: 4k
+  volume_size: 64M

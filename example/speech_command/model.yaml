@@ -1,5 +1,5 @@
 version: 1.0
-name: speech_commands_m5
+name: speech_command
 model:
   - models/m5.pth
 run:

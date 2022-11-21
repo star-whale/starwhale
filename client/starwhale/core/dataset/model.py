@@ -121,6 +121,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             str, t.Any
         ] = {}  # TODO: use manifest class get_conda_env
         self.yaml_name = DefaultYAMLName.DATASET
+        self._version = uri.object.version if uri.object and uri.object.version else ""
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.add(tags, quiet)

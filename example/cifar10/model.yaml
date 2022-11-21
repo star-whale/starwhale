@@ -1,5 +1,5 @@
 version: 1.0
-name: cifar_net
+name: cifar10
 model:
   - models/cifar_net.pth
 

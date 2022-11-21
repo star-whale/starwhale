@@ -109,7 +109,7 @@ class RuntimeTermView(BaseTermView):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-    ) -> None:
+    ) -> URI:
         _config = load_yaml(Path(workdir) / yaml_name)
         _runtime_uri = cls.prepare_build_bundle(
             project=project, bundle_name=_config.get("name"), typ=URIType.RUNTIME
@@ -134,6 +134,7 @@ class RuntimeTermView(BaseTermView):
             env_name=env_name,
             env_use_shell=env_use_shell,
         )
+        return _runtime_uri
 
     @BaseTermView._only_standalone
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> None:

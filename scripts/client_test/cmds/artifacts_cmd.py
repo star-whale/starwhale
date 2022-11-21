@@ -1,5 +1,13 @@
 import json
 from typing import Any, List
+from pathlib import Path
+
+from starwhale import URI
+from starwhale.core.model.view import ModelTermView
+from starwhale.core.dataset.type import DatasetConfig
+from starwhale.core.dataset.view import DatasetTermView
+from starwhale.core.runtime.view import RuntimeTermView
+from starwhale.api._impl.data_store import LocalDataStore
 
 from . import CLI
 from .base.invoke import invoke, invoke_with_react
@@ -125,6 +133,15 @@ class Model(BaseArtifact):
     def __init__(self) -> None:
         super().__init__("model")
 
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        project: str = "",
+        model_yaml: str = "model.yaml",
+        runtime_uri: str = "",
+    ) -> URI:
+        return ModelTermView.build(workdir, project, model_yaml, runtime_uri)
+
     def build(
         self,
         workdir: str,
@@ -186,6 +203,19 @@ class Model(BaseArtifact):
 class Dataset(BaseArtifact):
     def __init__(self) -> None:
         super().__init__("dataset")
+
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        dataset_yaml: str = "dataset.yaml",
+    ) -> URI:
+        yaml_path = Path(workdir) / dataset_yaml
+        config = DatasetConfig()
+        if yaml_path.exists():
+            config = DatasetConfig.create_by_yaml(yaml_path)
+        _uri = DatasetTermView.build(workdir, config)
+        LocalDataStore.get_instance().dump()
+        return _uri
 
     def build(
         self,
@@ -296,6 +326,29 @@ class Runtime(BaseArtifact):
         self,
     ) -> None:
         super().__init__("runtime")
+
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        project: str = "",
+        runtime_yaml: str = "runtime.yaml",
+        gen_all_bundles: bool = False,
+        include_editable: bool = False,
+        enable_lock: bool = False,
+        env_prefix_path: str = "",
+        env_name: str = "",
+    ) -> URI:
+        return RuntimeTermView.build(
+            workdir,
+            project,
+            runtime_yaml,
+            gen_all_bundles,
+            include_editable,
+            enable_lock,
+            env_prefix_path,
+            env_name,
+            False,
+        )
 
     def build(
         self,

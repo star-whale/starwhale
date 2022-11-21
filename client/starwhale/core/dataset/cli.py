@@ -69,7 +69,7 @@ def _build(
     append: bool,
     append_from: str,
     runtime: str,
-) -> None:
+) -> URI:
     # TODO: add dry-run
     # TODO: add compress args
     if not os.path.exists(workdir):
@@ -101,7 +101,7 @@ def _build(
     print(config.handler)
 
     config.do_validate()
-    view.build(workdir, config)
+    return view.build(workdir, config)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")

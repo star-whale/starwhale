@@ -15,3 +15,13 @@ download-data:
 	shuf data/all_list.txt -n 9000 -o data/train_list.txt
 	shuf data/all_list.txt -n 1000 -o data/validation_list.txt
 	shuf data/all_list.txt -n 200 -o data/test_list.txt
+
+.POHNY: prepare-e2e-data
+prepare-e2e-data:
+	[ -d data ] ||  mkdir -p data
+	[ -f data/data.zip ] || curl -o data/data.zip http://10.131.0.1:9000/users/dataset/ucf101/data.zip
+	[ -f data/test_list.txt ] || unzip data/data.zip -d .
+	[ -d data/UCF-101 ] || mv data/UCF-101-WEBM data/UCF-101
+	[ -d models ] ||  mkdir -p models
+	[ -f models/PyTorch-MFNet_ep-0000.pth ] || curl -o models/PyTorch-MFNet_ep-0000.pth http://10.131.0.1:9000/users/model/ucf101.pth
+	python3 -m pip install -r requirments.txt

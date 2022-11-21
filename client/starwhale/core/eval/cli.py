@@ -111,9 +111,9 @@ def _run(
     gencmd: bool,
     step: str,
     task_index: int,
-) -> None:
+) -> str:
     # TODO: tune so many arguments
-    JobTermView.run(
+    return JobTermView.run(
         project_uri=project,
         version=version,
         model_uri=model,

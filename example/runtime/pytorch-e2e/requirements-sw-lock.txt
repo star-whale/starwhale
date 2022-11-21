@@ -51,7 +51,6 @@ scikit-learn==1.1.1
 scipy==1.8.1
 shellingham==1.5.0
 six==1.16.0
-starwhale==0.3.0
 tenacity==8.0.1
 textual==0.1.18
 threadpoolctl==3.1.0

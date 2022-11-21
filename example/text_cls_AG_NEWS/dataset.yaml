@@ -1,4 +1,4 @@
-name: ag_news_test
+name: ag_news
 
 handler: tcan.dataset:AGNewsBuildExecutor
 
