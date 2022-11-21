@@ -28,9 +28,13 @@ class StandaloneEvalExecutor(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+    @patch("starwhale.core.eval.executor.StandaloneRuntime.extract")
     @patch("starwhale.core.eval.executor.check_call")
     @patch("starwhale.core.job.scheduler.Scheduler.schedule")
-    def test_run(self, m_scheduler: MagicMock, m_call: MagicMock) -> None:
+    def test_run(
+        self, m_scheduler: MagicMock, m_call: MagicMock, m_extract: MagicMock
+    ) -> None:
+        m_extract.return_value = "/tmp/1111/swrt"
         sw = SWCliConfigMixed()
         project_dir = sw.rootdir / "self"
 
@@ -89,12 +93,16 @@ class StandaloneEvalExecutor(TestCase):
         ensure_file(runtime_bundle_path, " ")
         ensure_dir(runtime_workdir_path)
         ensure_file(runtime_workdir_path / DEFAULT_MANIFEST_NAME, "{}")
+
+        model_version = "mnist/version/gnstmntggi4t"
+        runtime_version = "mnist/version/ga4doztfg4yw"
+        dataset_version = "mnist/version/me4dczleg"
         # use docker
         ee = EvalExecutor(
-            model_uri="mnist/version/gnstmntggi4t",
-            dataset_uris=["mnist/version/me4dczleg"],
+            model_uri=model_version,
+            dataset_uris=[dataset_version],
             project_uri=URI(""),
-            runtime_uri="mnist/version/ga4doztfg4yw",
+            runtime_uri=runtime_version,
             use_docker=True,
         )
 
@@ -120,11 +128,11 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {job_dir}:/opt/starwhale",
                 f"-v {sw.rootdir}:/root/.starwhale",
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
-                f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111:/opt/starwhale/swrt",
+                "-v /tmp/1111/swrt:/opt/starwhale/swrt",
                 "-e SW_PROJECT=self",
                 f"-e SW_EVALUATION_VERSION={build_version}",
+                f"-e SW_MODEL_VERSION={model_version}",
+                f"-e SW_RUNTIME_VERSION={runtime_version}",
                 "-e SW_INSTANCE_URI=local",
                 "-e SW_TOKEN=",
                 "-e SW_DATASET_URI=local/project/self/dataset/mnist/version/me4dczleg",
