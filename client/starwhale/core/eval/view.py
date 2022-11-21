@@ -13,6 +13,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
+    DEFAULT_REPORT_COLS,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.uri import URI
@@ -112,7 +113,12 @@ class JobTermView(BaseTermView):
         console.print(table)
 
     @BaseTermView._header
-    def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
+    def info(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+        max_report_cols: int = DEFAULT_REPORT_COLS,
+    ) -> None:
         _rt = self.job.info(page, size)
         if not _rt:
             console.print(":tea: not found info")
@@ -140,7 +146,9 @@ class JobTermView(BaseTermView):
                 self._render_summary_report(_report["summary"], _kind)
 
             if _kind == MetricKind.MultiClassification.value:
-                self._render_multi_classification_job_report(_rt["report"])
+                self._render_multi_classification_job_report(
+                    _rt["report"], max_report_cols
+                )
 
     def _render_summary_report(self, summary: t.Dict[str, t.Any], kind: str) -> None:
         console.rule(f"[bold green]{kind.upper()} Summary")
@@ -175,7 +183,7 @@ class JobTermView(BaseTermView):
         console.print(table)
 
     def _render_multi_classification_job_report(
-        self, report: t.Dict[str, t.Any]
+        self, report: t.Dict[str, t.Any], max_report_cols: int
     ) -> None:
         if not report:
             console.print(":turtle: no report")
@@ -191,14 +199,24 @@ class JobTermView(BaseTermView):
             table = Table(box=box.SIMPLE)
             table.add_column("Label", style="cyan")
             keys = labels[sort_label_names[0]]
-            for _k in keys:
+            for idx, _k in enumerate(keys):
                 if _k == "id":
                     continue
-                table.add_column(_k.capitalize())
+                # add 1: because "id" is first col and should be removed
+                if idx < max_report_cols + 1:
+                    table.add_column(_k.capitalize())
+                else:
+                    table.add_column("...")
+                    break
 
             for _k, _v in labels.items():
                 table.add_row(
-                    _k, *(f"{float(_v[_k2]):.4f}" for _k2 in keys if _k2 != "id")
+                    _k,
+                    *(
+                        f"{float(_v[_k2]):.4f}"
+                        for idx, _k2 in enumerate(keys)
+                        if _k2 != "id" and idx < max_report_cols + 1
+                    ),
                 )
 
             console.rule(f"[bold green]{report['kind'].upper()} Label Metrics Report")
@@ -209,16 +227,23 @@ class JobTermView(BaseTermView):
             if not cm:
                 return
 
-            btable = Table(box=box.SIMPLE)
+            btable = Table(box=box.ROUNDED)
             btable.add_column("", style="cyan")
-            for n in sort_label_names:
-                btable.add_column(n)
+            for idx, n in enumerate(sort_label_names):
+                if idx < max_report_cols:
+                    btable.add_column(n)
+                else:
+                    btable.add_column("...")
+                    break
             for idx, bl in enumerate(cm.get("binarylabel", [])):
                 btable.add_row(
                     sort_label_names[idx],
-                    *[f"{float(bl[i]):.4f}" for i in bl if i != "id"],
+                    *[
+                        f"{float(bl[i]):.4f}"
+                        for idx, i in enumerate(bl)
+                        if i != "id" and idx < max_report_cols + 1
+                    ],
                 )
-
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
             console.print(btable)
 
@@ -385,7 +410,12 @@ class JobTermViewJson(JobTermView):
         _data, _ = super().list(project_uri, fullname, show_removed, page, size)
         cls.pretty_json(_data)
 
-    def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
+    def info(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+        max_report_cols: int = DEFAULT_REPORT_COLS,
+    ) -> None:
         _rt = self.job.info(page, size)
         if not _rt:
             console.print(":tea: not found info")

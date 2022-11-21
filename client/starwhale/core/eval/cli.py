@@ -5,7 +5,13 @@ import click
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 
-from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from .view import (
+    JobTermView,
+    get_term_view,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+    DEFAULT_REPORT_COLS,
+)
 
 
 @click.group(
@@ -175,9 +181,17 @@ def _cancel(job: str, force: bool) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
+@click.option(
+    "--max-report-cols",
+    type=int,
+    default=DEFAULT_REPORT_COLS,
+    help="Max table column size for print",
+)
 @click.pass_obj
-def _info(view: t.Type[JobTermView], job: str, page: int, size: int) -> None:
-    view(job).info(page, size)
+def _info(
+    view: t.Type[JobTermView], job: str, page: int, size: int, max_report_cols: int
+) -> None:
+    view(job).info(page, size, max_report_cols)
 
 
 @eval_job_cmd.command("compare", aliases=["cmp"])
