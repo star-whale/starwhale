@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -221,6 +222,11 @@ public class DataStore {
                 }
                 ret.schema = ret.table.getSchema();
                 ret.columns = this.getColumnAliases(ret.schema, info.getColumns());
+                if (info.getColumnPrefix() != null) {
+                    ret.columns = ret.columns.entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey,
+                                    entry -> info.getColumnPrefix() + entry.getValue()));
+                }
                 ret.columnTypeMap = ret.schema.getColumnTypeMapping(ret.columns);
                 ret.keepNone = info.isKeepNone();
                 return ret;
