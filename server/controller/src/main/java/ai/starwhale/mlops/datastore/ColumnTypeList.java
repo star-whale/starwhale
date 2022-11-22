@@ -130,16 +130,20 @@ public class ColumnTypeList extends ColumnType {
 
     @Override
     public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
-        recordConsumer.startField("list", 0);
+        recordConsumer.startGroup();
         var listValue = (List<?>) value;
-        for (var element : listValue) {
-            recordConsumer.startGroup();
-            recordConsumer.startField("element", 0);
-            this.elementType.writeParquetValue(recordConsumer, element);
-            recordConsumer.endField("element", 0);
-            recordConsumer.endGroup();
+        if (!listValue.isEmpty()) {
+            recordConsumer.startField("list", 0);
+            for (var element : listValue) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
+                this.elementType.writeParquetValue(recordConsumer, element);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
+            }
+            recordConsumer.endField("list", 0);
         }
-        recordConsumer.endField("list", 0);
+        recordConsumer.endGroup();
     }
 
     @Override
