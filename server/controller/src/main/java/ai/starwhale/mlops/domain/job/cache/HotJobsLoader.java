@@ -74,7 +74,12 @@ public class HotJobsLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         hotJobsFromDb().forEach(jobEntity -> {
-            jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+            try {
+                jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+            } catch (Exception e) {
+                log.error("loading hotting job failed {}", jobEntity.getId(), e);
+                jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+            }
         });
         log.info("hot jobs loaded");
     }
