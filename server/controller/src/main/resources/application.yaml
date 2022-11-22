@@ -80,6 +80,8 @@ spring:
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
   flyway:
     locations: "classpath:db/migration"
+    ignore-missing-migrations: true
+    out-of-order: true
   mvc:
     view:
       suffix: .html
