@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -298,16 +299,14 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public List<RecordResult> query(
+    public Iterator<RecordResult> query(
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            int start,
-            int limit,
             boolean keepNone,
             boolean rawResult) {
         if (this.schema == null) {
-            return Collections.emptyList();
+            return Collections.emptyIterator();
         }
         this.schema.getColumnTypeMapping(columns); // check if all column names are valid
         if (orderBy != null) {
@@ -326,24 +325,10 @@ public class MemoryTableImpl implements MemoryTable {
         if (filter != null) {
             this.checkFilter(filter);
         }
-        List<Map<String, Object>> results = new ArrayList<>();
-        for (var record : this.recordMap.values()) {
-            if (filter == null || this.match(filter, record)) {
-                results.add(record);
-            }
-        }
-        if (start < 0) {
-            start = 0;
-        }
-        if (limit < 0) {
-            limit = results.size();
-        }
-        int end = start + limit;
-        if (end > results.size()) {
-            end = results.size();
-        }
+        var stream = this.recordMap.values().stream()
+                .filter(record -> filter == null || this.match(filter, record));
         if (orderBy != null) {
-            results.sort((a, b) -> {
+            stream = stream.sorted((a, b) -> {
                 for (var col : orderBy) {
                     var columnType = this.schema.getColumnSchemaByName(col.getColumnName()).getType();
                     var result = ColumnType.compare(
@@ -361,20 +346,7 @@ public class MemoryTableImpl implements MemoryTable {
                 return 0;
             });
         }
-
-        return results.subList(start, end).stream().map(record -> {
-            var r = new HashMap<String, Object>();
-            for (var entry : columns.entrySet()) {
-                var key = entry.getKey();
-                if (record.containsKey(key)) {
-                    var value = record.get(entry.getKey());
-                    if (keepNone || value != null) {
-                        r.put(entry.getValue(), value);
-                    }
-                }
-            }
-            return new RecordResult(record.get(this.schema.getKeyColumn()), r);
-        }).collect(Collectors.toList());
+        return stream.map(record -> this.toRecordResult(record, columns, keepNone)).iterator();
     }
 
 
@@ -535,6 +507,21 @@ public class MemoryTableImpl implements MemoryTable {
                         MessageFormat.format("invalid filter, can not compare {0} with {1}", type));
             }
         }
+    }
+
+    private RecordResult toRecordResult(Map<String, Object> record, Map<String, String> columnMapping,
+            boolean keepNone) {
+        var r = new HashMap<String, Object>();
+        for (var entry : columnMapping.entrySet()) {
+            var key = entry.getKey();
+            if (record.containsKey(key)) {
+                var value = record.get(entry.getKey());
+                if (keepNone || value != null) {
+                    r.put(entry.getValue(), value);
+                }
+            }
+        }
+        return new RecordResult(record.get(this.schema.getKeyColumn()), r);
     }
 
     private static Map<String, Object> decodeRecord(TableSchema schema, Map<String, Object> record) {
