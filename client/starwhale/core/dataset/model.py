@@ -32,8 +32,9 @@ from starwhale.utils.load import import_object
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.api._impl.dataset import get_data_loader
+from starwhale.core.dataset.copy import DatasetCopy
 
-from .copy import DatasetCopy
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
 from .tabular import TabularDataset
@@ -46,6 +47,32 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     @abstractmethod
     def summary(self) -> t.Optional[DatasetSummary]:
         raise NotImplementedError
+
+    def head(
+        self, rows: int = 5, show_raw_data: bool = False
+    ) -> t.List[t.Dict[str, t.Any]]:
+        ret = []
+        loader = get_data_loader(self.uri)
+        for idx, row in enumerate(loader._iter_row()):
+            if idx >= rows:
+                break
+            info: t.Dict[str, t.Any] = {
+                "index": idx,
+                "annotations": row.annotations,
+                "data": {
+                    "id": row.id,
+                    "type": row.data_type,
+                    "link": row.data_link,
+                    "size": row.data_size,
+                },
+            }
+            if show_raw_data:
+                _, raw, _ = loader._unpack_row(row)
+                info["data"]["raw"] = raw.to_bytes()
+                info["data"]["size"] = len(info["data"]["raw"])
+            ret.append(info)
+
+        return ret
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         raise NotImplementedError

@@ -1,3 +1,4 @@
+import io
 import os
 import typing as t
 from pathlib import Path
@@ -18,18 +19,26 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import (
+    URIType,
+    BundleType,
+    DataFormatType,
+    DataOriginType,
+    ObjectStoreType,
+)
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.core.dataset.type import (
     Link,
     MIMEType,
+    ArtifactType,
     DatasetConfig,
     DatasetSummary,
     D_FILE_VOLUME_SIZE,
 )
-from starwhale.core.dataset.view import DatasetTermView
-from starwhale.core.dataset.model import StandaloneDataset
+from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
+from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.core.dataset.tabular import TabularDatasetRow
 from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
@@ -304,3 +313,85 @@ class StandaloneDatasetTestCase(TestCase):
 
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
+
+    @patch("starwhale.core.dataset.store.LocalFSStorageBackend._make_file")
+    @patch("starwhale.api._impl.dataset.loader.SWDSBinDataLoader._read_data")
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    def test_head(
+        self,
+        m_scan: MagicMock,
+        m_summary: MagicMock,
+        m_read: MagicMock,
+        m_makefile: MagicMock,
+    ) -> None:
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=False,
+            include_link=False,
+            rows=2,
+            increased_rows=2,
+        )
+        content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
+        m_read.return_value = content, len(content)
+        m_makefile.return_value = io.BytesIO(b"123")
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id="label-0",
+                object_store_type=ObjectStoreType.LOCAL,
+                data_link=Link("123"),
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                annotations={"label": 0},
+                data_origin=DataOriginType.NEW,
+                data_format=DataFormatType.SWDS_BIN,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
+                auth_name="",
+            ),
+            TabularDatasetRow(
+                id="label-1",
+                object_store_type=ObjectStoreType.LOCAL,
+                data_link=Link("456"),
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                annotations={"label": 1},
+                data_origin=DataOriginType.NEW,
+                data_format=DataFormatType.SWDS_BIN,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
+                auth_name="",
+            ),
+        ]
+
+        dataset_uri = "mnist/version/version"
+        ds = Dataset.get_dataset(URI(dataset_uri, expected_type=URIType.DATASET))
+
+        results = ds.head(0)
+        assert len(results) == 0
+
+        results = ds.head(1, show_raw_data=True)
+        assert results[0]["index"] == 0
+        assert results[0]["annotations"]["label"] == 0
+        assert results[0]["data"]["id"] == "label-0"
+        assert results[0]["data"]["type"] == {
+            "type": "image",
+            "mime_type": "x/grayscale",
+        }
+        assert results[0]["data"]["raw"] == content
+        assert results[0]["data"]["size"] == len(content)
+        assert len(results) == 1
+
+        results = ds.head(5, show_raw_data=True)
+        assert len(results) == 2
+        DatasetTermView(dataset_uri).head(1, show_raw_data=True)
+        DatasetTermView(dataset_uri).head(2, show_raw_data=True)
+        DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
+        DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
