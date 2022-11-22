@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
+import ai.starwhale.mlops.api.protocol.datastore.FlushRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
@@ -91,6 +92,12 @@ public class DataStoreController implements DataStoreApi {
         } catch (SwValidationException e) {
             throw new SwValidationException(e, "request=" + request);
         }
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> flush(FlushRequest request) {
+        this.dataStore.flush();
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
