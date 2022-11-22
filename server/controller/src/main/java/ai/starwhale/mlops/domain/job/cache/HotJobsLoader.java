@@ -61,7 +61,7 @@ public class HotJobsLoader implements CommandLineRunner {
      * load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem CREATED job has no steps yet, so it will
      * not be loaded here
      *
-     * @return tasks of jobs that are notFINISHED/ERROR/CANCELED/CREATED/PAUSED
+     * @return tasks of jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED
      */
     private List<JobEntity> hotJobsFromDb() {
         List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
