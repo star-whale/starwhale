@@ -29,6 +29,8 @@
     "LICENSE_APACHE2"
   ],
   "scripts": {
+    "link": "yarn link",
+    "link:all": "yarn link @starwhale/widgets @starwhale/ui",
     "build": "tsc -p ./tsconfig.build.json && rollup -c rollup.config.ts",
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled ./package.tgz",

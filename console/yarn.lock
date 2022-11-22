@@ -3294,6 +3294,29 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@starwhale/core@file:packages/starwhale-core":
+  version "1.0.0"
+  dependencies:
+    "@aksel/structjs" "^1.0.0"
+    "@sentry/browser" "6.19.7"
+    base64-js "^1.5.1"
+    eventemitter3 "^4.0.7"
+    history "4.10.1"
+    lodash "4.17.21"
+    rxjs "^7.5.7"
+    tsc "^2.0.4"
+    tslib "2.4.0"
+
+"@starwhale/ui@file:packages/starwhale-ui":
+  version "1.0.0"
+  dependencies:
+    "@sentry/browser" "6.19.7"
+    history "4.10.1"
+    lodash "4.17.21"
+    rxjs "7.5.6"
+    tsc "^2.0.4"
+    tslib "2.4.0"
+
 "@storybook/addon-actions@6.5.10", "@storybook/addon-actions@^6.5.10":
   version "6.5.10"
   resolved "https://registry.npmmirror.com/@storybook/addon-actions/-/addon-actions-6.5.10.tgz"
@@ -22351,6 +22374,11 @@ typescript@4.6.4:
   version "4.6.4"
   resolved "https://registry.npmmirror.com/typescript/-/typescript-4.6.4.tgz"
   integrity sha512-9ia/jWHIEbo49HfjrLGfKbZSuWo9iTMwXO+Ca3pRsSpbsMbc7/IU8NKdCZVRRBafVPGnoJeFL76ZOAA84I9fEg==
+
+typescript@4.8.2:
+  version "4.8.2"
+  resolved "https://registry.npmmirror.com/typescript/-/typescript-4.8.2.tgz#e3b33d5ccfb5914e4eeab6699cf208adee3fd790"
+  integrity sha512-C0I1UsrrDHo2fYI5oaCGbSejwX4ch+9Y5jTQELvovfmFkK3HHSZJB8MSJcWLmCUBzQBchCrZ9rMRV6GuNrvGtw==
 
 typescript@4.8.4, "typescript@^3 || ^4":
   version "4.8.4"

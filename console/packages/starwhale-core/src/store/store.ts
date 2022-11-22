@@ -5,8 +5,9 @@ import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import produce from 'immer'
 import { arrayMove, arrayRemove } from 'react-movable'
 import _ from 'lodash'
-import WidgetFactory, { WidgetConfig, WidgetConfigProps } from '../widget/WidgetFactory'
+import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
+import { WidgetConfig } from '../types'
 
 export type WidgetType = string
 
@@ -43,7 +44,7 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                     ...(initState as any),
                     key: name,
                     time: 0,
-                    onLayoutOrderChange: (paths: any, oldIndex, newIndex) =>
+                    onLayoutOrderChange: (paths: any, oldIndex: number, newIndex: number) =>
                         set(
                             produce((state) => {
                                 const nodes = _.get(get(), paths)
@@ -63,7 +64,7 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                 console.log('onConfigChange', state, paths, rawConfig, config)
                             })
                         ),
-                    onWidgetChange: (id: string, widgets: WidgetConfigProps) =>
+                    onWidgetChange: (id: string, widgets: WidgetConfig) =>
                         set(
                             produce((state) => {
                                 const { type } = widgets ?? {}

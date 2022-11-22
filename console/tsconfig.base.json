@@ -40,5 +40,5 @@
     "node_modules/baseui/helpers/overrides.js",
     "**/__generated__/**"
   ],
-  "extends": "./tsconfig.paths.json"
+  "extends": "./tsconfig.paths.json",
 }

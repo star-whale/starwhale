@@ -1,18 +1,14 @@
 {
   "compilerOptions": {
     "baseUrl": "./",
-    "declarationDir": "./compiled",
-    "emitDeclarationOnly": true,
-    "isolatedModules": true,
+    "declarationDir": "./dist",
     "rootDirs": ["."],
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx"
+    "composite":true
   },
+  "extends": "../../tsconfig.lib.json",
   "exclude": ["dist/**/*"],
-  "extends": "./tsconfig.base.json",
   "include": [
-    "src/**/*.ts*",
-    "../../@types/*.d.ts",
+    "src/**/*.ts*"
   ]
 }
 

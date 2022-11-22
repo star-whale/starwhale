@@ -1,11 +1,11 @@
 /* eslint-disable */
 /* @ts-nocheck */
 
-import Button from '@/components/Button'
-import IconFont from '@/components/IconFont'
+import Button from '@starwhale/ui/Button'
+import IconFont from '@starwhale/ui/IconFont'
 import { Panel, PanelProps } from 'baseui/accordion'
 import React, { useCallback } from 'react'
-import { expandBorder, expandMargin, expandPadding } from '@/utils'
+import { expandBorder, expandMargin, expandPadding } from '@starwhale/ui/utils'
 import SectionPopover from './SectionPopover'
 
 // @FIXME type define

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
@@ -18,14 +20,13 @@ export default defineConfig({
         },
     },
     resolve: {
-        alias: {},
+        alias: {
+            '@starwhale/ui': path.resolve(__dirname, '../starwhale-ui/src'),
+            '@starwhale/core': path.resolve(__dirname, '../starwhale-core/src'),
+            '@starwhale/widgets': path.resolve(__dirname, '../starwhale-widgets/src'),
+        },
     },
-    plugins: [
-        eslint(),
-        react({
-            exclude: /\.stories\.(t|j)sx?$/,
-        }),
-    ],
+    plugins: [eslint(), react()],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
     },

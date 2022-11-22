@@ -1,8 +1,10 @@
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import React from 'react'
-import { PanelSaveEvent, SectionAddEvent } from '../../events/app'
-import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '../../Widget/const'
-import { WidgetPlugin } from '@starwhale/core'
+import { PanelSaveEvent, SectionAddEvent } from '@starwhale/core/events'
+import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '@starwhale/core/types'
+import { WidgetPlugin } from '@starwhale/core/widget'
+
+import a from '@starwhale/ui'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@user/*": ["src/domain/user/*"],
@@ -10,6 +10,10 @@
       "@dataset/*": ["src/domain/dataset/*"],
       "@runtime/*": ["src/domain/runtime/*"],
       "@base/*": ["src/domain/base/*"],
+      "@starwhale/ui": ["./packages/stawhale-ui/src"],
+      "@starwhale/ui/*": ["./packages/stawhale-ui/src/*"],
+      "@starwhale/core/*": ["./packages/stawhale-core/src/*"],
+      "@starwhale/widgets/*": ["./packages/stawhale-widgets/src/*"],
     }
   }
-}
+} 

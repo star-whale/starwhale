@@ -18,23 +18,9 @@ export default defineConfig({
         },
     },
     resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
-            '@user': path.resolve(__dirname, './src/domain/user'),
-            '@project': path.resolve(__dirname, './src/domain/project'),
-            '@model': path.resolve(__dirname, './src/domain/model'),
-            '@job': path.resolve(__dirname, './src/domain/job'),
-            '@dataset': path.resolve(__dirname, './src/domain/dataset'),
-            '@runtime': path.resolve(__dirname, './src/domain/runtime'),
-            '@base': path.resolve(__dirname, './src/domain/base'),
-        },
+        // alias: { '@starwhale': path.resolve(__dirname, './src/domain/user'),},
     },
-    plugins: [
-        // eslint(),
-        react({
-            exclude: /\.stories\.(t|j)sx?$/,
-        }),
-    ],
+    plugins: [eslint(), react()],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
     },

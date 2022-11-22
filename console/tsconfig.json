@@ -1,7 +1,8 @@
 {
-  "extends": "./tsconfig.base.json",
+  // "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx"
-  }
+  },
+  "extends": "./tsconfig.paths.json",
 }
