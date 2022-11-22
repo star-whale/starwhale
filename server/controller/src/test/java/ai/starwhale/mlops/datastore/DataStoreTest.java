@@ -628,6 +628,35 @@ public class DataStoreTest {
         assertThat("result of non exist table",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005"))));
+
+        // scan with column prefix
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t1")
+                                .columnPrefix("a")
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t2")
+                                .columnPrefix("b")
+                                .build()))
+                .build());
+        assertThat("column prefix",
+                recordList.getColumnTypeMap(),
+                is(Map.of("ak",
+                        ColumnTypeScalar.STRING,
+                        "bk",
+                        ColumnTypeScalar.STRING,
+                        "aa",
+                        ColumnTypeScalar.INT32,
+                        "bb",
+                        ColumnTypeScalar.INT32)));
+        assertThat("column prefix",
+                recordList.getRecords(),
+                is(List.of(Map.of("ak", "0", "bk", "0", "aa", "00000005", "bb", "00000015"),
+                        Map.of("ak", "1", "aa", "00000004"),
+                        Map.of("ak", "2", "bk", "2", "aa", "00000003", "bb", "00000013"),
+                        Map.of("ak", "3", "aa", "00000002"),
+                        Map.of("ak", "4", "bk", "4", "aa", "00000001", "bb", "00000011"))));
     }
 
     @Test

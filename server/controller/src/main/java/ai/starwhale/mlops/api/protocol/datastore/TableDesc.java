@@ -23,6 +23,7 @@ import lombok.Data;
 public class TableDesc {
 
     private String tableName;
+    private String columnPrefix;
     private List<ColumnDesc> columns;
     private boolean keepNone;
 }

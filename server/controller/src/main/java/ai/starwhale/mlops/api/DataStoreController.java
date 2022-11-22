@@ -142,6 +142,7 @@ public class DataStoreController implements DataStoreApi {
                                 }
                                 return DataStoreScanRequest.TableInfo.builder()
                                         .tableName(x.getTableName())
+                                        .columnPrefix(x.getColumnPrefix())
                                         .columns(DataStoreController.convertColumns(x.getColumns()))
                                         .keepNone(x.isKeepNone())
                                         .build();
