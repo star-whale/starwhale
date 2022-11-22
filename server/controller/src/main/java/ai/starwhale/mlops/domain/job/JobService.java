@@ -216,15 +216,14 @@ public class JobService {
                     //one transaction
                     try {
                         jobSpliterator.split(jobEntity);
-                    } catch (StarwhaleException e) {
-                        log.error("parsing step specification error", e);
+                        Job job = jobBoConverter.fromEntity(jobEntity);
+                        jobLoader.load(job, false);
+                        jobUpdateHelper.updateJob(job);
+                    } catch (Exception e) {
+                        log.error("splitting job error {}", jobEntity.getId(), e);
                         jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
-                        return;
                     }
 
-                    Job job = jobBoConverter.fromEntity(jobEntity);
-                    jobLoader.load(job, false);
-                    jobUpdateHelper.updateJob(job);
                 });
 
     }
