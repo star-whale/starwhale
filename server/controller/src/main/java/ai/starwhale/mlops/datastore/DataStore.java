@@ -64,7 +64,6 @@ public class DataStore {
     public DataStore(StorageAccessService storageAccessService,
             @Value("${sw.datastore.walFileSize}") int walFileSize,
             @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
             @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts,
             @Value("${sw.datastore.dataRootPath:}") String dataRootPath,
             @Value("${sw.datastore.dumpInterval:1h}") String dumpInterval,
@@ -82,7 +81,6 @@ public class DataStore {
                 walFileSize,
                 walMaxFileSize,
                 dataRootPath + "wal/",
-                walWaitIntervalMillis,
                 ossMaxAttempts);
         this.parquetConfig = new ParquetConfig();
         this.parquetConfig.setCompressionCodec(CompressionCodec.valueOf(compressionCodec));

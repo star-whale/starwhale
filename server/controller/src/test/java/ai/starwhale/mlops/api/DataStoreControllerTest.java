@@ -66,7 +66,6 @@ public class DataStoreControllerTest {
                 new DataStore(new StorageAccessServiceMemory(),
                         65536,
                         65536,
-                        10000,
                         3,
                         "",
                         "1h",

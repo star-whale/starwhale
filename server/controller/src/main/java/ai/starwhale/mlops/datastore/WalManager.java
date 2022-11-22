@@ -45,6 +45,8 @@ import org.xerial.snappy.Snappy;
 @Slf4j
 public class WalManager extends Thread {
 
+    private static final int WAIT_INTERVAL_MILLIS = 1000;
+
     private final StorageAccessService storageAccessService;
 
     private final int walFileSize;
@@ -54,8 +56,6 @@ public class WalManager extends Thread {
     private final int walMaxFileSizeNoHeader;
 
     private final String logFilePrefix;
-
-    private final int walWaitIntervalMillis;
 
     private final LinkedList<Wal.WalEntry> entriesToWrite = new LinkedList<>();
 
@@ -85,14 +85,12 @@ public class WalManager extends Thread {
             int walFileSize,
             int walMaxFileSize,
             String walPrefix,
-            int walWaitIntervalMillis,
             int ossMaxAttempts) {
         this.storageAccessService = storageAccessService;
         this.walFileSize = walFileSize;
         this.walMaxFileSize = walMaxFileSize;
         this.walMaxFileSizeNoHeader = this.walMaxFileSize - this.header.length;
         this.logFilePrefix = walPrefix + "wal.log.";
-        this.walWaitIntervalMillis = walWaitIntervalMillis;
         this.ossMaxAttempts = ossMaxAttempts;
         this.compressedBuffer = new byte[this.walMaxFileSize];
         System.arraycopy(this.header, 0, this.compressedBuffer, 0, this.header.length);
@@ -239,10 +237,12 @@ public class WalManager extends Thread {
             var entry = builder.setId(this.maxEntryId + 1).build();
             if (entry.getSerializedSize() <= this.walMaxFileSizeNoHeader) {
                 this.entriesToWrite.add(entry);
-                return ++this.maxEntryId;
+                ++this.maxEntryId;
             } else {
-                return this.splitEntryAndAppend(entry);
+                this.splitEntryAndAppend(entry);
             }
+            this.entriesToWrite.notifyAll();
+            return this.maxEntryId;
         }
     }
 
@@ -368,7 +368,7 @@ public class WalManager extends Thread {
         synchronized (this.entriesToWrite) {
             while (!this.terminated && this.entriesToWrite.isEmpty()) {
                 try {
-                    this.entriesToWrite.wait(this.walWaitIntervalMillis);
+                    this.entriesToWrite.wait(WAIT_INTERVAL_MILLIS);
                 } catch (InterruptedException e) {
                     log.warn("interrupted", e);
                 }
@@ -457,7 +457,7 @@ public class WalManager extends Thread {
         }
     }
 
-    private long splitEntryAndAppend(Wal.WalEntry entry) {
+    private void splitEntryAndAppend(Wal.WalEntry entry) {
         List<Wal.WalEntry> entries = new ArrayList<>();
         var builder = Wal.WalEntry.newBuilder()
                 .setId(this.maxEntryId + 1)
@@ -502,6 +502,5 @@ public class WalManager extends Thread {
         }
         this.entriesToWrite.addAll(entries);
         this.maxEntryId += entries.size();
-        return this.maxEntryId;
     }
 }

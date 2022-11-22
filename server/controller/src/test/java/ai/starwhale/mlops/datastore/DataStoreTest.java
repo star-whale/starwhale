@@ -68,8 +68,6 @@ public class DataStoreTest {
         @Default
         int walMaxFileSize = 4096;
         @Default
-        int walWaitIntervalMillis = 10;
-        @Default
         int ossMaxAttempts = 3;
         @Default
         String dataRootPath = "";
@@ -99,7 +97,6 @@ public class DataStoreTest {
         this.dataStore = new DataStore(this.storageAccessService,
                 params.walFileSize,
                 params.walMaxFileSize,
-                params.walWaitIntervalMillis,
                 params.ossMaxAttempts,
                 params.dataRootPath,
                 params.dumpInterval,
@@ -774,7 +771,6 @@ public class DataStoreTest {
         this.createDateStore(DataStoreParams.builder()
                 .walFileSize(65536)
                 .walMaxFileSize(65536 * 1024)
-                .walWaitIntervalMillis(1000)
                 .build());
 
         var threads = new ArrayList<TestThread>();
@@ -898,7 +894,6 @@ public class DataStoreTest {
                     dataStore.terminate();
                     System.out.printf("%s terminated\n", this.dateFormat.format(new Date()));
                     createDateStore(DataStoreParams.builder()
-                            .walWaitIntervalMillis(1000)
                             .dumpInterval("1s")
                             .minNoUpdatePeriod("1ms")
                             .build());

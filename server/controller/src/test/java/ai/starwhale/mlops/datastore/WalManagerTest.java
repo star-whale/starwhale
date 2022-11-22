@@ -62,7 +62,7 @@ public class WalManagerTest {
     }
 
     private void createInstance() {
-        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 10, 3);
+        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 3);
     }
 
 
@@ -276,7 +276,6 @@ public class WalManagerTest {
                 256,
                 entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 4,
                 "test/",
-                10,
                 3);
         this.walManager.append(entry1.toBuilder().addAllRecords(entry2.getRecordsList()));
         this.walManager.terminate();
@@ -328,7 +327,7 @@ public class WalManagerTest {
                 .doThrow(new IOException())
                 .doNothing()
                 .when(storageAccessService).put(anyString(), any(), anyLong());
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t"));
@@ -347,7 +346,7 @@ public class WalManagerTest {
                 .willThrow(new IOException())
                 .willReturn(new LengthAbleInputStream(
                         new ByteArrayInputStream(new byte[]{'s', 'w', 'l', 0, 0, 0, 0, 0, 0, 0}), 10));
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         walManager.terminate();
