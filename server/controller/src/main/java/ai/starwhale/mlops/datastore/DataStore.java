@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.MemoryTable.RecordResult;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -269,30 +271,22 @@ public class DataStore {
             class TableRecords {
 
                 TableMeta meta;
-                List<MemoryTable.RecordResult> records;
-                int index;
-
-                public MemoryTable.RecordResult getRecord() {
-                    return this.records.get(this.index);
-                }
-
-                public Object getKey() {
-                    return this.getRecord().getKey();
-                }
+                Iterator<RecordResult> iterator;
+                RecordResult record;
             }
 
             var records = new ArrayList<TableRecords>();
             for (var table : tables) {
                 var r = new TableRecords();
                 r.meta = table;
-                r.records = table.table.scan(table.columns,
+                r.iterator = table.table.scan(table.columns,
                         req.getStart(),
                         req.isStartInclusive(),
                         req.getEnd(),
                         req.isEndInclusive(),
-                        limit,
                         table.keepNone);
-                if (!r.records.isEmpty()) {
+                if (r.iterator.hasNext()) {
+                    r.record = r.iterator.next();
                     records.add(r);
                 }
             }
@@ -301,24 +295,28 @@ public class DataStore {
             List<Map<String, Object>> ret = new ArrayList<>();
             while (!records.isEmpty() && ret.size() < limit) {
                 lastKey = Collections.min(records, (a, b) -> {
-                    @SuppressWarnings("rawtypes") var x = (Comparable) a.getKey();
-                    @SuppressWarnings("rawtypes") var y = (Comparable) b.getKey();
+                    @SuppressWarnings("rawtypes") var x = (Comparable) a.record.key;
+                    @SuppressWarnings("rawtypes") var y = (Comparable) b.record.key;
                     //noinspection unchecked
                     return x.compareTo(y);
-                }).getKey();
+                }).record.getKey();
                 var record = new HashMap<String, Object>();
                 for (var r : records) {
-                    if (r.getKey().equals(lastKey)) {
+                    if (r.record.getKey().equals(lastKey)) {
                         record.putAll(
-                                DataStore.encodeRecord(r.meta.columnTypeMap, r.getRecord().values, req.isRawResult()));
-                        ++r.index;
+                                DataStore.encodeRecord(r.meta.columnTypeMap, r.record.values, req.isRawResult()));
+                        if (r.iterator.hasNext()) {
+                            r.record = r.iterator.next();
+                        } else {
+                            r.record = null;
+                        }
                     }
                 }
                 if (!req.isKeepNone()) {
                     record.entrySet().removeIf(x -> x.getValue() == null);
                 }
                 ret.add(record);
-                records.removeIf(r -> r.index == r.records.size());
+                records.removeIf(r -> r.record == null);
             }
             return new RecordList(columnTypeMap, ret, (String) keyColumnType.encode(lastKey, false));
         } finally {
