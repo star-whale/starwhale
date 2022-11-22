@@ -142,19 +142,23 @@ public class ColumnTypeMap extends ColumnType {
 
     @Override
     public void writeNonNullParquetValue(RecordConsumer recordConsumer, @NonNull Object value) {
-        recordConsumer.startField("map", 0);
+        recordConsumer.startGroup();
         var mapValue = (Map<?, ?>) value;
-        mapValue.forEach((k, v) -> {
-            recordConsumer.startGroup();
-            recordConsumer.startField("key", 0);
-            this.keyType.writeParquetValue(recordConsumer, k);
-            recordConsumer.endField("key", 0);
-            recordConsumer.startField("value", 1);
-            this.valueType.writeParquetValue(recordConsumer, v);
-            recordConsumer.endField("value", 1);
-            recordConsumer.endGroup();
-        });
-        recordConsumer.endField("map", 0);
+        if (!mapValue.isEmpty()) {
+            recordConsumer.startField("map", 0);
+            mapValue.forEach((k, v) -> {
+                recordConsumer.startGroup();
+                recordConsumer.startField("key", 0);
+                this.keyType.writeParquetValue(recordConsumer, k);
+                recordConsumer.endField("key", 0);
+                recordConsumer.startField("value", 1);
+                this.valueType.writeParquetValue(recordConsumer, v);
+                recordConsumer.endField("value", 1);
+                recordConsumer.endGroup();
+            });
+            recordConsumer.endField("map", 0);
+        }
+        recordConsumer.endGroup();
     }
 
     @Override

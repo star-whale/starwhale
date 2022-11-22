@@ -995,6 +995,15 @@ public class DataStoreTest {
                             }
                         });
                     }
+                },
+                new HashMap<>() {
+                    {
+                        put("key", "z");
+                        put("j", List.of());
+                        put("k", Map.of());
+                        put("l", List.of());
+                        put("m", Map.of());
+                    }
                 });
         var columnTypeMap = new HashMap<String, ColumnType>() {
             {
@@ -1019,7 +1028,7 @@ public class DataStoreTest {
                 )));
             }
         };
-        var expected = new RecordList(columnTypeMap, records, "y");
+        var expected = new RecordList(columnTypeMap, records, "z");
         this.dataStore.update("t",
                 new TableSchemaDesc("key",
                         columnTypeMap.entrySet().stream()
