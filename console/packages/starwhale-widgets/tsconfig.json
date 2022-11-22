@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "declaration": true,
+    "declarationDir": "./compiled",
+    "isolatedModules": true,
+    "rootDirs": ["."],
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist/**/*"],
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "src/**/*.ts*",
+    "../../public/app/types/jquery/*.ts",
+    "../../public/app/types/*.d.ts",
+  ]  
+}
+

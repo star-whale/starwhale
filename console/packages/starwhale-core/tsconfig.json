@@ -4,14 +4,16 @@
     "declarationDir": "./compiled",
     "emitDeclarationOnly": true,
     "isolatedModules": true,
-    "rootDirs": ["."]
+    "rootDirs": ["."],
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx"
   },
   "exclude": ["dist/**/*"],
-  "extends": "@grafana/tsconfig",
+  "extends": "./tsconfig.base.json",
   "include": [
     "src/**/*.ts*",
     "../../public/app/types/jquery/*.ts",
     "../../public/app/types/*.d.ts",
-    // "../grafana-ui/src/types/*.d.ts"
   ]
 }
+

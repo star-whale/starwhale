@@ -129,7 +129,18 @@
     "build": "NODE_OPTIONS='--max-old-space-size=5120' vite build",
     "serve": "vite preview",
     "test": "jest --config jest/jest.config.ts",
-    "test:coverage": "jest --coverage --config jest/jest.config.ts"
+    "test:coverage": "jest --coverage --config jest/jest.config.ts",
+    "packages:build": "lerna run build --ignore @grafana-plugins/input-datasource",
+    "packages:clean": "lerna run clean --parallel",
+    "packages:prepare": "lerna version --no-push --no-git-tag-version --force-publish --exact",
+    "packages:pack": "lerna exec --no-private -- yarn pack",
+    "packages:publish": "lerna exec --no-private -- npm publish package.tgz",
+    "packages:publishCanary": "lerna exec --no-private -- npm publish package.tgz --tag canary",
+    "packages:publishLatest": "lerna exec --no-private -- npm publish package.tgz",
+    "packages:publishNext": "lerna exec --no-private -- npm publish package.tgz --tag next",
+    "packages:publishTest": "lerna exec --no-private -- npm publish package.tgz --tag test",
+    "packages:publishDev": "lerna exec --no-private -- npm publish package.tgz --tag dev --registry http://localhost:4873",
+    "packages:typecheck": "lerna run typecheck"
   },
   "eslintConfig": {
     "extends": [
@@ -159,6 +170,9 @@
       "last 1 safari version"
     ]
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@babel/core": ">=7.13.0 <8.0.0",
     "@mdx-js/react": "^2.1.3",

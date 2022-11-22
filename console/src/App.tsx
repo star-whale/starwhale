@@ -10,7 +10,6 @@ import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
 import { ConfirmCtxProvider } from '@/components/Modal/confirm'
-import '@/assets/fonts/iconfont.css'
 import Routes from './routes'
 import { AuthProvider } from './api/Auth'
 

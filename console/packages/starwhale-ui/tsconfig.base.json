@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types",
+    ],
+    "types": [
+      "vite/client",
+      "node",
+      "jest"
+    ],
+  },
+  "include": [
+    "src",
+    "types"
+  ],
+  "exclude": [
+    "src/stories",
+    "**/iconfont.js",
+    "baseui/helpers/overrides",
+    "node_modules/baseui/helpers/**",
+    "node_modules/baseui/helpers/overrides.js",
+    "**/__generated__/**"
+  ],
+  "extends": "./tsconfig.paths.json"
+}
