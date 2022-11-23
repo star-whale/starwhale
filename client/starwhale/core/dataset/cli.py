@@ -69,7 +69,7 @@ def _build(
     append: bool,
     append_from: str,
     runtime: str,
-) -> URI:
+) -> t.Union[URI, t.Any]:
     # TODO: add dry-run
     # TODO: add compress args
     if not os.path.exists(workdir):

@@ -3,11 +3,7 @@
 set -x
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-echo "$SCRIPT_DIR"
-pushd ../..
-REPO_PATH=$(pwd)
-popd
-echo "$REPO_PATH"
+REPO_PATH=$( cd -- "$SCRIPT_DIR/../.." &> /dev/null && pwd )
 export WORK_DIR=`mktemp -d -p "$SCRIPT_DIR"`
 export SW_CLI_CONFIG="$WORK_DIR/config.yaml"
 export SW_LOCAL_STORAGE="$WORK_DIR/data"
@@ -18,16 +14,19 @@ function cleanup {
 }
 trap cleanup EXIT
 rsync -av $REPO_PATH/client $WORK_DIR --exclude venv --exclude .venv
+rsync -av $REPO_PATH/example/ucf101 $WORK_DIR/example --exclude venv --exclude .venv --exclude .starwhale --exclude data --exclude models
+rsync -av $REPO_PATH/example/runtime/pytorch-e2e $WORK_DIR/example/runtime --exclude venv --exclude .venv --exclude .starwhale
 cp $REPO_PATH/README.md $WORK_DIR
 pushd $WORK_DIR
-python3 -m venv venve2e && . venve2e/bin/activate && python3 -m pip install --upgrade pip
+python3 -m venv venv && . venv/bin/activate && python3 -m pip install --upgrade pip
 if [[ -n $PYPI_RELEASE_VERSION ]] ; then
   python3 -m pip install starwhale==$PYPI_RELEASE_VERSION
 else
   python3 -m pip install -e client
 fi
-
 swcli --version
 popd
-python3 cli_test.py "$1"
+
+bash "$SCRIPT_DIR"/update_controller_setting.sh
+python3 "$SCRIPT_DIR"/cli_test.py "$1"
 

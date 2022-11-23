@@ -22,4 +22,5 @@ prepare-e2e-data:
 	[ -f models/decoder.pth ] || curl -o models/decoder.pth http://10.131.0.1:9000/users/model/nmt/decoder.pth
 	[ -f models/encoder.pth ] || curl -o models/encoder.pth http://10.131.0.1:9000/users/model/nmt/encoder.pth
 	[ -f models/vocab_eng-fra.bin ] || curl -o models/vocab_eng-fra.bin http://10.131.0.1:9000/users/model/nmt/vocab_eng-fra.bin
+	python3 -m pip install -r requirments.txt
 

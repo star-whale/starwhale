@@ -1,15 +1,13 @@
 import os
 import sys
+import typing as t
 import logging
 import subprocess
 from time import sleep
-from typing import Any
-from asyncio import Future
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures._base import Future
 
 from cmds.eval_cmd import Evaluation
-from cmds.base.common import EnvironmentPrepare
-from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
@@ -17,19 +15,25 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 from starwhale import URI
 
 CURRENT_DIR = os.path.dirname(__file__)
-step_spec_f = lambda spec: f"{os.path.abspath(CURRENT_DIR)}/step_specs/{spec}"
+step_spec_f: t.Callable[
+    [str], str
+] = lambda spec: f"{os.path.abspath(CURRENT_DIR)}/step_specs/{spec}"
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+WORK_DIR = os.environ.get("WORK_DIR")
+if not WORK_DIR:
+    raise RuntimeError("WORK_DIR NOT FOUND")
 STATUS_SUCCESS = {"SUCCESS", "success"}
 STATUS_FAIL = {"FAIL", "fail", "CANCELED"}
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-EXAMPLES = {
+EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
         "workdir": f"{ROOT_DIR}/example/mnist",
         "datasets": ["dataset.yaml", "dataset.yaml.raw", "dataset.yaml.link"],
+        # "datasets": ["dataset.yaml"],
     },
     "cifar10": {
         "workdir": f"{ROOT_DIR}/example/cifar10",
@@ -39,14 +43,15 @@ EXAMPLES = {
         "workdir": f"{ROOT_DIR}/example/nmt",
         "datasets": ["dataset.yaml"],
     },
-    # "pfp": {
-    #     "workdir": f"{ROOT_DIR}/example/PennFudanPed",
-    #     "datasets": ["dataset.yaml"],
-    #     "device": "gpu",
-    # },
+    "pfp": {
+        "workdir": f"{ROOT_DIR}/example/PennFudanPed",
+        "datasets": ["dataset.yaml"],
+        "device": "gpu",
+    },
     "speech_command": {
         "workdir": f"{ROOT_DIR}/example/speech_command",
         "datasets": ["dataset.yaml", "dataset.yaml.link"],
+        "device": "gpu",
     },
     "ag_news": {
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
@@ -57,12 +62,12 @@ EXAMPLES = {
         "datasets": ["dataset.yaml"],
     },
 }
-RUNTIMES = {
+RUNTIMES: t.Dict[str, t.Dict[str, str]] = {
     "pytorch": {
-        "workdir": f"{ROOT_DIR}/example/runtime/pytorch-e2e",
+        "workdir": f"{WORK_DIR}/example/runtime/pytorch-e2e",
     },
     "ucf101": {
-        "workdir": f"{ROOT_DIR}/example/ucf101",
+        "workdir": f"{WORK_DIR}/example/ucf101",
     },
 }
 
@@ -79,21 +84,23 @@ class TestCli:
         self,
         work_dir: str,
         thread_pool: ThreadPoolExecutor,
-        cloud_url: str,
+        cloud_url: t.Optional[str],
         cloud_project: str = "starwhale",
     ) -> None:
         self._work_dir = work_dir
         self.executor = thread_pool
         self.cloud_url = cloud_url
         self.cloud_project = cloud_project
-        self.datasets = {}
-        self.runtimes = {}
-        self.models = {}
+        self.datasets: dict[str, t.List[URI]] = {}
+        self.runtimes: dict[str, URI] = {}
+        self.models: dict[str, URI] = {}
         if self.cloud_url:
             logger.info(f"login to cloud {self.cloud_url} ...")
             assert self.instance.login(url=self.cloud_url)
 
-    def build_dataset(self, _workdir: str, yaml: str) -> URI:
+    def build_dataset(
+        self, _workdir: str, yaml: str = "dataset.yaml"
+    ) -> t.Union[URI, t.Any]:
         self.select_local_instance()
         _uri = Dataset.build_with_api(workdir=_workdir, dataset_yaml=yaml)
         if self.cloud_url:
@@ -102,9 +109,9 @@ class TestCli:
                 target_project=f"cloud://cloud/project/{self.cloud_project}",
                 force=True,
             )
-        if _uri.object.name not in self.datasets:
-            self.datasets[_uri.object.name] = []
-        self.datasets[_uri.object.name].append(_uri)
+        dss_ = self.datasets.get(_uri.object.name, [])
+        dss_.append(_uri)
+        self.datasets.update({_uri.object.name: dss_})
         assert len(self.dataset.list())
         assert self.dataset.info(_uri.full_uri)
         return _uri
@@ -112,7 +119,7 @@ class TestCli:
     def build_model(
         self,
         _workdir: str,
-    ) -> URI:
+    ) -> t.Union[URI, t.Any]:
         self.select_local_instance()
         _uri = Model.build_with_api(workdir=_workdir)
         if self.cloud_url:
@@ -121,7 +128,7 @@ class TestCli:
                 target_project=f"cloud://cloud/project/{self.cloud_project}",
                 force=True,
             )
-        self.models[_uri.object.name] = _uri
+        self.models.update({_uri.object.name: _uri})
         assert len(self.model.list())
         assert self.model.info(_uri.full_uri)
         return _uri
@@ -129,7 +136,7 @@ class TestCli:
     def build_runtime(
         self,
         _workdir: str,
-    ) -> URI:
+    ) -> t.Union[URI, t.Any]:
         self.select_local_instance()
         _uri = Runtime.build_with_api(workdir=_workdir)
         if self.cloud_url:
@@ -138,57 +145,35 @@ class TestCli:
                 target_project=f"cloud://cloud/project/{self.cloud_project}",
                 force=True,
             )
-        self.runtimes[_uri.object.name] = _uri
+        self.runtimes.update({_uri.object.name: _uri})
         assert len(self.runtime.list())
         assert self.runtime.info(_uri.full_uri)
         return _uri
 
-    def select_local_instance(self):
+    def select_local_instance(self) -> None:
         self.instance.select("local")
         assert self.project.select("self")
-
-    def standard_workflow(
-        self,
-        model_workdir: str,
-        ds_workdir: str,
-        rt_workdir: str,
-        step_spec_file: str,
-    ) -> Future:
-        # use local instance
-        logger.info("select local")
-        self.select_local_instance()
-
-        # 1.model build
-        logger.info("building model...")
-        _model_uri = self.build_model(model_workdir)
-
-        # 2.dataset build
-        _ds_uri = self.build_dataset(ds_workdir)
-
-        # 3.runtime build
-        _rt_uri = self.build_runtime(rt_workdir)
-
-        return self.eval(_ds_uri, _model_uri, _rt_uri, step_spec_file)
 
     def eval(
         self,
         _model_uri: URI,
         _rt_uri: URI,
-        _ds_uris: list[URI],
+        _ds_uris: t.List[URI],
         step_spec_file: str,
-        remote_only: bool = False,
-    ):
-        # 4.run evaluation on local instance
-        _job_id = "0"
-        if not remote_only:
-            _job_id = self.local_evl(_ds_uris, _model_uri, _rt_uri)
-        if not self.cloud_url:
-            return executor.submit(lambda: (_job_id, next(iter(STATUS_SUCCESS))))
-        # 7.select to cloud instance
-        return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
+        local_instance: bool = True,
+    ) -> Future:
+        if local_instance:
+            _jid = self.local_evl(_ds_uris, _model_uri, _rt_uri)
+            return executor.submit(lambda: (_jid, next(iter(STATUS_SUCCESS))))
+        if self.cloud_url and not local_instance:
+            return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
+        return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
 
-    def local_evl(self, _ds_uris, _model_uri, _rt_uri):
+    def local_evl(
+        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI
+    ) -> t.Union[str, t.Any]:
         logger.info("running evaluation at local...")
+        self.select_local_instance()
         _job_id = self.evaluation.run(
             model=_model_uri.full_uri,
             datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
@@ -203,7 +188,7 @@ class TestCli:
         return _job_id
 
     def remote_eval(
-        self, _ds_uris: list[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
+        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
     ) -> Future:
         self.instance.select(instance="cloud")
         self.project.select(project=self.cloud_project)
@@ -220,10 +205,9 @@ class TestCli:
         assert _remote_jid
         # 9.check job's status
         _js = executor.submit(self.get_remote_job_status, _remote_jid)
-        print("submit success-------------------")
         return _js
 
-    def get_remote_job_status(self, job_id: str) -> Any:
+    def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
             _remote_job = self.evaluation.info(
                 f"{self.cloud_url}/project/{self.cloud_project}/evaluation/{job_id}"
@@ -242,16 +226,27 @@ class TestCli:
             logger.info(f"status for job {job_id} is:{_job_status}")
 
     def test_simple(self) -> None:
-        _js = self.standard_workflow(
-            model_workdir=f"{self._work_dir}/scripts/example",
-            ds_workdir=f"{self._work_dir}/scripts/example",
-            rt_workdir=f"{self._work_dir}/scripts/example",
-            step_spec_file=step_spec_f("step_spec_cpu_mini.yaml")
-            if os.environ.get("GITHUB_ACTION")
-            else step_spec_f("step_spec_cpu_full.yaml"),
-        )
-        _, status = _js.result()
-        assert status in STATUS_SUCCESS
+        # use local instance
+        logger.info("select local")
+        self.select_local_instance()
+
+        # 1.model build
+        logger.info("building model...")
+        _model_uri = self.build_model(f"{self._work_dir}/scripts/example")
+
+        # 2.dataset build
+        _ds_uri = self.build_dataset(f"{self._work_dir}/scripts/example")
+
+        # 3.runtime build
+        _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
+
+        self.local_evl([_ds_uri], _model_uri, _rt_uri)
+        if self.cloud_url:
+            _js = self.remote_eval(
+                [_ds_uri], _model_uri, _rt_uri, step_spec_f("step_spec_cpu_mini.yaml")
+            )
+            _, status = _js.result()
+            assert status in STATUS_SUCCESS
 
     def test_all(self) -> None:
 
@@ -273,16 +268,23 @@ class TestCli:
 
         for name, expl in EXAMPLES.items():
             workdir_ = expl["workdir"]
-            #  download data
             for d_type in expl["datasets"]:
                 self.build_dataset(workdir_, d_type)
             self.build_model(workdir_)
-            # run_eval
+
+        # run evals on standalone
+        for name, expl in EXAMPLES.items():
+            expl.get("device", "cpu") == "cpu" and self.run_example(
+                name,
+                step_spec_f("step_spec_cpu_full.yaml"),
+            )
+
+        # run evals on cloud
         res = [
             self.run_example(
                 name,
                 step_spec_f(f"step_spec_{expl.get('device', 'cpu')}_full.yaml"),
-                expl.get("device", "cpu") == "gpu",
+                False,
             )
             for name, expl in EXAMPLES.items()
         ]
@@ -292,12 +294,14 @@ class TestCli:
                 logger.error(f"job {jid} failed!")
                 exit(1)
 
-    def test_expl(self, expl_name: str):
+    def test_expl(self, expl_name: str) -> None:
         rt_ = RUNTIMES.get(expl_name) or RUNTIMES.get("pytorch")
-        self.build_runtime(rt_["workdir"])
+        if not rt_:
+            raise RuntimeError(f"no runtime matching for {expl_name}")
+        self.build_runtime(str(rt_.get("workdir")))
 
         expl = EXAMPLES[expl_name]
-        workdir_ = expl["workdir"]
+        workdir_ = str(expl["workdir"])
 
         p = subprocess.Popen(
             ["make", "prepare-e2e-data"],
@@ -317,7 +321,7 @@ class TestCli:
         _js = self.run_example(
             expl_name,
             step_spec_f(f"step_spec_{expl.get('device', 'cpu')}_full.yaml"),
-            expl.get("device", "cpu") == "gpu",
+            expl.get("device", "cpu") == "cpu",
         )
         jid, status = _js.result()
         if status not in STATUS_SUCCESS:
@@ -325,22 +329,32 @@ class TestCli:
             exit(1)
 
     def run_example(
-        self, name: str, step_spec: str, remote_only: bool = False
+        self, name: str, step_spec: str, local_instance: bool = True
     ) -> Future:
         datasets_ = self.datasets.get(name)
+        if not datasets_:
+            raise RuntimeError("datasets should not be empty")
         model_ = self.models.get(name)
+        if not model_:
+            raise RuntimeError("model should not be empty")
         runtime_ = self.runtimes.get(name) or self.runtimes.get("pytorch")
-        return self.eval(model_, runtime_, datasets_, step_spec, remote_only)
+        if not runtime_:
+            raise RuntimeError("runtime should not be empty")
+        return self.eval(model_, runtime_, datasets_, step_spec, local_instance)
+
+    def debug(self) -> None:
+        for name, expl in EXAMPLES.items():
+            workdir_ = expl["workdir"]
+            self.build_model(str(workdir_))
 
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(
         max_workers=int(os.environ.get("SW_TEST_E2E_THREAD_NUM", "10"))
     ) as executor:
-        workdir = os.environ.get("WORK_DIR")
         # start test
         test_cli = TestCli(
-            work_dir=workdir,
+            work_dir=WORK_DIR,
             thread_pool=executor,
             cloud_url=os.environ.get("CONTROLLER_URL"),
         )
@@ -349,5 +363,7 @@ if __name__ == "__main__":
             test_cli.test_simple()
         elif example == "all":
             test_cli.test_all()
+        elif example == "debug":
+            test_cli.debug()
         else:
             test_cli.test_expl(expl_name=example)

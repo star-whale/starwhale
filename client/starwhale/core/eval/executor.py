@@ -1,5 +1,6 @@
 import os
 import typing as t
+import tempfile
 from pathlib import Path
 
 from loguru import logger
@@ -144,7 +145,10 @@ class EvalExecutor:
 
     def _extract_swrt(self) -> None:
         if self.runtime and self.use_docker:
-            self._runtime_dir = self.runtime.extract()
+            # avoid conflict with normal process with venv or conda
+            self._runtime_dir = self.runtime.extract(
+                target=f"{tempfile.mkdtemp()}/{RunSubDirType.SWRT}"
+            )
         else:
             self._runtime_dir = Path()
 

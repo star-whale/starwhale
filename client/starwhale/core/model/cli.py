@@ -29,7 +29,9 @@ def model_cmd(ctx: click.Context) -> None:
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
 @click.option("--runtime", default="", help="runtime uri")
-def _build(workdir: str, project: str, model_yaml: str, runtime: str) -> URI:
+def _build(
+    workdir: str, project: str, model_yaml: str, runtime: str
+) -> t.Union[URI, t.Any]:
     return ModelTermView.build(workdir, project, model_yaml, runtime)
 
 

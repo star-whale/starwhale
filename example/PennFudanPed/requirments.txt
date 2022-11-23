@@ -1,2 +1,3 @@
-Pillow==9.2.0
+Pillow
+torch
 pycocotools

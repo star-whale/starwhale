@@ -40,9 +40,7 @@ class SWDSBuildExecutor(BuildExecutor):
 
 class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
 
-    _auth = S3LinkAuth(
-        name="speech", access_key="minioadmin", secret="minioadmin", region="local"
-    )
+    _auth = S3LinkAuth(name="speech", access_key="minioadmin", secret="minioadmin")
     _addr = "10.131.0.1:9000"
     _bucket = "users"
 

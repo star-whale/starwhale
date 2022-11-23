@@ -1,7 +1,6 @@
 import json
-from typing import Any, List
+import typing as t
 
-from starwhale import URI, URIType
 from starwhale.core.eval.view import JobTermView
 
 from . import CLI
@@ -14,7 +13,7 @@ class Evaluation:
     def run(
         self,
         model: str,
-        datasets: List[str],
+        datasets: t.List[str],
         project: str = "self",
         version: str = "",
         runtime: str = "",
@@ -60,7 +59,7 @@ class Evaluation:
             task_index=task_index,
         )
 
-    def info(self, version: str) -> Any:
+    def info(self, version: str) -> t.Any:
         """
         :param version:
         :return:
@@ -224,7 +223,7 @@ class Evaluation:
         show_removed: bool = False,
         page: int = 1,
         size: int = 20,
-    ) -> Any:
+    ) -> t.Any:
         """
 
         :param project:
@@ -279,7 +278,7 @@ class Evaluation:
     def cancel(self, uri: str, force: bool = False) -> bool:
         return self._operate("cancel", uri=uri, force=force)
 
-    def compare(self, base_uri: str, compare_uri: str) -> Any:
+    def compare(self, base_uri: str, compare_uri: str) -> t.Any:
         _ret_code, _res = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
         return _res
 
