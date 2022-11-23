@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "declarationDir": "./dist",
-    "rootDirs": ["."],
+    "rootDirs": ["./src"],
     "composite":true
   },
   "extends": "../../tsconfig.lib.json",
