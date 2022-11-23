@@ -2,7 +2,7 @@ import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { useParseConfusionMatrix } from '@/domain/datastore/hooks/useParseDatastore'
 import React from 'react'
-import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/widget'
+import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
 
 const PlotlyVisualizer = React.lazy(

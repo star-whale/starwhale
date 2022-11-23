@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo } from 'react'
 import log from 'loglevel'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import EditorContextProvider from './context/EditorContextProvider'
-import { registerWidgets } from './Widget/WidgetFactoryRegister'
-import WidgetFactory from './Widget/WidgetFactory'
-import { generateId } from './utils/generators'
-import { createCustomStore, WidgetTreeNode } from './context/store'
-import WidgetRenderTree from './Widget/WidgetRenderTree'
-import { EventBusSrv } from './events/events'
+import EditorContextProvider from '@starwhale/core/context/EditorContextProvider'
+import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
+import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
+import { createCustomStore, WidgetTreeNode } from '@starwhale/core/store'
+import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
+import { EventBusSrv } from '@starwhale/core/events'
 
 // log.enableAll()
 registerWidgets()
@@ -58,14 +56,9 @@ const initialState = {
             children: [
                 {
                     type: 'ui:section',
-                    // children: [],
                 },
             ],
         },
-        // {
-        //     type: 'ui:section',
-        //     // children: [],
-        // },
     ],
     widgets: {},
     defaults: {},

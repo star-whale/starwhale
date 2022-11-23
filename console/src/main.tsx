@@ -5,9 +5,6 @@ import '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
 import App from './App'
 
-import a from '@starwhale/ui/'
-import a from '@user/'
-
 // eslint-disable-next-line
 // @ts-ignore
 window.g = null
