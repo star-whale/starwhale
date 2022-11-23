@@ -36,7 +36,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
     const { columnTypes = [], records = [] } = data
 
     const columns = React.useMemo(() => {
-        return columnTypes.map((column: any) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []
+        return columnTypes.map((column: any) => column.name)?.sort((a: string) => (a === 'id' ? -1 : 1)) ?? []
     }, [columnTypes])
 
     const $data = React.useMemo(() => {
@@ -44,7 +44,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
 
         return (
             records.map((item: any) => {
-                return columns.map((k) => item?.[k])
+                return columns.map((k: string) => item?.[k])
             }) ?? []
         )
     }, [records, columns])

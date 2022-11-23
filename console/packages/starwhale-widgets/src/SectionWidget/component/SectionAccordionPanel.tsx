@@ -14,14 +14,19 @@ const Header = React.forwardRef((props, ref) => {
     const { $expanded, children, onClick, onPanelAdd } = props as any
 
     const actions = {
+        // @ts-ignore
         rename: props.onSectionRename,
+        // @ts-ignore
         addAbove: props.onSectionAddAbove,
+        // @ts-ignore
         addBelow: props.onSectionAddBelow,
+        // @ts-ignore
         delete: props.onSectionDelete,
     }
 
     return (
         <div
+            // @ts-ignore
             ref={ref}
             style={{
                 height: '48px',
@@ -60,8 +65,9 @@ const Header = React.forwardRef((props, ref) => {
             </Button>
             <div style={{ flex: 1 }} />
             <SectionPopover
-                onOptionSelect={(item) => {
-                    console.log(item)
+                // // @ts-ignore
+                onOptionSelect={(item: any) => {
+                    // @ts-ignore
                     actions[item.type]?.()
                 }}
             />

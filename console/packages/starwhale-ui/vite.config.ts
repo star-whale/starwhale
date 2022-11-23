@@ -1,9 +1,12 @@
+// @ts-nocheck
+
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
 import eslint from 'vite-plugin-eslint'
+import dts from 'vite-plugin-dts'
+import { alias } from '../../vite.config'
 
-// https://vitejs.dev/config/
 export default defineConfig({
     define: {
         'process.env.NODE_ENV': `"${process.env.NODE_ENV}"`,
@@ -18,13 +21,14 @@ export default defineConfig({
         },
     },
     resolve: {
-        alias: {
-            '@starwhale/ui': path.resolve(__dirname, '../starwhale-ui/src'),
-            '@starwhale/core': path.resolve(__dirname, '../starwhale-core/src'),
-            '@starwhale/widgets': path.resolve(__dirname, '../starwhale-widgets/src'),
-        },
+        alias,
     },
-    plugins: [eslint(), react()],
+    plugins: [
+        // eslint(),
+        react({
+            exclude: /\.stories\.(t|j)sx?$/,
+        }),
+    ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
     },

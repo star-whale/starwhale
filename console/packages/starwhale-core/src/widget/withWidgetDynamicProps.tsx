@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect } from 'react'
 import { useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
-import useSelector, { getWidget, getWidgetDefaults } from '../store/hooks/useSelector'
-import BaseWidget from './BaseWidget'
+import useSelector, { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
-import { WidgetRendererProps, WidgetRendererType } from '../types'
+import { WidgetRendererType } from '../types'
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
     function WrapedPropsWidget(props: any) {

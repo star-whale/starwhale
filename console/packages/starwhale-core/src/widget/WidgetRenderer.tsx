@@ -62,11 +62,13 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
                 // height={height}
                 // renderCounter={0}
                 // replaceVariables={(str: string) => str}
+                // @ts-ignore
                 defaults={widget.defaults ?? {}}
                 optionConfig={optionsWithDefaults}
                 onOptionChange={onOptionChange}
                 //
                 fieldConfig={fieldsWithDefaults}
+                // @ts-ignore
                 onFieldChange={onFieldChange}
                 //
                 onLayoutOrderChange={onLayoutOrderChange}

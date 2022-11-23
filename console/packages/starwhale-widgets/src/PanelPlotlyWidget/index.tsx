@@ -14,7 +14,7 @@ function PanelTableWidget(props: WidgetRendererProps) {
     const { columnTypes, records } = data
 
     const columns = React.useMemo(() => {
-        return columnTypes?.map((column: any) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []
+        return columnTypes?.map((column: any) => column.name)?.sort((a: string) => (a === 'id' ? -1 : 1)) ?? []
     }, [columnTypes])
 
     const panelData = React.useMemo(() => {

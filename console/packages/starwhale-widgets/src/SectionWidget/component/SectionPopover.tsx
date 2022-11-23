@@ -10,6 +10,7 @@ const COLUMN_OPTIONS = [
     { label: 'Delete', type: 'delete' },
 ]
 
+// @ts-ignore
 export default function SectionPopover({ onOptionSelect }) {
     return (
         <StatefulPopover

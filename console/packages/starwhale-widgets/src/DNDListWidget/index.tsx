@@ -12,6 +12,8 @@ export const CONFIG: WidgetConfig = {
 
 function DNDListWidget(props: WidgetRendererProps) {
     console.log('DNDListWidget', props)
+
+    // @ts-ignore
     const { onOrderChange, onOptionChange, onChildrenAdd, eventBus, children, ...rest } = props
     // if (rest.children?.length === 0 || 1)
     //     return (
@@ -37,6 +39,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                     onClick={() =>
                         eventBus.publish(
                             new SectionAddEvent({
+                                // @ts-ignore
                                 path: props.path,
                                 // @FIXME type const shouldn't be here
                                 type: 'ui:section',

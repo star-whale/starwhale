@@ -13,7 +13,7 @@ export default function WidgetFormModel({
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen,
-}) {
+}: any) {
     // @FIXME use event bus handle global state
     const [t] = useTranslation()
     const config = store(getWidget(editWidgetId)) ?? {}
@@ -21,7 +21,9 @@ export default function WidgetFormModel({
 
     const handleFormChange = (formData: any) => setFormData(formData)
 
+    // @ts-ignore
     const type = formData?.chartType
+    // @ts-ignore
     const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
     const filter = undefined
     const PAGE_TABLE_SIZE = 100
@@ -92,7 +94,6 @@ export default function WidgetFormModel({
                     {!type && 'Select a metric to visalize in this chart'}
                     {type && (
                         <div
-                            key={i}
                             style={{
                                 width: '100%',
                                 height: '100%',
@@ -104,6 +105,7 @@ export default function WidgetFormModel({
                                 position: 'relative',
                             }}
                         >
+                            {/* @ts-ignore */}
                             <WidgetRenderer type={type} data={info.data} />
                         </div>
                     )}
@@ -133,6 +135,7 @@ export default function WidgetFormModel({
                     <Button
                         size='compact'
                         onClick={() => {
+                            // @ts-ignore
                             formRef.current?.submit()
                             // setisPanelModalOpen(false)
                         }}

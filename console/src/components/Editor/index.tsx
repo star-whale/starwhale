@@ -31,6 +31,7 @@ export function witEditorContext(EditorApp: React.FC, rawState: typeof initialSt
     return function EditorContexted(props: any) {
         const state = useMemo(() => tranformState(rawState), [])
         const value = useMemo(() => {
+            // @ts-ignore
             const store = createCustomStore(state)
             const eventBus = new EventBusSrv()
             log.debug('store', state)
@@ -69,6 +70,7 @@ const tranformState = (state: typeof initialState) => {
 
     function walk(nodes: WidgetTreeNode[]) {
         return nodes.map((node: WidgetTreeNode) => {
+            // @ts-ignore
             if (node.children) node.children = walk(node.children)
             const widgetConfig = WidgetFactory.newWidget(node.type)
             if (widgetConfig) {

@@ -1,4 +1,4 @@
-import Widgets from '@/components/RJSF/widgets'
+import Widgets from '@starwhale/ui/form/widgets'
 import Form from '@rjsf/core'
 import { RegistryWidgetsType, RJSFSchema, UiSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
@@ -21,11 +21,12 @@ const uiSchema: UiSchema = {
     },
 }
 
-function WidgetForm({ formData, onChange, onSubmit }, ref) {
+// @ts-ignore
+function WidgetForm({ formData, onChange, onSubmit }: any, ref: any) {
     // 'starwhale', '90138e6fde2a480888531526b7b65dfe'
     const { project } = useProject()
     const { job } = useJob()
-    const { tables = [] } = useDatastoreTables(project?.name, job?.uuid)
+    const { tables = [] } = useDatastoreTables(project?.name as string, job?.uuid as string)
 
     const panels = WidgetFactory.getPanels()
     if (panels.length === 0) return <></>
@@ -68,6 +69,7 @@ function WidgetForm({ formData, onChange, onSubmit }, ref) {
                         title: v.name,
                     })) ?? [],
             },
+            // @ts-ignore
             tableName: tables.length === 0 ? undefined : tableNameSchema,
             chartTitle: {
                 type: 'string',
@@ -86,6 +88,7 @@ function WidgetForm({ formData, onChange, onSubmit }, ref) {
             formData={formData}
             validator={validator}
             onSubmit={onSubmit}
+            // @ts-ignore
             ref={(form) => (ref.current = form)}
             onChange={(e) => onChange?.(e.formData)}
         />

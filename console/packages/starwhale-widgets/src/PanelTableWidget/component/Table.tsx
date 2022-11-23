@@ -1,6 +1,7 @@
 import Table from '@/components/Table'
 import React from 'react'
 
+// @ts-ignore
 export default function PanelTable({ columns, data }) {
     return (
         <Table

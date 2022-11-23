@@ -8,6 +8,7 @@ import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import { PanelAddEvent, PanelEditEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
+import IconFont from '@starwhale/ui/IconFont'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -42,8 +43,11 @@ export const CONFIG: WidgetConfig = {
 
 type Option = typeof CONFIG['optionConfig']
 
+// @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { optionConfig, children, eventBus, type } = props
+
+    // @ts-ignore
     const { title = '', isExpaned = false, gridLayoutConfig, gridLayout } = optionConfig as Option
 
     const len = React.Children.count(children)
@@ -91,6 +95,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     // @FIXME abatract events
                     eventBus.publish(
                         new PanelAddEvent({
+                            // @ts-ignore
                             path: props.path,
                         })
                     )
@@ -118,6 +123,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     containerPadding={[20, 0]}
                     margin={[20, 20]}
                 >
+                    {/* @ts-ignore */}
                     {React.Children.map(children, (child: React.ReactChild, i: number) => (
                         <div
                             key={i}
@@ -142,6 +148,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                             >
                                 <Button
                                     // @FIXME direct used child props here ?
+                                    // @ts-ignore
                                     onClick={() => handleEditPanel(child.props.id)}
                                     size='compact'
                                     kind='secondary'
@@ -184,6 +191,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     )
 }
 
+// @ts-ignore
 const widget = new WidgetPlugin<Option>(SectionWidget, CONFIG)
 
 export default widget

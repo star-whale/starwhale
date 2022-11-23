@@ -23,6 +23,7 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
                 childWidgets.length > 0 &&
                 childWidgets.map(({ children: childChildren, ...childRest }, i) => (
                     <WrapedWidgetNode
+                        // @ts-ignore
                         key={[...path, 'children', i]}
                         path={[...path, 'children', i]}
                         childWidgets={childChildren}
@@ -44,6 +45,7 @@ export function WidgetRenderTree() {
     const { store, eventBus } = useEditorContext()
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
+    // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
     // const key = job?.modelName ? `modelName-${job?.modelName}` : ''
@@ -55,6 +57,7 @@ export function WidgetRenderTree() {
     //     console.log(evt)
     // })
 
+    // @ts-ignore
     const handleAddSection = ({ path, type }) => {
         api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
             type,
@@ -163,6 +166,7 @@ export function WidgetRenderTree() {
                 setIsShow={setisPanelModalOpen}
                 store={store}
                 handleFormSubmit={({ formData }: any) => {
+                    // @ts-ignore
                     actions[editWidget.type]?.(formData)
                     setisPanelModalOpen(false)
                 }}
