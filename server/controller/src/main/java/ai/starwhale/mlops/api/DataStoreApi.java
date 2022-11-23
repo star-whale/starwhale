@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.datastore.FlushRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
@@ -42,6 +43,10 @@ public interface DataStoreApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> updateTable(
             @Valid @RequestBody UpdateTableRequest request);
+
+    @PostMapping(value = "/datastore/flush")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> flush(FlushRequest request);
 
     @PostMapping(value = "/datastore/queryTable")
     @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")

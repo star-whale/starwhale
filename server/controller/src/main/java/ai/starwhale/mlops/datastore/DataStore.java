@@ -145,6 +145,10 @@ public class DataStore {
         }
     }
 
+    public void flush() {
+        this.walManager.flush();
+    }
+
     public RecordList query(DataStoreQueryRequest req) {
         var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {

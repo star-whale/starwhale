@@ -33,14 +33,12 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -738,30 +736,6 @@ public class DataStoreTest {
                     is(IntStream.range(0, 1000)
                             .mapToObj(k -> Map.of("k", String.format("%04d", k)))
                             .collect(Collectors.toList())));
-        }
-    }
-
-    private abstract static class TestThread extends Thread {
-
-        protected final Random random = new Random();
-        protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
-        private Throwable throwable;
-
-        public void run() {
-            try {
-                this.execute();
-            } catch (Throwable t) {
-                t.printStackTrace();
-                this.throwable = t;
-            }
-        }
-
-        abstract void execute() throws Exception;
-
-        public void checkException() throws Throwable {
-            if (this.throwable != null) {
-                throw this.throwable;
-            }
         }
     }
 
