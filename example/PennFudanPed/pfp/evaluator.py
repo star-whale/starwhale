@@ -21,14 +21,20 @@ class MaskRCnn(PipelineHandler):
         super().__init__()
 
     @torch.no_grad()
-    def ppl(self, img: Image, index: str, **kw):
-        index = index.split("_")[-1]
+    def ppl(self, img: Image, index: t.Union[int, str], **kw):
+        if isinstance(index, str) and "_" in index and index.startswith("dataset-"):
+            # v0.3.2 SDK index contains dataset name-version prefix, such as: 'dataset-pfp-small-d2zbajpbvotc7g7qwbev7lhqwvvu4k33qj5pehkf_PNGImages/FudanPed00001.png'
+            # other versions index is the origin data row index
+            index = index.split("_")[-1]
+
         _img = PILImage.open(io.BytesIO(img.to_bytes())).convert("RGB")
         _tensor = functional.to_tensor(_img).to(self.device)
         output = self.model(torch.stack([_tensor]))
         return index, self._post(index, output[0])
 
-    def _post(self, index: str, pred: t.Dict[str, torch.Tensor]) -> t.Dict[str, t.Any]:
+    def _post(
+        self, index: t.Union[int, str], pred: t.Dict[str, torch.Tensor]
+    ) -> t.Dict[str, t.Any]:
         output = {}
         pred = {k: v.cpu() for k, v in pred.items()}
         for typ in self.iou_types:
