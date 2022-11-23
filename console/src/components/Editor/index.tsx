@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo } from 'react'
+/* eslint-disable */
+
+import React, { useMemo } from 'react'
 import log from 'loglevel'
 import EditorContextProvider from '@starwhale/core/context/EditorContextProvider'
 import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
@@ -29,6 +31,7 @@ export function withEditorRegister(EditorApp: React.FC) {
 
 export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
     return function EditorContexted(props: any) {
+        // @eslint-disable-next-line typescript-eslint/no-use-before-define
         const state = useMemo(() => tranformState(rawState), [])
         const value = useMemo(() => {
             // @ts-ignore
@@ -79,6 +82,7 @@ const tranformState = (state: typeof initialState) => {
                 return { ...node, ...widgetConfig.node }
             }
             console.log('Init state missing widget', node.type)
+            return
         })
     }
     const newTree = walk(Object.assign([], state.tree) as WidgetTreeNode[])
