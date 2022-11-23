@@ -45,13 +45,12 @@ public interface MemoryTable {
             boolean keepNone,
             boolean rawResult);
 
-    List<RecordResult> scan(
+    Iterator<RecordResult> scan(
             Map<String, String> columns,
             String start,
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            int limit,
             boolean keepNone);
 
     void lock();

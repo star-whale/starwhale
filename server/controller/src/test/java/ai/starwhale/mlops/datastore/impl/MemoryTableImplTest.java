@@ -60,13 +60,13 @@ public class MemoryTableImplTest {
     private static List<MemoryTable.RecordResult> scanAll(MemoryTable memoryTable,
             List<String> columns,
             boolean keepNone) {
-        return memoryTable.scan(columns.stream().collect(Collectors.toMap(Function.identity(), Function.identity())),
-                null,
-                true,
-                null,
-                false,
-                1000,
-                keepNone);
+        return ImmutableList.copyOf(
+                memoryTable.scan(columns.stream().collect(Collectors.toMap(Function.identity(), Function.identity())),
+                        null,
+                        true,
+                        null,
+                        false,
+                        keepNone));
     }
 
     private WalManager walManager;
@@ -2098,8 +2098,8 @@ public class MemoryTableImplTest {
         @Test
         public void testScanInitialEmptyTable() {
             this.memoryTable = createInstance("test");
-            var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, 1000, false);
-            assertThat("empty", results, empty());
+            var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, false);
+            assertThat("empty", ImmutableList.copyOf(results), empty());
         }
 
         @Test
@@ -2108,14 +2108,14 @@ public class MemoryTableImplTest {
             this.memoryTable.update(
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));
-            var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, 1000, false);
-            assertThat("empty", results, empty());
+            var results = this.memoryTable.scan(Map.of("a", "a"), null, false, null, false, false);
+            assertThat("empty", ImmutableList.copyOf(results), empty());
         }
 
         @Test
         public void testScanColumnAliases() {
-            var results = this.memoryTable.scan(Map.of("a", "x", "d", "y"), null, false, null, false, 1000, false);
-            assertThat(results,
+            assertThat(ImmutableList.copyOf(
+                            this.memoryTable.scan(Map.of("a", "x", "d", "y"), null, false, null, false, false)),
                     is(List.of(new MemoryTable.RecordResult(0, Map.of("y", 2)),
                             new MemoryTable.RecordResult(1, Map.of("x", false, "y", 3)),
                             new MemoryTable.RecordResult(2, Map.of("x", true, "y", 4)),
@@ -2144,23 +2144,23 @@ public class MemoryTableImplTest {
                     true,
                     "1",
                     true,
-                    -1,
                     false);
-            assertThat(results, is(List.of(new MemoryTable.RecordResult(1, Map.of("key", 1, "x", List.of(10))))));
+            assertThat(ImmutableList.copyOf(results),
+                    is(List.of(new MemoryTable.RecordResult(1, Map.of("key", 1, "x", List.of(10))))));
         }
 
 
         @Test
         public void testScanStartEnd() {
             assertThat("start,non-inclusive",
-                    this.memoryTable.scan(Map.of("d", "d"), "5", false, null, false, 1000, false),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), "5", false, null, false, false)),
                     is(List.of(new MemoryTable.RecordResult(6, Map.of("d", 8)),
                             new MemoryTable.RecordResult(7, Map.of()),
                             new MemoryTable.RecordResult(8, Map.of("d", 0)),
                             new MemoryTable.RecordResult(9, Map.of("d", 1)))));
 
             assertThat("start,inclusive",
-                    this.memoryTable.scan(Map.of("d", "d"), "5", true, null, false, 1000, false),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), "5", true, null, false, false)),
                     is(List.of(new MemoryTable.RecordResult(5, Map.of("d", 7)),
                             new MemoryTable.RecordResult(6, Map.of("d", 8)),
                             new MemoryTable.RecordResult(7, Map.of()),
@@ -2168,7 +2168,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(9, Map.of("d", 1)))));
 
             assertThat("end,non-inclusive",
-                    this.memoryTable.scan(Map.of("d", "d"), null, false, "5", false, 1000, false),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), null, false, "5", false, false)),
                     is(List.of(new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("d", 3)),
                             new MemoryTable.RecordResult(2, Map.of("d", 4)),
@@ -2176,7 +2176,7 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(4, Map.of("d", 6)))));
 
             assertThat("end,inclusive",
-                    this.memoryTable.scan(Map.of("d", "d"), null, false, "5", true, 1000, false),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), null, false, "5", true, false)),
                     is(List.of(new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("d", 3)),
                             new MemoryTable.RecordResult(2, Map.of("d", 4)),
@@ -2185,24 +2185,16 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(5, Map.of("d", 7)))));
 
             assertThat("start+end",
-                    this.memoryTable.scan(Map.of("d", "d"), "2", true, "5", false, 1000, false),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), "2", true, "5", false, false)),
                     is(List.of(new MemoryTable.RecordResult(2, Map.of("d", 4)),
                             new MemoryTable.RecordResult(3, Map.of("d", 5)),
                             new MemoryTable.RecordResult(4, Map.of("d", 6)))));
         }
 
         @Test
-        public void testScanLimit() {
-            assertThat("test",
-                    this.memoryTable.scan(Map.of("d", "d"), null, false, null, false, 2, true),
-                    is(List.of(new MemoryTable.RecordResult(0, Map.of("d", 2)),
-                            new MemoryTable.RecordResult(1, Map.of("d", 3)))));
-        }
-
-        @Test
         public void testScanKeepNone() {
             assertThat("test",
-                    this.memoryTable.scan(Map.of("d", "d"), null, false, null, false, 1000, true),
+                    ImmutableList.copyOf(this.memoryTable.scan(Map.of("d", "d"), null, false, null, false, true)),
                     is(List.of(new MemoryTable.RecordResult(0, Map.of("d", 2)),
                             new MemoryTable.RecordResult(1, Map.of("d", 3)),
                             new MemoryTable.RecordResult(2, Map.of("d", 4)),
@@ -2221,7 +2213,8 @@ public class MemoryTableImplTest {
 
         @Test
         public void testScanUnknown() {
-            assertThat(this.memoryTable.scan(Map.of("z", "z"), null, false, null, false, 1000, false),
+            assertThat(ImmutableList.copyOf(
+                            this.memoryTable.scan(Map.of("z", "z"), null, false, null, false, false)),
                     is(List.of(new MemoryTable.RecordResult(0, Map.of()),
                             new MemoryTable.RecordResult(1, Map.of()),
                             new MemoryTable.RecordResult(2, Map.of()),
