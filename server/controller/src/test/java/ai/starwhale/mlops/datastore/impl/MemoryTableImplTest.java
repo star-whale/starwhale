@@ -74,7 +74,7 @@ public class MemoryTableImplTest {
     @BeforeEach
     public void setUp() throws IOException {
         this.storageAccessService = new StorageAccessServiceMemory();
-        this.walManager = new WalManager(this.storageAccessService, 256, 4096, "wal/", 10, 3);
+        this.walManager = new WalManager(this.storageAccessService, 256, 4096, "wal/", 3);
     }
 
     @AfterEach
@@ -518,7 +518,6 @@ public class MemoryTableImplTest {
                     256,
                     4096,
                     "wal/",
-                    10,
                     3);
             this.memoryTable = createInstance("test");
             var it = MemoryTableImplTest.this.walManager.readAll();
