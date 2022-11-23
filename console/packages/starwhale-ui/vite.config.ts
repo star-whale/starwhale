@@ -18,7 +18,11 @@ export default defineConfig({
         },
     },
     resolve: {
-        // alias: { '@starwhale': path.resolve(__dirname, './src/domain/user'),},
+        alias: {
+            '@starwhale/ui': path.resolve(__dirname, '../starwhale-ui/src'),
+            '@starwhale/core': path.resolve(__dirname, '../starwhale-core/src'),
+            '@starwhale/widgets': path.resolve(__dirname, '../starwhale-widgets/src'),
+        },
     },
     plugins: [eslint(), react()],
     esbuild: {

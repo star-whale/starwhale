@@ -1,14 +1,9 @@
 {
+  "extends": "../../tsconfig",
   "compilerOptions": {
-    "baseUrl": "./",
-    "declarationDir": "./dist",
-    "rootDirs": ["./src"],
-    "composite":true
+    "skipLibCheck": true
   },
-  "extends": "../../tsconfig.lib.json",
-  "exclude": ["dist/**/*"],
   "include": [
     "src/**/*.ts*"
   ]
 }
-

@@ -15,7 +15,9 @@
       "@base/*": ["src/domain/base/*"],
       "@starwhale/ui": ["./packages/starwhale-ui/src"],
       "@starwhale/ui/*": ["./packages/starwhale-ui/src/*"],
+      "@starwhale/core": ["./packages/starwhale-core/src"],
       "@starwhale/core/*": ["./packages/starwhale-core/src/*"],
+      "@starwhale/widgets": ["./packages/starwhale-widgets/src"],
       "@starwhale/widgets/*": ["./packages/starwhale-widgets/src/*"],
     }
   }

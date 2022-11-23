@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import WidgetFactory, { WidgetConfig } from './WidgetFactory'
+import WidgetFactory from './WidgetFactory'
 import WidgetPlugin from './WidgetPlugin'
-
-import DNDListWidget from '../widgets/DNDListWidget'
-import SectionWidget from '../widgets/SectionWidget'
-import PanelTableWidget from '../widgets/PanelTableWidget'
-import PanelRocAucWidget from '../widgets/PanelRocAucWidget'
-import PanelHeatmapWidget from '../widgets/PanelHeatmapWidget'
+import DNDListWidget from '@starwhale/widgets/DNDListWidget'
+import SectionWidget from '@starwhale/widgets/SectionWidget'
+import PanelTableWidget from '@starwhale/widgets/PanelTableWidget'
+import PanelRocAucWidget from '@starwhale/widgets/PanelRocAucWidget'
+import PanelHeatmapWidget from '@starwhale/widgets/PanelHeatmapWidget'
+import { WidgetConfig } from '../types'
 
 export function useWidget(widgetType: string) {
     const [widget, setWidget] = useState<WidgetPlugin | undefined>(WidgetFactory.widgetMap.get(widgetType))

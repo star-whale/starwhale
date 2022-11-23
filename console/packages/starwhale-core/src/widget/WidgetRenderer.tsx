@@ -94,3 +94,5 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
 // export function setPanelRenderer(renderer: WidgetRendererType) {
 //     PanelRenderer = renderer
 // }
+
+export default WidgetRenderer

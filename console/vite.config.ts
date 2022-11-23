@@ -5,6 +5,19 @@ import eslint from 'vite-plugin-eslint'
 
 // import mpa from '../../vite-plugin-mpa'
 // import { visualizer } from 'rollup-plugin-visualizer'
+export const alias = {
+    '@': path.resolve(__dirname, './src'),
+    '@user': path.resolve(__dirname, './src/domain/user'),
+    '@project': path.resolve(__dirname, './src/domain/project'),
+    '@model': path.resolve(__dirname, './src/domain/model'),
+    '@job': path.resolve(__dirname, './src/domain/job'),
+    '@dataset': path.resolve(__dirname, './src/domain/dataset'),
+    '@runtime': path.resolve(__dirname, './src/domain/runtime'),
+    '@base': path.resolve(__dirname, './src/domain/base'),
+    '@starwhale/ui': path.resolve(__dirname, '../starwhale-ui/src'),
+    '@starwhale/core': path.resolve(__dirname, '../starwhale-core/src'),
+    '@starwhale/widgets': path.resolve(__dirname, '../starwhale-widgets/src'),
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -33,18 +46,7 @@ export default defineConfig({
         manifest: true,
         // minify: true,
     },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
-            '@user': path.resolve(__dirname, './src/domain/user'),
-            '@project': path.resolve(__dirname, './src/domain/project'),
-            '@model': path.resolve(__dirname, './src/domain/model'),
-            '@job': path.resolve(__dirname, './src/domain/job'),
-            '@dataset': path.resolve(__dirname, './src/domain/dataset'),
-            '@runtime': path.resolve(__dirname, './src/domain/runtime'),
-            '@base': path.resolve(__dirname, './src/domain/base'),
-        },
-    },
+    resolve: { alias },
     plugins: [
         // eslint(),
         react({

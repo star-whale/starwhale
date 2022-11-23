@@ -5,11 +5,9 @@ import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import produce from 'immer'
 import { arrayMove, arrayRemove } from 'react-movable'
 import _ from 'lodash'
-import WidgetFactory from '../widget/WidgetFactory'
+import WidgetFactory, { WidgetType } from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
 import { WidgetConfig } from '../types'
-
-export type WidgetType = string
 
 export type LayoutWidget = ''
 export type WidgetLayoutType = {
