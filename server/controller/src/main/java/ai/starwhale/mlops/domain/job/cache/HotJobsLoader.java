@@ -61,7 +61,7 @@ public class HotJobsLoader implements CommandLineRunner {
      * load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem CREATED job has no steps yet, so it will
      * not be loaded here
      *
-     * @return tasks of jobs that are notFINISHED/ERROR/CANCELED/CREATED/PAUSED
+     * @return tasks of jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED
      */
     private List<JobEntity> hotJobsFromDb() {
         List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
@@ -74,7 +74,12 @@ public class HotJobsLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         hotJobsFromDb().forEach(jobEntity -> {
-            jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+            try {
+                jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+            } catch (Exception e) {
+                log.error("loading hotting job failed {}", jobEntity.getId(), e);
+                jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+            }
         });
         log.info("hot jobs loaded");
     }
