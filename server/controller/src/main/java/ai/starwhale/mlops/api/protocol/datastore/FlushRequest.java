@@ -16,14 +16,9 @@
 
 package ai.starwhale.mlops.api.protocol.datastore;
 
-import java.util.List;
 import lombok.Data;
 
 @Data
-public class TableDesc {
+public class FlushRequest {
 
-    private String tableName;
-    private String columnPrefix;
-    private List<ColumnDesc> columns;
-    private boolean keepNone;
 }

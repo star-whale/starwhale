@@ -66,7 +66,6 @@ public class DataStoreControllerTest {
                 new DataStore(new StorageAccessServiceMemory(),
                         65536,
                         65536,
-                        10000,
                         3,
                         "",
                         "1h",
@@ -1217,6 +1216,20 @@ public class DataStoreControllerTest {
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "1", "b", "1", "a", "16"))));
+            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
+
+            this.req.getTables().get(0).setColumnPrefix("x");
+            resp = DataStoreControllerTest.this.controller.scanTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("xb").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("xa").type("INT32").build()));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(Map.of("xa", "4", "xb", "1", "k", "1", "a", "16"))));
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
         }
 

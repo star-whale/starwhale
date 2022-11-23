@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.MemoryTable.RecordResult;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -29,8 +30,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,7 +66,6 @@ public class DataStore {
     public DataStore(StorageAccessService storageAccessService,
             @Value("${sw.datastore.walFileSize}") int walFileSize,
             @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
             @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts,
             @Value("${sw.datastore.dataRootPath:}") String dataRootPath,
             @Value("${sw.datastore.dumpInterval:1h}") String dumpInterval,
@@ -81,7 +83,6 @@ public class DataStore {
                 walFileSize,
                 walMaxFileSize,
                 dataRootPath + "wal/",
-                walWaitIntervalMillis,
                 ossMaxAttempts);
         this.parquetConfig = new ParquetConfig();
         this.parquetConfig.setCompressionCodec(CompressionCodec.valueOf(compressionCodec));
@@ -144,6 +145,10 @@ public class DataStore {
         }
     }
 
+    public void flush() {
+        this.walManager.flush();
+    }
+
     public RecordList query(DataStoreQueryRequest req) {
         var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {
@@ -151,17 +156,31 @@ public class DataStore {
         }
         table.lock();
         try {
+            int skipCount = req.getStart();
+            if (skipCount < 0) {
+                skipCount = 0;
+            }
+            int limitCount = req.getLimit();
+            if (limitCount < 0) {
+                limitCount = Integer.MAX_VALUE;
+            }
             var schema = table.getSchema();
             var columns = this.getColumnAliases(schema, req.getColumns());
-            var columnTypeMap = schema.getColumnTypeMapping(columns);
-            var results = table.query(
+            var results = new ArrayList<RecordResult>();
+            var iterator = table.query(
                     columns,
                     req.getOrderBy(),
                     req.getFilter(),
-                    req.getStart(),
-                    req.getLimit(),
                     req.isKeepNone(),
                     req.isRawResult());
+            while (iterator.hasNext() && skipCount > 0) {
+                iterator.next();
+                --skipCount;
+            }
+            while (iterator.hasNext() && limitCount > 0) {
+                results.add(iterator.next());
+                --limitCount;
+            }
             String lastKey;
             if (results.isEmpty()) {
                 lastKey = null;
@@ -170,6 +189,7 @@ public class DataStore {
                         results.get(results.size() - 1).getKey(),
                         req.isRawResult());
             }
+            var columnTypeMap = schema.getColumnTypeMapping(columns);
             var records = results.stream()
                     .map(r -> DataStore.encodeRecord(columnTypeMap, r.getValues(), req.isRawResult()))
                     .collect(Collectors.toList());
@@ -221,6 +241,11 @@ public class DataStore {
                 }
                 ret.schema = ret.table.getSchema();
                 ret.columns = this.getColumnAliases(ret.schema, info.getColumns());
+                if (info.getColumnPrefix() != null) {
+                    ret.columns = ret.columns.entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey,
+                                    entry -> info.getColumnPrefix() + entry.getValue()));
+                }
                 ret.columnTypeMap = ret.schema.getColumnTypeMapping(ret.columns);
                 ret.keepNone = info.isKeepNone();
                 return ret;
@@ -269,30 +294,22 @@ public class DataStore {
             class TableRecords {
 
                 TableMeta meta;
-                List<MemoryTable.RecordResult> records;
-                int index;
-
-                public MemoryTable.RecordResult getRecord() {
-                    return this.records.get(this.index);
-                }
-
-                public Object getKey() {
-                    return this.getRecord().getKey();
-                }
+                Iterator<RecordResult> iterator;
+                RecordResult record;
             }
 
             var records = new ArrayList<TableRecords>();
             for (var table : tables) {
                 var r = new TableRecords();
                 r.meta = table;
-                r.records = table.table.scan(table.columns,
+                r.iterator = table.table.scan(table.columns,
                         req.getStart(),
                         req.isStartInclusive(),
                         req.getEnd(),
                         req.isEndInclusive(),
-                        limit,
                         table.keepNone);
-                if (!r.records.isEmpty()) {
+                if (r.iterator.hasNext()) {
+                    r.record = r.iterator.next();
                     records.add(r);
                 }
             }
@@ -301,24 +318,28 @@ public class DataStore {
             List<Map<String, Object>> ret = new ArrayList<>();
             while (!records.isEmpty() && ret.size() < limit) {
                 lastKey = Collections.min(records, (a, b) -> {
-                    @SuppressWarnings("rawtypes") var x = (Comparable) a.getKey();
-                    @SuppressWarnings("rawtypes") var y = (Comparable) b.getKey();
+                    @SuppressWarnings("rawtypes") var x = (Comparable) a.record.key;
+                    @SuppressWarnings("rawtypes") var y = (Comparable) b.record.key;
                     //noinspection unchecked
                     return x.compareTo(y);
-                }).getKey();
+                }).record.getKey();
                 var record = new HashMap<String, Object>();
                 for (var r : records) {
-                    if (r.getKey().equals(lastKey)) {
+                    if (r.record.getKey().equals(lastKey)) {
                         record.putAll(
-                                DataStore.encodeRecord(r.meta.columnTypeMap, r.getRecord().values, req.isRawResult()));
-                        ++r.index;
+                                DataStore.encodeRecord(r.meta.columnTypeMap, r.record.values, req.isRawResult()));
+                        if (r.iterator.hasNext()) {
+                            r.record = r.iterator.next();
+                        } else {
+                            r.record = null;
+                        }
                     }
                 }
                 if (!req.isKeepNone()) {
                     record.entrySet().removeIf(x -> x.getValue() == null);
                 }
                 ret.add(record);
-                records.removeIf(r -> r.index == r.records.size());
+                records.removeIf(r -> r.record == null);
             }
             return new RecordList(columnTypeMap, ret, (String) keyColumnType.encode(lastKey, false));
         } finally {

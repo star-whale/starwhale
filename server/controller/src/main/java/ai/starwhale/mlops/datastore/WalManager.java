@@ -45,6 +45,10 @@ import org.xerial.snappy.Snappy;
 @Slf4j
 public class WalManager extends Thread {
 
+    private static final int WAIT_INTERVAL_MILLIS = 1000;
+
+    private static final long FLUSH_ID = -12345;
+
     private final StorageAccessService storageAccessService;
 
     private final int walFileSize;
@@ -54,8 +58,6 @@ public class WalManager extends Thread {
     private final int walMaxFileSizeNoHeader;
 
     private final String logFilePrefix;
-
-    private final int walWaitIntervalMillis;
 
     private final LinkedList<Wal.WalEntry> entriesToWrite = new LinkedList<>();
 
@@ -85,14 +87,13 @@ public class WalManager extends Thread {
             int walFileSize,
             int walMaxFileSize,
             String walPrefix,
-            int walWaitIntervalMillis,
             int ossMaxAttempts) {
         this.storageAccessService = storageAccessService;
         this.walFileSize = walFileSize;
         this.walMaxFileSize = walMaxFileSize;
-        this.walMaxFileSizeNoHeader = this.walMaxFileSize - this.header.length;
+        this.walMaxFileSizeNoHeader =
+                this.walMaxFileSize - this.header.length - 10; // 10 is for possible overhead of SNAPPY
         this.logFilePrefix = walPrefix + "wal.log.";
-        this.walWaitIntervalMillis = walWaitIntervalMillis;
         this.ossMaxAttempts = ossMaxAttempts;
         this.compressedBuffer = new byte[this.walMaxFileSize];
         System.arraycopy(this.header, 0, this.compressedBuffer, 0, this.header.length);
@@ -239,9 +240,30 @@ public class WalManager extends Thread {
             var entry = builder.setId(this.maxEntryId + 1).build();
             if (entry.getSerializedSize() <= this.walMaxFileSizeNoHeader) {
                 this.entriesToWrite.add(entry);
-                return ++this.maxEntryId;
+                ++this.maxEntryId;
             } else {
-                return this.splitEntryAndAppend(entry);
+                this.splitEntryAndAppend(entry);
+            }
+            this.entriesToWrite.notifyAll();
+            return this.maxEntryId;
+        }
+    }
+
+    public void flush() {
+        var entry = Wal.WalEntry.newBuilder().setId(FLUSH_ID).build();
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (entry) {
+            synchronized (this.entriesToWrite) {
+                if (this.terminated) {
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "terminated");
+                }
+                this.entriesToWrite.add(entry);
+                this.entriesToWrite.notifyAll();
+            }
+            try {
+                entry.wait();
+            } catch (InterruptedException e) {
+                log.error("interrupted", e);
             }
         }
     }
@@ -286,14 +308,27 @@ public class WalManager extends Thread {
     @Override
     public void run() {
         for (; ; ) {
+            var flushEntries = new ArrayList<Wal.WalEntry>();
             try {
-                var status = this.populateOutput();
+                var status = this.populateOutput(flushEntries);
                 if (status == PopulationStatus.TERMINATED) {
                     return;
                 }
-                this.writeToStorage(status == PopulationStatus.BUFFER_FULL);
+                if (this.outputStream.size() > 0) {
+                    this.writeToStorage(status == PopulationStatus.BUFFER_FULL);
+                }
+                for (var entry : flushEntries) {
+                    //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                    synchronized (entry) {
+                        entry.notify();
+                    }
+                }
             } catch (Throwable e) {
                 log.error("unexpected exception", e);
+                // put all flush entries back
+                synchronized (this.entriesToWrite) {
+                    this.entriesToWrite.addAll(flushEntries);
+                }
                 try {
                     //noinspection BusyWait
                     Thread.sleep(1000);
@@ -364,11 +399,11 @@ public class WalManager extends Thread {
         NO_MORE_ENTRIES
     }
 
-    private PopulationStatus populateOutput() {
+    private PopulationStatus populateOutput(List<Wal.WalEntry> flushEntries) {
         synchronized (this.entriesToWrite) {
             while (!this.terminated && this.entriesToWrite.isEmpty()) {
                 try {
-                    this.entriesToWrite.wait(this.walWaitIntervalMillis);
+                    this.entriesToWrite.wait(WAIT_INTERVAL_MILLIS);
                 } catch (InterruptedException e) {
                     log.warn("interrupted", e);
                 }
@@ -384,6 +419,13 @@ public class WalManager extends Thread {
                     break;
                 }
                 entry = this.entriesToWrite.getFirst();
+            }
+            if (entry.getId() == FLUSH_ID) {
+                synchronized (this.entriesToWrite) {
+                    this.entriesToWrite.removeFirst();
+                }
+                flushEntries.add(entry);
+                continue;
             }
             if (CodedOutputStream.computeMessageSizeNoTag(entry) + this.outputStream.size()
                     > this.walMaxFileSizeNoHeader) {
@@ -457,7 +499,7 @@ public class WalManager extends Thread {
         }
     }
 
-    private long splitEntryAndAppend(Wal.WalEntry entry) {
+    private void splitEntryAndAppend(Wal.WalEntry entry) {
         List<Wal.WalEntry> entries = new ArrayList<>();
         var builder = Wal.WalEntry.newBuilder()
                 .setId(this.maxEntryId + 1)
@@ -502,6 +544,5 @@ public class WalManager extends Thread {
         }
         this.entriesToWrite.addAll(entries);
         this.maxEntryId += entries.size();
-        return this.maxEntryId;
     }
 }

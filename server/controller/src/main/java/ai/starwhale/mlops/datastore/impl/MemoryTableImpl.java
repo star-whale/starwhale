@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -298,16 +299,14 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public List<RecordResult> query(
+    public Iterator<RecordResult> query(
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            int start,
-            int limit,
             boolean keepNone,
             boolean rawResult) {
         if (this.schema == null) {
-            return Collections.emptyList();
+            return Collections.emptyIterator();
         }
         this.schema.getColumnTypeMapping(columns); // check if all column names are valid
         if (orderBy != null) {
@@ -326,24 +325,10 @@ public class MemoryTableImpl implements MemoryTable {
         if (filter != null) {
             this.checkFilter(filter);
         }
-        List<Map<String, Object>> results = new ArrayList<>();
-        for (var record : this.recordMap.values()) {
-            if (filter == null || this.match(filter, record)) {
-                results.add(record);
-            }
-        }
-        if (start < 0) {
-            start = 0;
-        }
-        if (limit < 0) {
-            limit = results.size();
-        }
-        int end = start + limit;
-        if (end > results.size()) {
-            end = results.size();
-        }
+        var stream = this.recordMap.values().stream()
+                .filter(record -> filter == null || this.match(filter, record));
         if (orderBy != null) {
-            results.sort((a, b) -> {
+            stream = stream.sorted((a, b) -> {
                 for (var col : orderBy) {
                     var columnType = this.schema.getColumnSchemaByName(col.getColumnName()).getType();
                     var result = ColumnType.compare(
@@ -361,78 +346,65 @@ public class MemoryTableImpl implements MemoryTable {
                 return 0;
             });
         }
-
-        return results.subList(start, end).stream().map(record -> {
-            var r = new HashMap<String, Object>();
-            for (var entry : columns.entrySet()) {
-                var key = entry.getKey();
-                if (record.containsKey(key)) {
-                    var value = record.get(entry.getKey());
-                    if (keepNone || value != null) {
-                        r.put(entry.getValue(), value);
-                    }
-                }
-            }
-            return new RecordResult(record.get(this.schema.getKeyColumn()), r);
-        }).collect(Collectors.toList());
+        return stream.map(record -> this.toRecordResult(record, columns, keepNone)).iterator();
     }
 
 
     @Override
-    public List<RecordResult> scan(
+    public Iterator<RecordResult> scan(
             @NonNull Map<String, String> columns,
             String start,
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            int limit,
             boolean keepNone) {
         if (this.schema == null) {
-            return Collections.emptyList();
+            return Collections.emptyIterator();
         }
-        if (this.recordMap.isEmpty() || limit == 0) {
-            return Collections.emptyList();
+        if (this.recordMap.isEmpty()) {
+            return Collections.emptyIterator();
         }
 
-        var startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
-        var endKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(end);
+        var startKey = this.schema.getKeyColumnType().decode(start);
+        var endKey = this.schema.getKeyColumnType().decode(end);
         if (startKey == null) {
-            startKey = MemoryTableImpl.this.recordMap.firstKey();
+            startKey = this.recordMap.firstKey();
             startInclusive = true;
         }
         if (endKey == null) {
-            endKey = MemoryTableImpl.this.recordMap.lastKey();
+            endKey = this.recordMap.lastKey();
             endInclusive = true;
         }
         //noinspection rawtypes,unchecked
         if (((Comparable) startKey).compareTo(endKey) > 0) {
-            return Collections.emptyList();
+            return Collections.emptyIterator();
         }
         var keyColumn = this.schema.getKeyColumn();
-        var records = new ArrayList<RecordResult>();
-        for (var record : MemoryTableImpl.this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive)
-                .values()) {
-            var values = new HashMap<String, Object>();
-            for (var entry : columns.entrySet()) {
-                var columnName = entry.getKey();
-                var alias = entry.getValue();
-                if (record.containsKey(columnName)) {
-                    var value = record.get(columnName);
-                    if (keepNone || value != null) {
-                        values.put(alias, value);
+        var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).values().iterator();
+        return new Iterator<>() {
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public RecordResult next() {
+                var record = iterator.next();
+                var values = new HashMap<String, Object>();
+                for (var entry : columns.entrySet()) {
+                    var columnName = entry.getKey();
+                    var alias = entry.getValue();
+                    if (record.containsKey(columnName)) {
+                        var value = record.get(columnName);
+                        if (keepNone || value != null) {
+                            values.put(alias, value);
+                        }
                     }
                 }
+                return new RecordResult(record.get(keyColumn), values);
             }
-            records.add(new RecordResult(record.get(keyColumn), values));
-            if (records.size() == limit) {
-                break;
-            }
-        }
-        if (records.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            return records;
-        }
+        };
     }
 
     private boolean match(TableQueryFilter filter, Map<String, Object> record) {
@@ -535,6 +507,21 @@ public class MemoryTableImpl implements MemoryTable {
                         MessageFormat.format("invalid filter, can not compare {0} with {1}", type));
             }
         }
+    }
+
+    private RecordResult toRecordResult(Map<String, Object> record, Map<String, String> columnMapping,
+            boolean keepNone) {
+        var r = new HashMap<String, Object>();
+        for (var entry : columnMapping.entrySet()) {
+            var key = entry.getKey();
+            if (record.containsKey(key)) {
+                var value = record.get(entry.getKey());
+                if (keepNone || value != null) {
+                    r.put(entry.getValue(), value);
+                }
+            }
+        }
+        return new RecordResult(record.get(this.schema.getKeyColumn()), r);
     }
 
     private static Map<String, Object> decodeRecord(TableSchema schema, Map<String, Object> record) {

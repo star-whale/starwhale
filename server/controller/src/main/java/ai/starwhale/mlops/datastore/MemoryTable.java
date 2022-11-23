@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.datastore;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -38,21 +39,18 @@ public interface MemoryTable {
         Map<String, Object> values;
     }
 
-    List<RecordResult> query(Map<String, String> columns,
+    Iterator<RecordResult> query(Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            int start,
-            int limit,
             boolean keepNone,
             boolean rawResult);
 
-    List<RecordResult> scan(
+    Iterator<RecordResult> scan(
             Map<String, String> columns,
             String start,
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            int limit,
             boolean keepNone);
 
     void lock();

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.datastore.Wal.WalEntry.Type;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -41,6 +42,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -62,7 +64,7 @@ public class WalManagerTest {
     }
 
     private void createInstance() {
-        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 10, 3);
+        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 3);
     }
 
 
@@ -274,9 +276,8 @@ public class WalManagerTest {
         // make max file size equal the message
         this.walManager = new WalManager(this.storageAccessService,
                 256,
-                entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 4,
+                entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 14,
                 "test/",
-                10,
                 3);
         this.walManager.append(entry1.toBuilder().addAllRecords(entry2.getRecordsList()));
         this.walManager.terminate();
@@ -328,7 +329,7 @@ public class WalManagerTest {
                 .doThrow(new IOException())
                 .doNothing()
                 .when(storageAccessService).put(anyString(), any(), anyLong());
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t"));
@@ -347,10 +348,45 @@ public class WalManagerTest {
                 .willThrow(new IOException())
                 .willReturn(new LengthAbleInputStream(
                         new ByteArrayInputStream(new byte[]{'s', 'w', 'l', 0, 0, 0, 0, 0, 0, 0}), 10));
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 10, 3);
+        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         walManager.terminate();
         verify(storageAccessService, times(3)).get(eq("test/wal.log.0"));
+    }
+
+    @Test
+    public void testFlush() throws Throwable {
+        // really hard to verify whether previous logs are flushed, only test if flush can work in multiple threads
+        var flag = new AtomicBoolean(true);
+        var threads = new ArrayList<TestThread>();
+        try {
+            for (int i = 0; i < 100; ++i) {
+                var t = new TestThread() {
+                    @Override
+                    void execute() {
+                        while (flag.get()) {
+                            walManager.append(Wal.WalEntry.newBuilder().setEntryType(Type.UPDATE));
+                            walManager.flush();
+                        }
+                    }
+                };
+                t.start();
+                threads.add(t);
+            }
+            Thread.sleep(5000);
+            flag.set(false);
+            for (var t : threads) {
+                t.join();
+            }
+            for (var t : threads) {
+                t.checkException();
+            }
+        } finally {
+            flag.set(false);
+            for (var t : threads) {
+                t.interrupt();
+            }
+        }
     }
 }

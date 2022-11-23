@@ -36,6 +36,7 @@ public class DataStoreScanRequest {
     public static class TableInfo {
 
         private String tableName;
+        private String columnPrefix;
         private Map<String, String> columns;
         private boolean keepNone;
     }

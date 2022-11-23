@@ -33,14 +33,12 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,8 +65,6 @@ public class DataStoreTest {
         int walFileSize = 256;
         @Default
         int walMaxFileSize = 4096;
-        @Default
-        int walWaitIntervalMillis = 10;
         @Default
         int ossMaxAttempts = 3;
         @Default
@@ -99,7 +95,6 @@ public class DataStoreTest {
         this.dataStore = new DataStore(this.storageAccessService,
                 params.walFileSize,
                 params.walMaxFileSize,
-                params.walWaitIntervalMillis,
                 params.ossMaxAttempts,
                 params.dataRootPath,
                 params.dumpInterval,
@@ -628,6 +623,35 @@ public class DataStoreTest {
         assertThat("result of non exist table",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005"))));
+
+        // scan with column prefix
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t1")
+                                .columnPrefix("a")
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t2")
+                                .columnPrefix("b")
+                                .build()))
+                .build());
+        assertThat("column prefix",
+                recordList.getColumnTypeMap(),
+                is(Map.of("ak",
+                        ColumnTypeScalar.STRING,
+                        "bk",
+                        ColumnTypeScalar.STRING,
+                        "aa",
+                        ColumnTypeScalar.INT32,
+                        "bb",
+                        ColumnTypeScalar.INT32)));
+        assertThat("column prefix",
+                recordList.getRecords(),
+                is(List.of(Map.of("ak", "0", "bk", "0", "aa", "00000005", "bb", "00000015"),
+                        Map.of("ak", "1", "aa", "00000004"),
+                        Map.of("ak", "2", "bk", "2", "aa", "00000003", "bb", "00000013"),
+                        Map.of("ak", "3", "aa", "00000002"),
+                        Map.of("ak", "4", "bk", "4", "aa", "00000001", "bb", "00000011"))));
     }
 
     @Test
@@ -715,37 +739,12 @@ public class DataStoreTest {
         }
     }
 
-    private abstract static class TestThread extends Thread {
-
-        protected final Random random = new Random();
-        protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
-        private Throwable throwable;
-
-        public void run() {
-            try {
-                this.execute();
-            } catch (Throwable t) {
-                t.printStackTrace();
-                this.throwable = t;
-            }
-        }
-
-        abstract void execute() throws Exception;
-
-        public void checkException() throws Throwable {
-            if (this.throwable != null) {
-                throw this.throwable;
-            }
-        }
-    }
-
     @Test
     public void testMultiThreads() throws Throwable {
         this.dataStore.terminate();
         this.createDateStore(DataStoreParams.builder()
                 .walFileSize(65536)
                 .walMaxFileSize(65536 * 1024)
-                .walWaitIntervalMillis(1000)
                 .build());
 
         var threads = new ArrayList<TestThread>();
@@ -869,7 +868,6 @@ public class DataStoreTest {
                     dataStore.terminate();
                     System.out.printf("%s terminated\n", this.dateFormat.format(new Date()));
                     createDateStore(DataStoreParams.builder()
-                            .walWaitIntervalMillis(1000)
                             .dumpInterval("1s")
                             .minNoUpdatePeriod("1ms")
                             .build());
@@ -995,6 +993,15 @@ public class DataStoreTest {
                             }
                         });
                     }
+                },
+                new HashMap<>() {
+                    {
+                        put("key", "z");
+                        put("j", List.of());
+                        put("k", Map.of());
+                        put("l", List.of());
+                        put("m", Map.of());
+                    }
                 });
         var columnTypeMap = new HashMap<String, ColumnType>() {
             {
@@ -1019,7 +1026,7 @@ public class DataStoreTest {
                 )));
             }
         };
-        var expected = new RecordList(columnTypeMap, records, "y");
+        var expected = new RecordList(columnTypeMap, records, "z");
         this.dataStore.update("t",
                 new TableSchemaDesc("key",
                         columnTypeMap.entrySet().stream()

@@ -63,6 +63,11 @@ public class ParquetReadWriteTest {
                         .type("LIST")
                         .elementType(ColumnSchemaDesc.builder().type("INT32").build())
                         .build(),
+                ColumnSchemaDesc.builder().name("jj")
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                        .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .build(),
                 ColumnSchemaDesc.builder().name("k")
                         .type("OBJECT")
                         .pythonType("t")
@@ -117,6 +122,7 @@ public class ParquetReadWriteTest {
                         put("h", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
                         put("i", null);
                         put("j", List.of(10));
+                        put("jj", Map.of("a", 0, "b", 1));
                         put("k", Map.of("b", 11, "a", 12));
                         put("l", List.of(List.of(Map.of("a", Map.of("b", 3, "a", 4), "b", List.of(100)))));
                     }
@@ -131,7 +137,14 @@ public class ParquetReadWriteTest {
                         add(null);
                         add(4);
                     }
-                }));
+                }, "jj", new HashMap<>() {
+                    {
+                        put("a", 0);
+                        put("b", 1);
+                        put("x", null);
+                    }
+                }),
+                Map.of("key", "6", "j", List.of(), "jj", Map.of(), "k", Map.of()));
         for (var record : records) {
             writer.write(record);
         }
@@ -146,6 +159,7 @@ public class ParquetReadWriteTest {
         assertThat(reader.read(), is(records.get(3)));
         assertThat(reader.read(), is(records.get(4)));
         assertThat(reader.read(), is(records.get(5)));
+        assertThat(reader.read(), is(records.get(6)));
         assertThat(reader.read(), nullValue());
         reader.close();
     }

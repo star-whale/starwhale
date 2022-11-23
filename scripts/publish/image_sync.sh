@@ -25,8 +25,8 @@ if [[ -z ${GH_TOKEN} ]]; then
 fi
 
 
-export source_registry=${source_registry:="docker.io"}
-export source_repo_name=${source_repo_name:="starwhaleai"}
+export source_registry=${source_registry:="ghcr.io"}
+export source_repo_name=${source_repo_name:="star-whale"}
 export target_registry=${target_registry:="homepage-bj.intra.starwhale.ai:5000"}
 target_repo_name1=star-whale
 target_repo_name2=starwhaleai
