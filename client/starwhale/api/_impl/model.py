@@ -232,37 +232,44 @@ class PipelineHandler(metaclass=ABCMeta):
             for _idx, _data, _annotations in loader:
                 cnt += 1
                 _start = time.time()
-                result: t.Any = b""
-                exception = None
-                _unique_id = f"{_uri.object}_{_idx}"
+                _result: t.Any = b""
+                _exception = None
+                _idx_with_ds = f"{_uri.object}_#@#_{_idx}"
                 try:
                     # TODO: inspect profiling
-                    result = self.ppl(_data, annotations=_annotations, index=_unique_id)
+                    _result = self.ppl(
+                        _data,
+                        annotations=_annotations,
+                        index=_idx,
+                        index_with_dataset=_idx_with_ds,
+                    )
                 except Exception as e:
-                    exception = e
-                    self._sw_logger.exception(f"[{_unique_id}] data handle -> failed")
+                    _exception = e
+                    self._sw_logger.exception(f"[{_idx_with_ds}] data handle -> failed")
                     if not self.ignore_error:
                         self._update_status(STATUS.FAILED)
                         raise
                 else:
-                    exception = None
+                    _exception = None
 
                 self._sw_logger.debug(
-                    f"[{_unique_id}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
+                    f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
                 )
 
                 self._timeline_writer.write(
                     {
                         "time": now_str(),
-                        "status": exception is None,
-                        "exception": str(exception),
-                        "index": f"{_unique_id}",
+                        "status": _exception is None,
+                        "exception": str(_exception),
+                        "index": _idx,
+                        "index_with_dataset": _idx_with_ds,
                     }
                 )
 
                 result_storage.save(
-                    data_id=f"{_unique_id}",
-                    result=result,
+                    data_id=_idx_with_ds,
+                    index=_idx,
+                    result=_result,
                     annotations={} if self.ignore_annotations else _annotations,
                 )
 
