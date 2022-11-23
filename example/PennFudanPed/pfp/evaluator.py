@@ -21,13 +21,14 @@ class MaskRCnn(PipelineHandler):
         super().__init__()
 
     @torch.no_grad()
-    def ppl(self, img: Image, index: int, **kw):
+    def ppl(self, img: Image, index: str, **kw):
+        index = index.split("_")[-1]
         _img = PILImage.open(io.BytesIO(img.to_bytes())).convert("RGB")
         _tensor = functional.to_tensor(_img).to(self.device)
         output = self.model(torch.stack([_tensor]))
         return index, self._post(index, output[0])
 
-    def _post(self, index: int, pred: t.Dict[str, torch.Tensor]) -> t.Dict[str, t.Any]:
+    def _post(self, index: str, pred: t.Dict[str, torch.Tensor]) -> t.Dict[str, t.Any]:
         output = {}
         pred = {k: v.cpu() for k, v in pred.items()}
         for typ in self.iou_types:
