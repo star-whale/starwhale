@@ -17,6 +17,7 @@ from starwhale.core.dataset.type import (
     COCOObjectAnnotation,
 )
 
+from .model import Dataset
 from .loader import get_data_loader, SWDSBinDataLoader, UserRawDataLoader
 from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 
@@ -43,4 +44,5 @@ __all__ = [
     "BoundingBox",
     "GrayscaleImage",
     "COCOObjectAnnotation",
+    "Dataset",
 ]

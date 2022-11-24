@@ -134,13 +134,18 @@ class DatasetTermView(BaseTermView):
     @classmethod
     def list(
         cls,
-        project_uri: str = "",
+        project_uri: t.Union[str, URI] = "",
         fullname: bool = False,
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _uri = URI(project_uri, expected_type=URIType.PROJECT)
+
+        if isinstance(project_uri, str):
+            _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        else:
+            _uri = project_uri
+
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _datasets, _pager = Dataset.list(_uri, page, size)
         _data = BaseTermView.list_data(_datasets, show_removed, fullname)
@@ -152,21 +157,23 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str,
         config: DatasetConfig,
+        disable_copy_src: bool = False,
     ) -> URI:
         dataset_uri = cls.prepare_build_bundle(
             project=config.project_uri, bundle_name=config.name, typ=URIType.DATASET
         )
         ds = Dataset.get_dataset(dataset_uri)
 
+        kwargs = dict(
+            workdir=Path(workdir), config=config, disable_copy_src=disable_copy_src
+        )
+
         if config.runtime_uri:
             RuntimeProcess.from_runtime_uri(
-                uri=config.runtime_uri,
-                target=ds.build,
-                args=(Path(workdir),),
-                kwargs=dict(config=config),
+                uri=config.runtime_uri, target=ds.build, kwargs=kwargs
             ).run()
         else:
-            ds.build(Path(workdir), config=config)
+            ds.build(**kwargs)
         return dataset_uri
 
     @classmethod
@@ -181,13 +188,15 @@ class DatasetTermView(BaseTermView):
         console.print(":clap: copy done")
 
     @BaseTermView._header
-    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
+    def tag(
+        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
+    ) -> None:
         if remove:
             console.print(f":golfer: remove tags {tags} @ {self.uri}...")
-            self.dataset.remove_tags(tags, quiet)
+            self.dataset.remove_tags(tags, ignore_errors)
         else:
             console.print(f":surfer: add tags {tags} @ {self.uri}...")
-            self.dataset.add_tags(tags, quiet)
+            self.dataset.add_tags(tags, ignore_errors)
 
     @BaseTermView._header
     def head(self, rows: int, show_raw_data: bool = False) -> None:

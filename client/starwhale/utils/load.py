@@ -14,8 +14,10 @@ from starwhale.utils.venv import (
 )
 
 
-def import_object(workdir: Path, handler_path: str, py_env: str = "") -> t.Any:
-    workdir_path = str(workdir.absolute())
+def import_object(
+    workdir: t.Union[Path, str], handler_path: str, py_env: str = ""
+) -> t.Any:
+    workdir_path = str(Path(workdir).absolute())
     external_paths = [workdir_path]
     py_env = py_env or guess_current_py_env()
     _ok, _cur_py, _ex_py = check_python_interpreter_consistency(py_env)

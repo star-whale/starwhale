@@ -35,7 +35,7 @@ class Logger:
             if exceptions:
                 raise Exception(*exceptions)
 
-    def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+    def _fetch_writer(self, table_name: str) -> data_store.TableWriter:
         with self._lock:
             if table_name not in self._writers:
                 self._writers.setdefault(table_name, None)
@@ -44,7 +44,10 @@ class Logger:
                 _store = getattr(self, "_data_store", None)
                 writer = data_store.TableWriter(table_name, data_store=_store)
                 self._writers[table_name] = writer
+        return writer
 
+    def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+        writer = self._fetch_writer(table_name)
         writer.insert(record)
 
     def _flush(self, table_name: str) -> None:
@@ -53,6 +56,10 @@ class Logger:
             if writer is None:
                 return
         writer.flush()
+
+    def _delete(self, table_name: str, key: Any) -> None:
+        writer = self._fetch_writer(table_name)
+        writer.delete(key)
 
 
 def _serialize(data: Any) -> Any:
@@ -174,16 +181,27 @@ class Dataset(Logger):
             record[k.lower()] = v
         self._log(self._meta_table_name, record)
 
-    def scan(self, start: Any, end: Any) -> Iterator[Dict[str, Any]]:
+    def delete(self, data_id: Union[str, int]) -> None:
+        self._delete(self._meta_table_name, data_id)
+
+    def scan(
+        self, start: Any, end: Any, end_inclusive: bool = False
+    ) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [data_store.TableDesc(self._meta_table_name)], start=start, end=end
+            [data_store.TableDesc(self._meta_table_name)],
+            start=start,
+            end=end,
+            end_inclusive=end_inclusive,
         )
 
-    def scan_id(self, start: Any, end: Any) -> Iterator[Any]:
+    def scan_id(
+        self, start: Any, end: Any, end_inclusive: bool = False
+    ) -> Iterator[Any]:
         return self._data_store.scan_tables(
             [data_store.TableDesc(self._meta_table_name, columns=["id"])],
             start=start,
             end=end,
+            end_inclusive=end_inclusive,
         )
 
     def flush(self) -> None:

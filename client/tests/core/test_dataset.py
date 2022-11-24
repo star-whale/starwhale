@@ -62,30 +62,17 @@ class StandaloneDatasetTestCase(TestCase):
 
     @patch("starwhale.api._impl.dataset.builder.UserRawBuildExecutor.make_swds")
     @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
-    @patch("starwhale.core.dataset.model.import_object")
     def test_function_handler_make_swds(
-        self, m_import: MagicMock, m_swds_bin: MagicMock, m_user_raw: MagicMock
+        self, m_swds_bin: MagicMock, m_user_raw: MagicMock
     ) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         sd._version = "112233"
-        workdir = "/home/starwhale/myproject"
-        config = DatasetConfig(name, handler="mnist:handler")
+        swds_config = DatasetConfig(name=name, handler=lambda: 1)
 
-        kwargs = dict(
-            workdir=Path(workdir),
-            swds_config=config,
-            append=False,
-            append_from_uri=None,
-            append_from_store=None,
-        )
-
-        m_import.return_value = lambda: 1
         with self.assertRaises(RuntimeError):
-            sd._call_make_swds(**kwargs)  # type: ignore
-
-        m_import.reset_mock()
+            sd._call_make_swds(swds_config)
 
         def _iter_swds_bin_item() -> t.Generator:
             yield b"", {}
@@ -93,15 +80,16 @@ class StandaloneDatasetTestCase(TestCase):
         def _iter_user_raw_item() -> t.Generator:
             yield Link(""), {}
 
-        m_import.return_value = _iter_swds_bin_item
-        sd._call_make_swds(**kwargs)  # type: ignore
+        swds_config.handler = _iter_swds_bin_item
+        sd._call_make_swds(swds_config)
         assert m_swds_bin.call_count == 1
 
-        m_import.return_value = _iter_user_raw_item
-        sd._call_make_swds(**kwargs)  # type: ignore
+        swds_config.handler = _iter_user_raw_item
+        sd._call_make_swds(swds_config)
         assert m_user_raw.call_count == 1
 
-    def test_build_only_cli(self) -> None:
+    @patch("starwhale.core.dataset.cli.import_object")
+    def test_build_only_cli(self, m_import: MagicMock) -> None:
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
@@ -120,10 +108,11 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[0] == workdir
         assert call_args[1].name == "mnist"
-        assert call_args[1].handler == "mnist:test"
         assert call_args[1].append is not None
+        assert m_import.call_args[0][1] == "mnist:test"
 
-    def test_build_only_yaml(self) -> None:
+    @patch("starwhale.core.dataset.cli.import_object")
+    def test_build_only_yaml(self, m_import: MagicMock) -> None:
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
@@ -146,9 +135,9 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build.call_count == 1
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
-        assert call_args[1].handler == "dataset:build"
         assert call_args[1].append
         assert call_args[1].append_from == "112233"
+        assert m_import.call_args[0][1] == "dataset:build"
 
         new_workdir = "/tmp/workdir-new"
         ensure_dir(new_workdir)
@@ -157,28 +146,26 @@ class StandaloneDatasetTestCase(TestCase):
         assert new_yaml_path.exists() and not yaml_path.exists()
 
         mock_obj.reset_mock()
-        result = runner.invoke(build_cli, [new_workdir], obj=mock_obj)
-
-        assert result.exit_code == 1
-        assert result.exception
-
-        mock_obj.reset_mock()
+        m_import.reset_mock()
         result = runner.invoke(
             build_cli, [new_workdir, "-f", "dataset-new.yaml"], obj=mock_obj
         )
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
-        assert call_args[1].handler == "dataset:build"
         assert call_args[1].append
         assert call_args[1].append_from == "112233"
+        assert m_import.call_args[0][1] == "dataset:build"
 
-    def test_build_mixed_cli_yaml(self) -> None:
+    @patch("starwhale.core.dataset.cli.import_object")
+    def test_build_mixed_cli_yaml(self, m_import: MagicMock) -> None:
+        handler_func = lambda: 1
+        m_import.return_value = handler_func
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
         config = DatasetConfig(
             name="mnist-error",
-            handler="dataset:buildClass",
+            handler="dataset:not_found",
             append=True,
             append_from="112233",
         )
@@ -207,22 +194,18 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build.call_count == 1
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
-        assert call_args[1].handler == "dataset:buildFunction"
+        assert call_args[1].handler == handler_func
         assert call_args[1].append
         assert call_args[1].append_from == "112233"
         assert call_args[1].attr.data_mime_type == MIMEType.MP4
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
     @patch("starwhale.core.dataset.model.copy_fs")
-    @patch("starwhale.core.dataset.model.import_object")
     def test_build_workflow(
         self,
-        m_import: MagicMock,
         m_copy_fs: MagicMock,
     ) -> None:
         sw = SWCliConfigMixed()
-
-        m_import.return_value = MockBuildExecutor
 
         workdir = "/home/starwhale/myproject"
         name = "mnist"
@@ -231,9 +214,10 @@ class StandaloneDatasetTestCase(TestCase):
         ensure_file(os.path.join(workdir, "mnist.py"), " ")
 
         config = DatasetConfig(**yaml.safe_load(_dataset_yaml))
+        config.handler = MockBuildExecutor
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
-        sd.build(Path(workdir), config=config)
+        sd.build(workdir=Path(workdir), config=config)
         build_version = sd.uri.object.version
 
         snapshot_workdir = (
@@ -244,10 +228,6 @@ class StandaloneDatasetTestCase(TestCase):
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.DATASET}"
         )
-
-        assert m_import.call_count == 1
-        assert m_import.call_args[0][0] == Path(workdir)
-        assert m_import.call_args[0][1] == "mnist.dataset:DatasetProcessExecutor"
 
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "data").exists()

@@ -10,6 +10,7 @@ from starwhale.api.dataset import (
     Image,
     Video,
     Binary,
+    Dataset,
     LinkAuth,
     LinkType,
     MIMEType,
@@ -28,10 +29,14 @@ from starwhale.api.dataset import (
 from starwhale.api.evaluation import Evaluation
 from starwhale.core.dataset.tabular import get_dataset_consumption
 
+dataset = Dataset.dataset
+
 __all__ = [
     "__version__",
     "PipelineHandler",
     "multi_classification",
+    "Dataset",
+    "dataset",
     "URI",
     "URIType",
     "step",

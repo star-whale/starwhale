@@ -49,7 +49,7 @@ class StandaloneTagTestCase(TestCase):
 
         assert set(st.list()) == {"test", "latest", "me3"}
 
-        st.remove(["latest", "notfound"], quiet=True)
+        st.remove(["latest", "notfound"], ignore_errors=True)
         assert set(st.list()) == {"test", "me3"}
         _manifest = st._get_manifest()
         assert "latest" not in _manifest["tags"]
@@ -96,7 +96,7 @@ class StandaloneTagTestCase(TestCase):
         assert st._get_manifest()["fast_tag_seq"] == 7
         assert st._get_manifest()["tags"]["v7"] == version
 
-        st.remove(["v7", "v6"], quiet=True)
+        st.remove(["v7", "v6"], ignore_errors=True)
         st.add_fast_tag()
         assert st._get_manifest()["fast_tag_seq"] == 8
         assert st._get_manifest()["tags"]["v8"] == version

@@ -25,7 +25,11 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetRow,
     get_dataset_consumption,
 )
-from starwhale.api._impl.dataset.loader import SWDSBinDataLoader, UserRawDataLoader
+from starwhale.api._impl.dataset.loader import (
+    DataRow,
+    SWDSBinDataLoader,
+    UserRawDataLoader,
+)
 
 
 class TestDataLoader(TestCase):
@@ -133,7 +137,7 @@ class TestDataLoader(TestCase):
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
-        loader = get_data_loader(self.dataset_uri)
+        loader = get_data_loader("mnist/version/1122334455667788")
         assert isinstance(loader, UserRawDataLoader)
         assert loader.session_consumption is None
         rows = list(loader)
@@ -636,3 +640,32 @@ class TestDataLoader(TestCase):
 
         self.assertEqual(req_get_file.call_count, 4)
         self.assertEqual(len(_label_uris_map), 4)
+
+    def test_data_row(self) -> None:
+        dr = DataRow(index=1, data=Image(), annotations={"label": 1})
+        index, data, annotations = dr
+        assert index == 1
+        assert isinstance(data, Image)
+        assert annotations == {"label": 1}
+        assert dr[0] == 1
+        assert len(dr) == 3
+
+        dr_another = DataRow(index=2, data=Image(), annotations={"label": 2})
+        assert dr < dr_another
+        assert dr != dr_another
+
+        dr_third = DataRow(index=1, data=Image(fp=b""), annotations={"label": 10})
+        assert dr >= dr_third
+
+        dr_none = DataRow(index=1, data=None, annotations={})
+        assert dr_none.data is None
+
+    def test_data_row_exceptions(self) -> None:
+        with self.assertRaises(TypeError):
+            DataRow(index=b"", data=Image(), annotations={})  # type: ignore
+
+        with self.assertRaises(TypeError):
+            DataRow(index=1, data=b"", annotations={})  # type: ignore
+
+        with self.assertRaises(TypeError):
+            DataRow(index=1, data=Image(), annotations=1)  # type: ignore

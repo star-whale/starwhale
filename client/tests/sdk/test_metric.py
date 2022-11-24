@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+import pytest
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.api._impl.job import Context, context_holder
@@ -16,6 +17,9 @@ class TestMultiClassificationMetric(TestCase):
             project="self",
         )
 
+    @pytest.mark.filterwarnings(
+        "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
+    )
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     def test_multi_classification_metric(self, log_metric_mock: MagicMock) -> None:
         def _cmp(handler, data):
@@ -39,6 +43,9 @@ class TestMultiClassificationMetric(TestCase):
         assert list(rt["labels"].keys()) == ["a", "b", "c", "d"]
         assert "confusion_matrix/binarylabel" not in rt
 
+    @pytest.mark.filterwarnings(
+        "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
+    )
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_multi_classification_metric_with_pa(

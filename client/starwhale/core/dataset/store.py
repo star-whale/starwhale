@@ -469,7 +469,7 @@ class BaseBufferedFileLike(metaclass=ABCMeta):
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
-        if value:
+        if value:  # pragma: no cover
             print(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()

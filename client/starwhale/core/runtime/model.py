@@ -702,11 +702,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
 
-    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
-        self.tag.add(tags, quiet)
+    def list_tags(self) -> t.List[str]:
+        return self.tag.list()
 
-    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
-        self.tag.remove(tags, quiet)
+    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+        self.tag.add(tags, ignore_errors)
+
+    def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+        self.tag.remove(tags, ignore_errors)
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         return self._do_remove(force)
@@ -746,12 +749,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
         return _r
 
-    def build(
+    def build(  # type: ignore[override]
         self,
         workdir: Path,
-        yaml_name: str = DefaultYAMLName.RUNTIME,
         **kw: t.Any,
     ) -> None:
+        yaml_name = kw.get("yaml_name", DefaultYAMLName.RUNTIME)
         disable_env_lock = kw.get("disable_env_lock", False)
         env_name = kw.get("env_name", "")
         env_prefix_path = kw.get("env_prefix_path", "")
@@ -1693,5 +1696,5 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
 
-    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
+    def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")
