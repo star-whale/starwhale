@@ -148,7 +148,7 @@ class Model(BaseArtifact):
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _ret_code, _res = invoke(_args)
+        _ret_code, _res = invoke(_args, log=True)
         return bool(_ret_code == 0)
 
     def extract(self) -> Any:
