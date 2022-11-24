@@ -321,11 +321,7 @@ CREATE TABLE IF NOT EXISTS `project_info`
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `unq_project_name_owner` (`project_name`, `owner_id`) USING BTREE,
     INDEX `idx_create_user_id` (`owner_id`) USING BTREE
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 4
-  CHARACTER SET = utf8
-  COLLATE = utf8_general_ci
-  ROW_FORMAT = Dynamic;
+);
 
 -- ----------------------------
 -- Table structure for runtime_info
@@ -465,11 +461,7 @@ CREATE TABLE IF NOT EXISTS `user_info`
     `modified_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `uk_user_name` (`user_name`) USING BTREE
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 3
-  CHARACTER SET = utf8
-  COLLATE = utf8_general_ci
-  ROW_FORMAT = Dynamic;
+);
 
 -- ----------------------------
 -- Table structure for user_role_info
@@ -483,11 +475,7 @@ CREATE TABLE IF NOT EXISTS `user_role_info`
     `role_description` varchar(255) NOT NULL,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `uk_role_name` (`role_name`) USING BTREE
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 4
-  CHARACTER SET = utf8
-  COLLATE = utf8_general_ci
-  ROW_FORMAT = Dynamic;
+);
 
 -- ----------------------------
 -- Table structure for user_role_rel
@@ -506,11 +494,7 @@ CREATE TABLE IF NOT EXISTS `user_role_rel`
     INDEX `idx_user_id` (`user_id`) USING BTREE,
     INDEX `idx_role_id` (`role_id`) USING BTREE,
     INDEX `idx_project_id` (`project_id`) USING BTREE
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 5
-  CHARACTER SET = utf8
-  COLLATE = utf8_general_ci
-  ROW_FORMAT = Dynamic;
+);
 
 -- ----------------------------
 -- Table structure for view_config
