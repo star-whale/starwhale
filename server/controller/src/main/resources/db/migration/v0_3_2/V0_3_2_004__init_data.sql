@@ -23,7 +23,7 @@ insert ignore into user_info(user_name, user_pwd, user_pwd_salt, user_enabled)
 values ('test', '7ce1c1d60c3393e4ca681e738036fe8c', 'be1866739033b7907631a71e', 0);
 
 insert ignore into project_info(project_name, owner_id)
-values ('starwhale', 1);
+values ('starwhale', (select id from user_info where user_name='starwhale'));
 
 insert ignore into user_role_info(role_name, role_code, role_description)
 values ('Owner', 'OWNER', '');
