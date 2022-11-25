@@ -75,10 +75,6 @@ function WidgetForm({ formData, onChange, onSubmit }: any, ref: any) {
                 type: 'string',
             },
         },
-        //   "required": ["name"],
-        //   "dependencies": {
-        //     "credit_card": ["billing_address"]
-        //   }
     }
     return (
         <Form

@@ -1,6 +1,7 @@
 import { WidgetStoreState, WidgetTreeNode } from '../store/store'
 import { WidgetType } from '../widget/WidgetFactory'
 import { EventBus } from '../events/types'
+import { Matcher } from '../utils/replacer'
 
 export type WidgetMeta = Record<string, unknown>
 
@@ -20,6 +21,11 @@ export interface WidgetFieldConfig {
     data: any
 }
 
+export interface WidgetDynamicConfig {
+    matches: Matcher[]
+    data: Record<string, any>
+}
+
 export type WidgetOptionConfig = any
 
 export interface WidgetConfig<
@@ -28,6 +34,7 @@ export interface WidgetConfig<
 > extends WidgetBaseConfig {
     optionConfig?: Partial<O>
     fieldConfig?: Partial<F>
+    dynamicConfig?: WidgetDynamicConfig
 }
 
 // -----------widget component---------------

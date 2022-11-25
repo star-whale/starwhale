@@ -91,7 +91,8 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 title={title}
                 expanded={isExpaned}
                 onExpanded={handleExpanded}
-                onPanelAdd={() =>
+                onPanelAdd={() => {
+                    console.log('add panel')
                     // @FIXME abatract events
                     eventBus.publish(
                         new PanelAddEvent({
@@ -99,7 +100,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                             path: props.path,
                         })
                     )
-                }
+                }}
                 onSectionRename={() => {
                     setIsModelOpen(true)
                 }}

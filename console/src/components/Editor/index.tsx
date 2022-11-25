@@ -8,6 +8,9 @@ import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
 import { createCustomStore, WidgetTreeNode } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { useJob } from '@/domain/job/hooks/useJob'
+import { tablesOfEvaluation } from '@starwhale/core'
 
 // log.enableAll()
 registerWidgets()
@@ -31,13 +34,17 @@ export function withEditorRegister(EditorApp: React.FC) {
 
 export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
     return function EditorContexted(props: any) {
+        // @FIXME
+        const { project } = useProject()
+        const { job } = useJob()
+
         // @eslint-disable-next-line typescript-eslint/no-use-before-define
         const state = useMemo(() => tranformState(rawState), [])
+        // @NOTICE must only init once
         const value = useMemo(() => {
             // @ts-ignore
             const store = createCustomStore(state)
             const eventBus = new EventBusSrv()
-            log.debug('store', state)
             return {
                 store,
                 eventBus,
@@ -45,7 +52,16 @@ export function witEditorContext(EditorApp: React.FC, rawState: typeof initialSt
         }, [state])
 
         return (
-            <EditorContextProvider value={value}>
+            <EditorContextProvider
+                value={{
+                    ...value,
+                    dynamicVars: {
+                        // @FIXME should match to matcher of regexp
+                        prefix:
+                            project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined,
+                    },
+                }}
+            >
                 <EditorApp {...props} />
             </EditorContextProvider>
         )
@@ -86,7 +102,8 @@ const tranformState = (state: typeof initialState) => {
         })
     }
     const newTree = walk(Object.assign([], state.tree) as WidgetTreeNode[])
-    console.log('INIT TREE', newTree, defaults, widgets)
+    console.log('tree init', newTree)
+    // console.log('INIT TREE', newTree, defaults, widgets)
     return {
         key: state.key,
         tree: newTree,

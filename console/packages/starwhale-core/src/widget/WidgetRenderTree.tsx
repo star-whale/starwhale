@@ -14,6 +14,10 @@ import { WidgetProps } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEvent, BusEventType } from '../events/types'
 import { PanelEditEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
+import widget from '../../../starwhale-widgets/src/SectionWidget/index'
+import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
+import _ from 'lodash'
+import produce from 'immer'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path } = props
@@ -42,14 +46,15 @@ enum PanelEditAction {
 export function WidgetRenderTree() {
     const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
     const { job } = useJob()
-    const { store, eventBus } = useEditorContext()
+    const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
     // const key = job?.modelName ? `modelName-${job?.modelName}` : ''
-    const key = jobId ? `evaluation-${jobId}` : ''
+    // const key = jobId ? `evaluation-${jobId}` : ''
+    const key = 'evaluation'
 
     console.log('Tree', tree, job)
 
@@ -91,17 +96,23 @@ export function WidgetRenderTree() {
     }
 
     // use  api store
+    // @FIXME refactor load/save, now only global inject what about table row inject ?
     const setting = useFetchPanelSetting(projectId, key)
     useEffect(() => {
-        if (setting.data) {
+        // @FIXME make sure dynamicVars to be exists!
+        if (setting.data && dynamicVars?.prefix) {
             try {
-                const data = JSON.parse(setting.data)
+                let data = JSON.parse(setting.data)
+                for (let id in data?.widgets) {
+                    _.set(data.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars))
+                }
+                console.log('origin', data)
                 if (store.getState().time < data?.time) store.setState(data)
             } catch (e) {
                 console.log(e)
             }
         }
-    }, [setting])
+    }, [setting, dynamicVars?.prefix])
 
     // subscription
     useEffect(() => {
@@ -139,8 +150,14 @@ export function WidgetRenderTree() {
                         key,
                         time: Date.now(),
                     })
+                    let data = store.getState()
                     if (key) {
-                        await updatePanelSetting(projectId, key, store.getState())
+                        for (let id in data?.widgets) {
+                            data = produce(data, (temp) => {
+                                _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
+                            })
+                        }
+                        await updatePanelSetting(projectId, key, data)
                         toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
                     }
                 },

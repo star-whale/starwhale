@@ -47,7 +47,7 @@ export function tableNameOfSummary(projectName: string) {
     return `project/${projectName}/eval/summary`
 }
 
-export function tablesOfEvaluation(projectName: string, evaluationUuid: string) {
+export function tablesOfEvaluation(projectName: string, evaluationUuid: string = '') {
     return `project/${projectName}/eval/${evaluationUuid.substring(0, VERSION_PREFIX_CNT)}/${evaluationUuid}`
 }
 

@@ -21,6 +21,8 @@ export const CONFIG: WidgetConfig = {
         },
         data: {
             chartType: 'ui:panel:table',
+            tableName: '/projext/*/aoc_ruc/0',
+            //
         },
         // dataOverrides: {
         //     tableName: '',

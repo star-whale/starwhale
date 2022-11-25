@@ -5,10 +5,6 @@ import { WidgetComponent, WidgetConfig, WidgetFieldConfig, WidgetMeta } from '..
 export type WidgetState = Record<string, unknown>
 
 class BaseWidget<T extends WidgetMeta = WidgetMeta> {
-    static contextType = EditorContext
-
-    declare context: React.ContextType<typeof EditorContext>
-
     meta?: T
 }
 
