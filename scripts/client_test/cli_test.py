@@ -91,9 +91,9 @@ class TestCli:
         self.executor = thread_pool
         self.cloud_url = cloud_url
         self.cloud_project = cloud_project
-        self.datasets: dict[str, t.List[URI]] = {}
-        self.runtimes: dict[str, URI] = {}
-        self.models: dict[str, URI] = {}
+        self.datasets: t.Dict[str, t.List[URI]] = {}
+        self.runtimes: t.Dict[str, URI] = {}
+        self.models: t.Dict[str, URI] = {}
         if self.cloud_url:
             logger.info(f"login to cloud {self.cloud_url} ...")
             assert self.instance.login(url=self.cloud_url)

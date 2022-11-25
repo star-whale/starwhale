@@ -4,7 +4,7 @@ set -x
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_PATH=$( cd -- "$SCRIPT_DIR/../.." &> /dev/null && pwd )
-export WORK_DIR=`mktemp -d -p "$SCRIPT_DIR"`
+export WORK_DIR=`mktemp -d`
 export SW_CLI_CONFIG="$WORK_DIR/config.yaml"
 export SW_LOCAL_STORAGE="$WORK_DIR/data"
 # deletes the temp directory
