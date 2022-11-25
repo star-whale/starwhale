@@ -251,3 +251,28 @@ table { border-collapse: separate; }
   -ms-user-select: all;
   user-select: all;
 }
+
+// @FIXME use component style
+.rjsf {
+
+  fieldset {
+    border-width: 0;
+    display: flex;
+    gap:20px;
+    flex-direction: column;
+  
+    .form-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+
+      .control-label {
+        width: 100px;
+        flex-basis: 100px;
+      }
+      >div{
+        width:280px
+      }
+    }
+  }
+}

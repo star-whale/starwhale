@@ -92,7 +92,7 @@ export const Card: FC<ICardProps> = ({ id, text, index, moveCard }) => {
         }),
     })
 
-    const opacity = isDragging ? 0.5 : 1
+    const opacity = isDragging ? 1 : 1
     const backgroundColor = isDragging ? '#F0F4FF' : '#FFF'
     drag(drop(ref))
 

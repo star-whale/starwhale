@@ -354,8 +354,18 @@ export function expandBorderRadius(radius: string) {
 export function expandPadding(top: string, right: string, bottom: string, left: string) {
     return {
         paddingTop: top ?? undefined,
-        paddingBottom: top ?? undefined,
-        paddingLeft: top ?? undefined,
-        paddingRight: top ?? undefined,
+        paddingBottom: bottom ?? undefined,
+        paddingLeft: left ?? undefined,
+        paddingRight: right ?? undefined,
+    }
+}
+
+// eslint-disable-next-line  @typescript-eslint/no-unused-vars
+export function expandMargin(top: string, right: string, bottom: string, left: string) {
+    return {
+        marginTop: top ?? undefined,
+        marginBottom: bottom ?? undefined,
+        marginLeft: left ?? undefined,
+        marginRight: right ?? undefined,
     }
 }

@@ -5,9 +5,10 @@ import IconFont from '../IconFont'
 
 interface IBusyPlaceholderProps {
     type?: 'spinner' | 'loading' | 'notfound' | 'empty'
+    style?: React.CSSProperties
 }
 
-export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
+export default function BusyPlaceholder({ type, style }: IBusyPlaceholderProps) {
     let children = null
 
     switch (type) {
@@ -45,6 +46,7 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
                 width: '100%',
                 height: '100%',
                 minHeight: '500px',
+                ...style,
             }}
         >
             {children}

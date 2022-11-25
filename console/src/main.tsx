@@ -4,6 +4,7 @@ import '@/styles/_global.scss'
 import '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
 import App from './App'
+
 // eslint-disable-next-line
 // @ts-ignore
 window.g = null

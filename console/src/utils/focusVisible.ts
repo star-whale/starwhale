@@ -172,3 +172,21 @@ export default function useIsFocusVisible(): IUseIsFocusVisibleResult {
 
     return { isFocusVisibleRef, onFocus: handleFocusVisible, onBlur: handleBlurVisible, ref }
 }
+
+export const forkFocus =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
+        if (typeof rootProps.onFocus === 'function') {
+            rootProps.onFocus(e)
+        }
+        handler(e)
+    }
+
+export const forkBlur =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
+        if (typeof rootProps.onBlur === 'function') {
+            rootProps.onBlur(e)
+        }
+        handler(e)
+    }
