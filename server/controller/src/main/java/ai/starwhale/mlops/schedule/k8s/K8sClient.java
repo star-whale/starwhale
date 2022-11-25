@@ -40,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.bouncycastle.util.Strings;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -103,21 +105,35 @@ public class K8sClient {
     }
 
     public String logOfJob(String selector, List<String> containers) throws ApiException, IOException {
+        V1Pod pod = podOfJob(selector);
+        return logOfPod(pod, containers);
+    }
+
+    @NotNull
+    public String logOfPod(V1Pod pod, List<String> containers) {
+        if (pod == null) {
+            return "";
+        }
+
+        StringBuilder logBuilder = new StringBuilder();
+        containers.forEach(c -> appendLog(pod, logBuilder, c));
+        return logBuilder.toString();
+    }
+
+    @Nullable
+    public V1Pod podOfJob(String selector) throws ApiException {
         V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, selector, null, null, null, 30,
                 null);
 
         if (podList.getItems().isEmpty()) {
-            return "";
+            return null;
         }
         if (podList.getItems().size() > 1) {
             throw new ApiException("to many pods");
         }
 
         V1Pod pod = podList.getItems().get(0);
-
-        StringBuilder logBuilder = new StringBuilder();
-        containers.forEach(c -> appendLog(pod, logBuilder, c));
-        return logBuilder.toString();
+        return pod;
     }
 
     private void appendLog(V1Pod pod, StringBuilder logBuilder, String containerName) {
