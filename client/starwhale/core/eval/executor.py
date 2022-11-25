@@ -1,6 +1,5 @@
 import os
 import typing as t
-import tempfile
 from pathlib import Path
 
 from loguru import logger
