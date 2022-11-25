@@ -1,4 +1,6 @@
 import os
+import getpass as gt
+from pwd import getpwnam
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -28,13 +30,9 @@ class StandaloneEvalExecutor(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.core.eval.executor.StandaloneRuntime.extract")
     @patch("starwhale.core.eval.executor.check_call")
     @patch("starwhale.core.job.scheduler.Scheduler.schedule")
-    def test_run(
-        self, m_scheduler: MagicMock, m_call: MagicMock, m_extract: MagicMock
-    ) -> None:
-        m_extract.return_value = "/tmp/1111/swrt"
+    def test_run(self, m_scheduler: MagicMock, m_call: MagicMock) -> None:
         sw = SWCliConfigMixed()
         project_dir = sw.rootdir / "self"
 
@@ -124,11 +122,12 @@ class StandaloneEvalExecutor(TestCase):
 
         assert ppl_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1 -l version={build_version}",
-                f"-v {job_dir}:/opt/starwhale",
-                f"-v {sw.rootdir}:/root/.starwhale",
+                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1",
+                f"-e SW_USER={gt.getuser()} -e SW_USER_ID={getpwnam(gt.getuser()).pw_uid} -e SW_USER_GROUP_ID=0",
+                f"-e SW_LOCAL_STORAGE={sw.rootdir} -l version={build_version}",
+                f"-v {job_dir}:{job_dir}",
+                f"-v {sw.rootdir}:{sw.rootdir}",
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",
-                "-v /tmp/1111/swrt:/opt/starwhale/swrt",
                 "-e SW_PROJECT=self",
                 f"-e SW_EVALUATION_VERSION={build_version}",
                 f"-e SW_MODEL_VERSION={model_version}",

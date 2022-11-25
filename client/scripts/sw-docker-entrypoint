@@ -9,8 +9,7 @@ fi
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
-SWRT_DIR=${SW_SWRT_WORKDIR:=/opt/starwhale/swrt}
-PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
+PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-'root'}"/.cache/pip}
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
@@ -70,18 +69,6 @@ set_python() {
     fi
 }
 
-# restore when processing evaluation on local use-docker
-# because of venv use absolute path,eval run use param: 'runtime URI' will occur error
-restore_activate_runtime() {
-    echo '--> restore python env ...'
-    export PYTHONWARNINGS="ignore:Unverified HTTPS request"
-    swcli ${VERBOSE} runtime restore ${SWRT_DIR} || exit 1
-    unset PYTHONWARNINGS
-
-    echo '--> source activate ...'
-    eval "$(${SWRT_DIR}/activate.sw)" || exit 1
-}
-
 # TODO support run remote on standalone mode
 pull_model_and_runtime() {
     echo '--> pulling model and runtime ...'
@@ -94,13 +81,7 @@ pull_model_and_runtime() {
 run() {
     echo "--> start to run evaluation: ${STEP}, use $(which swcli) cli ..."
 
-    cmd="swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION}"
-
-    if [ "${SW_INSTANCE_URI}" != "local" ]
-    then
-        cmd="$cmd --runtime ${SW_RUNTIME_VERSION}"
-    fi
-    eval "$cmd" || exit 1
+    swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
 }
 
 welcome() {
@@ -111,7 +92,13 @@ welcome() {
     echo "Run: $1 "
     echo "Model Version: ${SW_MODEL_VERSION}"
     echo "Runtime Version: ${SW_RUNTIME_VERSION}"
+    echo "Local User: ${SW_USER:-'root'}"
     echo "===================================="
+    if [ ! -z "${SW_USER}" ];
+    then
+      useradd -g ${SW_USER_GROUP_ID} -u ${SW_USER_ID} ${SW_USER}
+      su ${SW_USER}
+    fi
 }
 
 eval_task_prepare(){
@@ -121,8 +108,6 @@ eval_task_prepare(){
     then
         # only remote
         pull_model_and_runtime
-    else
-        restore_activate_runtime
     fi
     set_python
     set_pip_cache

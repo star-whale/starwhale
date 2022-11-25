@@ -1,6 +1,7 @@
 import os
 import typing as t
-import tempfile
+import getpass as gt
+from pwd import getpwnam
 from pathlib import Path
 
 from loguru import logger
@@ -148,9 +149,7 @@ class EvalExecutor:
     def _extract_swrt(self) -> None:
         if self.runtime and self.use_docker:
             # avoid conflict with normal process with venv or conda
-            self._runtime_dir = self.runtime.extract(
-                target=f"{tempfile.mkdtemp()}/{RunSubDirType.SWRT}"
-            )
+            self._runtime_dir = self.runtime.extract()
         else:
             self._runtime_dir = Path()
 
@@ -207,19 +206,25 @@ class EvalExecutor:
             f"{self._version}-{step}-{task_index}",
             "-e",
             "DEBUG=1",
+            "-e",
+            f"SW_USER={gt.getuser()}",
+            "-e",
+            f"SW_USER_ID={getpwnam(gt.getuser()).pw_uid}",
+            "-e",
+            "SW_USER_GROUP_ID=0",
+            "-e",
+            f"SW_LOCAL_STORAGE={self.sw_config.rootdir}",
             "-l",
             f"version={self._version}",
         ]
 
         cmd += [
             "-v",
-            f"{_run_dir}:{_CNTR_WORKDIR}",
+            f"{_run_dir}:{_run_dir}",
             "-v",
-            f"{self.sw_config.rootdir}:/root/.starwhale",
+            f"{self.sw_config.rootdir}:{self.sw_config.rootdir}",
             "-v",
             f"{self.sw_config.object_store_dir}:{self.sw_config.object_store_dir}",
-            "-v",
-            f"{self._runtime_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWRT}",
         ]
 
         if typ == EvalTaskType.SINGLE:
@@ -240,7 +245,7 @@ class EvalExecutor:
                 f"{SWEnv.instance_token}={self.sw_config._current_instance_obj.get('sw_token', '')}",
             ]
         )
-        # TODO: support multi dataset
+        # support multi dataset
         cmd.extend(
             [
                 "-e",
