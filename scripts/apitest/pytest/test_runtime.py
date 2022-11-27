@@ -110,36 +110,6 @@ class TestRuntime:
 
         print('Test Runtime Version tag update ok.')
 
-    def test_remove(self, host, port):
-        if os.getenv('swrt_name') is None:
-            print('Test Runtime remove cancel.')
-            return
-        swrt_name = os.getenv('swrt_name')
-        res = requests.delete(url=hu.url(host, port) + '/project'
-                                                       '/1'
-                                                       '/runtime'
-                                                       '/' + swrt_name,
-                              headers=hu.header())
-        response = res.json()
-        assert res.status_code == 200
-        assert response['code'] == 'success'
-
-        print('Test Runtime remove ok.')
-
-    def test_recover(self, host, port):
-        if os.getenv('swrt_name') is None:
-            print('Test Runtime recover cancel.')
-            return
-        swrt_name = os.getenv('swrt_name')
-        path = '/project/1/runtime/' + swrt_name + '/recover'
-        res = requests.put(url=hu.url(host, port) + path,
-                           headers=hu.header())
-        response = res.json()
-        assert res.status_code == 200
-        assert response['code'] == 'success'
-
-        print('Test Runtime recover ok.')
-
     def test_head(self, host, port):
         swrt_name = os.getenv('swrt_name')
         swrt_version_name = os.getenv('swrt_version_name')

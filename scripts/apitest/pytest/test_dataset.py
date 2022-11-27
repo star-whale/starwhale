@@ -110,36 +110,6 @@ class TestDataset:
 
         print('Test Dataset Version tag update ok.')
 
-    def test_remove(self, host, port):
-        if os.getenv('swds_name') is None:
-            print('Test Dataset remove cancel.')
-            return
-        swds_name = os.getenv('swds_name')
-        res = requests.delete(url=hu.url(host, port) + '/project'
-                                                       '/1'
-                                                       '/dataset'
-                                                       '/' + swds_name,
-                              headers=hu.header())
-        response = res.json()
-        assert res.status_code == 200
-        assert response['code'] == 'success'
-
-        print('Test Dataset remove ok.')
-
-    def test_recover(self, host, port):
-        if os.getenv('swds_name') is None:
-            print('Test Dataset recover cancel.')
-            return
-        swds_name = os.getenv('swds_name')
-        path = '/project/1/dataset/' + swds_name + '/recover'
-        res = requests.put(url=hu.url(host, port) + path,
-                           headers=hu.header())
-        response = res.json()
-        assert res.status_code == 200
-        assert response['code'] == 'success'
-
-        print('Test Dataset recover ok.')
-
     def test_head(self, host, port):
         swds_name = os.getenv('swds_name')
         swds_version_name = os.getenv('swds_version_name')
