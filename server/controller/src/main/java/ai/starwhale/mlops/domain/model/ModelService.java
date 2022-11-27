@@ -58,6 +58,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
@@ -65,6 +66,7 @@ import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -73,6 +75,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -374,12 +377,17 @@ public class ModelService {
         String jobContent = "";
         try (final InputStream inputStream = dsFile.getInputStream()) {
             // only extract the eval job file content
+            // TODO: replace with oss path content
+            // but update only for job
             jobContent = new String(
                     Objects.requireNonNull(
                             TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, modelPath, dsFile.getOriginalFilename()),
-                    inputStream, dsFile.getSize());
-        } catch (IOException e) {
+            TarFileUtil.extract(inputStream, (name, size, in) ->
+                        storageAccessService.put(
+                            String.format(FORMATTER_STORAGE_PATH, modelPath, name), in, size
+                        )
+            );
+        } catch (IOException | ArchiveException e) {
             log.error("upload model failed {}", uploadRequest.getSwmp(), e);
             throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -428,18 +436,48 @@ public class ModelService {
             log.error("listing file from storage failed {}", modelVersionEntity.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
+
         if (CollectionUtils.isEmpty(files)) {
             throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
         }
-        String filePath = files.get(0);
-        try (InputStream fileInputStream = storageAccessService.get(filePath);
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            long length = fileInputStream.transferTo(outputStream);
-            String fileName = filePath.substring(modelVersionEntity.getStoragePath().length() + 1);
-            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
+
+        try (ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            final long[] length = {0L};
+            if (files.size() == 1 && files.get(0).endsWith(".swmp")) {
+                var filePath = files.get(0);
+                try (LengthAbleInputStream fileInputStream = storageAccessService.get(filePath)) {
+                    length[0] += fileInputStream.transferTo(outputStream);
+                }
+            } else {
+                TarFileUtil.archiveAndTransferTo(new Iterator<>() {
+                    @Override
+                    public boolean hasNext() {
+                        return !files.isEmpty();
+                    }
+
+                    @Override
+                    public TarFileUtil.TarEntry next() {
+                        var filePath = files.remove(0);
+                        try {
+                            var inputStream = storageAccessService.get(filePath);
+                            length[0] += inputStream.getSize();
+                            return TarFileUtil.TarEntry.builder()
+                                .inputStream(inputStream)
+                                .size(inputStream.getSize())
+                                .name(filePath.substring(modelVersionEntity.getStoragePath().length() + 1))
+                                .build();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, outputStream);
+            }
+
+            httpResponse.addHeader("Content-Disposition",
+                    "attachment; filename=\"" + modelVersionEntity.getVersionName() + "\".swmp");
+            httpResponse.addHeader("Content-Length", String.valueOf(length[0]));
             outputStream.flush();
-        } catch (IOException e) {
+        } catch (IOException | ArchiveException e) {
             log.error("download file from storage failed {}", modelVersionEntity.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE);
         }

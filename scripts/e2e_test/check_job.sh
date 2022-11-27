@@ -52,5 +52,6 @@ job_status=`cat jobStatus`
 
 echo "job status is $job_status"
 if [[ "$job_status" != "SUCCESS" ]] ; then
+  echo "jos failed, now exit!"
   exit 1
 fi

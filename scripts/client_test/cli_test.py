@@ -39,8 +39,8 @@ class TestCli:
         ds_workdir: str,
         rt_name: str,
         rt_workdir: str,
-        cloud_uri: str,
-        cloud_project: str,
+        server_uri: str,
+        server_project: str,
         step_spec_file: str,
     ) -> None:
         # use local instance
@@ -97,53 +97,53 @@ class TestCli:
         assert eval_info["manifest"]["status"] == "success"
         logging.info("finish run evaluation at standalone.")
 
-        if mode != RunMode.CLOUD:
+        if mode != RunMode.SERVER:
             return
-        # 5.login to cloud
-        logging.info(f"login to cloud {cloud_uri} ...")
-        assert self.instance.login(url=cloud_uri)
+        # 5.login to server
+        logging.info(f"login to server {server_uri} ...")
+        assert self.instance.login(url=server_uri)
 
-        # 6.copy local artifacts to cloud
-        logging.info("copy local artifacts to cloud...")
+        # 6.copy local artifacts to server
+        logging.info("copy local artifacts to server...")
         assert self.model.copy(
             src_uri=_model_uri,
-            target_project=f"cloud://cloud/project/{cloud_project}",
+            target_project=f"cloud://server/project/{server_project}",
             force=True,
         )
         assert self.dataset.copy(
             src_uri=f'{ds_name}/version/{swds["version"]}',
-            target_project=f"cloud://cloud/project/{cloud_project}",
+            target_project=f"cloud://server/project/{server_project}",
             force=True,
         )
         assert self.dataset.copy(
             src_uri=f'{ds_name}/version/{swds2["version"]}',
-            target_project=f"cloud://cloud/project/{cloud_project}",
+            target_project=f"cloud://server/project/{server_project}",
             force=True,
         )
         assert self.runtime.copy(
             src_uri=_rt_uri,
-            target_project=f"cloud://cloud/project/{cloud_project}",
+            target_project=f"cloud://server/project/{server_project}",
             force=True,
         )
 
-        # 7.select to cloud instance
-        self.instance.select(instance="cloud")
-        self.project.select(project=cloud_project)
+        # 7.select to server instance
+        self.instance.select(instance="server")
+        self.project.select(project=server_project)
 
-        _origin_job_list = self.evaluation.list(project=cloud_project)
+        _origin_job_list = self.evaluation.list(project=server_project)
 
         # 8.start an evaluation
 
-        logging.info("running evaluation at cloud...")
+        logging.info("running evaluation at server...")
         assert self.evaluation.run(
             model=swmp["version"],
             datasets=[swds["version"], swds2["version"]],
             runtime=swrt["version"],
-            project=cloud_project,
+            project=server_project,
             step_spec=step_spec_file,
             resource_pool=os.environ.get("RESOURCE_POOL"),
         )
-        _new_job_list = self.evaluation.list(project=cloud_project)
+        _new_job_list = self.evaluation.list(project=server_project)
         assert len(_new_job_list) == len(_origin_job_list) + 1
 
         _origin_job_ids = [j["manifest"]["id"] for j in _origin_job_list]
@@ -153,7 +153,7 @@ class TestCli:
 
         # 9.check job's status
         _job_status = self.get_job_status(
-            cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id
+            server_uri=server_uri, server_project=server_project, job_id=_new_job_id
         )
 
         while True:
@@ -161,7 +161,7 @@ class TestCli:
                 break
             sleep(10)
             _job_status = self.get_job_status(
-                cloud_uri=cloud_uri, cloud_project=cloud_project, job_id=_new_job_id
+                server_uri=server_uri, server_project=server_project, job_id=_new_job_id
             )
             if _job_status:
                 logging.info(f"job status is:{_job_status}")
@@ -169,48 +169,48 @@ class TestCli:
                 logging.info("job status api occur some error!now will exit")
                 break
 
-        logging.info(f"finish run evaluation at cloud, status is:{_job_status}.")
+        logging.info(f"finish run evaluation at server, status is:{_job_status}.")
         # 10.reset instance to local
         self.instance.select("local")
 
-    def get_job_status(self, cloud_uri: str, cloud_project: str, job_id: str) -> Any:
+    def get_job_status(self, server_uri: str, server_project: str, job_id: str) -> Any:
         _remote_job = self.evaluation.info(
-            f"{cloud_uri}/project/{cloud_project}/evaluation/{job_id}"
+            f"{server_uri}/project/{server_project}/evaluation/{job_id}"
         )
         return _remote_job["manifest"]["jobStatus"] if _remote_job else "API ERROR"
 
-    def test_mnist(self, cloud_url: Optional[str]) -> None:
+    def test_mnist(self, server_url: Optional[str]) -> None:
         invoke(["cp", "-rf", f"{ROOT_DIR}/example", f"{self._work_dir}/example"])
         _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
         _environment_prepare.prepare_mnist_data()
         _environment_prepare.prepare_mnist_requirements()
 
         self.standard_workflow(
-            mode=RunMode.CLOUD if cloud_url else RunMode.STANDALONE,
+            mode=RunMode.SERVER if server_url else RunMode.STANDALONE,
             model_name="mnist",
             model_workdir=f"{self._work_dir}/example/mnist",
             ds_name="mnist",
             ds_workdir=f"{self._work_dir}/example/mnist",
             rt_name="pytorch",
             rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
-            cloud_uri=cloud_url if cloud_url else "http://127.0.0.1:8082",
-            cloud_project="starwhale",
+            server_uri=server_url if server_url else "http://127.0.0.1:8082",
+            server_project="starwhale",
             step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
             if os.environ.get("GITHUB_ACTION")
             else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
         )
 
-    def test_simple(self, cloud_url: Optional[str]) -> None:
+    def test_simple(self, server_url: Optional[str]) -> None:
         self.standard_workflow(
-            mode=RunMode.CLOUD if cloud_url else RunMode.STANDALONE,
+            mode=RunMode.SERVER if server_url else RunMode.STANDALONE,
             model_name="simple-test",
             model_workdir=f"{self._work_dir}/scripts/example",
             ds_name="simple-test",
             ds_workdir=f"{self._work_dir}/scripts/example",
             rt_name="simple-test",
             rt_workdir=f"{self._work_dir}/scripts/example",
-            cloud_uri=cloud_url if cloud_url else "http://127.0.0.1:8082",
-            cloud_project="starwhale",
+            server_uri=server_url if server_url else "http://127.0.0.1:8082",
+            server_project="starwhale",
             step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
             if os.environ.get("GITHUB_ACTION")
             else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
@@ -241,7 +241,7 @@ def init_run_environment(work_dir: str) -> None:
 
 class RunMode:
     STANDALONE = "standalone"
-    CLOUD = "cloud"
+    SERVER = "server"
 
 
 if __name__ == "__main__":
@@ -250,10 +250,10 @@ if __name__ == "__main__":
         # start test
         test_cli = TestCli(work_dir=workdir)
         example = sys.argv[1]
-        _cloud_url = os.environ.get("CONTROLLER_URL")
+        _server_url = os.environ.get("CONTROLLER_URL")
         if example == "mnist":
-            test_cli.test_mnist(_cloud_url)
+            test_cli.test_mnist(_server_url)
         elif example == "simple":
-            test_cli.test_simple(_cloud_url)
+            test_cli.test_simple(_server_url)
         else:
             logging.warning("there is nothing to run!")

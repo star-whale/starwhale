@@ -3,8 +3,6 @@ configs:
   conda:
     channels:
       - conda-forge
-  docker:
-    image: ghcr.io/star-whale/runtime/pytorch
   pip:
     extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple
     index_url: https://pypi.tuna.tsinghua.edu.cn/simple

@@ -33,10 +33,13 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
+import ai.starwhale.mlops.common.ArchiveFileConsumer;
 import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
@@ -78,6 +81,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -411,9 +415,11 @@ public class ModelServiceTest {
 
             request.setSwmp("m3:v3");
             service.upload(dsFile, request);
+            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
             request.setProject("2");
             service.upload(dsFile, request);
+            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1 + 1));
         }
     }
 
@@ -441,12 +447,23 @@ public class ModelServiceTest {
                 () -> service.pull("1", "m1", "v3", response));
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
-                ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
+                ServletOutputStream outputStream = mock(ServletOutputStream.class);
+                MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
+            // case 1: only download .swmp file
+            given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/123456.swmp"));
             given(storageAccessService.get(anyString())).willReturn(fileInputStream);
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
 
             service.pull("1", "m1", "v1", response);
+            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(0));
+            verify(storageAccessService, times(1)).get("path1/123456.swmp");
+
+            // case 2: download extract file
+            given(storageAccessService.list(same("path1")))
+                    .willReturn(Stream.of("path1/123456.py", "path1/model/u.pth"));
+            service.pull("1", "m1", "v1", response);
+            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
         }
     }
 
