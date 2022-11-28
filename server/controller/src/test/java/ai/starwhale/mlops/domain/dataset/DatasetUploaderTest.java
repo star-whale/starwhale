@@ -100,6 +100,7 @@ public class DatasetUploaderTest {
         UploadRequest uploadRequest = new UploadRequest();
         String dsName = "testds3";
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
+        uploadRequest.setSwds(dsName + ":" + dsVersionId);
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService, yamlMapper,
@@ -111,7 +112,6 @@ public class DatasetUploaderTest {
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
                 "abc/index.jsonl");
 
-        uploadRequest.setSwds(dsName + ":" + dsVersionId);
         when(datasetDao.selectVersionOrderForUpdate(any(), any())).thenReturn(1L);
         when(datasetDao.selectMaxVersionOrderOfBundleForUpdate(any())).thenReturn(2L);
         when(datasetDao.updateVersionOrder(any(), any())).thenReturn(1);
