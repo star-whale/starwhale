@@ -2,7 +2,6 @@ import typing as t
 
 import click
 
-from starwhale import URI
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
@@ -29,10 +28,8 @@ def model_cmd(ctx: click.Context) -> None:
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
 @click.option("--runtime", default="", help="runtime uri")
-def _build(
-    workdir: str, project: str, model_yaml: str, runtime: str
-) -> t.Union[URI, t.Any]:
-    return ModelTermView.build(workdir, project, model_yaml, runtime)
+def _build(workdir: str, project: str, model_yaml: str, runtime: str) -> None:
+    ModelTermView.build(workdir, project, model_yaml, runtime)
 
 
 @model_cmd.command("tag", help="Model Tag Management, add or remove")

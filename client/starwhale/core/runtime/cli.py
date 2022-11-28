@@ -183,8 +183,8 @@ def _build(
     env_prefix_path: str,
     env_name: str,
     env_use_shell: bool,
-) -> t.Union[URI, t.Any]:
-    return RuntimeTermView.build(
+) -> None:
+    RuntimeTermView.build(
         workdir=workdir,
         project=project,
         yaml_name=runtime_yaml,

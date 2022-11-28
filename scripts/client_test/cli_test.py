@@ -32,34 +32,38 @@ logger = logging.getLogger(__name__)
 EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
         "workdir": f"{ROOT_DIR}/example/mnist",
-        "datasets": ["dataset.yaml", "dataset.yaml.raw", "dataset.yaml.link"],
-        # "datasets": ["dataset.yaml"],
+        "datasets": [
+            "",
+            "mnist.dataset:RawDatasetProcessExecutor",
+            "mnist.dataset:LinkRawDatasetProcessExecutor",
+        ],
+        # "datasets": [""],
     },
     "cifar10": {
         "workdir": f"{ROOT_DIR}/example/cifar10",
-        "datasets": ["dataset.yaml"],
+        "datasets": [""],
     },
     "nmt": {
         "workdir": f"{ROOT_DIR}/example/nmt",
-        "datasets": ["dataset.yaml"],
+        "datasets": [""],
     },
     "pfp": {
         "workdir": f"{ROOT_DIR}/example/PennFudanPed",
-        "datasets": ["dataset.yaml"],
+        "datasets": [""],
         "device": "gpu",
     },
     "speech_command": {
         "workdir": f"{ROOT_DIR}/example/speech_command",
-        "datasets": ["dataset.yaml", "dataset.yaml.link"],
+        "datasets": ["", "sc.dataset:LinkRawDatasetBuildExecutor"],
         "device": "gpu",
     },
     "ag_news": {
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
-        "datasets": ["dataset.yaml"],
+        "datasets": [""],
     },
     "ucf101": {
         "workdir": f"{ROOT_DIR}/example/ucf101",
-        "datasets": ["dataset.yaml"],
+        "datasets": [""],
     },
 }
 RUNTIMES: t.Dict[str, t.Dict[str, str]] = {
@@ -98,11 +102,9 @@ class TestCli:
             logger.info(f"login to cloud {self.cloud_url} ...")
             assert self.instance.login(url=self.cloud_url)
 
-    def build_dataset(
-        self, _workdir: str, yaml: str = "dataset.yaml"
-    ) -> t.Union[URI, t.Any]:
+    def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
         self.select_local_instance()
-        _uri = Dataset.build_with_api(workdir=_workdir, dataset_yaml=yaml)
+        _uri = Dataset.build_with_api(workdir=_workdir, handler=handler)
         if self.cloud_url:
             assert self.dataset.copy(
                 src_uri=_uri.full_uri,
@@ -119,7 +121,7 @@ class TestCli:
     def build_model(
         self,
         _workdir: str,
-    ) -> t.Union[URI, t.Any]:
+    ) -> t.Any:
         self.select_local_instance()
         _uri = Model.build_with_api(workdir=_workdir)
         if self.cloud_url:
@@ -136,7 +138,7 @@ class TestCli:
     def build_runtime(
         self,
         _workdir: str,
-    ) -> t.Union[URI, t.Any]:
+    ) -> t.Any:
         self.select_local_instance()
         _uri = Runtime.build_with_api(workdir=_workdir)
         if self.cloud_url:
@@ -169,9 +171,7 @@ class TestCli:
             return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
         return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
 
-    def local_evl(
-        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI
-    ) -> t.Union[str, t.Any]:
+    def local_evl(self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI) -> t.Any:
         logger.info("running evaluation at local...")
         self.select_local_instance()
         _job_id = self.evaluation.run(
@@ -255,7 +255,7 @@ class TestCli:
 
         processes = [
             subprocess.Popen(
-                ["make", "prepare-e2e-data"],
+                ["make", "CN=1", "prepare-data"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=expl["workdir"],

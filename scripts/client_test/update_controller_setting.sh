@@ -20,8 +20,30 @@ done
 curl -X 'POST' \
   "$CONTROLLER_URL/api/v1/system/setting" \
   -H 'accept: application/json' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY2OTMzMjIyOSwiZXhwIjoxNjcxOTI0MjI5fQ.hmv-reV5kuLwt_KR_xWZSEYLDMCCaHDSjD0N78HyBFJa53w0W-Q91j8LgCgMwp9AWGt5fU9lVPvATD69xDiBdg'\
+  -H "$auth_header"\
   -H 'Content-Type: text/plain' \
-  -d $'---\nstorageSetting:\n- type: "minio"\n  tokens:\n    bucket: "users"\n    ak: "starwhale"\n    sk: "starwhale"\n    endpoint: "http://10.131.0.1:9000"\n    region: "local"\n    hugeFileThreshold: "10485760"\n    hugeFilePartSize: "5242880"\n- type: "s3"\n  tokens:\n    bucket: "users"\n    ak: "starwhale"\n    sk: "starwhale"\n    endpoint: "http://10.131.0.1:9000"\n    region: "local"\n    hugeFileThreshold: "10485760"\n    hugeFilePartSize: "5242880"\n'
+  --data-binary @- << EOF
+---
+storageSetting:
+- type: "minio"
+  tokens:
+    bucket: "users"
+    ak: "starwhale"
+    sk: "starwhale"
+    endpoint: "http://10.131.0.1:9000"
+    region: "local"
+    hugeFileThreshold: "10485760"
+    hugeFilePartSize: "5242880"
+- type: "s3"
+  tokens:
+    bucket: "users"
+    ak: "starwhale"
+    sk: "starwhale"
+    endpoint: "http://10.131.0.1:9000"
+    region: "local"
+    hugeFileThreshold: "10485760"
+    hugeFilePartSize: "5242880"
+EOF
+
 )
 

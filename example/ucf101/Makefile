@@ -16,12 +16,12 @@ download-data:
 	shuf data/all_list.txt -n 1000 -o data/validation_list.txt
 	shuf data/all_list.txt -n 200 -o data/test_list.txt
 
-.POHNY: prepare-e2e-data
-prepare-e2e-data:
+.POHNY: prepare-data
+prepare-data:
 	[ -d data ] ||  mkdir -p data
-	[ -f data/data.zip ] || curl -o data/data.zip http://10.131.0.1:9000/users/dataset/ucf101/data.zip
+	[ -f data/data.zip ] || ([ -z $(CN) ] && curl -o data/data.zip https://starwhale-examples.s3.us-west-1.amazonaws.com/dataset/ucf101/data.zip) || curl -o data/data.zip https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/ucf101/data.zip
 	[ -f data/test_list.txt ] || unzip data/data.zip -d .
 	[ -d data/UCF-101 ] || mv data/UCF-101-WEBM data/UCF-101
 	[ -d models ] ||  mkdir -p models
-	[ -f models/PyTorch-MFNet_ep-0000.pth ] || curl -o models/PyTorch-MFNet_ep-0000.pth http://10.131.0.1:9000/users/model/ucf101.pth
+	[ -f models/PyTorch-MFNet_ep-0000.pth ] || ([ -z $(CN) ] && curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ucf101.pth) || curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ucf101.pth
 	python3 -m pip install -r requirments.txt

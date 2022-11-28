@@ -209,7 +209,7 @@ class Parser:
     @staticmethod
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
         if not jobs:
-            raise RuntimeError("EMPTY job specification error!")
+            raise ValueError("EMPTY job specification error!")
 
         checks = []
         logger.debug(f"check jobs:{jobs}")

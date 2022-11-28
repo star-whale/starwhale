@@ -2,7 +2,6 @@ import json
 import typing as t
 from pathlib import Path
 
-from starwhale import URI
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.dataset.view import DatasetTermView
@@ -139,7 +138,7 @@ class Model(BaseArtifact):
         project: str = "",
         model_yaml: str = "model.yaml",
         runtime_uri: str = "",
-    ) -> t.Union[URI, t.Any]:
+    ) -> t.Any:
         return ModelTermView.build(workdir, project, model_yaml, runtime_uri)
 
     def build(
@@ -208,11 +207,13 @@ class Dataset(BaseArtifact):
     def build_with_api(
         workdir: str,
         dataset_yaml: str = "dataset.yaml",
-    ) -> t.Union[URI, t.Any]:
+        handler: str = "",
+    ) -> t.Any:
         yaml_path = Path(workdir) / dataset_yaml
         config = DatasetConfig()
         if yaml_path.exists():
             config = DatasetConfig.create_by_yaml(yaml_path)
+        config.handler = handler or config.handler
         _uri = DatasetTermView.build(workdir, config)
         LocalDataStore.get_instance().dump()
         return _uri
@@ -337,7 +338,7 @@ class Runtime(BaseArtifact):
         enable_lock: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
-    ) -> t.Union[URI, t.Any]:
+    ) -> t.Any:
         return RuntimeTermView.build(
             workdir,
             project,

@@ -10,11 +10,11 @@ download-data:
 	curl -o data/train.csv https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/train.csv
 	curl -o data/test.csv https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/test.csv
 
-.POHNY: prepare-e2e-data
-prepare-e2e-data:
+.POHNY: prepare-data
+prepare-data:
 	[ -d data ] ||  mkdir -p data
-	[ -f data/test.csv ] || curl -o data/test.csv http://10.131.0.1:9000/users/dataset/ag_news/data/test.csv
+	[ -f data/test.csv ] || ([ $(CN) = "1" ] && curl -o data/test.csv https://starwhale-examples.s3.us-west-1.amazonaws.com/dataset/ag_news/data/test.csv) || curl -o data/test.csv https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/ag_news/data/test.csv
 	[ -d models ] ||  mkdir -p models
-	[ -f models/model.i ] || curl -o models/model.i http://10.131.0.1:9000/users/model/ag_news/models/model.i
-	[ -f models/vocab.i ] || curl -o models/vocab.i http://10.131.0.1:9000/users/model/ag_news/models/vocab.i
+	[ -f models/model.i ] || ([ $(CN) = "1" ] && curl -o models/model.i https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ag_news/models/model.i) || curl -o models/model.i https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ag_news/models/model.i
+	[ -f models/vocab.i ] || ([ $(CN) = "1" ] && curl -o models/vocab.i https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ag_news/models/vocab.i) || curl -o models/vocab.i https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ag_news/models/vocab.i
 

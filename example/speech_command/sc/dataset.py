@@ -10,7 +10,9 @@ from starwhale import (
     UserRawBuildExecutor,
 )
 
-dataset_dir = Path(__file__).parent.parent / "data"
+dataset_dir = (
+    Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
+)
 validation_ds_paths = [dataset_dir / "validation_list.txt"]
 testing_ds_paths = [dataset_dir / "testing_list.txt"]
 
