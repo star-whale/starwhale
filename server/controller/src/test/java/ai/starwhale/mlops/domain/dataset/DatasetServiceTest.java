@@ -188,7 +188,7 @@ public class DatasetServiceTest {
     }
 
     @Test
-    public void testListSwmp() {
+    public void testList() {
         given(datasetMapper.list(same(1L), anyString(), any()))
                 .willReturn(List.of(
                         DatasetEntity.builder().id(1L).build(),
@@ -337,7 +337,7 @@ public class DatasetServiceTest {
     }
 
     @Test
-    public void testListModelInfo() {
+    public void testListDatasetInfo() {
         given(datasetMapper.findByName(same("d1"), same(1L), any()))
                 .willReturn(DatasetEntity.builder().id(1L).build());
         given(datasetVersionMapper.list(same(1L), any(), any()))

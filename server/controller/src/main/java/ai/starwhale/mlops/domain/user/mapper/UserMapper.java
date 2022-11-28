@@ -47,7 +47,7 @@ public interface UserMapper {
             + " where user_name = #{userName}")
     UserEntity findByName(@NotNull @Param("userName") String userName);
 
-    @SelectProvider(value = UserProvider.class, method = "list")
+    @SelectProvider(value = UserProvider.class, method = "listSql")
     List<UserEntity> list(@Param("userName") String userName, @Param("order") String order);
 
     @Update("update user_info"
@@ -64,13 +64,13 @@ public interface UserMapper {
 
     class UserProvider {
 
-        public String list(String userName, String order) {
+        public String listSql(String userName, String order) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
                     FROM("user_info");
                     if (StrUtil.isNotEmpty(userName)) {
-                        WHERE("user_name like concat(#{userNamePrefix}, '%')");
+                        WHERE("user_name like concat(#{userName}, '%')");
                     }
                     if (StrUtil.isNotEmpty(order)) {
                         ORDER_BY(order);

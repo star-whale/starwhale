@@ -41,6 +41,10 @@ public class RevertManager {
         Long bundleId = bundleManager.getBundleId(bundleVersionUrl.getBundleUrl());
         Long versionId = bundleManager.getBundleVersionId(bundleVersionUrl, bundleId);
 
+        return revertVersionTo(bundleId, versionId);
+    }
+
+    public Boolean revertVersionTo(Long bundleId, Long versionId) {
         Long maxOrder = revertAccessor.selectMaxVersionOrderOfBundleForUpdate(bundleId);
         Long versionOrder = revertAccessor.selectVersionOrderForUpdate(bundleId, versionId);
         if (!Objects.equals(maxOrder, versionOrder) || Objects.equals(maxOrder, 0L)) {

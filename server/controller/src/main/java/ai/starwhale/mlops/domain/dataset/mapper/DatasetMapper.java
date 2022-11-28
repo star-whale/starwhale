@@ -55,7 +55,7 @@ public interface DatasetMapper {
 
     @SelectProvider(value = DatasetProvider.class, method = "findByNameSql")
     DatasetEntity findByName(@Param("name") String name, @Param("projectId") Long projectId,
-            @Param("forUpdate") boolean forUpdate);
+            @Param("forUpdate") Boolean forUpdate);
 
     @Select("select " + COLUMNS + " from dataset_info where is_deleted = 1 and id = #{id}")
     DatasetEntity findDeleted(@Param("id") Long id);
@@ -87,7 +87,7 @@ public interface DatasetMapper {
 
         public String findByNameSql(@Param("name") String name,
                 @Param("projectId") Long projectId,
-                @Param("forUpdate") boolean forUpdate) {
+                @Param("forUpdate") Boolean forUpdate) {
             String sql = new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -98,7 +98,7 @@ public interface DatasetMapper {
                     }
                 }
             }.toString();
-            return forUpdate ? (sql + " for update") : sql;
+            return Objects.equals(forUpdate, true) ? (sql + " for update") : sql;
         }
     }
 

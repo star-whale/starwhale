@@ -131,6 +131,9 @@ public interface ProjectMapper {
                     if (Objects.nonNull(project.getPrivacy())) {
                         SET("privacy = #{privacy}");
                     }
+                    if (Objects.nonNull(project.getIsDefault())) {
+                        SET("is_default = #{isDefault}");
+                    }
                     WHERE("id = #{id}");
                 }
             }.toString();

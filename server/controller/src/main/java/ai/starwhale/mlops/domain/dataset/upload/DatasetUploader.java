@@ -246,10 +246,7 @@ public class DatasetUploader {
                     projectManager,
                     datasetDao,
                     datasetDao
-            ), datasetDao).revertVersionTo(BundleVersionUrl.create(idConvertor.convert(projectId),
-                    idConvertor.convert(datasetVersionEntity.getDatasetId()),
-                    idConvertor.convert(datasetVersionEntity.getId())));
-            //datasetVersionMapper.revertTo(datasetVersionEntity.getDatasetId(), datasetVersionEntity.getId());
+            ), datasetDao).revertVersionTo(datasetEntity.getId(), datasetVersionEntity.getId());
             uploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
         } else {
             // dataset version create dup

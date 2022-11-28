@@ -417,10 +417,8 @@ public class ModelService {
                     .evalJobs(jobContent)
                     .build();
             modelVersionMapper.insert(modelVersionEntity);
-            RevertManager.create(bundleManager, modelDao).revertVersionTo(BundleVersionUrl.create(
-                    idConvertor.convert(projectId),
-                    idConvertor.convert(modelVersionEntity.getModelId()),
-                    idConvertor.convert(modelVersionEntity.getId())));
+            RevertManager.create(bundleManager, modelDao)
+                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
         }
 
     }

@@ -52,10 +52,10 @@ public interface RuntimeVersionMapper {
             + " limit 1")
     RuntimeVersionEntity findByLatest(@Param("runtimeId") Long runtimeId);
 
-    @Select("select version_order from runtime_version where id = #{id}")
+    @Select("select version_order from runtime_version where id = #{id} for update")
     Long selectVersionOrderForUpdate(@Param("id") Long id);
 
-    @Select("select max(version_order) as max from runtime_version where runtime_id = #{runtimeId}")
+    @Select("select max(version_order) as max from runtime_version where runtime_id = #{runtimeId} for update")
     Long selectMaxVersionOrderOfRuntimeForUpdate(@Param("runtimeId") Long runtimeId);
 
     @Update("update runtime_version set version_order = #{versionOrder} where id = #{id}")

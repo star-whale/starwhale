@@ -365,9 +365,9 @@ public class ModelServiceTest {
 
         given(modelMapper.findByIds(anyString()))
                 .willAnswer(invocation -> {
-                    List<Long> ids = invocation.getArgument(0);
-                    return ids.stream()
-                            .map(id -> ModelEntity.builder().id(id).build())
+                    String ids = invocation.getArgument(0);
+                    return Stream.of(ids.split(","))
+                            .map(id -> ModelEntity.builder().id(Long.valueOf(id)).build())
                             .collect(Collectors.toList());
                 });
 

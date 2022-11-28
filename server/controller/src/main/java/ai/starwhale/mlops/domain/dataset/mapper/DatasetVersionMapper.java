@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.dataset.mapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
+import java.util.Objects;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -61,7 +62,7 @@ public interface DatasetVersionMapper {
     @SelectProvider(value = DatasetVersionProvider.class, method = "findByNameAndDatasetIdSql")
     DatasetVersionEntity findByNameAndDatasetId(@Param("versionName") String versionName,
             @Param("datasetId") Long datasetId,
-            @Param("forUpdate") boolean forUpdate);
+            @Param("forUpdate") Boolean forUpdate);
 
     @Select("select " + COLUMNS + " from dataset_version"
             + " where version_order = #{versionOrder}"
@@ -69,10 +70,10 @@ public interface DatasetVersionMapper {
     DatasetVersionEntity findByVersionOrder(@Param("versionOrder") Long versionOrder,
             @Param("datasetId") Long datasetId);
 
-    @Select("select version_order from dataset_version where id = #{id}")
+    @Select("select version_order from dataset_version where id = #{id} for update")
     Long selectVersionOrderForUpdate(@Param("id") Long id);
 
-    @Select("select max(version_order) as max from dataset_version where dataset_id = #{datasetId}")
+    @Select("select max(version_order) as max from dataset_version where dataset_id = #{datasetId} for update")
     Long selectMaxVersionOrderOfDatasetForUpdate(@Param("datasetId") Long datasetId);
 
     @Update("update dataset_version set version_order = #{versionOrder} where id = #{id}")
@@ -124,7 +125,7 @@ public interface DatasetVersionMapper {
 
         public String findByNameAndDatasetIdSql(@Param("datasetId") Long datasetId,
                 @Param("versionName") String versionName,
-                @Param("forUpdate") boolean forUpdate) {
+                @Param("forUpdate") Boolean forUpdate) {
             String sql = new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -134,7 +135,7 @@ public interface DatasetVersionMapper {
                 }
             }.toString();
 
-            return forUpdate ? (sql + " for update") : sql;
+            return Objects.equals(forUpdate, true) ? (sql + " for update") : sql;
         }
 
         public String updateSql(DatasetVersionEntity version) {

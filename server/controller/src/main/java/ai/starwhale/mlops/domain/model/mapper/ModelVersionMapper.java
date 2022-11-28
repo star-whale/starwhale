@@ -53,10 +53,10 @@ public interface ModelVersionMapper {
             + " limit 1")
     ModelVersionEntity findByLatest(@Param("modelId") Long modelId);
 
-    @Select("select version_order from model_version where id = #{id}")
+    @Select("select version_order from model_version where id = #{id} for update")
     Long selectVersionOrderForUpdate(@Param("id") Long id);
 
-    @Select("select max(version_order) as max from model_version where model_id = #{modelId}")
+    @Select("select max(version_order) as max from model_version where model_id = #{modelId} for update")
     Long selectMaxVersionOrderOfModelForUpdate(@Param("modelId") Long modelId);
 
     @Update("update model_version set version_order = #{versionOrder} where id = #{id}")

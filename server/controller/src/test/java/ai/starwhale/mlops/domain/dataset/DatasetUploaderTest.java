@@ -105,6 +105,10 @@ public class DatasetUploaderTest {
         String dsName = "testds3";
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        when(datasetDao.selectVersionOrderForUpdate(any(), any())).thenReturn(1L);
+        when(datasetDao.selectMaxVersionOrderOfBundleForUpdate(any())).thenReturn(2L);
+        when(datasetDao.updateVersionOrder(any(), any())).thenReturn(1);
+
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadBody(
                 dsVersionId,

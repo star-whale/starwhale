@@ -98,19 +98,19 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         projectRoleMapper.insert(
                 ProjectRoleEntity.builder().projectId(project2.getId()).roleId(1L).userId(user.getId()).build());
         List<ProjectEntity> projectEntities = projectMapper.list("p", user.getId(),
-                new Order("project_id", Direction.ASC).toString());
+                new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(2, projectEntities.size());
         projectEntities.forEach(pj -> validProject(pj.getId().equals(project.getId()) ? project : project2, user, pj));
 
         projectEntities = projectMapper.list("p",
                 user.getId() + 23L,
-                new Order("project_id", Direction.ASC).toString());
+                new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project, user, projectEntities.get(0));
 
         projectEntities = projectMapper.list("px",
                 user.getId(),
-                new Order("project_id", Direction.ASC).toString());
+                new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project2, user, projectEntities.get(0));
 
@@ -119,7 +119,7 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testFindProjectByName() {
-        Assertions.assertNull(projectMapper.findByName("p"));
+        Assertions.assertEquals(0, projectMapper.findByName("p").size());
         validProject(project, user, projectMapper.findByName(project.getProjectName()).get(0));
         validProject(project2, user, projectMapper.findByName(project2.getProjectName()).get(0));
     }

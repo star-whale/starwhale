@@ -402,10 +402,8 @@ public class RuntimeService {
                     .image(null == runtimeManifestObj ? null : runtimeManifestObj.getBaseImage())
                     .build();
             runtimeVersionMapper.insert(version);
-            RevertManager.create(bundleManager, runtimeDao).revertVersionTo(BundleVersionUrl.create(
-                    idConvertor.convert(projectId),
-                    idConvertor.convert(version.getRuntimeId()),
-                    idConvertor.convert(version.getId())));
+            RevertManager.create(bundleManager, runtimeDao)
+                    .revertVersionTo(version.getRuntimeId(), version.getId());
         }
     }
 

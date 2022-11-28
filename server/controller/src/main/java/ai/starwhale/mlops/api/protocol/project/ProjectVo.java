@@ -66,8 +66,7 @@ public class ProjectVo implements Serializable {
         }
         return ProjectVo.builder()
                 .id(idConvertor.convert(entity.getId()))
-                .name(entity.getProjectName())
-                .owner(Optional.of(owner).orElse(UserVo.empty()))
+                .name(entity.getProjectName()).owner(Optional.ofNullable(owner).orElse(UserVo.empty()))
                 .createdTime(entity.getCreatedTime().getTime())
                 .privacy(Privacy.fromValue(entity.getPrivacy()).name())
                 .description(entity.getProjectDescription())

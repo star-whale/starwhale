@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.SelectProvider;
@@ -40,6 +41,7 @@ public interface ModelMapper {
 
     @Insert("insert into model_info(model_name, project_id, owner_id)"
             + " values(#{modelName}, #{projectId}, #{ownerId})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelEntity entity);
 
     @Update("update model_info set is_deleted = 1 where id = #{id}")
@@ -57,7 +59,7 @@ public interface ModelMapper {
     @SelectProvider(value = ModelProvider.class, method = "findByNameSql")
     ModelEntity findByName(@Param("name") String name,
             @Param("projectId") Long projectId,
-            @Param("forUpdate") boolean forUpdate);
+            @Param("forUpdate") Boolean forUpdate);
 
     @Select("select " + COLUMNS + " from model_info where id = #{id} and is_deleted = 1")
     ModelEntity findDeleted(@Param("id") Long id);
@@ -90,7 +92,7 @@ public interface ModelMapper {
 
         public String findByNameSql(@Param("name") String name,
                 @Param("projectId") Long projectId,
-                @Param("forUpdate") boolean forUpdate) {
+                @Param("forUpdate") Boolean forUpdate) {
             String sql = new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -101,7 +103,7 @@ public interface ModelMapper {
                     }
                 }
             }.toString();
-            return forUpdate ? (sql + " for update") : sql;
+            return Objects.equals(forUpdate, true) ? (sql + " for update") : sql;
         }
     }
 }
