@@ -93,27 +93,28 @@ public class DatasetUploaderTest {
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
         DatasetDao datasetDao = mock(DatasetDao.class);
+
         IdConverter idConvertor = new IdConverter();
         VersionAliasConverter versionAliasConvertor = new VersionAliasConverter();
+
+        UploadRequest uploadRequest = new UploadRequest();
+        String dsName = "testds3";
+        String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService, yamlMapper,
                 hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
                 versionAliasConvertor);
-
-        UploadRequest uploadRequest = new UploadRequest();
-        String dsName = "testds3";
-        String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
-        uploadRequest.setSwds(dsName + ":" + dsVersionId);
-        when(datasetDao.selectVersionOrderForUpdate(any(), any())).thenReturn(1L);
-        when(datasetDao.selectMaxVersionOrderOfBundleForUpdate(any())).thenReturn(2L);
-        when(datasetDao.updateVersionOrder(any(), any())).thenReturn(1);
-
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadBody(
                 dsVersionId,
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
                 "abc/index.jsonl");
+
+        uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        when(datasetDao.selectVersionOrderForUpdate(any(), any())).thenReturn(1L);
+        when(datasetDao.selectMaxVersionOrderOfBundleForUpdate(any())).thenReturn(2L);
+        when(datasetDao.updateVersionOrder(any(), any())).thenReturn(1);
 
         datasetUploader.end(dsVersionId);
 
