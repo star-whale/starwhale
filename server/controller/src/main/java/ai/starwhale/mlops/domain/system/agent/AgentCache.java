@@ -65,7 +65,7 @@ public class AgentCache implements CommandLineRunner {
         if (tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE) {
             throw new SwValidationException(ValidSubject.NODE, "you can't remove online agent manually!");
         }
-        agentMapper.deleteById(tobeDeleteAgent.getId());
+        agentMapper.delete(tobeDeleteAgent.getId());
         agents.remove(agentSerialNumber);
     }
 
@@ -95,14 +95,14 @@ public class AgentCache implements CommandLineRunner {
             return;
         }
         BatchOperateHelper.doBatch(agentEntities,
-                entities -> agentMapper.updateAgents(entities.parallelStream().collect(
+                entities -> agentMapper.update(entities.parallelStream().collect(
                         Collectors.toList())), 100);
         ;
     }
 
     private Agent save(Agent agentReported) {
         AgentEntity entity = agentConverter.toEntity(agentReported);
-        agentMapper.addAgent(entity);
+        agentMapper.insert(entity);
         agentReported.setId(entity.getId());
         return agentReported;
     }

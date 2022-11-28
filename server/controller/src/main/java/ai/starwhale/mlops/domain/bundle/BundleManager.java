@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.bundle;
 
-import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
@@ -28,13 +28,13 @@ public class BundleManager {
 
     public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
     private final ProjectAccessor projectAccessor;
-    private final IdConvertor idConvertor;
-    private final VersionAliasConvertor versionAliasConvertor;
+    private final IdConverter idConvertor;
+    private final VersionAliasConverter versionAliasConvertor;
     private final BundleAccessor bundleAccessor;
     private final BundleVersionAccessor bundleVersionAccessor;
 
-    public BundleManager(IdConvertor idConvertor,
-            VersionAliasConvertor versionAliasConvertor,
+    public BundleManager(IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor,
             ProjectAccessor projectAccessor,
             BundleAccessor bundleAccessor,
             BundleVersionAccessor bundleVersionAccessor) {
@@ -55,7 +55,7 @@ public class BundleManager {
             entity = bundleAccessor.findById(idConvertor.revert(bundleUrl));
         } else {
             Long projectId = projectAccessor.getProjectId(projectUrl);
-            entity = bundleAccessor.findByName(bundleUrl, projectId);
+            entity = bundleAccessor.findByNameForUpdate(bundleUrl, projectId);
         }
         if (entity == null) {
             throw new BundleException(String.format("Unable to find %s", bundleUrl));

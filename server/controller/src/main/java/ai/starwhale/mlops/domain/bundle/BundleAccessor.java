@@ -22,5 +22,5 @@ public interface BundleAccessor {
 
     BundleEntity findById(Long id);
 
-    BundleEntity findByName(String name, Long projectId);
+    BundleEntity findByNameForUpdate(String name, Long projectId);
 }

@@ -44,7 +44,7 @@ public class HotDatasetLoader implements CommandLineRunner {
     }
 
     void loadUploadingDs() {
-        List<DatasetVersionEntity> datasetVersionEntities = datasetVersionMapper.findVersionsByStatus(
+        List<DatasetVersionEntity> datasetVersionEntities = datasetVersionMapper.findByStatus(
                 DatasetVersionEntity.STATUS_UN_AVAILABLE);
         datasetVersionEntities.parallelStream().forEach(entity -> hotDatasetHolder.manifest(entity));
     }

@@ -9,8 +9,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper">
-  <select id="listDatasetVersionsByJobId"
-    resultMap="ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper.dsVersionResultMap">
+  <select id="listDatasetVersionsByJobId" resultMap="dsVersionResultMap">
     select dsv.id as dsv_id,
     dataset_id,
     dsv.owner_id,
@@ -39,4 +38,23 @@
       (#{jobId},#{vid})
     </foreach>
   </insert>
+
+  <resultMap id="dsVersionResultMap"
+    type="ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity">
+    <id column="dsv_id" property="id"/>
+    <result column="dataset_id" property="datasetId"/>
+    <result column="dsv_version_order" property="versionOrder"/>
+    <result column="dsv_version_name" property="versionName"/>
+    <result column="ds_dataset_name" property="datasetName"/>
+    <result column="dsv_size" property="size"/>
+    <result column="dsv_index_table" property="indexTable"/>
+    <result column="dsv_version_tag" property="versionTag"/>
+    <result column="dsv_version_meta" property="versionMeta"/>
+    <result column="dsv_storage_path" property="storagePath"/>
+    <result column="dsv_created_time" property="createdTime"/>
+    <result column="dsv_modified_time" property="modifiedTime"/>
+    <result column="owner_id" property="ownerId"/>
+    <result column="status" property="status"/>
+    <result column="files_uploaded" property="filesUploaded"/>
+  </resultMap>
 </mapper>

@@ -18,5 +18,9 @@ package ai.starwhale.mlops.domain.bundle.revert;
 
 public interface RevertAccessor {
 
-    Boolean revertTo(Long bundleId, Long bundleVersionId);
+    Long selectVersionOrderForUpdate(Long bundleId, Long bundleVersionId);
+
+    Long selectMaxVersionOrderOfBundleForUpdate(Long bundleId);
+
+    int updateVersionOrder(Long versionId, Long versionOrder);
 }

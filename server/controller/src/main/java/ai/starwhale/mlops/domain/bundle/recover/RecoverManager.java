@@ -40,7 +40,7 @@ public class RecoverManager {
         String name = entity.getName();
 
         // Check for duplicate names
-        if (recoverAccessor.findByName(name, projectId) != null) {
+        if (recoverAccessor.findByNameForUpdate(name, projectId) != null) {
             throw new RecoverException(String.format("Recover error. Model %s already exists.", name));
         }
 

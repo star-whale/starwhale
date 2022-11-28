@@ -17,48 +17,137 @@
 package ai.starwhale.mlops.domain.dataset.mapper;
 
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import cn.hutool.core.util.StrUtil;
 import java.util.List;
+import java.util.Objects;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
+import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.UpdateProvider;
+import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface DatasetVersionMapper {
 
-    List<DatasetVersionEntity> listVersions(@Param("datasetId") Long datasetId,
+    String COLUMNS = "id, version_order, dataset_id, owner_id,"
+            + " version_name, version_tag, version_meta, files_uploaded, storage_path,"
+            + " status, created_time, modified_time, size, index_table";
+
+    @SelectProvider(value = DatasetVersionProvider.class, method = "listSql")
+    List<DatasetVersionEntity> list(@Param("datasetId") Long datasetId,
             @Param("namePrefix") String namePrefix,
             @Param("tag") String tag);
 
-    DatasetVersionEntity getVersionById(@Param("dsVersionId") Long dsVersionId);
 
-    List<DatasetVersionEntity> findVersionsByIds(@Param("ids") List<Long> ids);
+    @Select("select " + COLUMNS + " from dataset_version where id = #{id}")
+    DatasetVersionEntity find(@Param("id") Long id);
 
-    List<DatasetVersionEntity> findVersionsByNames(@Param("names") List<String> names);
+    @Select("select " + COLUMNS + " from dataset_version where id in (${ids})")
+    List<DatasetVersionEntity> findByIds(@Param("ids") String ids);
 
-    List<DatasetVersionEntity> findVersionsByStatus(@Param("status") Integer status);
+    @Select("select " + COLUMNS + " from dataset_version where status = #{status}")
+    List<DatasetVersionEntity> findByStatus(@Param("status") Integer status);
 
-    DatasetVersionEntity getLatestVersion(@Param("datasetId") Long datasetId);
+    @Select("select " + COLUMNS + " from dataset_version"
+            + " where dataset_id = #{datasetId}"
+            + " order by version_order desc"
+            + " limit 1")
+    DatasetVersionEntity findByLatest(@Param("datasetId") Long datasetId);
 
-    DatasetVersionEntity findByDsIdAndVersionNameForUpdate(@Param("datasetId") Long datasetId,
-            @Param("versionName") String versionName);
+    @SelectProvider(value = DatasetVersionProvider.class, method = "findByNameAndDatasetIdSql")
+    DatasetVersionEntity findByNameAndDatasetId(@Param("versionName") String versionName,
+            @Param("datasetId") Long datasetId,
+            @Param("forUpdate") Boolean forUpdate);
 
-    DatasetVersionEntity findByDsIdAndVersionName(@Param("datasetId") Long datasetId,
-            @Param("versionName") String versionName);
+    @Select("select " + COLUMNS + " from dataset_version"
+            + " where version_order = #{versionOrder}"
+            + " and dataset_id = #{datasetId}")
+    DatasetVersionEntity findByVersionOrder(@Param("versionOrder") Long versionOrder,
+            @Param("datasetId") Long datasetId);
 
-    DatasetVersionEntity findByDsIdAndVersionOrder(@Param("datasetId") Long datasetId,
-            @Param("versionOrder") Long versionOrder);
+    @Select("select version_order from dataset_version where id = #{id} for update")
+    Long selectVersionOrderForUpdate(@Param("id") Long id);
 
-    int revertTo(@Param("dsId") Long dsId, @Param("dsVersionId") Long dsVersionId);
+    @Select("select max(version_order) as max from dataset_version where dataset_id = #{datasetId} for update")
+    Long selectMaxVersionOrderOfDatasetForUpdate(@Param("datasetId") Long datasetId);
 
-    int addNewVersion(@Param("version") DatasetVersionEntity version);
+    @Update("update dataset_version set version_order = #{versionOrder} where id = #{id}")
+    int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
-    int update(@Param("version") DatasetVersionEntity version);
+    @Insert("insert into dataset_version(dataset_id, owner_id, version_name, size,"
+            + " index_table, version_tag, version_meta, storage_path, files_uploaded)"
+            + " values (#{datasetId}, #{ownerId}, #{versionName}, #{size},"
+            + " #{indexTable}, #{versionTag}, #{versionMeta}, #{storagePath}, #{filesUploaded})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    int insert(DatasetVersionEntity version);
 
-    int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
+    @UpdateProvider(value = DatasetVersionProvider.class, method = "updateSql")
+    int update(DatasetVersionEntity version);
 
-    int updateFilesUploaded(@Param("version") DatasetVersionEntity version);
+    @Update("update dataset_version set version_tag = #{tag} where id = #{id}")
+    int updateTag(@Param("id") Long id, @Param("tag") String tag);
 
+    //int updateFilesUploaded(@Param("version") DatasetVersionEntity version);
+    @Update("update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}")
+    int updateFilesUploaded(@Param("id") Long id, @Param("filesUploaded") String filesUploaded);
+
+    @Update("update dataset_version set status = #{status} where id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
 
-    int deleteById(@Param("id") Long id);
+    @Delete("delete from dataset_version where id = #{id}")
+    int delete(@Param("id") Long id);
 
+    class DatasetVersionProvider {
+
+        public String listSql(@Param("datasetId") Long datasetId,
+                @Param("namePrefix") String namePrefix,
+                @Param("tag") String tag) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("dataset_version");
+                    WHERE("dataset_id = #{datasetId}");
+                    if (StrUtil.isNotEmpty(namePrefix)) {
+                        WHERE("version_name like concat(#{namePrefix}, '%')");
+                    }
+                    if (StrUtil.isNotEmpty(tag)) {
+                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
+                    }
+                    ORDER_BY("version_order desc");
+                }
+            }.toString();
+        }
+
+        public String findByNameAndDatasetIdSql(@Param("datasetId") Long datasetId,
+                @Param("versionName") String versionName,
+                @Param("forUpdate") Boolean forUpdate) {
+            String sql = new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("dataset_version");
+                    WHERE("version_name = #{versionName}");
+                    WHERE("dataset_id = #{datasetId}");
+                }
+            }.toString();
+
+            return Objects.equals(forUpdate, true) ? (sql + " for update") : sql;
+        }
+
+        public String updateSql(DatasetVersionEntity version) {
+            return new SQL() {
+                {
+                    UPDATE("dataset_version");
+                    if (StrUtil.isNotEmpty(version.getVersionTag())) {
+                        SET("version_tag = #{versionTag}");
+                    }
+                    WHERE("where id = #{id}");
+                }
+            }.toString();
+        }
+    }
 }

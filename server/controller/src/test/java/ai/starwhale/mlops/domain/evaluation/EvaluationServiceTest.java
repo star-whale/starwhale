@@ -33,12 +33,12 @@ import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
-import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -57,7 +57,7 @@ public class EvaluationServiceTest {
     private EvaluationService service;
     private JobMapper jobMapper;
     private ViewConfigMapper viewConfigMapper;
-    private JobConvertor jobConvertor;
+    private JobConverter jobConvertor;
 
     @BeforeEach
     public void setUp() {
@@ -71,9 +71,9 @@ public class EvaluationServiceTest {
                 projectManager,
                 jobMapper = mock(JobMapper.class),
                 viewConfigMapper = mock(ViewConfigMapper.class),
-                new IdConvertor(),
-                new ViewConfigConvertor(),
-                jobConvertor = mock(JobConvertor.class),
+                new IdConverter(),
+                new ViewConfigConverter(),
+                jobConvertor = mock(JobConverter.class),
                 new JobStatusMachine()
         );
     }

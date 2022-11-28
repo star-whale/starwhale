@@ -24,7 +24,7 @@ import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.model.ModelService;
@@ -55,9 +55,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class ModelController implements ModelApi {
 
     private final ModelService modelService;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
-    public ModelController(ModelService modelService, IdConvertor idConvertor) {
+    public ModelController(ModelService modelService, IdConverter idConvertor) {
         this.modelService = modelService;
         this.idConvertor = idConvertor;
     }

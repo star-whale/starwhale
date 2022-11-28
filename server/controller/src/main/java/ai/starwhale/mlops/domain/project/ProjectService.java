@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.project;
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -28,7 +28,7 @@ import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
@@ -60,13 +60,9 @@ public class ProjectService {
 
     private final ProjectManager projectManager;
 
-    private final ProjectConvertor projectConvertor;
-
     private final ProjectRoleMapper projectRoleMapper;
 
-    private final ProjectRoleConvertor projectRoleConvertor;
-
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     private final UserService userService;
 
@@ -74,16 +70,12 @@ public class ProjectService {
 
     public ProjectService(ProjectMapper projectMapper,
             ProjectManager projectManager,
-            ProjectConvertor projectConvertor,
             ProjectRoleMapper projectRoleMapper,
-            ProjectRoleConvertor projectRoleConvertor,
-            IdConvertor idConvertor,
+            IdConverter idConvertor,
             UserService userService) {
         this.projectMapper = projectMapper;
         this.projectManager = projectManager;
-        this.projectConvertor = projectConvertor;
         this.projectRoleMapper = projectRoleMapper;
-        this.projectRoleConvertor = projectRoleConvertor;
         this.idConvertor = idConvertor;
         this.userService = userService;
     }
@@ -96,13 +88,14 @@ public class ProjectService {
      */
     public ProjectVo findProject(String projectUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity projectEntity = projectMapper.findProject(projectId);
+        ProjectEntity projectEntity = projectMapper.find(projectId);
         if (projectEntity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
                     HttpStatus.BAD_REQUEST);
         }
-        return projectConvertor.convert(projectEntity);
+        return ProjectVo.fromEntity(projectEntity, idConvertor,
+                userService.findUserById(projectEntity.getOwnerId()));
     }
 
     /**
@@ -126,18 +119,20 @@ public class ProjectService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ProjectEntity> entities = projectManager.listProjects(projectName, userId, orderParams);
         List<Long> ids = entities.stream().map(ProjectEntity::getId).collect(Collectors.toList());
-        Map<Long, ProjectObjectCountEntity> countMap = projectManager.getObjectCountsOfProjects(
+        Map<Long, ProjectObjectCounts> countMap = projectManager.getObjectCountsOfProjects(
                 ids);
 
         return PageUtil.toPageInfo(entities, entity -> {
-            ProjectVo vo = projectConvertor.convert(entity);
-            ProjectObjectCountEntity count = countMap.get(entity.getId());
+            ProjectVo vo = ProjectVo.fromEntity(entity, idConvertor,
+                    userService.findUserById(entity.getOwnerId()));
+            ProjectObjectCounts count = countMap.get(entity.getId());
             if (count != null) {
                 vo.setStatistics(StatisticsVo.builder()
-                        .modelCounts(Optional.ofNullable(count.getCountModel()).orElse(0))
-                        .datasetCounts(Optional.ofNullable(count.getCountDataset()).orElse(0))
-                        .memberCounts(Optional.ofNullable(count.getCountMember()).orElse(0))
-                        .evaluationCounts(Optional.ofNullable(count.getCountJobs()).orElse(0))
+                        .modelCounts(count.getCountModel())
+                        .datasetCounts(count.getCountDataset())
+                        .runtimeCounts(count.getCountRuntime())
+                        .memberCounts(count.getCountMember())
+                        .evaluationCounts(count.getCountJob())
                         .build());
             }
             return vo;
@@ -153,7 +148,7 @@ public class ProjectService {
     @Transactional
     public Long createProject(Project project) {
         Assert.notNull(project.getName(), "Project name must not be null");
-        if (projectManager.existProject(project.getName())) {
+        if (projectManager.existProject(project.getName(), project.getOwner().getId())) {
             //项目存在且未被删除
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT,
@@ -165,11 +160,11 @@ public class ProjectService {
                 .projectName(project.getName())
                 .ownerId(project.getOwner().getId())
                 .privacy(project.getPrivacy().getValue())
-                .description(project.getDescription())
+                .projectDescription(project.getDescription())
                 .isDefault(project.isDefault() ? 1 : 0)
                 .build();
-        projectMapper.createProject(entity);
-        projectRoleMapper.addProjectRoleByName(entity.getOwnerId(), entity.getId(), "owner");
+        projectMapper.insert(entity);
+        projectRoleMapper.insertByRoleName(entity.getOwnerId(), entity.getId(), "owner");
         log.info("Project has been created. ID={}, NAME={}", entity.getId(), entity.getProjectName());
         return entity.getId();
     }
@@ -183,7 +178,7 @@ public class ProjectService {
     @Transactional
     public Boolean deleteProject(String projectUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity entity = projectMapper.findProject(projectId);
+        ProjectEntity entity = projectMapper.find(projectId);
         if (entity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
@@ -195,19 +190,20 @@ public class ProjectService {
                     HttpStatus.BAD_REQUEST);
         }
         entity.setProjectName(entity.getProjectName() + DELETE_SUFFIX + "." + entity.getId());
-        projectMapper.modifyProject(entity);
-        int res = projectMapper.deleteProject(entity.getId());
+        projectMapper.update(entity);
+        int res = projectMapper.remove(entity.getId());
         log.info("Project has been deleted. ID={}", entity.getId());
         return res > 0;
     }
 
     @Transactional
     public Long recoverProject(String projectUrl) {
-        String projectName = projectUrl;
+        String projectName = null;
+        Long ownerId = null;
         Long id;
         if (idConvertor.isId(projectUrl)) {
             id = idConvertor.revert(projectUrl);
-            ProjectEntity entity = projectMapper.findProject(id);
+            ProjectEntity entity = projectMapper.find(id);
             if (entity == null) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.PROJECT,
@@ -216,11 +212,30 @@ public class ProjectService {
             }
             projectName = entity.getProjectName().substring(0,
                     entity.getProjectName().lastIndexOf(DELETE_SUFFIX));
+            ownerId = entity.getOwnerId();
             entity.setProjectName(projectName);
         } else {
+            String[] arr = projectManager.splitProjectUrl(projectUrl);
+            if (arr.length > 1) {
+                projectName = arr[1];
+                if (idConvertor.isId(arr[0])) {
+                    ownerId = idConvertor.revert(arr[0]);
+                } else {
+                    ownerId = Optional.of(userService.loadUserByUsername(arr[0]))
+                            .orElseThrow(() -> new StarwhaleApiException(
+                                    new SwValidationException(ValidSubject.PROJECT,
+                                            "Recover project error. User can not be found. "),
+                                    HttpStatus.BAD_REQUEST))
+                            .getId();
+                }
+            } else {
+                projectName = projectUrl;
+                ownerId = userService.currentUserDetail().getId();
+            }
+
             // To restore projects by name, need to check whether there are duplicate names
-            List<ProjectEntity> deletedProjects = projectMapper.listProjects(projectName + DELETE_SUFFIX, null, 1,
-                    null);
+            List<ProjectEntity> deletedProjects = projectMapper.listRemovedProjects(projectName + DELETE_SUFFIX,
+                    ownerId);
             if (deletedProjects.size() > 1) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.PROJECT,
@@ -238,17 +253,17 @@ public class ProjectService {
         }
 
         // Check for duplicate names
-        if (projectManager.existProject(projectName)) {
+        if (projectManager.existProject(projectName, ownerId)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT,
                             String.format("Recover project error. Project %s already exists", projectName)),
                     HttpStatus.BAD_REQUEST);
         }
-        projectMapper.modifyProject(ProjectEntity.builder()
+        projectMapper.update(ProjectEntity.builder()
                 .id(id)
                 .projectName(projectName)
                 .build());
-        projectMapper.recoverProject(id);
+        projectMapper.recover(id);
         log.info("Project has been recovered. Name={}", projectName);
         return id;
     }
@@ -258,7 +273,7 @@ public class ProjectService {
             String privacy) {
         Long projectId = projectManager.getProjectId(projectUrl);
         if (StrUtil.isNotEmpty(projectName)) {
-            ProjectEntity existProject = projectMapper.findProjectByNameForUpdate(projectName);
+            ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, userId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.PROJECT,
@@ -269,21 +284,28 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
                 .id(projectId)
                 .projectName(projectName)
-                .description(description)
+                .projectDescription(description)
                 .ownerId(userId)
                 .privacy(privacy == null ? null : Privacy.fromName(privacy).getValue())
                 .build();
-        int res = projectMapper.modifyProject(entity);
+        int res = projectMapper.update(entity);
         log.info("Project has been modified ID={}", entity.getId());
         return res > 0;
     }
 
     public List<ProjectRoleVo> listProjectRoles(String projectUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<ProjectRoleEntity> entities = projectRoleMapper.listProjectRoles(projectId);
+        List<ProjectRoleEntity> entities = projectRoleMapper.listByProject(projectId);
         return entities.stream()
-                .map(projectRoleConvertor::convert)
-                .collect(Collectors.toList());
+                .map(entity -> {
+                    ProjectRoleVo vo = ProjectRoleVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .role(userService.findRoleById(entity.getRoleId()))
+                            .user(userService.findUserById(entity.getUserId()))
+                            .project(findProject(projectUrl))
+                            .build();
+                    return vo;
+                }).collect(Collectors.toList());
     }
 
     public Boolean addProjectRole(String projectUrl, Long userId, Long roleId) {
@@ -293,22 +315,19 @@ public class ProjectService {
                 .roleId(roleId)
                 .projectId(projectId)
                 .build();
-        int res = projectRoleMapper.addProjectRole(entity);
+        int res = projectRoleMapper.insert(entity);
         log.info("Project Role has been created ID={}", entity.getId());
         return res > 0;
     }
 
     public Boolean modifyProjectRole(String projectUrl, Long projectRoleId, Long roleId) {
-        int res = projectRoleMapper.updateProjectRole(ProjectRoleEntity.builder()
-                .id(projectRoleId)
-                .roleId(roleId)
-                .build());
+        int res = projectRoleMapper.updateRole(projectRoleId, roleId);
         log.info("Project Role has been modified ID={}", projectRoleId);
         return res > 0;
     }
 
     public Boolean deleteProjectRole(String projectUrl, Long projectRoleId) {
-        int res = projectRoleMapper.deleteProjectRole(projectRoleId);
+        int res = projectRoleMapper.delete(projectRoleId);
         log.info("Project Role has been deleted ID={}", projectRoleId);
         return res > 0;
     }

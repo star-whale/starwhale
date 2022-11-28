@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.project;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
@@ -29,17 +28,16 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,27 +53,29 @@ public class ProjectManagerTest {
     public void setUp() {
         projectMapper = mock(ProjectMapper.class);
         ProjectEntity project1 = ProjectEntity.builder()
-                .id(1L).projectName("p1").ownerId(1L).isDefault(1).isDeleted(0).privacy(1).description("project1")
+                .id(1L).projectName("p1").ownerId(1L).isDefault(1).isDeleted(0).privacy(1)
+                .projectDescription("project1")
                 .build();
         ProjectEntity project2 = ProjectEntity.builder()
-                .id(2L).projectName("p2").ownerId(2L).isDefault(0).isDeleted(0).privacy(0).description("project2")
+                .id(2L).projectName("p2").ownerId(2L).isDefault(0).isDeleted(0).privacy(0)
+                .projectDescription("project2")
                 .build();
-        given(projectMapper.findProject(same(1L))).willReturn(project1);
-        given(projectMapper.findProject(same(2L))).willReturn(project2);
-        given(projectMapper.findProjectByName(same("p1"))).willReturn(project1);
-        given(projectMapper.findProjectByName(same("p2"))).willReturn(project2);
-        given(projectMapper.findProjectByNameForUpdate(same("p1"))).willReturn(project1);
-        given(projectMapper.findProjectByNameForUpdate(same("p2"))).willReturn(project2);
-        given(projectMapper.findProjectByNameAndOwnerId(any(), any()))
+        given(projectMapper.find(same(1L))).willReturn(project1);
+        given(projectMapper.find(same(2L))).willReturn(project2);
+        given(projectMapper.findByName(same("p1"))).willReturn(List.of(project1));
+        given(projectMapper.findByName(same("p2"))).willReturn(List.of(project2));
+        given(projectMapper.findByNameForUpdateAndOwner(same("p1"), any())).willReturn(project1);
+        given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any())).willReturn(project2);
+        given(projectMapper.findExistingByNameAndOwner(any(), any()))
                 .willReturn(project1);
-        given(projectMapper.findProjectByNameAndOwnerName(any(), any()))
+        given(projectMapper.findExistingByNameAndOwnerName(any(), any()))
                 .willReturn(project2);
-        given(projectMapper.listProjects(anyString(), any(), any(), any()))
+        given(projectMapper.list(anyString(), any(), any()))
                 .willReturn(List.of(project1, project2));
-        given(projectMapper.listProjects(same("p1"), any(), any(), any()))
+        given(projectMapper.list(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
 
-        projectManager = new ProjectManager(projectMapper, new IdConvertor());
+        projectManager = new ProjectManager(projectMapper, new IdConverter());
     }
 
     @Test
@@ -95,35 +95,6 @@ public class ProjectManagerTest {
     }
 
     @Test
-    public void testFindDefaultProject() {
-        given(projectMapper.findDefaultProject(same(1L)))
-                .willReturn(ProjectEntity.builder().build());
-        given(projectMapper.listProjectsByOwner(same(2L), any(), any()))
-                .willReturn(List.of(ProjectEntity.builder().build()));
-
-        var res = projectManager.findDefaultProject(1L);
-        assertThat(res, notNullValue());
-
-        res = projectManager.findDefaultProject(2L);
-        assertThat(res, notNullValue());
-
-        res = projectManager.findDefaultProject(3L);
-        assertThat(res, nullValue());
-
-        res = projectManager.findByNameOrDefault("p1", 1L);
-        assertThat(res, allOf(
-                notNullValue(),
-                is(hasProperty("id", is(1L)))
-        ));
-
-        res = projectManager.findByNameOrDefault("none", 1L);
-        assertThat(res, notNullValue());
-
-        res = projectManager.findByNameOrDefault("none", 3L);
-        assertThat(res, nullValue());
-    }
-
-    @Test
     public void testFindById() {
         var res = projectManager.findById(1L);
         assertThat(res, allOf(
@@ -136,31 +107,63 @@ public class ProjectManagerTest {
 
     @Test
     public void testExistProject() {
-        var res = projectManager.existProject("p1");
+        var res = projectManager.existProject("p1", 1L);
         assertThat(res, is(true));
 
-        res = projectManager.existProject("p3");
+        res = projectManager.existProject("p3", 1L);
         assertThat(res, is(false));
     }
 
     @Test
     public void testGetObjectCountsOfProjects() {
-        given(projectMapper.listObjectCounts(argThat(list -> list.contains(1L))))
-                .willReturn(List.of(ProjectObjectCountEntity.builder()
-                        .projectId(1L)
-                        .countModel(2)
-                        .build()));
+        given(projectMapper.countModel(anyString()))
+                .willReturn(List.of(
+                        ObjectCountEntity.builder().projectId(1L).count(2).build(),
+                        ObjectCountEntity.builder().projectId(2L).count(3).build()
+                ));
+        given(projectMapper.countDataset(anyString()))
+                .willReturn(List.of(
+                        ObjectCountEntity.builder().projectId(1L).count(4).build()
+                ));
+        given(projectMapper.countRuntime(anyString()))
+                .willReturn(List.of(
+                        ObjectCountEntity.builder().projectId(2L).count(5).build()
+                ));
+        given(projectMapper.countJob(anyString()))
+                .willReturn(List.of(
+                        ObjectCountEntity.builder().projectId(1L).count(6).build(),
+                        ObjectCountEntity.builder().projectId(2L).count(7).build(),
+                        ObjectCountEntity.builder().projectId(3L).count(8).build()
+                ));
+        given(projectMapper.countMember(anyString()))
+                .willReturn(List.of(
+                        ObjectCountEntity.builder().projectId(1L).count(9).build(),
+                        ObjectCountEntity.builder().projectId(2L).count(10).build()
+                ));
+
         var res = projectManager.getObjectCountsOfProjects(List.of(1L, 2L));
         assertThat(res, allOf(
                 notNullValue(),
                 is(hasKey(1L)),
-                is(hasEntry(is(1L), is(hasProperty("countModel", is(2)))))
-        ));
-
-        res = projectManager.getObjectCountsOfProjects(List.of(2L));
-        assertThat(res, allOf(
-                notNullValue(),
-                anEmptyMap()
+                is(hasKey(2L)),
+                is(hasEntry(is(1L), is(
+                        allOf(
+                                hasProperty("countModel", is(2)),
+                                hasProperty("countDataset", is(4)),
+                                hasProperty("countRuntime", is(0)),
+                                hasProperty("countJob", is(6)),
+                                hasProperty("countMember", is(9))
+                        )
+                ))),
+                is(hasEntry(is(2L), is(
+                        allOf(
+                                hasProperty("countModel", is(3)),
+                                hasProperty("countDataset", is(0)),
+                                hasProperty("countRuntime", is(5)),
+                                hasProperty("countJob", is(7)),
+                                hasProperty("countMember", is(10))
+                        )
+                )))
         ));
     }
 

@@ -25,8 +25,8 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
@@ -52,14 +52,14 @@ public class BundleManagerTest {
         bundleAccessor = mock(BundleAccessor.class);
         given(bundleAccessor.findById(same(1L)))
                 .willReturn(EntityWrapper.builder().id(1L).build());
-        given(bundleAccessor.findByName(same("bundle1"), anyLong()))
+        given(bundleAccessor.findByNameForUpdate(same("bundle1"), anyLong()))
                 .willReturn(EntityWrapper.builder().id(2L).name("bundle1").build());
         given(projectAccessor.getProjectId(anyString()))
                 .willReturn(1L);
         bundleVersionAccessor = mock(BundleVersionAccessor.class);
         bundleManager = new BundleManager(
-                new IdConvertor(),
-                new VersionAliasConvertor(),
+                new IdConverter(),
+                new VersionAliasConverter(),
                 projectAccessor,
                 bundleAccessor,
                 bundleVersionAccessor

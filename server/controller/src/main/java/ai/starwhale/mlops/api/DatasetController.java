@@ -27,7 +27,7 @@ import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
@@ -69,10 +69,10 @@ import org.springframework.web.multipart.MultipartFile;
 public class DatasetController implements DatasetApi {
 
     private final DatasetService datasetService;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
     private final DatasetUploader datasetUploader;
 
-    public DatasetController(DatasetService datasetService, IdConvertor idConvertor, DatasetUploader datasetUploader) {
+    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader) {
         this.datasetService = datasetService;
         this.idConvertor = idConvertor;
         this.datasetUploader = datasetUploader;
@@ -289,7 +289,7 @@ public class DatasetController implements DatasetApi {
                             Collectors.toList()));
             pageInfo = PageInfo.of(voList);
         } else {
-            pageInfo = datasetService.listSwDataset(
+            pageInfo = datasetService.listDataset(
                     DatasetQuery.builder()
                             .projectUrl(projectUrl)
                             .build(),

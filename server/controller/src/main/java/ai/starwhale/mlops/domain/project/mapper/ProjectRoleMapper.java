@@ -19,26 +19,50 @@ package ai.starwhale.mlops.domain.project.mapper;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface ProjectRoleMapper {
 
-    List<ProjectRoleEntity> listSystemRoles();
+    String COLUMNS = "id,user_id,role_id,project_id,created_time,modified_time";
 
-    List<ProjectRoleEntity> listUserRoles(@NotNull @Param("userId") Long userId, @Param("projectId") Long projectId);
+    @Insert("replace into user_role_rel (user_id, role_id, project_id)"
+            + " values (#{userId}, #{roleId}, #{projectId})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    int insert(@NotNull ProjectRoleEntity projectRole);
 
-    List<ProjectRoleEntity> listProjectRoles(@NotNull @Param("projectId") Long projectId);
-
-    int addProjectRole(@NotNull @Param("projectRole") ProjectRoleEntity projectRole);
-
-    int addProjectRoleByName(@NotNull @Param("userId") Long userId,
+    @Insert("replace into user_role_rel (user_id, role_id, project_id)"
+            + " values (#{userId}, (select id from user_role_info where role_name=#{roleName}), #{projectId})")
+    int insertByRoleName(@NotNull @Param("userId") Long userId,
             @NotNull @Param("projectId") Long projectId,
             @NotNull @Param("roleName") String roleName);
 
-    int deleteProjectRole(@NotNull @Param("projectRoleId") Long projectRoleId);
+    @Delete("delete from user_role_rel where id = #{id}")
+    int delete(@NotNull @Param("id") Long id);
 
-    int updateProjectRole(@NotNull @Param("projectRole") ProjectRoleEntity projectRole);
+    @Update("update user_role_rel"
+            + " set role_id = #{roleId}"
+            + " where id = #{id}")
+    int updateRole(@NotNull @Param("id") Long id, @NotNull @Param("roleId") Long roleId);
+
+    @Select("select " + COLUMNS + " from user_role_rel"
+            + " where user_id = #{userId}"
+            + " and project_id = #{projectId}")
+    ProjectRoleEntity findByUserAndProject(@NotNull @Param("userId") Long userId,
+            @NotNull @Param("projectId") Long projectId);
+
+    @Select("select " + COLUMNS + " from user_role_rel"
+            + " where project_id = #{projectId}")
+    List<ProjectRoleEntity> listByProject(@NotNull @Param("projectId") Long projectId);
+
+    @Select("select " + COLUMNS + " from user_role_rel"
+            + " where user_id = #{userId}")
+    List<ProjectRoleEntity> listByUser(@NotNull @Param("userId") Long userId);
 
 }

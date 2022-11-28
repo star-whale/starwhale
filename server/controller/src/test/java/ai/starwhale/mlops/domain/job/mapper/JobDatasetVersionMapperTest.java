@@ -48,7 +48,7 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
     @BeforeEach
     public void initData() {
         dataset = DatasetEntity.builder().datasetName("dsn").projectId(1L).ownerId(1L).build();
-        datasetMapper.addDataset(dataset);
+        datasetMapper.insert(dataset);
 
         datasetVersionEntity = DatasetVersionEntity.builder().datasetId(dataset.getId()).versionName("vn")
                 .filesUploaded("fl").versionTag("vt").versionMeta("vm").indexTable("idt").size(123L)
@@ -57,8 +57,8 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
                 .filesUploaded("fl2").versionTag("vt2").versionMeta("vm2").indexTable("idt2")
                 .size(1223L)
                 .storagePath("stp2").ownerId(1L).build();
-        datasetVersionMapper.addNewVersion(datasetVersionEntity);
-        datasetVersionMapper.addNewVersion(datasetVersionEntity2);
+        datasetVersionMapper.insert(datasetVersionEntity);
+        datasetVersionMapper.insert(datasetVersionEntity2);
         jobDatasetVersionMapper.addJobDatasetVersions(13L,
                 List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()));
     }
@@ -81,7 +81,6 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getVersionOrder(), acutal.getVersionOrder());
         Assertions.assertEquals("dsn", acutal.getDatasetName());
         Assertions.assertEquals(expected.getOwnerId(), acutal.getOwnerId());
-        Assertions.assertEquals(expected.getOwner(), acutal.getOwner());
         Assertions.assertEquals(expected.getVersionName(), acutal.getVersionName());
         Assertions.assertEquals(expected.getVersionTag(), acutal.getVersionTag());
         Assertions.assertEquals(expected.getVersionMeta(), acutal.getVersionMeta());

@@ -46,6 +46,6 @@ public class AgentEntity extends BaseEntity {
 
     private String deviceInfo;
 
-    private AgentStatus status;
+    private AgentStatus agentStatus;
 
 }

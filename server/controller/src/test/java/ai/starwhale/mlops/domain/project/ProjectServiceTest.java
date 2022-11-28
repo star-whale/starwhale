@@ -16,12 +16,12 @@
 
 package ai.starwhale.mlops.domain.project;
 
+import static ai.starwhale.mlops.domain.project.ProjectManager.PROJECT_SEPARATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,8 +32,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -42,19 +41,16 @@ import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
-import ai.starwhale.mlops.domain.user.RoleConvertor;
-import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.po.RoleEntity;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 public class ProjectServiceTest {
 
@@ -67,10 +63,12 @@ public class ProjectServiceTest {
     @BeforeEach
     public void setUp() {
         ProjectEntity project1 = ProjectEntity.builder()
-                .id(1L).projectName("p1").ownerId(1L).isDefault(1).isDeleted(0).privacy(1).description("project1")
+                .id(1L).projectName("p1").ownerId(1L).isDefault(1).isDeleted(0).privacy(1)
+                .projectDescription("project1")
                 .build();
         ProjectEntity project2 = ProjectEntity.builder()
-                .id(2L).projectName("p2").ownerId(2L).isDefault(0).isDeleted(0).privacy(0).description("project2")
+                .id(2L).projectName("p2").ownerId(2L).isDefault(0).isDeleted(0).privacy(0)
+                .projectDescription("project2")
                 .build();
 
         ProjectManager projectManager = mock(ProjectManager.class);
@@ -79,7 +77,12 @@ public class ProjectServiceTest {
         given(projectManager.getProjectId(same("p1"))).willReturn(1L);
         given(projectManager.getProjectId(same("p2"))).willReturn(2L);
         given(projectManager.listProjects(anyString(), any(), any())).willReturn(List.of(project1, project2));
-        given(projectManager.existProject(same("exist_project"))).willReturn(true);
+        given(projectManager.existProject(same("exist_project"), any())).willReturn(true);
+        given(projectManager.splitProjectUrl(anyString()))
+                .willAnswer((Answer<String[]>) invocation -> {
+                    String s = invocation.getArgument(0);
+                    return s.split(PROJECT_SEPARATOR);
+                });
 
         UserService userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder()
@@ -93,25 +96,15 @@ public class ProjectServiceTest {
         projectRoleMapper = mock(ProjectRoleMapper.class);
 
         projectMapper = mock(ProjectMapper.class);
-        given(projectMapper.findProject(same(1L)))
+        given(projectMapper.find(same(1L)))
                 .willReturn(project1);
-        given(projectMapper.findProject(same(2L)))
+        given(projectMapper.find(same(2L)))
                 .willReturn(project2);
 
-        IdConvertor idConvertor = new IdConvertor();
-        UserConvertor userConvertor = new UserConvertor(idConvertor);
-        ProjectConvertor projectConvertor = new ProjectConvertor(idConvertor, userConvertor);
-        RoleConvertor roleConvertor = new RoleConvertor(idConvertor);
-        ProjectRoleConvertor projectRoleConvertor = new ProjectRoleConvertor(
-                idConvertor,
-                projectConvertor,
-                roleConvertor,
-                userConvertor);
+        IdConverter idConvertor = new IdConverter();
         service = new ProjectService(projectMapper,
                 projectManager,
-                projectConvertor,
                 projectRoleMapper,
-                projectRoleConvertor,
                 idConvertor,
                 userService);
     }
@@ -124,8 +117,7 @@ public class ProjectServiceTest {
                 hasProperty("name", is("p1")),
                 hasProperty("id", is("1")),
                 hasProperty("privacy", is("PUBLIC")),
-                hasProperty("description", is("project1")),
-                hasProperty("owner", isA(UserVo.class))
+                hasProperty("description", is("project1"))
         ));
         var p2 = service.findProject("p2");
         assertThat(p2, allOf(
@@ -133,8 +125,7 @@ public class ProjectServiceTest {
                 hasProperty("name", is("p2")),
                 hasProperty("id", is("2")),
                 hasProperty("privacy", is("PRIVATE")),
-                hasProperty("description", is("project2")),
-                hasProperty("owner", isA(UserVo.class))
+                hasProperty("description", is("project2"))
         ));
     }
 
@@ -152,7 +143,7 @@ public class ProjectServiceTest {
 
     @Test
     public void testCreateProject() {
-        given(projectMapper.createProject(any(ProjectEntity.class)))
+        given(projectMapper.insert(any(ProjectEntity.class)))
                 .willAnswer(invocation -> {
                     var entity = (ProjectEntity) invocation.getArgument(0);
                     entity.setId(1L);
@@ -176,8 +167,8 @@ public class ProjectServiceTest {
 
     @Test
     public void testDeleteProject() {
-        given(projectMapper.deleteProject(same(1L))).willReturn(1);
-        given(projectMapper.deleteProject(same(2L))).willReturn(1);
+        given(projectMapper.remove(same(1L))).willReturn(1);
+        given(projectMapper.remove(same(2L))).willReturn(1);
 
         var res = service.deleteProject("2");
         assertThat(res, is(true));
@@ -194,15 +185,15 @@ public class ProjectServiceTest {
 
     @Test
     public void testRecoverProject() {
-        given(projectMapper.findProject(99L))
+        given(projectMapper.find(99L))
                 .willReturn(ProjectEntity.builder().id(99L).projectName("del.deleted").build());
-        given(projectMapper.listProjects(anyString(), any(), same(1), any()))
+        given(projectMapper.listRemovedProjects(anyString(), any()))
                 .willReturn(Collections.emptyList());
-        given(projectMapper.listProjects(matches("^one.*"), any(), same(1), any()))
+        given(projectMapper.listRemovedProjects(matches("^one.*"), any()))
                 .willReturn(List.of(ProjectEntity.builder().id(1L).build()));
-        given(projectMapper.listProjects(matches("^many.*"), any(), same(1), any()))
+        given(projectMapper.listRemovedProjects(matches("^many.*"), any()))
                 .willReturn(List.of(ProjectEntity.builder().id(1L).build(), ProjectEntity.builder().id(2L).build()));
-        given(projectMapper.listProjects(matches("^exist_project.*"), any(), same(1), any()))
+        given(projectMapper.listRemovedProjects(matches("^exist_project.*"), any()))
                 .willReturn(List.of(ProjectEntity.builder().id(1L).build()));
 
         var res = service.recoverProject("99");
@@ -223,9 +214,9 @@ public class ProjectServiceTest {
 
     @Test
     public void testModifyProject() {
-        given(projectMapper.modifyProject(argThat(p -> p.getId() == 1L)))
+        given(projectMapper.update(argThat(p -> p.getId() == 1L)))
                 .willReturn(1);
-        given(projectMapper.findProjectByNameForUpdate("p2"))
+        given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any()))
                 .willReturn(ProjectEntity.builder().id(2L).projectName("p2").build());
         var res = service.modifyProject("1", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(true));
@@ -248,21 +239,21 @@ public class ProjectServiceTest {
 
     @Test
     public void testListProjectRoles() {
-        given(projectRoleMapper.listProjectRoles(same(1L)))
+        given(projectRoleMapper.listByProject(same(1L)))
                 .willReturn(List.of(
                         ProjectRoleEntity.builder()
                                 .id(1L)
-                                .project(ProjectEntity.builder().id(1L).build())
-                                .role(RoleEntity.builder().id(1L).build())
-                                .user(UserEntity.builder().id(1L).build())
+                                .projectId(1L)
+                                .userId(1L)
+                                .roleId(1L)
                                 .build(),
                         ProjectRoleEntity.builder()
                                 .id(2L)
-                                .project(ProjectEntity.builder().id(1L).build())
-                                .role(RoleEntity.builder().id(2L).build())
-                                .user(UserEntity.builder().id(2L).build())
+                                .projectId(1L)
+                                .userId(2L)
+                                .roleId(2L)
                                 .build()));
-        given(projectRoleMapper.listProjectRoles(same(2L)))
+        given(projectRoleMapper.listByProject(same(2L)))
                 .willReturn(Collections.emptyList());
 
         var res = service.listProjectRoles("1");
@@ -284,7 +275,7 @@ public class ProjectServiceTest {
 
     @Test
     public void testAddProjectRole() {
-        given(projectRoleMapper.addProjectRole(any())).willReturn(1);
+        given(projectRoleMapper.insert(any())).willReturn(1);
         var res = service.addProjectRole("1", 1L, 1L);
         assertThat(res, is(true));
 
@@ -295,7 +286,7 @@ public class ProjectServiceTest {
 
     @Test
     public void testModifyProjectRole() {
-        given(projectRoleMapper.updateProjectRole(argThat(r -> r.getId() == 1L)))
+        given(projectRoleMapper.updateRole(same(1L), any()))
                 .willReturn(1);
         var res = service.modifyProjectRole("", 1L, 2L);
         assertThat(res, is(true));
@@ -306,7 +297,7 @@ public class ProjectServiceTest {
 
     @Test
     public void testDeleteProjectRole() {
-        given(projectRoleMapper.deleteProjectRole(same(1L))).willReturn(1);
+        given(projectRoleMapper.delete(same(1L))).willReturn(1);
         var res = service.deleteProjectRole("", 1L);
         assertThat(res, is(true));
 
