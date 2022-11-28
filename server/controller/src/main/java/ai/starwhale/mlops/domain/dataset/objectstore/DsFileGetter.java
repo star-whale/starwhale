@@ -111,7 +111,7 @@ public class DsFileGetter {
             throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
         }
         if (!objectInfo.isExists()) {
-            DatasetVersionEntity versionById = datasetVersionMapper.getVersionById(datasetId);
+            DatasetVersionEntity versionById = datasetVersionMapper.find(datasetId);
             path = StringUtils.trimTrailingCharacter(versionById.getStoragePath(), '/') + "/"
                     + StringUtils.trimLeadingCharacter(path, '/');
         }

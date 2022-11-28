@@ -21,11 +21,11 @@ import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -42,6 +42,8 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
+import ai.starwhale.mlops.domain.runtime.converter.RuntimeConverter;
+import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -64,6 +66,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -92,15 +95,15 @@ public class RuntimeService {
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
     private final ProjectManager projectManager;
-    private final RuntimeConvertor runtimeConvertor;
-    private final RuntimeVersionConvertor versionConvertor;
-    private final RuntimeManager runtimeManager;
+    private final RuntimeConverter runtimeConvertor;
+    private final RuntimeVersionConverter versionConvertor;
+    private final RuntimeDao runtimeDao;
     private final StoragePathCoordinator storagePathCoordinator;
     private final StorageAccessService storageAccessService;
     private final UserService userService;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
     private final HotJobHolder jobHolder;
-    private final VersionAliasConvertor versionAliasConvertor;
+    private final VersionAliasConverter versionAliasConvertor;
     private final ObjectMapper yamlMapper;
     private final TrashService trashService;
     @Setter
@@ -108,11 +111,11 @@ public class RuntimeService {
 
     public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
             StorageService storageService, ProjectManager projectManager,
-            @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConvertor runtimeConvertor,
-            RuntimeVersionConvertor versionConvertor, RuntimeManager runtimeManager,
+            @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConverter runtimeConvertor,
+            RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
             StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
-            HotJobHolder jobHolder, UserService userService, IdConvertor idConvertor,
-            VersionAliasConvertor versionAliasConvertor, TrashService trashService) {
+            HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor, TrashService trashService) {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
@@ -120,7 +123,7 @@ public class RuntimeService {
         this.yamlMapper = yamlMapper;
         this.runtimeConvertor = runtimeConvertor;
         this.versionConvertor = versionConvertor;
-        this.runtimeManager = runtimeManager;
+        this.runtimeDao = runtimeDao;
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.jobHolder = jobHolder;
@@ -132,22 +135,25 @@ public class RuntimeService {
                 idConvertor,
                 versionAliasConvertor,
                 projectManager,
-                runtimeManager,
-                runtimeManager
+                runtimeDao,
+                runtimeDao
         );
     }
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
-        List<RuntimeEntity> entities = runtimeMapper.listRuntimes(projectId, runtimeQuery.getNamePrefix());
+        List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), null);
 
         return PageUtil.toPageInfo(entities, rt -> {
             RuntimeVo vo = runtimeConvertor.convert(rt);
-            RuntimeVersionEntity version = runtimeVersionMapper.getLatestVersion(rt.getId());
+            RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
             if (version != null) {
-                vo.setVersion(versionConvertor.convert(version));
+                RuntimeVersionVo versionVo = versionConvertor.convert(version);
+                versionVo.setOwner(userService.findUserById(version.getOwnerId()));
+                vo.setVersion(versionVo);
             }
+            vo.setOwner(userService.findUserById(rt.getOwnerId()));
             return vo;
         });
     }
@@ -160,14 +166,14 @@ public class RuntimeService {
                 .type(Type.RUNTIME)
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
-        return RemoveManager.create(bundleManager, runtimeManager)
+        return RemoveManager.create(bundleManager, runtimeDao)
                 .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
     }
 
     public RuntimeInfoVo getRuntimeInfo(RuntimeQuery runtimeQuery) {
         BundleUrl bundleUrl = BundleUrl.create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl());
         Long runtimeId = bundleManager.getBundleId(bundleUrl);
-        RuntimeEntity rt = runtimeMapper.findRuntimeById(runtimeId);
+        RuntimeEntity rt = runtimeMapper.find(runtimeId);
         if (rt == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.RUNTIME,
@@ -180,10 +186,10 @@ public class RuntimeService {
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                     .create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl(),
                             runtimeQuery.getRuntimeVersionUrl()));
-            versionEntity = runtimeVersionMapper.findVersionById(versionId);
+            versionEntity = runtimeVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
-            versionEntity = runtimeVersionMapper.getLatestVersion(rt.getId());
+            versionEntity = runtimeVersionMapper.findByLatest(rt.getId());
         }
         if (versionEntity == null) {
             throw new StarwhaleApiException(
@@ -235,7 +241,7 @@ public class RuntimeService {
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
             TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager, runtimeManager)
+            return TagManager.create(bundleManager, runtimeDao)
                     .updateTag(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl), tagAction);
         } catch (TagException e) {
             throw new StarwhaleApiException(
@@ -246,33 +252,35 @@ public class RuntimeService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
-        return RevertManager.create(bundleManager, runtimeManager)
+        return RevertManager.create(bundleManager, runtimeDao)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, runtimeUrl, runtimeVersionUrl));
     }
 
     public PageInfo<RuntimeVersionVo> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
         Long runtimeId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<RuntimeVersionEntity> entities = runtimeVersionMapper.listVersions(
+        List<RuntimeVersionEntity> entities = runtimeVersionMapper.list(
                 runtimeId, query.getVersionName(), query.getVersionTag());
-        RuntimeVersionEntity latest = runtimeVersionMapper.getLatestVersion(runtimeId);
+        RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(runtimeId);
         return PageUtil.toPageInfo(entities, entity -> {
             RuntimeVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConvertor.LATEST);
+                vo.setAlias(VersionAliasConverter.LATEST);
             }
+            vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });
     }
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
-        List<RuntimeVersionEntity> versions = runtimeVersionMapper.findVersionsByIds(
-                versionIds);
+        List<RuntimeVersionEntity> versions = runtimeVersionMapper.findByIds(
+                Joiner.on(",").join(versionIds));
 
         return versions.stream().map(version -> {
-            RuntimeEntity rt = runtimeMapper.findRuntimeById(version.getRuntimeId());
+            RuntimeEntity rt = runtimeMapper.find(version.getRuntimeId());
             RuntimeVo vo = runtimeConvertor.convert(rt);
             vo.setVersion(versionConvertor.convert(version));
+            vo.setOwner(userService.findUserById(version.getOwnerId()));
             return vo;
         }).collect(Collectors.toList());
     }
@@ -280,16 +288,15 @@ public class RuntimeService {
     public List<RuntimeInfoVo> listRuntimeInfo(String project, String name) {
         if (StringUtils.hasText(name)) {
             Long projectId = projectManager.getProjectId(project);
-            RuntimeEntity rt = runtimeMapper.findByName(name, projectId);
+            RuntimeEntity rt = runtimeMapper.findByName(name, projectId, false);
             if (rt == null) {
                 throw new SwValidationException(ValidSubject.RUNTIME, "Unable to find the runtime with name " + name);
             }
             return runtimeInfoOfRuntime(rt);
         }
 
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project,
-                userService.currentUserDetail().getIdTableKey());
-        List<RuntimeEntity> runtimeEntities = runtimeMapper.listRuntimes(projectEntity.getId(), null);
+        ProjectEntity projectEntity = projectManager.getProject(project);
+        List<RuntimeEntity> runtimeEntities = runtimeMapper.list(projectEntity.getId(), null, null);
         if (runtimeEntities == null || runtimeEntities.isEmpty()) {
             return List.of();
         }
@@ -302,7 +309,7 @@ public class RuntimeService {
 
     private List<RuntimeInfoVo> runtimeInfoOfRuntime(RuntimeEntity rt) {
         List<RuntimeVersionEntity> runtimeVersionEntities = runtimeVersionMapper
-                .listVersions(rt.getId(), null, null);
+                .list(rt.getId(), null, null);
 
         if (runtimeVersionEntities == null || runtimeVersionEntities.isEmpty()) {
             return List.of();
@@ -321,17 +328,16 @@ public class RuntimeService {
         log.debug("access received at {}", startTime);
         ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
         Long projectId = projectEntity.getId();
-        RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name(), projectId);
+        RuntimeEntity entity = runtimeMapper.findByName(uploadRequest.name(), projectId, true);
         if (null == entity) {
             //create
-            projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(),
-                    userService.currentUserDetail().getIdTableKey());
+            projectEntity = projectManager.getProject(uploadRequest.getProject());
             entity = RuntimeEntity.builder().isDeleted(0)
                     .ownerId(userService.currentUserDetail().getId())
                     .projectId(null == projectEntity ? null : projectEntity.getId())
                     .runtimeName(uploadRequest.name())
                     .build();
-            runtimeMapper.addRuntime(entity);
+            runtimeMapper.insert(entity);
         }
         log.debug("Runtime checked time use {}", System.currentTimeMillis() - startTime);
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(uploadRequest.version(),
@@ -395,8 +401,11 @@ public class RuntimeService {
                     .versionMeta(runtimeManifest)
                     .image(null == runtimeManifestObj ? null : runtimeManifestObj.getBaseImage())
                     .build();
-            runtimeVersionMapper.addNewVersion(version);
-            runtimeVersionMapper.revertTo(version.getRuntimeId(), version.getId());
+            runtimeVersionMapper.insert(version);
+            RevertManager.create(bundleManager, runtimeDao).revertVersionTo(BundleVersionUrl.create(
+                    idConvertor.convert(projectId),
+                    idConvertor.convert(version.getRuntimeId()),
+                    idConvertor.convert(version.getId())));
         }
     }
 
@@ -410,7 +419,7 @@ public class RuntimeService {
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(versionId);
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
         if (null == runtimeVersionEntity) {
             throw new SwValidationException(ValidSubject.RUNTIME, "Runtime version not found");
         }
@@ -442,7 +451,7 @@ public class RuntimeService {
 
     public String query(String projectUrl, String runtimeUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(versionId);
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
         if (null == runtimeVersionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME), HttpStatus.NOT_FOUND);
         }

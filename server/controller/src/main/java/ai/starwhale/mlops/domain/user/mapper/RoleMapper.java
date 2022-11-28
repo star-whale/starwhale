@@ -21,12 +21,18 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface RoleMapper {
 
-    List<RoleEntity> listRoles();
+    String COLUMNS = "id, role_name, role_code, role_description";
 
-    List<RoleEntity> getRolesOfProject(@NotNull @Param("userId") Long userId,
-            @NotNull @Param("projectId") Long projectId);
+    @Select("select " + COLUMNS + " from user_role_info")
+    List<RoleEntity> list();
+
+    @Select("select " + COLUMNS + " from user_role_info"
+            + " where id = #{id}")
+    RoleEntity find(@NotNull @Param("id") Long id);
+
 }

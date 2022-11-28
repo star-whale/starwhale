@@ -37,7 +37,7 @@ import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
@@ -58,7 +58,7 @@ public class ModelControllerTest {
     @BeforeEach
     public void setUp() {
         modelService = mock(ModelService.class);
-        controller = new ModelController(modelService, new IdConvertor());
+        controller = new ModelController(modelService, new IdConverter());
     }
 
     @Test

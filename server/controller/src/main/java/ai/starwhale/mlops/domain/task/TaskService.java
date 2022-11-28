@@ -23,7 +23,7 @@ import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
+import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -43,7 +43,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskService {
 
-    private final TaskConvertor taskConvertor;
+    private final TaskConverter taskConvertor;
 
     private final TaskMapper taskMapper;
 
@@ -53,7 +53,7 @@ public class TaskService {
 
     private final SystemSettingService systemSettingService;
 
-    public TaskService(TaskConvertor taskConvertor, TaskMapper taskMapper,
+    public TaskService(TaskConverter taskConvertor, TaskMapper taskMapper,
             StorageAccessService storageAccessService, JobManager jobManager,
             SystemSettingService systemSettingService) {
         this.taskConvertor = taskConvertor;

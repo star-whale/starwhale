@@ -18,16 +18,42 @@ package ai.starwhale.mlops.domain.system.mapper;
 
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
+@Mapper
 public interface AgentMapper {
 
+    @Select("select id, inet_ntoa(agent_ip) as agent_ip, connect_time,"
+            + " agent_version, agent_status, serial_number, device_info, created_time, modified_time"
+            + " from agent_info"
+            + " order by connect_time desc")
     List<AgentEntity> listAgents();
 
-    Long addAgent(@Param("agent") AgentEntity agent);
+    @Insert("insert into agent_info(agent_ip, connect_time, agent_version, agent_status, serial_number, device_info)"
+            + " values (inet_aton(#{agent.agentIp}), #{agent.connectTime}, #{agent.agentVersion},"
+            + " #{agent.agentStatus}, #{agent.serialNumber}, #{agent.deviceInfo})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    Long insert(@Param("agent") AgentEntity agent);
 
-    void deleteById(@Param("agentId") Long agentId);
+    @Delete("delete from agent_info where id = #{agentId}")
+    void delete(@Param("agentId") Long agentId);
 
-    void updateAgents(@Param("agents") List<AgentEntity> agents);
+    @Update("<script>"
+            + "<foreach item=\"item\" index=\"index\" collection=\"agents\""
+            + " open=\" \" separator=\";\" close=\" \">"
+            + " update agent_info set connect_time = #{item.connectTime},"
+            + " agent_version = #{item.agentVersion},"
+            + " agent_status = #{item.agentStatus},"
+            + " agent_ip = inet_aton(#{item.agentIp}),"
+            + " device_info = #{item.deviceInfo} WHERE id = #{item.id}"
+            + "</foreach>"
+            + "</script>")
+    void update(@Param("agents") List<AgentEntity> agents);
 
 }

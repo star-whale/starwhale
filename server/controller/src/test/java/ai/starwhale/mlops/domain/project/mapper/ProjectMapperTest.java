@@ -25,8 +25,8 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
@@ -71,45 +71,46 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     @BeforeEach
     public void setUp() {
         user = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user);
+        userMapper.insert(user);
         project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(1)
                 .build();
-        projectMapper.createProject(project);
+        projectMapper.insert(project);
         project2 = ProjectEntity.builder().projectName("pxn2").ownerId(user.getId()).privacy(0).isDefault(0)
                 .build();
-        projectMapper.createProject(project2);
+        projectMapper.insert(project2);
     }
 
     @Test
     public void testDeleteAndRecover() {
-        projectMapper.deleteProject(project.getId());
-        ProjectEntity pj = projectMapper.findProject(this.project.getId());
+        projectMapper.remove(project.getId());
+        ProjectEntity pj = projectMapper.find(this.project.getId());
         project.setIsDeleted(1);
         validProject(project, user, pj);
 
-        projectMapper.recoverProject(project.getId());
-        pj = projectMapper.findProject(this.project.getId());
+        projectMapper.recover(project.getId());
+        pj = projectMapper.find(this.project.getId());
         project.setIsDeleted(0);
         validProject(project, user, pj);
     }
 
     @Test
     public void testListProjects() {
-        projectRoleMapper.addProjectRole(
+        projectRoleMapper.insert(
                 ProjectRoleEntity.builder().projectId(project2.getId()).roleId(1L).userId(user.getId()).build());
-        List<ProjectEntity> projectEntities = projectMapper.listProjects("p",
-                new Order("project_id", Direction.ASC).toString(),
-                0, user.getId());
+        List<ProjectEntity> projectEntities = projectMapper.list("p", user.getId(),
+                new Order("project_id", Direction.ASC).toString());
         Assertions.assertEquals(2, projectEntities.size());
         projectEntities.forEach(pj -> validProject(pj.getId().equals(project.getId()) ? project : project2, user, pj));
 
-        projectEntities = projectMapper.listProjects("p", new Order("project_id", Direction.ASC).toString(),
-                0, user.getId() + 23L);
+        projectEntities = projectMapper.list("p",
+                user.getId() + 23L,
+                new Order("project_id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project, user, projectEntities.get(0));
 
-        projectEntities = projectMapper.listProjects("px", new Order("project_id", Direction.ASC).toString(),
-                0, user.getId());
+        projectEntities = projectMapper.list("px",
+                user.getId(),
+                new Order("project_id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project2, user, projectEntities.get(0));
 
@@ -117,29 +118,10 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     }
 
     @Test
-    public void testListProjectsByOwner() {
-        List<ProjectEntity> projectEntities = projectMapper.listProjectsByOwner(user.getId(),
-                new Order("project_id", Direction.ASC).toString(),
-                0);
-        Assertions.assertEquals(2, projectEntities.size());
-        projectEntities.forEach(pj -> validProject(pj.getId().equals(project.getId()) ? project : project2, user, pj));
-
-        projectEntities = projectMapper.listProjectsByOwner(user.getId() + 12L,
-                new Order("project_id", Direction.ASC).toString(),
-                0);
-        Assertions.assertEquals(0, projectEntities.size());
-    }
-
-    @Test
     public void testFindProjectByName() {
-        Assertions.assertNull(projectMapper.findProjectByName("p"));
-        validProject(project, user, projectMapper.findProjectByName(project.getProjectName()));
-        validProject(project2, user, projectMapper.findProjectByName(project2.getProjectName()));
-    }
-
-    @Test
-    public void testFindDefaultProject() {
-        validProject(project, user, projectMapper.findDefaultProject(user.getId()));
+        Assertions.assertNull(projectMapper.findByName("p"));
+        validProject(project, user, projectMapper.findByName(project.getProjectName()).get(0));
+        validProject(project2, user, projectMapper.findByName(project2.getProjectName()).get(0));
     }
 
     @Test
@@ -148,16 +130,16 @@ public class ProjectMapperTest extends MySqlContainerHolder {
                 .isDefault(0)
                 .build();
         project3.setId(project.getId());
-        projectMapper.modifyProject(project3);
-        validProject(project3, user, projectMapper.findProject(project.getId()));
+        projectMapper.update(project3);
+        validProject(project3, user, projectMapper.find(project.getId()));
     }
 
     @Test
     public void testListObjectCounts() {
-        modelMapper.addModel(
+        modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project.getId())
                         .ownerId(user.getId()).build());
-        modelMapper.addModel(
+        modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project2.getId())
                         .ownerId(user.getId()).build());
         jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
@@ -172,34 +154,44 @@ public class ProjectMapperTest extends MySqlContainerHolder {
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project2.getId()).ownerId(user.getId()).build());
-        datasetMapper.addDataset(
+        datasetMapper.insert(
                 DatasetEntity.builder().datasetName("dsn").projectId(project.getId()).ownerId(1L).build());
-        datasetMapper.addDataset(
+        datasetMapper.insert(
                 DatasetEntity.builder().datasetName("dsn2").projectId(project.getId()).ownerId(1L).build());
-        datasetMapper.addDataset(
+        datasetMapper.insert(
                 DatasetEntity.builder().datasetName("dsn3").projectId(project.getId()).ownerId(1L).build());
-        datasetMapper.addDataset(
+        datasetMapper.insert(
                 DatasetEntity.builder().datasetName("dsn3").projectId(project2.getId()).ownerId(1L).build());
 
-        List<ProjectObjectCountEntity> projectObjectCountEntities = projectMapper.listObjectCounts(
-                List.of(project.getId()));
-        Assertions.assertEquals(1, projectObjectCountEntities.size());
-        ProjectObjectCountEntity projectObjectCountEntity = projectObjectCountEntities.get(0);
-        Assertions.assertEquals(project.getId(), projectObjectCountEntity.getProjectId());
-        Assertions.assertEquals(2, projectObjectCountEntity.getCountJobs());
-        Assertions.assertEquals(3, projectObjectCountEntity.getCountDataset());
-        Assertions.assertEquals(1, projectObjectCountEntity.getCountModel());
-        Assertions.assertEquals(0, projectObjectCountEntity.getCountMember());
+        List<ObjectCountEntity> counts = projectMapper.countModel(String.valueOf(project.getId()));
+        Assertions.assertEquals(1, counts.size());
+        Assertions.assertEquals(project.getId(), counts.get(0).getProjectId());
+        Assertions.assertEquals(1, counts.get(0).getCount());
 
+        counts = projectMapper.countDataset(String.valueOf(project.getId()));
+        Assertions.assertEquals(1, counts.size());
+        Assertions.assertEquals(project.getId(), counts.get(0).getProjectId());
+        Assertions.assertEquals(3, counts.get(0).getCount());
+
+        counts = projectMapper.countJob(String.valueOf(project.getId()));
+        Assertions.assertEquals(1, counts.size());
+        Assertions.assertEquals(project.getId(), counts.get(0).getProjectId());
+        Assertions.assertEquals(2, counts.get(0).getCount());
+
+        counts = projectMapper.countMember(String.valueOf(project.getId()));
+        Assertions.assertEquals(0, counts.size());
+
+        counts = projectMapper.countRuntime(String.valueOf(project.getId()));
+        Assertions.assertEquals(0, counts.size());
 
     }
 
     @Test
     public void testFindProjectByNameAndOwner() {
-        ProjectEntity res = projectMapper.findProjectByNameAndOwnerId("pjn", user.getId());
+        ProjectEntity res = projectMapper.findExistingByNameAndOwner("pjn", user.getId());
         validProject(project, user, res);
 
-        res = projectMapper.findProjectByNameAndOwnerName("pxn2", "un12");
+        res = projectMapper.findExistingByNameAndOwnerName("pxn2", "un12");
         validProject(project2, user, res);
     }
 
@@ -207,11 +199,10 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getId(), actual.getId());
         Assertions.assertEquals(expected.getOwnerId(), actual.getOwnerId());
         Assertions.assertEquals(expected.getProjectName(), actual.getProjectName());
-        Assertions.assertEquals(expected.getDescription(), actual.getDescription());
+        Assertions.assertEquals(expected.getProjectDescription(), actual.getProjectDescription());
         Assertions.assertEquals(null == expected.getIsDeleted() ? 0 : expected.getIsDeleted(), actual.getIsDeleted());
         Assertions.assertEquals(null == expected.getIsDefault() ? 0 : expected.getIsDefault(), actual.getIsDefault());
         Assertions.assertEquals(expected.getPrivacy(), actual.getPrivacy());
-        validUser(user, actual.getOwner());
     }
 
     private void validUser(UserEntity expected, UserEntity actual) {

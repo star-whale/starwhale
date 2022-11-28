@@ -25,18 +25,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
-import ai.starwhale.mlops.api.protocol.user.UserRoleVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
 import ai.starwhale.mlops.domain.project.ProjectManager;
@@ -79,9 +74,9 @@ public class UserServiceTest {
                 .userPwd("password1")
                 .userPwdSalt("salt1")
                 .build();
-        given(userMapper.findUserByName(same("user1"))).willReturn(u1);
-        given(userMapper.findUser(same(1L))).willReturn(u1);
-        given(userMapper.findUserByName(same("current")))
+        given(userMapper.findByName(same("user1"))).willReturn(u1);
+        given(userMapper.find(same(1L))).willReturn(u1);
+        given(userMapper.findByName(same("current")))
                 .willReturn(UserEntity.builder()
                         .id(1L)
                         .userName("current")
@@ -92,6 +87,13 @@ public class UserServiceTest {
                         .userPwdSalt("current_salt")
                         .build());
         roleMapper = mock(RoleMapper.class);
+        RoleEntity owner = RoleEntity.builder().id(1L).roleName("Owner").roleCode("OWNER").build();
+        RoleEntity maintainer = RoleEntity.builder().id(2L).roleName("Maintainer").roleCode("MAINTAINER").build();
+        RoleEntity guest = RoleEntity.builder().id(3L).roleName("Guest").roleCode("GUEST").build();
+        given(roleMapper.find(same(1L))).willReturn(owner);
+        given(roleMapper.find(same(2L))).willReturn(maintainer);
+        given(roleMapper.find(same(3L))).willReturn(guest);
+
         projectMapper = mock(ProjectMapper.class);
         projectRoleMapper = mock(ProjectRoleMapper.class);
         projectManager = mock(ProjectManager.class);
@@ -99,29 +101,11 @@ public class UserServiceTest {
         given(projectManager.getProjectId(same("1"))).willReturn(1L);
         given(projectManager.getProjectId(same("2"))).willReturn(2L);
         given(projectManager.getProjectId(same("3"))).willReturn(3L);
-        UserConvertor userConvertor = mock(UserConvertor.class);
-        given(userConvertor.convert(any(UserEntity.class)))
-                .willAnswer(invocation -> {
-                    UserEntity entity = invocation.getArgument(0);
-                    return UserVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .name(entity.getUserName())
-                            .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled() == 1)
-                            .build();
-                });
-        RoleConvertor roleConvertor = mock(RoleConvertor.class);
-        given(roleConvertor.convert(any(RoleEntity.class)))
-                .willReturn(RoleVo.empty());
-        UserRoleConvertor userRoleConvertor = mock(UserRoleConvertor.class);
-        given(userRoleConvertor.convert(any(ProjectRoleEntity.class)))
-                .willReturn(UserRoleVo.builder().build());
-        SystemRoleConvertor systemRoleConvertor = mock(SystemRoleConvertor.class);
-        given(systemRoleConvertor.convert(any(ProjectRoleEntity.class)))
-                .willReturn(SystemRoleVo.builder().build());
+
         SaltGenerator saltGenerator = mock(SaltGenerator.class);
         given(saltGenerator.salt()).willReturn("salt");
         service = new UserService(userMapper, roleMapper, projectMapper, projectRoleMapper, projectManager,
-                new IdConvertor(), userConvertor, roleConvertor, userRoleConvertor, systemRoleConvertor, saltGenerator);
+                new IdConverter(), saltGenerator);
 
         User current = User.builder().id(1L).name("current").active(true).build();
         var token = new UsernamePasswordAuthenticationToken(current, null);
@@ -146,19 +130,19 @@ public class UserServiceTest {
 
     @Test
     public void testCurrentUser() {
-        given(projectRoleMapper.listUserRoles(same(1L), isNull()))
+        given(projectRoleMapper.listByUser(same(1L)))
                 .willReturn(List.of(
                         ProjectRoleEntity.builder()
-                                .project(ProjectEntity.builder().id(0L).build())
-                                .role(RoleEntity.builder().roleCode("OWNER").build())
+                                .projectId(0L)
+                                .roleId(1L)
                                 .build(),
                         ProjectRoleEntity.builder()
-                                .project(ProjectEntity.builder().id(1L).build())
-                                .role(RoleEntity.builder().roleCode("MAINTAINER").build())
+                                .projectId(1L)
+                                .roleId(2L)
                                 .build(),
                         ProjectRoleEntity.builder()
-                                .project(ProjectEntity.builder().id(2L).build())
-                                .role(RoleEntity.builder().roleCode("GUEST").build())
+                                .projectId(2L)
+                                .roleId(3L)
                                 .build()
                 ));
         var res = service.currentUser();
@@ -218,13 +202,11 @@ public class UserServiceTest {
 
     @Test
     public void testGetProjectRolesOfUser() {
-        RoleEntity owner = RoleEntity.builder().id(1L).roleName("Owner").build();
-        RoleEntity guest = RoleEntity.builder().id(3L).roleName("Guest").build();
-        given(roleMapper.getRolesOfProject(same(1L), same(1L)))
-                .willReturn(List.of(owner));
-        given(roleMapper.getRolesOfProject(same(2L), same(2L)))
-                .willReturn(List.of(guest));
-        given(projectMapper.findProject(same(3L)))
+        given(projectRoleMapper.findByUserAndProject(same(1L), same(1L)))
+                .willReturn(ProjectRoleEntity.builder().roleId(1L).build());
+        given(projectRoleMapper.findByUserAndProject(same(2L), same(2L)))
+                .willReturn(ProjectRoleEntity.builder().roleId(3L).build());
+        given(projectMapper.find(same(3L)))
                 .willReturn(ProjectEntity.builder().id(3L).privacy(1).build());
 
         var res = service.getProjectRolesOfUser(User.builder().id(1L).build(), "1");
@@ -251,13 +233,11 @@ public class UserServiceTest {
 
     @Test
     public void testGetProjectsRolesOfUser() {
-        RoleEntity owner = RoleEntity.builder().id(1L).roleName("Owner").roleCode("OWNER").build();
-        RoleEntity guest = RoleEntity.builder().id(3L).roleName("Guest").roleCode("GUEST").build();
-        given(roleMapper.getRolesOfProject(same(1L), same(1L)))
-                .willReturn(List.of(owner));
-        given(roleMapper.getRolesOfProject(same(2L), same(2L)))
-                .willReturn(List.of(guest));
-        given(projectMapper.findProject(same(3L)))
+        given(projectRoleMapper.findByUserAndProject(same(1L), same(1L)))
+                .willReturn(ProjectRoleEntity.builder().roleId(1L).build());
+        given(projectRoleMapper.findByUserAndProject(same(2L), same(2L)))
+                .willReturn(ProjectRoleEntity.builder().roleId(3L).build());
+        given(projectMapper.find(same(3L)))
                 .willReturn(ProjectEntity.builder().id(3L).privacy(1).build());
 
         var res = service.getProjectsRolesOfUser(User.builder().id(1L).build(), Set.of("1"));
@@ -295,9 +275,9 @@ public class UserServiceTest {
         UserEntity u1 = UserEntity.builder().id(1L).build();
         UserEntity u2 = UserEntity.builder().id(2L).build();
         UserEntity u3 = UserEntity.builder().id(3L).build();
-        given(userMapper.listUsers(any()))
+        given(userMapper.list(any(), any()))
                 .willReturn(List.of(u1, u2, u3));
-        given(userMapper.listUsers(same("u1")))
+        given(userMapper.list(same("u1"), any()))
                 .willReturn(List.of(u1));
 
         var res = service.listUsers(User.builder().build(), new PageParams(1, 10));
@@ -319,7 +299,7 @@ public class UserServiceTest {
 
     @Test
     public void testCreateUser() {
-        given(userMapper.createUser(any(UserEntity.class)))
+        given(userMapper.insert(any(UserEntity.class)))
                 .willAnswer(invocation -> {
                     var entity = (UserEntity) invocation.getArgument(0);
                     entity.setId(1L);
@@ -335,7 +315,7 @@ public class UserServiceTest {
 
     @Test
     public void testChangePassword() {
-        given(userMapper.changePassword(argThat(user -> user.getId() == 1L)))
+        given(userMapper.updatePassword(same(1L), anyString(), anyString()))
                 .willReturn(1);
 
         var res = service.changePassword(User.builder().id(1L).build(), "new", "old");
@@ -347,7 +327,7 @@ public class UserServiceTest {
 
     @Test
     public void testUpdateUserState() {
-        given(userMapper.enableUser(argThat(user -> user.getId() == 1L)))
+        given(userMapper.updateEnabled(same(1L), any()))
                 .willReturn(1);
 
         var res = service.updateUserState(User.builder().id(1L).build(), true);
@@ -359,7 +339,7 @@ public class UserServiceTest {
 
     @Test
     public void testListSystemRoles() {
-        given(projectRoleMapper.listSystemRoles())
+        given(projectRoleMapper.listByProject(same(0L)))
                 .willReturn(List.of(ProjectRoleEntity.builder().id(1L).build(),
                         ProjectRoleEntity.builder().id(2L).build()));
 
@@ -372,7 +352,7 @@ public class UserServiceTest {
 
     @Test
     public void testListRoles() {
-        given(roleMapper.listRoles())
+        given(roleMapper.list())
                 .willReturn(List.of(RoleEntity.builder().id(1L).build(), RoleEntity.builder().id(2L).build()));
 
         var res = service.listRoles();
@@ -384,15 +364,15 @@ public class UserServiceTest {
 
     @Test
     public void testListUserRoles() {
-        given(projectRoleMapper.listUserRoles(same(1L), isNull()))
+        given(projectRoleMapper.listByUser(same(1L)))
                 .willReturn(List.of(
                         ProjectRoleEntity.builder().id(1L).build(),
                         ProjectRoleEntity.builder().id(2L).build()
                 ));
-        given(projectRoleMapper.listUserRoles(same(1L), same(1L)))
-                .willReturn(List.of(
+        given(projectRoleMapper.findByUserAndProject(same(1L), same(1L)))
+                .willReturn(
                         ProjectRoleEntity.builder().id(1L).build()
-                ));
+                );
 
         var res = service.listUserRoles(1L, "1");
         assertThat(res, allOf(

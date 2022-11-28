@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.bundle.revert;
 
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,9 +38,15 @@ public class RevertManager {
     }
 
     public Boolean revertVersionTo(BundleVersionUrl bundleVersionUrl) {
-        Long id = bundleManager.getBundleId(bundleVersionUrl.getBundleUrl());
-        Long versionId = bundleManager.getBundleVersionId(bundleVersionUrl, id);
+        Long bundleId = bundleManager.getBundleId(bundleVersionUrl.getBundleUrl());
+        Long versionId = bundleManager.getBundleVersionId(bundleVersionUrl, bundleId);
 
-        return revertAccessor.revertTo(id, versionId);
+        Long maxOrder = revertAccessor.selectMaxVersionOrderOfBundleForUpdate(bundleId);
+        Long versionOrder = revertAccessor.selectVersionOrderForUpdate(bundleId, versionId);
+        if (!Objects.equals(maxOrder, versionOrder) || Objects.equals(maxOrder, 0L)) {
+            revertAccessor.updateVersionOrder(versionId, maxOrder + 1);
+        }
+
+        return true;
     }
 }

@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.panel;
 
 import ai.starwhale.mlops.api.protocol.panel.PanelPluginVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.panel.bo.PanelPlugin;
@@ -57,9 +57,9 @@ public class PluginService implements CommandLineRunner {
 
     private final PanelPluginMapper panelPluginMapper;
 
-    private final PanelPluginConvertor panelPluginConvertor;
+    private final PanelPluginConverter panelPluginConvertor;
 
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     private final ObjectMapper yamlMapper;
 
@@ -70,8 +70,8 @@ public class PluginService implements CommandLineRunner {
             StoragePathCoordinator storagePathCoordinator,
             @Qualifier("yamlMapper") ObjectMapper yamlMapper,
             PanelPluginMapper panelPluginMapper,
-            PanelPluginConvertor panelPluginConvertor,
-            IdConvertor idConvertor,
+            PanelPluginConverter panelPluginConvertor,
+            IdConverter idConvertor,
             @Value("${spring.web.resources.static-locations}") String[] staticLocations
     ) {
         this.storageAccessService = storageAccessService;

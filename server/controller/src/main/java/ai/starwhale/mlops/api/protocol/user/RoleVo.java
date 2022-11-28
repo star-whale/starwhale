@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
+import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -37,5 +39,17 @@ public class RoleVo {
 
     public static RoleVo empty() {
         return new RoleVo("", "", "", "");
+    }
+
+    public static RoleVo fromEntity(RoleEntity roleEntity, IdConverter idConvertor) {
+        if (roleEntity == null) {
+            return RoleVo.empty();
+        }
+        return RoleVo.builder()
+                .id(idConvertor.convert(roleEntity.getId()))
+                .name(roleEntity.getRoleName())
+                .code(roleEntity.getRoleCode())
+                .description(roleEntity.getRoleDescription())
+                .build();
     }
 }

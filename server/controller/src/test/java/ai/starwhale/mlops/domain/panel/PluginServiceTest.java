@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.panel.PanelPluginVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.domain.panel.mapper.PanelPluginMapper;
 import ai.starwhale.mlops.domain.panel.po.PanelPluginEntity;
@@ -57,9 +57,9 @@ public class PluginServiceTest {
         var storagePathCoordinator = new StoragePathCoordinator("/root");
         panelPluginMapper = mock(PanelPluginMapper.class);
         var yamlMapper = new ObjectMapper(new YAMLFactory());
-        var idConvertor = new IdConvertor();
-        var panelPluginConvertor = new PanelPluginConvertor(idConvertor);
-        var locations = new String[] {"file:/opt/starwhale.static"};
+        var idConvertor = new IdConverter();
+        var panelPluginConvertor = new PanelPluginConverter(idConvertor);
+        var locations = new String[]{"file:/opt/starwhale.static"};
         service = new PluginService(
                 storageAccessService,
                 storagePathCoordinator,

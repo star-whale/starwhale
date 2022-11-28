@@ -17,30 +17,89 @@
 package ai.starwhale.mlops.domain.dataset.mapper;
 
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
+import cn.hutool.core.util.StrUtil;
 import java.util.List;
+import java.util.Objects;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
+import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface DatasetMapper {
 
-    List<DatasetEntity> listDatasets(@Param("projectId") Long projectId, @Param("namePrefix") String namePrefix);
+    String COLUMNS = "id, dataset_name, project_id, owner_id, is_deleted, created_time, modified_time";
 
-    int addDataset(@Param("dataset") DatasetEntity dataset);
+    @SelectProvider(value = DatasetProvider.class, method = "listSql")
+    List<DatasetEntity> list(@Param("projectId") Long projectId,
+            @Param("namePrefix") String namePrefix,
+            @Param("order") String order);
 
-    int deleteDataset(@Param("id") Long id);
+    @Insert("insert into dataset_info(dataset_name, project_id, owner_id)"
+            + " values(#{datasetName}, #{projectId}, #{ownerId})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    int insert(DatasetEntity dataset);
 
-    int recoverDataset(@Param("id") Long id);
+    @Update("update dataset_info set is_deleted = 1 where id = #{id}")
+    int remove(@Param("id") Long id);
 
-    DatasetEntity findDatasetById(@Param("id") Long id);
+    @Update("update dataset_info set is_deleted = 0 where id = #{id}")
+    int recover(@Param("id") Long id);
 
-    List<DatasetEntity> findDatasetsByIds(@Param("ids") List<Long> ids);
+    @Select("select " + COLUMNS + " from dataset_info where id = #{id}")
+    DatasetEntity find(@Param("id") Long id);
 
-    DatasetEntity findByNameForUpdate(@Param("name") String name, @Param("projectId") Long projectId);
+    @SelectProvider(value = DatasetProvider.class, method = "findByNameSql")
+    DatasetEntity findByName(@Param("name") String name, @Param("projectId") Long projectId,
+            @Param("forUpdate") boolean forUpdate);
 
-    DatasetEntity findByName(@Param("name") String name, @Param("projectId") Long projectId);
+    @Select("select " + COLUMNS + " from dataset_info where is_deleted = 1 and id = #{id}")
+    DatasetEntity findDeleted(@Param("id") Long id);
 
-    DatasetEntity findDeletedDatasetById(@Param("id") Long id);
+    class DatasetProvider {
 
-    List<DatasetEntity> listDeletedDatasets(@Param("name") String name, @Param("projectId") Long projectId);
+        public String listSql(@Param("projectId") Long projectId,
+                @Param("namePrefix") String namePrefix,
+                @Param("order") String order) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("dataset_info");
+                    WHERE("is_deleted = 0");
+                    if (Objects.nonNull(projectId)) {
+                        WHERE("project_id = #{projectId}");
+                    }
+                    if (StrUtil.isNotEmpty(namePrefix)) {
+                        WHERE("dataset_name like concat(#{namePrefix}, '%')");
+                    }
+                    if (StrUtil.isNotEmpty(order)) {
+                        ORDER_BY(order);
+                    } else {
+                        ORDER_BY("id desc");
+                    }
+                }
+            }.toString();
+        }
+
+        public String findByNameSql(@Param("name") String name,
+                @Param("projectId") Long projectId,
+                @Param("forUpdate") boolean forUpdate) {
+            String sql = new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("dataset_info");
+                    WHERE("dataset_name = #{name}");
+                    if (Objects.nonNull(projectId)) {
+                        WHERE("project_id = #{projectId}");
+                    }
+                }
+            }.toString();
+            return forUpdate ? (sql + " for update") : sql;
+        }
+    }
+
 }

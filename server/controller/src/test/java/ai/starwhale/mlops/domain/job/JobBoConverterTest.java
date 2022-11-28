@@ -22,7 +22,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
@@ -31,6 +30,7 @@ import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
@@ -39,7 +39,6 @@ import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.model.Model;
-import ai.starwhale.mlops.domain.model.ModelVersionConvertor;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -54,6 +53,7 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -67,7 +67,7 @@ public class JobBoConverterTest {
     final DatasetBoConverter converter = mock(DatasetBoConverter.class);
 
     @Test
-    public void testJobBoConverter() {
+    public void testJobBoConverter() throws JsonProcessingException {
 
         JobEntity jobEntity = JobEntity.builder()
                 .id(1L)
@@ -95,23 +95,23 @@ public class JobBoConverterTest {
         ModelMapper modelMapper = mock(ModelMapper.class);
         ModelEntity modelEntity = ModelEntity.builder().modelName("name_model")
                 .build();
-        when(modelMapper.findModelById(
+        when(modelMapper.find(
                 jobEntity.getModelVersion().getModelId())).thenReturn(modelEntity);
 
         RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
         RuntimeVersionEntity runtimeVersionEntity = RuntimeVersionEntity.builder().versionName("name_swrt_version")
                 .runtimeId(1L).storagePath("swrt_path").build();
-        when(runtimeVersionMapper.findVersionById(
+        when(runtimeVersionMapper.find(
                 jobEntity.getRuntimeVersionId())).thenReturn(runtimeVersionEntity);
 
         RuntimeMapper runtimeMapper = mock(RuntimeMapper.class);
         RuntimeEntity runtimeEntity = RuntimeEntity.builder().runtimeName("name_swrt").build();
-        when(runtimeMapper.findRuntimeById(
+        when(runtimeMapper.find(
                 runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
-        ModelVersionConvertor modelVersionConvertor = mock(ModelVersionConvertor.class);
-        when(modelVersionConvertor.convert(any())).thenReturn(
-                ModelVersionVo.builder().stepSpecs(List.of(new StepSpec())).build());
+        JobSpecParser jobSpecParser = mock(JobSpecParser.class);
+        when(jobSpecParser.parseStepFromYaml(any()))
+                .thenReturn(List.of(new StepSpec()));
         StepConverter stepConverter = mock(StepConverter.class);
         given(stepConverter.fromEntity(any()))
                 .willAnswer(invocation -> {
@@ -132,7 +132,7 @@ public class JobBoConverterTest {
         JobBoConverter jobBoConverter = new JobBoConverter(jobDatasetVersionMapper, modelMapper, runtimeMapper,
                 runtimeVersionMapper,
                 converter,
-                modelVersionConvertor, systemSettingService,
+                jobSpecParser, systemSettingService,
                 stepMapper, stepConverter, taskMapper, taskBoConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);

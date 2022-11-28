@@ -24,13 +24,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
+import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 public class TaskServiceTest {
 
     TaskService taskService;
-    TaskConvertor taskConvertor;
+    TaskConverter taskConvertor;
 
     TaskMapper taskMapper;
 
@@ -57,7 +57,7 @@ public class TaskServiceTest {
 
     @BeforeEach
     public void setup() {
-        taskConvertor = new TaskConvertor(new IdConvertor());
+        taskConvertor = new TaskConverter(new IdConverter());
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobManager = mock(JobManager.class);

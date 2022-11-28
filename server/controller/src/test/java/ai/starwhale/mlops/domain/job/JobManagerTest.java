@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -54,7 +54,7 @@ public class JobManagerTest {
                 .willReturn(job1);
         given(jobMapper.findJobByUuid(same("job-uuid-2")))
                 .willReturn(job2);
-        manager = new JobManager(jobMapper, new IdConvertor());
+        manager = new JobManager(jobMapper, new IdConverter());
     }
 
     @Test

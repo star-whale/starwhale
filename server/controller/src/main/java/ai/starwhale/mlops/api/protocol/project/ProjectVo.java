@@ -17,9 +17,12 @@
 package ai.starwhale.mlops.api.protocol.project;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -52,5 +55,23 @@ public class ProjectVo implements Serializable {
     public static ProjectVo system() {
         return new ProjectVo("0", "SYSTEM", "System",
                 Privacy.PUBLIC.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
+    }
+
+    public static ProjectVo fromEntity(ProjectEntity entity, IdConverter idConvertor, UserVo owner) {
+        if (entity == null) {
+            return ProjectVo.empty();
+        }
+        if (entity.getId() == 0) {
+            return ProjectVo.system();
+        }
+        return ProjectVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getProjectName())
+                .owner(Optional.of(owner).orElse(UserVo.empty()))
+                .createdTime(entity.getCreatedTime().getTime())
+                .privacy(Privacy.fromValue(entity.getPrivacy()).name())
+                .description(entity.getProjectDescription())
+                .statistics(StatisticsVo.empty())
+                .build();
     }
 }

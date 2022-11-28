@@ -40,9 +40,9 @@ public class UserMapperTest extends MySqlContainerHolder {
     public void testAddAndGet() {
         String userName = UUID.randomUUID().toString();
         UserEntity user = UserEntity.builder().userEnabled(0).userName(userName).userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user);
-        Assertions.assertEquals(user, userMapper.findUser(user.getId()));
-        Assertions.assertEquals(user, userMapper.findUserByName(userName));
+        userMapper.insert(user);
+        Assertions.assertEquals(user, userMapper.find(user.getId()));
+        Assertions.assertEquals(user, userMapper.findByName(userName));
     }
 
     @Test
@@ -51,20 +51,20 @@ public class UserMapperTest extends MySqlContainerHolder {
         UserEntity user2 = UserEntity.builder().userEnabled(0).userName("un13").userPwdSalt("x").userPwd("up").build();
         UserEntity user3 = UserEntity.builder().userEnabled(0).userName("un23").userPwdSalt("x").userPwd("up").build();
         UserEntity user4 = UserEntity.builder().userEnabled(0).userName("xy65").userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user1);
-        userMapper.createUser(user2);
-        userMapper.createUser(user3);
-        userMapper.createUser(user4);
-        List<UserEntity> userEntities = userMapper.listUsers("un");
+        userMapper.insert(user1);
+        userMapper.insert(user2);
+        userMapper.insert(user3);
+        userMapper.insert(user4);
+        List<UserEntity> userEntities = userMapper.list("un", null);
         Collections.sort(userEntities, Comparator.comparing(UserEntity::getId));
         Assertions.assertIterableEquals(List.of(user1, user2, user3), userEntities);
-        userEntities = userMapper.listUsers("un1");
+        userEntities = userMapper.list("un1", null);
         Collections.sort(userEntities, Comparator.comparing(UserEntity::getId));
         Assertions.assertIterableEquals(List.of(user1, user2), userEntities);
-        userEntities = userMapper.listUsers("un2");
+        userEntities = userMapper.list("un2", null);
         Collections.sort(userEntities, Comparator.comparing(UserEntity::getId));
         Assertions.assertIterableEquals(List.of(user3), userEntities);
-        userEntities = userMapper.listUsers("xy65");
+        userEntities = userMapper.list("xy65", null);
         Collections.sort(userEntities, Comparator.comparing(UserEntity::getId));
         Assertions.assertIterableEquals(List.of(user4), userEntities);
     }
@@ -72,23 +72,23 @@ public class UserMapperTest extends MySqlContainerHolder {
     @Test
     public void testChangePassword() {
         UserEntity user1 = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user1);
+        userMapper.insert(user1);
         user1.setUserPwd("pds");
         user1.setUserPwdSalt("slt");
-        userMapper.changePassword(user1);
-        Assertions.assertEquals(user1, userMapper.findUser(user1.getId()));
+        userMapper.updatePassword(user1.getId(), user1.getUserPwd(), user1.getUserPwdSalt());
+        Assertions.assertEquals(user1, userMapper.find(user1.getId()));
     }
 
     @Test
     public void testEnableUser() {
         UserEntity user1 = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user1);
+        userMapper.insert(user1);
         user1.setUserEnabled(1);
-        userMapper.enableUser(user1);
-        Assertions.assertEquals(user1, userMapper.findUser(user1.getId()));
+        userMapper.updateEnabled(user1.getId(), user1.getUserEnabled());
+        Assertions.assertEquals(user1, userMapper.find(user1.getId()));
         user1.setUserEnabled(0);
-        userMapper.enableUser(user1);
-        Assertions.assertEquals(user1, userMapper.findUser(user1.getId()));
+        userMapper.updateEnabled(user1.getId(), user1.getUserEnabled());
+        Assertions.assertEquals(user1, userMapper.find(user1.getId()));
     }
 
 }

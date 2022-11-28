@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
@@ -27,8 +27,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,9 +36,9 @@ import org.springframework.stereotype.Service;
 public class JobManager implements BundleAccessor, RecoverAccessor {
 
     private final JobMapper jobMapper;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
-    public JobManager(JobMapper jobMapper, IdConvertor idConvertor) {
+    public JobManager(JobMapper jobMapper, IdConverter idConvertor) {
         this.jobMapper = jobMapper;
         this.idConvertor = idConvertor;
     }
@@ -84,7 +82,7 @@ public class JobManager implements BundleAccessor, RecoverAccessor {
     }
 
     @Override
-    public BundleEntity findByName(String name, Long projectId) {
+    public BundleEntity findByNameForUpdate(String name, Long projectId) {
         return jobMapper.findJobByUuid(name);
     }
 
@@ -93,15 +91,6 @@ public class JobManager implements BundleAccessor, RecoverAccessor {
         return jobMapper.findJobById(id);
     }
 
-    @Override
-    public List<? extends BundleEntity> listDeletedBundlesByName(String name, Long projectId) {
-        List<JobEntity> list = new ArrayList<>();
-        JobEntity job = jobMapper.findJobByUuid(name);
-        if (job != null) {
-            list.add(job);
-        }
-        return list;
-    }
 
     @Override
     public Boolean recover(Long id) {

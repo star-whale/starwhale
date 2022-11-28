@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
-import ai.starwhale.mlops.common.IdConvertor;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
@@ -86,19 +86,19 @@ public class DatasetUploaderTest {
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
         ProjectMapper projectMapper = mock(ProjectMapper.class);
         ProjectManager projectManager = mock(ProjectManager.class);
-        when(projectManager.findByNameOrDefault(anyString(), anyLong())).thenReturn(
+        when(projectManager.getProject(anyString())).thenReturn(
                 ProjectEntity.builder().id(1L).build());
         when(projectManager.getProject(anyString())).thenReturn(ProjectEntity.builder().id(1L).build());
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
-        DatasetManager datasetManager = mock(DatasetManager.class);
-        IdConvertor idConvertor = new IdConvertor();
-        VersionAliasConvertor versionAliasConvertor = new VersionAliasConvertor();
+        DatasetDao datasetDao = mock(DatasetDao.class);
+        IdConverter idConvertor = new IdConverter();
+        VersionAliasConverter versionAliasConvertor = new VersionAliasConverter();
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService, yamlMapper,
-                hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetManager, idConvertor,
+                hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
                 versionAliasConvertor);
 
         UploadRequest uploadRequest = new UploadRequest();
@@ -116,38 +116,38 @@ public class DatasetUploaderTest {
         verify(storageAccessService).put(anyString(), any(byte[].class));
         verify(storageAccessService).put(anyString(), any(InputStream.class), anyLong());
         verify(datasetVersionMapper).updateStatus(null, DatasetVersionEntity.STATUS_AVAILABLE);
-        verify(datasetVersionMapper).addNewVersion(any(DatasetVersionEntity.class));
-        verify(datasetMapper).findByName(eq(dsName), anyLong());
-        verify(datasetMapper).addDataset(any(DatasetEntity.class));
+        verify(datasetVersionMapper).insert(any(DatasetVersionEntity.class));
+        verify(datasetMapper).findByName(eq(dsName), anyLong(), any());
+        verify(datasetMapper).insert(any(DatasetEntity.class));
 
         when(storageAccessService.list(anyString())).thenReturn(Stream.of("a", "b"));
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.cancel(dsVersionId);
-        verify(datasetVersionMapper).deleteById(null);
+        verify(datasetVersionMapper).delete(null);
         verify(storageAccessService).list(anyString());
         verify(storageAccessService).delete("a");
         verify(storageAccessService).delete("b");
         verify(storageAccessService, times(0)).delete("c");
 
-        when(datasetMapper.findByName(eq(dsName), anyLong())).thenReturn(
+        when(datasetMapper.findByName(eq(dsName), anyLong(), any())).thenReturn(
                 DatasetEntity.builder().id(1L).projectId(1L).build());
         DatasetVersionEntity mockedEntity = DatasetVersionEntity.builder()
                 .id(1L)
                 .versionName("testversion")
                 .status(DatasetVersionEntity.STATUS_AVAILABLE)
                 .build();
-        when(datasetVersionMapper.findByDsIdAndVersionNameForUpdate(1L, dsVersionId)).thenReturn(mockedEntity);
-        when(datasetVersionMapper.findByDsIdAndVersionName(1L, dsVersionId)).thenReturn(mockedEntity);
-        when(datasetVersionMapper.getVersionById(1L)).thenReturn(mockedEntity);
+        when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
+        when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
+        when(datasetVersionMapper.find(1L)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(
                 new LengthAbleInputStream(
                         new ByteArrayInputStream(index_file_content.getBytes()),
                         index_file_content.getBytes().length
                 )
         );
-        when(datasetManager.findByName(anyString(), anyLong()))
+        when(datasetDao.findByNameForUpdate(anyString(), anyLong()))
                 .thenReturn(DatasetEntity.builder().id(1L).build());
-        when(datasetManager.findVersionByNameAndBundleId(dsVersionId, 1L))
+        when(datasetDao.findVersionByNameAndBundleId(dsVersionId, 1L))
                 .thenReturn(mockedEntity);
         HttpServletResponse httpResponse = mock(HttpServletResponse.class);
         ServletOutputStream mockOutPutStream = new ServletOutputStream() {

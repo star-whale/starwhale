@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollector;
 import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
@@ -34,13 +34,13 @@ import org.junit.jupiter.api.Test;
 public class TaskLogWsServerTest {
     private CancellableTaskLogK8sCollectorFactory factory;
     private CancellableTaskLogK8sCollector logK8sCollector;
-    private IdConvertor idConvertor;
+    private IdConverter idConvertor;
     private Session session;
 
     @BeforeEach
     public void setup() {
         factory = mock(CancellableTaskLogK8sCollectorFactory.class);
-        idConvertor = mock(IdConvertor.class);
+        idConvertor = mock(IdConverter.class);
         session = mock(Session.class);
         logK8sCollector = mock(CancellableTaskLogK8sCollector.class);
     }

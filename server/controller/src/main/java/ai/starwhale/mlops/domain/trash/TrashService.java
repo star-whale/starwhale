@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.trash;
 
 import ai.starwhale.mlops.api.protocol.trash.TrashVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -26,11 +26,11 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
-import ai.starwhale.mlops.domain.dataset.DatasetManager;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobManager;
-import ai.starwhale.mlops.domain.model.ModelManager;
+import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
 import ai.starwhale.mlops.domain.trash.mapper.TrashMapper;
@@ -59,21 +59,21 @@ public class TrashService {
     private final TrashMapper trashMapper;
     private final UserMapper userMapper;
     private final ProjectManager projectManager;
-    private final ModelManager modelManager;
-    private final DatasetManager datasetManager;
-    private final RuntimeManager runtimeManager;
+    private final ModelDao modelDao;
+    private final DatasetDao datasetDao;
+    private final RuntimeDao runtimeDao;
     private final JobManager jobManager;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     public TrashService(TrashMapper trashMapper, UserMapper userMapper, ProjectManager projectManager,
-            ModelManager modelManager, DatasetManager datasetManager,
-            RuntimeManager runtimeManager, JobManager jobManager, IdConvertor idConvertor) {
+            ModelDao modelDao, DatasetDao datasetDao,
+            RuntimeDao runtimeDao, JobManager jobManager, IdConverter idConvertor) {
         this.trashMapper = trashMapper;
         this.userMapper = userMapper;
         this.projectManager = projectManager;
-        this.modelManager = modelManager;
-        this.datasetManager = datasetManager;
-        this.runtimeManager = runtimeManager;
+        this.modelDao = modelDao;
+        this.datasetDao = datasetDao;
+        this.runtimeDao = runtimeDao;
         this.jobManager = jobManager;
         this.idConvertor = idConvertor;
     }
@@ -85,7 +85,7 @@ public class TrashService {
             if (idConvertor.isId(query.getOperator())) {
                 operatorId = idConvertor.revert(query.getOperator());
             } else {
-                UserEntity user = userMapper.findUserByName(query.getOperator());
+                UserEntity user = userMapper.findByName(query.getOperator());
                 if (user != null) {
                     operatorId = user.getId();
                 }
@@ -162,11 +162,11 @@ public class TrashService {
         switch (Optional.of(type)
                 .orElseThrow(() -> new SwValidationException(ValidSubject.TRASH, "Trash type is null."))) {
             case MODEL:
-                return modelManager;
+                return modelDao;
             case DATASET:
-                return datasetManager;
+                return datasetDao;
             case RUNTIME:
-                return runtimeManager;
+                return runtimeDao;
             case EVALUATION:
                 return jobManager;
             default:
@@ -175,7 +175,7 @@ public class TrashService {
     }
 
     private TrashVo toTrashVo(TrashPo trashPo) {
-        UserEntity operator = userMapper.findUser(trashPo.getOperatorId());
+        UserEntity operator = userMapper.find(trashPo.getOperatorId());
         if (operator == null) {
             throw new SwProcessException(ErrorType.DB, "Can not find operator. " + trashPo.getOperatorId());
         }

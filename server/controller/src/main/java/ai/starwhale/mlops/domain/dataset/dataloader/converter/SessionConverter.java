@@ -16,24 +16,24 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader.converter;
 
-import ai.starwhale.mlops.common.Convertor;
+import ai.starwhale.mlops.common.Converter;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.po.SessionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SessionConverter implements Convertor<Session, SessionEntity> {
+public class SessionConverter implements Converter<Session, SessionEntity> {
 
     @Override
     public SessionEntity convert(Session session) throws ConvertException {
         return SessionEntity.builder()
-            .id(session.getId())
-            .sessionId(session.getSessionId())
-            .batchSize(session.getBatchSize())
-            .datasetName(session.getDatasetName())
-            .datasetVersion(session.getDatasetVersion())
-            .tableName(session.getTableName())
+                .id(session.getId())
+                .sessionId(session.getSessionId())
+                .batchSize(session.getBatchSize())
+                .datasetName(session.getDatasetName())
+                .datasetVersion(session.getDatasetVersion())
+                .tableName(session.getTableName())
             .start(session.getStart())
             .startInclusive(session.isStartInclusive())
             .end(session.getEnd())
