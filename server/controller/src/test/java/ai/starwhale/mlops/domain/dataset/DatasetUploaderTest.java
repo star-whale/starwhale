@@ -97,15 +97,15 @@ public class DatasetUploaderTest {
         IdConverter idConvertor = new IdConverter();
         VersionAliasConverter versionAliasConvertor = new VersionAliasConverter();
 
-        UploadRequest uploadRequest = new UploadRequest();
-        String dsName = "testds3";
-        String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
-        uploadRequest.setSwds(dsName + ":" + dsVersionId);
-
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService, yamlMapper,
                 hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
                 versionAliasConvertor);
+
+        UploadRequest uploadRequest = new UploadRequest();
+        String dsName = "testds3";
+        String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
+        uploadRequest.setSwds(dsName + ":" + dsVersionId);
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadBody(
                 dsVersionId,
