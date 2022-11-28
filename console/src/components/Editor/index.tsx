@@ -11,6 +11,8 @@ import { EventBusSrv } from '@starwhale/core/events'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { tablesOfEvaluation } from '@starwhale/core'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { useParams } from 'react-router'
 
 // log.enableAll()
 registerWidgets()
@@ -27,17 +29,24 @@ export function withEditorRegister(EditorApp: React.FC) {
         //     return <BusyPlaceholder type='spinner' />
         // }
         log.debug('WidgetFactory', WidgetFactory.widgetMap)
+        // @FIXME
+        const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
+        const { project } = useProject()
+        const { job } = useJob()
+        const prefix = project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined
+        const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : undefined
+        if (!prefix || !storeKey || !projectId) {
+            return <BusyPlaceholder type='spinner' />
+        }
 
-        return <EditorApp {...props} />
+        const dynamicVars = { prefix, storeKey, projectId }
+
+        return <EditorApp {...props} dynamicVars={dynamicVars} />
     }
 }
 
 export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
     return function EditorContexted(props: any) {
-        // @FIXME
-        const { project } = useProject()
-        const { job } = useJob()
-
         // @eslint-disable-next-line typescript-eslint/no-use-before-define
         const state = useMemo(() => tranformState(rawState), [])
         // @NOTICE must only init once
@@ -55,11 +64,7 @@ export function witEditorContext(EditorApp: React.FC, rawState: typeof initialSt
             <EditorContextProvider
                 value={{
                     ...value,
-                    dynamicVars: {
-                        // @FIXME should match to matcher of regexp
-                        prefix:
-                            project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined,
-                    },
+                    dynamicVars: props.dynamicVars,
                 }}
             >
                 <EditorApp {...props} />

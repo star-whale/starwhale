@@ -6,53 +6,71 @@ import { Button } from '@/components/Button'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import WidgetEditForm from './WidgetForm'
+import useDatastoreTables from '../datastore/hooks/useDatastoreTables'
+import { useEditorContext } from '../context/EditorContextProvider'
+import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
+import WidgetFormModel from './WidgetFormModel'
+import useForceUpdate from '../utils/useForceUpdate'
+import deepEqual from 'fast-deep-equal'
+import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
+import WidgetModel from '../widget/WidgetModel'
 
-export default function WidgetFormModel({
+const PAGE_TABLE_SIZE = 100
+
+export default function WidgetFormModal({
     store,
     handleFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen,
-}: any) {
+    form,
+}: {
+    form: WidgetFormModel
+}) {
     // @FIXME use event bus handle global state
+    const { dynamicVars } = useEditorContext()
+    const { prefix } = dynamicVars
     const [t] = useTranslation()
     const config = store(getWidget(editWidgetId)) ?? {}
-    const [formData, setFormData] = React.useState({})
+    const [formData, setFormData] = React.useState<Record<string, any>>({})
+    const formRef = React.useRef(null)
+    const forceUpdate = useForceUpdate()
 
-    const handleFormChange = (formData: any) => setFormData(formData)
+    const handleFormChange = (formData: any) => {
+        if (formData?.chartType && form?.widget?.type !== formData?.chartType)
+            form.setWidget(new WidgetModel({ type: formData.chartType }))
+        setFormData(formData)
+    }
 
-    // @ts-ignore
     const type = formData?.chartType
-    // @ts-ignore
-    const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
-    const filter = undefined
-    const PAGE_TABLE_SIZE = 100
-
-    const query = React.useMemo(
-        () => ({
+    const query = React.useMemo(() => {
+        // @ts-ignore
+        const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
+        return {
             tableName,
             start: 0,
             limit: PAGE_TABLE_SIZE,
             rawResult: true,
             ignoreNonExistingTable: true,
-            // filter,
-        }),
-        [tableName]
-    )
+        }
+    }, [formData?.tableName])
 
-    const info = useQueryDatastore(query, false)
+    const { tables } = useDatastoreTablesByPrefix(prefix)
+    const info = useQueryDatastore(query)
 
+    // init widget tables
     useEffect(() => {
-        if (tableName) info.refetch()
-    }, [tableName, type])
+        if (tables) {
+            console.log('re tables')
+            form.addDatastoreTableField(tables)
+        }
+    }, [tables])
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
     }, [editWidgetId])
 
-    // console.log('WidgetFormModel', query, info, editWidgetId)
-
-    const formRef = React.useRef(null)
+    console.log('WidgetFormModel', form, form.widget, form.schemas, formData)
 
     return (
         <Modal
@@ -112,6 +130,7 @@ export default function WidgetFormModel({
                 </div>
                 <WidgetEditForm
                     ref={formRef}
+                    form={form}
                     formData={formData}
                     onChange={handleFormChange}
                     onSubmit={handleFormSubmit}

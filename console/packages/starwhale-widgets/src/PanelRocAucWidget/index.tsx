@@ -13,6 +13,27 @@ export const CONFIG: WidgetConfig = {
     type: 'ui:panel:rocauc',
     group: WidgetGroupType.PANEL,
     name: 'Roc Auc',
+    fieldConfig: {
+        schema: {
+            tableName: {
+                type: 'array',
+            },
+            x: {
+                title: 'X',
+                type: 'string',
+            },
+            y: {
+                title: 'Y',
+                type: 'string',
+            },
+        },
+        uiSchema: {
+            // tableName: {},
+            // x: {
+            //     'ui:widget': 'DatastoreColumn',
+            // },
+        },
+    },
 }
 
 function PanelRocAucWidget(props: WidgetRendererProps<any, any>) {

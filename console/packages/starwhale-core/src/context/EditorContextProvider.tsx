@@ -7,6 +7,7 @@ export type StoreType = ReturnType<typeof createCustomStore>
 export type EditorContextType = {
     store: StoreType
     eventBus: EventBus
+    dynamicVars: Record<string, any>
 }
 type EditorContextProviderProps = {
     value: any

@@ -18,6 +18,7 @@ import widget from '../../../starwhale-widgets/src/SectionWidget/index'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
 import _ from 'lodash'
 import produce from 'immer'
+import WidgetFormModal from '../form/WidgetFormModal'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path } = props
@@ -44,23 +45,13 @@ enum PanelEditAction {
 }
 
 export function WidgetRenderTree() {
-    const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
-    const { job } = useJob()
     const { store, eventBus, dynamicVars } = useEditorContext()
+    const { prefix, storeKey: key, projectId } = dynamicVars
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
-    const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
-    // const key = job?.modelName ? `modelName-${job?.modelName}` : ''
-    // const key = jobId ? `evaluation-${jobId}` : ''
-    const key = 'evaluation'
-
-    console.log('Tree', tree, job)
-
-    // useBusEvent(eventBus, { type: 'add-panel' }, (evt) => {
-    //     console.log(evt)
-    // })
+    const [isPanelModalOpen, setisPanelModalOpen] = React.useState(true)
 
     // @ts-ignore
     const handleAddSection = ({ path, type }) => {
@@ -174,10 +165,13 @@ export function WidgetRenderTree() {
         ))
     }, [tree])
 
+    const form = new WidgetFormModel().withPanelSchema()
+
     return (
         <div>
             {Nodes}
-            <WidgetFormModel
+            <WidgetFormModal
+                form={form}
                 id={editWidget?.payload?.id}
                 isShow={isPanelModalOpen}
                 setIsShow={setisPanelModalOpen}
