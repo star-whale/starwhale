@@ -11,4 +11,4 @@ prepare-data:
 	[ -d data/cifar-10-batches-py ] || tar -xzf data/cifar-10-python.tar.gz -C data
 	[ -d models ] ||  mkdir -p models
 	[ -f models/cifar_net.pth ] || ([ -z $(CN) ] && curl -o models/cifar_net.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/cifar_net.pth) || curl -o models/cifar_net.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/cifar_net.pth
-	python3 -m pip install -r requirments.txt
+	python3 -m pip install -r requirements.txt

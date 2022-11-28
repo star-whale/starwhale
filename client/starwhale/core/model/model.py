@@ -181,7 +181,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
         self.yaml_name = DefaultYAMLName.MODEL
-        self._version = uri.object.version if uri.object and uri.object.version else ""
+        self._version = uri.object.version
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.add(tags, quiet)

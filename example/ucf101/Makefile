@@ -24,4 +24,4 @@ prepare-data:
 	[ -d data/UCF-101 ] || mv data/UCF-101-WEBM data/UCF-101
 	[ -d models ] ||  mkdir -p models
 	[ -f models/PyTorch-MFNet_ep-0000.pth ] || ([ -z $(CN) ] && curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ucf101.pth) || curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ucf101.pth
-	python3 -m pip install -r requirments.txt
+	python3 -m pip install -r requirements.txt

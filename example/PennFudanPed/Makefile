@@ -18,4 +18,4 @@ prepare-data:
 	[ -d data/PennFudanPed ] || unzip data/PennFudanPed.zip -d data
 	[ -d models ] ||  mkdir -p models
 	[ -f models/mcrnn.pth ] || ([ -z $(CN) ] && curl -o models/mcrnn.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/mcrnn_fudan.pth ) || curl -o models/mcrnn.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/mcrnn_fudan.pth
-	python3 -m pip install -r requirments.txt
+	python3 -m pip install -r requirements.txt
