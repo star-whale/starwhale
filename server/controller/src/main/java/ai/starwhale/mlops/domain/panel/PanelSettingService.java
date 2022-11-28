@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.panel;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.panel.mapper.PanelSettingMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -30,12 +30,12 @@ public class PanelSettingService {
 
     private final UserService userService;
     private final PanelSettingMapper panelSettingMapper;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     PanelSettingService(
             UserService userService,
             PanelSettingMapper panelSettingMapper,
-            IdConvertor idConvertor
+            IdConverter idConvertor
     ) {
         this.userService = userService;
         this.panelSettingMapper = panelSettingMapper;

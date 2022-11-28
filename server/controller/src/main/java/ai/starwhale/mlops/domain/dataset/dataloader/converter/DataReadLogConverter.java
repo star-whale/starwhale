@@ -16,24 +16,24 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader.converter;
 
-import ai.starwhale.mlops.common.Convertor;
+import ai.starwhale.mlops.common.Converter;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.po.DataReadLogEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DataReadLogConverter implements Convertor<DataReadLog, DataReadLogEntity> {
+public class DataReadLogConverter implements Converter<DataReadLog, DataReadLogEntity> {
 
     @Override
     public DataReadLogEntity convert(DataReadLog dataReadLog) throws ConvertException {
         return DataReadLogEntity.builder()
-            .id(dataReadLog.getId())
-            .sessionId(dataReadLog.getSessionId())
-            .consumerId(dataReadLog.getConsumerId())
-            .start(dataReadLog.getStart())
-            .startInclusive(dataReadLog.isStartInclusive())
-            .end(dataReadLog.getEnd())
+                .id(dataReadLog.getId())
+                .sessionId(dataReadLog.getSessionId())
+                .consumerId(dataReadLog.getConsumerId())
+                .start(dataReadLog.getStart())
+                .startInclusive(dataReadLog.isStartInclusive())
+                .end(dataReadLog.getEnd())
             .endInclusive(dataReadLog.isEndInclusive())
             .size(dataReadLog.getSize())
             .status(dataReadLog.getStatus())

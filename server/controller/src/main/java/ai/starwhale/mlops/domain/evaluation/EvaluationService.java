@@ -21,14 +21,14 @@ import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
-import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
@@ -55,16 +55,16 @@ public class EvaluationService {
     private final ProjectManager projectManager;
     private final JobMapper jobMapper;
     private final ViewConfigMapper viewConfigMapper;
-    private final IdConvertor idConvertor;
-    private final ViewConfigConvertor viewConfigConvertor;
-    private final JobConvertor jobConvertor;
+    private final IdConverter idConvertor;
+    private final ViewConfigConverter viewConfigConvertor;
+    private final JobConverter jobConvertor;
     private final JobStatusMachine jobStatusMachine;
 
     private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
     public EvaluationService(UserService userService, ProjectManager projectManager, JobMapper jobMapper,
-            ViewConfigMapper viewConfigMapper, IdConvertor idConvertor, ViewConfigConvertor viewConfigConvertor,
-            JobConvertor jobConvertor, JobStatusMachine jobStatusMachine) {
+            ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
+            JobConverter jobConvertor, JobStatusMachine jobStatusMachine) {
         this.userService = userService;
         this.projectManager = projectManager;
         this.jobMapper = jobMapper;

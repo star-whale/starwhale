@@ -68,7 +68,7 @@ public class AgentConverter {
                 .ip(entity.getAgentIp())
                 .serialNumber(entity.getSerialNumber())
                 .agentVersion(entity.getAgentVersion())
-                .status(entity.getStatus())
+                .status(entity.getAgentStatus())
                 .nodeInfo(nodeInfo)
                 .connectTime(entity.getConnectTime().getTime())
                 .build();
@@ -86,7 +86,7 @@ public class AgentConverter {
                 .serialNumber(agent.getSerialNumber())
                 .agentIp(agent.getIp())
                 .agentVersion(agent.getAgentVersion())
-                .status(agent.getStatus())
+                .agentStatus(agent.getStatus())
                 .connectTime(new Date(agent.getConnectTime()))
                 .deviceInfo(deviceInfo)
                 .build();

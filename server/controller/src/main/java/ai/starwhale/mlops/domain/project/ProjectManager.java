@@ -16,18 +16,19 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import cn.hutool.core.util.StrUtil;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -37,11 +38,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectManager implements ProjectAccessor {
 
-    public static final String PROJECT_SEPERATOR = ":";
+    public static final String PROJECT_SEPARATOR = ":";
 
     private final ProjectMapper projectMapper;
 
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     private static final Map<String, String> SORT_MAP = Map.of(
             "id", "project_id",
@@ -49,53 +50,69 @@ public class ProjectManager implements ProjectAccessor {
             "time", "project_created_time",
             "createdTime", "project_created_time");
 
-    public ProjectManager(ProjectMapper projectMapper, IdConvertor idConvertor) {
+    public ProjectManager(ProjectMapper projectMapper, IdConverter idConvertor) {
         this.projectMapper = projectMapper;
         this.idConvertor = idConvertor;
     }
 
     public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
-        return projectMapper.listProjects(projectName, orderParams.getOrderSql(SORT_MAP), 0, userId);
-    }
-
-
-    public ProjectEntity findDefaultProject(Long userId) {
-        ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
-        if (defaultProject == null) {
-            List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId, null, 0);
-            if (entities.isEmpty()) {
-                log.error("Can not find default project by user, id = {}", userId);
-                return null;
-            }
-            defaultProject = entities.get(0);
-        }
-        return defaultProject;
-    }
-
-    public ProjectEntity findByNameOrDefault(String projectName, Long userId) {
-        if (!StrUtil.isEmpty(projectName)) {
-            ProjectEntity entity = projectMapper.findProjectByName(projectName);
-            if (entity != null) {
-                return entity;
-            }
-        }
-        return findDefaultProject(userId);
+        return projectMapper.list(projectName, userId, orderParams.getOrderSql(SORT_MAP));
     }
 
     public ProjectEntity findById(Long projectId) {
-        return projectMapper.findProject(projectId);
+        if (projectId == 0) {
+            return ProjectEntity.builder()
+                    .id(0L)
+                    .projectName("SYSTEM")
+                    .projectDescription("System")
+                    .privacy(1)
+                    .ownerId(0L)
+                    .build();
+        }
+        return projectMapper.find(projectId);
     }
 
-    public Boolean existProject(String projectName) {
-        ProjectEntity existProject = projectMapper.findProjectByNameForUpdate(projectName);
+    public Boolean existProject(String projectName, Long userId) {
+        ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, userId);
         return existProject != null;
     }
 
-    public Map<Long, ProjectObjectCountEntity> getObjectCountsOfProjects(List<Long> projectIds) {
-        List<ProjectObjectCountEntity> counts = projectMapper.listObjectCounts(
-                projectIds);
-        return counts.stream()
-                .collect(Collectors.toMap(ProjectObjectCountEntity::getProjectId, entity -> entity));
+    public Map<Long, ProjectObjectCounts> getObjectCountsOfProjects(List<Long> projectIds) {
+        String ids = Joiner.on(",").join(projectIds);
+        Map<Long, ProjectObjectCounts> map = Maps.newHashMap();
+        for (Long projectId : projectIds) {
+            map.put(projectId, new ProjectObjectCounts());
+        }
+
+        List<ObjectCountEntity> modelCounts = projectMapper.countModel(ids);
+        setCounts(modelCounts, map, ProjectObjectCounts::setCountModel);
+
+        List<ObjectCountEntity> datasetCounts = projectMapper.countDataset(ids);
+        setCounts(datasetCounts, map, ProjectObjectCounts::setCountDataset);
+
+        List<ObjectCountEntity> runtimeCounts = projectMapper.countRuntime(ids);
+        setCounts(runtimeCounts, map, ProjectObjectCounts::setCountRuntime);
+
+        List<ObjectCountEntity> jobCounts = projectMapper.countJob(ids);
+        setCounts(jobCounts, map, ProjectObjectCounts::setCountJob);
+
+        List<ObjectCountEntity> memberCounts = projectMapper.countMember(ids);
+        setCounts(memberCounts, map, ProjectObjectCounts::setCountMember);
+
+        return map;
+    }
+
+    private void setCounts(List<ObjectCountEntity> list, Map<Long, ProjectObjectCounts> map, CountSetter setter) {
+        for (ObjectCountEntity entity : list) {
+            if (map.containsKey(entity.getProjectId())) {
+                setter.set(map.get(entity.getProjectId()), entity.getCount());
+            }
+        }
+    }
+
+    interface CountSetter {
+
+        void set(ProjectObjectCounts obj, Integer count);
     }
 
     @Override
@@ -103,25 +120,32 @@ public class ProjectManager implements ProjectAccessor {
         return findById(getProjectId(projectUrl));
     }
 
+    public String[] splitProjectUrl(String projectUrl) {
+        return projectUrl.split(PROJECT_SEPARATOR);
+    }
+
     public Long getProjectId(@NotNull String projectUrl) {
-        ProjectEntity projectEntity;
+        ProjectEntity projectEntity = null;
         if (idConvertor.isId(projectUrl)) {
             Long id = idConvertor.revert(projectUrl);
             if (id == 0) {
                 return id;
             }
-            projectEntity = projectMapper.findProject(id);
+            projectEntity = projectMapper.find(id);
         } else {
-            if (projectUrl.contains(PROJECT_SEPERATOR)) {
+            String[] arr = splitProjectUrl(projectUrl);
+            if (arr.length > 1) {
                 // OWNER:PROJECT
-                String[] arr = projectUrl.split(PROJECT_SEPERATOR);
                 if (idConvertor.isId(arr[0])) {
-                    projectEntity = projectMapper.findProjectByNameAndOwnerId(arr[1], idConvertor.revert(arr[0]));
+                    projectEntity = projectMapper.findExistingByNameAndOwner(arr[1], idConvertor.revert(arr[0]));
                 } else {
-                    projectEntity = projectMapper.findProjectByNameAndOwnerName(arr[1], arr[0]);
+                    projectEntity = projectMapper.findExistingByNameAndOwnerName(arr[1], arr[0]);
                 }
             } else {
-                projectEntity = projectMapper.findProjectByName(projectUrl);
+                List<ProjectEntity> byName = projectMapper.findByName(projectUrl);
+                if (byName.size() > 0) {
+                    projectEntity = byName.get(0);
+                }
             }
         }
         if (projectEntity == null) {

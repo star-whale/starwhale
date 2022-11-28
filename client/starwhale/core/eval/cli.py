@@ -97,6 +97,11 @@ def _list(
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option(
+    "--override-task-num",
+    default=0,
+    help="Total num of tasks in the current step",
+)
 def _run(
     project: str,
     version: str,
@@ -111,6 +116,7 @@ def _run(
     gencmd: bool,
     step: str,
     task_index: int,
+    override_task_num: int,
 ) -> None:
     # TODO: tune so many arguments
     JobTermView.run(
@@ -127,6 +133,7 @@ def _run(
         use_docker=use_docker,
         step=step,
         task_index=task_index,
+        task_num=override_task_num,
     )
 
 

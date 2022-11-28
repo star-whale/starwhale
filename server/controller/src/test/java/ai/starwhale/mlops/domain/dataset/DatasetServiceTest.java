@@ -24,7 +24,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -37,9 +36,9 @@ import static org.mockito.Mockito.mockStatic;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -49,8 +48,8 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionConvertor;
-import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConvertor;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionVoConverter;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
@@ -69,7 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
@@ -82,11 +80,11 @@ public class DatasetServiceTest {
     private DatasetService service;
     private DatasetMapper datasetMapper;
     private DatasetVersionMapper datasetVersionMapper;
-    private DatasetVoConvertor datasetConvertor;
-    private DatasetVersionConvertor versionConvertor;
+    private DatasetVoConverter datasetConvertor;
+    private DatasetVersionVoConverter versionConvertor;
     private StorageService storageService;
     private ProjectManager projectManager;
-    private DatasetManager datasetManager;
+    private DatasetDao datasetDao;
     private UserService userService;
     private DsFileGetter dsFileGetter;
     private DataLoader dataLoader;
@@ -99,7 +97,7 @@ public class DatasetServiceTest {
     public void setUp() {
         datasetMapper = mock(DatasetMapper.class);
         datasetVersionMapper = mock(DatasetVersionMapper.class);
-        datasetConvertor = mock(DatasetVoConvertor.class);
+        datasetConvertor = mock(DatasetVoConverter.class);
         given(datasetConvertor.convert(any(DatasetEntity.class)))
                 .willAnswer(invocation -> {
                     DatasetEntity entity = invocation.getArgument(0);
@@ -108,7 +106,7 @@ public class DatasetServiceTest {
                             .name(entity.getName())
                             .build();
                 });
-        versionConvertor = mock(DatasetVersionConvertor.class);
+        versionConvertor = mock(DatasetVersionVoConverter.class);
         given(versionConvertor.convert(any(DatasetVersionEntity.class)))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
@@ -132,7 +130,7 @@ public class DatasetServiceTest {
                 .willReturn(1L);
         given(projectManager.getProjectId(same("2")))
                 .willReturn(2L);
-        datasetManager = mock(DatasetManager.class);
+        datasetDao = mock(DatasetDao.class);
 
         dsFileGetter = mock(DsFileGetter.class);
 
@@ -147,9 +145,9 @@ public class DatasetServiceTest {
                 datasetConvertor,
                 versionConvertor,
                 storageService,
-                datasetManager,
-                new IdConvertor(),
-                new VersionAliasConvertor(),
+                datasetDao,
+                new IdConverter(),
+                new VersionAliasConverter(),
                 userService,
                 dsFileGetter,
                 dataLoader,
@@ -190,13 +188,13 @@ public class DatasetServiceTest {
     }
 
     @Test
-    public void testListSwmp() {
-        given(datasetMapper.listDatasets(same(1L), anyString()))
+    public void testList() {
+        given(datasetMapper.list(same(1L), anyString(), any()))
                 .willReturn(List.of(
                         DatasetEntity.builder().id(1L).build(),
                         DatasetEntity.builder().id(2L).build()
                 ));
-        var res = service.listSwDataset(DatasetQuery.builder()
+        var res = service.listDataset(DatasetQuery.builder()
                 .projectUrl("1")
                 .namePrefix("")
                 .build(), new PageParams(1, 5));
@@ -226,19 +224,19 @@ public class DatasetServiceTest {
 
     @Test
     public void testGetDatasetInfo() {
-        given(datasetMapper.findDatasetById(same(1L)))
+        given(datasetMapper.find(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
-        given(datasetMapper.findDatasetById(same(2L)))
+        given(datasetMapper.find(same(2L)))
                 .willReturn(DatasetEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
 
-        given(datasetVersionMapper.getVersionById(same(1L)))
+        given(datasetVersionMapper.find(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
 
-        given(datasetVersionMapper.getLatestVersion(same(1L)))
+        given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         var res = service.getDatasetInfo(DatasetQuery.builder()
@@ -252,7 +250,7 @@ public class DatasetServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        given(datasetVersionMapper.getLatestVersion(same(1L)))
+        given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         res = service.getDatasetInfo(DatasetQuery.builder()
@@ -304,7 +302,7 @@ public class DatasetServiceTest {
 
     @Test
     public void testListDatasetVersionHistory() {
-        given(datasetVersionMapper.listVersions(anyLong(), anyString(), anyString()))
+        given(datasetVersionMapper.list(anyLong(), anyString(), anyString()))
                 .willReturn(List.of(DatasetVersionEntity.builder().id(1L).datasetName("d1").build()));
         var res = service.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
@@ -322,21 +320,14 @@ public class DatasetServiceTest {
 
     @Test
     public void testFindDatasetByVersionIds() {
-        given(datasetVersionMapper.findVersionsByIds(anyList()))
+        given(datasetVersionMapper.findByIds(anyString()))
                 .willReturn(List.of(
                         DatasetVersionEntity.builder().datasetId(1L).build()
                 ));
 
-        given(datasetMapper.findDatasetById(same(1L)))
+        given(datasetMapper.find(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
-        given(datasetMapper.findDatasetsByIds(anyList()))
-                .willAnswer(invocation -> {
-                    List<Long> ids = invocation.getArgument(0);
-                    return ids.stream()
-                            .map(id -> DatasetEntity.builder().id(id).build())
-                            .collect(Collectors.toList());
-                });
 
         var res = service.findDatasetsByVersionIds(List.of());
         assertThat(res, allOf(
@@ -346,10 +337,10 @@ public class DatasetServiceTest {
     }
 
     @Test
-    public void testListModelInfo() {
-        given(datasetMapper.findByName(same("d1"), same(1L)))
+    public void testListDatasetInfo() {
+        given(datasetMapper.findByName(same("d1"), same(1L), any()))
                 .willReturn(DatasetEntity.builder().id(1L).build());
-        given(datasetVersionMapper.listVersions(same(1L), any(), any()))
+        given(datasetVersionMapper.list(same(1L), any(), any()))
                 .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).build()));
 
         var res = service.listDs("1", "d1");
@@ -358,9 +349,9 @@ public class DatasetServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.findByNameOrDefault(same("1"), same(1L)))
+        given(projectManager.getProject(same("1")))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(datasetMapper.listDatasets(same(1L), any()))
+        given(datasetMapper.list(same(1L), any(), any()))
                 .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
 
         res = service.listDs("1", "");
@@ -375,7 +366,7 @@ public class DatasetServiceTest {
 
     @Test
     public void testQuery() {
-        given(datasetVersionMapper.getVersionById(same(1L)))
+        given(datasetVersionMapper.find(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).build());
         var res = service.query("1", "d1", "v1");
         assertThat(res, hasProperty("id", is(1L)));

@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.dataset.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,8 +37,6 @@ public class DatasetEntity extends BaseEntity implements BundleEntity {
     private Long projectId;
 
     private Long ownerId;
-
-    private UserEntity owner;
 
     private Integer isDeleted;
 

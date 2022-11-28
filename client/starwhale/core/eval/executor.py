@@ -1,5 +1,7 @@
 import os
 import typing as t
+import getpass as gt
+from pwd import getpwnam
 from pathlib import Path
 
 from loguru import logger
@@ -34,6 +36,7 @@ class EvalExecutor:
         desc: str = "",
         step: str = "",
         task_index: int = 0,
+        task_num: int = 0,
         gencmd: bool = False,
         use_docker: bool = False,
     ) -> None:
@@ -46,6 +49,7 @@ class EvalExecutor:
             self.type = EvalTaskType.ALL
         self.step = step
         self.task_index = task_index
+        self.task_num = task_num
 
         self.desc = desc
         self.model_uri = model_uri
@@ -144,6 +148,7 @@ class EvalExecutor:
 
     def _extract_swrt(self) -> None:
         if self.runtime and self.use_docker:
+            # avoid conflict with normal process with venv or conda
             self._runtime_dir = self.runtime.extract()
         else:
             self._runtime_dir = Path()
@@ -162,6 +167,7 @@ class EvalExecutor:
             dataset_uris=[u.full_uri for u in self.dataset_uris],
             step_name=self.step,
             task_index=self.task_index,
+            task_num=self.task_num,
             # other runtime info
             base_info=dict(
                 name=self.name,
@@ -200,23 +206,25 @@ class EvalExecutor:
             f"{self._version}-{step}-{task_index}",
             "-e",
             "DEBUG=1",
+            "-e",
+            f"SW_USER={gt.getuser()}",
+            "-e",
+            f"SW_USER_ID={getpwnam(gt.getuser()).pw_uid}",
+            "-e",
+            "SW_USER_GROUP_ID=0",
+            "-e",
+            f"SW_LOCAL_STORAGE={self.sw_config.rootdir}",
             "-l",
             f"version={self._version}",
         ]
 
         cmd += [
             "-v",
-            f"{_run_dir}:{_CNTR_WORKDIR}",
+            f"{_run_dir}:{_run_dir}",
             "-v",
-            f"{self.sw_config.rootdir}:/root/.starwhale",
+            f"{self.sw_config.rootdir}:{self.sw_config.rootdir}",
             "-v",
             f"{self.sw_config.object_store_dir}:{self.sw_config.object_store_dir}",
-            "-v",
-            f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
-            "-v",
-            f"{self._model_dir}/{DefaultYAMLName.MODEL}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DefaultYAMLName.MODEL}",
-            "-v",
-            f"{self._runtime_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWRT}",
         ]
 
         if typ == EvalTaskType.SINGLE:
@@ -227,6 +235,8 @@ class EvalExecutor:
 
         cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
         cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
+        cmd.extend(["-e", f"{SWEnv.model_version}={self.model_uri}"])
+        cmd.extend(["-e", f"{SWEnv.runtime_version}={self.runtime_uri}"])
         cmd.extend(
             [
                 "-e",
@@ -235,7 +245,7 @@ class EvalExecutor:
                 f"{SWEnv.instance_token}={self.sw_config._current_instance_obj.get('sw_token', '')}",
             ]
         )
-        # TODO: support multi dataset
+        # support multi dataset
         cmd.extend(
             [
                 "-e",

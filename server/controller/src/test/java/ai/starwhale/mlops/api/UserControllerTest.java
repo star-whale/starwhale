@@ -32,6 +32,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
@@ -39,11 +40,10 @@ import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
-import ai.starwhale.mlops.api.protocol.user.UserRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -80,7 +80,7 @@ public class UserControllerTest {
         given(userService.changePassword(argThat(user -> user.getId() == 1L), same("newPassword")))
                 .willReturn(true);
 
-        IdConvertor idConvertor = new IdConvertor();
+        IdConverter idConvertor = new IdConverter();
         controller = new UserController(userService, projectService, idConvertor, jwtTokenUtil);
     }
 
@@ -140,7 +140,7 @@ public class UserControllerTest {
     @Test
     public void testGetCurrentUserRoles() {
         given(userService.listCurrentUserRoles(same("p1")))
-                .willReturn(List.of(UserRoleVo.builder().id("1").build()));
+                .willReturn(List.of(ProjectRoleVo.builder().id("1").build()));
 
         var resp = controller.getCurrentUserRoles("p1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

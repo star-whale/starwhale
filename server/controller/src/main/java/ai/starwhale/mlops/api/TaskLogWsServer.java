@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogCollector;
 import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
@@ -41,7 +41,7 @@ public class TaskLogWsServer {
 
     private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    private static IdConvertor idConvertor;
+    private static IdConverter idConvertor;
 
     private static CancellableTaskLogK8sCollectorFactory logCollectorFactory;
 
@@ -55,7 +55,7 @@ public class TaskLogWsServer {
 
 
     @Autowired
-    public void setIdConvertor(IdConvertor idConvertor) {
+    public void setIdConvertor(IdConverter idConvertor) {
         TaskLogWsServer.idConvertor = idConvertor;
     }
 

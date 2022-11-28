@@ -21,10 +21,10 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -36,8 +36,8 @@ import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionConvertor;
-import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConvertor;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionVoConverter;
+import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -60,6 +60,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -79,13 +80,13 @@ public class DatasetService {
 
     private final DatasetMapper datasetMapper;
     private final DatasetVersionMapper datasetVersionMapper;
-    private final DatasetVoConvertor datasetVoConvertor;
-    private final DatasetVersionConvertor versionConvertor;
+    private final DatasetVoConverter datasetVoConverter;
+    private final DatasetVersionVoConverter versionConvertor;
     private final StorageService storageService;
     private final ProjectManager projectManager;
-    private final DatasetManager datasetManager;
-    private final IdConvertor idConvertor;
-    private final VersionAliasConvertor versionAliasConvertor;
+    private final DatasetDao datasetDao;
+    private final IdConverter idConvertor;
+    private final VersionAliasConverter versionAliasConvertor;
     private final UserService userService;
     private final DsFileGetter dsFileGetter;
     private final DataLoader dataLoader;
@@ -94,17 +95,17 @@ public class DatasetService {
     private BundleManager bundleManager;
 
     public DatasetService(ProjectManager projectManager, DatasetMapper datasetMapper,
-            DatasetVersionMapper datasetVersionMapper, DatasetVoConvertor datasetVoConvertor,
-            DatasetVersionConvertor versionConvertor, StorageService storageService, DatasetManager datasetManager,
-            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, UserService userService,
+            DatasetVersionMapper datasetVersionMapper, DatasetVoConverter datasetVoConverter,
+            DatasetVersionVoConverter versionConvertor, StorageService storageService, DatasetDao datasetDao,
+            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, UserService userService,
             DsFileGetter dsFileGetter, DataLoader dataLoader, TrashService trashService) {
         this.projectManager = projectManager;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
-        this.datasetVoConvertor = datasetVoConvertor;
+        this.datasetVoConverter = datasetVoConverter;
         this.versionConvertor = versionConvertor;
         this.storageService = storageService;
-        this.datasetManager = datasetManager;
+        this.datasetDao = datasetDao;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.userService = userService;
@@ -115,21 +116,21 @@ public class DatasetService {
                 idConvertor,
                 versionAliasConvertor,
                 projectManager,
-                datasetManager,
-                datasetManager
+                datasetDao,
+                datasetDao
         );
     }
 
 
-    public PageInfo<DatasetVo> listSwDataset(DatasetQuery query, PageParams pageParams) {
+    public PageInfo<DatasetVo> listDataset(DatasetQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
-        List<DatasetEntity> entities = datasetMapper.listDatasets(projectId,
-                query.getNamePrefix());
+        List<DatasetEntity> entities = datasetMapper.list(projectId,
+                query.getNamePrefix(), null);
 
         return PageUtil.toPageInfo(entities, ds -> {
-            DatasetVersionEntity version = datasetVersionMapper.getLatestVersion(ds.getId());
-            DatasetVo vo = datasetVoConvertor.convert(ds);
+            DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
+            DatasetVo vo = datasetVoConverter.convert(ds);
             vo.setVersion(versionConvertor.convert(version));
             return vo;
         });
@@ -143,7 +144,7 @@ public class DatasetService {
                 .type(Type.DATASET)
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
-        return RemoveManager.create(bundleManager, datasetManager)
+        return RemoveManager.create(bundleManager, datasetDao)
                 .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl()));
     }
 
@@ -154,7 +155,7 @@ public class DatasetService {
     public DatasetInfoVo getDatasetInfo(DatasetQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl());
         Long datasetId = bundleManager.getBundleId(bundleUrl);
-        DatasetEntity ds = datasetMapper.findDatasetById(datasetId);
+        DatasetEntity ds = datasetMapper.find(datasetId);
         if (ds == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "Unable to find dataset " + query.getDatasetUrl()),
@@ -165,10 +166,10 @@ public class DatasetService {
         if (!StrUtil.isEmpty(query.getDatasetVersionUrl())) {
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                     .create(bundleUrl, query.getDatasetVersionUrl()), datasetId);
-            versionEntity = datasetVersionMapper.getVersionById(versionId);
+            versionEntity = datasetVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
-            versionEntity = datasetVersionMapper.getLatestVersion(ds.getId());
+            versionEntity = datasetVersionMapper.findByLatest(ds.getId());
         }
         if (versionEntity == null) {
             throw new StarwhaleApiException(
@@ -176,11 +177,11 @@ public class DatasetService {
                             "Unable to find the latest version of dataset " + query.getDatasetUrl()),
                     HttpStatus.BAD_REQUEST);
         }
-        return toSwDatasetInfoVo(ds, versionEntity);
+        return toDatasetInfoVo(ds, versionEntity);
 
     }
 
-    private DatasetInfoVo toSwDatasetInfoVo(DatasetEntity ds, DatasetVersionEntity versionEntity) {
+    private DatasetInfoVo toDatasetInfoVo(DatasetEntity ds, DatasetVersionEntity versionEntity) {
 
         //Get file list in storage
         try {
@@ -205,7 +206,6 @@ public class DatasetService {
         }
     }
 
-
     public Boolean modifyDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
             DatasetVersion version) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
@@ -223,7 +223,7 @@ public class DatasetService {
             TagAction tagAction) {
 
         try {
-            return TagManager.create(bundleManager, datasetManager)
+            return TagManager.create(bundleManager, datasetDao)
                     .updateTag(
                             BundleVersionUrl.create(projectUrl, datasetUrl, versionUrl),
                             tagAction);
@@ -235,31 +235,31 @@ public class DatasetService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String datasetUrl, String versionUrl) {
-        return RevertManager.create(bundleManager, datasetManager)
+        return RevertManager.create(bundleManager, datasetDao)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, datasetUrl, versionUrl));
     }
 
     public PageInfo<DatasetVersionVo> listDatasetVersionHistory(DatasetVersionQuery query, PageParams pageParams) {
         Long datasetId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<DatasetVersionEntity> entities = datasetVersionMapper.listVersions(
+        List<DatasetVersionEntity> entities = datasetVersionMapper.list(
                 datasetId, query.getVersionName(), query.getVersionTag());
-        DatasetVersionEntity latest = datasetVersionMapper.getLatestVersion(datasetId);
+        DatasetVersionEntity latest = datasetVersionMapper.findByLatest(datasetId);
         return PageUtil.toPageInfo(entities, entity -> {
             DatasetVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConvertor.LATEST);
+                vo.setAlias(VersionAliasConverter.LATEST);
             }
             return vo;
         });
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
-        List<DatasetVersionEntity> versions = datasetVersionMapper.findVersionsByIds(versionIds);
+        List<DatasetVersionEntity> versions = datasetVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
         return versions.stream().map(version -> {
-            DatasetEntity ds = datasetMapper.findDatasetById(version.getDatasetId());
-            DatasetVo vo = datasetVoConvertor.convert(ds);
+            DatasetEntity ds = datasetMapper.find(version.getDatasetId());
+            DatasetVo vo = datasetVoConverter.convert(ds);
             vo.setVersion(versionConvertor.convert(version));
             return vo;
         }).collect(Collectors.toList());
@@ -268,16 +268,15 @@ public class DatasetService {
     public List<DatasetInfoVo> listDs(String project, String name) {
         if (StringUtils.hasText(name)) {
             Long projectId = projectManager.getProjectId(project);
-            DatasetEntity ds = datasetMapper.findByName(name, projectId);
+            DatasetEntity ds = datasetMapper.findByName(name, projectId, false);
             if (null == ds) {
                 throw new SwValidationException(ValidSubject.DATASET, "Unable to find the dataset with name " + name);
             }
             return swDatasetInfoOfDs(ds);
         }
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project,
-                userService.currentUserDetail().getIdTableKey());
+        ProjectEntity projectEntity = projectManager.getProject(project);
 
-        List<DatasetEntity> swDatasetEntities = datasetMapper.listDatasets(projectEntity.getId(), null);
+        List<DatasetEntity> swDatasetEntities = datasetMapper.list(projectEntity.getId(), null, null);
         if (null == swDatasetEntities || swDatasetEntities.isEmpty()) {
             return List.of();
         }
@@ -288,19 +287,19 @@ public class DatasetService {
     }
 
     private List<DatasetInfoVo> swDatasetInfoOfDs(DatasetEntity ds) {
-        List<DatasetVersionEntity> swDatasetVersionEntities = datasetVersionMapper.listVersions(
+        List<DatasetVersionEntity> versionEntities = datasetVersionMapper.list(
                 ds.getId(), null, null);
-        if (null == swDatasetVersionEntities || swDatasetVersionEntities.isEmpty()) {
+        if (null == versionEntities || versionEntities.isEmpty()) {
             return List.of();
         }
-        return swDatasetVersionEntities.parallelStream()
-                .map(entity -> toSwDatasetInfoVo(ds, entity)).collect(Collectors.toList());
+        return versionEntities.parallelStream()
+                .map(entity -> toDatasetInfoVo(ds, entity)).collect(Collectors.toList());
     }
 
     public DatasetVersionEntity query(String projectUrl, String datasetUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, datasetUrl, versionUrl));
-        DatasetVersionEntity versionEntity = datasetVersionMapper.getVersionById(versionId);
+        DatasetVersionEntity versionEntity = datasetVersionMapper.find(versionId);
         if (null == versionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET), HttpStatus.NOT_FOUND);
         }

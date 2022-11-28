@@ -22,7 +22,7 @@ import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -50,10 +50,10 @@ public class ProjectController implements ProjectApi {
 
     private final UserService userService;
 
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
 
     public ProjectController(ProjectService projectService, UserService userService,
-            IdConvertor idConvertor) {
+            IdConverter idConvertor) {
         this.projectService = projectService;
         this.userService = userService;
         this.idConvertor = idConvertor;

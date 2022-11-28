@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "no-restricted-imports": ["error", { "patterns": ["@starwhale/ui","@starwhale/widgts","@starwhale/core"] }]
+  }
+}
+

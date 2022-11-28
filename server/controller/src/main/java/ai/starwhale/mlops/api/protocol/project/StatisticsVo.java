@@ -27,6 +27,8 @@ public class StatisticsVo {
 
     private Integer datasetCounts;
 
+    private Integer runtimeCounts;
+
     private Integer memberCounts;
 
     private Integer evaluationCounts;
@@ -35,6 +37,7 @@ public class StatisticsVo {
         return StatisticsVo.builder()
                 .modelCounts(0)
                 .datasetCounts(0)
+                .runtimeCounts(0)
                 .memberCounts(0)
                 .evaluationCounts(0)
                 .build();

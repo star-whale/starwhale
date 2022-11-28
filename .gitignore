@@ -75,6 +75,7 @@ yarn-error.log*
 /server/controller/src/main/resources/static/
 videos/
 storybook-static/
+compiled
 
 # Test Coverage
 .coverage

@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.dataset.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,7 +38,6 @@ public class DatasetVersionEntity extends BaseEntity implements BundleVersionEnt
     private Long versionOrder;
     private String datasetName;
     private Long ownerId;
-    private UserEntity owner;
     private String versionName;
     private String versionTag;
     private String versionMeta;

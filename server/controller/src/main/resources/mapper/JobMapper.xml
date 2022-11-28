@@ -190,11 +190,44 @@
     <result property="isDeleted" column="job_is_deleted"/>
     <result property="runtimeVersionId" column="runtime_version_id"/>
     <result property="resourcePool" column="resource_pool"/>
-    <association property="project"
-      resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
-    <association property="modelVersion"
-      resultMap="ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper.modelVersionResultMap"/>
-    <association property="owner"
-      resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap"/>
+    <association property="project" resultMap="projectResultMap"/>
+    <association property="modelVersion" resultMap="modelVersionResultMap"/>
+    <association property="owner" resultMap="userResultMap"/>
+  </resultMap>
+  <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
+    <id property="id" column="project_id"/>
+    <result property="projectName" column="project_name"/>
+    <result property="privacy" column="project_privacy"/>
+    <result property="projectDescription" column="project_description"/>
+    <result property="isDeleted" column="project_is_deleted"/>
+    <result property="isDefault" column="project_is_default"/>
+    <result property="createdTime" column="project_created_time"/>
+    <result property="modifiedTime" column="project_modified_time"/>
+    <result property="ownerId" column="owner_id"/>
+  </resultMap>
+  <resultMap id="modelVersionResultMap"
+    type="ai.starwhale.mlops.domain.model.po.ModelVersionEntity">
+    <id column="mv_id" property="id"/>
+    <result column="model_id" property="modelId"/>
+    <result column="model_name" property="modelName"/>
+    <result column="mv_version_order" property="versionOrder"/>
+    <result column="mv_version_name" property="versionName"/>
+    <result column="mv_version_tag" property="versionTag"/>
+    <result column="mv_version_meta" property="versionMeta"/>
+    <result column="mv_storage_path" property="storagePath"/>
+    <result column="mv_manifest" property="manifest"/>
+    <result column="mv_eval_jobs" property="evalJobs"/>
+    <result column="mv_created_time" property="createdTime"/>
+    <result column="mv_modified_time" property="modifiedTime"/>
+    <result column="owner_id" property="ownerId"/>
+  </resultMap>
+  <resultMap id="userResultMap" type="ai.starwhale.mlops.domain.user.po.UserEntity">
+    <id property="id" column="user_id"/>
+    <result property="userName" column="user_name"/>
+    <result property="userPwd" column="user_pwd"/>
+    <result property="userPwdSalt" column="user_pwd_salt"/>
+    <result property="userEnabled" column="user_enabled"/>
+    <result property="createdTime" column="user_created_time"/>
+    <result property="modifiedTime" column="user_modified_time"/>
   </resultMap>
 </mapper>

@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,11 +71,13 @@ public class K8sJobTemplate {
     }
 
     public List<V1Container> getInitContainerTemplates() {
-        return v1Job.getSpec().getTemplate().getSpec().getInitContainers();
+        var containers = v1Job.getSpec().getTemplate().getSpec().getInitContainers();
+        return CollectionUtils.isEmpty(containers) ? List.of() : containers;
     }
 
     public List<V1Container> getContainersTemplates() {
-        return v1Job.getSpec().getTemplate().getSpec().getContainers();
+        var containers = v1Job.getSpec().getTemplate().getSpec().getContainers();
+        return CollectionUtils.isEmpty(containers) ? List.of() : containers;
     }
 
     public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
@@ -98,7 +101,11 @@ public class K8sJobTemplate {
             }
             podSpec.nodeSelector(nodeSelectors);
         }
-        Stream.concat(podSpec.getContainers().stream(), podSpec.getInitContainers().stream()).forEach(c -> {
+        var allContainers = new ArrayList<>(podSpec.getContainers());
+        if (!CollectionUtils.isEmpty(podSpec.getInitContainers())) {
+            allContainers.addAll(podSpec.getInitContainers());
+        }
+        allContainers.forEach(c -> {
             ContainerOverwriteSpec containerOverwriteSpec = containerSpecMap.get(c.getName());
             if (null == containerOverwriteSpec) {
                 return;

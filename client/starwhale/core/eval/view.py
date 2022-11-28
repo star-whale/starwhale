@@ -266,6 +266,7 @@ class JobTermView(BaseTermView):
         use_docker: bool = False,
         step: str = "",
         task_index: int = 0,
+        task_num: int = 0,
     ) -> str:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, version = EvaluationJob.run(
@@ -282,6 +283,7 @@ class JobTermView(BaseTermView):
             use_docker=use_docker,
             step=step,
             task_index=task_index,
+            task_num=task_num,
         )
 
         # TODO: show report in standalone mode directly

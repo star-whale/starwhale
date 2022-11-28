@@ -15,7 +15,7 @@ class Instance:
         user: str = "starwhale",
         password: str = "abcd1234",
         url: str = "http://console.pre.intra.starwhale.ai",
-        alias: str = "cloud",
+        alias: str = "server",
     ) -> bool:
         """
         :param alias:
@@ -39,7 +39,7 @@ class Instance:
                     "instance": "local",
                     "root_dir": "/home/star_g/.starwhale"
                 }
-            cloud:
+            server:
                 {
                     "agents": [
                         {
@@ -49,7 +49,7 @@ class Instance:
                         },
                         ...
                     ],
-                    "instance": "cloud...",
+                    "instance": "server...",
                     "version": "0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52"
                 }
         """
@@ -65,9 +65,9 @@ class Instance:
                 {
                     "current_project": "",
                     "in_use": false,
-                    "name": "cloud",
+                    "name": "server",
                     "updated_at": "2022-09-09 10:45:30 CST",
-                    "uri": "http://cloud.pre.intra.starwhale.ai",
+                    "uri": "http://server.pre.intra.starwhale.ai",
                     "user_name": "lijing_test",
                     "user_role": "normal"
                 },
