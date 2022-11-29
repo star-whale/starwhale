@@ -17,11 +17,11 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 import ai.starwhale.mlops.common.DockerImage;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
@@ -61,7 +61,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JobBoConverter {
 
-    final JobDatasetVersionMapper jobDatasetVersionMapper;
+    final DatasetDao datasetDao;
 
     final ModelMapper modelMapper;
 
@@ -84,7 +84,7 @@ public class JobBoConverter {
     final TaskBoConverter taskBoConverter;
 
     public JobBoConverter(
-            JobDatasetVersionMapper jobDatasetVersionMapper,
+            DatasetDao datasetDao,
             ModelMapper modelMapper,
             RuntimeMapper runtimeMapper,
             RuntimeVersionMapper runtimeVersionMapper,
@@ -93,7 +93,7 @@ public class JobBoConverter {
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
             TaskBoConverter taskBoConverter) {
-        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
+        this.datasetDao = datasetDao;
         this.modelMapper = modelMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
@@ -107,8 +107,8 @@ public class JobBoConverter {
     }
 
     public Job fromEntity(JobEntity jobEntity) {
-        List<DataSet> dataSets = jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())
-                .stream().map(datasetBoConverter::fromEntity)
+        List<DataSet> dataSets = datasetDao.listDatasetVersionsOfJob(jobEntity.getId())
+                .stream().map(datasetBoConverter::fromVersion)
                 .collect(Collectors.toList());
         ModelEntity modelEntity = modelMapper.find(
                 jobEntity.getModelVersion().getModelId());

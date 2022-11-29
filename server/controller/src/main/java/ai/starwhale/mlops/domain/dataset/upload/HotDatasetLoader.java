@@ -16,7 +16,10 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
+import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +32,16 @@ public class HotDatasetLoader implements CommandLineRunner {
 
     final DatasetVersionMapper datasetVersionMapper;
 
+    final DatasetMapper datasetMapper;
+
     final HotDatasetHolder hotDatasetHolder;
 
     public HotDatasetLoader(
             DatasetVersionMapper datasetVersionMapper,
+            DatasetMapper datasetMapper,
             HotDatasetHolder hotDatasetHolder) {
         this.datasetVersionMapper = datasetVersionMapper;
+        this.datasetMapper = datasetMapper;
         this.hotDatasetHolder = hotDatasetHolder;
     }
 
@@ -45,7 +52,10 @@ public class HotDatasetLoader implements CommandLineRunner {
 
     void loadUploadingDs() {
         List<DatasetVersionEntity> datasetVersionEntities = datasetVersionMapper.findByStatus(
-                DatasetVersionEntity.STATUS_UN_AVAILABLE);
-        datasetVersionEntities.parallelStream().forEach(entity -> hotDatasetHolder.manifest(entity));
+                DatasetVersion.STATUS_UN_AVAILABLE);
+        datasetVersionEntities.parallelStream().forEach(versionEntity -> {
+            DatasetEntity datasetEntity = datasetMapper.find(versionEntity.getDatasetId());
+            hotDatasetHolder.manifest(DatasetVersion.fromEntity(datasetEntity, versionEntity));
+        });
     }
 }

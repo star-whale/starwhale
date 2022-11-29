@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -120,14 +121,14 @@ public class DatasetUploader {
 
     public void cancel(String uploadId) {
         final DatasetVersionWithMeta swDatasetVersionEntityWithMeta = getDatasetVersion(uploadId);
-        datasetVersionMapper.delete(swDatasetVersionEntityWithMeta.getDatasetVersionEntity().getId());
+        datasetVersionMapper.delete(swDatasetVersionEntityWithMeta.getDatasetVersion().getId());
         hotDatasetHolder.cancel(uploadId);
-        clearDatasetStorageData(swDatasetVersionEntityWithMeta.getDatasetVersionEntity());
+        clearDatasetStorageData(swDatasetVersionEntityWithMeta.getDatasetVersion());
 
     }
 
-    private void clearDatasetStorageData(DatasetVersionEntity datasetVersionEntity) {
-        final String storagePath = datasetVersionEntity.getStoragePath();
+    private void clearDatasetStorageData(DatasetVersion datasetVersion) {
+        final String storagePath = datasetVersion.getStoragePath();
         try {
             Stream<String> files = storageAccessService.list(storagePath);
             files.parallel().forEach(file -> {
@@ -138,7 +139,7 @@ public class DatasetUploader {
                 }
             });
         } catch (IOException e) {
-            log.error("delete storage objects failed for {}", datasetVersionEntity.getVersionName(), e);
+            log.error("delete storage objects failed for {}", datasetVersion.getVersionName(), e);
             throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -150,12 +151,12 @@ public class DatasetUploader {
         try (InputStream inputStream = file.getInputStream()) {
             if (INDEX_FILE_NAME.equals(filename)) {
                 try (InputStream anotherInputStream = file.getInputStream()) {
-                    indexWriter.writeToStore(swDatasetVersionWithMeta.getDatasetVersionEntity().getIndexTable(),
+                    indexWriter.writeToStore(swDatasetVersionWithMeta.getDatasetVersion().getIndexTable(),
                             anotherInputStream);
                 }
             }
             final String storagePath = String.format(FORMATTER_STORAGE_PATH,
-                    swDatasetVersionWithMeta.getDatasetVersionEntity().getStoragePath(),
+                    swDatasetVersionWithMeta.getDatasetVersion().getStoragePath(),
                     StringUtils.hasText(uri) ? uri : filename);
             storageAccessService.put(storagePath, inputStream, file.getSize());
         } catch (IOException e) {
@@ -250,7 +251,7 @@ public class DatasetUploader {
             uploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
         } else {
             // dataset version create dup
-            if (datasetVersionEntity.getStatus().equals(DatasetVersionEntity.STATUS_AVAILABLE)) {
+            if (datasetVersionEntity.getStatus().equals(DatasetVersion.STATUS_AVAILABLE)) {
                 if (uploadRequest.force()) {
                     Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
                             .parallelStream().map(Job::getDataSets)
@@ -262,7 +263,7 @@ public class DatasetUploader {
                                 " dataset version is being hired by running job, force push is not allowed now");
                     } else {
                         datasetVersionMapper.updateStatus(datasetVersionEntity.getId(),
-                                DatasetVersionEntity.STATUS_UN_AVAILABLE);
+                                DatasetVersion.STATUS_UN_AVAILABLE);
                     }
                 } else {
                     throw new SwValidationException(ValidSubject.DATASET,
@@ -274,13 +275,15 @@ public class DatasetUploader {
                 datasetVersionEntity.setVersionMeta(yamlContent);
                 // if manifest(signature) change, all files should be re-uploaded
                 datasetVersionEntity.setFilesUploaded("");
-                clearDatasetStorageData(datasetVersionEntity);
+                clearDatasetStorageData(DatasetVersion.fromEntity(datasetEntity, datasetVersionEntity));
                 datasetVersionMapper.updateFilesUploaded(datasetVersionEntity.getId(),
                         datasetVersionEntity.getFilesUploaded());
                 reUploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
             }
         }
-        hotDatasetHolder.manifest(datasetVersionEntity);
+
+        hotDatasetHolder.manifest(DatasetVersion.fromEntity(datasetEntity, datasetVersionEntity));
+
         return datasetVersionEntity.getVersionName();
     }
 
@@ -319,8 +322,8 @@ public class DatasetUploader {
 
     public void end(String uploadId) {
         final DatasetVersionWithMeta datasetVersionWithMeta = getDatasetVersion(uploadId);
-        datasetVersionMapper.updateStatus(datasetVersionWithMeta.getDatasetVersionEntity().getId(),
-                DatasetVersionEntity.STATUS_AVAILABLE);
+        datasetVersionMapper.updateStatus(datasetVersionWithMeta.getDatasetVersion().getId(),
+                DatasetVersion.STATUS_AVAILABLE);
         hotDatasetHolder.end(uploadId);
     }
 

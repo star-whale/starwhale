@@ -131,7 +131,9 @@ public interface DatasetVersionMapper {
                     SELECT(COLUMNS);
                     FROM("dataset_version");
                     WHERE("version_name = #{versionName}");
-                    WHERE("dataset_id = #{datasetId}");
+                    if (Objects.nonNull(datasetId)) {
+                        WHERE("dataset_id = #{datasetId}");
+                    }
                 }
             }.toString();
 
