@@ -88,27 +88,27 @@ class TestCli:
         self,
         work_dir: str,
         thread_pool: ThreadPoolExecutor,
-        cloud_url: t.Optional[str],
-        cloud_project: str = "starwhale",
+        server_url: t.Optional[str],
+        server_project: str = "starwhale",
     ) -> None:
         self._work_dir = work_dir
         self.executor = thread_pool
-        self.cloud_url = cloud_url
-        self.cloud_project = cloud_project
+        self.server_url = server_url
+        self.server_project = server_project
         self.datasets: t.Dict[str, t.List[URI]] = {}
         self.runtimes: t.Dict[str, URI] = {}
         self.models: t.Dict[str, URI] = {}
-        if self.cloud_url:
-            logger.info(f"login to cloud {self.cloud_url} ...")
-            assert self.instance.login(url=self.cloud_url)
+        if self.server_url:
+            logger.info(f"login to server {self.server_url} ...")
+            assert self.instance.login(url=self.server_url)
 
     def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
         self.select_local_instance()
         _uri = Dataset.build_with_api(workdir=_workdir, handler=handler)
-        if self.cloud_url:
+        if self.server_url:
             assert self.dataset.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://cloud/project/{self.cloud_project}",
+                target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
         dss_ = self.datasets.get(_uri.object.name, [])
@@ -124,10 +124,10 @@ class TestCli:
     ) -> t.Any:
         self.select_local_instance()
         _uri = Model.build_with_api(workdir=_workdir)
-        if self.cloud_url:
+        if self.server_url:
             assert self.model.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://cloud/project/{self.cloud_project}",
+                target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
         self.models.update({_uri.object.name: _uri})
@@ -141,10 +141,10 @@ class TestCli:
     ) -> t.Any:
         self.select_local_instance()
         _uri = Runtime.build_with_api(workdir=_workdir)
-        if self.cloud_url:
+        if self.server_url:
             assert self.runtime.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://cloud/project/{self.cloud_project}",
+                target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
         self.runtimes.update({_uri.object.name: _uri})
@@ -167,7 +167,7 @@ class TestCli:
         if local_instance:
             _jid = self.local_evl(_ds_uris, _model_uri, _rt_uri)
             return executor.submit(lambda: (_jid, next(iter(STATUS_SUCCESS))))
-        if self.cloud_url and not local_instance:
+        if self.server_url and not local_instance:
             return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
         return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
 
@@ -190,15 +190,15 @@ class TestCli:
     def remote_eval(
         self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
     ) -> Future:
-        self.instance.select(instance="cloud")
-        self.project.select(project=self.cloud_project)
+        self.instance.select(instance="server")
+        self.project.select(project=self.server_project)
         # 8.start an evaluation
-        logger.info("running evaluation at cloud...")
+        logger.info("running evaluation at server...")
         _remote_jid = self.evaluation.run(
             model=_model_uri.object.version,
             datasets=[_ds_uri.object.version for _ds_uri in _ds_uris],
             runtime=_rt_uri.object.version,
-            project=f"{self.cloud_url}/project/{self.cloud_project}",
+            project=f"{self.server_url}/project/{self.server_project}",
             step_spec=step_spec_file,
             resource_pool=os.environ.get("RESOURCE_POOL"),
         )
@@ -210,7 +210,7 @@ class TestCli:
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
             _remote_job = self.evaluation.info(
-                f"{self.cloud_url}/project/{self.cloud_project}/evaluation/{job_id}"
+                f"{self.server_url}/project/{self.server_project}/evaluation/{job_id}"
             )
             _job_status = (
                 _remote_job["manifest"]["jobStatus"]
@@ -219,7 +219,7 @@ class TestCli:
             )
             if _job_status in STATUS_SUCCESS.union(STATUS_FAIL):
                 logger.info(
-                    f"finish run evaluation at cloud for job {job_id}, status is:{_job_status}."
+                    f"finish run evaluation at server for job {job_id}, status is:{_job_status}."
                 )
                 return job_id, _job_status
             sleep(10)
@@ -241,7 +241,7 @@ class TestCli:
         _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
 
         self.local_evl([_ds_uri], _model_uri, _rt_uri)
-        if self.cloud_url:
+        if self.server_url:
             _js = self.remote_eval(
                 [_ds_uri], _model_uri, _rt_uri, step_spec_f("step_spec_cpu_mini.yaml")
             )
@@ -279,7 +279,7 @@ class TestCli:
                 step_spec_f("step_spec_cpu_full.yaml"),
             )
 
-        # run evals on cloud
+        # run evals on server
         res = [
             self.run_example(
                 name,
@@ -356,7 +356,7 @@ if __name__ == "__main__":
         test_cli = TestCli(
             work_dir=WORK_DIR,
             thread_pool=executor,
-            cloud_url=os.environ.get("CONTROLLER_URL"),
+            server_url=os.environ.get("CONTROLLER_URL"),
         )
         example = sys.argv[1]
         if example == "simple":
