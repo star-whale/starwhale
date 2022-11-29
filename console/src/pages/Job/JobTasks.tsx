@@ -37,7 +37,7 @@ export default function JobTasks() {
             if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
                 files[task?.uuid] = 'ws'
             }
-            if(!Object.keys(files).length) {
+            if (!Object.keys(files).length) {
                 toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
             }
             setCurrentLogFiles({
