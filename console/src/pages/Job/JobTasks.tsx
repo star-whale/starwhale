@@ -26,24 +26,23 @@ export default function JobTasks() {
     const onAction = useCallback(
         async (type, task: ITaskSchema) => {
             setCurrentTask(task)
-            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
-                setCurrentLogFiles({
-                    [task?.uuid]: 'ws',
-                })
-            } else {
-                const data = await fetchTaskOfflineLogFiles(task?.id)
-                if (_.isEmpty(data)) {
-                    toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
-                }
-                const files: Record<string, string> = {}
+            const data = await fetchTaskOfflineLogFiles(task?.id)
+            const files: Record<string, string> = {}
+            if (!_.isEmpty(data)) {
                 data.map(async (v: string) => {
                     const content = await fetchTaskOfflineFileLog(task?.id, v)
                     files[v] = content ?? ''
-                    setCurrentLogFiles({
-                        ...files,
-                    })
                 })
             }
+            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+                files[task?.uuid] = 'ws'
+            }
+            if(!Object.keys(files).length) {
+                toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
+            }
+            setCurrentLogFiles({
+                ...files,
+            })
             setExpanded(true)
         },
         [t]
