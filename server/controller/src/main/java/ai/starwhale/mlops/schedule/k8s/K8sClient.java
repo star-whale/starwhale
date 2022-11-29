@@ -104,6 +104,18 @@ public class K8sClient {
         informerFactory.startAllRegisteredInformers();
     }
 
+    public void watchPod(ResourceEventHandler<V1Pod> eventH, String selector) {
+        SharedIndexInformer<V1Pod> podInformer = informerFactory.sharedIndexInformerFor(
+                (CallGeneratorParams params) -> coreV1Api.listNamespacedPodCall(ns, null, null, null, null,
+                        selector,
+                        null, params.resourceVersion, null, params.timeoutSeconds, params.watch,
+                        null),
+                V1Pod.class,
+                V1PodList.class);
+        podInformer.addEventHandler(eventH);
+        informerFactory.startAllRegisteredInformers();
+    }
+
     public String logOfJob(String selector, List<String> containers) throws ApiException, IOException {
         V1Pod pod = podOfJob(selector);
         return logOfPod(pod, containers);

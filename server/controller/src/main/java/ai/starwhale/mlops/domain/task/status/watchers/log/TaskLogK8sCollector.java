@@ -70,7 +70,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
                                     k8sJobTemplate.getContainersTemplates().stream())
                             .map(V1Container::getName)
                             .collect(Collectors.toList()));
-            log.debug("logs for task {} is {}...", task.getId(),
+            log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
             String logPath = resolveLogPath(task, logName);
             log.debug("putting log to storage at path {}", logPath);

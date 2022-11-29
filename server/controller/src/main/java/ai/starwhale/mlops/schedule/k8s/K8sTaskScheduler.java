@@ -38,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,6 +69,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final K8sJobTemplate k8sJobTemplate;
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
+    final ResourceEventHandler<V1Pod> eventHandlerPod;
     final String instanceUri;
     final int datasetLoadBatchSize;
     final String restartPolicy;
@@ -80,7 +82,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             K8sJobTemplate k8sJobTemplate,
             ResourceEventHandler<V1Job> eventHandlerJob,
             ResourceEventHandler<V1Node> eventHandlerNode,
-            @Value("${sw.instance-uri}") String instanceUri,
+            ResourceEventHandler<V1Pod> eventHandlerPod, @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
@@ -91,6 +93,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
+        this.eventHandlerPod = eventHandlerPod;
         this.instanceUri = instanceUri;
         this.storageAccessService = storageAccessService;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
@@ -300,5 +303,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         log.info("spring context ready now");
         k8sClient.watchJob(eventHandlerJob, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
         k8sClient.watchNode(eventHandlerNode);
+        k8sClient.watchPod(eventHandlerPod, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
     }
 }
