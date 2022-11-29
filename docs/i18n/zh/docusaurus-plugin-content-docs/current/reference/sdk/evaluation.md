@@ -240,3 +240,119 @@ def func():
 @step(resources={"cpu": 0.1, "gpu": 1, "memory": 100})
 @step(resources={"cpu": {"request": 0.1, "limit": 0.2}, "gpu": {"request": 1, "limit": 1}, "memory": {"request": 100, "limit": 200}})
 ```
+
+## 7. starwhale.api.service.Service
+
+用于 model serve 的基础类, 最常用的用法是
+
+7.1. 使用 decorator 添加 handler
+
+```python
+from starwhale.api.service import Service
+
+svc = Service()
+
+@svc.api(...)
+def handler(data):
+    ...
+```
+
+使用此方法定义的模型支持使用 `swcli model serve` 命令启动一个 web service 接收外部请求, 并将推理结果返回给用户
+
+下面是请求 example/mnist model serving 的示例
+
+```bash
+# curl 127.0.0.1:8080/handler -X POST -H 'Content-Type: application/json' -d 'json payload ...'
+[
+  [
+    9
+  ],
+  [
+    [
+      3.3270520369869727e-09,
+      1.2171811490062852e-10,
+      1.2030677147728627e-09,
+      1.7674896093116236e-09,
+      9.050932806073548e-05,
+      6.260229311866706e-08,
+      4.511245851157581e-10,
+      4.308102983942366e-06,
+      1.1480706309613537e-05,
+      0.999893676619871
+    ]
+  ]
+]
+```
+
+7.2. 使用基类函数添加 handler
+
+如果 model 是继承自 `PipelineHandler`, 也可以不实例化 `Service`, 调用基类的 `add_api` 方法手动添加 handler, 例如
+
+```python
+class MyDefaultClass(PipelineHandler):
+    def __init__(self) -> None:
+        super().__init__()
+        for func in [self.ppl, self.handler_foo]:
+            self.add_api(Input(), Output(), func, func.__name__)
+
+    def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
+        return data
+
+    def handler_foo(self, data: t.Any) -> t.Any:
+        return
+
+    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+        pass
+```
+
+7.3. 自定义 Service
+
+如果希望自定义 web service 的实现, 可以继承 `Service` 并重写 `serve` 函数即可
+
+```python
+class CustomService(Service):
+    def serve(self, addr: str, port: int, handler_list: t.List[str] = None) -> None:
+        ...
+
+svc = CustomService()
+```
+
+说明:
+
+- 使用 `PipelineHandler.add_api` 函数添加的 handler 和使用实例化的 `Service.api` decorator 添加的 handler 可以同时生效
+- 如果使用自定义的 `Service`, 需要在 model 中实例化自定义的 Service 类
+
+7.4. 自定义 Request 和 Response
+
+Request 和 Response 分别是用于接收用户请求和返回给用户结果的处理类, 可以简单的理解成是 `handler` 的前处理和后处理逻辑
+
+Starwhale 将支持 Dataset 内置类型的 Request 实现以及 Json Response 的实现, 同时用户可以自定义处理逻辑来使用, 自定义的示例如下
+
+```python
+import typing as t
+
+from starwhale.api.service import (
+    Request,
+    Service,
+    Response,
+)
+
+
+class CustomInput(Request):
+    def load(self, req: t.Any) -> t.Any:
+        return req
+
+
+class CustomOutput(Response):
+    def __init__(self, prefix: str) -> None:
+        self.prefix = prefix
+
+    def dump(self, req: str) -> bytes:
+        return f"{self.prefix} {req}".encode("utf-8")
+
+svc = Service()
+
+@svc.api(request=CustomInput(), response=CustomOutput("hello"))
+def foo(data: t.Any) -> t.Any:
+    ...
+```

@@ -45,6 +45,7 @@ title: Starwhale Model-模型包
   - `swcli model extract`
 - 运行阶段
   - `swcli model eval`
+  - `swcli model serve`
 - 基本管理
   - `swcli model list`
   - `swcli model info`

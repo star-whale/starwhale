@@ -1,3 +1,4 @@
+import base64
 import typing as t
 from pathlib import Path
 
@@ -14,16 +15,26 @@ from starwhale import (
     Context,
     URIType,
     pass_context,
+    GrayscaleImage,
     get_data_loader,
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
     get_dataset_consumption,
 )
+from starwhale.api.service import Request, Service, JsonResponse
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
+
+svc = Service()
+
+
+class CustomGrayscaleImageRequest(Request):
+    def load(self, req: t.Any) -> GrayscaleImage:
+        raw = base64.b64decode(req["custom_field"])
+        return GrayscaleImage(raw, shape=[28, 28, 1])
 
 
 class CustomPipelineHandler:
@@ -47,11 +58,7 @@ class CustomPipelineHandler:
             for _idx, _data, _annotations in loader:
                 _unique_id = f"{_uri.object}_{_idx}"
                 try:
-                    data_tensor = self._pre(_data)
-                    output = self.model(data_tensor)
-
-                    pred_value = output.argmax(1).flatten().tolist()
-                    probability_matrix = np.exp(output.tolist()).tolist()
+                    pred_value, probability_matrix = self.ppl(_data)
 
                     ppl_result_storage.save(
                         data_id=_unique_id,
@@ -102,3 +109,17 @@ class CustomPipelineHandler:
             [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
         )(_image_array)
         return torch.stack([_image]).to(self.device)
+
+    @svc.api(request=CustomGrayscaleImageRequest(), response=JsonResponse())
+    def ppl(self, data: Image) -> t.Tuple[t.List[int], t.List[float]]:
+        data_tensor = self._pre(data)
+        output = self.model(data_tensor)
+        return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
+
+    @svc.api(
+        request=CustomGrayscaleImageRequest(),
+        response=JsonResponse(),
+        uri="custom_handler",
+    )
+    def custom_svc_handler(self, data: t.Any) -> t.Any:
+        return self.ppl(data)
