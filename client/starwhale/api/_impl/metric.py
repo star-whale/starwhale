@@ -109,12 +109,12 @@ def multi_classification(
                     _ra_value = _calculate_roc_auc(y_true, y_pr, _label, _idx)
                     _r["roc_auc"][str(_label)] = _ra_value
 
-                    for _fpr, _tpr, _threshold in zip(
-                        _ra_value["fpr"], _ra_value["tpr"], _ra_value["thresholds"]
+                    for _id, (_fpr, _tpr, _threshold) in enumerate(
+                        zip(_ra_value["fpr"], _ra_value["tpr"], _ra_value["thresholds"])
                     ):
                         evaluation.log(
                             f"roc_auc/{_label}",
-                            id=_idx,
+                            id=_id,
                             fpr=_fpr,
                             tpr=_tpr,
                             threshold=_threshold,
