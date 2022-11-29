@@ -73,7 +73,7 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         if (entity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.MODEL,
-                            String.format("Unable to find Runtime %s", versionUrl)),
+                            String.format("Unable to find dataset version %s, %d", versionUrl, datasetId)),
                     HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
