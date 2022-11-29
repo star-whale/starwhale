@@ -22,7 +22,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -30,12 +29,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -57,16 +55,16 @@ public class JobConverterTest {
         RuntimeService runtimeService = mock(RuntimeService.class);
         given(runtimeService.findRuntimeByVersionIds(anyList()))
                 .willReturn(List.of(RuntimeVo.builder().id("1").build()));
-        JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
-        given(jobDatasetVersionMapper.listDatasetVersionsByJobId(anyLong()))
-                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).versionName("v1").build()));
+        DatasetDao datasetDao = mock(DatasetDao.class);
+        given(datasetDao.listDatasetVersionsOfJob(anyLong()))
+                .willReturn(List.of(DatasetVersion.builder().id(1L).versionName("v1").build()));
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
         jobConvertor = new JobConverter(
                 idConvertor,
                 runtimeService,
-                jobDatasetVersionMapper,
+                datasetDao,
                 systemSettingService
         );
     }
@@ -103,11 +101,5 @@ public class JobConverterTest {
                 hasProperty("comment", is("job-comment")),
                 hasProperty("resourcePool", is("default"))
         ));
-    }
-
-    @Test
-    public void testRevert() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> jobConvertor.revert(JobVo.builder().build()));
     }
 }

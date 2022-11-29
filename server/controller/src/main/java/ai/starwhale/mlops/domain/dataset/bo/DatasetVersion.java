@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.bo;
 
+import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,15 +29,39 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DatasetVersion {
 
+    public static final Integer STATUS_AVAILABLE = 1;
+    public static final Integer STATUS_UN_AVAILABLE = 0;
     private Long id;
-
-    private String name;
-
+    private Long datasetId;
+    private Long versionOrder;
+    private String datasetName;
     private Long ownerId;
-
-    private String tag;
-
-    private String meta;
-
+    private String versionName;
+    private String versionTag;
+    private String versionMeta;
+    private String filesUploaded;
     private String storagePath;
+    private Long size;
+    private String indexTable;
+    /**
+     * 0 - unavailable 1 - available
+     */
+    private Integer status = STATUS_UN_AVAILABLE;
+
+    public static DatasetVersion fromEntity(DatasetEntity datasetEntity, DatasetVersionEntity versionEntity) {
+        return DatasetVersion.builder()
+                .id(versionEntity.getId())
+                .datasetId(versionEntity.getDatasetId())
+                .versionOrder(versionEntity.getVersionOrder())
+                .datasetName(datasetEntity.getDatasetName())
+                .ownerId(versionEntity.getOwnerId())
+                .versionName(versionEntity.getVersionName())
+                .versionTag(versionEntity.getVersionTag())
+                .versionMeta(versionEntity.getVersionMeta())
+                .filesUploaded(versionEntity.getFilesUploaded())
+                .storagePath(versionEntity.getStoragePath())
+                .size(versionEntity.getSize())
+                .indexTable(versionEntity.getIndexTable())
+                .build();
+    }
 }

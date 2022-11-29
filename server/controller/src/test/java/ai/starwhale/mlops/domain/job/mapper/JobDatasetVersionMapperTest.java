@@ -59,35 +59,19 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
                 .storagePath("stp2").ownerId(1L).build();
         datasetVersionMapper.insert(datasetVersionEntity);
         datasetVersionMapper.insert(datasetVersionEntity2);
-        jobDatasetVersionMapper.addJobDatasetVersions(13L,
+        jobDatasetVersionMapper.insert(13L,
                 List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()));
     }
 
     @Test
     public void testListSwdsVersionsByJobId() {
-        List<DatasetVersionEntity> swDatasetVersionEntities = jobDatasetVersionMapper.listDatasetVersionsByJobId(
+        List<Long> ids = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(
                 13L);
-        Assertions.assertEquals(2, swDatasetVersionEntities.size());
-        swDatasetVersionEntities.forEach(entity -> assertDsEquals(
-                entity.getId().equals(datasetVersionEntity.getId()) ? datasetVersionEntity
-                        : datasetVersionEntity2, entity));
+        Assertions.assertEquals(2, ids.size());
+        Assertions.assertIterableEquals(
+                List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()),
+                ids
+        );
 
-    }
-
-
-    public void assertDsEquals(DatasetVersionEntity expected, DatasetVersionEntity acutal) {
-        Assertions.assertEquals(expected.getId(), acutal.getId());
-        Assertions.assertEquals(expected.getDatasetId(), acutal.getDatasetId());
-        Assertions.assertEquals(expected.getVersionOrder(), acutal.getVersionOrder());
-        Assertions.assertEquals("dsn", acutal.getDatasetName());
-        Assertions.assertEquals(expected.getOwnerId(), acutal.getOwnerId());
-        Assertions.assertEquals(expected.getVersionName(), acutal.getVersionName());
-        Assertions.assertEquals(expected.getVersionTag(), acutal.getVersionTag());
-        Assertions.assertEquals(expected.getVersionMeta(), acutal.getVersionMeta());
-        Assertions.assertEquals(expected.getFilesUploaded(), acutal.getFilesUploaded());
-        Assertions.assertEquals(expected.getStoragePath(), acutal.getStoragePath());
-        Assertions.assertEquals(expected.getSize(), acutal.getSize());
-        Assertions.assertEquals(expected.getIndexTable(), acutal.getIndexTable());
-        Assertions.assertEquals(0, acutal.getStatus());
     }
 }

@@ -201,7 +201,7 @@ public class JobService {
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
                 .map(url -> datasetDao.getDatasetVersionId(url, null))
                 .collect(Collectors.toList());
-        jobDatasetVersionMapper.addJobDatasetVersions(jobEntity.getId(), datasetVersionIds);
+        jobDatasetVersionMapper.insert(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
 

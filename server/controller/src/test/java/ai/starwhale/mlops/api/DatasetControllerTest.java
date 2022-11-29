@@ -48,7 +48,6 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
@@ -260,7 +259,7 @@ public class DatasetControllerTest {
                     }
                 });
         given(datasetService.query(anyString(), anyString(), anyString()))
-                .willReturn(DatasetVersionEntity.builder().id(1L).build());
+                .willReturn(DatasetVersion.builder().id(1L).build());
         given(datasetService.dataOf(same(1L), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
@@ -272,19 +271,6 @@ public class DatasetControllerTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> controller.pullLinkContent("p1", "", "v1", "", 1L, 1L, response));
-    }
-
-    @Test
-    public void testModifyDatasetVersionInfo() {
-        given(datasetService.modifyDatasetVersion(same("p1"), same("d1"), same("v1"), any(DatasetVersion.class)))
-                .willReturn(true);
-        DatasetTagRequest request = new DatasetTagRequest();
-        request.setTag("tag1");
-        var resp = controller.modifyDatasetVersionInfo("p1", "d1", "v1", request);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.modifyDatasetVersionInfo("p2", "d1", "v1", request));
     }
 
     @Test
@@ -362,7 +348,7 @@ public class DatasetControllerTest {
         String ds = "ds";
         String v = "v";
         String uri = "uri";
-        when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersionEntity.builder().id(1L).build());
+        when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersion.builder().id(1L).build());
         String signUrl = "sign-url";
         when(datasetService.signLinks(1L, Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
         Assertions.assertEquals(Map.of(uri, signUrl),

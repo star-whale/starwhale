@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.dataset.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,12 +32,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class DatasetVersionEntity extends BaseEntity implements BundleVersionEntity {
 
-    public static final Integer STATUS_AVAILABLE = 1;
-    public static final Integer STATUS_UN_AVAILABLE = 0;
     private Long id;
     private Long datasetId;
     private Long versionOrder;
-    private String datasetName;
+
     private Long ownerId;
     private String versionName;
     private String versionTag;
@@ -45,10 +44,8 @@ public class DatasetVersionEntity extends BaseEntity implements BundleVersionEnt
     private String storagePath;
     private Long size;
     private String indexTable;
-    /**
-     * 0 - unavailable 1 - available
-     */
-    private Integer status = STATUS_UN_AVAILABLE;
+
+    private Integer status = DatasetVersion.STATUS_UN_AVAILABLE;
 
     @Override
     public String getName() {
