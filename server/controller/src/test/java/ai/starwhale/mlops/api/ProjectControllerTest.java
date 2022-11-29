@@ -38,7 +38,7 @@ import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -70,7 +70,7 @@ public class ProjectControllerTest {
                 .idTableKey(1L)
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
-        IdConvertor idConvertor = new IdConvertor();
+        IdConverter idConvertor = new IdConverter();
         controller = new ProjectController(projectService, userService, idConvertor);
     }
 

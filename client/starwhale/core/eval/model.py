@@ -163,6 +163,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         use_docker = kw.get("use_docker", False)
         step = kw.get("step", "")
         task_index = kw.get("task_index", 0)
+        task_num = kw.get("task_num", 0)
 
         ee = EvalExecutor(
             model_uri=model_uri,
@@ -174,6 +175,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             desc=desc,
             step=step,
             task_index=task_index,
+            task_num=task_num,
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
         )

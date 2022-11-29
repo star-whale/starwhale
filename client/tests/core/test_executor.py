@@ -1,4 +1,6 @@
 import os
+import getpass as gt
+from pwd import getpwnam
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -89,12 +91,16 @@ class StandaloneEvalExecutor(TestCase):
         ensure_file(runtime_bundle_path, " ")
         ensure_dir(runtime_workdir_path)
         ensure_file(runtime_workdir_path / DEFAULT_MANIFEST_NAME, "{}")
+
+        model_version = "mnist/version/gnstmntggi4t"
+        runtime_version = "mnist/version/ga4doztfg4yw"
+        dataset_version = "mnist/version/me4dczleg"
         # use docker
         ee = EvalExecutor(
-            model_uri="mnist/version/gnstmntggi4t",
-            dataset_uris=["mnist/version/me4dczleg"],
+            model_uri=model_version,
+            dataset_uris=[dataset_version],
             project_uri=URI(""),
-            runtime_uri="mnist/version/ga4doztfg4yw",
+            runtime_uri=runtime_version,
             use_docker=True,
         )
 
@@ -116,15 +122,16 @@ class StandaloneEvalExecutor(TestCase):
 
         assert ppl_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1 -l version={build_version}",
-                f"-v {job_dir}:/opt/starwhale",
-                f"-v {sw.rootdir}:/root/.starwhale",
+                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1",
+                f"-e SW_USER={gt.getuser()} -e SW_USER_ID={getpwnam(gt.getuser()).pw_uid} -e SW_USER_GROUP_ID=0",
+                f"-e SW_LOCAL_STORAGE={sw.rootdir} -l version={build_version}",
+                f"-v {job_dir}:{job_dir}",
+                f"-v {sw.rootdir}:{sw.rootdir}",
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
-                f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111:/opt/starwhale/swrt",
                 "-e SW_PROJECT=self",
                 f"-e SW_EVALUATION_VERSION={build_version}",
+                f"-e SW_MODEL_VERSION={model_version}",
+                f"-e SW_RUNTIME_VERSION={runtime_version}",
                 "-e SW_INSTANCE_URI=local",
                 "-e SW_TOKEN=",
                 "-e SW_DATASET_URI=local/project/self/dataset/mnist/version/me4dczleg",

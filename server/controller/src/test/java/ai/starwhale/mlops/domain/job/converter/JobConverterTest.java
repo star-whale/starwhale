@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,7 +33,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -43,7 +42,6 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.Date;
 import java.util.List;
@@ -52,26 +50,21 @@ import org.junit.jupiter.api.Test;
 
 public class JobConverterTest {
 
-    private JobConvertor jobConvertor;
+    private JobConverter jobConvertor;
 
     @BeforeEach
     public void setUp() {
-        UserConvertor userConvertor = mock(UserConvertor.class);
-        given(userConvertor.convert(any(UserEntity.class)))
-                .willReturn(UserVo.builder().build());
-
         RuntimeService runtimeService = mock(RuntimeService.class);
         given(runtimeService.findRuntimeByVersionIds(anyList()))
                 .willReturn(List.of(RuntimeVo.builder().id("1").build()));
         JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
         given(jobDatasetVersionMapper.listDatasetVersionsByJobId(anyLong()))
                 .willReturn(List.of(DatasetVersionEntity.builder().id(1L).versionName("v1").build()));
-        IdConvertor idConvertor = new IdConvertor();
+        IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
-        jobConvertor = new JobConvertor(
+        jobConvertor = new JobConverter(
                 idConvertor,
-                userConvertor,
                 runtimeService,
                 jobDatasetVersionMapper,
                 systemSettingService

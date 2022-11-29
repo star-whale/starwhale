@@ -20,12 +20,12 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.dataset.DatasetManager;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -33,9 +33,9 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.model.ModelManager;
+import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -47,7 +47,6 @@ import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -77,7 +76,7 @@ public class JobService {
     private final JobMapper jobMapper;
     private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final TaskMapper taskMapper;
-    private final JobConvertor jobConvertor;
+    private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
     private final HotJobHolder hotJobHolder;
@@ -87,34 +86,34 @@ public class JobService {
     private final UserService userService;
     private final ProjectManager projectManager;
     private final JobManager jobManager;
-    private final ModelManager modelManager;
-    private final DatasetManager datasetManager;
-    private final RuntimeManager runtimeManager;
+    private final ModelDao modelDao;
+    private final DatasetDao datasetDao;
+    private final RuntimeDao runtimeDao;
     private final JobUpdateHelper jobUpdateHelper;
 
     private final TrashService trashService;
 
     public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper,
             JobDatasetVersionMapper jobDatasetVersionMapper,
-            TaskMapper taskMapper, JobConvertor jobConvertor, RuntimeManager runtimeManager,
+            TaskMapper taskMapper, JobConverter jobConvertor, RuntimeDao runtimeDao,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelManager modelManager,
-            ResultQuerier resultQuerier, DatasetManager datasetManager, StoragePathCoordinator storagePathCoordinator,
+            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelDao modelDao,
+            ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
             UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.jobBoConverter = jobBoConverter;
         this.jobMapper = jobMapper;
         this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
-        this.runtimeManager = runtimeManager;
+        this.runtimeDao = runtimeDao;
         this.jobSpliterator = jobSpliterator;
         this.hotJobHolder = hotJobHolder;
         this.projectManager = projectManager;
         this.jobManager = jobManager;
         this.jobLoader = jobLoader;
-        this.modelManager = modelManager;
+        this.modelDao = modelDao;
         this.resultQuerier = resultQuerier;
-        this.datasetManager = datasetManager;
+        this.datasetDao = datasetDao;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
@@ -180,8 +179,8 @@ public class JobService {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
-        Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = modelManager.getModelVersionId(modelVersionUrl, null);
+        Long runtimeVersionId = runtimeDao.getRuntimeVersionId(runtimeVersionUrl, null);
+        Long modelVersionId = modelDao.getModelVersionId(modelVersionUrl, null);
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
                 .jobUuid(jobUuid)
@@ -200,7 +199,7 @@ public class JobService {
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
 
         List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(url -> datasetManager.getDatasetVersionId(url, null))
+                .map(url -> datasetDao.getDatasetVersionId(url, null))
                 .collect(Collectors.toList());
         jobDatasetVersionMapper.addJobDatasetVersions(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();

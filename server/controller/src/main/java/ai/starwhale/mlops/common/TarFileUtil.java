@@ -22,11 +22,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.io.IOUtils;
@@ -99,6 +103,56 @@ public final class TarFileUtil {
 
         return baos.toByteArray();
 
+    }
+
+    @Builder
+    public static class TarEntry {
+        InputStream inputStream;
+        long size;
+        String name;
+    }
+
+    public static void archiveAndTransferTo(Iterator<TarEntry> inputStreamIterator, OutputStream outputStream)
+            throws ArchiveException {
+        try (ArchiveOutputStream archiveOutputStream =
+                 new ArchiveStreamFactory().createArchiveOutputStream(ArchiveStreamFactory.TAR, outputStream)) {
+            // tar all of these files
+            while (inputStreamIterator.hasNext()) {
+                var tarEntry = inputStreamIterator.next();
+                try (InputStream fileInputStream = tarEntry.inputStream) {
+                    TarArchiveEntry entry = new TarArchiveEntry(new File(tarEntry.name));
+                    if (entry.isDirectory()) {
+                        continue;
+                    }
+                    // must set size before copy
+                    entry.setSize(tarEntry.size);
+                    archiveOutputStream.putArchiveEntry(entry);
+                    // copy to output stream
+                    fileInputStream.transferTo(archiveOutputStream);
+                    // close current entry stream
+                    archiveOutputStream.closeArchiveEntry();
+                }
+            }
+            // finally flag the stream to finish
+            archiveOutputStream.finish();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void extract(
+            InputStream in, ArchiveFileConsumer func) throws ArchiveException {
+        try (ArchiveInputStream archive = getArchiveInputStream(in)) {
+            TarArchiveEntry entry;
+            while ((entry = (TarArchiveEntry) archive.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                func.apply(entry.getName(), entry.getSize(), archive);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void extract(InputStream tar, String dstDir) throws ArchiveException, IOException {

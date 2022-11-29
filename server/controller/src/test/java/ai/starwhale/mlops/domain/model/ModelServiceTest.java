@@ -23,7 +23,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,14 +32,17 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.ArchiveFileConsumer;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -52,6 +54,8 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
+import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
+import ai.starwhale.mlops.domain.model.converter.ModelVoConverter;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -78,6 +82,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -87,17 +92,16 @@ public class ModelServiceTest {
     private ModelService service;
     private ModelMapper modelMapper;
     private ModelVersionMapper modelVersionMapper;
-    private ModelConvertor modelConvertor;
-    private ModelVersionConvertor versionConvertor;
+    private ModelVoConverter modelConverter;
+    private ModelVersionVoConverter versionConvertor;
     private StoragePathCoordinator storagePathCoordinator;
     private StorageAccessService storageAccessService;
     private StorageService storageService;
     private UserService userService;
     private ProjectManager projectManager;
-    private ModelManager modelManager;
+    private ModelDao modelDao;
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
-
     private TrashService trashService;
 
     @SneakyThrows
@@ -105,8 +109,8 @@ public class ModelServiceTest {
     public void setUp() {
         modelMapper = mock(ModelMapper.class);
         modelVersionMapper = mock(ModelVersionMapper.class);
-        modelConvertor = mock(ModelConvertor.class);
-        given(modelConvertor.convert(any(ModelEntity.class)))
+        modelConverter = mock(ModelVoConverter.class);
+        given(modelConverter.convert(any(ModelEntity.class)))
                 .willAnswer(invocation -> {
                     ModelEntity entity = invocation.getArgument(0);
                     return ModelVo.builder()
@@ -114,7 +118,7 @@ public class ModelServiceTest {
                             .name(entity.getName())
                             .build();
                 });
-        versionConvertor = mock(ModelVersionConvertor.class);
+        versionConvertor = mock(ModelVersionVoConverter.class);
         given(versionConvertor.convert(any(ModelVersionEntity.class)))
                 .willAnswer(invocation -> {
                     ModelVersionEntity entity = invocation.getArgument(0);
@@ -139,19 +143,19 @@ public class ModelServiceTest {
                 .willReturn(1L);
         given(projectManager.getProjectId(same("2")))
                 .willReturn(2L);
-        modelManager = mock(ModelManager.class);
+        modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
 
         service = new ModelService(
                 modelMapper,
                 modelVersionMapper,
-                new IdConvertor(),
-                new VersionAliasConvertor(),
-                modelConvertor,
+                new IdConverter(),
+                new VersionAliasConverter(),
+                modelConverter,
                 versionConvertor,
                 storagePathCoordinator,
-                modelManager,
+                modelDao,
                 storageAccessService,
                 storageService,
                 userService,
@@ -194,7 +198,7 @@ public class ModelServiceTest {
 
     @Test
     public void testListModel() {
-        given(modelMapper.listModels(same(1L), anyString()))
+        given(modelMapper.list(same(1L), anyString(), any()))
                 .willReturn(List.of(
                         ModelEntity.builder().id(1L).build(),
                         ModelEntity.builder().id(2L).build()
@@ -250,9 +254,9 @@ public class ModelServiceTest {
 
     @Test
     public void testListModelInfo() {
-        given(modelMapper.findByName(same("m1"), same(1L)))
+        given(modelMapper.findByName(same("m1"), same(1L), any()))
                 .willReturn(ModelEntity.builder().id(1L).build());
-        given(modelVersionMapper.listVersions(same(1L), any(), any()))
+        given(modelVersionMapper.list(same(1L), any(), any()))
                 .willReturn(List.of(ModelVersionEntity.builder().versionOrder(2L).build()));
 
         var res = service.listModelInfo("1", "m1");
@@ -261,9 +265,9 @@ public class ModelServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.findByNameOrDefault(same("1"), same(1L)))
+        given(projectManager.getProject(same("1")))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(modelMapper.listModels(same(1L), any()))
+        given(modelMapper.list(same(1L), any(), any()))
                 .willReturn(List.of(ModelEntity.builder().id(1L).build()));
 
         res = service.listModelInfo("1", "");
@@ -278,19 +282,19 @@ public class ModelServiceTest {
 
     @Test
     public void testGetModelInfo() {
-        given(modelMapper.findModelById(same(1L)))
+        given(modelMapper.find(same(1L)))
                 .willReturn(ModelEntity.builder().id(1L).build());
 
-        given(modelMapper.findModelById(same(2L)))
+        given(modelMapper.find(same(2L)))
                 .willReturn(ModelEntity.builder().id(2L).build());
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m3").build()));
 
-        given(modelVersionMapper.findVersionById(same(1L)))
+        given(modelVersionMapper.find(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
-        given(modelVersionMapper.getLatestVersion(same(1L)))
+        given(modelVersionMapper.findByLatest(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         var res = service.getModelInfo(ModelQuery.builder()
@@ -304,7 +308,7 @@ public class ModelServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        given(modelVersionMapper.getLatestVersion(same(1L)))
+        given(modelVersionMapper.findByLatest(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
         res = service.getModelInfo(ModelQuery.builder()
@@ -335,7 +339,7 @@ public class ModelServiceTest {
 
     @Test
     public void testListModelVersionHistory() {
-        given(modelVersionMapper.listVersions(anyLong(), anyString(), anyString()))
+        given(modelVersionMapper.list(anyLong(), anyString(), anyString()))
                 .willReturn(List.of(ModelVersionEntity.builder().id(1L).modelName("m1").build()));
         var res = service.listModelVersionHistory(
                 ModelVersionQuery.builder()
@@ -353,17 +357,17 @@ public class ModelServiceTest {
 
     @Test
     public void testFindModelByVersionId() {
-        given(modelVersionMapper.findVersionsByIds(anyList()))
+        given(modelVersionMapper.findByIds(anyString()))
                 .willReturn(List.of(
                         ModelVersionEntity.builder().modelId(1L).build(),
                         ModelVersionEntity.builder().modelId(2L).build()
                 ));
 
-        given(modelMapper.findModelsByIds(anyList()))
+        given(modelMapper.findByIds(anyString()))
                 .willAnswer(invocation -> {
-                    List<Long> ids = invocation.getArgument(0);
-                    return ids.stream()
-                            .map(id -> ModelEntity.builder().id(id).build())
+                    String ids = invocation.getArgument(0);
+                    return Stream.of(ids.split(","))
+                            .map(id -> ModelEntity.builder().id(Long.valueOf(id)).build())
                             .collect(Collectors.toList());
                 });
 
@@ -379,7 +383,7 @@ public class ModelServiceTest {
     public void testUpload() {
         given(projectManager.getProject(anyString()))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(modelMapper.findByNameForUpdate(anyString(), same(1L)))
+        given(modelMapper.findByName(anyString(), same(1L), any()))
                 .willReturn(ModelEntity.builder().id(1L).build());
         given(modelVersionMapper.findByNameAndModelId(anyString(), same(1L)))
                 .willReturn(ModelVersionEntity.builder()
@@ -411,21 +415,23 @@ public class ModelServiceTest {
 
             request.setSwmp("m3:v3");
             service.upload(dsFile, request);
+            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
             request.setProject("2");
             service.upload(dsFile, request);
+            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1 + 1));
         }
     }
 
     @Test
     public void testPull() throws IOException {
-        given(modelVersionMapper.findVersionById(same(1L)))
+        given(modelVersionMapper.find(same(1L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path1").build());
 
-        given(modelVersionMapper.findVersionById(same(2L)))
+        given(modelVersionMapper.find(same(2L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path2").build());
 
-        given(modelVersionMapper.findVersionById(same(3L)))
+        given(modelVersionMapper.find(same(3L)))
                 .willReturn(ModelVersionEntity.builder().storagePath("path3").build());
 
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -441,18 +447,29 @@ public class ModelServiceTest {
                 () -> service.pull("1", "m1", "v3", response));
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
-                ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
+                ServletOutputStream outputStream = mock(ServletOutputStream.class);
+                MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
+            // case 1: only download .swmp file
+            given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/123456.swmp"));
             given(storageAccessService.get(anyString())).willReturn(fileInputStream);
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
 
             service.pull("1", "m1", "v1", response);
+            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(0));
+            verify(storageAccessService, times(1)).get("path1/123456.swmp");
+
+            // case 2: download extract file
+            given(storageAccessService.list(same("path1")))
+                    .willReturn(Stream.of("path1/123456.py", "path1/model/u.pth"));
+            service.pull("1", "m1", "v1", response);
+            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
         }
     }
 
     @Test
     public void testQuery() {
-        given(modelVersionMapper.findVersionById(same(1L)))
+        given(modelVersionMapper.find(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).build());
 
         var res = service.query("p1", "m1", "v1");

@@ -22,7 +22,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.panel.mapper.PanelSettingMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -37,7 +37,7 @@ public class PanelSettingServiceTest {
 
     @BeforeEach
     public void setUp() {
-        var idConvertor = new IdConvertor();
+        var idConvertor = new IdConverter();
         userService = mock(UserService.class);
         panelSettingMapper = mock(PanelSettingMapper.class);
         service = new PanelSettingService(

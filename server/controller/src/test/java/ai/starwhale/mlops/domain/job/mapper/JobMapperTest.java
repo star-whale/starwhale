@@ -68,13 +68,13 @@ public class JobMapperTest extends MySqlContainerHolder {
     @BeforeEach
     public void initData() {
         user = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
-        userMapper.createUser(user);
+        userMapper.insert(user);
         project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(0)
                 .build();
-        projectMapper.createProject(project);
+        projectMapper.insert(project);
         model = ModelEntity.builder().modelName("model").projectId(project.getId())
                 .ownerId(user.getId()).build();
-        modelMapper.addModel(model);
+        modelMapper.insert(model);
         modelVersionEntity = ModelVersionEntity.builder()
                 .modelId(model.getId())
                 .versionName("vn")
@@ -85,7 +85,7 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .storagePath("s")
                 .versionOrder(1L)
                 .build();
-        modelVersionMapper.addNewVersion(modelVersionEntity);
+        modelVersionMapper.insert(modelVersionEntity);
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
@@ -248,18 +248,16 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertNotNull(target.getVersionOrder());
         Assertions.assertEquals("model", target.getModelName());
         Assertions.assertEquals(expected.getName(), target.getName());
-        validUser(user, target.getOwner());
     }
 
     private void validProject(ProjectEntity expected, UserEntity user, ProjectEntity target) {
         Assertions.assertEquals(expected.getId(), target.getId());
         Assertions.assertEquals(expected.getOwnerId(), target.getOwnerId());
         Assertions.assertEquals(expected.getProjectName(), target.getProjectName());
-        Assertions.assertEquals(expected.getDescription(), target.getDescription());
+        Assertions.assertEquals(expected.getProjectDescription(), target.getProjectDescription());
         Assertions.assertEquals(0, target.getIsDeleted());
         Assertions.assertEquals(0, target.getIsDefault());
         Assertions.assertEquals(expected.getPrivacy(), target.getPrivacy());
-        validUser(user, target.getOwner());
     }
 
     private void validUser(UserEntity expected, UserEntity target) {

@@ -36,12 +36,12 @@ import static org.mockito.Mockito.doAnswer;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.dataset.DatasetManager;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -49,9 +49,9 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.model.ModelManager;
+import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -73,7 +73,7 @@ public class JobServiceTest {
     private JobMapper jobMapper;
     private JobDatasetVersionMapper jobDatasetVersionMapper;
     private TaskMapper taskMapper;
-    private JobConvertor jobConvertor;
+    private JobConverter jobConvertor;
     private JobBoConverter jobBoConverter;
     private JobSpliterator jobSpliterator;
     private HotJobHolder hotJobHolder;
@@ -83,9 +83,9 @@ public class JobServiceTest {
     private UserService userService;
     private ProjectManager projectManager;
     private JobManager jobManager;
-    private ModelManager modelManager;
-    private DatasetManager datasetManager;
-    private RuntimeManager runtimeManager;
+    private ModelDao modelDao;
+    private DatasetDao datasetDao;
+    private RuntimeDao runtimeDao;
     private TrashService trashService;
 
     @BeforeEach
@@ -93,7 +93,7 @@ public class JobServiceTest {
         jobMapper = mock(JobMapper.class);
         jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
         taskMapper = mock(TaskMapper.class);
-        jobConvertor = mock(JobConvertor.class);
+        jobConvertor = mock(JobConverter.class);
         given(jobConvertor.convert(any(JobEntity.class)))
                 .willReturn(JobVo.builder().id("1").build());
         jobBoConverter = mock(JobBoConverter.class);
@@ -120,16 +120,16 @@ public class JobServiceTest {
                 .willReturn(1L);
         given(jobManager.getJobId("2"))
                 .willReturn(2L);
-        modelManager = mock(ModelManager.class);
-        datasetManager = mock(DatasetManager.class);
-        runtimeManager = mock(RuntimeManager.class);
+        modelDao = mock(ModelDao.class);
+        datasetDao = mock(DatasetDao.class);
+        runtimeDao = mock(RuntimeDao.class);
         trashService = mock(TrashService.class);
 
         service = new JobService(
                 jobBoConverter, jobMapper, jobDatasetVersionMapper, taskMapper,
-                jobConvertor, runtimeManager, jobSpliterator,
-                hotJobHolder, projectManager, jobManager, jobLoader, modelManager,
-                resultQuerier, datasetManager, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
+                jobConvertor, runtimeDao, jobSpliterator,
+                hotJobHolder, projectManager, jobManager, jobLoader, modelDao,
+                resultQuerier, datasetDao, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
                 trashService);
     }
 
@@ -199,9 +199,9 @@ public class JobServiceTest {
     public void testCreateJob() {
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());
-        given(runtimeManager.getRuntimeVersionId(same("2"), any()))
+        given(runtimeDao.getRuntimeVersionId(same("2"), any()))
                 .willReturn(2L);
-        given(modelManager.getModelVersionId(same("3"), any()))
+        given(modelDao.getModelVersionId(same("3"), any()))
                 .willReturn(3L);
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
@@ -211,7 +211,7 @@ public class JobServiceTest {
                     entity.setId(1L);
                     return 1;
                 });
-        given(datasetManager.getDatasetVersionId(anyString(), any()))
+        given(datasetDao.getDatasetVersionId(anyString(), any()))
                 .willReturn(1L);
 
         var res = service.createJob("1", "3", "1", "2",

@@ -23,13 +23,13 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.model.Model;
-import ai.starwhale.mlops.domain.model.ModelVersionConvertor;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -43,6 +43,9 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -70,7 +73,7 @@ public class JobBoConverter {
 
     final SystemSettingService systemSettingService;
 
-    final ModelVersionConvertor modelVersionConvertor;
+    final JobSpecParser jobSpecParser;
 
     final StepMapper stepMapper;
 
@@ -86,7 +89,7 @@ public class JobBoConverter {
             RuntimeMapper runtimeMapper,
             RuntimeVersionMapper runtimeVersionMapper,
             DatasetBoConverter datasetBoConverter,
-            ModelVersionConvertor modelVersionConvertor,
+            JobSpecParser jobSpecParser,
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
             TaskBoConverter taskBoConverter) {
@@ -96,7 +99,7 @@ public class JobBoConverter {
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.datasetBoConverter = datasetBoConverter;
         this.systemSettingService = systemSettingService;
-        this.modelVersionConvertor = modelVersionConvertor;
+        this.jobSpecParser = jobSpecParser;
         this.stepMapper = stepMapper;
         this.stepConverter = stepConverter;
         this.taskMapper = taskMapper;
@@ -107,11 +110,11 @@ public class JobBoConverter {
         List<DataSet> dataSets = jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())
                 .stream().map(datasetBoConverter::fromEntity)
                 .collect(Collectors.toList());
-        ModelEntity modelEntity = modelMapper.findModelById(
+        ModelEntity modelEntity = modelMapper.find(
                 jobEntity.getModelVersion().getModelId());
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(
                 jobEntity.getRuntimeVersionId());
-        RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
+        RuntimeEntity runtimeEntity = runtimeMapper.find(
                 runtimeVersionEntity.getRuntimeId());
         String image = runtimeVersionEntity.getImage();
         if (null != systemSettingService.getSystemSetting() && null != systemSettingService.getSystemSetting()
@@ -120,36 +123,42 @@ public class JobBoConverter {
             image = new DockerImage(image).resolve(
                     systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
         }
-        Job job = Job.builder()
-                .id(jobEntity.getId())
-                .project(Project.builder()
-                        .id(jobEntity.getProjectId())
-                        .name(jobEntity.getProject().getProjectName())
-                        .build())
-                .jobRuntime(JobRuntime.builder()
-                        .name(runtimeEntity.getRuntimeName())
-                        .version(runtimeVersionEntity.getVersionName())
-                        .storagePath(runtimeVersionEntity.getStoragePath())
-                        .image(image)
-                        .build())
-                .status(jobEntity.getJobStatus())
-                .type(jobEntity.getType())
-                .model(Model
-                        .builder()
-                        .id(jobEntity.getModelVersionId())
-                        .name(modelEntity.getModelName())
-                        .version(jobEntity.getModelVersion().getVersionName())
-                        .path(jobEntity.getModelVersion().getStoragePath())
-                        .stepSpecs(modelVersionConvertor.convert(jobEntity.getModelVersion()).getStepSpecs())
-                        .build()
-                )
-                .stepSpec(jobEntity.getStepSpec())
-                .dataSets(dataSets)
-                .outputDir(jobEntity.getResultOutputPath())
-                .uuid(jobEntity.getJobUuid())
-                .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
-                .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName()).build())
-                .build();
+        Job job = null;
+        try {
+            job = Job.builder()
+                    .id(jobEntity.getId())
+                    .project(Project.builder()
+                            .id(jobEntity.getProjectId())
+                            .name(jobEntity.getProject().getProjectName())
+                            .build())
+                    .jobRuntime(JobRuntime.builder()
+                            .name(runtimeEntity.getRuntimeName())
+                            .version(runtimeVersionEntity.getVersionName())
+                            .storagePath(runtimeVersionEntity.getStoragePath())
+                            .image(image)
+                            .build())
+                    .status(jobEntity.getJobStatus())
+                    .type(jobEntity.getType())
+                    .model(Model
+                            .builder()
+                            .id(jobEntity.getModelVersionId())
+                            .name(modelEntity.getModelName())
+                            .version(jobEntity.getModelVersion().getVersionName())
+                            .path(jobEntity.getModelVersion().getStoragePath())
+                            .stepSpecs(jobSpecParser.parseStepFromYaml(jobEntity.getModelVersion().getEvalJobs()))
+                            .build()
+                    )
+                    .stepSpec(jobEntity.getStepSpec())
+                    .dataSets(dataSets)
+                    .outputDir(jobEntity.getResultOutputPath())
+                    .uuid(jobEntity.getJobUuid())
+                    .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
+                    .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName())
+                            .build())
+                    .build();
+        } catch (JsonProcessingException e) {
+            throw new SwValidationException(ValidSubject.JOB, e.getMessage());
+        }
         return fillStepsAndTasks(job);
     }
 

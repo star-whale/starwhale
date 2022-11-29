@@ -79,10 +79,10 @@ def multi_classification(
 
                 _report.update(
                     {
-                        "TP-True Positive": matrix[0][0],
-                        "TN-True Negative": matrix[0][1],
-                        "FP-False Positive": matrix[1][0],
-                        "FN-False Negative": matrix[1][1],
+                        "TN-True Negative": matrix[0][0],
+                        "FP-False Positive": matrix[0][1],
+                        "FN-False Negative": matrix[1][0],
+                        "TP-True Positive": matrix[1][1],
                     }
                 )
 

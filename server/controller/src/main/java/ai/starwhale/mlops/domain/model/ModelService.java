@@ -21,11 +21,11 @@ import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
-import ai.starwhale.mlops.common.VersionAliasConvertor;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -39,6 +39,8 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
+import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
+import ai.starwhale.mlops.domain.model.converter.ModelVoConverter;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -58,13 +60,16 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -73,6 +78,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,16 +92,16 @@ public class ModelService {
 
     private final ModelMapper modelMapper;
     private final ModelVersionMapper modelVersionMapper;
-    private final IdConvertor idConvertor;
-    private final VersionAliasConvertor versionAliasConvertor;
-    private final ModelConvertor modelConvertor;
-    private final ModelVersionConvertor versionConvertor;
+    private final IdConverter idConvertor;
+    private final VersionAliasConverter versionAliasConvertor;
+    private final ModelVoConverter modelVoConverter;
+    private final ModelVersionVoConverter versionConvertor;
     private final StoragePathCoordinator storagePathCoordinator;
     private final StorageAccessService storageAccessService;
     private final StorageService storageService;
     private final UserService userService;
     private final ProjectManager projectManager;
-    private final ModelManager modelManager;
+    private final ModelDao modelDao;
     private final HotJobHolder jobHolder;
 
     private final TrashService trashService;
@@ -103,18 +109,18 @@ public class ModelService {
     private BundleManager bundleManager;
 
     public ModelService(ModelMapper modelMapper, ModelVersionMapper modelVersionMapper,
-            IdConvertor idConvertor, VersionAliasConvertor versionAliasConvertor, ModelConvertor modelConvertor,
-            ModelVersionConvertor versionConvertor, StoragePathCoordinator storagePathCoordinator,
-            ModelManager modelManager, StorageAccessService storageAccessService, StorageService storageService,
+            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, ModelVoConverter modelVoConverter,
+            ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
+            ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
             UserService userService, ProjectManager projectManager, HotJobHolder jobHolder, TrashService trashService) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
-        this.modelConvertor = modelConvertor;
+        this.modelVoConverter = modelVoConverter;
         this.versionConvertor = versionConvertor;
         this.storagePathCoordinator = storagePathCoordinator;
-        this.modelManager = modelManager;
+        this.modelDao = modelDao;
         this.storageAccessService = storageAccessService;
         this.storageService = storageService;
         this.userService = userService;
@@ -125,16 +131,20 @@ public class ModelService {
                 idConvertor,
                 versionAliasConvertor,
                 projectManager,
-                modelManager,
-                modelManager
+                modelDao,
+                modelDao
         );
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
-        List<ModelEntity> entities = modelMapper.listModels(projectId, query.getNamePrefix());
-        return PageUtil.toPageInfo(entities, modelConvertor::convert);
+        List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), null);
+        return PageUtil.toPageInfo(entities, entity -> {
+            ModelVo vo = modelVoConverter.convert(entity);
+            vo.setOwner(userService.findUserById(entity.getOwnerId()));
+            return vo;
+        });
     }
 
     @Transactional
@@ -146,7 +156,7 @@ public class ModelService {
                 .type(Type.MODEL)
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
-        return RemoveManager.create(bundleManager, modelManager)
+        return RemoveManager.create(bundleManager, modelDao)
                 .removeBundle(bundleUrl);
     }
 
@@ -158,7 +168,7 @@ public class ModelService {
 
         if (StringUtils.hasText(name)) {
             Long projectId = projectManager.getProjectId(project);
-            ModelEntity model = modelMapper.findByName(name, projectId);
+            ModelEntity model = modelMapper.findByName(name, projectId, false);
             if (model == null) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.MODEL, "Unable to find the model with name " + name),
@@ -167,9 +177,8 @@ public class ModelService {
             return listModelInfoOfModel(model);
         }
 
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project,
-                userService.currentUserDetail().getIdTableKey());
-        List<ModelEntity> entities = modelMapper.listModels(projectEntity.getId(), null);
+        ProjectEntity projectEntity = projectManager.getProject(project);
+        List<ModelEntity> entities = modelMapper.list(projectEntity.getId(), null, null);
         if (entities == null || entities.isEmpty()) {
             return List.of();
         }
@@ -181,7 +190,7 @@ public class ModelService {
     }
 
     public List<ModelInfoVo> listModelInfoOfModel(ModelEntity model) {
-        List<ModelVersionEntity> versions = modelVersionMapper.listVersions(
+        List<ModelVersionEntity> versions = modelVersionMapper.list(
                 model.getId(), null, null);
         if (versions == null || versions.isEmpty()) {
             return List.of();
@@ -194,7 +203,7 @@ public class ModelService {
     public ModelInfoVo getModelInfo(ModelQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getModelUrl());
         Long modelId = bundleManager.getBundleId(bundleUrl);
-        ModelEntity model = modelMapper.findModelById(modelId);
+        ModelEntity model = modelMapper.find(modelId);
         if (model == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.MODEL, "Unable to find model " + query.getModelUrl()),
@@ -206,11 +215,11 @@ public class ModelService {
             // find version by versionId
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                     .create(query.getProjectUrl(), query.getModelUrl(), query.getModelVersionUrl()));
-            versionEntity = modelVersionMapper.findVersionById(versionId);
+            versionEntity = modelVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
             // find current version
-            versionEntity = modelVersionMapper.getLatestVersion(model.getId());
+            versionEntity = modelVersionMapper.findByLatest(model.getId());
         }
         if (versionEntity == null) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
@@ -262,7 +271,7 @@ public class ModelService {
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
             TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager, modelManager)
+            return TagManager.create(bundleManager, modelDao)
                     .updateTag(
                             BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
                             tagAction);
@@ -274,7 +283,7 @@ public class ModelService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String modelUrl, String versionUrl) {
-        return RevertManager.create(bundleManager, modelManager)
+        return RevertManager.create(bundleManager, modelDao)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
     }
 
@@ -282,14 +291,14 @@ public class ModelService {
         Long modelId = bundleManager.getBundleId(BundleUrl
                 .create(query.getProjectUrl(), query.getModelUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ModelVersionEntity> entities = modelVersionMapper.listVersions(
+        List<ModelVersionEntity> entities = modelVersionMapper.list(
                 modelId, query.getVersionName(), query.getVersionTag());
-        ModelVersionEntity latest = modelVersionMapper.getLatestVersion(modelId);
+        ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
                 //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
-                vo.setAlias(VersionAliasConvertor.LATEST);
+                vo.setAlias(VersionAliasConverter.LATEST);
             }
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
@@ -298,17 +307,20 @@ public class ModelService {
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
 
-        List<ModelVersionEntity> versions = modelVersionMapper.findVersionsByIds(versionIds);
+        List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
         List<Long> ids = versions.stream()
                 .map(ModelVersionEntity::getModelId)
                 .collect(Collectors.toList());
 
-        List<ModelEntity> models = modelMapper.findModelsByIds(ids);
+        List<ModelEntity> models = modelMapper.findByIds(Joiner.on(",").join(ids));
 
         return models.stream()
-                .map(modelConvertor::convert)
-                .collect(Collectors.toList());
+                .map(model -> {
+                    ModelVo vo = modelVoConverter.convert(model);
+                    vo.setOwner(userService.findUserById(model.getOwnerId()));
+                    return vo;
+                }).collect(Collectors.toList());
     }
 
 
@@ -329,12 +341,11 @@ public class ModelService {
             projectEntity = projectManager.getProject(uploadRequest.getProject());
             projectId = projectEntity.getId();
         }
-        ModelEntity entity = modelMapper.findByNameForUpdate(uploadRequest.name(), projectId);
+        ModelEntity entity = modelMapper.findByName(uploadRequest.name(), projectId, true);
         if (null == entity) {
             //create
             if (projectId == null) {
-                projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(),
-                        userService.currentUserDetail().getIdTableKey());
+                projectEntity = projectManager.getProject(uploadRequest.getProject());
                 projectId = projectEntity.getId();
             }
             entity = ModelEntity.builder().isDeleted(0)
@@ -342,7 +353,7 @@ public class ModelService {
                     .projectId(projectId)
                     .modelName(uploadRequest.name())
                     .build();
-            modelMapper.addModel(entity);
+            modelMapper.insert(entity);
         }
         log.debug("model checked time use {}", System.currentTimeMillis() - startTime);
         ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(
@@ -374,12 +385,17 @@ public class ModelService {
         String jobContent = "";
         try (final InputStream inputStream = dsFile.getInputStream()) {
             // only extract the eval job file content
+            // TODO: replace with oss path content
+            // but update only for job
             jobContent = new String(
                     Objects.requireNonNull(
                             TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, modelPath, dsFile.getOriginalFilename()),
-                    inputStream, dsFile.getSize());
-        } catch (IOException e) {
+            TarFileUtil.extract(inputStream, (name, size, in) ->
+                    storageAccessService.put(
+                            String.format(FORMATTER_STORAGE_PATH, modelPath, name), in, size
+                    )
+            );
+        } catch (IOException | ArchiveException e) {
             log.error("upload model failed {}", uploadRequest.getSwmp(), e);
             throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -400,8 +416,9 @@ public class ModelService {
                     .manifest(uploadRequest.getManifest())
                     .evalJobs(jobContent)
                     .build();
-            modelVersionMapper.addNewVersion(modelVersionEntity);
-            modelVersionMapper.revertTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
+            modelVersionMapper.insert(modelVersionEntity);
+            RevertManager.create(bundleManager, modelDao)
+                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
         }
 
     }
@@ -416,7 +433,7 @@ public class ModelService {
 
     public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.findVersionById(versionId);
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
         if (null == modelVersionEntity) {
             throw new SwValidationException(ValidSubject.MODEL, "model version not found");
         }
@@ -428,18 +445,48 @@ public class ModelService {
             log.error("listing file from storage failed {}", modelVersionEntity.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
+
         if (CollectionUtils.isEmpty(files)) {
             throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
         }
-        String filePath = files.get(0);
-        try (InputStream fileInputStream = storageAccessService.get(filePath);
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            long length = fileInputStream.transferTo(outputStream);
-            String fileName = filePath.substring(modelVersionEntity.getStoragePath().length() + 1);
-            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
+
+        try (ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            final long[] length = {0L};
+            if (files.size() == 1 && files.get(0).endsWith(".swmp")) {
+                var filePath = files.get(0);
+                try (LengthAbleInputStream fileInputStream = storageAccessService.get(filePath)) {
+                    length[0] += fileInputStream.transferTo(outputStream);
+                }
+            } else {
+                TarFileUtil.archiveAndTransferTo(new Iterator<>() {
+                    @Override
+                    public boolean hasNext() {
+                        return !files.isEmpty();
+                    }
+
+                    @Override
+                    public TarFileUtil.TarEntry next() {
+                        var filePath = files.remove(0);
+                        try {
+                            var inputStream = storageAccessService.get(filePath);
+                            length[0] += inputStream.getSize();
+                            return TarFileUtil.TarEntry.builder()
+                                    .inputStream(inputStream)
+                                    .size(inputStream.getSize())
+                                    .name(filePath.substring(modelVersionEntity.getStoragePath().length() + 1))
+                                    .build();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, outputStream);
+            }
+
+            httpResponse.addHeader("Content-Disposition",
+                    "attachment; filename=\"" + modelVersionEntity.getVersionName() + "\".swmp");
+            httpResponse.addHeader("Content-Length", String.valueOf(length[0]));
             outputStream.flush();
-        } catch (IOException e) {
+        } catch (IOException | ArchiveException e) {
             log.error("download file from storage failed {}", modelVersionEntity.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
@@ -448,7 +495,7 @@ public class ModelService {
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.findVersionById(versionId);
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
         if (null == modelVersionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL), HttpStatus.NOT_FOUND);
         }

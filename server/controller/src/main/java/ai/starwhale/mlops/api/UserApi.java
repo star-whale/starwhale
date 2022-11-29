@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
@@ -24,7 +25,6 @@ import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
-import ai.starwhale.mlops.api.protocol.user.UserRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
@@ -103,7 +103,7 @@ public interface UserApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/user/current/role")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<UserRoleVo>>> getCurrentUserRoles(
+    ResponseEntity<ResponseMessage<List<ProjectRoleVo>>> getCurrentUserRoles(
             @RequestParam(value = "projectUrl", required = false) String projectUrl
     );
 

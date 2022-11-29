@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.model.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,8 +40,6 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
     private String modelName;
 
     private Long ownerId;
-
-    private UserEntity owner;
 
     private String versionName;
 

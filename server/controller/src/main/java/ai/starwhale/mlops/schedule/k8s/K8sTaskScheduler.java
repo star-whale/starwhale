@@ -18,7 +18,6 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
-import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
@@ -120,6 +119,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
      */
     static final String FORMATTER_URI_DATASET = "%s/project/%s/dataset/%s/version/%s";
 
+    static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
+
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
         try {
@@ -148,11 +149,14 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap(Task task) {
         // TODO: use task's resource needs
         Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-        k8sJobTemplate.getInitContainerTemplates().forEach(templateContainer -> {
-            ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
-            ret.put(templateContainer.getName(), containerOverwriteSpec);
-        });
+        var initContainers = k8sJobTemplate.getInitContainerTemplates();
+        if (!CollectionUtils.isEmpty(initContainers)) {
+            initContainers.forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
+                ret.put(templateContainer.getName(), containerOverwriteSpec);
+            });
+        }
 
         JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
         k8sJobTemplate.getContainersTemplates().forEach(templateContainer -> {
@@ -178,6 +182,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     @NotNull
     private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
+        var project = swJob.getProject();
+        var model = swJob.getModel();
+        var runtime = swJob.getJobRuntime();
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
@@ -186,11 +193,17 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     .map(dataSet -> String.format(
                             FORMATTER_URI_DATASET,
                             instanceUri,
-                            swJob.getProject().getName(),
+                            project.getName(),
                             dataSet.getName(),
                             dataSet.getVersion())
                     ).collect(Collectors.joining(" "));
         coreContainerEnvs.put("SW_DATASET_URI", datasetUri);
+        coreContainerEnvs.put("SW_MODEL_VERSION",
+                String.format(FORMATTER_VERSION_ARTIFACT,
+                        model.getName(), model.getVersion()));
+        coreContainerEnvs.put("SW_RUNTIME_VERSION",
+                String.format(FORMATTER_VERSION_ARTIFACT,
+                        runtime.getName(), runtime.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());

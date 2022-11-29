@@ -9,9 +9,7 @@ fi
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
-SWMP_DIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
-SWRT_DIR=${SW_SWRT_WORKDIR:=/opt/starwhale/swrt}
-PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
+PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-'root'}"/.cache/pip}
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
@@ -58,28 +56,8 @@ set_pip_cache() {
     python3 -m pip cache dir || true
 }
 
-pre_check() {
-    echo "--> run pre check for swmp model dir ..."
-    if [ ! -f "${SWMP_DIR}/model.yaml" ] || [ ! -d "${SWMP_DIR}/src" ]; then
-        echo "${SWMP_DIR} is not starwhale swmp target dir, will exit"
-        exit 1
-    fi
-
-    echo "--> run pre check for swrt runtime dir ..."
-    if [ ! -f "${SWRT_DIR}/_manifest.yaml" ] || [ ! -d "${SWRT_DIR}/dependencies" ]; then
-        echo "${SWRT_DIR} is not starwhale swrt target dir, will exit"
-        exit 1
-    fi
-
-    if [ "${SWRT_DIR}" = "${SWMP_DIR}" ]; then
-        echo "swmp and swrt use the same dir, will exit"
-        exit 1
-    fi
-}
-
 set_python() {
-	# yq only installed for py3.8
-    _MANIFEST_RUNTIME=$(python3.8 -m yq -r .environment.python ${SWRT_DIR}/_manifest.yaml) || exit 1
+    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r '.config["environment"]["python"]') || exit 1
     _RUNTIME="python${_MANIFEST_RUNTIME}"
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
@@ -91,20 +69,19 @@ set_python() {
     fi
 }
 
-# TODO:restore when processing evaluation(eval run use param: 'runtime URI', and it can be uri or dir path )
-restore_activate_runtime() {
-    echo '--> restore python env ...'
-    export PYTHONWARNINGS="ignore:Unverified HTTPS request"
-    swcli ${VERBOSE} runtime restore ${SWRT_DIR} || exit 1
-    unset PYTHONWARNINGS
+# TODO support run remote on standalone mode
+pull_model_and_runtime() {
+    echo '--> pulling model and runtime ...'
 
-    echo '--> source activate ...'
-    eval "$(${SWRT_DIR}/activate.sw)" || exit 1
+    swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
+    swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+    swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
 }
 
 run() {
-    echo "--> start to run swmp ${STEP}, use $(which swcli) cli @ ${SWMP_DIR} ..."
-    swcli ${VERBOSE} model eval "${SWMP_DIR}"/src --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --version=${SW_EVALUATION_VERSION} || exit 1
+    echo "--> start to run evaluation: ${STEP}, use $(which swcli) cli ..."
+
+    swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
 }
 
 welcome() {
@@ -113,19 +90,27 @@ welcome() {
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Version: `swcli --version`"
     echo "Run: $1 "
-    echo "Model Version: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
-    echo "Model Workdir: ${SWMP_DIR}"
-    echo "Runtime Workdir: ${SWRT_DIR}"
+    echo "Model Version: ${SW_MODEL_VERSION}"
+    echo "Runtime Version: ${SW_RUNTIME_VERSION}"
+    echo "Local User: ${SW_USER:-'root'}"
     echo "===================================="
+    if [ ! -z "${SW_USER}" ];
+    then
+      useradd -g ${SW_USER_GROUP_ID} -u ${SW_USER_ID} ${SW_USER}
+      su ${SW_USER}
+    fi
 }
 
 eval_task_prepare(){
     welcome $1
     pre_config
-    pre_check
+    if [ "${SW_INSTANCE_URI}" != "local" ]
+    then
+        # only remote
+        pull_model_and_runtime
+    fi
     set_python
     set_pip_cache
-    restore_activate_runtime
 }
 
 case "$1" in

@@ -22,7 +22,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
@@ -48,11 +48,11 @@ public class JobController implements JobApi {
 
     private final JobService jobService;
     private final TaskService taskService;
-    private final IdConvertor idConvertor;
+    private final IdConverter idConvertor;
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
 
-    public JobController(JobService jobService, TaskService taskService, IdConvertor idConvertor,
+    public JobController(JobService jobService, TaskService taskService, IdConverter idConvertor,
             DagQuerier dagQuerier) {
         this.jobService = jobService;
         this.taskService = taskService;

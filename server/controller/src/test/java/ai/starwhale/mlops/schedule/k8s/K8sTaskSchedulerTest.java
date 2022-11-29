@@ -186,6 +186,8 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
+            expectedEnvs.put("SW_MODEL_VERSION", "null/version/null");
+            expectedEnvs.put("SW_RUNTIME_VERSION", "null/version/null");
             expectedEnvs.put("SW_TASK_INDEX", "1");
             expectedEnvs.put("SW_TASK_NUM", "1");
             expectedEnvs.put("SW_PYPI_INDEX_URL", "indexU");

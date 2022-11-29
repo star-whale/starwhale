@@ -42,7 +42,7 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadPhase;
 import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
@@ -82,7 +82,7 @@ public class DatasetControllerTest {
         datasetService = mock(DatasetService.class);
         datasetUploader = mock(DatasetUploader.class);
 
-        controller = new DatasetController(datasetService, new IdConvertor(), datasetUploader);
+        controller = new DatasetController(datasetService, new IdConverter(), datasetUploader);
     }
 
     @Test
@@ -323,7 +323,7 @@ public class DatasetControllerTest {
     public void testListDataset() {
         given(datasetService.findDatasetsByVersionIds(anyList()))
                 .willReturn(List.of(DatasetVo.builder().id("1").build()));
-        given(datasetService.listSwDataset(any(DatasetQuery.class), any(PageParams.class)))
+        given(datasetService.listDataset(any(DatasetQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
                         DatasetVo.builder().id("1").build(),
                         DatasetVo.builder().id("2").build()

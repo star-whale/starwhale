@@ -21,6 +21,7 @@ def invoke_with_react(args: List[str], input_content: str = "yes") -> Tuple[int,
 def invoke(
     args: List[str],
     raise_err: bool = False,
+    log: bool = False,
 ) -> Tuple[int, str]:
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
@@ -38,6 +39,8 @@ def invoke(
     while True:
         line = p.stdout.readline()  # type: ignore
         if line:
+            if log:
+                logging.debug(line)
             output.append(line)
 
         if p.poll() is not None:
@@ -46,6 +49,8 @@ def invoke(
     p.wait()
     for line in p.stdout.readlines():  # type: ignore
         if line:
+            if log:
+                logging.debug(line)
             output.append(line)
 
     try:

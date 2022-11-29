@@ -28,17 +28,17 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.common.IdConvertor;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.dataset.DatasetManager;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.model.ModelManager;
+import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
@@ -60,9 +60,9 @@ public class TrashServiceTest {
     private TrashMapper trashMapper;
     private UserMapper userMapper;
     private ProjectManager projectManager;
-    private ModelManager modelManager;
-    private DatasetManager datasetManager;
-    private RuntimeManager runtimeManager;
+    private ModelDao modelDao;
+    private DatasetDao datasetDao;
+    private RuntimeDao runtimeDao;
     private JobManager jobManager;
 
     @BeforeEach
@@ -70,19 +70,19 @@ public class TrashServiceTest {
         trashMapper = mock(TrashMapper.class);
         userMapper = mock(UserMapper.class);
         projectManager = mock(ProjectManager.class);
-        modelManager = mock(ModelManager.class);
-        datasetManager = mock(DatasetManager.class);
-        runtimeManager = mock(RuntimeManager.class);
+        modelDao = mock(ModelDao.class);
+        datasetDao = mock(DatasetDao.class);
+        runtimeDao = mock(RuntimeDao.class);
         jobManager = mock(JobManager.class);
 
         service = new TrashService(trashMapper,
                 userMapper,
                 projectManager,
-                modelManager,
-                datasetManager,
-                runtimeManager,
+                modelDao,
+                datasetDao,
+                runtimeDao,
                 jobManager,
-                new IdConvertor());
+                new IdConverter());
     }
 
 
@@ -92,11 +92,11 @@ public class TrashServiceTest {
         UserEntity test = UserEntity.builder().id(2L).userName("test").build();
         given(projectManager.getProjectId(same("1")))
                 .willReturn(1L);
-        given(userMapper.findUserByName(same("starwhale")))
+        given(userMapper.findByName(same("starwhale")))
                 .willReturn(starwhale);
-        given(userMapper.findUser(same(1L)))
+        given(userMapper.find(same(1L)))
                 .willReturn(starwhale);
-        given(userMapper.findUser(same(2L)))
+        given(userMapper.find(same(2L)))
                 .willReturn(test);
         given(trashMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(
@@ -136,11 +136,11 @@ public class TrashServiceTest {
 
     @Test
     public void testMoveToRecycleBin() {
-        given(modelManager.findById(same(1L)))
+        given(modelDao.findById(same(1L)))
                 .willReturn(ModelEntity.builder().id(1L).modelName("model1").modifiedTime(new Date()).build());
-        given(datasetManager.findById(same(1L)))
+        given(datasetDao.findById(same(1L)))
                 .willReturn(DatasetEntity.builder().id(2L).datasetName("dataset1").modifiedTime(new Date()).build());
-        given(runtimeManager.findById(same(1L)))
+        given(runtimeDao.findById(same(1L)))
                 .willReturn(RuntimeEntity.builder().id(3L).runtimeName("runtime1").modifiedTime(new Date()).build());
         given(jobManager.findById(same(1L)))
                 .willReturn(JobEntity.builder().id(4L).jobUuid("job1").modifiedTime(new Date()).build());
@@ -237,21 +237,21 @@ public class TrashServiceTest {
                         .createdTime(new Date())
                         .build());
 
-        given(modelManager.findDeletedBundleById(same(1L)))
+        given(modelDao.findDeletedBundleById(same(1L)))
                 .willReturn(ModelEntity.builder().id(1L).modelName("model1").modifiedTime(new Date()).build());
-        given(datasetManager.findDeletedBundleById(same(1L)))
+        given(datasetDao.findDeletedBundleById(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).datasetName("dataset1").modifiedTime(new Date()).build());
         given(jobManager.findDeletedBundleById(same(1L)))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
-        given(runtimeManager.findByName(same("runtime1"), any()))
+        given(runtimeDao.findByNameForUpdate(same("runtime1"), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).runtimeName("runtime1").modifiedTime(new Date()).build());
-        given(jobManager.findByName(same("job1"), any()))
+        given(jobManager.findByNameForUpdate(same("job1"), any()))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
-        given(modelManager.recover(any())).willReturn(true);
-        given(datasetManager.recover(any())).willReturn(true);
-        given(runtimeManager.recover(any())).willReturn(true);
+        given(modelDao.recover(any())).willReturn(true);
+        given(datasetDao.recover(any())).willReturn(true);
+        given(runtimeDao.recover(any())).willReturn(true);
         given(jobManager.recover(any())).willReturn(true);
 
         var res = service.recover("1", 1L);

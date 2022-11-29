@@ -45,4 +45,5 @@ public class ModelVo implements Serializable {
     public static ModelVo empty() {
         return new ModelVo("", "", -1L, UserVo.empty());
     }
+
 }

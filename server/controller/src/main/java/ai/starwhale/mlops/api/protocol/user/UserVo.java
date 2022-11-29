@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
+import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.user.po.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import lombok.Builder;
@@ -42,5 +44,17 @@ public class UserVo {
 
     public static UserVo empty() {
         return new UserVo("", "", -1L, false, "", Map.of());
+    }
+
+    public static UserVo fromEntity(UserEntity entity, IdConverter idConvertor) {
+        if (entity == null) {
+            return UserVo.empty();
+        }
+        return UserVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getUserName())
+                .createdTime(entity.getCreatedTime().getTime())
+                .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled() == 1)
+                .build();
     }
 }
