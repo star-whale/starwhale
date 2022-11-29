@@ -28,12 +28,17 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
+import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,13 +50,17 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     private final DatasetMapper datasetMapper;
     private final DatasetVersionMapper datasetVersionMapper;
+
+    private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
 
     public DatasetDao(DatasetMapper datasetMapper, DatasetVersionMapper datasetVersionMapper,
+            JobDatasetVersionMapper jobDatasetVersionMapper,
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
@@ -68,6 +77,24 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
                     HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
+    }
+
+    public DatasetVersion getDatasetVersion(Long versionId) {
+        DatasetVersionEntity versionEntity = datasetVersionMapper.find(versionId);
+        if (null == versionEntity) {
+            throw new SwValidationException(ValidSubject.DATASET, "Can not find dataset version" + versionId);
+        }
+        DatasetEntity datasetEntity = datasetMapper.find(versionEntity.getDatasetId());
+        if (null == datasetEntity) {
+            throw new SwValidationException(ValidSubject.DATASET,
+                    "Can not find dataset" + versionEntity.getDatasetId());
+        }
+        return DatasetVersion.fromEntity(datasetEntity, versionEntity);
+    }
+
+    public List<DatasetVersion> listDatasetVersionsOfJob(Long jobId) {
+        List<Long> versionIds = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(jobId);
+        return versionIds.stream().map(this::getDatasetVersion).collect(Collectors.toList());
     }
 
     @Override

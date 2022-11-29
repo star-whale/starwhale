@@ -16,16 +16,36 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface JobDatasetVersionMapper {
 
-    List<DatasetVersionEntity> listDatasetVersionsByJobId(@Param("jobId") Long jobId);
+    @Select("select dataset_version_id from job_dataset_version_rel where job_id = #{jobId}")
+    List<Long> listDatasetVersionIdsByJobId(@Param("jobId") Long jobId);
 
-    int addJobDatasetVersions(@Param("jobId") Long jodId, @Param("dsvIds") List<Long> dsvIds);
+    @InsertProvider(value = JobDatasetVersionProvider.class, method = "insertSql")
+    int insert(@Param("jobId") Long jodId, @Param("datasetVersionIds") List<Long> datasetVersionIds);
+
+    class JobDatasetVersionProvider {
+
+        public String insertSql(@Param("jobId") Long jobId, @Param("datasetVersionIds") List<Long> datasetVersionIds) {
+            return new SQL() {
+                {
+                    INSERT_INTO("job_dataset_version_rel");
+                    INTO_COLUMNS("job_id", "dataset_version_id");
+                    for (Long datasetVersionId : datasetVersionIds) {
+                        INTO_VALUES(String.valueOf(jobId), String.valueOf(datasetVersionId));
+                        ADD_ROW();
+                    }
+                }
+            }.toString();
+        }
+    }
 
 }

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import java.util.Map;
 import java.util.Optional;
@@ -35,9 +35,9 @@ public class HotDatasetHolder {
         this.datasetHolder = new ConcurrentHashMap<>();
     }
 
-    public void manifest(DatasetVersionEntity datasetVersionEntity) {
-        datasetHolder.put(datasetVersionEntity.getVersionName(),
-                datasetVersionWithMetaConverter.from(datasetVersionEntity));
+    public void manifest(DatasetVersion datasetVersion) {
+        datasetHolder.put(datasetVersion.getVersionName(),
+                datasetVersionWithMetaConverter.from(datasetVersion));
     }
 
     public void cancel(String datasetId) {

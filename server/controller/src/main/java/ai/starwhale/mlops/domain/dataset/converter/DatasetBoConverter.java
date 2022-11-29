@@ -17,20 +17,20 @@
 package ai.starwhale.mlops.domain.dataset.converter;
 
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DatasetBoConverter {
 
-    public DataSet fromEntity(DatasetVersionEntity datasetVersionEntity) {
+    public DataSet fromVersion(DatasetVersion datasetVersion) {
         return DataSet.builder()
-                .id(datasetVersionEntity.getId())
-                .name(datasetVersionEntity.getDatasetName())
-                .version(datasetVersionEntity.getVersionName())
-                .size(datasetVersionEntity.getSize())
-                .path(datasetVersionEntity.getStoragePath())
-                .indexTable(datasetVersionEntity.getIndexTable())
+                .id(datasetVersion.getId())
+                .name(datasetVersion.getDatasetName())
+                .version(datasetVersion.getVersionName())
+                .size(datasetVersion.getSize())
+                .path(datasetVersion.getStoragePath())
+                .indexTable(datasetVersion.getIndexTable())
                 .build();
     }
 }

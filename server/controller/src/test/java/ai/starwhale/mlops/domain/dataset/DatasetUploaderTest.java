@@ -30,6 +30,7 @@ import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -120,7 +121,7 @@ public class DatasetUploaderTest {
 
         verify(storageAccessService).put(anyString(), any(byte[].class));
         verify(storageAccessService).put(anyString(), any(InputStream.class), anyLong());
-        verify(datasetVersionMapper).updateStatus(null, DatasetVersionEntity.STATUS_AVAILABLE);
+        verify(datasetVersionMapper).updateStatus(null, DatasetVersion.STATUS_AVAILABLE);
         verify(datasetVersionMapper).insert(any(DatasetVersionEntity.class));
         verify(datasetMapper).findByName(eq(dsName), anyLong(), any());
         verify(datasetMapper).insert(any(DatasetEntity.class));
@@ -139,7 +140,7 @@ public class DatasetUploaderTest {
         DatasetVersionEntity mockedEntity = DatasetVersionEntity.builder()
                 .id(1L)
                 .versionName("testversion")
-                .status(DatasetVersionEntity.STATUS_AVAILABLE)
+                .status(DatasetVersion.STATUS_AVAILABLE)
                 .build();
         when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
         when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
@@ -187,7 +188,7 @@ public class DatasetUploaderTest {
                 () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest));
         hotJobHolder.remove(mockJob.getId());
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
-        verify(datasetVersionMapper, times(1)).updateStatus(1L, DatasetVersionEntity.STATUS_UN_AVAILABLE);
+        verify(datasetVersionMapper, times(1)).updateStatus(1L, DatasetVersion.STATUS_UN_AVAILABLE);
 
     }
 
