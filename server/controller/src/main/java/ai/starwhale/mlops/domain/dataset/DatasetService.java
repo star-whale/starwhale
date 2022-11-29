@@ -206,19 +206,6 @@ public class DatasetService {
         }
     }
 
-    public Boolean modifyDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
-            DatasetVersion version) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, datasetUrl, versionUrl));
-        DatasetVersionEntity entity = DatasetVersionEntity.builder()
-                .id(versionId)
-                .versionTag(version.getTag())
-                .build();
-        int update = datasetVersionMapper.update(entity);
-        log.info("Dataset Version has been modified. ID={}", entity.getId());
-        return update > 0;
-    }
-
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
             TagAction tagAction) {
 
@@ -296,14 +283,10 @@ public class DatasetService {
                 .map(entity -> toDatasetInfoVo(ds, entity)).collect(Collectors.toList());
     }
 
-    public DatasetVersionEntity query(String projectUrl, String datasetUrl, String versionUrl) {
+    public DatasetVersion query(String projectUrl, String datasetUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, datasetUrl, versionUrl));
-        DatasetVersionEntity versionEntity = datasetVersionMapper.find(versionId);
-        if (null == versionEntity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.DATASET), HttpStatus.NOT_FOUND);
-        }
-        return versionEntity;
+        return datasetDao.getDatasetVersion(versionId);
     }
 
 

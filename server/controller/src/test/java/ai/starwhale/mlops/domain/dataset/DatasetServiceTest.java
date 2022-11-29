@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -268,18 +269,6 @@ public class DatasetServiceTest {
     }
 
     @Test
-    public void testModifyDatasetVersion() {
-        given(datasetVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
-                .willReturn(1);
-
-        var res = service.modifyDatasetVersion("1", "d1", "v1", new DatasetVersion());
-        assertThat(res, is(true));
-
-        res = service.modifyDatasetVersion("1", "d1", "v2", new DatasetVersion());
-        assertThat(res, is(false));
-    }
-
-    @Test
     public void testRevertVersionTo() {
         RevertManager revertManager = mock(RevertManager.class);
         given(revertManager.revertVersionTo(argThat(
@@ -303,7 +292,7 @@ public class DatasetServiceTest {
     @Test
     public void testListDatasetVersionHistory() {
         given(datasetVersionMapper.list(anyLong(), anyString(), anyString()))
-                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).datasetName("d1").build()));
+                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).build()));
         var res = service.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
                         .projectUrl("1")
@@ -366,13 +355,13 @@ public class DatasetServiceTest {
 
     @Test
     public void testQuery() {
-        given(datasetVersionMapper.find(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).build());
+        given(datasetDao.getDatasetVersion(same(1L)))
+                .willReturn(DatasetVersion.builder().id(1L).build());
         var res = service.query("1", "d1", "v1");
         assertThat(res, hasProperty("id", is(1L)));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.query("1", "d1", "v2"));
+        res = service.query("1", "d1", "v2");
+        assertThat(res, nullValue());
 
     }
 

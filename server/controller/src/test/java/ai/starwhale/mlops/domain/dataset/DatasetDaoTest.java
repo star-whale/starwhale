@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,10 +33,14 @@ import static org.mockito.BDDMockito.same;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
+import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,16 +50,70 @@ public class DatasetDaoTest {
     private DatasetMapper datasetMapper;
     private DatasetVersionMapper versionMapper;
 
+    private JobDatasetVersionMapper jobDatasetVersionMapper;
+
     @BeforeEach
     public void setUp() {
         datasetMapper = mock(DatasetMapper.class);
         versionMapper = mock(DatasetVersionMapper.class);
+        jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
         manager = new DatasetDao(
                 datasetMapper,
                 versionMapper,
+                jobDatasetVersionMapper,
                 new IdConverter(),
                 new VersionAliasConverter()
         );
+    }
+
+    @Test
+    public void testGetDatasetVersion() {
+        given(versionMapper.find(same(1L)))
+                .willReturn(DatasetVersionEntity.builder()
+                        .id(1L)
+                        .datasetId(2L)
+                        .versionOrder(3L)
+                        .ownerId(4L)
+                        .versionName("v1")
+                        .versionTag("tag1")
+                        .versionMeta("meta1")
+                        .storagePath("path1")
+                        .filesUploaded("files1")
+                        .size(10L)
+                        .indexTable("index1")
+                        .build());
+        given(datasetMapper.find(same(2L)))
+                .willReturn(DatasetEntity.builder().id(2L).datasetName("ds1").build());
+
+        DatasetVersion datasetVersion = manager.getDatasetVersion(1L);
+        assertThat(datasetVersion, allOf(
+                hasProperty("id", is(1L)),
+                hasProperty("datasetId", is(2L)),
+                hasProperty("datasetName", is("ds1")),
+                hasProperty("versionOrder", is(3L)),
+                hasProperty("ownerId", is(4L)),
+                hasProperty("versionName", is("v1")),
+                hasProperty("versionTag", is("tag1")),
+                hasProperty("storagePath", is("path1")),
+                hasProperty("filesUploaded", is("files1")),
+                hasProperty("size", is(10L)),
+                hasProperty("indexTable", is("index1"))
+
+        ));
+
+        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same(1L)))
+                .willReturn(List.of(1L));
+        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same(2L)))
+                .willReturn(List.of(2L));
+        given(versionMapper.find(same(2L)))
+                .willReturn(DatasetVersionEntity.builder()
+                        .id(2L)
+                        .datasetId(3L)
+                        .build());
+
+        List<DatasetVersion> versionList = manager.listDatasetVersionsOfJob(1L);
+        assertThat(versionList, iterableWithSize(1));
+        Assertions.assertEquals(datasetVersion, versionList.get(0));
     }
 
     @Test
