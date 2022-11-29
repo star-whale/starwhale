@@ -6,26 +6,10 @@ import PanelTable from './component/Table'
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
     group: WidgetGroupType.PANEL,
-    name: 'table',
+    name: 'Table',
     fieldConfig: {
-        uiSchema: {
-            'ui:order': ['*', 'chartTitle'],
-        },
-        schema: {
-            type: 'object',
-            properties: {
-                tableName: {
-                    'ui:widget': 'DatastoreTableSelect',
-                },
-            },
-        },
-        data: {
-            chartType: 'ui:panel:table',
-        },
-        // dataOverrides: {
-        //     tableName: '',
-        //     chartTitle: 'summary',
-        // },
+        uiSchema: {},
+        schema: {},
     },
 }
 

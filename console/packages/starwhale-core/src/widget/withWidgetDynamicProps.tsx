@@ -1,15 +1,24 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
 import useSelector, { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType } from '../types'
+import WidgetModel from './WidgetModel'
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
     function WrapedPropsWidget(props: any) {
-        const { id, type, path, childWidgets } = props
-        const { store, eventBus } = useEditorContext()
+        const { id, type, path } = props
+        const { store, eventBus, dynamicVars } = useEditorContext()
         const api = store()
         const overrides = useSelector(getWidget(id)) ?? {}
+
+        // const model = useRef(new WidgetModel({ id, type }))
+        // useEffect(() => {
+        //     model.current.setDynamicVars(dynamicVars)
+        //     model.current.setOverrides(overrides)
+        // }, [overrides, dynamicVars])
+
+        // console.log('【model】', model.current.type, model.current.id, model)
 
         const handleLayoutOrderChange = useCallback(
             (oldIndex, newIndex) => {
@@ -29,12 +38,10 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             (widget: any, payload: Record<string, any>) => {
                 // @FIXME path utils
                 const paths = ['tree', ...path]
-                console.log(paths, getParentPath(paths))
                 api.onLayoutChildrenChange(paths, getParentPath(paths), widget, payload)
             },
             [api]
         )
-        console.log('withWidgetDynamicProps', props, overrides)
 
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
@@ -58,6 +65,8 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             if (tableName) info.refetch()
         }, [tableName, type])
 
+        // console.log(tableName)
+
         return (
             <WrappedWidgetRender
                 {...props}
@@ -65,8 +74,16 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 data={info?.data}
                 optionConfig={overrides.optionConfig}
                 onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
+                // onOptionChange={(config) => {
+                //     model.current.updateOptionConfig(config)
+                //     model.current.saveToStore(api)
+                // }}
                 fieldConfig={overrides.fieldConfig}
                 onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
+                // onFieldChange={(config) => {
+                //     model.current.updateFieldConfig(config)
+                //     model.current.saveToStore(api)
+                // }}
                 // for layout
                 onLayoutOrderChange={handleLayoutOrderChange}
                 onLayoutChildrenChange={handleLayoutChildrenChange}

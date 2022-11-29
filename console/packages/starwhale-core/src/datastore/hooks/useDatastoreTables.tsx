@@ -4,39 +4,34 @@ import React, { useEffect, useMemo } from 'react'
 
 export default function useDatastoreTables(projectName: string, jobUuid: string) {
     const queryAllTables = useMemo(() => {
-        if (!projectName || !jobUuid) return ''
+        if (!projectName || !jobUuid) return
         return {
             prefix: tablesOfEvaluation(projectName, jobUuid),
         }
     }, [projectName, jobUuid])
-    const allTables = useListDatastoreTables(queryAllTables)
+
+    return useDatastoreTablesByPrefix(queryAllTables?.prefix as string)
+}
+
+export function useDatastoreTablesByPrefix(prefix: string) {
+    const allTables = useListDatastoreTables({ prefix })
 
     useEffect(() => {
-        if (projectName && jobUuid) {
+        if (prefix) {
             allTables.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectName, jobUuid])
+    }, [prefix])
 
     const tables = React.useMemo(() => {
-        // const names = []
-        // if (projectName) names.push(tableNameOfSummary(projectName))
-
-        return [
-            // ...names,
-            // @FIXME hard code remove results
-            ...(allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)).filter((v) => !v.includes('results')) ?? []),
-        ]
-    }, [allTables, projectName])
+        return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)).filter((v) => !v.includes('results')) ?? []
+    }, [allTables])
 
     return {
         names: tables,
         tables: tables.map((table) => {
-            // @FIXME hard code remove summary replace
-            const short = table.replace(`${tablesOfEvaluation(projectName, jobUuid)}/`, '')
-            // .replace('project/mnist-exp/eval/', '')
             return {
-                short,
+                short: table.replace(`${prefix}`, ''),
                 name: table,
             }
         }),
