@@ -241,7 +241,7 @@ restore_env() {
   echo 'cleanup'
 }
 
-exit() {
+exit_hook() {
   if restore_env ; then echo "restore_env success" ; fi
 }
 
@@ -272,7 +272,7 @@ publish_to_k8s() {
 main() {
   declare_env
   if ! in_github_action; then
-    trap exit EXIT
+    trap exit_hook EXIT
     publish_to_k8s
   else
     publish_to_mini_k8s
