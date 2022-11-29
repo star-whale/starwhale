@@ -24,7 +24,6 @@ import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -290,8 +289,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private void taskFailed(Task task) {
-        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(
-                Set.of(TaskWatcherForSchedule.class, TaskWatcherForLogging.class));
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForSchedule.class));
         // todo save log
         task.updateStatus(TaskStatus.FAIL);
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();

@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import _, { isPlainObject } from 'lodash'
-import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
 import { LazyLog } from 'react-lazylog'
@@ -32,17 +31,18 @@ export default function JobTasks() {
                 data.map(async (v: string) => {
                     const content = await fetchTaskOfflineFileLog(task?.id, v)
                     files[v] = content ?? ''
+                    setCurrentLogFiles({
+                        ...files,
+                    })
                 })
             }
             if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
                 files[task?.uuid] = 'ws'
+                setCurrentLogFiles({
+                    ...files,
+                })
             }
-            if (!Object.keys(files).length) {
-                toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
-            }
-            setCurrentLogFiles({
-                ...files,
-            })
+
             setExpanded(true)
         },
         [t]
@@ -149,27 +149,28 @@ export default function JobTasks() {
                 <TaskListCard header={null} onAction={onAction} />
 
                 <Card outTitle={t('View Log')} style={{ padding: 0 }}>
-                    <Accordion
-                        overrides={{
-                            Header: {
-                                style: {
-                                    borderRadius: '8px',
+                    {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                        <Accordion
+                            key={fileName}
+                            overrides={{
+                                Header: {
+                                    style: {
+                                        borderRadius: '8px',
+                                    },
                                 },
-                            },
-                            Content: {
-                                style: {
-                                    height: '800px',
-                                    paddingBottom: '0px',
-                                    paddingTop: '0px',
-                                    backgroundColor: 'var(--color-brandBgSecondary)',
+                                Content: {
+                                    style: {
+                                        height: '800px',
+                                        paddingBottom: '0px',
+                                        paddingTop: '0px',
+                                        backgroundColor: 'var(--color-brandBgSecondary)',
+                                    },
                                 },
-                            },
-                        }}
-                        onChange={({ expanded }) => {
-                            setExpanded(expanded.includes('0'))
-                        }}
-                    >
-                        {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                            }}
+                            onChange={({ expanded }) => {
+                                setExpanded(expanded.includes('0'))
+                            }}
+                        >
                             <Panel key={fileName} title={`Log: ${fileName}`}>
                                 {!content.startsWith('ws') ? (
                                     <LazyLog
@@ -195,8 +196,8 @@ export default function JobTasks() {
                                     />
                                 )}
                             </Panel>
-                        ))}
-                    </Accordion>
+                        </Accordion>
+                    ))}
                 </Card>
             </div>
         </>

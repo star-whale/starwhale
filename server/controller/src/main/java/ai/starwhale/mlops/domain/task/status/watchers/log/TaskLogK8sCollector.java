@@ -64,7 +64,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
                 log.warn("pod not exists for task {}", task.getId());
                 return;
             }
-            String logName = v1Pod.getMetadata().getName();
+            String logName = v1Pod.getMetadata().getName() + System.currentTimeMillis() / 1000;
             String taskLog = k8sClient.logOfPod(v1Pod,
                     Stream.concat(k8sJobTemplate.getInitContainerTemplates().stream(),
                                     k8sJobTemplate.getContainersTemplates().stream())

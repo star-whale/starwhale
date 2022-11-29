@@ -16,18 +16,29 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Pod;
+import java.util.Collection;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Component
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
+    final TaskLogK8sCollector taskLogK8sCollector;
 
-    public PodEventHandler() {
+    final HotJobHolder jobHolder;
 
+
+    public PodEventHandler(TaskLogK8sCollector taskLogK8sCollector, HotJobHolder jobHolder) {
+        this.taskLogK8sCollector = taskLogK8sCollector;
+        this.jobHolder = jobHolder;
     }
 
     @Override
@@ -36,8 +47,33 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     @Override
     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
-        newObj.getStatus().getPhase();
-
+        if (null == newObj.getStatus()
+                || null == newObj.getStatus().getContainerStatuses()
+                || null == newObj.getStatus().getContainerStatuses().get(0)
+                || null == newObj.getStatus().getContainerStatuses().get(0).getState()
+                || null == newObj.getStatus().getContainerStatuses().get(0).getState().getTerminated()
+        ) {
+            return;
+        }
+        String taskId = newObj.getMetadata().getLabels().get("job-name");
+        if (null == taskId || taskId.isBlank()) {
+            log.info("no task id found for pod {}", taskId);
+            return;
+        }
+        Long tid;
+        try {
+            tid = Long.valueOf(taskId);
+        } catch (Exception e) {
+            log.warn("task id is not number {}", taskId);
+            return;
+        }
+        Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(tid));
+        if (CollectionUtils.isEmpty(optionalTasks)) {
+            log.warn("no tasks found for pod {}", newObj.getMetadata().getName());
+            return;
+        }
+        Task task = optionalTasks.stream().findAny().get();
+        taskLogK8sCollector.collect(task);
     }
 
     @Override
