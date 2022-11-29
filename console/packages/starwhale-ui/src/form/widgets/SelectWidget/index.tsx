@@ -26,7 +26,6 @@ const SelectWidget = ({
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { enumOptions, enumDisabled } = options
-    // console.log('SelectWidget', options)
 
     const handleChange = (nextValue: any) =>
         !multiple

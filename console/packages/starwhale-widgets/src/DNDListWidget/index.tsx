@@ -11,7 +11,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 function DNDListWidget(props: WidgetRendererProps) {
-    console.log('DNDListWidget', props)
+    // console.log('DNDListWidget', props)
 
     // @ts-ignore
     const { onOrderChange, onOptionChange, onChildrenAdd, eventBus, children, ...rest } = props

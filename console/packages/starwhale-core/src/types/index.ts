@@ -1,6 +1,8 @@
 import { WidgetStoreState, WidgetTreeNode } from '../store/store'
 import { WidgetType } from '../widget/WidgetFactory'
 import { EventBus } from '../events/types'
+import { Matcher } from '../utils/replacer'
+import { RJSFSchema, UiSchema } from '@rjsf/utils'
 
 export type WidgetMeta = Record<string, unknown>
 
@@ -15,9 +17,14 @@ export interface WidgetBaseConfig {
 }
 
 export interface WidgetFieldConfig {
-    uiSchema: any
-    schema: any
-    data: any
+    uiSchema: UiSchema
+    schema: RJSFSchema
+    data: Record<string, any>
+}
+
+export interface WidgetDynamicConfig {
+    matches: Matcher[]
+    data: Record<string, any>
 }
 
 export type WidgetOptionConfig = any
@@ -28,6 +35,7 @@ export interface WidgetConfig<
 > extends WidgetBaseConfig {
     optionConfig?: Partial<O>
     fieldConfig?: Partial<F>
+    dynamicConfig?: WidgetDynamicConfig
 }
 
 // -----------widget component---------------

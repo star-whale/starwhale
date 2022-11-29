@@ -8,6 +8,11 @@ import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
 import { createCustomStore, WidgetTreeNode } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { useJob } from '@/domain/job/hooks/useJob'
+import { tablesOfEvaluation } from '@starwhale/core'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { useParams } from 'react-router'
 
 // log.enableAll()
 registerWidgets()
@@ -24,8 +29,19 @@ export function withEditorRegister(EditorApp: React.FC) {
         //     return <BusyPlaceholder type='spinner' />
         // }
         log.debug('WidgetFactory', WidgetFactory.widgetMap)
+        // @FIXME
+        const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
+        const { project } = useProject()
+        const { job } = useJob()
+        const prefix = project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined
+        const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : undefined
+        if (!prefix || !storeKey || !projectId) {
+            return <BusyPlaceholder type='spinner' />
+        }
 
-        return <EditorApp {...props} />
+        const dynamicVars = { prefix, storeKey, projectId }
+
+        return <EditorApp {...props} dynamicVars={dynamicVars} />
     }
 }
 
@@ -33,11 +49,11 @@ export function witEditorContext(EditorApp: React.FC, rawState: typeof initialSt
     return function EditorContexted(props: any) {
         // @eslint-disable-next-line typescript-eslint/no-use-before-define
         const state = useMemo(() => tranformState(rawState), [])
+        // @NOTICE must only init once
         const value = useMemo(() => {
             // @ts-ignore
             const store = createCustomStore(state)
             const eventBus = new EventBusSrv()
-            log.debug('store', state)
             return {
                 store,
                 eventBus,
@@ -45,7 +61,12 @@ export function witEditorContext(EditorApp: React.FC, rawState: typeof initialSt
         }, [state])
 
         return (
-            <EditorContextProvider value={value}>
+            <EditorContextProvider
+                value={{
+                    ...value,
+                    dynamicVars: props.dynamicVars,
+                }}
+            >
                 <EditorApp {...props} />
             </EditorContextProvider>
         )
@@ -86,7 +107,8 @@ const tranformState = (state: typeof initialState) => {
         })
     }
     const newTree = walk(Object.assign([], state.tree) as WidgetTreeNode[])
-    console.log('INIT TREE', newTree, defaults, widgets)
+    console.log('tree init', newTree)
+    // console.log('INIT TREE', newTree, defaults, widgets)
     return {
         key: state.key,
         tree: newTree,

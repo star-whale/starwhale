@@ -32,19 +32,27 @@ export function useParseConfusionMatrix(data: RecordListVO = {}) {
     return { labels, binarylabel }
 }
 
-export function useParseRocAuc(data: RecordListVO = {}) {
+export function useParseRocAuc(
+    data: {
+        records: Record<string, any>
+        x?: string
+        y?: string
+    } = { records: [] }
+) {
     const rocAuc = React.useMemo(() => {
-        const { records = [] } = data
+        const { records, x, y } = data
         const fpr: number[] = []
         const tpr: number[] = []
-        records.sort((a, b) => {
-            return parseInt(a.id, 10) - parseInt(b.id, 10)
+        records.sort((a: any, b: any) => {
+            return parseInt(a?.id, 10) - parseInt(b?.id, 10)
         })
-        records.forEach((item, i) => {
+        records.forEach((item: any, i: number) => {
             if (i > 20 && i % 20 !== 0) return
 
-            fpr.push(Number(item.fpr))
-            tpr.push(Number(item.tpr))
+            const xnum = item?.[x ?? 'fpr']
+            const ynum = item?.[y ?? 'tpr']
+            if (xnum && !Number.isNaN(xnum)) fpr.push(Number(xnum))
+            if (ynum && !Number.isNaN(ynum)) fpr.push(Number(ynum))
         })
         return {
             records,

@@ -15,7 +15,7 @@ export const CONFIG: WidgetConfig = {
     name: 'Confusion Matrix',
 }
 
-function PanelHeatmapWidget(props: WidgetRendererProps<any, any>) {
+function PanelConfusionMatrixWidget(props: WidgetRendererProps<any, any>) {
     const { fieldConfig, data = {} } = props
     const { data: formData } = fieldConfig ?? {}
     const title = formData?.chartTitle ?? ''
@@ -30,6 +30,6 @@ function PanelHeatmapWidget(props: WidgetRendererProps<any, any>) {
     )
 }
 
-const widget = new WidgetPlugin(PanelHeatmapWidget, CONFIG)
+const widget = new WidgetPlugin(PanelConfusionMatrixWidget, CONFIG)
 
 export default widget

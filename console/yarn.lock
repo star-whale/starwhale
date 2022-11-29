@@ -3385,6 +3385,7 @@
     base64-js "^1.5.1"
     eventemitter3 "^4.0.7"
     history "4.10.1"
+    klona "^2.0.5"
     lodash "4.17.21"
     rxjs "^7.5.7"
     tsc "^2.0.4"
@@ -3395,6 +3396,7 @@
   dependencies:
     "@sentry/browser" "6.19.7"
     history "4.10.1"
+    klona "^2.0.5"
     lodash "4.17.21"
     rxjs "7.5.6"
     tsc "^2.0.4"
@@ -15430,7 +15432,7 @@ kleur@^4.0.3:
   resolved "https://registry.npmmirror.com/kleur/-/kleur-4.1.4.tgz"
   integrity sha512-8QADVssbrFjivHWQU7KkMgptGTl6WAcSdlbBPY4uNF+mWr6DGcKrvY2w4FQJoXch7+fKMjj0dRrL75vk3k23OA==
 
-klona@^2.0.4:
+klona@^2.0.4, klona@^2.0.5:
   version "2.0.5"
   resolved "https://registry.npmmirror.com/klona/-/klona-2.0.5.tgz"
   integrity sha512-pJiBpiXMbt7dkzXe8Ghj/u4FfXOOa98fPW+bihOJ4SjnoijweJrNThJfd3ifXpXhREjpoF2mZVH1GfS9LV3kHQ==
