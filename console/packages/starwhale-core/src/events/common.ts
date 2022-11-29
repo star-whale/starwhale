@@ -28,3 +28,11 @@ export class DataHoverClearEvent extends BusEventBase {
 export class DataSelectEvent extends BusEventWithPayload<DataHoverPayload> {
     static type = 'data-select'
 }
+
+export class DragStartEvent extends BusEventBase {
+    static type = 'drag-start'
+}
+
+export class DragEndEvent extends BusEventBase {
+    static type = 'drag-end'
+}

@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Button from '@starwhale/ui/Button'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
@@ -9,6 +9,8 @@ import SectionForm from './component/SectionForm'
 import { PanelAddEvent, PanelEditEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
+import { DragEndEvent, DragStartEvent } from '../../../starwhale-core/src/events/common'
+import { Subscription } from 'rxjs'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -49,6 +51,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
 
     // @ts-ignore
     const { title = '', isExpaned = false, gridLayoutConfig, gridLayout } = optionConfig as Option
+    const [isDragging, setIsDragging] = useState(false)
 
     const len = React.Children.count(children)
     const { cols } = gridLayoutConfig
@@ -84,12 +87,30 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
     }
 
+    // subscription
+    useEffect(() => {
+        const subscription = new Subscription()
+        subscription.add(
+            eventBus.getStream(DragStartEvent).subscribe({
+                next: (evt) => setIsDragging(true),
+            })
+        )
+        subscription.add(
+            eventBus.getStream(DragEndEvent).subscribe({
+                next: (evt) => setIsDragging(false),
+            })
+        )
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [])
+
     return (
         <div>
             <SectionAccordionPanel
                 childNums={len}
                 title={title}
-                expanded={isExpaned}
+                expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
                 onPanelAdd={() => {
                     console.log('add panel')

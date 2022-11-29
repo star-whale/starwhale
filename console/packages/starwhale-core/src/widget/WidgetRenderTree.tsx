@@ -46,7 +46,7 @@ export function WidgetRenderTree() {
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
-    const [isPanelModalOpen, setisPanelModalOpen] = React.useState(true)
+    const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
 
     // @ts-ignore
     const handleAddSection = ({ path, type }) => {
@@ -92,7 +92,6 @@ export function WidgetRenderTree() {
                 for (let id in data?.widgets) {
                     _.set(data.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars))
                 }
-                console.log('origin', data)
                 if (store.getState().time < data?.time) store.setState(data)
             } catch (e) {
                 console.log(e)
@@ -162,7 +161,7 @@ export function WidgetRenderTree() {
 
     const form = new WidgetFormModel().initPanelSchema()
 
-    console.log('editWidget', editWidget)
+    // console.log('editWidget', editWidget)
     return (
         <div>
             {Nodes}
