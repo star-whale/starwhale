@@ -7,7 +7,7 @@ import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import WidgetEditForm from './WidgetForm'
 import useDatastoreTables from '../datastore/hooks/useDatastoreTables'
-import { useEditorContext } from '../context/EditorContextProvider'
+import { StoreType, useEditorContext } from '../context/EditorContextProvider'
 import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
 import WidgetFormModel from './WidgetFormModel'
 import useForceUpdate from '../utils/useForceUpdate'
@@ -22,10 +22,15 @@ export default function WidgetFormModal({
     handleFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
-    setIsShow: setisPanelModalOpen,
+    setIsShow: setisPanelModalOpen = () => {},
     form,
 }: {
+    store: StoreType
     form: WidgetFormModel
+    isShow?: boolean
+    setIsShow?: any
+    handleFormSubmit: (args: any) => void
+    id?: string
 }) {
     // @FIXME use event bus handle global state
     const { dynamicVars } = useEditorContext()
@@ -34,11 +39,8 @@ export default function WidgetFormModal({
     const config = store(getWidget(editWidgetId)) ?? {}
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
-    const forceUpdate = useForceUpdate()
 
     const handleFormChange = (formData: any) => {
-        if (formData?.chartType && form?.widget?.type !== formData?.chartType)
-            form.setWidget(new WidgetModel({ type: formData.chartType }))
         setFormData(formData)
     }
 
@@ -58,19 +60,17 @@ export default function WidgetFormModal({
     const { tables } = useDatastoreTablesByPrefix(prefix)
     const info = useQueryDatastore(query)
 
-    // init widget tables
-    useEffect(() => {
-        if (tables) {
-            console.log('re tables')
-            form.addDatastoreTableField(tables)
-        }
-    }, [tables])
+    if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
+        form.setWidget(new WidgetModel({ type: formData.chartType }))
+    }
+    form.addDataTableNamesField(tables)
+    form.addDataTableColumnsField(info.data?.columnTypes)
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
     }, [editWidgetId])
 
-    console.log('WidgetFormModel', form, form.widget, form.schemas, formData)
+    console.log('WidgetFormModel', form, formData)
 
     return (
         <Modal
@@ -124,7 +124,13 @@ export default function WidgetFormModal({
                             }}
                         >
                             {/* @ts-ignore */}
-                            <WidgetRenderer type={type} data={info.data} />
+                            <WidgetRenderer
+                                type={type}
+                                data={info.data}
+                                fieldConfig={{
+                                    data: formData,
+                                }}
+                            />
                         </div>
                     )}
                 </div>

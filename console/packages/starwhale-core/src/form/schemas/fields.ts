@@ -1,9 +1,15 @@
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { WidgetFactory } from '@starwhale/core/widget'
+
+export const UI_DATA_KEY = 'ui:data'
+export enum UI_DATA {
+    DataTableColumns = 'DataTableColumns',
+}
 
 export const chartTypeField = (): RJSFSchema | undefined => {
     const panels = WidgetFactory.getPanels()
-    if (panels.length === 0) return undefined
+    if (!panels || panels.length === 0) return undefined
 
     return {
         chartType: {
@@ -19,20 +25,23 @@ export const chartTypeField = (): RJSFSchema | undefined => {
 }
 
 export const tableNameField = (tables: any, schema?: RJSFSchema, uiSchema?: UiSchema): RJSFSchema | undefined => {
-    if (tables.length === 0) return undefined
+    if (!tables || tables.length === 0) return undefined
     const { type } = schema?.tableName ?? {}
 
     if (type === 'array') {
         return {
-            type: 'array',
-            uniqueItems: true,
-            items: {
-                type: 'object',
-                oneOf:
-                    tables.map((v: any) => ({
-                        const: v.name,
-                        title: v.short,
-                    })) ?? [],
+            tableName: {
+                type: 'array',
+                title: 'Table Name',
+                uniqueItems: true,
+                items: {
+                    type: 'string',
+                    oneOf:
+                        tables.map((v: any) => ({
+                            const: v.name,
+                            title: v.short,
+                        })) ?? [],
+                },
             },
         }
     }
@@ -55,3 +64,24 @@ export const chartTitleField = (): RJSFSchema | undefined => ({
         type: 'string',
     },
 })
+
+export const dataTableColumnsField = (
+    property: string,
+    columnTypes: ColumnSchemaDesc[],
+    schema?: RJSFSchema,
+    uiSchema?: UiSchema
+): RJSFSchema | undefined => {
+    if (!columnTypes || columnTypes.length === 0) return undefined
+
+    return {
+        [property]: {
+            type: 'string',
+            title: schema?.title,
+            oneOf:
+                columnTypes.map((v) => ({
+                    const: v.name,
+                    title: v.name,
+                })) ?? [],
+        },
+    }
+}

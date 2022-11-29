@@ -8,9 +8,17 @@ import _ from 'lodash'
 import { StoreType } from '../context'
 import { WidgetStoreState } from '../store/store'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
-import { chartTitleField, chartTypeField, tableNameField } from './schemas/fields'
+import {
+    chartTitleField,
+    chartTypeField,
+    dataTableColumnsField,
+    tableNameField,
+    UI_DATA,
+    UI_DATA_KEY,
+} from './schemas/fields'
 import { Console } from 'console'
 import WidgetModel from '../widget/WidgetModel'
+import { ColumnSchemaDesc } from '../datastore'
 
 const PersistProperty = {
     type: true,
@@ -24,9 +32,6 @@ const PanelUISchema: UiSchema = {
         'ui:widget': 'SelectWidget',
     },
     'ui:order': ['*', 'chartTitle'],
-    // "ui:options":  {
-    //     expandable: false
-    //   }
     'ui:submitButtonOptions': {
         norender: true,
     },
@@ -36,10 +41,9 @@ class WidgetFormModel implements WidgetFieldConfig {
     schema: RJSFSchema = {}
     uiSchema: UiSchema<any, RJSFSchema, any> = {}
     data: any
-    widget?: WidgetModel
-    fields: RJSFSchema['properties']
 
-    dynamicVars!: Record<string, any>
+    widget?: WidgetModel
+    $fields: RJSFSchema['properties']
 
     constructor(widget?: any) {
         if (widget) this.setWidget(widget)
@@ -54,32 +58,42 @@ class WidgetFormModel implements WidgetFieldConfig {
     addField(property?: RJSFSchema) {
         if (!property) return
 
-        this.fields = {
-            ...this.fields,
+        this.$fields = {
+            ...this.$fields,
             ...property,
         }
         return this
     }
 
-    addDatastoreTableField(tables: any[]) {
-        const { schema, uiSchema } = this.widget?.config?.fieldConfig ?? {}
-        this.addField(tableNameField(tables, schema, uiSchema))
+    addDataTableNamesField(tables?: any[]) {
+        if (!tables) return
+
+        this.addField(tableNameField(tables, this.widget?.config?.fieldConfig?.schema))
     }
 
-    withPanelSchema({ tables }: { tables?: any[] } = {}) {
+    addDataTableColumnsField(columnTypes?: ColumnSchemaDesc[]) {
+        if (!columnTypes) return
+
+        const { schema, uiSchema } = this.widget?.config?.fieldConfig ?? {}
+        for (const property in uiSchema) {
+            if (uiSchema[property]?.[UI_DATA_KEY] === UI_DATA.DataTableColumns) {
+                this.addField(dataTableColumnsField(property, columnTypes, schema, uiSchema))
+            }
+        }
+    }
+
+    initPanelSchema() {
         this.addField(chartTypeField())
-        this.addDatastoreTableField(tables ?? [])
         this.addField(chartTitleField())
         this.uiSchema = PanelUISchema
         return this
     }
 
     get schemas() {
-        console.log(this.widget?.config?.fieldConfig?.schema)
         return {
             schema: {
                 type: 'object',
-                properties: _.merge({}, this.fields, this.widget?.config?.fieldConfig?.schema),
+                properties: _.merge({}, this.$fields, this.widget?.config?.fieldConfig?.schema),
             },
             uiSchema: _.merge({}, this.uiSchema, this.widget?.config?.fieldConfig?.uiSchema),
         }

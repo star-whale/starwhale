@@ -39,11 +39,6 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
     )
 })
 
-enum PanelEditAction {
-    ADD = 'add-panel',
-    EDIT = 'edit-panel',
-}
-
 export function WidgetRenderTree() {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const { prefix, storeKey: key, projectId } = dynamicVars
@@ -82,8 +77,8 @@ export function WidgetRenderTree() {
     }
 
     const actions = {
-        [PanelEditAction.ADD]: handleAddPanel,
-        [PanelEditAction.EDIT]: handleEditPanel,
+        [PanelAddEvent.type]: handleAddPanel,
+        [PanelEditEvent.type]: handleEditPanel,
     }
 
     // use  api store
@@ -165,8 +160,9 @@ export function WidgetRenderTree() {
         ))
     }, [tree])
 
-    const form = new WidgetFormModel().withPanelSchema()
+    const form = new WidgetFormModel().initPanelSchema()
 
+    console.log('editWidget', editWidget)
     return (
         <div>
             {Nodes}
@@ -178,7 +174,7 @@ export function WidgetRenderTree() {
                 store={store}
                 handleFormSubmit={({ formData }: any) => {
                     // @ts-ignore
-                    actions[editWidget.type]?.(formData)
+                    actions[editWidget?.type]?.(formData)
                     setisPanelModalOpen(false)
                 }}
             />
