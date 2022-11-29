@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.dataset;
 
 import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetVersionWithMetaConverter;
 import ai.starwhale.mlops.domain.dataset.upload.HotDatasetHolder;
 import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
@@ -110,7 +110,7 @@ public class HotDatasetHolderTest {
         HotDatasetHolder hotDatasetHolder = new HotDatasetHolder(datasetVersionWithMetaConverter);
 
         String versionName = "testversion";
-        DatasetVersionEntity datasetVersionEntity = DatasetVersionEntity.builder()
+        DatasetVersion datasetVersion = DatasetVersion.builder()
                 .id(1L)
                 .datasetId(1L)
                 .datasetName("test")
@@ -119,7 +119,7 @@ public class HotDatasetHolderTest {
                 .versionMeta(MANIFEST)
                 .storagePath(STORAGE_PATH)
                 .build();
-        hotDatasetHolder.manifest(datasetVersionEntity);
+        hotDatasetHolder.manifest(datasetVersion);
 
         Optional<DatasetVersionWithMeta> swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isPresent());
@@ -188,7 +188,7 @@ public class HotDatasetHolderTest {
         swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isEmpty());
 
-        hotDatasetHolder.manifest(datasetVersionEntity);
+        hotDatasetHolder.manifest(datasetVersion);
         hotDatasetHolder.cancel(versionName);
         swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isEmpty());

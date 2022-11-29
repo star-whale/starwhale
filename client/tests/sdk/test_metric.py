@@ -79,4 +79,20 @@ class TestMultiClassificationMetric(TestCase):
         assert "labels" in log_calls
         assert "confusion_matrix/binarylabel" in log_calls
         assert "roc_auc/9" in log_calls
+        assert "roc_auc/8" in log_calls
+        assert "roc_auc/7" in log_calls
+        assert "roc_auc/6" in log_calls
+        assert "roc_auc/5" in log_calls
+        assert "roc_auc/4" in log_calls
+        assert "roc_auc/3" in log_calls
+        assert "roc_auc/2" in log_calls
         assert "roc_auc/1" in log_calls
+
+        roc_1_calls = set(
+            [
+                f"{args[0][0]},{args[1]['id']}"
+                for args in log_mock.call_args_list
+                if args[0][0] == "roc_auc/1"
+            ]
+        )
+        assert len(roc_1_calls) > 1

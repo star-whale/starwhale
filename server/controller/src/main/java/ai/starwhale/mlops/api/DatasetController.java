@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -227,10 +226,10 @@ public class DatasetController implements DatasetApi {
                     new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
                     HttpStatus.BAD_REQUEST);
         }
-        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        DatasetVersion datasetVersion = datasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(datasetService.dataOf(datasetVersionEntity.getId(), uri, offset, size));
+            outputStream.write(datasetService.dataOf(datasetVersion.getId(), uri, offset, size));
             outputStream.flush();
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);
@@ -241,22 +240,9 @@ public class DatasetController implements DatasetApi {
     @Override
     public ResponseEntity<ResponseMessage<Map>> signLinks(String projectUrl, String datasetUrl, String versionUrl,
             Set<String> uris, Long expTimeMillis) {
-        DatasetVersionEntity datasetVersionEntity = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        DatasetVersion datasetVersion = datasetService.query(projectUrl, datasetUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(
-                datasetService.signLinks(datasetVersionEntity.getId(), uris, expTimeMillis)));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
-            String projectUrl, String datasetUrl, String versionUrl, DatasetTagRequest datasetTagRequest) {
-        Boolean res = datasetService.modifyDatasetVersion(projectUrl, datasetUrl, versionUrl,
-                DatasetVersion.builder().tag(datasetTagRequest.getTag()).build());
-        if (!res) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET, "Modify dataset failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return ResponseEntity.ok(Code.success.asResponse("success"));
+                datasetService.signLinks(datasetVersion.getId(), uris, expTimeMillis)));
     }
 
     @Override

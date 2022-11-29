@@ -22,13 +22,13 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -84,11 +84,11 @@ public class JobBoConverterTest {
                 .resourcePool("rp")
                 .owner(UserEntity.builder().userName("naf").id(1232L).build())
                 .build();
-        JobDatasetVersionMapper jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
-        when(jobDatasetVersionMapper.listDatasetVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
-                DatasetVersionEntity.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
+        DatasetDao datasetDao = mock(DatasetDao.class);
+        when(datasetDao.listDatasetVersionsOfJob(jobEntity.getId())).thenReturn(List.of(
+                DatasetVersion.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
                         .versionName("name_swds").build(),
-                DatasetVersionEntity.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")
+                DatasetVersion.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")
                         .versionName("name_swds1").build()
         ));
 
@@ -129,7 +129,7 @@ public class JobBoConverterTest {
 
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool("rp")).thenReturn(ResourcePool.builder().name("fool").build());
-        JobBoConverter jobBoConverter = new JobBoConverter(jobDatasetVersionMapper, modelMapper, runtimeMapper,
+        JobBoConverter jobBoConverter = new JobBoConverter(datasetDao, modelMapper, runtimeMapper,
                 runtimeVersionMapper,
                 converter,
                 jobSpecParser, systemSettingService,

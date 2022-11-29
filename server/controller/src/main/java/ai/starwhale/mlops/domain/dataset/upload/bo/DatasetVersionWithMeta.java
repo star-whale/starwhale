@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload.bo;
 
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DatasetVersionWithMeta {
 
-    DatasetVersionEntity datasetVersionEntity;
+    DatasetVersion datasetVersion;
     VersionMeta versionMeta;
 
 }

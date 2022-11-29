@@ -215,7 +215,7 @@ client_test() {
     bash scripts/client_test/cli_test.sh all
   else
     if ! bash scripts/client_test/cli_test.sh simple; then
-      scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER
+      scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER || exit 1
     fi
   fi
   popd
@@ -246,7 +246,7 @@ restore_env() {
   echo 'cleanup'
 }
 
-exit() {
+exit_hook() {
   if restore_env ; then echo "restore_env success" ; fi
 }
 
@@ -277,7 +277,7 @@ publish_to_k8s() {
 main() {
   declare_env
   if ! in_github_action; then
-    trap exit EXIT
+    trap exit_hook EXIT
     publish_to_k8s
   else
     publish_to_mini_k8s

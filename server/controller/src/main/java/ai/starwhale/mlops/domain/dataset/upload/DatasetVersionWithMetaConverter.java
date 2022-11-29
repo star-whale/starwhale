@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
 import ai.starwhale.mlops.domain.dataset.upload.bo.VersionMeta;
@@ -45,7 +45,7 @@ public class DatasetVersionWithMetaConverter {
         this.objectMapper = objectMapper;
     }
 
-    public DatasetVersionWithMeta from(DatasetVersionEntity entity) {
+    public DatasetVersionWithMeta from(DatasetVersion entity) {
         VersionMeta versionMeta;
         try {
             Manifest manifest = objectMapper.readValue(entity.getVersionMeta(),
