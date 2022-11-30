@@ -3,12 +3,6 @@ configs:
   conda:
     channels:
       - conda-forge
-  pip:
-    extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple
-    index_url: https://pypi.tuna.tsinghua.edu.cn/simple
-    trusted_host:
-      - pypi.tuna.tsinghua.edu.cn
-      - mirrors.bfsu.edu.cn
 dependencies:
   - pip:
       - numpy

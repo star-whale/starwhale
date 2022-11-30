@@ -697,6 +697,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self.store = RuntimeStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}
+        self._version = uri.object.version
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

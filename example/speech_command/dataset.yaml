@@ -1,4 +1,4 @@
-name: speech_commands_validation
+name: speech_command
 handler: sc.dataset:SWDSBuildExecutor
 
 #name: speech_commands_train_link

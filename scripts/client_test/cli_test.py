@@ -1,259 +1,369 @@
 import os
 import sys
+import typing as t
 import logging
-import tempfile
+import subprocess
 from time import sleep
-from typing import Any, Optional
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures._base import Future
 
 from cmds.eval_cmd import Evaluation
-from cmds.base.common import EnvironmentPrepare
-from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
+from starwhale import URI
+
 CURRENT_DIR = os.path.dirname(__file__)
+step_spec_f: t.Callable[
+    [str], str
+] = lambda spec: f"{os.path.abspath(CURRENT_DIR)}/step_specs/{spec}"
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+WORK_DIR = os.environ.get("WORK_DIR")
+if not WORK_DIR:
+    raise RuntimeError("WORK_DIR NOT FOUND")
+STATUS_SUCCESS = {"SUCCESS", "success"}
+STATUS_FAIL = {"FAIL", "fail", "CANCELED"}
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
+    "mnist": {
+        "workdir": f"{ROOT_DIR}/example/mnist",
+        "datasets": [
+            "",
+            "mnist.dataset:RawDatasetProcessExecutor",
+            "mnist.dataset:LinkRawDatasetProcessExecutor",
+        ],
+        # "datasets": [""],
+    },
+    "cifar10": {
+        "workdir": f"{ROOT_DIR}/example/cifar10",
+        "datasets": [""],
+    },
+    "nmt": {
+        "workdir": f"{ROOT_DIR}/example/nmt",
+        "datasets": [""],
+    },
+    "pfp": {
+        "workdir": f"{ROOT_DIR}/example/PennFudanPed",
+        "datasets": [""],
+        "device": "gpu",
+    },
+    "speech_command": {
+        "workdir": f"{ROOT_DIR}/example/speech_command",
+        "datasets": ["", "sc.dataset:LinkRawDatasetBuildExecutor"],
+        "device": "gpu",
+    },
+    "ag_news": {
+        "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
+        "datasets": [""],
+    },
+    "ucf101": {
+        "workdir": f"{ROOT_DIR}/example/ucf101",
+        "datasets": [""],
+    },
+}
+RUNTIMES: t.Dict[str, t.Dict[str, str]] = {
+    "pytorch": {
+        "workdir": f"{WORK_DIR}/example/runtime/pytorch-e2e",
+    },
+    "ucf101": {
+        "workdir": f"{WORK_DIR}/example/ucf101",
+    },
+}
 
 
 class TestCli:
-    instance = Instance()
-    project = Project()
-    model = Model()
-    dataset = Dataset()
-    runtime = Runtime()
-    evaluation = Evaluation()
+    instance_api = Instance()
+    project_api = Project()
+    model_api = Model()
+    dataset_api = Dataset()
+    runtime_api = Runtime()
+    evaluation_api = Evaluation()
 
-    def __init__(self, work_dir: str) -> None:
-        self._work_dir = work_dir
-
-    def standard_workflow(
+    def __init__(
         self,
-        mode: str,
-        model_name: str,
-        model_workdir: str,
-        ds_name: str,
-        ds_workdir: str,
-        rt_name: str,
-        rt_workdir: str,
-        server_uri: str,
-        server_project: str,
-        step_spec_file: str,
+        work_dir: str,
+        thread_pool: ThreadPoolExecutor,
+        server_url: t.Optional[str],
+        server_project: str = "starwhale",
     ) -> None:
-        # use local instance
-        logging.info("select local")
-        self.instance.select("local")
-        assert self.project.select("self")
+        self._work_dir = work_dir
+        self.executor = thread_pool
+        self.server_url = server_url
+        self.server_project = server_project
+        self.datasets: t.Dict[str, t.List[URI]] = {}
+        self.runtimes: t.Dict[str, URI] = {}
+        self.models: t.Dict[str, URI] = {}
+        if self.server_url:
+            logger.info(f"login to server {self.server_url} ...")
+            assert self.instance_api.login(url=self.server_url)
 
-        # 1.model build
-        logging.info("building model...")
-        _model_uri = f"{model_name}/version/latest"
-        assert len(self.model.list()) == 0
-        self.model.build(workdir=model_workdir)
-        assert len(self.model.list()) == 1
-        swmp = self.model.info(_model_uri)
-        assert swmp
+    def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
+        self.select_local_instance()
+        _uri = Dataset.build_with_api(workdir=_workdir, handler=handler)
+        if self.server_url:
+            assert self.dataset_api.copy(
+                src_uri=_uri.full_uri,
+                target_project=f"cloud://server/project/{self.server_project}",
+                force=True,
+            )
+        dss_ = self.datasets.get(_uri.object.name, [])
+        dss_.append(_uri)
+        self.datasets.update({_uri.object.name: dss_})
+        assert len(self.dataset_api.list())
+        assert self.dataset_api.info(_uri.full_uri)
+        return _uri
 
-        # 2.dataset build
-        logging.info("building dataset...")
-        _ds_uri = f"{ds_name}/version/latest"
-        assert len(self.dataset.list()) == 0
-        self.dataset.build(workdir=ds_workdir)
-        assert len(self.dataset.list()) == 1
-        swds = self.dataset.info(_ds_uri)
-        assert swds
-        self.dataset.build(workdir=ds_workdir)
-        assert len(self.dataset.list()) == 2
-        swds2 = self.dataset.info(_ds_uri)
-        assert swds2
+    def build_model(
+        self,
+        _workdir: str,
+    ) -> t.Any:
+        self.select_local_instance()
+        _uri = Model.build_with_api(workdir=_workdir)
+        if self.server_url:
+            assert self.model_api.copy(
+                src_uri=_uri.full_uri,
+                target_project=f"cloud://server/project/{self.server_project}",
+                force=True,
+            )
+        self.models.update({_uri.object.name: _uri})
+        assert len(self.model_api.list())
+        assert self.model_api.info(_uri.full_uri)
+        return _uri
 
-        # 3.runtime build
-        logging.info("building runtime...")
-        _rt_uri = f"{rt_name}/version/latest"
-        assert len(self.runtime.list()) == 0
-        self.runtime.build(workdir=rt_workdir)
-        assert len(self.runtime.list()) == 1
-        swrt = self.runtime.info(_rt_uri)
-        assert swrt
+    def build_runtime(
+        self,
+        _workdir: str,
+    ) -> t.Any:
+        self.select_local_instance()
+        _uri = Runtime.build_with_api(workdir=_workdir)
+        if self.server_url:
+            assert self.runtime_api.copy(
+                src_uri=_uri.full_uri,
+                target_project=f"cloud://server/project/{self.server_project}",
+                force=True,
+            )
+        self.runtimes.update({_uri.object.name: _uri})
+        assert len(self.runtime_api.list())
+        assert self.runtime_api.info(_uri.full_uri)
+        return _uri
 
-        # 4.run evaluation on local instance
-        logging.info("running evaluation at local...")
-        assert len(self.evaluation.list()) == 0
-        assert self.evaluation.run(
-            model=_model_uri,
-            datasets=[
-                f'{ds_name}/version/{swds["version"]}',
-                f'{ds_name}/version/{swds2["version"]}',
-            ],
+    def select_local_instance(self) -> None:
+        self.instance_api.select("local")
+        assert self.project_api.select("self")
+
+    def eval(
+        self,
+        _model_uri: URI,
+        _rt_uri: URI,
+        _ds_uris: t.List[URI],
+        step_spec_file: str,
+        local_instance: bool = True,
+    ) -> Future:
+        if local_instance:
+            _jid = self.local_evl(_ds_uris, _model_uri, _rt_uri)
+            return executor.submit(lambda: (_jid, next(iter(STATUS_SUCCESS))))
+        if self.server_url and not local_instance:
+            return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
+        return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
+
+    def local_evl(self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI) -> t.Any:
+        logger.info("running evaluation at local...")
+        self.select_local_instance()
+        _job_id = self.evaluation_api.run(
+            model=_model_uri.full_uri,
+            datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
+            runtime=_rt_uri.full_uri,
         )
-        _eval_list = self.evaluation.list()
-        assert len(_eval_list) == 1
-
-        eval_info = self.evaluation.info(_eval_list[0]["manifest"]["version"])
+        assert _job_id
+        assert len(self.evaluation_api.list())
+        eval_info = self.evaluation_api.info(_job_id)
         assert eval_info
-        assert eval_info["manifest"]["status"] == "success"
-        logging.info("finish run evaluation at standalone.")
+        assert eval_info["manifest"]["status"] in STATUS_SUCCESS
+        logger.info("finish run evaluation at standalone.")
+        return _job_id
 
-        if mode != RunMode.SERVER:
-            return
-        # 5.login to server
-        logging.info(f"login to server {server_uri} ...")
-        assert self.instance.login(url=server_uri)
-
-        # 6.copy local artifacts to server
-        logging.info("copy local artifacts to server...")
-        assert self.model.copy(
-            src_uri=_model_uri,
-            target_project=f"cloud://server/project/{server_project}",
-            force=True,
-        )
-        assert self.dataset.copy(
-            src_uri=f'{ds_name}/version/{swds["version"]}',
-            target_project=f"cloud://server/project/{server_project}",
-            force=True,
-        )
-        assert self.dataset.copy(
-            src_uri=f'{ds_name}/version/{swds2["version"]}',
-            target_project=f"cloud://server/project/{server_project}",
-            force=True,
-        )
-        assert self.runtime.copy(
-            src_uri=_rt_uri,
-            target_project=f"cloud://server/project/{server_project}",
-            force=True,
-        )
-
-        # 7.select to server instance
-        self.instance.select(instance="server")
-        self.project.select(project=server_project)
-
-        _origin_job_list = self.evaluation.list(project=server_project)
-
+    def remote_eval(
+        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
+    ) -> Future:
+        self.instance_api.select(instance="server")
+        self.project_api.select(project=self.server_project)
         # 8.start an evaluation
-
-        logging.info("running evaluation at server...")
-        assert self.evaluation.run(
-            model=swmp["version"],
-            datasets=[swds["version"], swds2["version"]],
-            runtime=swrt["version"],
-            project=server_project,
+        logger.info("running evaluation at server...")
+        _remote_jid = self.evaluation_api.run(
+            model=_model_uri.object.version,
+            datasets=[_ds_uri.object.version for _ds_uri in _ds_uris],
+            runtime=_rt_uri.object.version,
+            project=f"{self.server_url}/project/{self.server_project}",
             step_spec=step_spec_file,
             resource_pool=os.environ.get("RESOURCE_POOL"),
         )
-        _new_job_list = self.evaluation.list(project=server_project)
-        assert len(_new_job_list) == len(_origin_job_list) + 1
-
-        _origin_job_ids = [j["manifest"]["id"] for j in _origin_job_list]
-        _new_job_ids = [j["manifest"]["id"] for j in _new_job_list]
-
-        _new_job_id = list(set(_new_job_ids) - set(_origin_job_ids))[0]
-
+        assert _remote_jid
         # 9.check job's status
-        _job_status = self.get_job_status(
-            server_uri=server_uri, server_project=server_project, job_id=_new_job_id
-        )
+        _js = executor.submit(self.get_remote_job_status, _remote_jid)
+        return _js
 
+    def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
-            if _job_status == "SUCCESS" or _job_status == "FAIL":
-                break
-            sleep(10)
-            _job_status = self.get_job_status(
-                server_uri=server_uri, server_project=server_project, job_id=_new_job_id
+            _remote_job = self.evaluation_api.info(
+                f"{self.server_url}/project/{self.server_project}/evaluation/{job_id}"
             )
-            if _job_status:
-                logging.info(f"job status is:{_job_status}")
-            else:
-                logging.info("job status api occur some error!now will exit")
-                break
+            _job_status = (
+                _remote_job["manifest"]["jobStatus"]
+                if _remote_job
+                else next(iter(STATUS_FAIL))
+            )
+            if _job_status in STATUS_SUCCESS.union(STATUS_FAIL):
+                logger.info(
+                    f"finish run evaluation at server for job {job_id}, status is:{_job_status}."
+                )
+                return job_id, _job_status
+            sleep(10)
+            logger.info(f"status for job {job_id} is:{_job_status}")
 
-        logging.info(f"finish run evaluation at server, status is:{_job_status}.")
-        # 10.reset instance to local
-        self.instance.select("local")
+    def test_simple(self) -> None:
+        # use local instance
+        logger.info("select local")
+        self.select_local_instance()
 
-    def get_job_status(self, server_uri: str, server_project: str, job_id: str) -> Any:
-        _remote_job = self.evaluation.info(
-            f"{server_uri}/project/{server_project}/evaluation/{job_id}"
+        # 1.model build
+        logger.info("building model...")
+        _model_uri = self.build_model(f"{self._work_dir}/scripts/example")
+
+        # 2.dataset build
+        _ds_uri = self.build_dataset(f"{self._work_dir}/scripts/example")
+
+        # 3.runtime build
+        _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
+
+        self.local_evl([_ds_uri], _model_uri, _rt_uri)
+        if self.server_url:
+            _js = self.remote_eval(
+                [_ds_uri], _model_uri, _rt_uri, step_spec_f("step_spec_cpu_mini.yaml")
+            )
+            _, status = _js.result()
+            assert status in STATUS_SUCCESS
+
+    def test_all(self) -> None:
+
+        for name, rt in RUNTIMES.items():
+            self.build_runtime(rt["workdir"])
+
+        processes = [
+            subprocess.Popen(
+                ["make", "CN=1", "prepare-data"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=expl["workdir"],
+            )
+            for name, expl in EXAMPLES.items()
+        ]
+
+        for p in processes:
+            p.wait()
+
+        for name, expl in EXAMPLES.items():
+            workdir_ = expl["workdir"]
+            for d_type in expl["datasets"]:
+                self.build_dataset(workdir_, d_type)
+            self.build_model(workdir_)
+
+        # run evals on standalone
+        for name, expl in EXAMPLES.items():
+            expl.get("device", "cpu") == "cpu" and self.run_example(
+                name,
+                step_spec_f("step_spec_cpu_full.yaml"),
+            )
+
+        # run evals on server
+        res = [
+            self.run_example(
+                name,
+                step_spec_f(f"step_spec_{expl.get('device', 'cpu')}_full.yaml"),
+                False,
+            )
+            for name, expl in EXAMPLES.items()
+        ]
+        for _js in res:
+            jid, status = _js.result()
+            if status not in STATUS_SUCCESS:
+                logger.error(f"job {jid} failed!")
+                exit(1)
+
+    def test_expl(self, expl_name: str) -> None:
+        rt_ = RUNTIMES.get(expl_name) or RUNTIMES.get("pytorch")
+        if not rt_:
+            raise RuntimeError(f"no runtime matching for {expl_name}")
+        self.build_runtime(str(rt_.get("workdir")))
+
+        expl = EXAMPLES[expl_name]
+        workdir_ = str(expl["workdir"])
+
+        p = subprocess.Popen(
+            ["make", "prepare-e2e-data"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=workdir_,
         )
-        return _remote_job["manifest"]["jobStatus"] if _remote_job else "API ERROR"
 
-    def test_mnist(self, server_url: Optional[str]) -> None:
-        invoke(["cp", "-rf", f"{ROOT_DIR}/example", f"{self._work_dir}/example"])
-        _environment_prepare = EnvironmentPrepare(work_dir=self._work_dir)
-        _environment_prepare.prepare_mnist_data()
-        _environment_prepare.prepare_mnist_requirements()
+        p.wait()
 
-        self.standard_workflow(
-            mode=RunMode.SERVER if server_url else RunMode.STANDALONE,
-            model_name="mnist",
-            model_workdir=f"{self._work_dir}/example/mnist",
-            ds_name="mnist",
-            ds_workdir=f"{self._work_dir}/example/mnist",
-            rt_name="pytorch",
-            rt_workdir=f"{self._work_dir}/example/runtime/pytorch",
-            server_uri=server_url if server_url else "http://127.0.0.1:8082",
-            server_project="starwhale",
-            step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
-            if os.environ.get("GITHUB_ACTION")
-            else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
+        #  download data
+        for d_type in expl["datasets"]:
+            self.build_dataset(workdir_, d_type)
+        self.build_model(workdir_)
+
+        # run_eval
+        _js = self.run_example(
+            expl_name,
+            step_spec_f(f"step_spec_{expl.get('device', 'cpu')}_full.yaml"),
+            expl.get("device", "cpu") == "cpu",
         )
+        jid, status = _js.result()
+        if status not in STATUS_SUCCESS:
+            logger.error(f"job {jid} failed!")
+            exit(1)
 
-    def test_simple(self, server_url: Optional[str]) -> None:
-        self.standard_workflow(
-            mode=RunMode.SERVER if server_url else RunMode.STANDALONE,
-            model_name="simple-test",
-            model_workdir=f"{self._work_dir}/scripts/example",
-            ds_name="simple-test",
-            ds_workdir=f"{self._work_dir}/scripts/example",
-            rt_name="simple-test",
-            rt_workdir=f"{self._work_dir}/scripts/example",
-            server_uri=server_url if server_url else "http://127.0.0.1:8082",
-            server_project="starwhale",
-            step_spec_file=f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_mini.yaml"
-            if os.environ.get("GITHUB_ACTION")
-            else f"{os.path.abspath(CURRENT_DIR)}/step_specs/step_spec_mnist_full.yaml",
-        )
+    def run_example(
+        self, name: str, step_spec: str, local_instance: bool = True
+    ) -> Future:
+        datasets_ = self.datasets.get(name)
+        if not datasets_:
+            raise RuntimeError("datasets should not be empty")
+        model_ = self.models.get(name)
+        if not model_:
+            raise RuntimeError("model should not be empty")
+        runtime_ = self.runtimes.get(name) or self.runtimes.get("pytorch")
+        if not runtime_:
+            raise RuntimeError("runtime should not be empty")
+        return self.eval(model_, runtime_, datasets_, step_spec, local_instance)
 
-    # TODO add more example
-
-
-def init_run_environment(work_dir: str) -> None:
-    # prepare environment
-    logging.info(f"work-dir is:{work_dir}")
-
-    os.environ["SW_CLI_CONFIG"] = f"{work_dir}/config.yaml"
-    os.environ["SW_LOCAL_STORAGE"] = f"{work_dir}/data"
-
-    invoke(["cp", "-rf", f"{ROOT_DIR}/client", f"{work_dir}/client"])
-    invoke(["cp", "-rf", f"{ROOT_DIR}/scripts", f"{work_dir}/scripts"])
-    invoke(["cp", "-rf", f"{ROOT_DIR}/README.md", f"{work_dir}/README.md"])
-
-    # install sw at current session
-    logging.info(
-        f"env PYPI_RELEASE_VERSION is:{os.environ.get('PYPI_RELEASE_VERSION')}"
-    )
-    invoke(["python3", "-m", "pip", "install", "-e", f"{work_dir}/client"])
-    _res, _err = invoke(["swcli", "--version"])
-    logging.info(f"pytest use swcli version is:{_res}")
-
-
-class RunMode:
-    STANDALONE = "standalone"
-    SERVER = "server"
+    def debug(self) -> None:
+        for name, expl in EXAMPLES.items():
+            workdir_ = expl["workdir"]
+            self.build_model(str(workdir_))
 
 
 if __name__ == "__main__":
-    with tempfile.TemporaryDirectory() as workdir:
-        init_run_environment(workdir)
+    with ThreadPoolExecutor(
+        max_workers=int(os.environ.get("SW_TEST_E2E_THREAD_NUM", "10"))
+    ) as executor:
         # start test
-        test_cli = TestCli(work_dir=workdir)
+        test_cli = TestCli(
+            work_dir=WORK_DIR,
+            thread_pool=executor,
+            server_url=os.environ.get("CONTROLLER_URL"),
+        )
         example = sys.argv[1]
-        _server_url = os.environ.get("CONTROLLER_URL")
-        if example == "mnist":
-            test_cli.test_mnist(_server_url)
-        elif example == "simple":
-            test_cli.test_simple(_server_url)
+        if example == "simple":
+            test_cli.test_simple()
+        elif example == "all":
+            test_cli.test_all()
+        elif example == "debug":
+            test_cli.debug()
         else:
-            logging.warning("there is nothing to run!")
+            test_cli.test_expl(expl_name=example)

@@ -1,0 +1,24 @@
+api_version: 1.1
+configs:
+  conda:
+    channels:
+      - conda-forge
+  docker:
+    image: ghcr.io/star-whale/runtime/pytorch
+dependencies:
+  - pip:
+      - Pillow
+      - numpy
+      - scikit-learn
+      - torchvision
+      - torch
+      - torchdata
+      - torchtext
+      - torchaudio
+      - pycocotools
+  - requirements-sw-lock.txt
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+mode: venv
+name: pytorch

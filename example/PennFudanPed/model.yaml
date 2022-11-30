@@ -1,5 +1,5 @@
 version: 1.0
-name: mask_rcnn
+name: pfp
 model:
   - models/mcrnn.pth
 run:

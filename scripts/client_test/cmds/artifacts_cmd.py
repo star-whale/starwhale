@@ -1,5 +1,12 @@
 import json
-from typing import Any, List
+import typing as t
+from pathlib import Path
+
+from starwhale.core.model.view import ModelTermView
+from starwhale.core.dataset.type import DatasetConfig
+from starwhale.core.dataset.view import DatasetTermView
+from starwhale.core.runtime.view import RuntimeTermView
+from starwhale.api._impl.data_store import LocalDataStore
 
 from . import CLI
 from .base.invoke import invoke, invoke_with_react
@@ -9,7 +16,7 @@ class BaseArtifact:
     def __init__(self, name: str):
         self.name = name
 
-    def info(self, uri: str) -> Any:
+    def info(self, uri: str) -> t.Any:
         """
         :param uri: mnist/version/latest
         :return:
@@ -45,7 +52,7 @@ class BaseArtifact:
         show_removed: bool = False,
         page: int = 1,
         size: int = 20,
-    ) -> Any:
+    ) -> t.Any:
         _args = [
             CLI,
             "-o",
@@ -81,7 +88,7 @@ class BaseArtifact:
         _ret_code, _res = invoke_with_react(_args)
         return bool(_ret_code == 0)
 
-    def history(self, name: str, fullname: bool = False) -> Any:
+    def history(self, name: str, fullname: bool = False) -> t.Any:
         """
         :param name: mnist
         :param fullname: bool
@@ -110,7 +117,7 @@ class BaseArtifact:
         _ret_code, _res = invoke(_args)
         return json.loads(_res) if _ret_code == 0 else []
 
-    def tag(self, uri: str, tags: List[str], remove: bool, quiet: bool) -> bool:
+    def tag(self, uri: str, tags: t.List[str], remove: bool, quiet: bool) -> bool:
         _args = [CLI, self.name, "tag", uri]
         if remove:
             _args.extend("--remove")
@@ -124,6 +131,15 @@ class BaseArtifact:
 class Model(BaseArtifact):
     def __init__(self) -> None:
         super().__init__("model")
+
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        project: str = "",
+        model_yaml: str = "model.yaml",
+        runtime_uri: str = "",
+    ) -> t.Any:
+        return ModelTermView.build(workdir, project, model_yaml, runtime_uri)
 
     def build(
         self,
@@ -151,7 +167,7 @@ class Model(BaseArtifact):
         _ret_code, _res = invoke(_args, log=True)
         return bool(_ret_code == 0)
 
-    def extract(self) -> Any:
+    def extract(self) -> t.Any:
         return invoke([CLI, self.name, "extract"])
 
     def eval(
@@ -187,6 +203,21 @@ class Dataset(BaseArtifact):
     def __init__(self) -> None:
         super().__init__("dataset")
 
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        dataset_yaml: str = "dataset.yaml",
+        handler: str = "",
+    ) -> t.Any:
+        yaml_path = Path(workdir) / dataset_yaml
+        config = DatasetConfig()
+        if yaml_path.exists():
+            config = DatasetConfig.create_by_yaml(yaml_path)
+        config.handler = handler or config.handler
+        _uri = DatasetTermView.build(workdir, config)
+        LocalDataStore.get_instance().dump()
+        return _uri
+
     def build(
         self,
         workdir: str,
@@ -212,7 +243,7 @@ class Dataset(BaseArtifact):
         # TODO use version match
         return bool(_ret_code == 0)
 
-    def summary(self, uri: str) -> Any:
+    def summary(self, uri: str) -> t.Any:
         """
         :param uri: mnist/version/latest
         :return:
@@ -238,7 +269,7 @@ class Dataset(BaseArtifact):
         _ret_code, _res = invoke(_args)
         return bool(_ret_code == 0)
 
-    def diff(self, base_uri: str, compare_uri: str) -> Any:
+    def diff(self, base_uri: str, compare_uri: str) -> t.Any:
         """
         :param base_uri: mnist/version/meytgyrtgi4d
         :param compare_uri: mnist/version/latest
@@ -297,6 +328,29 @@ class Runtime(BaseArtifact):
     ) -> None:
         super().__init__("runtime")
 
+    @staticmethod
+    def build_with_api(
+        workdir: str,
+        project: str = "",
+        runtime_yaml: str = "runtime.yaml",
+        gen_all_bundles: bool = False,
+        include_editable: bool = False,
+        enable_lock: bool = False,
+        env_prefix_path: str = "",
+        env_name: str = "",
+    ) -> t.Any:
+        return RuntimeTermView.build(
+            workdir,
+            project,
+            runtime_yaml,
+            gen_all_bundles,
+            include_editable,
+            enable_lock,
+            env_prefix_path,
+            env_name,
+            False,
+        )
+
     def build(
         self,
         workdir: str,
@@ -331,7 +385,7 @@ class Runtime(BaseArtifact):
         # TODO use version match
         return bool(_ret_code == 0)
 
-    def activate(self, uri: str, path: str) -> Any:
+    def activate(self, uri: str, path: str) -> t.Any:
         """
         activate
         :param uri: Runtime uri which has already been restored
@@ -347,7 +401,7 @@ class Runtime(BaseArtifact):
         _ret_code, _res = invoke(_args)
         return bool(_ret_code == 0)
 
-    def extract(self, uri: str, force: bool = False, target_dir: str = "") -> Any:
+    def extract(self, uri: str, force: bool = False, target_dir: str = "") -> t.Any:
         """
         extract
         :param uri:
@@ -363,17 +417,17 @@ class Runtime(BaseArtifact):
         return invoke(_args)
 
     # TODO impl valid result logic
-    def lock(self) -> Any:
+    def lock(self) -> t.Any:
         return invoke([CLI, self.name, "lock"])
 
-    def restore(self) -> Any:
+    def restore(self) -> t.Any:
         return invoke([CLI, self.name, "restore"])
 
-    def quick_start_shell(self) -> Any:
+    def quick_start_shell(self) -> t.Any:
         return invoke([CLI, self.name, "quick-start", "shell"])
 
-    def quick_start_uri(self) -> Any:
+    def quick_start_uri(self) -> t.Any:
         return invoke([CLI, self.name, "quick-start", "uri"])
 
-    def dockerize(self) -> Any:
+    def dockerize(self) -> t.Any:
         return invoke([CLI, self.name, "dockerize"])
