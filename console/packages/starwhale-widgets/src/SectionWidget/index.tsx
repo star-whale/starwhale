@@ -216,7 +216,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
 const EmptyPlaceholder = () => {
     return (
         <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
-            <IconFont type='emptyChart' size={100} />
+            <IconFont type='emptyChart' size={64} />
             <span>Click "Add Panel" to add visualizations</span>
         </BusyPlaceholder>
     )

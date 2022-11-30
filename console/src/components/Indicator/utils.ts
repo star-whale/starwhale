@@ -38,8 +38,6 @@ const Ticks = {
 const Layout = {
     init: {
         autosize: true,
-        // width: 1000,
-        // height: 1000,
         annotations: [] as any[],
         xaxis: {
             ...Ticks.full,
@@ -176,8 +174,8 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 y: yValues,
                 z: zValues,
                 colorscale: [
-                    [0, '#3D9970'],
-                    [1, '#001f3f'],
+                    [0, '#2B65D9'],
+                    [1, '#FFB700'],
                 ],
                 // showscale: false,
                 type: 'heatmap',

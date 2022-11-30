@@ -17,6 +17,7 @@ function PlotlyVisualizer({ data, isLoading }: IPlotlyVisualizerProps) {
                 ) : (
                     <div className='PlotlyVisualizer__chart'>
                         <Plot
+                            style={{ width: '100%', height: '100%' }}
                             data={data?.data}
                             layout={data?.layout}
                             frames={data?.frames}
