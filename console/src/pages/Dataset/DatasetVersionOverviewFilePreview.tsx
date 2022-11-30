@@ -48,7 +48,8 @@ const useStyles = createUseStyles({
         left: 0,
         right: 0,
         bottom: 0,
-        top: headerHeight,
+        top: 0,
+        zIndex: 20,
     },
     exitFullscreen: {
         height: '56px',
