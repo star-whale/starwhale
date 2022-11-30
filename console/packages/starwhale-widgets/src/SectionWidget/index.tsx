@@ -9,7 +9,7 @@ import SectionForm from './component/SectionForm'
 import { PanelAddEvent, PanelEditEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
-import { DragEndEvent, DragStartEvent } from '../../../starwhale-core/src/events/common'
+import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
 import { Subscription } from 'rxjs'
 
 export const CONFIG: WidgetConfig = {

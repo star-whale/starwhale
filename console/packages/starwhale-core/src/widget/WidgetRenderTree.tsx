@@ -1,10 +1,8 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
 import { updatePanelSetting } from '@/domain/panel/services/panel'
-import { useParams } from 'react-router'
 import { toaster } from 'baseui/toast'
-import { useJob } from '@/domain/job/hooks/useJob'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
@@ -12,29 +10,32 @@ import WidgetFormModel from '../form/WidgetFormModel'
 import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
 import { WidgetProps } from '../types'
 import { PanelAddEvent } from '../events'
-import { BusEvent, BusEventType } from '../events/types'
+import { BusEventType } from '../events/types'
 import { PanelEditEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
-import widget from '../../../starwhale-widgets/src/SectionWidget/index'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
 import _ from 'lodash'
 import produce from 'immer'
 import WidgetFormModal from '../form/WidgetFormModal'
+import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
-    const { childWidgets, path } = props
+    const { childWidgets, path = [] } = props
     return (
         <WidgetRenderer {...props}>
             {childWidgets &&
                 childWidgets.length > 0 &&
-                childWidgets.map(({ children: childChildren, ...childRest }, i) => (
-                    <WrapedWidgetNode
-                        // @ts-ignore
-                        key={[...path, 'children', i]}
-                        path={[...path, 'children', i]}
-                        childWidgets={childChildren}
-                        {...childRest}
-                    />
-                ))}
+                childWidgets.map((node, i) => {
+                    const { children: childChildren, id, ...childRest } = node ?? {}
+                    return (
+                        <WrapedWidgetNode
+                            key={id ?? i}
+                            id={id}
+                            path={[...path, 'children', i]}
+                            childWidgets={childChildren}
+                            {...childRest}
+                        />
+                    )
+                })}
         </WidgetRenderer>
     )
 })
@@ -84,7 +85,7 @@ export function WidgetRenderTree() {
     // use  api store
     // @FIXME refactor load/save, now only global inject what about table row inject ?
     const setting = useFetchPanelSetting(projectId, key)
-    useEffect(() => {
+    useDeepEffect(() => {
         // @FIXME make sure dynamicVars to be exists!
         if (setting.data && dynamicVars?.prefix) {
             try {
@@ -97,7 +98,7 @@ export function WidgetRenderTree() {
                 console.log(e)
             }
         }
-    }, [setting, dynamicVars?.prefix])
+    }, [setting.data, dynamicVars?.prefix])
 
     // subscription
     useEffect(() => {
@@ -161,7 +162,7 @@ export function WidgetRenderTree() {
 
     const form = new WidgetFormModel().initPanelSchema()
 
-    // console.log('editWidget', editWidget)
+    console.log('tree', tree)
     return (
         <div>
             {Nodes}
