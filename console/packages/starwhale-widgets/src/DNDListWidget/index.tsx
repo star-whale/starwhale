@@ -124,8 +124,6 @@ function DNDListWidget(props: WidgetRendererProps) {
         onLayoutOrderChange?.(state)
     }
 
-    console.log(dragContentRect)
-
     return (
         <div
             ref={ref}
@@ -144,7 +142,6 @@ function DNDListWidget(props: WidgetRendererProps) {
                 setList={setState}
                 animation={50}
                 onChoose={(props) => {
-                    console.log(props)
                     dragSelect(props.oldIndex as number)
                 }}
                 onUnchoose={dragUnselect}
@@ -156,7 +153,6 @@ function DNDListWidget(props: WidgetRendererProps) {
                         <div
                             key={item.id}
                             className={`${styles.wrapper} item`}
-                            // style={{ height: isChoosing ? '50px' : 'auto', overflow: 'hidden' }}
                             style={{
                                 boxShadow: item.chosen ? '0 2px 8px 0 rgba(0,0,0,0.20)' : undefined,
                                 zIndex: item.chosen ? 10 : 0,

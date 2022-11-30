@@ -2,6 +2,8 @@ import React from 'react'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
+// @FIXME move to ui
+import { ConfirmButton } from '@/components/Modal/confirm'
 
 const COLUMN_OPTIONS = [
     { label: 'Rename', type: 'rename' },
@@ -20,6 +22,7 @@ export default function SectionPopover({ onOptionSelect }) {
                 <StatefulMenu
                     items={COLUMN_OPTIONS}
                     onItemSelect={({ item }) => {
+                        if (item.type === 'delete') return close()
                         onOptionSelect(item)
                         close()
                     }}
@@ -32,15 +35,52 @@ export default function SectionPopover({ onOptionSelect }) {
                                         rename: <IconFont type='edit' />,
                                         addAbove: <IconFont type='a-Addabove' />,
                                         addBelow: <IconFont type='a-Addbelow' />,
-                                        delete: <IconFont type='delete' />,
+                                        delete: <IconFont type='delete' style={{ color: '#CC3D3D' }} />,
                                     }
-
-                                    return (
-                                        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '13px' }}>
+                                    const menu = (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'flex-start',
+                                                gap: '13px',
+                                                color: item.type === 'delete' ? '#CC3D3D' : undefined,
+                                                alignItems: 'center',
+                                            }}
+                                        >
                                             {icon?.[item.type as keyof typeof icon]}
                                             {item.label}
                                         </div>
                                     )
+
+                                    if (item.type === 'delete') {
+                                        return (
+                                            <ConfirmButton
+                                                as='link'
+                                                title={'Are you sure to delete this panel?'}
+                                                onClick={async (e) => {
+                                                    e.preventDefault
+                                                    onOptionSelect(item)
+                                                    close()
+                                                }}
+                                                overrides={{
+                                                    BaseButton: {
+                                                        style: {
+                                                            width: 'calc(100% + 32px)',
+                                                            textAlign: 'left',
+                                                            justifyContent: 'flex-start',
+                                                            margin: '-8px -16px',
+                                                            padding: '8px 16px',
+                                                            height: '36px',
+                                                        },
+                                                    },
+                                                }}
+                                            >
+                                                {menu}
+                                            </ConfirmButton>
+                                        )
+                                    }
+
+                                    return menu
                                 },
                             },
                         },
