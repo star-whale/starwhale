@@ -5,6 +5,7 @@ import './fonts/iconfont.css'
 import projectSvg from './project.svg'
 import settingSvg from './setting.svg'
 import emptySvg from './empty.svg'
+import emptyChart from './empty-chart.svg'
 import searchEmptySvg from './search-empty.svg'
 import googleSvg from './google.svg'
 
@@ -83,6 +84,7 @@ const hijacked = {
     setting2: settingSvg,
     google: googleSvg,
     empty: emptySvg,
+    emptyChart: emptyChart,
     searchEmpty: searchEmptySvg,
 }
 

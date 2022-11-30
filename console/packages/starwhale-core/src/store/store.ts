@@ -3,7 +3,6 @@
 import create from 'zustand'
 import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import produce from 'immer'
-import { arrayMove, arrayRemove } from 'react-movable'
 import _ from 'lodash'
 import WidgetFactory, { WidgetType } from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
@@ -42,15 +41,15 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                     ...(initState as any),
                     key: name,
                     time: 0,
-                    onLayoutOrderChange: (paths: any, oldIndex: number, newIndex: number) =>
+                    onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
                         set(
                             produce((state) => {
                                 const nodes = _.get(get(), paths)
                                 console.log(get(), nodes, paths)
-                                const ordered =
-                                    newIndex === -1
-                                        ? arrayRemove(nodes, oldIndex)
-                                        : arrayMove(nodes, oldIndex, newIndex)
+
+                                const ordered = newOrderList
+                                    .map((item) => nodes.find((v: any) => v?.id === item.id))
+                                    .filter((v: any) => !!v)
                                 _.set(state, paths, ordered)
                             })
                         ),

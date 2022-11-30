@@ -76,7 +76,7 @@ export interface WidgetRendererProps<O extends object = any, F extends object = 
     fieldConfig: Partial<F>
     onOptionChange?: (options: Partial<O>) => void
     onFieldChange?: (options: Partial<F>) => void
-    onLayoutOrderChange?: (oldIndex: number, newIndex: number) => void
+    onLayoutOrderChange?: (list: any[]) => void
     onLayoutChildrenChange?: (widgets: any, payload: Record<string, any>) => void
     onLayoutCurrentChange?: (widgets: any, payload: Record<string, any>) => void
     eventBus: EventBus

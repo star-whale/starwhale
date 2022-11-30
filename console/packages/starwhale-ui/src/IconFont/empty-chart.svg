@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="chart" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#C7DCFF;}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#DEEAFF;}
+	.st2{opacity:0.8;fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer19_1_);enable-background:new    ;}
+	.st3{fill:#A0C3FF;}
+	.st4{fill:#7FA0D8;}
+	.st5{fill:#9EBFF7;}
+	.st6{fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;}
+	.st7{fill:#7296D4;}
+	.st8{opacity:0.8;fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;enable-background:new    ;}
+	.st9{fill-rule:evenodd;clip-rule:evenodd;fill:#E1EBFF;}
+	.st10{fill:#95B4E9;}
+	.st11{fill-rule:evenodd;clip-rule:evenodd;fill:#B2C9EF;}
+	.st12{fill-rule:evenodd;clip-rule:evenodd;fill:#E6EEFF;}
+	.st13{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer3_1_);}
+	.st14{fill:none;stroke:#E6EEFF;stroke-width:0.5;stroke-linecap:round;}
+</style>
+<polygon id="layer21" class="st0" points="7,53 31,47 55,53 31,59 "/>
+<polygon id="layer20" class="st1" points="21,51.5 31,49 41,51.5 31,54 "/>
+<linearGradient id="layer19_1_" gradientUnits="userSpaceOnUse" x1="-895.6" y1="509.625" x2="-895.6" y2="508.625" gradientTransform="matrix(30 0 0 -8 26899 4118)">
+	<stop  offset="0" style="stop-color:#CCDDFF"/>
+	<stop  offset="1" style="stop-color:#CCDDFF;stop-opacity:0"/>
+</linearGradient>
+<polygon id="layer19" class="st2" points="16,45 31,41 46,45 31,49 "/>
+<polygon id="layer18" class="st3" points="21,51.5 21,53.5 31,56 31,54 "/>
+<polygon id="layer17" class="st4" points="41,51.5 41,53.5 31,56 31,54 "/>
+<polygon id="layer16" class="st5" points="7,58 7,53 31,59 31,64 "/>
+<polygon id="layer15" class="st6" points="7,56 7,55 31,61 31,62 "/>
+<polygon id="layer14" class="st7" points="55,58 55,53 31,59 31,64 "/>
+<polygon id="layer13" class="st6" points="55,56 55,55 31,61 31,62 "/>
+<polygon id="layer12" class="st8" points="12,34 24,37 24,35 12,32 "/>
+<path id="layer11" class="st9" d="M8,0h48c1.1,0,2,0.9,2,2v36c0,1.1-0.9,2-2,2H8c-1.1,0-2-0.9-2-2V2C6,0.9,6.9,0,8,0z"/>
+<path id="layer10" class="st10" d="M9,2h46c0.6,0,1,0.4,1,1v34c0,0.6-0.4,1-1,1H9c-0.6,0-1-0.4-1-1V3C8,2.4,8.4,2,9,2z"/>
+<path id="layer9" class="st11" d="M31,6h20c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1H31c-0.6,0-1-0.4-1-1l0,0C30,6.4,30.4,6,31,6z"/>
+<path id="layer8" class="st11" d="M31,11h20c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1H31c-0.6,0-1-0.4-1-1l0,0C30,11.4,30.4,11,31,11z"
+	/>
+<path id="layer7" class="st11" d="M31,16h20c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1H31c-0.6,0-1-0.4-1-1l0,0C30,16.4,30.4,16,31,16z"
+	/>
+<path id="layer6" class="st12" d="M31,6h15c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1H31c-0.6,0-1-0.4-1-1l0,0C30,6.4,30.4,6,31,6z"/>
+<path id="layer5_1_" class="st12" d="M31,11h10c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1H31c-0.6,0-1-0.4-1-1l0,0C30,11.4,30.4,11,31,11
+	z"/>
+<path id="layer4" class="st12" d="M31,16h6c0.6,0,1,0.4,1,1l0,0c0,0.6-0.4,1-1,1h-6c-0.6,0-1-0.4-1-1l0,0C30,16.4,30.4,16,31,16z"/>
+<linearGradient id="layer3_1_" gradientUnits="userSpaceOnUse" x1="-903.325" y1="536.7857" x2="-903.325" y2="535.7857" gradientTransform="matrix(40 0 0 -14 36165 7536)">
+	<stop  offset="0" style="stop-color:#DFE8FB"/>
+	<stop  offset="1" style="stop-color:#DFE8FB;stop-opacity:0"/>
+</linearGradient>
+<polygon id="layer3" class="st13" points="12,30 19,25 26,29 33,24 40,27 46,21 52,25 52,35 12,35 "/>
+<polyline id="layer2" class="st14" points="12,30 19,25 26,29 33,24 40,27 46,21 52,25 "/>
+<path id="layer1" class="st12" d="M18.7,6l0.1,2c-2.7,0.1-4.8,2.3-4.8,5c0,2.8,2.2,5,5,5c0.8,0,1.5-0.2,2.2-0.5l0.3-0.1l1,1.7
+	c-1,0.6-2.2,0.9-3.4,0.9c-3.9,0-7-3.1-7-7C12,9.2,15,6.1,18.7,6z M19.2,6C23,6.1,26,9.2,26,13c0,2.3-1.1,4.4-3,5.7l-0.2,0.2
+	l-1.1-1.7c1.4-0.9,2.3-2.5,2.3-4.2c0-2.6-2-4.8-4.6-5l-0.2,0L19.2,6z"/>
+</svg>
