@@ -76,6 +76,7 @@ function DNDListWidget(props: WidgetRendererProps) {
     useEffect(() => {
         setState(
             React.Children.map(children, (child, i) => ({
+                // @ts-ignore
                 id: child?.props?.id ?? i,
                 child,
             })) ?? []
