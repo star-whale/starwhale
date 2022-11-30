@@ -9,12 +9,13 @@ from starwhale import URI, URIType, get_data_loader, get_dataset_consumption
 
 def draw_bbox(img, bbox_view_):
     bbox1 = ImageDraw.Draw(img)
+    x, y, w, h = bbox_view_
     bbox1.rectangle(
         [
-            (bbox_view_.x, bbox_view_.y),
+            (x, y),
             (
-                bbox_view_.x + bbox_view_.width,
-                bbox_view_.y + bbox_view_.height,
+                x + w,
+                y + h,
             ),
         ],
         fill=None,
@@ -28,8 +29,8 @@ def raw():
         with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
             io.BytesIO(annotations["mask"].to_bytes(uri))
         ).convert("RGBA") as msk:
-            # for seg in annotations["segments_info"]:
-            #     draw_bbox(img, seg.bbox_view)
+            for seg in annotations["segments_info"]:
+                draw_bbox(img, seg["bbox"])
 
             msk.putalpha(127)
             img.paste(msk, (0, 0), mask=msk)
@@ -42,8 +43,8 @@ def link():
         with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
             io.BytesIO(annotations["mask"].to_bytes(uri))
         ).convert("RGBA") as msk:
-            # for seg in annotations["segments_info"]:
-            #     draw_bbox(img, seg.bbox_view)
+            for seg in annotations["segments_info"]:
+                draw_bbox(img, seg["bbox"])
 
             msk.putalpha(127)
             img.paste(msk, (0, 0), mask=msk)
@@ -65,8 +66,8 @@ def link_remote():
         with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
             io.BytesIO(annotations["mask"].to_bytes(uri))
         ).convert("RGBA") as msk:
-            # for seg in annotations["segments_info"]:
-            #     draw_bbox(img, seg.bbox_view)
+            for seg in annotations["segments_info"]:
+                draw_bbox(img, seg["bbox"])
 
             msk.putalpha(127)
             img.paste(msk, (0, 0), mask=msk)
@@ -74,4 +75,4 @@ def link_remote():
 
 
 if __name__ == "__main__":
-    link_remote()
+    link()

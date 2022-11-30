@@ -19,6 +19,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.api._impl import data_store
 from starwhale.base.type import (
     URIType,
     BundleType,
@@ -30,6 +31,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.core.dataset.type import (
     Link,
+    JsonDict,
     MIMEType,
     ArtifactType,
     DatasetConfig,
@@ -395,3 +397,59 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(dataset_uri).head(2, show_raw_data=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
+
+
+class TestJsonDict(TestCase):
+    JSON_DICT = {"a": 1, "b": [1, 2, 3], "c": {"ca": "1"}, "d": Link("http://ad.c/d")}
+
+    def test_init(self) -> None:
+        _jd = JsonDict(self.JSON_DICT)
+        self._do_assert(_jd)
+
+    def _do_assert(self, _jd):
+        self.assertEqual(1, _jd.a)
+        self.assertEqual([1, 2, 3], _jd.b)
+        self.assertEqual(JsonDict, type(_jd.c))
+        self.assertEqual("1", _jd.c.ca)
+        self.assertEqual(Link, type(_jd.d))
+        self.assertEqual("http://ad.c/d", _jd.d.uri)
+        self.assertEqual(
+            data_store.SwObjectType(
+                JsonDict,
+                {
+                    "a": data_store.INT64,
+                    "b": data_store.SwListType(data_store.INT64),
+                    "c": data_store.SwObjectType(JsonDict, {"ca": data_store.STRING}),
+                    "d": data_store.SwObjectType(
+                        data_store.Link,
+                        {
+                            "_type": data_store.STRING,
+                            "uri": data_store.STRING,
+                            "offset": data_store.INT64,
+                            "size": data_store.INT64,
+                            "auth": data_store.UNKNOWN,
+                            "data_type": data_store.UNKNOWN,
+                            "with_local_fs_data": data_store.BOOL,
+                            "_local_fs_uri": data_store.STRING,
+                            "_signed_uri": data_store.STRING,
+                        },
+                    ),
+                },
+            ),
+            data_store._get_type(_jd),
+        )
+
+    def test_cls_method(self):
+        self.assertEqual(1, JsonDict.from_data(1))
+        self.assertEqual("a", JsonDict.from_data("a"))
+        self.assertEqual([1, 2, 3], JsonDict.from_data([1, 2, 3]))
+        _d = JsonDict.from_data({"ca": "1"})
+        self.assertEqual("1", _d.ca)
+        _l = Link("http://ad.c/d")
+        self.assertEqual(_l, JsonDict.from_data(_l))
+        sw_j_o = JsonDict.from_data(self.JSON_DICT)
+        self._do_assert(sw_j_o)
+
+    def test_asdict(self):
+        sw_j_o = JsonDict.from_data(self.JSON_DICT)
+        self.assertEqual(self.JSON_DICT, sw_j_o.asdict())

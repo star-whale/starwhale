@@ -5,6 +5,7 @@ from ._impl.dataset import (
     Image,
     Video,
     Binary,
+    JsonDict,
     LinkAuth,
     LinkType,
     MIMEType,
@@ -29,6 +30,7 @@ from ._impl.dataset import (
 __all__ = [
     "get_data_loader",
     "Link",
+    "JsonDict",
     "LinkAuth",
     "DefaultS3LinkAuth",
     "LocalFSLinkAuth",

@@ -24,7 +24,7 @@ from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
-from starwhale.api._impl.data_store import SwObject
+from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -702,3 +702,53 @@ class DatasetConfig(ASDictMixin):
         c = load_yaml(fpath)
 
         return cls(**c)
+
+
+class JsonDict(SwObject):
+    """
+    JsonDict takes json like dict(https://www.json.org/json-en.html) as init parameter
+    Besides the standard value types, SwObject is an extra value type that is allowed to be passed in
+    """
+
+    def __init__(self, d: dict = {}) -> None:
+        for _k, _v in d.items():
+            if type(_k) != str:
+                raise ValueError("json like dict shouldn't have none-str keys")
+            self.__dict__[_k] = JsonDict.from_data(_v)
+
+    @classmethod
+    def from_data(cls, d: t.Any) -> t.Any:
+        """
+        returns JsonDict or primitive values
+        SwObject is an extra primitive value
+        """
+        if isinstance(d, dict):
+            return cls(d)
+        for _t, _ in _TYPE_DICT.items():
+            if isinstance(d, _t):
+                return d
+        if isinstance(d, SwObject):
+            return d
+        if type(d) == list:
+            return [cls.from_data(_d) for _d in d]
+
+        raise ValueError(
+            "json like dict shouldn't have values who's type is not in [SwObject, list, dict, str, int, bool, None]"
+        )
+
+    def asdict(self) -> t.Dict:
+        ret: t.Dict[str, t.Any] = {}
+        for k, v in self.__dict__.items():
+            ret[k] = JsonDict.to_data(v)
+        return ret
+
+    @classmethod
+    def to_data(cls, d: t.Any) -> t.Any:
+        """
+        unwrapp JsonDict to dict
+        """
+        if isinstance(d, JsonDict):
+            return d.asdict()
+        if isinstance(d, list):
+            return [JsonDict.to_data(_d) for _d in d]
+        return d
