@@ -135,7 +135,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
                 }}
             >
-                {len === 0 && <BusyPlaceholder type='empty' style={{ minHeight: '240px' }} />}
+                {len === 0 && <EmptyPlaceholder />}
                 <GridLayout
                     rowHeight={300}
                     className='layout'
@@ -210,6 +210,15 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </ModalBody>
             </Modal>
         </div>
+    )
+}
+
+const EmptyPlaceholder = () => {
+    return (
+        <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
+            <IconFont type='emptyChart' size={100} />
+            <span>Click "Add Panel" to add visualizations</span>
+        </BusyPlaceholder>
     )
 }
 
