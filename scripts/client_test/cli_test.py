@@ -77,12 +77,12 @@ RUNTIMES: t.Dict[str, t.Dict[str, str]] = {
 
 
 class TestCli:
-    instance = Instance()
-    project = Project()
-    model = Model()
-    dataset = Dataset()
-    runtime = Runtime()
-    evaluation = Evaluation()
+    instance_api = Instance()
+    project_api = Project()
+    model_api = Model()
+    dataset_api = Dataset()
+    runtime_api = Runtime()
+    evaluation_api = Evaluation()
 
     def __init__(
         self,
@@ -100,13 +100,13 @@ class TestCli:
         self.models: t.Dict[str, URI] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
-            assert self.instance.login(url=self.server_url)
+            assert self.instance_api.login(url=self.server_url)
 
     def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
         self.select_local_instance()
         _uri = Dataset.build_with_api(workdir=_workdir, handler=handler)
         if self.server_url:
-            assert self.dataset.copy(
+            assert self.dataset_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
@@ -114,8 +114,8 @@ class TestCli:
         dss_ = self.datasets.get(_uri.object.name, [])
         dss_.append(_uri)
         self.datasets.update({_uri.object.name: dss_})
-        assert len(self.dataset.list())
-        assert self.dataset.info(_uri.full_uri)
+        assert len(self.dataset_api.list())
+        assert self.dataset_api.info(_uri.full_uri)
         return _uri
 
     def build_model(
@@ -125,14 +125,14 @@ class TestCli:
         self.select_local_instance()
         _uri = Model.build_with_api(workdir=_workdir)
         if self.server_url:
-            assert self.model.copy(
+            assert self.model_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
         self.models.update({_uri.object.name: _uri})
-        assert len(self.model.list())
-        assert self.model.info(_uri.full_uri)
+        assert len(self.model_api.list())
+        assert self.model_api.info(_uri.full_uri)
         return _uri
 
     def build_runtime(
@@ -142,19 +142,19 @@ class TestCli:
         self.select_local_instance()
         _uri = Runtime.build_with_api(workdir=_workdir)
         if self.server_url:
-            assert self.runtime.copy(
+            assert self.runtime_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
         self.runtimes.update({_uri.object.name: _uri})
-        assert len(self.runtime.list())
-        assert self.runtime.info(_uri.full_uri)
+        assert len(self.runtime_api.list())
+        assert self.runtime_api.info(_uri.full_uri)
         return _uri
 
     def select_local_instance(self) -> None:
-        self.instance.select("local")
-        assert self.project.select("self")
+        self.instance_api.select("local")
+        assert self.project_api.select("self")
 
     def eval(
         self,
@@ -174,14 +174,14 @@ class TestCli:
     def local_evl(self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI) -> t.Any:
         logger.info("running evaluation at local...")
         self.select_local_instance()
-        _job_id = self.evaluation.run(
+        _job_id = self.evaluation_api.run(
             model=_model_uri.full_uri,
             datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
             runtime=_rt_uri.full_uri,
         )
         assert _job_id
-        assert len(self.evaluation.list())
-        eval_info = self.evaluation.info(_job_id)
+        assert len(self.evaluation_api.list())
+        eval_info = self.evaluation_api.info(_job_id)
         assert eval_info
         assert eval_info["manifest"]["status"] in STATUS_SUCCESS
         logger.info("finish run evaluation at standalone.")
@@ -190,11 +190,11 @@ class TestCli:
     def remote_eval(
         self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
     ) -> Future:
-        self.instance.select(instance="server")
-        self.project.select(project=self.server_project)
+        self.instance_api.select(instance="server")
+        self.project_api.select(project=self.server_project)
         # 8.start an evaluation
         logger.info("running evaluation at server...")
-        _remote_jid = self.evaluation.run(
+        _remote_jid = self.evaluation_api.run(
             model=_model_uri.object.version,
             datasets=[_ds_uri.object.version for _ds_uri in _ds_uris],
             runtime=_rt_uri.object.version,
@@ -209,7 +209,7 @@ class TestCli:
 
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
-            _remote_job = self.evaluation.info(
+            _remote_job = self.evaluation_api.info(
                 f"{self.server_url}/project/{self.server_project}/evaluation/{job_id}"
             )
             _job_status = (
