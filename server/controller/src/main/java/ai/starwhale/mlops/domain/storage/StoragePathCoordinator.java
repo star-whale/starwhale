@@ -88,6 +88,11 @@ public class StoragePathCoordinator {
         return allocateBundlePath(projectName, BUNDLE_MODEL, modelName, modelVersion);
     }
 
+    public String allocateCommonModelPoolPath(String projectName, String signature) {
+        return String.format(STORAGE_PATH_FORMATTER_MODEL_POOL,
+                prefix, projectName, BUNDLE_MODEL, signature);
+    }
+
     public String allocateRuntimePath(String projectName, String runtimeName,
             String runtimeVersion) {
         checkKeyWord(runtimeVersion, ValidSubject.RUNTIME);
@@ -101,6 +106,7 @@ public class StoragePathCoordinator {
      * {prefix}/project/{projectName}/{bundleType}/{bundleName}/version/{bundleVersion}
      */
     static final String STORAGE_PATH_FORMATTER_BUNDLE = "%s/project/%s/%s/%s/version/%s";
+    static final String STORAGE_PATH_FORMATTER_MODEL_POOL = "%s/project/%s/%s/%s";
 
     public String allocateBundlePath(String projectName, String bundleName,
             String bundleVersion, String bundleType) {

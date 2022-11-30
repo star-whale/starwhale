@@ -26,7 +26,7 @@ swcli [OPTIONS] COMMAND [ARGS]...
 |-------|-----------|
 |dataset|Dataset management, build/info/list/copy/tag/render-fuse...|
 |runtime|Runtime management, create/build/copy/activate/restore...|
-|model|Model management, build/copy/ppl/cmp/eval/extract...|
+|model|Model management, build/copy/ppl/cmp/eval...|
 |project|Project management, for standalone and cloud instances|
 |instance|Instance management, login and select standalone or cloud instance|
 |job|Job management, create/list/info/compare evaluation job|

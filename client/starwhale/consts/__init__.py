@@ -1,4 +1,6 @@
 import pathlib
+from enum import Enum, unique
+from dataclasses import dataclass
 
 # TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
@@ -116,8 +118,27 @@ class SWDSSubFileType:
     META = "swds_meta"
 
 
+@unique
+class FileType(Enum):
+    MANIFEST = "MANIFEST"
+    SRC = "SRC"
+    SRC_TAR = "SRC_TAR"
+    MODEL = "MODEL"
+    DATA = "DATA"
+
+
+@dataclass
+class FileDesc:
+    path: pathlib.Path
+    name: str
+    size: int
+    file_type: FileType
+    signature: str = ""
+
+
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
 ARCHIVED_SWDS_META_FNAME = "archive.%s" % SWDSSubFileType.META
+SWMP_SRC_FNAME = "src.tar"
 
 CURRENT_FNAME = "current"
 

@@ -31,12 +31,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 
-import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
+import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.upload.UploadPhase;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.model.ModelService;
@@ -191,13 +193,39 @@ public class ModelControllerTest {
 
     @Test
     public void testUpload() {
-        var resp = controller.upload("p1", "m1", "v1", null, new ClientModelRequest());
+        var request = new ModelUploadRequest();
+        request.setPhase(UploadPhase.MANIFEST);
+        var resp = controller.upload(
+                FileType.MANIFEST, "", 1L, "p1", "m1", "v1", null, request);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+
+        request.setPhase(UploadPhase.BLOB);
+        resp = controller.upload(
+                FileType.SRC_TAR, "", 1L, "p1", "m1", "v1", null, request);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+
+        resp = controller.upload(
+                FileType.MODEL, "qwerty", 1L, "p1", "m1", "v1", null, request);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+
+        request.setPhase(UploadPhase.CANCEL);
+        assertThrows(StarwhaleApiException.class, () -> controller.upload(
+                null, "", 1L, "p1", "m1", "v1", null, request));
+
+        request.setPhase(UploadPhase.END);
+        controller.upload(
+                null, "", 1L, "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 
     @Test
     public void testPull() {
-        controller.pull("p1", "m1", "v1", null);
+        controller.pull(
+                FileType.MANIFEST, "qwer", "", "p1", "m1", "v1", null);
+        controller.pull(
+                FileType.SRC_TAR, "qwer", "", "p1", "m1", "v1", null);
+        controller.pull(
+                FileType.MODEL, "qwer", "qwer", "p1", "m1", "v1", null);
     }
 
     @Test

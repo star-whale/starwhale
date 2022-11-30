@@ -40,8 +40,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadPhase;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
+import ai.starwhale.mlops.api.protocol.upload.UploadPhase;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
@@ -184,15 +184,15 @@ public class DatasetControllerTest {
     public void testUploadDs() {
         MultipartFile file = new MockMultipartFile("dsFile", "originalName", null,
                 "file_content".getBytes());
-        given(datasetUploader.create(anyString(), anyString(), any(UploadRequest.class)))
+        given(datasetUploader.create(anyString(), anyString(), any(DatasetUploadRequest.class)))
                 .willAnswer((Answer<String>) invocation -> {
                     String yamlContent = invocation.getArgument(0);
                     String fileName = invocation.getArgument(1);
-                    UploadRequest request = invocation.getArgument(2);
+                    DatasetUploadRequest request = invocation.getArgument(2);
                     return String.format("%s-%s-%s-%s",
                             yamlContent, fileName, request.getProject(), request.getSwds());
                 });
-        UploadRequest uploadRequest = new UploadRequest();
+        DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
         uploadRequest.setPhase(UploadPhase.MANIFEST);
         var resp = controller.uploadDs("upload1", "", "p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
@@ -212,7 +212,7 @@ public class DatasetUploader {
     }
 
     @Transactional
-    public String create(String yamlContent, String fileName, UploadRequest uploadRequest) {
+    public String create(String yamlContent, String fileName, DatasetUploadRequest uploadRequest) {
         Manifest manifest;
         try {
             manifest = yamlMapper.readValue(yamlContent, Manifest.class);

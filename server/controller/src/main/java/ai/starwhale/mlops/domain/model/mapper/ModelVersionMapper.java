@@ -34,7 +34,7 @@ import org.apache.ibatis.jdbc.SQL;
 public interface ModelVersionMapper {
 
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, manifest, created_time, modified_time, eval_jobs";
+            + " storage_path, manifest, created_time, modified_time, eval_jobs, status";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
@@ -68,6 +68,9 @@ public interface ModelVersionMapper {
             + " #{storagePath}, #{manifest}, #{evalJobs})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
+
+    @Update("update model_version set status = #{status} where id = #{id}")
+    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
 
     @UpdateProvider(value = ModelVersionProvider.class, method = "updateSql")
     int update(ModelVersionEntity version);
@@ -126,7 +129,16 @@ public interface ModelVersionMapper {
                     if (StrUtil.isNotEmpty(version.getVersionTag())) {
                         SET("version_tag = #{versionTag}");
                     }
-                    WHERE("where id = #{id}");
+                    if (StrUtil.isNotEmpty(version.getEvalJobs())) {
+                        SET("eval_jobs=#{evalJobs}");
+                    }
+                    if (StrUtil.isNotEmpty(version.getManifest())) {
+                        SET("manifest=#{manifest}");
+                    }
+                    if (Objects.nonNull(version.getStatus())) {
+                        SET("status=#{status}");
+                    }
+                    WHERE("id = #{id}");
                 }
             }.toString();
         }

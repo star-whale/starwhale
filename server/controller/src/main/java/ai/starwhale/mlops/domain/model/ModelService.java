@@ -17,8 +17,9 @@
 package ai.starwhale.mlops.domain.model;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVo;
-import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadResult;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -36,6 +37,7 @@ import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.bo.MetaInfo;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -63,12 +65,15 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -90,6 +95,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class ModelService {
 
+    static final String MODEL_MANIFEST = "_manifest.yaml";
+
     private final ModelMapper modelMapper;
     private final ModelVersionMapper modelVersionMapper;
     private final IdConverter idConvertor;
@@ -105,6 +112,8 @@ public class ModelService {
     private final HotJobHolder jobHolder;
 
     private final TrashService trashService;
+
+    private final YAMLMapper yamlMapper;
     @Setter
     private BundleManager bundleManager;
 
@@ -112,7 +121,8 @@ public class ModelService {
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, ModelVoConverter modelVoConverter,
             ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
             ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
-            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder, TrashService trashService) {
+            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder,
+                        TrashService trashService, YAMLMapper yamlMapper) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -134,6 +144,7 @@ public class ModelService {
                 modelDao,
                 modelDao
         );
+        this.yamlMapper = yamlMapper;
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
@@ -328,11 +339,11 @@ public class ModelService {
      * prefix + / + fileName
      */
     static final String FORMATTER_STORAGE_PATH = "%s/%s";
+    static final String FORMATTER_STORAGE_SRC_FILE_PATH = "%s/src/%s";
+    static final String FORMATTER_STORAGE_SRC_PATH = "%s/src";
 
     @Transactional
-    public void upload(MultipartFile dsFile,
-            ClientModelRequest uploadRequest) {
-
+    public ModelUploadResult uploadManifest(MultipartFile multipartFile, ModelUploadRequest uploadRequest) {
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
         Long projectId = null;
@@ -349,10 +360,10 @@ public class ModelService {
                 projectId = projectEntity.getId();
             }
             entity = ModelEntity.builder().isDeleted(0)
-                    .ownerId(getOwner())
-                    .projectId(projectId)
-                    .modelName(uploadRequest.name())
-                    .build();
+                .ownerId(getOwner())
+                .projectId(projectId)
+                .modelName(uploadRequest.name())
+                .build();
             modelMapper.insert(entity);
         }
         log.debug("model checked time use {}", System.currentTimeMillis() - startTime);
@@ -371,56 +382,139 @@ public class ModelService {
                         if (model.getName().equals(uploadRequest.name())
                                 && model.getVersion().equals(uploadRequest.version())) {
                             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                                    "job's are running on model version " + uploadRequest.version()
-                                            + " you can't force push now"),
-                                    HttpStatus.BAD_REQUEST);
+                                "job's are running on model version " + uploadRequest.version()
+                                    + " you can't force push now"),
+                                HttpStatus.BAD_REQUEST);
                         }
                     });
         }
         log.debug("model version checked time use {}", System.currentTimeMillis() - startTime);
-        //upload to storage
-        final String modelPath = entityExists ? modelVersionEntity.getStoragePath()
+        // upload to storage
+        final String modelPackagePath = entityExists ? modelVersionEntity.getStoragePath()
                 : storagePathCoordinator.allocateModelPath(projectEntity.getProjectName(), uploadRequest.name(),
-                        uploadRequest.version());
+                uploadRequest.version());
+        String manifestContent = "";
+        Set<String> existed = new HashSet<>();
+        try (final InputStream inputStream = multipartFile.getInputStream()) {
+            manifestContent = new String(TarFileUtil.getContent(multipartFile.getInputStream()));
+
+            // parse model file's signature, valid if existed
+            var metaInfo = yamlMapper.readValue(manifestContent, MetaInfo.class);
+
+            for (MetaInfo.FileDesc file : metaInfo.getResources()) {
+                if (!file.isDuplicateCheck()) {
+                    continue;
+                }
+                String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
+                        uploadRequest.getProject(), file.getSignature());
+                var model = storageAccessService.list(modelPath).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(model)) {
+                    existed.add(file.getSignature());
+                }
+            }
+            // upload manifest to oss
+            storageAccessService.put(
+                    String.format(FORMATTER_STORAGE_PATH, modelPackagePath, MODEL_MANIFEST),
+                    inputStream, multipartFile.getSize()
+            );
+        } catch (IOException e) {
+            log.error("upload model failed {}", uploadRequest.getSwmp(), e);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (entityExists) {
+            // update manifest
+            modelVersionEntity.setManifest(manifestContent);
+            modelVersionEntity.setStatus(ModelVersionEntity.STATUS_UN_AVAILABLE);
+            modelVersionMapper.update(modelVersionEntity);
+        } else {
+            // create new entity
+            modelVersionEntity = ModelVersionEntity.builder()
+                .ownerId(getOwner())
+                .storagePath(modelPackagePath)
+                .modelId(entity.getId())
+                .versionName(uploadRequest.version())
+                .versionMeta(uploadRequest.getSwmp())
+                .evalJobs("")
+                .manifest(manifestContent)
+                .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
+                .build();
+            modelVersionMapper.insert(modelVersionEntity);
+            RevertManager.create(bundleManager, modelDao)
+                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
+        }
+        return ModelUploadResult.builder()
+                .uploadId(modelVersionEntity.getId().toString())
+                .existed(existed)
+                .build();
+    }
+
+    @Transactional
+    public void uploadModel(Long modelVersionId, String signature,
+                            MultipartFile modelFile, ModelUploadRequest uploadRequest) {
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(modelVersionId);
+        if (modelVersionEntity == null
+                || Objects.equals(modelVersionEntity.getStatus(), ModelVersionEntity.STATUS_AVAILABLE)) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
+                uploadRequest.getProject(), signature);
+
+        try {
+            storageAccessService.put(modelPath, modelFile.getInputStream());
+        } catch (IOException e) {
+            log.error("upload model failed {}", uploadRequest.getSwmp(), e);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.STORAGE),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    @Transactional
+    public void uploadSrc(Long modelVersionId, MultipartFile multipartFile, ModelUploadRequest uploadRequest) {
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(modelVersionId);
+        if (modelVersionEntity == null
+                || Objects.equals(modelVersionEntity.getStatus(), ModelVersionEntity.STATUS_AVAILABLE)) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.MODEL),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        //upload to storage
+        final String storagePath = modelVersionEntity.getStoragePath();
         String jobContent = "";
-        try (final InputStream inputStream = dsFile.getInputStream()) {
+        try (final InputStream inputStream = multipartFile.getInputStream()) {
             // only extract the eval job file content
             // TODO: replace with oss path content
             // but update only for job
             jobContent = new String(
                     Objects.requireNonNull(
-                            TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
+                            TarFileUtil.getContentFromTarFile(
+                                multipartFile.getInputStream(), "", "eval_jobs.yaml")
+                    )
+            );
             TarFileUtil.extract(inputStream, (name, size, in) ->
                     storageAccessService.put(
-                            String.format(FORMATTER_STORAGE_PATH, modelPath, name), in, size
+                            String.format(FORMATTER_STORAGE_SRC_FILE_PATH, storagePath, name), in, size
                     )
             );
         } catch (IOException | ArchiveException e) {
-            log.error("upload model failed {}", uploadRequest.getSwmp(), e);
+            log.error("upload model src failed {}", uploadRequest.getSwmp(), e);
             throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        // update job content
+        modelVersionEntity.setEvalJobs(jobContent);
+        modelVersionMapper.update(modelVersionEntity);
+    }
 
-        if (entityExists) {
-            // update job content
-            modelVersionEntity.setEvalJobs(jobContent);
-            modelVersionMapper.update(modelVersionEntity);
-        } else {
-            // create new entity
-            modelVersionEntity = ModelVersionEntity.builder()
-                    .ownerId(getOwner())
-                    .storagePath(modelPath)
-                    .modelId(entity.getId())
-                    .versionName(uploadRequest.version())
-                    .versionMeta(uploadRequest.getSwmp())
-                    .manifest(uploadRequest.getManifest())
-                    .evalJobs(jobContent)
-                    .build();
-            modelVersionMapper.insert(modelVersionEntity);
-            RevertManager.create(bundleManager, modelDao)
-                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
-        }
-
+    public void end(Long modelVersionId) {
+        modelVersionMapper.updateStatus(modelVersionId, ModelVersionEntity.STATUS_AVAILABLE);
     }
 
     private Long getOwner() {
@@ -431,16 +525,66 @@ public class ModelService {
         return currentUserDetail.getIdTableKey();
     }
 
-    public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
+    public void pullManifest(String name, String projectUrl, String modelUrl, String versionUrl,
+                     HttpServletResponse httpResponse) {
+        Long versionId = bundleManager.getBundleVersionId(
+                BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
+        if (null == modelVersionEntity) {
+            throw new SwValidationException(ValidSubject.MODEL, "model version not found");
+        }
+        try (InputStream fileInputStream = new ByteArrayInputStream(modelVersionEntity.getManifest().getBytes());
+                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            long length = fileInputStream.transferTo(outputStream);
+            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            outputStream.flush();
+        } catch (IOException e) {
+            log.error("download manifest file failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM);
+        }
+    }
+
+    public void pullModelFile(String name, String signature, String projectUrl,
+                              HttpServletResponse httpResponse) {
+        String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
+                projectUrl, signature);
+        List<String> files;
+        try {
+            files = storageAccessService.list(modelPath).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("listing file from storage failed {}", modelPath, e);
+            throw new SwProcessException(ErrorType.STORAGE);
+        }
+
+        if (CollectionUtils.isEmpty(files)) {
+            throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
+        }
+        String filePath = files.get(0);
+        try (InputStream fileInputStream = storageAccessService.get(filePath);
+                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            long length = fileInputStream.transferTo(outputStream);
+            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            outputStream.flush();
+        } catch (IOException e) {
+            log.error("download file from storage failed {}", modelPath, e);
+            throw new SwProcessException(ErrorType.STORAGE);
+        }
+    }
+
+    public void pullSrc(String name, String projectUrl, String modelUrl, String versionUrl,
+                        HttpServletResponse httpResponse) {
+        Long versionId = bundleManager.getBundleVersionId(
+                BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
         ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
         if (null == modelVersionEntity) {
             throw new SwValidationException(ValidSubject.MODEL, "model version not found");
         }
         List<String> files;
+        var srcPath = String.format(FORMATTER_STORAGE_SRC_PATH, modelVersionEntity.getStoragePath());
         try {
-            files = storageAccessService.list(
-                    modelVersionEntity.getStoragePath()).collect(Collectors.toList());
+            files = storageAccessService.list(srcPath).collect(Collectors.toList());
         } catch (IOException e) {
             log.error("listing file from storage failed {}", modelVersionEntity.getStoragePath(), e);
             throw new SwProcessException(ErrorType.STORAGE);
@@ -452,38 +596,31 @@ public class ModelService {
 
         try (ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             final long[] length = {0L};
-            if (files.size() == 1 && files.get(0).endsWith(".swmp")) {
-                var filePath = files.get(0);
-                try (LengthAbleInputStream fileInputStream = storageAccessService.get(filePath)) {
-                    length[0] += fileInputStream.transferTo(outputStream);
+            TarFileUtil.archiveAndTransferTo(new Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return !files.isEmpty();
                 }
-            } else {
-                TarFileUtil.archiveAndTransferTo(new Iterator<>() {
-                    @Override
-                    public boolean hasNext() {
-                        return !files.isEmpty();
-                    }
 
-                    @Override
-                    public TarFileUtil.TarEntry next() {
-                        var filePath = files.remove(0);
-                        try {
-                            var inputStream = storageAccessService.get(filePath);
-                            length[0] += inputStream.getSize();
-                            return TarFileUtil.TarEntry.builder()
-                                    .inputStream(inputStream)
-                                    .size(inputStream.getSize())
-                                    .name(filePath.substring(modelVersionEntity.getStoragePath().length() + 1))
-                                    .build();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                @Override
+                public TarFileUtil.TarEntry next() {
+                    var filePath = files.remove(0);
+                    try {
+                        var inputStream = storageAccessService.get(filePath);
+                        length[0] += inputStream.getSize();
+                        return TarFileUtil.TarEntry.builder()
+                                .inputStream(inputStream)
+                                .size(inputStream.getSize())
+                                .name(filePath.substring(srcPath.length() + 1))
+                                .build();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                }, outputStream);
-            }
+                }
+            }, outputStream);
 
             httpResponse.addHeader("Content-Disposition",
-                    "attachment; filename=\"" + modelVersionEntity.getVersionName() + "\".swmp");
+                    "attachment; filename=\"" + name + "\"");
             httpResponse.addHeader("Content-Length", String.valueOf(length[0]));
             outputStream.flush();
         } catch (IOException | ArchiveException e) {

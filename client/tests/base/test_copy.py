@@ -1,5 +1,6 @@
 import json
 from http import HTTPStatus
+from unittest.mock import patch, MagicMock
 
 import yaml
 from requests_mock import Mocker
@@ -19,7 +20,9 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
-from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.model.copy import ModelCopy
+from starwhale.base.bundle_copy import FileType, BundleCopy
+from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 
 _existed_config_contents = get_predefined_config_yaml()
@@ -215,7 +218,11 @@ class TestBundleCopy(TestCase):
             ).do()
 
     @Mocker()
-    def test_model_copy_c2l(self, rm: Mocker) -> None:
+    @patch("starwhale.core.model.copy.load_yaml")
+    @patch("starwhale.core.model.copy.extract_tar")
+    def test_model_copy_c2l(
+        self, rm: Mocker, m_load_yaml: MagicMock, m_extract: MagicMock
+    ) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.HEAD,
@@ -225,9 +232,25 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
+            headers={
+                "X-SW-DOWNLOAD-TYPE": FileType.MANIFEST.name,
+                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
+                "X-SW-DOWNLOAD-OBJECT-HASH": "",
+            },
+            json={"resources": []},
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
+            headers={
+                "X-SW-DOWNLOAD-TYPE": FileType.SRC_TAR.name,
+                "X-SW-DOWNLOAD-OBJECT-NAME": "src.tar",
+                "X-SW-DOWNLOAD-OBJECT-HASH": "",
+            },
             content=b"mnist model content",
         )
+        # m_load_yaml.return_value = {"resources": []}
 
         cloud_uri = f"cloud://pre-bare/project/myproject/model/mnist/version/{version}"
 
@@ -263,18 +286,22 @@ class TestBundleCopy(TestCase):
             swmp_path = (
                 self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swmp"
             )
+            swmp_manifest_path = swmp_path / "_manifest.yaml"
             assert not swmp_path.exists()
-            BundleCopy(
+            assert not swmp_manifest_path.exists()
+            ModelCopy(
                 src_uri=cloud_uri,
                 dest_uri=case["dest_uri"],
                 typ=URIType.MODEL,
                 dest_local_project_uri=case["dest_local_project_uri"],
             ).do()
             assert swmp_path.exists()
-            assert swmp_path.is_file()
+            assert swmp_path.is_dir()
+            assert swmp_manifest_path.exists()
+            assert swmp_manifest_path.is_file()
 
         with self.assertRaises(Exception):
-            BundleCopy(
+            ModelCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/mnist-new-alias",
                 typ=URIType.MODEL,
@@ -292,11 +319,22 @@ class TestBundleCopy(TestCase):
             / version[:2]
             / f"{version}.swmp"
         )
+        swmp_manifest_path = swmp_path / "_manifest.yaml"
+        swmp_src_tar_path = swmp_path / "src.tar"
         tag_manifest_path = (
             self._sw_config.rootdir / "self" / "model" / "mnist" / "_manifest.yaml"
         )
-        ensure_dir(swmp_path.parent)
-        ensure_file(swmp_path, "")
+        ensure_dir(swmp_path)
+        ensure_file(swmp_src_tar_path, "")
+        ensure_file(
+            swmp_manifest_path,
+            yaml.safe_dump(
+                {
+                    "resources": [],
+                    "version": "ge3tkylgha2tenrtmftdgyjzni3dayq",
+                }
+            ),
+        )
         ensure_file(
             tag_manifest_path,
             yaml.safe_dump(
@@ -368,12 +406,14 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
+                headers={"X-SW-UPLOAD-TYPE": FileType.MANIFEST.name},
+                json={"data": {"upload_id": "123"}},
             )
-            BundleCopy(
+            ModelCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.MODEL
             ).do()
             assert head_request.call_count == 1
-            assert upload_request.call_count == 1
+            assert upload_request.call_count == 3
 
         # TODO: support the flowing case
         with self.assertRaises(NoMockAddress):
@@ -387,14 +427,15 @@ class TestBundleCopy(TestCase):
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
             )
-            BundleCopy(
+            ModelCopy(
                 src_uri="mnist/v1",
                 dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
                 typ=URIType.MODEL,
             ).do()
 
     @Mocker()
-    def test_dataset_copy_c2l(self, rm: Mocker) -> None:
+    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
+    def test_dataset_copy_c2l(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.HEAD,
@@ -404,7 +445,12 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?part_name=",
+            headers={
+                "X-SW-DOWNLOAD-TYPE": FileType.MANIFEST.name,
+                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
+                "X-SW-DOWNLOAD-OBJECT-HASH": "",
+            },
             json={
                 "signature": [],
             },
@@ -446,8 +492,10 @@ class TestBundleCopy(TestCase):
             swds_path = (
                 self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swds"
             )
+            swds_manifest_path = swds_path / "_manifest.yaml"
             assert not swds_path.exists()
-            BundleCopy(
+            assert not swds_manifest_path.exists()
+            DatasetCopy(
                 src_uri=cloud_uri,
                 dest_uri=case["dest_uri"],
                 typ=URIType.DATASET,
@@ -455,9 +503,11 @@ class TestBundleCopy(TestCase):
             ).do()
             assert swds_path.exists()
             assert swds_path.is_dir()
+            assert swds_manifest_path.exists()
+            assert swds_manifest_path.is_file()
 
         with self.assertRaises(Exception):
-            BundleCopy(
+            DatasetCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/mnist-new-alias",
                 typ=URIType.DATASET,
@@ -465,7 +515,8 @@ class TestBundleCopy(TestCase):
             ).do()
 
     @Mocker()
-    def test_dataset_copy_l2c(self, rm: Mocker) -> None:
+    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
+    def test_dataset_copy_l2c(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         swds_path = (
             self._sw_config.rootdir
@@ -565,7 +616,7 @@ class TestBundleCopy(TestCase):
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
                 json={"data": {"upload_id": 1}},
             )
-            BundleCopy(
+            DatasetCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
             ).do()
             assert head_request.call_count == 1
@@ -594,24 +645,24 @@ class TestBundleCopy(TestCase):
     def test_upload_bundle_file(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/project/model/mnist/version/abcdefg1234",
+            "http://1.1.1.1:8182/api/v1/project/project/runtime/mnist/version/abcdefg1234",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/project/project/model/mnist/version/abcdefg1234/file",
+            "http://1.1.1.1:8182/api/v1/project/project/runtime/mnist/version/abcdefg1234/file",
         )
 
-        model_dir = self._sw_config.rootdir / "self" / "model" / "mnist" / "ab"
+        runtime_dir = self._sw_config.rootdir / "self" / "runtime" / "mnist" / "ab"
         version = "abcdefg1234"
-        ensure_dir(model_dir)
-        ensure_file(model_dir / f"{version}.swmp", " ")
+        ensure_dir(runtime_dir)
+        ensure_file(runtime_dir / f"{version}.swrt", " ")
 
         bc = BundleCopy(
             src_uri=f"mnist/version/{version[:5]}",
             dest_uri="cloud://pre-bare/project/",
-            typ=URIType.MODEL,
+            typ=URIType.RUNTIME,
         )
 
         _v = bc._guess_bundle_version()
@@ -623,46 +674,47 @@ class TestBundleCopy(TestCase):
         version = "112233"
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version}/file",
             content=b"test",
         )
 
         dest_dir = (
             self._sw_config.rootdir
             / "self"
-            / "model"
+            / "runtime"
             / "mnist"
             / f"{version[:VERSION_PREFIX_CNT]}"
         )
         ensure_dir(dest_dir)
 
         bc = BundleCopy(
-            src_uri=f"cloud://pre-bare/project/1/model/mnist/version/{version}",
+            src_uri=f"cloud://pre-bare/project/1/runtime/mnist/version/{version}",
             dest_uri="",
             local_project_uri="self",
-            typ=URIType.MODEL,
+            typ=URIType.RUNTIME,
         )
         bc.do()
-        swmp_path = dest_dir / f"{version}.swmp"
+        swrt_path = dest_dir / f"{version}.swrt"
 
-        assert swmp_path.exists()
-        assert swmp_path.read_bytes() == b"test"
+        assert swrt_path.exists()
+        assert swrt_path.read_bytes() == b"test"
         st = StandaloneTag(
             URI(
                 f"mnist/version/{version}",
-                expected_type=URIType.MODEL,
+                expected_type=URIType.RUNTIME,
             )
         )
         assert st.list() == ["v0"]
 
     @Mocker()
-    def test_upload_bundle_dir(self, rm: Mocker) -> None:
+    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
+    def test_upload_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde",
@@ -693,7 +745,7 @@ class TestBundleCopy(TestCase):
         ensure_dir(data_path.parent)
         ensure_file(data_path, "")
 
-        bc = BundleCopy(
+        bc = DatasetCopy(
             src_uri="mnist/version/abcde",
             dest_uri="cloud://pre-bare/project/",
             typ=URIType.DATASET,
@@ -702,7 +754,8 @@ class TestBundleCopy(TestCase):
         bc.do()
 
     @Mocker()
-    def test_download_bundle_dir(self, rm: Mocker) -> None:
+    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
+    def test_download_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         hash_name1 = "bfa8805ddc2d43df098e43832c24e494ad"
         hash_name2 = "f954056e4324495ae5bec4e8e5e6d18f1b"
         rm.request(
@@ -721,7 +774,7 @@ class TestBundleCopy(TestCase):
                 ]
             },
         )
-        bc = BundleCopy(
+        bc = DatasetCopy(
             src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
             dest_uri="",
             local_project_uri="self",

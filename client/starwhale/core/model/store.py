@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.consts import DEFAULT_MANIFEST_NAME
+from starwhale.consts import VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.base.type import URIType, BundleType
 from starwhale.base.store import BaseStorage
 
@@ -19,8 +19,12 @@ class ModelStorage(BaseStorage):
         return URIType.MODEL
 
     @property
+    def src_dir_name(self) -> str:
+        return "src"
+
+    @property
     def src_dir(self) -> Path:
-        return self.snapshot_workdir / "src"
+        return self.snapshot_workdir / self.src_dir_name
 
     @property
     def recover_loc(self) -> Path:
@@ -32,4 +36,13 @@ class ModelStorage(BaseStorage):
 
     @property
     def snapshot_workdir(self) -> Path:
-        return self._get_snapshot_workdir_for_bundle()
+        if self.building:
+            return self.tmp_dir
+        version = self.uri.object.version
+        return (
+            self.project_dir
+            / URIType.MODEL
+            / self.uri.object.name
+            / version[:VERSION_PREFIX_CNT]
+            / f"{version}{BundleType.MODEL}"
+        )

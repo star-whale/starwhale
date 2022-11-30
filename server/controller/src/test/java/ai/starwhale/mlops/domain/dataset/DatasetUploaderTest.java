@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
@@ -103,7 +103,7 @@ public class DatasetUploaderTest {
                 hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
                 versionAliasConvertor);
 
-        UploadRequest uploadRequest = new UploadRequest();
+        DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
         String dsName = "testds3";
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
         uploadRequest.setSwds(dsName + ":" + dsVersionId);

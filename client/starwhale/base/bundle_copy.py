@@ -16,13 +16,14 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from starwhale.utils import console, load_yaml
+from starwhale.utils import console
 from starwhale.consts import (
+    FileDesc,
+    FileType,
     HTTPMethod,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
-    ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -212,8 +213,7 @@ class BundleCopy(CloudRequestMixed):
             )
             return
 
-        # TODO: when controller api support dataset head, remove dataset type check
-        if self.typ != URIType.DATASET and not self._is_existed(self.src_uri):
+        if not self._is_existed(self.src_uri):
             raise NotFoundError(str(self.src_uri))
 
         console.print(
@@ -232,12 +232,12 @@ class BundleCopy(CloudRequestMixed):
             refresh_per_second=0.2,
         ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
-                if self.typ == URIType.DATASET:
-                    self._do_upload_bundle_dir(progress, add_data_uri_header=True)
+                if self.typ == URIType.DATASET or self.typ == URIType.MODEL:
+                    self._do_upload_bundle_dir(progress)
                 else:
                     self._do_upload_bundle_tar(progress)
             else:
-                if self.typ == URIType.DATASET:
+                if self.typ == URIType.DATASET or self.typ == URIType.MODEL:
                     self._do_download_bundle_dir(progress)
                 else:
                     self._do_download_bundle_tar(progress)
@@ -251,12 +251,61 @@ class BundleCopy(CloudRequestMixed):
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()
 
-    def _do_ubd_prepare(
+    def upload_files(self, workdir: Path) -> t.Iterator[FileDesc]:
+        raise NotImplementedError
+
+    def download_files(self, workdir: Path) -> t.Iterator[FileDesc]:
+        raise NotImplementedError
+
+    def _do_download_bundle_dir(self, progress: Progress) -> None:
+        _workdir = self._get_target_path(self.dest_uri)
+
+        def _download(_tid: TaskID, fd: FileDesc) -> None:
+            self.do_download_file(
+                # TODO: use /project/{self.typ}/pull api
+                url_path=self._get_remote_instance_rc_url(),
+                dest_path=fd.path,
+                instance_uri=self.src_uri,
+                headers={
+                    "X-SW-DOWNLOAD-TYPE": fd.file_type.name,
+                    "X-SW-DOWNLOAD-OBJECT-NAME": fd.name,
+                    "X-SW-DOWNLOAD-OBJECT-HASH": fd.signature,
+                },
+                params={
+                    # for ds download
+                    "part_name": fd.signature,
+                },
+                progress=progress,
+                task_id=_tid,
+            )
+
+        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
+        _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
+        _download(
+            _tid,
+            FileDesc(
+                path=_manifest_path,
+                name=DEFAULT_MANIFEST_NAME,
+                signature="",
+                file_type=FileType.MANIFEST,
+                size=0,
+            ),
+        )
+
+        for _f in self.download_files(workdir=_workdir):
+            _tid = progress.add_task(
+                f":arrow_down: {_f.name}",
+                total=float(_f.size),
+            )
+            if not _f.path.exists() or self.force:
+                _download(_tid, _f)
+
+    def _do_ubd_bundle_prepare(
         self,
         progress: Progress,
         workdir: Path,
         url_path: str,
-    ) -> str:
+    ) -> t.Any:
         manifest_path = workdir / DEFAULT_MANIFEST_NAME
         task_id = progress.add_task(
             f":arrow_up: {manifest_path.name}",
@@ -267,6 +316,7 @@ class BundleCopy(CloudRequestMixed):
             url_path=url_path,
             file_path=manifest_path,
             instance_uri=self.dest_uri,
+            headers={"X-SW-UPLOAD-TYPE": FileType.MANIFEST.name},
             fields={
                 self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
@@ -277,10 +327,7 @@ class BundleCopy(CloudRequestMixed):
             progress=progress,
             task_id=task_id,
         )
-        upload_id: str = r.json().get("data", {}).get("upload_id", "")
-        if not upload_id:
-            raise Exception("get invalid upload_id")
-        return upload_id
+        return r.json().get("data", {})
 
     def _do_ubd_blobs(
         self,
@@ -288,25 +335,23 @@ class BundleCopy(CloudRequestMixed):
         workdir: Path,
         upload_id: str,
         url_path: str,
-        add_data_uri_header: bool = False,
+        existed_files: t.Optional[t.List] = None,
     ) -> None:
+        existed_files = existed_files or []
         _headers = {_UPLOAD_ID_KEY: str(upload_id)}
-        _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
 
         # TODO: add retry deco
-        def _upload_blob(_fp: Path, _tid: TaskID, _data_uri: str = "") -> None:
-            if not _fp.exists():
-                raise NotFoundError(f"{_fp} not found")
-
+        def _upload_blob(_tid: TaskID, fd: FileDesc) -> None:
+            if not fd.path.exists():
+                raise NotFoundError(f"{fd.path} not found")
             _upload_headers = deepcopy(_headers)
-            if add_data_uri_header and _data_uri:
-                _upload_headers["X-SW-UPLOAD-DATA-URI"] = _data_uri
-                _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = _data_uri
+            _upload_headers["X-SW-UPLOAD-TYPE"] = fd.file_type.name
+            _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = fd.signature
 
             progress.update(_tid, visible=True)
             self.do_multipart_upload_file(
                 url_path=url_path,
-                file_path=_fp,
+                file_path=fd.path,
                 instance_uri=self.dest_uri,
                 fields={
                     self.field_flag: self.field_value,
@@ -319,36 +364,22 @@ class BundleCopy(CloudRequestMixed):
             )
 
         _p_map = {}
-
-        for _k in _manifest["signature"]:
-            _size, _, _hash = _k.split(":")
-
-            # TODO: head object by hash name at first
-            _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
+        for _f in self.upload_files(workdir=workdir):
+            if existed_files and _f.signature in existed_files:
+                continue
             _tid = progress.add_task(
-                f":arrow_up: {_path.name}",
-                total=float(_size),
+                f":arrow_up: {_f.path.name}",
+                total=float(_f.size),
                 visible=False,
             )
-            _p_map[_tid] = (_path, _hash)
-
-        _meta_names = [ARCHIVED_SWDS_META_FNAME]
-
-        for _n in _meta_names:
-            _path = workdir / _n
-            _tid = progress.add_task(
-                f":arrow_up: {_path.name}",
-                total=_path.stat().st_size,
-                visible=False,
-            )
-            _p_map[_tid] = (_path, "")
+            _p_map[_tid] = _f
 
         with ThreadPoolExecutor(
             max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
         ) as executor:
             futures = [
-                executor.submit(_upload_blob, _p, _tid, _data_uri)
-                for _tid, (_p, _data_uri) in _p_map.items()
+                executor.submit(_upload_blob, _tid, _file_desc)
+                for _tid, _file_desc in _p_map.items()
             ]
             wait(futures)
 
@@ -371,23 +402,26 @@ class BundleCopy(CloudRequestMixed):
     def _do_upload_bundle_dir(
         self,
         progress: Progress,
-        add_data_uri_header: bool = False,
     ) -> None:
         workdir: Path = self._get_target_path(self.src_uri)
         url_path = self._get_remote_instance_rc_url()
 
-        upload_id = self._do_ubd_prepare(
+        res_data = self._do_ubd_bundle_prepare(
             progress=progress,
             workdir=workdir,
             url_path=url_path,
         )
+        upload_id: str = res_data.get("upload_id", "")
+        if not upload_id:
+            raise Exception("upload_id is empty")
+        exists_files: list = res_data.get("existed", [])
         try:
             self._do_ubd_blobs(
                 progress=progress,
                 workdir=workdir,
                 upload_id=upload_id,
                 url_path=url_path,
-                add_data_uri_header=add_data_uri_header,
+                existed_files=exists_files,
             )
         except Exception as e:
             console.print(
@@ -397,49 +431,3 @@ class BundleCopy(CloudRequestMixed):
             raise
         else:
             self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=True)
-
-    def _do_download_bundle_dir(self, progress: Progress) -> None:
-        _workdir = self._get_target_path(self.dest_uri)
-        ensure_dir(_workdir / "data")
-
-        def _download(_target: Path, _part: str, _tid: TaskID) -> None:
-            self.do_download_file(
-                # TODO: use /project/{self.typ}/pull api
-                url_path=self._get_remote_instance_rc_url(),
-                dest_path=_target,
-                instance_uri=self.src_uri,
-                params={
-                    "name": self.bundle_name,
-                    "version": self.bundle_version,
-                    "part_name": _part,
-                },
-                progress=progress,
-                task_id=_tid,
-            )
-
-        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
-        _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
-        _download(_manifest_path, DEFAULT_MANIFEST_NAME, _tid)
-        _manifest = load_yaml(_manifest_path)
-
-        for _k in _manifest.get("signature", []):
-            # TODO: parallel download
-            _size, _algo, _hash = _k.split(":")
-            if _algo != DatasetStorage.object_hash_algo:
-                raise NoSupportError(f"download file hash algorithm {_algo}")
-
-            _tid = progress.add_task(
-                f":arrow_down: {_hash[:DatasetStorage.short_sign_cnt]}",
-                total=float(_size),
-            )
-
-            _dest = DatasetStorage._get_object_store_path(_hash)
-            if not _dest.exists() or self.force:
-                _download(_dest, _hash, _tid)
-            Path(_workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]).symlink_to(
-                _dest
-            )
-
-        for _f in (ARCHIVED_SWDS_META_FNAME,):
-            _tid = progress.add_task(f":arrow_down: {_f}")
-            _download(_workdir / _f, _f, _tid)

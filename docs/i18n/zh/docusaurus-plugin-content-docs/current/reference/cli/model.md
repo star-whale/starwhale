@@ -19,7 +19,6 @@ model包含如下子命令：
 |build||✅|❌|
 |copy|cp|✅|✅|
 |eval||✅|❌|
-|extract||✅|❌|
 |history||✅|✅|
 |info||✅|✅|
 |list|ls|✅|✅|
@@ -82,20 +81,7 @@ swcli model eval [OPTIONS] TARGET
 
 ![model-eval.gif](../../img/model-eval.gif)
 
-## 5. 解压模型包文件
-
-```bash
-swcli model extract [OPTIONS] MODEL
-```
-
-`model extract` 命令可以解压Starwhale Model的 `swmp` 格式文件，查看原始模型包内容，目前**该命令只能在standalone instance下执行**。`MODEL` 参数为Model URI，其他参数如下：
-
-|参数|参数别名|必要性|类型|默认值|说明|
-|------|--------|-------|-----------|-----|-----------|
-|`--force`|`-f`|❌|Boolean|False|若曾经在target-dir目录中extract过，设定该参数后，会强制在target-dir目录覆盖旧的内容|
-|`--target-dir`||❌|String|Model URI对应的snapshot_workdir目录|解压模型包后存储相关内容的目录|
-
-## 6. 查看模型包历史版本
+## 5. 查看模型包历史版本
 
 ```bash
 swcli model history [OPTIONS] MODEL
@@ -107,7 +93,7 @@ swcli model history [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 7. 查看模型包详细信息
+## 6. 查看模型包详细信息
 
 ```bash
 swcli model info [OPTIONS] MODEL
@@ -119,7 +105,7 @@ swcli model info [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 8. 展示模型包列表
+## 7. 展示模型包列表
 
 ```bash
 swcli model list [OPTIONS]
@@ -135,7 +121,7 @@ swcli model list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 9. 删除模型包
+## 8. 删除模型包
 
 ```bash
 swcli model remove [OPTIONS] MODEL
@@ -147,7 +133,7 @@ swcli model remove [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 10. 恢复软删除的模型包
+## 9. 恢复软删除的模型包
 
 ```bash
 swcli model recover [OPTIONS] MODEL
@@ -159,7 +145,7 @@ swcli model recover [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 11. 标记模型包
+## 10. 标记模型包
 
 ```bash
 swcli model tag [OPTIONS] MODEL [TAGS]...

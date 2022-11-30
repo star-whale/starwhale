@@ -11,10 +11,13 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from fs.walk import Walker
 from fs.tarfs import TarFS
 
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
+    FileType,
+    SWMP_SRC_FNAME,
     DefaultYAMLName,
     EvalHandlerType,
     DEFAULT_PAGE_IDX,
@@ -28,7 +31,7 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
+from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, blake2b_file
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
@@ -41,7 +44,7 @@ from starwhale.api._impl.job import Parser, Context, context_holder
 from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.job.scheduler import Scheduler
 
@@ -166,7 +169,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        bc = BundleCopy(
+        bc = ModelCopy(
             src_uri,
             dest_uri,
             URIType.MODEL,
@@ -183,6 +186,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.store = ModelStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self.models: t.List[t.Dict[str, t.Any]] = []
+        self.sources: t.List[t.Dict[str, t.Any]] = []
         self.yaml_name = DefaultYAMLName.MODEL
         self._version = uri.object.version
 
@@ -196,7 +201,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, ignore_errors)
 
     def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
-        d = self.store.snapshot_workdir / "src"
+        d = self.store.src_dir
         svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
         apis = {k: v.to_yaml() for k, v in svc.apis.items()}
@@ -374,13 +379,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _store = self.store
         _om = {}
         if _store.snapshot_workdir.exists():
-            pth = _store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+            pth = _store.src_dir / DEFAULT_EVALUATION_JOBS_FNAME
             if pth.exists():
                 _om = load_yaml(pth)
             else:
                 ignore_error("step_spec not found in model snapshot_workdir")
         elif _store.bundle_path.exists():
-            if tarfile.is_tarfile(_store.bundle_path):
+            if _store.bundle_path.is_file() and tarfile.is_tarfile(_store.bundle_path):
                 with TarFS(str(_store.bundle_path)) as tar:
                     with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
                         _om = yaml.safe_load(f)
@@ -402,12 +407,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         _r = []
         for _bf in self.store.iter_bundle_history():
-            if not _bf.path.is_file():
+            _manifest_path = _bf.path / DEFAULT_MANIFEST_NAME
+            if not _manifest_path.exists():
                 continue
 
-            _manifest = ModelStorage.get_manifest_by_path(
-                _bf.path, BundleType.MODEL, URIType.MODEL
-            )
+            _manifest = load_yaml(_manifest_path)
 
             _r.append(
                 dict(
@@ -450,13 +454,15 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             bundle_type=BundleType.MODEL,
             uri_type=URIType.MODEL,
         ):
-            if not _bf.path.is_file():
+            if _bf.path.is_file():
+                # for origin swmp(tar)
+                _manifest = ModelStorage.get_manifest_by_path(
+                    _bf.path, BundleType.MODEL, URIType.MODEL
+                )
+            elif (_bf.path / DEFAULT_MANIFEST_NAME).exists():
+                _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
+            else:
                 continue
-
-            _manifest = ModelStorage.get_manifest_by_path(
-                _bf.path, BundleType.MODEL, URIType.MODEL
-            )
-
             rs[_bf.name].append(
                 {
                     "name": _bf.name,
@@ -497,14 +503,39 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 ),
             ),
             (
+                self._make_meta_tar,
+                20,
+                "build model bundle",
+            ),
+            (
                 self._render_manifest,
                 5,
                 "render manifest",
             ),
-            (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_auto_tags, 5, "make auto tags"),
         ]
         run_with_progress_bar("model bundle building...", operations)
+
+    def _make_meta_tar(self) -> None:
+        w = Walker(exclude=[f["name"] for f in self.models])
+        src_fs = open_fs(str(self.store.src_dir.resolve()))
+        with tarfile.open(self.store.snapshot_workdir / SWMP_SRC_FNAME, "w:") as tar:
+            for f in w.files(src_fs):
+                sub_path = f[1:]
+                tar.add(str(self.store.src_dir / sub_path), arcname=sub_path)
+                self.sources.append(
+                    {
+                        "name": os.path.basename(f),
+                        "path": f"{self.store.src_dir_name}/{sub_path}",
+                        "signature": blake2b_file(self.store.src_dir / sub_path),
+                        "duplicate_check": False,
+                        "type": FileType.SRC.name,
+                    }
+                )
+
+    def _render_manifest(self) -> None:
+        self._manifest["resources"] = self.models + self.sources
+        super()._render_manifest()
 
     @classmethod
     def load_model_config(cls, yaml_path: Path) -> ModelConfig:
@@ -549,22 +580,31 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _mc = model_config
 
         workdir_fs = open_fs(str(workdir.resolve()))
-        snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
-        src_fs = open_fs(str(self.store.src_dir.resolve()))
-        # TODO: support glob pkg_data
-        copy_file(workdir_fs, yaml_name, snapshot_fs, DefaultYAMLName.MODEL)
+        snapshot_src_fs = open_fs(str(self.store.src_dir.resolve()))
         copy_fs(
             workdir_fs,
-            src_fs,
+            snapshot_src_fs,
             walker=self._get_src_walker(
                 workdir, _mc.run.pkg_data, _mc.run.exclude_pkg_data
             ),
             workers=DEFAULT_COPY_WORKERS,
         )
 
-        for _fname in _mc.config + _mc.model:
-            copy_file(workdir_fs, _fname, src_fs, _fname)
+        for _fname in _mc.config:
+            copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)
 
+        # TODO link models to unified storage
+        for _fname in _mc.model:
+            copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)
+            self.models.append(
+                {
+                    "name": os.path.basename(_fname),
+                    "path": f"{self.store.src_dir_name}/{_fname}",
+                    "signature": blake2b_file(self.store.src_dir / _fname),
+                    "duplicate_check": True,
+                    "type": FileType.MODEL.name,
+                }
+            )
         logger.info("[step:copy]finish copy files")
 
     @classmethod
@@ -578,9 +618,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             if _k not in os.environ:
                 os.environ[_k] = _v
-
-    def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
-        return self._do_extract(force, target)
 
     @classmethod
     def serve(

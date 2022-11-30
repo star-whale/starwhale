@@ -31,6 +31,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ModelVersionEntity extends BaseEntity implements BundleVersionEntity {
 
+    public static final Integer STATUS_AVAILABLE = 1;
+    public static final Integer STATUS_UN_AVAILABLE = 0;
+
     private Long id;
 
     private Long modelId;
@@ -52,6 +55,11 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
     private String manifest;
 
     private String evalJobs;
+
+    /**
+     * 0 - unavailable 1 - available
+     */
+    private Integer status = STATUS_UN_AVAILABLE;
 
     @Override
     public String getName() {

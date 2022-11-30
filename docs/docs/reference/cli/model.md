@@ -29,7 +29,6 @@ swcli model [OPTIONS] COMMAND [ARGS]...
   |history|✅|✅|
   |info|✅|✅|
   |tag|✅|❌|
-  |extract|✅|❌|
   |copy|✅|✅|
 
 ## Build a model
@@ -275,29 +274,6 @@ swcli model recover [OPTIONS] MODEL
     ```bash
     ❯ swcli model recover mnist/version/hbtdenjxgm4ggnrtmftdgyjzm43tioi
     👏 do successfully
-    ```
-
-## Extract model bundle
-
-```bash
-swcli model extract [OPTIONS] MODEL
-```
-
-- This command extracts the bundled model to target dir. When you copy a model from a remote cloud instance to the local standalone instance, you can extract it and then do some operations, such as updating the code and rebuilding the model.
-- The `MODEL` argument uses the `Model URI` format, which must include the `/version/{version id}` part.
-- Options:
-
-    |Option|Alias Option|Required|Type|Default|Description|
-    |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to extract model|
-    |`--target-dir`||❌|String|Starwhale default model workdir|Extract target dir|
-
-- Example:
-
-    ```bash
-    ❯ swcli model extract mnist/version/latest --force
-    🚔 try to extract ...
-    👏 extracted @ /home/liutianwei/.cache/starwhale/self/workdir/model/mnist/gb/gbstgnlgheydqnrtmftdgyjzpe4tezy 🎉
     ```
 
 ## Copy a model
