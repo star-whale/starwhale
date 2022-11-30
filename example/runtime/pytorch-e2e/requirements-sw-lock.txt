@@ -30,7 +30,7 @@ nvidia-cuda-nvrtc-cu11==11.7.99
 nvidia-cuda-runtime-cu11==11.7.99
 nvidia-cudnn-cu11==8.5.0.96
 packaging==21.3
-Pillow==9.2.0
+Pillow==9.3.0
 platformdirs==2.5.2
 portalocker==2.5.1
 pyarrow==9.0.0
