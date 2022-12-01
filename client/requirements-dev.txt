@@ -20,3 +20,5 @@ pytest-mock >= 3.7.0
 requests-mock >= 1.9.3
 isort >= 5.10.1
 torch
+pillow
+soundfile

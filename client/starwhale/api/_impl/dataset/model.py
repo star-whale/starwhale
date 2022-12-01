@@ -406,8 +406,20 @@ class Dataset:
         # TODO: render artifact in JupyterNotebook
         return self.__core_dataset.head(n, show_raw_data)
 
-    def to_pytorch(self) -> t.Any:
-        raise NotImplementedError
+    def to_pytorch(
+        self,
+        transform: t.Optional[t.Callable] = None,
+        drop_index: bool = True,
+        skip_default_transform: bool = False,
+    ) -> t.Any:
+        from starwhale.integrations.pytorch import TorchIterableDataset
+
+        return TorchIterableDataset(
+            dataset=self,
+            transform=transform,
+            drop_index=drop_index,
+            skip_default_transform=skip_default_transform,
+        )
 
     def to_tensorflow(self) -> t.Any:
         raise NotImplementedError

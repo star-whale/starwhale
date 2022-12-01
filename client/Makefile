@@ -1,4 +1,5 @@
 PY_CHANGED_FILES = $(shell git diff --name-only --relative -- '*.py')
+DISTRIBUTOR_OS = $(shell lsb_release -si)
 
 .POHNY: check
 check:
@@ -23,6 +24,7 @@ install-sw:
 .POHNY: install-dev-req
 install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
+	((grep -E "ubuntu|debian" /etc/os-release > /dev/null) && sudo apt-get install libsndfile1) || echo "skip install libsndfile1"
 
 .POHNY: black-format
 black-format:

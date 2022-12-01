@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import io
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -5,6 +8,9 @@ from unittest.mock import MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
+import torch
+import torch.utils.data as tdata
+from PIL import Image as PILImage
 from requests_mock import Mocker
 
 from starwhale import dataset
@@ -14,9 +20,10 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.dataset.type import Binary, DatasetSummary
+from starwhale.core.dataset.type import Text, Audio, Image, Binary, DatasetSummary
 from starwhale.api._impl.dataset.loader import DataRow
 
+from .. import ROOT_DIR
 from .test_base import BaseTestCase
 
 
@@ -234,7 +241,6 @@ class TestDatasetSDK(BaseTestCase):
 
         ds = dataset(existed_ds_uri, create=True)
         del ds[0]
-        assert len(ds) == 9
         ds.flush()
 
         del ds[0]
@@ -746,3 +752,156 @@ class TestDatasetSDK(BaseTestCase):
         )
 
         ds.copy("cloud://test/project/self")
+
+
+class TestPytorch(TestDatasetSDK):
+    def test_skip_default_transform_without_batch(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        torch_ds = ds.to_pytorch(skip_default_transform=True)
+        assert isinstance(torch_ds, tdata.Dataset)
+        assert isinstance(torch_ds, tdata.IterableDataset)
+
+        torch_loader = tdata.DataLoader(torch_ds, batch_size=None)
+
+        items = list(torch_loader)
+        assert len(ds) == len(items)
+        assert len(items[0]) == 2
+        assert items[0][1] == ds["0"].annotations  # type: ignore
+        assert isinstance(items[0][0], Binary)
+
+    def test_skip_default_transform_with_batch(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        torch_ds = ds.to_pytorch(skip_default_transform=True)
+        torch_loader = tdata.DataLoader(torch_ds, batch_size=2)
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "default_collate: batch must contain tensors, numpy arrays, numbers, dicts or lists; found <class 'starwhale.core.dataset.type.Binary'>",
+        ):
+            list(torch_loader)
+
+    def test_binary_type_without_batch(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        assert isinstance(ds["0"].data, Binary)  # type: ignore
+
+        torch_loader = tdata.DataLoader(
+            ds.to_pytorch(skip_default_transform=False), batch_size=None
+        )
+        items = list(torch_loader)
+        assert len(items) == 10
+
+    def test_binary_type_with_batch(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        assert isinstance(ds["0"].data, Binary)  # type: ignore
+
+        torch_loader = tdata.DataLoader(
+            ds.to_pytorch(skip_default_transform=False), batch_size=2
+        )
+        items = list(torch_loader)
+        assert len(items) == 5
+        first_item = items[0]
+        assert isinstance(first_item, list)
+        assert len(first_item) == 2
+        assert first_item[0] == (b"data-0", b"data-1")
+
+        assert isinstance(first_item[1], dict)
+        assert list(first_item[1].keys()) == ["label"]
+        assert isinstance(first_item[1]["label"], torch.Tensor)
+        assert torch.equal(torch.tensor([0, 1]), first_item[1]["label"])
+
+    def test_keep_index(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        torch_ds = ds.to_pytorch(drop_index=False)
+        torch_loader = tdata.DataLoader(torch_ds, batch_size=5)
+
+        item = next(iter(torch_loader))
+        assert isinstance(item, list)
+        assert item[0] == tuple([f"{i}" for i in range(0, 5)])
+
+    def test_use_custom_transform(self) -> None:
+        with dataset("mnist", create=True) as ds:
+            for i in range(0, 10):
+                ds.append((Text(f"data-{i}"), {"label": i}))
+
+            ds.commit()
+
+        def _custom_transform(data: t.Any) -> t.Any:
+            if isinstance(data, Text):
+                return f"custom-{data.to_str()}"
+            else:
+                return data
+
+        torch_loader = tdata.DataLoader(
+            dataset(ds.uri).to_pytorch(transform=_custom_transform), batch_size=1
+        )
+        item = next(iter(torch_loader))
+        assert isinstance(item, list) and len(item) == 2
+        assert item[0][0] == "custom-data-0"
+
+    def test_complex_transform(self) -> None:
+        ds = dataset("mnist", create=True)
+        for i in range(0, 10):
+            annotations = {
+                "int": 1,
+                "float": 1.1,
+                "tuple": (1, 2, 3),
+                "list": [1, 2, 3],
+                "map": {"key": i},
+                "str": f"str-{i}",
+                "bytes": f"bytes-{i}".encode(),
+            }
+            ds.append((Text(f"data-{i}"), annotations))
+        ds.commit()
+        torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
+        item = next(iter(torch_loader))
+
+        assert torch.equal(item[1]["int"], torch.tensor([1, 1]))
+        assert torch.equal(
+            item[1]["float"], torch.tensor([1.1000, 1.1000], dtype=torch.float64)
+        )
+        assert torch.equal(item[1]["tuple"][0], torch.tensor([1, 1]))
+        assert torch.equal(item[1]["map"]["key"], torch.tensor([0, 1]))
+        assert item[1]["str"] == ["str-0", "str-1"]
+        assert item[1]["bytes"] == [b"bytes-0", b"bytes-1"]
+
+    def test_image_transform(self) -> None:
+        ds = dataset("mnist", create=True)
+        for i in range(1, 10):
+            img = PILImage.new(mode="RGB", size=(2, 2), color=(i, i, i))
+            img_io = io.BytesIO()
+            img.save(img_io, format="PNG")
+            ds.append((Image(img_io.getvalue()), {"label": i}))
+
+        ds.commit()
+
+        torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
+        item = next(iter(torch_loader))
+        assert torch.equal(
+            item[0],
+            torch.tensor(
+                [
+                    [[[1, 1, 1], [1, 1, 1]], [[1, 1, 1], [1, 1, 1]]],
+                    [[[2, 2, 2], [2, 2, 2]], [[2, 2, 2], [2, 2, 2]]],
+                ],
+                dtype=torch.uint8,
+            ),
+        )
+
+    def test_audio_transform(self) -> None:
+        with dataset("mnist", create=True) as ds:
+            ds.append((Audio(Path(ROOT_DIR) / "data" / "simple.wav"), {"label": 1}))
+            ds.commit()
+
+        torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
+        item = next(iter(torch_loader))
+        assert isinstance(item[0], torch.Tensor)
+        assert len(item[0]) != 0
+        assert item[0].dtype == torch.float64
