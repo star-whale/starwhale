@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.mapper;
 
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -46,5 +47,66 @@ public class DatasetMapperTest {
                 entity.getProjectId(), false));
         Assertions.assertEquals(entity, datasetMapper.findByName(entity.getDatasetName(),
                 entity.getProjectId(), true));
+    }
+
+    @Test
+    public void testList() {
+        DatasetEntity dataset1 = DatasetEntity.builder()
+                .datasetName("dataset1")
+                .ownerId(1L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+        DatasetEntity dataset2 = DatasetEntity.builder()
+                .datasetName("dataset2")
+                .ownerId(2L)
+                .projectId(2L)
+                .isDeleted(0)
+                .build();
+        DatasetEntity dataset3 = DatasetEntity.builder()
+                .datasetName("dataset3")
+                .ownerId(2L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+
+        datasetMapper.insert(dataset1);
+        datasetMapper.insert(dataset2);
+        datasetMapper.insert(dataset3);
+
+        var list = datasetMapper.list(1L, null, null);
+        Assertions.assertIterableEquals(List.of(dataset3, dataset1), list);
+
+        list = datasetMapper.list(2L, null, null);
+        Assertions.assertIterableEquals(List.of(dataset2), list);
+
+        list = datasetMapper.list(null, "dataset", null);
+        Assertions.assertIterableEquals(List.of(dataset3, dataset2, dataset1), list);
+
+        list = datasetMapper.list(null, "dataset1", null);
+        Assertions.assertIterableEquals(List.of(dataset1), list);
+    }
+
+    @Test
+    public void testRemoveAndRecover() {
+        DatasetEntity dataset1 = DatasetEntity.builder()
+                .datasetName("dataset1")
+                .ownerId(1L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+        datasetMapper.insert(dataset1);
+
+        datasetMapper.remove(dataset1.getId());
+        Assertions.assertEquals(1, datasetMapper.find(dataset1.getId()).getIsDeleted());
+        Assertions.assertNull(datasetMapper.findByName(dataset1.getDatasetName(), dataset1.getProjectId(), false));
+        Assertions.assertEquals(dataset1.getDatasetName(),
+                datasetMapper.findDeleted(dataset1.getId()).getDatasetName());
+
+        datasetMapper.recover(dataset1.getId());
+        Assertions.assertEquals(0, datasetMapper.find(dataset1.getId()).getIsDeleted());
+        Assertions.assertEquals(dataset1,
+                datasetMapper.findByName(dataset1.getDatasetName(), dataset1.getProjectId(), false));
+        Assertions.assertNull(datasetMapper.findDeleted(dataset1.getId()));
     }
 }
