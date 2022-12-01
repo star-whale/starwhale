@@ -79,7 +79,7 @@ public interface RuntimeMapper {
                         WHERE("project_id = #{projectId}");
                     }
                     if (StrUtil.isNotEmpty(namePrefix)) {
-                        WHERE("model_name like concat(#{namePrefix}, '%')");
+                        WHERE("runtime_name like concat(#{namePrefix}, '%')");
                     }
                     if (StrUtil.isNotEmpty(order)) {
                         ORDER_BY(order);
