@@ -98,6 +98,7 @@ public interface ModelMapper {
                     SELECT(COLUMNS);
                     FROM("model_info");
                     WHERE("model_name = #{name}");
+                    WHERE("is_deleted = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }

@@ -243,7 +243,26 @@ public class DatasetDaoTest {
 
     @Test
     public void testRevertTo() {
+        Long bundleId = 4L;
+        Long versionId = 3L;
+        Long maxOrder = 5L;
+        given(versionMapper.selectVersionOrderForUpdate(same(versionId)))
+                .willReturn(2L);
 
+        given(versionMapper.selectMaxVersionOrderOfDatasetForUpdate(same(bundleId)))
+                .willReturn(maxOrder);
+
+        given(versionMapper.updateVersionOrder(same(versionId), same(maxOrder)))
+                .willReturn(1);
+
+        var order = manager.selectVersionOrderForUpdate(bundleId, versionId);
+        assertThat(order, is(2L));
+
+        var max = manager.selectMaxVersionOrderOfBundleForUpdate(bundleId);
+        assertThat(max, is(maxOrder));
+
+        var res = manager.updateVersionOrder(versionId, max);
+        assertThat(res, is(1));
     }
 
     @Test

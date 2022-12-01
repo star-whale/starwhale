@@ -98,6 +98,7 @@ public interface RuntimeMapper {
                     SELECT(COLUMNS);
                     FROM("runtime_info");
                     WHERE("runtime_name = #{name}");
+                    WHERE("is_deleted = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
