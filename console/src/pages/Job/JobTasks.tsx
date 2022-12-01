@@ -22,31 +22,28 @@ export default function JobTasks() {
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
-    const onAction = useCallback(
-        async (type, task: ITaskSchema) => {
-            setCurrentTask(task)
-            const data = await fetchTaskOfflineLogFiles(task?.id)
-            const files: Record<string, string> = {}
-            if (!_.isEmpty(data)) {
-                data.map(async (v: string) => {
-                    const content = await fetchTaskOfflineFileLog(task?.id, v)
-                    files[v] = content ?? ''
-                    setCurrentLogFiles({
-                        ...files,
-                    })
-                })
-            }
-            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
-                files[task?.uuid] = 'ws'
+    const onAction = useCallback(async (type, task: ITaskSchema) => {
+        setCurrentTask(task)
+        const data = await fetchTaskOfflineLogFiles(task?.id)
+        const files: Record<string, string> = {}
+        if (!_.isEmpty(data)) {
+            data.map(async (v: string) => {
+                const content = await fetchTaskOfflineFileLog(task?.id, v)
+                files[v] = content ?? ''
                 setCurrentLogFiles({
                     ...files,
                 })
-            }
+            })
+        }
+        if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+            files[task?.uuid] = 'ws'
+            setCurrentLogFiles({
+                ...files,
+            })
+        }
 
-            setExpanded(true)
-        },
-        [t]
-    )
+        setExpanded(true)
+    }, [])
 
     const handleScroll = ({ scrollTop, scrollHeight, clientHeight }: IScrollProps) => {
         const delta = scrollHeight - scrollTop
