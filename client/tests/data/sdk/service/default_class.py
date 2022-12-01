@@ -26,5 +26,6 @@ class MyDefaultClass(PipelineHandler):
     def handler_foo(self, data: t.Any) -> t.Any:
         return
 
+    @service.api(Input(), Output())
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         pass

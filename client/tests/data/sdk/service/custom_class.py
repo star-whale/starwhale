@@ -1,12 +1,7 @@
 import typing as t
 
-from starwhale.api.service import (
-    Request,
-    Service,
-    Response,
-    JsonResponse,
-    GrayscaleImageRequest,
-)
+from starwhale import Image
+from starwhale.api.service import Request, Service, Response, JsonResponse
 
 svc = Service()
 
@@ -25,7 +20,7 @@ class CustomOutput(Response):
 
 
 class MyCustomClass:
-    @svc.api(request=GrayscaleImageRequest(shape=[1, 1, 1]), response=JsonResponse())
+    @svc.api(request=Image(), response=JsonResponse())
     def handler_foo(self, data: t.Any) -> t.Any:
         return
 

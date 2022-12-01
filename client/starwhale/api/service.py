@@ -1,17 +1,19 @@
 from ._impl.service import (
     Api,
+    api,
     Request,
     Service,
     Response,
+    RawResponse,
     JsonResponse,
-    GrayscaleImageRequest,
 )
 
 __all__ = [
     "Service",
     "Request",
-    "GrayscaleImageRequest",
+    "RawResponse",
     "JsonResponse",
     "Api",
+    "api",
     "Response",
 ]

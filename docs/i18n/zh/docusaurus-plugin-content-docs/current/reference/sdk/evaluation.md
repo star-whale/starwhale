@@ -248,11 +248,9 @@ def func():
 7.1. 使用 decorator 添加 handler
 
 ```python
-from starwhale.api.service import Service
+from starwhale.api.service import api
 
-svc = Service()
-
-@svc.api(...)
+@api(...)
 def handler(data):
     ...
 ```
@@ -315,11 +313,15 @@ class CustomService(Service):
         ...
 
 svc = CustomService()
+
+@svc.api(...)
+def handler(data):
+    ...
 ```
 
 说明:
 
-- 使用 `PipelineHandler.add_api` 函数添加的 handler 和使用实例化的 `Service.api` decorator 添加的 handler 可以同时生效
+- 使用 `PipelineHandler.add_api` 函数添加的 handler 和 `api` 以及实例化的 `Service.api` decorator 添加的 handler 可以同时生效
 - 如果使用自定义的 `Service`, 需要在 model 中实例化自定义的 Service 类
 
 7.4. 自定义 Request 和 Response

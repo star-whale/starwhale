@@ -7,7 +7,7 @@ from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
-from starwhale.api.service import JsonResponse, GrayscaleImageRequest
+from starwhale.api.service import api, JsonResponse
 
 from .model import Net
 
@@ -19,10 +19,8 @@ class MNISTInference(PipelineHandler):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
-        self.add_api(
-            GrayscaleImageRequest(shape=[28, 28, 1]), JsonResponse(), self.ppl, "ppl"
-        )
 
+    @api(Image(), JsonResponse())
     def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:  # type: ignore
         data_tensor = self._pre(img)
         output = self.model(data_tensor)

@@ -194,7 +194,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
         d = self.store.snapshot_workdir / "src"
-        svc = self._get_service(ppl, d)
+        svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
         apis = {k: v.to_yaml() for k, v in svc.apis.items()}
         ensure_file(_f, yaml.safe_dump(apis, default_flow_style=False))
@@ -211,7 +211,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         module, _, attr = module.partition(":")
         m = load_module(module, pkg)
         apis = dict()
-        svc: Service = Service()
+        svc: t.Optional[Service] = None
 
         # TODO: check duplication
         for k, v in m.__dict__.items():
@@ -228,6 +228,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ins = cls()
             apis.update(ins.svc.apis)
 
+        from starwhale.api._impl.service import internal_api_list
+
+        apis.update(internal_api_list())
+
+        if svc is None:
+            svc = Service()
         for api in apis.values():
             svc.add_api_instance(api)
         return svc

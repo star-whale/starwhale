@@ -1,49 +1,26 @@
 import json
-import base64
 import typing as t
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from starwhale.core.dataset.type import MIMEType, ArtifactType, BaseArtifact
+from typing_extensions import Protocol, runtime_checkable
 
 
-class Request(ABC):
-    @abstractmethod
+@runtime_checkable
+class Request(Protocol):
     def load(self, req: t.Any) -> t.Any:
-        raise NotImplementedError()
+        ...
 
 
-class Response(ABC):
+@runtime_checkable
+class Response(Protocol):
     # TODO: support mime_type and body
-    @abstractmethod
     def dump(self, resp: t.Any) -> bytes:
-        raise NotImplementedError()
+        ...
 
 
-class GrayscaleImageRequest(Request):
-    def __init__(
-        self, shape: t.Optional[t.List] = None, image_key: t.Optional[str] = None
-    ):
-        self.shape = shape
-        self.image_key = image_key or "img"
-
-    def load(self, req: t.Any) -> BaseArtifact:
-        if isinstance(req, (str, bytes)):
-            raw = base64.b64decode(req)
-        elif isinstance(req, dict) and self.image_key:
-            if self.image_key not in req:
-                raise Exception("can not get image")
-            raw = base64.b64decode(req[self.image_key])
-        else:
-            raise Exception("can not get image from unknown request type")
-        return BaseArtifact.reflect(
-            raw,
-            {
-                "type": ArtifactType.Image.value,
-                "mime_type": MIMEType.GRAYSCALE,
-                "shape": self.shape,
-            },
-        )
+class RawResponse(Request):
+    def load(self, req: t.Any) -> t.Any:
+        return req
 
 
 class JsonResponse(Response):
@@ -126,3 +103,14 @@ class Service:
                 methods=["POST"],
             )
         app.run(addr, port)
+
+
+_svc = Service()
+
+
+def api(request: Request, response: Response, uri: t.Optional[str] = None) -> t.Any:
+    return _svc.api(request, response, uri)
+
+
+def internal_api_list() -> t.Dict[str, Api]:
+    return _svc.apis

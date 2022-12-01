@@ -5,7 +5,8 @@ from pathlib import Path
 from unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale.api.service import JsonResponse, GrayscaleImageRequest
+from starwhale import Image
+from starwhale.api.service import Response
 from starwhale.core.model.model import StandaloneModel
 
 
@@ -18,8 +19,8 @@ class ServiceTestCase(TestCase):
         assert list(svc.apis.keys()) == ["handler_foo", "bar", "baz"]
 
         api_foo = svc.apis["handler_foo"]
-        assert isinstance(api_foo.request, GrayscaleImageRequest)
-        assert isinstance(api_foo.response, JsonResponse)
+        assert isinstance(api_foo.request, Image)
+        assert isinstance(api_foo.response, Response)
 
         api_bar = svc.apis["bar"]
         assert api_bar.request.load("foo") == "foo"
@@ -33,7 +34,7 @@ class ServiceTestCase(TestCase):
 
     def test_default_class(self):
         svc = StandaloneModel._get_service("default_class:MyDefaultClass", self.root)
-        assert list(svc.apis.keys()) == ["ppl", "handler_foo"]
+        assert list(svc.apis.keys()) == ["ppl", "handler_foo", "cmp"]
         req = uuid.uuid1().bytes
         assert svc.apis["ppl"].view_func(req) == req
 

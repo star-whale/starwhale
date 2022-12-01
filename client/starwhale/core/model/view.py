@@ -150,13 +150,13 @@ class ModelTermView(BaseTermView):
             self.model.add_tags(tags, quiet)
 
     @classmethod
+    @BaseTermView._only_standalone
     def serve(
         cls,
         target: str,
         model_yaml: str,
         host: str,
         port: int,
-        runtime: str,
         handlers: t.Optional[t.List[str]] = None,
     ) -> None:
         workdir = cls._get_workdir(target)
