@@ -45,9 +45,7 @@ export type IAnnotationCOCOObject = {
     image_id: number
     category_id: number
     // RLE or [polygon],
-    segmentation?: {
-        size: [height: number, width: number]
-    }
+    _segmentation_rle_size?: [height: number, width: number]
     type: 'coco_object_annotation'
     bbox: IBBox
     iscrowd: 0 | 1
