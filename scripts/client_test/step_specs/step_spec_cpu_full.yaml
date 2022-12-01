@@ -3,11 +3,10 @@ default:
     concurrency: 1
     job_name: default
     needs: [ ]
-    overwriteable: true
     resources:
     - type: cpu
-      request: 0.4
-      limit: 0.4
+      request: 1
+      limit: 1
     step_name: ppl
     task_num: 2
   - cls_name: ''
@@ -15,10 +14,9 @@ default:
     job_name: default
     needs:
     - ppl
-    overwriteable: false
     resources:
     - type: cpu
-      request: 0.4
-      limit: 0.4
+      request: 1
+      limit: 1
     step_name: cmp
     task_num: 1

@@ -267,7 +267,7 @@ class JobTermView(BaseTermView):
         step: str = "",
         task_index: int = 0,
         task_num: int = 0,
-    ) -> None:
+    ) -> str:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, version = EvaluationJob.run(
             _project_uri,
@@ -300,10 +300,12 @@ class JobTermView(BaseTermView):
             console.print(
                 f":bird: run cmd to fetch eval info: [bold green]swcli eval info {_job_uri}[/]"
             )
+            return version
         else:
             console.print(
                 f":collision: failed to create eval job, notice: [red]{version}[/]"
             )
+            return ""
 
     @classmethod
     def list(

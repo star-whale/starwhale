@@ -105,4 +105,4 @@ jobs:
         working-directory: ./scripts/e2e_test
         env:
           PYTHON_VERSION: ${{matrix.python-version}}
-        run: ./start_test.sh
+        run: bash start_test.sh

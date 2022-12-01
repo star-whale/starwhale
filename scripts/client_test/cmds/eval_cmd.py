@@ -1,5 +1,7 @@
 import json
-from typing import Any, List
+import typing as t
+
+from starwhale.core.eval.view import JobTermView
 
 from . import CLI
 from .base.invoke import invoke
@@ -11,7 +13,7 @@ class Evaluation:
     def run(
         self,
         model: str,
-        datasets: List[str],
+        datasets: t.List[str],
         project: str = "self",
         version: str = "",
         runtime: str = "",
@@ -23,7 +25,7 @@ class Evaluation:
         step: str = "",
         task_index: int = 0,
         resource_pool: str = "",
-    ) -> bool:
+    ) -> str:
         """
         :param project:
         :param version: Evaluation job version
@@ -40,35 +42,24 @@ class Evaluation:
         :param resource_pool: [ONLY Cloud] which nodes should job run on
         :return:
         """
-        _args = [CLI, self._cmd, "run", "--model", model]
-        for ds in datasets:
-            _args.extend(["--dataset", ds])
-        if version:
-            _args.extend(["--version", version])
-        if runtime:
-            _args.extend(["--runtime", runtime])
-        if name:
-            _args.extend(["--name", name])
-        if desc:
-            _args.extend(["--desc", desc])
-        if step_spec:
-            _args.extend(["--step-spec", step_spec])
-        if resource_pool:
-            _args.extend(["--resource-pool", resource_pool])
-        if use_docker:
-            _args.append("--use-docker")
-        # TODO: return value is str
-        if gencmd:
-            _args.append("--gencmd")
-        if step:
-            _args.extend(["--step", step, "--task-index", str(task_index)])
 
-        _args.extend(["--project", project])
-        _ret_code, _ = invoke(_args, raise_err=True)
+        return JobTermView.run(
+            project,
+            model,
+            datasets,
+            runtime,
+            version=version,
+            name=name,
+            desc=desc,
+            step_spec=step_spec,
+            resource_pool=resource_pool,
+            gencmd=gencmd,
+            use_docker=use_docker,
+            step=step,
+            task_index=task_index,
+        )
 
-        return bool(_ret_code == 0)
-
-    def info(self, version: str) -> Any:
+    def info(self, version: str) -> t.Any:
         """
         :param version:
         :return:
@@ -232,7 +223,7 @@ class Evaluation:
         show_removed: bool = False,
         page: int = 1,
         size: int = 20,
-    ) -> Any:
+    ) -> t.Any:
         """
 
         :param project:
@@ -287,7 +278,7 @@ class Evaluation:
     def cancel(self, uri: str, force: bool = False) -> bool:
         return self._operate("cancel", uri=uri, force=force)
 
-    def compare(self, base_uri: str, compare_uri: str) -> Any:
+    def compare(self, base_uri: str, compare_uri: str) -> t.Any:
         _ret_code, _res = invoke([CLI, self._cmd, "compare", base_uri, compare_uri])
         return _res
 

@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Button from '@starwhale/ui/Button'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
@@ -9,6 +9,8 @@ import SectionForm from './component/SectionForm'
 import { PanelAddEvent, PanelEditEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
+import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
+import { Subscription } from 'rxjs'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -21,7 +23,7 @@ export const CONFIG: WidgetConfig = {
         layoutConfig: {
             gutter: 10,
             columnsPerPage: 3,
-            rowsPerPage: 2,
+            rowsPerPage: 3,
             boxWidth: 430,
             heightWidth: 274,
         },
@@ -30,12 +32,12 @@ export const CONFIG: WidgetConfig = {
                 w: 1,
                 h: 2,
                 minW: 1,
-                maxW: 2,
-                maxH: 3,
+                maxW: 3,
                 minH: 1,
+                maxH: 3,
                 isBounded: true,
             },
-            cols: 2,
+            cols: 3,
         },
         gridLayout: [],
     },
@@ -49,6 +51,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
 
     // @ts-ignore
     const { title = '', isExpaned = false, gridLayoutConfig, gridLayout } = optionConfig as Option
+    const [isDragging, setIsDragging] = useState(false)
 
     const len = React.Children.count(children)
     const { cols } = gridLayoutConfig
@@ -84,12 +87,30 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
     }
 
+    // subscription
+    useEffect(() => {
+        const subscription = new Subscription()
+        subscription.add(
+            eventBus.getStream(DragStartEvent).subscribe({
+                next: (evt) => setIsDragging(true),
+            })
+        )
+        subscription.add(
+            eventBus.getStream(DragEndEvent).subscribe({
+                next: (evt) => setIsDragging(false),
+            })
+        )
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [])
+
     return (
         <div>
             <SectionAccordionPanel
                 childNums={len}
                 title={title}
-                expanded={isExpaned}
+                expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
                 onPanelAdd={() => {
                     console.log('add panel')
@@ -114,7 +135,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
                 }}
             >
-                {len === 0 && <BusyPlaceholder type='empty' style={{ minHeight: '240px' }} />}
+                {len === 0 && <EmptyPlaceholder />}
                 <GridLayout
                     rowHeight={300}
                     className='layout'
@@ -189,6 +210,15 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </ModalBody>
             </Modal>
         </div>
+    )
+}
+
+const EmptyPlaceholder = () => {
+    return (
+        <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
+            <IconFont type='emptyChart' size={64} />
+            <span>Click "Add Panel" to add visualizations</span>
+        </BusyPlaceholder>
     )
 }
 

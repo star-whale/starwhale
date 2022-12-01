@@ -1,3 +1,4 @@
+import sys
 import typing as t
 import numbers
 import threading
@@ -178,6 +179,8 @@ class Parser:
         Parser.set_parse_stage(True)
         # parse DAG
         logger.debug(f"parse @step for module:{module}")
+        if module in sys.modules:
+            del sys.modules[module]
         load_module(module, path)
         _jobs = Parser.get_jobs().copy()
         Parser.clear_config()
@@ -205,6 +208,9 @@ class Parser:
 
     @staticmethod
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
+        if not jobs:
+            raise ValueError("EMPTY job specification error!")
+
         checks = []
         logger.debug(f"check jobs:{jobs}")
 

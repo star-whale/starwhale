@@ -4,12 +4,13 @@ import { Spinner, SIZE } from 'baseui/spinner'
 import IconFont from '../IconFont'
 
 interface IBusyPlaceholderProps {
-    type?: 'spinner' | 'loading' | 'notfound' | 'empty'
+    type?: 'spinner' | 'loading' | 'notfound' | 'empty' | 'center'
     style?: React.CSSProperties
+    children?: React.ReactNode
 }
 
-export default function BusyPlaceholder({ type, style }: IBusyPlaceholderProps) {
-    let children = null
+export default function BusyPlaceholder({ type, style, children: rawChildren }: IBusyPlaceholderProps) {
+    let children = rawChildren
 
     switch (type) {
         default:
@@ -31,6 +32,13 @@ export default function BusyPlaceholder({ type, style }: IBusyPlaceholderProps) 
                     <div style={{ alignSelf: 'center', fontSize: '50px' }}>
                         <IconFont type='empty' size={50} />
                     </div>
+                </>
+            )
+            break
+        case 'center':
+            children = (
+                <>
+                    <div style={{ display: 'grid', placeItems: 'center', gap: '12px' }}>{rawChildren}</div>
                 </>
             )
             break

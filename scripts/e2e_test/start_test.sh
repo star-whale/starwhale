@@ -30,7 +30,7 @@ declare_env() {
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
   export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
-  export CONTROLLER_URL="http://127.0.0.1:$PORT_CONTROLLER"
+  export CONTROLLER_URL="${CONTROLLER_URL:=http://127.0.0.1:8082}"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
   export SW_IMAGE_REPO="${SW_IMAGE_REPO:=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER}"
@@ -211,8 +211,13 @@ client_test() {
   rm -rf venv*
   pushd ../
   python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip
-  python3 scripts/client_test/cli_test.py simple
-  scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER || exit 1
+  if ! in_github_action; then
+    bash scripts/client_test/cli_test.sh all
+  else
+    if ! bash scripts/client_test/cli_test.sh simple; then
+      scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER || exit 1
+    fi
+  fi
   popd
   popd
 

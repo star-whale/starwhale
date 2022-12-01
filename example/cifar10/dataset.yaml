@@ -1,7 +1,7 @@
 #name: cifar10-train
 #handler: cifar.dataset:CIFAR10TrainBuildExecutor
 
-name: cifar10-test
+name: cifar10
 handler: cifar.dataset:CIFAR10TestBuildExecutor
 desc: CIFAR10 data and label test dataset
 

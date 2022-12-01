@@ -147,12 +147,9 @@ EOF
 [global]
 index-url=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
 extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
-                http://pypi.mirrors.ustc.edu.cn/simple
-                https://mirrors.bfsu.edu.cn/pypi/web/simple
 
 [install]
 trusted-host=$NEXUS_HOSTNAME
-             pypi.mirrors.ustc.edu.cn
 EOF
 
     echo "$HOME/.pip/pip.conf is modified to "

@@ -10,7 +10,14 @@ from rich.table import Table
 from rich.pretty import Pretty
 from rich.console import RenderableType
 
-from starwhale.utils import Order, console, pretty_bytes, sort_obj_list, snake_to_camel
+from starwhale.utils import (
+    Order,
+    console,
+    pretty_bytes,
+    sort_obj_list,
+    snake_to_camel,
+    gen_uniq_version,
+)
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -126,6 +133,7 @@ class BaseTermView(SWCliConfigMixed):
             project=_project_uri.project,
             obj_type=typ,
             obj_name=bundle_name,
+            obj_ver=gen_uniq_version(),
         )
         console.print(f":construction_worker: uri:{_uri}")
         return _uri

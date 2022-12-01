@@ -52,7 +52,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 function PanelRocAucWidget(props: WidgetRendererProps<any, any>) {
-    console.log('PanelRocAucWidget', props)
+    // console.log('PanelRocAucWidget', props)
 
     const { fieldConfig, data = {} } = props
     const { records = [] } = data

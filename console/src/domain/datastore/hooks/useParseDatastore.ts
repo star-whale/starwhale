@@ -52,7 +52,7 @@ export function useParseRocAuc(
             const xnum = item?.[x ?? 'fpr']
             const ynum = item?.[y ?? 'tpr']
             if (xnum && !Number.isNaN(xnum)) fpr.push(Number(xnum))
-            if (ynum && !Number.isNaN(ynum)) fpr.push(Number(ynum))
+            if (ynum && !Number.isNaN(ynum)) tpr.push(Number(ynum))
         })
         return {
             records,

@@ -1,0 +1,22 @@
+default:
+  - cls_name: ''
+    concurrency: 1
+    job_name: default
+    needs: [ ]
+    resources:
+    - type: nvidia.com/gpu
+      request: 1
+      limit: 1
+    step_name: ppl
+    task_num: 2
+  - cls_name: ''
+    concurrency: 1
+    job_name: default
+    needs:
+    - ppl
+    resources:
+    - type: nvidia.com/gpu
+      request: 1
+      limit: 1
+    step_name: cmp
+    task_num: 1
