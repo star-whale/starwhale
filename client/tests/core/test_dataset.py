@@ -400,7 +400,13 @@ class StandaloneDatasetTestCase(TestCase):
 
 
 class TestJsonDict(TestCase):
-    JSON_DICT = {"a": 1, "b": [1, 2, 3], "c": {"ca": "1"}, "d": Link("http://ad.c/d")}
+    JSON_DICT = {
+        "a": 1,
+        "b": [1, 2, 3],
+        "c": {"ca": "1"},
+        "d": Link("http://ad.c/d"),
+        "e": ("a", "b"),
+    }
 
     def test_init(self) -> None:
         _jd = JsonDict(self.JSON_DICT)
@@ -413,6 +419,7 @@ class TestJsonDict(TestCase):
         self.assertEqual("1", _jd.c.ca)
         self.assertEqual(Link, type(_jd.d))
         self.assertEqual("http://ad.c/d", _jd.d.uri)
+        self.assertEqual(("a", "b"), _jd.e)
         self.assertEqual(
             data_store.SwObjectType(
                 JsonDict,
@@ -434,6 +441,7 @@ class TestJsonDict(TestCase):
                             "_signed_uri": data_store.STRING,
                         },
                     ),
+                    "e": data_store.SwTupleType(data_store.STRING),
                 },
             ),
             data_store._get_type(_jd),
@@ -447,9 +455,12 @@ class TestJsonDict(TestCase):
         self.assertEqual("1", _d.ca)
         _l = Link("http://ad.c/d")
         self.assertEqual(_l, JsonDict.from_data(_l))
+        tpl = ("a", "b")
+        self.assertEqual(tpl, JsonDict.from_data(tpl))
         sw_j_o = JsonDict.from_data(self.JSON_DICT)
         self._do_assert(sw_j_o)
 
     def test_asdict(self):
         sw_j_o = JsonDict.from_data(self.JSON_DICT)
         self.assertEqual(self.JSON_DICT, sw_j_o.asdict())
+        self.assertEqual({}, JsonDict().asdict())

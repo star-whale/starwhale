@@ -713,7 +713,7 @@ class JsonDict(SwObject):
     def __init__(self, d: dict = {}) -> None:
         for _k, _v in d.items():
             if type(_k) != str:
-                raise ValueError("json like dict shouldn't have none-str keys")
+                raise ValueError(f"json like dict shouldn't have none-str keys {_k}")
             self.__dict__[_k] = JsonDict.from_data(_v)
 
     @classmethod
@@ -731,9 +731,11 @@ class JsonDict(SwObject):
             return d
         if type(d) == list:
             return [cls.from_data(_d) for _d in d]
+        if type(d) == tuple:
+            return tuple(cls.from_data(_d) for _d in d)
 
         raise ValueError(
-            "json like dict shouldn't have values who's type is not in [SwObject, list, dict, str, int, bool, None]"
+            f"json like dict shouldn't have values who's type is not in [SwObject, list, dict, str, int, bool, None], Type: {type(d)}"
         )
 
     def asdict(self) -> t.Dict:
@@ -751,4 +753,6 @@ class JsonDict(SwObject):
             return d.asdict()
         if isinstance(d, list):
             return [JsonDict.to_data(_d) for _d in d]
+        if isinstance(d, tuple):
+            return tuple(JsonDict.to_data(_d) for _d in d)
         return d
