@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.model.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -47,5 +48,64 @@ public class ModelMapperTest extends MySqlContainerHolder {
                 entity.getProjectId(), false));
         Assertions.assertEquals(entity, modelMapper.findByName(entity.getModelName(),
                 entity.getProjectId(), true));
+    }
+
+    @Test
+    public void testList() {
+        ModelEntity model1 = ModelEntity.builder()
+                .modelName("model1")
+                .ownerId(1L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+        ModelEntity model2 = ModelEntity.builder()
+                .modelName("model2")
+                .ownerId(2L)
+                .projectId(2L)
+                .isDeleted(0)
+                .build();
+        ModelEntity model3 = ModelEntity.builder()
+                .modelName("model3")
+                .ownerId(2L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+
+        modelMapper.insert(model1);
+        modelMapper.insert(model2);
+        modelMapper.insert(model3);
+
+        var list = modelMapper.list(1L, null, null);
+        Assertions.assertIterableEquals(List.of(model3, model1), list);
+
+        list = modelMapper.list(2L, null, null);
+        Assertions.assertIterableEquals(List.of(model2), list);
+
+        list = modelMapper.list(null, "model", null);
+        Assertions.assertIterableEquals(List.of(model3, model2, model1), list);
+
+        list = modelMapper.list(null, "model1", null);
+        Assertions.assertIterableEquals(List.of(model1), list);
+    }
+
+    @Test
+    public void testRemoveAndRecover() {
+        ModelEntity model1 = ModelEntity.builder()
+                .modelName("model1")
+                .ownerId(1L)
+                .projectId(1L)
+                .isDeleted(0)
+                .build();
+        modelMapper.insert(model1);
+
+        modelMapper.remove(model1.getId());
+        Assertions.assertEquals(1, modelMapper.find(model1.getId()).getIsDeleted());
+        Assertions.assertNull(modelMapper.findByName(model1.getModelName(), model1.getProjectId(), false));
+        Assertions.assertEquals(model1.getModelName(), modelMapper.findDeleted(model1.getId()).getModelName());
+
+        modelMapper.recover(model1.getId());
+        Assertions.assertEquals(0, modelMapper.find(model1.getId()).getIsDeleted());
+        Assertions.assertEquals(model1, modelMapper.findByName(model1.getModelName(), model1.getProjectId(), false));
+        Assertions.assertNull(modelMapper.findDeleted(model1.getId()));
     }
 }
