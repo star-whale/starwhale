@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +28,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class RuntimeMapperTest {
+public class RuntimeMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private RuntimeMapper runtimeMapper;

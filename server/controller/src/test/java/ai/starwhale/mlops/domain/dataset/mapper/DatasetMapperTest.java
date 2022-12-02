@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +28,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class DatasetMapperTest {
+public class DatasetMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private DatasetMapper datasetMapper;
