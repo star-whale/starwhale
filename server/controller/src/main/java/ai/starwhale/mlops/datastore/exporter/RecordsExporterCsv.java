@@ -19,11 +19,14 @@ package ai.starwhale.mlops.datastore.exporter;
 import ai.starwhale.mlops.datastore.RecordList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.List;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 /**
  * export as <a href="https://www.rfc-editor.org/rfc/rfc4180">csv format</a>
@@ -38,39 +41,30 @@ public class RecordsExporterCsv implements RecordsExporter {
         this.objectMapper = objectMapper;
     }
 
-    @Override
-    public byte[] asBytes(RecordList recordList) {
+    public byte[] asBytes(RecordList recordList) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
-        recordList.getRecords().forEach(r -> {
-            r.entrySet().stream().sorted(Entry.comparingByKey()).forEach(record -> {
-                String v;
+        try (final CSVPrinter printer = new CSVPrinter(stringBuilder, CSVFormat.RFC4180)) {
+            recordList.getRecords().forEach(r -> {
+                List<String> values = r.entrySet().stream().sorted(Entry.comparingByKey()).map(record -> {
+                    if (record.getValue() instanceof String) {
+                        return (String) record.getValue();
+                    }
+                    String v;
+                    try {
+                        v = objectMapper.writeValueAsString(record.getValue());
+                    } catch (JsonProcessingException e) {
+                        log.warn("can't jsonlize record value {} , error message is dumped", record.getValue(), e);
+                        v = e.getMessage();
+                    }
+                    return v;
+                }).collect(Collectors.toList());
                 try {
-                    v = objectMapper.writeValueAsString(record.getValue());
-                } catch (JsonProcessingException e) {
-                    log.warn("can't jsonlize record value {} , error message is dumped", record.getValue(), e);
-                    v = e.getMessage();
+                    printer.printRecord(values.toArray());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-                stringBuilder.append(wrap(v));
-                stringBuilder.append(",");
             });
-            stringBuilder.replace(stringBuilder.length() - 1, stringBuilder.length(), "\n");
-        });
-        return stringBuilder.toString().getBytes();
-    }
-
-    private static final Pattern QUOTE = Pattern.compile("^\".*\"$");
-
-    /**
-     * https://www.rfc-editor.org/rfc/rfc4180
-     *
-     * @param v csv value
-     * @return conform to rfc4180 value
-     */
-    private String wrap(String v) {
-        if (QUOTE.matcher(v).matches()) {
-            return v;
         }
-        return "\"" + v.replace("\"", "\"\"") + "\"";
-
+        return stringBuilder.toString().getBytes();
     }
 }

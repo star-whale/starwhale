@@ -188,7 +188,7 @@ public class DataStoreController implements DataStoreApi {
             throw new SwValidationException(e, "request=" + request);
         } catch (IOException e) {
             log.error("writing response failed", e);
-            throw new SwProcessException(ErrorType.NETWORK, "writing response failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
         }
     }
 
@@ -197,7 +197,7 @@ public class DataStoreController implements DataStoreApi {
             throw new SwValidationException(ValidSubject.DATASTORE,
                     "table name should not be null");
         }
-        var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
+        return this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName(request.getTableName())
                 .columns(DataStoreController.convertColumns(request.getColumns()))
                 .filter(DataStoreController.convertFilter(request.getFilter()))
@@ -208,7 +208,6 @@ public class DataStoreController implements DataStoreApi {
                 .rawResult(request.isRawResult())
                 .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                 .build());
-        return recordList;
     }
 
     private static TableQueryFilter convertFilter(TableQueryFilterDesc input) {

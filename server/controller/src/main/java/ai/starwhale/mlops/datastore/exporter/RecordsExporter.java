@@ -17,9 +17,10 @@
 package ai.starwhale.mlops.datastore.exporter;
 
 import ai.starwhale.mlops.datastore.RecordList;
+import java.io.IOException;
 
 public interface RecordsExporter {
 
-    byte[] asBytes(RecordList recordList);
+    byte[] asBytes(RecordList recordList)  throws IOException;
 
 }

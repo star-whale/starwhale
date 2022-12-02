@@ -18,6 +18,7 @@ package ai.starwhale.mlops.datastore.exporter;
 
 import ai.starwhale.mlops.datastore.RecordList;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -25,8 +26,8 @@ import org.junit.jupiter.api.Test;
 
 public class RecordsExporterCsvTest {
 
-    private static final String EXPECTED = "\"v1\",\"{\"\"mk\"\":\"\"mv\"\"}\",\"[1,2,3]\"\n"
-            + "\"V1\",\"{\"\"MK\"\":\"\"MV\"\"}\",\"[4,5,6]\"\n";
+    private static final String EXPECTED = "v1,\"{\"\"mk\"\":\"\"mv\"\"}\",\"[1,2,3]\"\r\n"
+            + "V1,\"{\"\"MK\"\":\"\"MV\"\"}\",\"[4,5,6]\"\r\n";
 
     private static final RecordList RECORD_LIST = new RecordList(
             null,
@@ -41,8 +42,9 @@ public class RecordsExporterCsvTest {
             null);
 
     @Test
-    public void testRecordsExporterCsv() {
+    public void testRecordsExporterCsv() throws IOException {
         RecordsExporterCsv exporter = new RecordsExporterCsv(new ObjectMapper());
         Assertions.assertEquals(EXPECTED, new String(exporter.asBytes(RECORD_LIST)));
     }
+
 }
