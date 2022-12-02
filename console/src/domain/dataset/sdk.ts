@@ -1,4 +1,3 @@
-import isObject from 'lodash/isObject'
 import { tableDataLink } from '../datastore/utils'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
@@ -34,6 +33,7 @@ export type IObjectImage = {
     encoding: string
     type: TYPES[keyof TYPES]
     as_mask: boolean
+    data_type: any
 }
 
 export type IAnnotation = {
@@ -45,9 +45,7 @@ export type IAnnotationCOCOObject = {
     image_id: number
     category_id: number
     // RLE or [polygon],
-    segmentation?: {
-        size: [height: number, width: number]
-    }
+    _segmentation_rle_size?: [height: number, width: number]
     type: 'coco_object_annotation'
     bbox: IBBox
     iscrowd: 0 | 1
@@ -96,22 +94,17 @@ export class DatasetObject {
         this.objects = []
 
         // @ts-ignore
-        Object.entries(data).forEach(([key, value]: [string, string]) => {
-            if (!key.startsWith('_annotation')) return
-            const attr = key.replace(/^_annotation?_/, '')
+        Object.entries(data).forEach(([key, value]: [string, any]) => {
+            if (key !== 'annotations') return
 
             try {
-                const annos =
-                    String(value).startsWith('{') || String(value).startsWith('[')
-                        ? JSON.parse(value, undefined)
-                        : value
-                if (Array.isArray(annos)) {
-                    annos.forEach((item) => this.setProps(item))
-                } else if (isObject(annos)) {
-                    this.setProps(annos)
-                } else {
-                    this.summary[attr] = annos
-                }
+                Object.entries(value).forEach(([k, v]: [string, any]) => {
+                    if (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') {
+                        this.summary[k] = v
+                    }
+                })
+                value.annotations.forEach((item?: any) => this.setProps(item))
+                this.setProps(value.mask)
             } catch (e) {
                 // eslint-disable-next-line no-console
                 console.error(e)
@@ -134,11 +127,11 @@ export class DatasetObject {
     }
 
     setProps(anno: any) {
-        if (anno?.type === TYPES.COCO) {
+        if (anno?._type === TYPES.COCO) {
             this.cocos?.push(anno)
-        } else if (anno?.type === TYPES.IMAGE && anno?.as_mask) {
+        } else if ((anno?._type === TYPES.IMAGE || anno?._type === TYPES.LINK) && anno?.data_type?.as_mask) {
             this.masks?.push(anno)
-        } else if (!anno?.type) {
+        } else if (!anno?._type) {
             this.objects?.push(anno)
         }
     }
@@ -155,6 +148,19 @@ export class DatasetObject {
             Authorization: token as string,
         })
         this.src = src
+        this.masks.forEach((msk: any) => {
+            let mskUri = msk.uri
+            if (msk.with_local_fs_data === 'true') {
+                mskUri = msk._local_fs_uri
+            }
+            // eslint-disable-next-line no-param-reassign
+            msk._raw_base64_data = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
+                uri: mskUri,
+                offset: msk.offset,
+                size: msk.size,
+                Authorization: token as string,
+            })
+        })
         return src
     }
 }

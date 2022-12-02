@@ -184,7 +184,26 @@ public class ModelDaoTest {
 
     @Test
     public void testRevertTo() {
+        Long bundleId = 3L;
+        Long versionId = 1L;
+        Long maxOrder = 4L;
+        given(versionMapper.selectVersionOrderForUpdate(same(versionId)))
+                .willReturn(2L);
 
+        given(versionMapper.selectMaxVersionOrderOfModelForUpdate(same(bundleId)))
+                .willReturn(maxOrder);
+
+        given(versionMapper.updateVersionOrder(same(versionId), same(maxOrder)))
+                .willReturn(1);
+
+        var order = manager.selectVersionOrderForUpdate(bundleId, versionId);
+        assertThat(order, is(2L));
+
+        var max = manager.selectMaxVersionOrderOfBundleForUpdate(bundleId);
+        assertThat(max, is(maxOrder));
+
+        var res = manager.updateVersionOrder(versionId, max);
+        assertThat(res, is(1));
     }
 
     @Test
@@ -210,4 +229,6 @@ public class ModelDaoTest {
         res = manager.remove(2L);
         assertThat(res, is(false));
     }
+
+
 }

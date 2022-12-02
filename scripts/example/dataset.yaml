@@ -1,6 +1,6 @@
 name: simple-test
 
-handler: code.dataset:SimpleTextDatasetBuildExecutor
+handler: src.dataset:SimpleTextDatasetBuildExecutor
 
 desc: simple dataset
 

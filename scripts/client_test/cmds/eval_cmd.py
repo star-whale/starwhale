@@ -2,6 +2,7 @@ import json
 import typing as t
 
 from starwhale.core.eval.view import JobTermView
+from starwhale.api._impl.data_store import LocalDataStore
 
 from . import CLI
 from .base.invoke import invoke
@@ -43,7 +44,7 @@ class Evaluation:
         :return:
         """
 
-        return JobTermView.run(
+        jid = JobTermView.run(
             project,
             model,
             datasets,
@@ -58,6 +59,8 @@ class Evaluation:
             step=step,
             task_index=task_index,
         )
+        LocalDataStore.get_instance().dump()
+        return jid
 
     def info(self, version: str) -> t.Any:
         """
