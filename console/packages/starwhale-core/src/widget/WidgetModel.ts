@@ -1,12 +1,9 @@
-import { WidgetBaseConfig, WidgetConfig, WidgetGroupType, WidgetMeta } from '../types/index'
-import { WidgetType } from '../widget/WidgetFactory'
 import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
-import { generateId } from '../utils/generators'
-import { Matcher, PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
 import { klona } from 'klona/full'
 import _ from 'lodash'
-import { StoreType } from '../context'
-import { WidgetStoreState } from '../store/store'
+import { WidgetConfig, WidgetGroupType, WidgetMeta, WidgetStoreState, WidgetType } from '../types/index'
+import { generateId } from '../utils/generators'
+import { PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
 
 const PersistProperty = {
     type: true,
@@ -17,17 +14,25 @@ const PersistProperty = {
 
 class WidgetModel implements WidgetConfig {
     id!: string
+
     type!: WidgetType
+
     name!: string
+
     group?: WidgetGroupType
+
     description?: string
+
     meta?: WidgetMeta
 
     defaultConfig!: WidgetConfig
+
     restoreConfig!: WidgetConfig
+
     overrideConfig!: WidgetConfig
 
     replacer!: Replacer
+
     dynamicVars!: Record<string, any>
 
     constructor(config: any) {
@@ -37,7 +42,7 @@ class WidgetModel implements WidgetConfig {
 
     restore(config: any) {
         const { type, id } = config
-        const properties = Object.assign({}, config)
+        const properties = { ...config }
         this.restoreConfig = properties
 
         if (type && !this.defaultConfig && WidgetFactory.getWidget(type)) {

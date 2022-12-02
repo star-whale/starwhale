@@ -110,6 +110,9 @@ module.exports = {
         '@typescript-eslint/ban-ts-comment': 'off',
         'react/destructuring-assignment': 'off',
         'import/no-named-as-default': 'off',
+        // @FIXME check
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-restricted-imports': 'off',
     },
     settings: {
         'react': {

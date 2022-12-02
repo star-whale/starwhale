@@ -10,7 +10,7 @@ export interface INumberInputProps {
     disabled?: boolean
     type?: 'int' | 'float'
     overrides?: InputProps['overrides']
-    size?: SIZE[keyof SIZE]
+    size?: keyof typeof SIZE
 }
 
 export default function NumberInput({
@@ -38,6 +38,7 @@ export default function NumberInput({
             overrides={overrides}
             type='number'
             value={value}
+            // @ts-ignore
             onChange={handleChange}
             min={min}
             max={max}

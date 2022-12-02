@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 import _ from 'lodash'
+import { ErrorBoundary } from '@starwhale/ui'
 import { useWidget } from './WidgetFactoryRegister'
 import { WidgetRendererProps } from '../types'
 
@@ -24,7 +24,7 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     } = props
 
     const { widget } = useWidget(type)
-    const [error, setError] = useState<string | undefined>()
+    const [error] = useState<string | undefined>()
 
     if (error) {
         return <div>Failed to load widget: {error}</div>

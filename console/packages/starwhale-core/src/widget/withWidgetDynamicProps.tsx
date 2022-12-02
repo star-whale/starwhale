@@ -1,14 +1,23 @@
-import React, { useCallback, useEffect, useRef } from 'react'
-import { useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
+import React, { useCallback, useEffect } from 'react'
 import useSelector, { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType } from '../types'
-import WidgetModel from './WidgetModel'
+import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
+
+function getParentPath(paths: any[]) {
+    const curr = paths.slice()
+    const parentIndex = paths.lastIndexOf('children')
+    return curr.slice(0, parentIndex + 1)
+}
+
+function getChildrenPath(paths: any[]) {
+    return [...paths, 'children']
+}
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
     function WrapedPropsWidget(props: any) {
         const { id, type, path } = props
-        const { store, eventBus, dynamicVars } = useEditorContext()
+        const { store, eventBus } = useEditorContext()
         const api = store()
         const overrides = useSelector(getWidget(id)) ?? {}
 
@@ -25,23 +34,22 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 const paths = ['tree', ...path, 'children']
                 api.onLayoutOrderChange(paths, newList)
             },
-            [api]
+            [api, path]
         )
         const handleLayoutChildrenChange = useCallback(
             (widget: any, payload: Record<string, any>) => {
                 const paths = ['tree', ...path, 'children']
                 api.onLayoutChildrenChange(paths, getChildrenPath(paths), widget, payload)
             },
-            [api]
+            [api, path]
         )
         const handleLayoutCurrentChange = useCallback(
             (widget: any, payload: Record<string, any>) => {
                 // @FIXME path utils
                 const paths = ['tree', ...path]
-                console.log(paths, payload)
                 api.onLayoutChildrenChange(paths, getParentPath(paths), widget, payload)
             },
-            [api]
+            [api, path]
         )
 
         // @FIXME show datastore be fetch at here
@@ -55,7 +63,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 limit: 99999,
                 rawResult: true,
                 ignoreNonExistingTable: true,
-                // filter,
             }),
             [tableName]
         )
@@ -64,9 +71,8 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
 
         useEffect(() => {
             if (tableName) info.refetch()
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [tableName, type])
-
-        // console.log(tableName)
 
         return (
             <WrappedWidgetRender
@@ -95,14 +101,4 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         )
     }
     return WrapedPropsWidget
-}
-
-function getParentPath(paths: any[]) {
-    const curr = paths.slice()
-    const parentIndex = paths.lastIndexOf('children')
-    return curr.slice(0, parentIndex + 1)
-}
-
-function getChildrenPath(paths: any[]) {
-    return [...paths, 'children']
 }

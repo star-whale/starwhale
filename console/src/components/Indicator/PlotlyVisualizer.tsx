@@ -10,7 +10,7 @@ import './PlotlyVisualizer.scss'
 
 function PlotlyVisualizer({ data, isLoading }: IPlotlyVisualizerProps) {
     return (
-        <BusyLoaderWrapper className='VisualizationLoader' isLoading={!!isLoading}>
+        <BusyLoaderWrapper className='VisualizationLoader' isLoading={!!isLoading} height='100%'>
             <div className='PlotlyVisualizer'>
                 {_.isEmpty(data?.data) ? (
                     <div>No Tracked Figures</div>

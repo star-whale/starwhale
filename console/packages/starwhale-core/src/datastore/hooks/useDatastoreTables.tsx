@@ -1,6 +1,6 @@
+import React, { useEffect, useMemo } from 'react'
 import { useListDatastoreTables } from './useFetchDatastore'
 import { tablesOfEvaluation } from '../utils'
-import React, { useEffect, useMemo } from 'react'
 
 export default function useDatastoreTables(projectName: string, jobUuid: string) {
     const queryAllTables = useMemo(() => {

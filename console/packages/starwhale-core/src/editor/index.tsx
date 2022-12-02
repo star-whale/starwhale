@@ -1,11 +1,13 @@
+/* eslint-disable */
 import React, { useEffect, useMemo } from 'react'
 import log from 'loglevel'
 import EditorContextProvider from '../context/EditorContextProvider'
 import { registerWidgets } from '../widget/WidgetFactoryRegister'
 import WidgetFactory from '../widget/WidgetFactory'
-import { createCustomStore, WidgetTreeNode } from '../store/store'
+import { createCustomStore } from '../store/store'
 import WidgetRenderTree from '../widget/WidgetRenderTree'
 import { EventBusSrv } from '../events/events'
+import { WidgetTreeNode } from '../types'
 
 // log.enableAll()
 registerWidgets()
