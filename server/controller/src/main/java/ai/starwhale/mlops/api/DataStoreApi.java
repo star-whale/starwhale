@@ -24,6 +24,7 @@ import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -57,4 +58,9 @@ public interface DataStoreApi {
     @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<RecordListVo>> scanTable(
             @Valid @RequestBody ScanTableRequest request);
+
+    @PostMapping(value = "/datastore/queryTable/export")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
+    void queryAndExport(
+            @Valid @RequestBody QueryTableRequest request, HttpServletResponse httpResponse);
 }
