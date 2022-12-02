@@ -1,12 +1,9 @@
 import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
 import { klona } from 'klona/full'
 import _ from 'lodash'
-import { WidgetBaseConfig, WidgetConfig, WidgetGroupType, WidgetMeta } from '../types/index'
-import { WidgetType } from './WidgetFactory'
+import { WidgetConfig, WidgetGroupType, WidgetMeta, WidgetStoreState, WidgetType } from '../types/index'
 import { generateId } from '../utils/generators'
-import { Matcher, PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
-import { StoreType } from '../context'
-import { WidgetStoreState } from '../store/store'
+import { PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
 
 const PersistProperty = {
     type: true,

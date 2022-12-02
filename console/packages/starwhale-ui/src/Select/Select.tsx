@@ -4,7 +4,7 @@ import { mergeOverrides } from '../utils'
 
 export interface ISelectProps extends SelectProps {
     overrides?: SelectProps['overrides']
-    size?: SIZE[keyof SIZE]
+    size?: keyof typeof SIZE
 }
 
 export default function Select({ size = 'compact', ...props }: ISelectProps) {

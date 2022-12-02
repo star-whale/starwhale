@@ -5,7 +5,7 @@ import IconFont from '../IconFont'
 
 export interface IInputProps extends InputProps {
     overrides?: InputProps['overrides']
-    size?: SIZE[keyof SIZE]
+    size?: keyof typeof SIZE
 }
 
 export default function Input({ size = 'compact', ...props }: IInputProps) {

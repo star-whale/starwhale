@@ -7,7 +7,6 @@ import { INavItem } from '@/components/BaseSidebar'
 import { doJobAction, fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import IconFont from '@/components/IconFont/index'
 import Accordion from '@/components/Accordion'
 import { Panel } from 'baseui/accordion'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
@@ -56,18 +55,15 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
             {
                 title: t('Results'),
                 path: `/projects/${projectId}/evaluations/${jobId}/results`,
-                icon: <IconFont type='results' />,
             },
             {
                 title: t('DAG'),
                 path: `/projects/${projectId}/evaluations/${jobId}/actions`,
-                icon: <IconFont type='results' />,
             },
             {
                 title: t('Tasks'),
                 path: `/projects/${projectId}/evaluations/${jobId}/tasks`,
                 pattern: '/\\/tasks\\/?',
-                icon: <IconFont type='tasks' />,
             },
         ]
         return items

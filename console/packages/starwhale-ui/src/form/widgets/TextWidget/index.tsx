@@ -32,8 +32,11 @@ const TextWidget = ({
             disabled={disabled || (readonlyAsDisabled && readonly)}
             id={id}
             name={id}
+            // @ts-ignore
             onBlur={!readonly ? handleBlur : undefined}
+            // @ts-ignore
             onChange={!readonly ? handleChange : undefined}
+            // @ts-ignore
             onFocus={!readonly ? handleFocus : undefined}
             placeholder={placeholder}
             rows={options.rows || 4}

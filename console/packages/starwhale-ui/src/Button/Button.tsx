@@ -5,7 +5,7 @@ import { mergeOverrides } from '../utils'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent' | 'withIcon'
-    kind?: KIND[keyof KIND]
+    kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
 }
