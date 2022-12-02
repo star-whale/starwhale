@@ -152,7 +152,7 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str,
         config: DatasetConfig,
-    ) -> None:
+    ) -> URI:
         dataset_uri = cls.prepare_build_bundle(
             project=config.project_uri, bundle_name=config.name, typ=URIType.DATASET
         )
@@ -167,6 +167,7 @@ class DatasetTermView(BaseTermView):
             ).run()
         else:
             ds.build(Path(workdir), config=config)
+        return dataset_uri
 
     @classmethod
     def copy(

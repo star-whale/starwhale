@@ -181,6 +181,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
         self.yaml_name = DefaultYAMLName.MODEL
+        self._version = uri.object.version
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.add(tags, quiet)
@@ -188,13 +189,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
 
-    def _gen_steps(self, typ: str, ppl: str) -> None:
+    def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
         _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
         logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
-        Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
+        Parser.generate_job_yaml(ppl, workdir, _f)
 
     @classmethod
     def get_pipeline_handler(
@@ -449,7 +450,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._gen_steps,
                 5,
                 "generate execute steps",
-                dict(typ=_model_config.run.typ, ppl=_model_config.run.handler),
+                dict(
+                    typ=_model_config.run.typ,
+                    ppl=_model_config.run.handler,
+                    workdir=workdir,
+                ),
             ),
             (
                 self._render_manifest,

@@ -1,5 +1,5 @@
 version: 1.0
-name: text_cls
+name: ag_news
 
 model:
   - models/model.i

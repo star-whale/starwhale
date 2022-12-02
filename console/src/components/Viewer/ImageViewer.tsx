@@ -73,7 +73,7 @@ export function SegmentOverlay({ masks = [] }: { masks: IObjectImage[] }) {
 
     useEffect(() => {
         if (canvasRef.current && masks[0]) {
-            const [height, width] = masks[0].shape
+            const [height, width] = masks[0].data_type.shape
             const canvas = canvasRef.current
             canvas.width = width
             canvas.height = height
@@ -98,8 +98,7 @@ export function COCOBBoxOverlay({ cocos = [] }: { cocos: IImageViewerProps['coco
         const canvas = canvasRef.current
         clearCanvas(canvas)
         const coco = cocos[0]
-        const [height = 0, width = 0] = coco.segmentation?.size ?? []
-
+        const [height = 0, width = 0] = coco._segmentation_rle_size ?? []
         canvas.width = width
         canvas.height = height
 

@@ -93,6 +93,7 @@ public interface DatasetMapper {
                     SELECT(COLUMNS);
                     FROM("dataset_info");
                     WHERE("dataset_name = #{name}");
+                    WHERE("is_deleted = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }

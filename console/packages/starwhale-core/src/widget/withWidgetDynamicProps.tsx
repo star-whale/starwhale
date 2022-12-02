@@ -21,9 +21,9 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // console.log('【model】', model.current.type, model.current.id, model)
 
         const handleLayoutOrderChange = useCallback(
-            (oldIndex, newIndex) => {
+            (newList) => {
                 const paths = ['tree', ...path, 'children']
-                api.onLayoutOrderChange(paths, oldIndex, newIndex)
+                api.onLayoutOrderChange(paths, newList)
             },
             [api]
         )
@@ -38,6 +38,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             (widget: any, payload: Record<string, any>) => {
                 // @FIXME path utils
                 const paths = ['tree', ...path]
+                console.log(paths, payload)
                 api.onLayoutChildrenChange(paths, getParentPath(paths), widget, payload)
             },
             [api]

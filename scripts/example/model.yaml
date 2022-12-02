@@ -5,6 +5,6 @@ model:
   - model/empty.pt
 
 run:
-  handler: code.evaluator:SimplePipeline
+  handler: src.evaluator:SimplePipeline
 
 desc: simple model

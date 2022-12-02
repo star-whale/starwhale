@@ -3,7 +3,6 @@ import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { createUseStyles } from 'react-jss'
-import { headerHeight } from '@/consts'
 import useTranslation from '../../hooks/useTranslation'
 import IconFont from '../../components/IconFont/index'
 import { DatasetObject } from '../../domain/dataset/sdk'
@@ -48,7 +47,8 @@ const useStyles = createUseStyles({
         left: 0,
         right: 0,
         bottom: 0,
-        top: headerHeight,
+        top: 0,
+        zIndex: 20,
     },
     exitFullscreen: {
         height: '56px',

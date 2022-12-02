@@ -1,4 +1,4 @@
-name: nmt-test
+name: nmt
 
 handler: nmt.dataset:NMTDatasetBuildExecutor
 

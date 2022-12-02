@@ -169,7 +169,26 @@ public class RuntimeDaoTest {
 
     @Test
     public void testRevertTo() {
+        Long bundleId = 1L;
+        Long versionId = 5L;
+        Long maxOrder = 7L;
+        given(versionMapper.selectVersionOrderForUpdate(same(versionId)))
+                .willReturn(2L);
 
+        given(versionMapper.selectMaxVersionOrderOfRuntimeForUpdate(same(bundleId)))
+                .willReturn(maxOrder);
+
+        given(versionMapper.updateVersionOrder(same(versionId), same(maxOrder)))
+                .willReturn(1);
+
+        var order = manager.selectVersionOrderForUpdate(bundleId, versionId);
+        assertThat(order, is(2L));
+
+        var max = manager.selectMaxVersionOrderOfBundleForUpdate(bundleId);
+        assertThat(max, is(maxOrder));
+
+        var res = manager.updateVersionOrder(versionId, max);
+        assertThat(res, is(1));
     }
 
     @Test

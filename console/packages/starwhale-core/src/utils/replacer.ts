@@ -52,7 +52,6 @@ export const replacer = (matches: Matcher[]) => {
                 const rawValue = _.get(raw, property)
                 if (isDynamicValue(rawValue) && injected?.[injectKey]) {
                     const origin = rawValue.replace(`{{${injectKey}}}`, injected[injectKey])
-                    console.log('toorigin', rawValue, origin)
 
                     data = produce(data, (temp: any) => {
                         _.set(temp, property, origin)

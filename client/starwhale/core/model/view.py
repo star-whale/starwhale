@@ -110,7 +110,7 @@ class ModelTermView(BaseTermView):
         project: str,
         yaml_name: str = DefaultYAMLName.MODEL,
         runtime_uri: str = "",
-    ) -> None:
+    ) -> URI:
         _config = load_yaml(Path(workdir) / yaml_name)
         _model_uri = cls.prepare_build_bundle(
             project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
@@ -124,6 +124,7 @@ class ModelTermView(BaseTermView):
             ).run()
         else:
             _m.build(Path(workdir), yaml_name)
+        return _model_uri
 
     @classmethod
     def copy(

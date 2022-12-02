@@ -693,7 +693,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         self.fs.remove_object(yaml_file)
         self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
-        sr = StandaloneRuntime(uri)
+        sr = StandaloneRuntime(URI(name, expected_type=URIType.RUNTIME))
         sr.build(Path(workdir), env_use_shell=True)
         runtime_workdir = os.path.join(
             sw.rootdir,
