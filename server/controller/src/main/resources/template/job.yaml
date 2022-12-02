@@ -2,11 +2,16 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: 'indexed-job'
+  labels:
+    owner: starwhale
 spec:
   completions: 1
   parallelism: 1
   completionMode: Indexed
   template:
+    metadata:
+      labels:
+        owner: starwhale
     spec:
       restartPolicy: Never
       containers:

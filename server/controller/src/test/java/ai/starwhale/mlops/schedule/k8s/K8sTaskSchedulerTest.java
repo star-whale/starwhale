@@ -82,7 +82,7 @@ public class K8sTaskSchedulerTest {
                 new K8sJobTemplateMock(""),
                 null,
                 null,
-                "http://instanceUri", 50,
+                null, "http://instanceUri", 50,
                 "OnFailure", 10,
                 storageAccessService);
         return scheduler;
@@ -111,7 +111,7 @@ public class K8sTaskSchedulerTest {
                 k8sJobTemplate,
                 null,
                 null,
-                "",
+                null, "",
                 50,
                 "OnFailure",
                 10,

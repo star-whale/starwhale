@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import _, { isPlainObject } from 'lodash'
-import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
 import { LazyLog } from 'react-lazylog'
@@ -23,31 +22,28 @@ export default function JobTasks() {
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
-    const onAction = useCallback(
-        async (type, task: ITaskSchema) => {
-            setCurrentTask(task)
-            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+    const onAction = useCallback(async (type, task: ITaskSchema) => {
+        setCurrentTask(task)
+        const data = await fetchTaskOfflineLogFiles(task?.id)
+        const files: Record<string, string> = {}
+        if (!_.isEmpty(data)) {
+            data.map(async (v: string) => {
+                const content = await fetchTaskOfflineFileLog(task?.id, v)
+                files[v] = content ?? ''
                 setCurrentLogFiles({
-                    [task?.uuid]: 'ws',
+                    ...files,
                 })
-            } else {
-                const data = await fetchTaskOfflineLogFiles(task?.id)
-                if (_.isEmpty(data)) {
-                    toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
-                }
-                const files: Record<string, string> = {}
-                data.map(async (v: string) => {
-                    const content = await fetchTaskOfflineFileLog(task?.id, v)
-                    files[v] = content ?? ''
-                    setCurrentLogFiles({
-                        ...files,
-                    })
-                })
-            }
-            setExpanded(true)
-        },
-        [t]
-    )
+            })
+        }
+        if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+            files[task?.uuid] = 'ws'
+            setCurrentLogFiles({
+                ...files,
+            })
+        }
+
+        setExpanded(true)
+    }, [])
 
     const handleScroll = ({ scrollTop, scrollHeight, clientHeight }: IScrollProps) => {
         const delta = scrollHeight - scrollTop
@@ -150,27 +146,28 @@ export default function JobTasks() {
                 <TaskListCard header={null} onAction={onAction} />
 
                 <Card outTitle={t('View Log')} style={{ padding: 0 }}>
-                    <Accordion
-                        overrides={{
-                            Header: {
-                                style: {
-                                    borderRadius: '8px',
+                    {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                        <Accordion
+                            key={fileName}
+                            overrides={{
+                                Header: {
+                                    style: {
+                                        borderRadius: '8px',
+                                    },
                                 },
-                            },
-                            Content: {
-                                style: {
-                                    height: '800px',
-                                    paddingBottom: '0px',
-                                    paddingTop: '0px',
-                                    backgroundColor: 'var(--color-brandBgSecondary)',
+                                Content: {
+                                    style: {
+                                        height: '800px',
+                                        paddingBottom: '0px',
+                                        paddingTop: '0px',
+                                        backgroundColor: 'var(--color-brandBgSecondary)',
+                                    },
                                 },
-                            },
-                        }}
-                        onChange={({ expanded }) => {
-                            setExpanded(expanded.includes('0'))
-                        }}
-                    >
-                        {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                            }}
+                            onChange={({ expanded }) => {
+                                setExpanded(expanded.includes('0'))
+                            }}
+                        >
                             <Panel key={fileName} title={`Log: ${fileName}`}>
                                 {!content.startsWith('ws') ? (
                                     <LazyLog
@@ -196,8 +193,8 @@ export default function JobTasks() {
                                     />
                                 )}
                             </Panel>
-                        ))}
-                    </Accordion>
+                        </Accordion>
+                    ))}
                 </Card>
             </div>
         </>

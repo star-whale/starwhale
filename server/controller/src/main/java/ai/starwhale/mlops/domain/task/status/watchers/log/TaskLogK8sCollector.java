@@ -25,6 +25,7 @@ import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -55,35 +56,36 @@ public class TaskLogK8sCollector implements TaskLogCollector {
 
     @Override
     public void collect(Task task) throws StarwhaleException {
-        String taskLog;
         log.debug("logging for task {} begins...", task.getId());
         try {
-            taskLog = k8sClient.logOfJob(K8sClient.toV1LabelSelector(Map.of(
-                            K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())),
+            V1Pod v1Pod = k8sClient.podOfJob(K8sClient.toV1LabelSelector(Map.of(
+                    K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())));
+            if (null == v1Pod) {
+                log.warn("pod not exists for task {}", task.getId());
+                return;
+            }
+            String logName = v1Pod.getMetadata().getName() + System.currentTimeMillis() / 1000;
+            String taskLog = k8sClient.logOfPod(v1Pod,
                     Stream.concat(k8sJobTemplate.getInitContainerTemplates().stream(),
                                     k8sJobTemplate.getContainersTemplates().stream())
                             .map(V1Container::getName)
                             .collect(Collectors.toList()));
-            log.debug("logs for task {} is {}...", task.getId(),
+            log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
+            String logPath = resolveLogPath(task, logName);
+            log.debug("putting log to storage at path {}", logPath);
+            storageService.put(logPath, taskLog.getBytes(
+                    StandardCharsets.UTF_8));
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.INFRA,
                     MessageFormat.format("k8s api exception {}", e.getResponseBody()),
                     e);
         } catch (IOException e) {
-            throw new SwProcessException(ErrorType.NETWORK, "k8s connection exception", e);
-        }
-        try {
-            String logPath = resolveLogPath(task);
-            log.debug("putting log to storage at path {}", logPath);
-            storageService.put(logPath, taskLog.getBytes(
-                    StandardCharsets.UTF_8));
-        } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "uploading log failed", e);
         }
     }
 
-    private String resolveLogPath(Task task) {
-        return task.getResultRootPath().logDir() + "/log";
+    private String resolveLogPath(Task task, String logName) {
+        return task.getResultRootPath().logDir() + "/" + logName;
     }
 }
