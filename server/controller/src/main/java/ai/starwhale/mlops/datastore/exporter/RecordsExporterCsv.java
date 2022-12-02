@@ -17,6 +17,8 @@
 package ai.starwhale.mlops.datastore.exporter;
 
 import ai.starwhale.mlops.datastore.RecordList;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -61,7 +63,8 @@ public class RecordsExporterCsv implements RecordsExporter {
                 try {
                     printer.printRecord(values.toArray());
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    log.error("printing error", e);
+                    throw new SwProcessException(ErrorType.SYSTEM);
                 }
             });
         }
