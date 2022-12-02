@@ -17,7 +17,7 @@ function Summary({ fetch }: any) {
     return (
         <div className='mb-20'>
             <Accordion accordion>
-                <Panel title='Summary' expanded>
+                <Panel title='Summary'>
                     {fetch?.data?.records.length === 0 && (
                         <BusyPlaceholder type='notfound' style={{ minHeight: '300px' }} />
                     )}

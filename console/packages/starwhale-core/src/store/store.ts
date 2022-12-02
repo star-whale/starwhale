@@ -1,34 +1,12 @@
 /* eslint-disable */
 /* @ts-nocheck */
 import create from 'zustand'
-import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
+import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import _ from 'lodash'
-import WidgetFactory, { WidgetType } from '../widget/WidgetFactory'
+import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
-import { WidgetConfig } from '../types'
-
-export type LayoutWidget = ''
-export type WidgetLayoutType = {
-    dndList: 'dndList'
-}
-
-export type WidgetTreeNode = {
-    id?: string
-    type: string
-    children?: WidgetTreeNode[]
-}
-export type WidgetStoreState = {
-    key: string
-    time: number
-    tree: WidgetTreeNode[]
-    widgets: Record<string, any>
-    defaults: Record<string, any>
-    onConfigChange: any
-    onLayoutOrderChange: any
-    onLayoutChildrenChange: any
-    onWidgetChange: any
-}
+import { WidgetConfig, WidgetStoreState } from '../types'
 
 export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
     console.log('store init')
@@ -86,6 +64,21 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                 }
 
                                 state.widgets[id] = _.merge({}, state.widgets?.[id], widgets)
+                            })
+                        ),
+                    onWidgetDelete: (id: string) =>
+                        set(
+                            produce((state) => {
+                                const { type } = state.widgets?.[id] ?? {}
+                                if (!id || !type) return
+                                const { current, parent } = getTreePath(state, id)
+                                console.log(id, type, current)
+                                const currentIndex = getCurrentIndex(current)
+                                const currentParent = _.get(state, parent) ?? []
+                                const darr = currentParent.slice()
+                                darr.splice(currentIndex, 1)
+                                _.set(state, parent, darr)
+                                delete state.widgets[id]
                             })
                         ),
                     onLayoutChildrenChange: (

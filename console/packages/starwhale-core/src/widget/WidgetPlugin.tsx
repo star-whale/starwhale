@@ -1,5 +1,4 @@
 import React from 'react'
-import { EditorContext } from '../context/EditorContextProvider'
 import { WidgetComponent, WidgetConfig, WidgetFieldConfig, WidgetMeta } from '../types'
 
 export type WidgetState = Record<string, unknown>
@@ -21,19 +20,6 @@ class WidgetPlugin<
         this.renderer = renderer
         this.defaults = config
     }
-
-    // addConfig(config: any) {
-    //     this._defaults = config
-    //     return this
-    // }
-
-    // get defaults() {
-    //     return this._defaults
-    // }
-
-    // get type() {
-    //     return this._defaults.type
-    // }
 }
 
 export default WidgetPlugin

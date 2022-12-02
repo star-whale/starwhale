@@ -1,4 +1,4 @@
-import { WidgetTreeNode } from '../store/store'
+import { WidgetTreeNode } from '../types'
 
 export function getTreePath(state: any, id: string) {
     let rtn: any = {

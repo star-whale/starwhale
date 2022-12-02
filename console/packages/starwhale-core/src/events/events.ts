@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Unsubscribable, Observable, Subscriber } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import EventEmitter from 'eventemitter3'
@@ -35,8 +36,8 @@ export class EventBusSrv implements EventBus {
         })
     }
 
-    newScopedBus(key: string, filter?: EventFilterOptions): EventBus {
-        return new ScopedEventBus([key], this, filter)
+    newScopedBus(key: string, filterOptions?: EventFilterOptions): EventBus {
+        return new ScopedEventBus([key], this, filterOptions)
     }
 
     removeAllListeners() {

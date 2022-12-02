@@ -1,4 +1,3 @@
-export * from './context/EditorContextProvider'
 export * from './datastore'
 export * from './form'
 export * from './widget'

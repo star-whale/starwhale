@@ -1,8 +1,6 @@
 import { isEqual } from 'lodash'
-import React from 'react'
-import { useStore } from 'zustand'
 import { useEditorContext } from '../../context/EditorContextProvider'
-import { WidgetStoreState } from '../store'
+import { WidgetStoreState } from '../../types'
 
 export const getTree = (state: WidgetStoreState) => state.tree
 export const getWidget = (id: string) => (state: WidgetStoreState) => {

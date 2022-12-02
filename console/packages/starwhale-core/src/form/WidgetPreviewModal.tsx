@@ -4,39 +4,23 @@ import Button from '@starwhale/ui/Button'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
-import WidgetEditForm from './WidgetForm'
-import { StoreType, useEditorContext } from '../context/EditorContextProvider'
-import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
-import WidgetFormModel from './WidgetFormModel'
-import WidgetModel from '../widget/WidgetModel'
+import { StoreType } from '../context/EditorContextProvider'
 
 const PAGE_TABLE_SIZE = 100
 
-export default function WidgetFormModal({
+export default function WidgetPreviewModal({
     store,
-    handleFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
-    form,
 }: {
     store: StoreType
-    form: WidgetFormModel
     isShow?: boolean
     setIsShow?: any
-    handleFormSubmit: (args: any) => void
     id?: string
 }) {
-    // @FIXME use event bus handle global state
-    const { dynamicVars } = useEditorContext()
-    const { prefix } = dynamicVars
     const config = store(getWidget(editWidgetId)) ?? {}
     const [formData, setFormData] = React.useState<Record<string, any>>({})
-    const formRef = React.useRef(null)
-
-    const handleFormChange = (data: any) => {
-        setFormData(data)
-    }
 
     const type = formData?.chartType
     const query = React.useMemo(() => {
@@ -51,14 +35,7 @@ export default function WidgetFormModal({
         }
     }, [formData?.tableName])
 
-    const { tables } = useDatastoreTablesByPrefix(prefix)
     const info = useQueryDatastore(query)
-
-    if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
-        form.setWidget(new WidgetModel({ type: formData.chartType }))
-    }
-    form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(info.data?.columnTypes)
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
@@ -76,6 +53,7 @@ export default function WidgetFormModal({
                 Dialog: {
                     style: {
                         width: '90vw',
+                        height: '90vh',
                         maxWidth: '1200px',
                         maxHeight: '640px',
                         display: 'flex',
@@ -84,15 +62,13 @@ export default function WidgetFormModal({
                 },
             }}
         >
-            <ModalHeader>Add Chart</ModalHeader>
+            <ModalHeader />
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
-                        flexBasis: '600px',
                         flexGrow: '1',
-                        maxHeight: '70vh',
                         minHeight: '348px',
-                        height: 'auto',
+                        height: '100%',
                         overflow: 'auto',
                         backgroundColor: '#F7F8FA',
                         display: 'grid',
@@ -100,7 +76,6 @@ export default function WidgetFormModal({
                         position: 'relative',
                     }}
                 >
-                    {!type && 'Select a metric to visalize in this chart'}
                     {type && (
                         <div
                             style={{
@@ -125,13 +100,6 @@ export default function WidgetFormModal({
                         </div>
                     )}
                 </div>
-                <WidgetEditForm
-                    ref={formRef}
-                    form={form}
-                    formData={formData}
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                />
             </ModalBody>
             <ModalFooter>
                 <div style={{ display: 'flex' }}>
@@ -144,16 +112,6 @@ export default function WidgetFormModal({
                         }}
                     >
                         Cancel
-                    </Button>
-                    &nbsp;&nbsp;
-                    <Button
-                        size='compact'
-                        onClick={() => {
-                            // @ts-ignore
-                            formRef.current?.submit()
-                        }}
-                    >
-                        Submit
                     </Button>
                 </div>
             </ModalFooter>

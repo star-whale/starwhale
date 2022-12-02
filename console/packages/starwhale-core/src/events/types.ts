@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import { Unsubscribable, Observable } from 'rxjs'
 
 /**
@@ -23,6 +24,7 @@ export abstract class BusEventBase implements BusEvent {
 
     constructor() {
         // @ts-ignore
+        // eslint-disable-next-line
         this.type = this.__proto__.constructor.type
     }
 }

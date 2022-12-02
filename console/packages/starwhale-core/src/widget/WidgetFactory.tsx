@@ -1,10 +1,9 @@
-import React from 'react'
-import { WidgetGroupType, WidgetProps } from '../types'
+import { WidgetGroupType, WidgetType } from '../types'
+// eslint-disable-next-line import/no-cycle
 import WidgetPlugin from './WidgetPlugin'
 import { generateId } from '../utils/generators'
 
 export type DerivedPropertiesMap = Record<string, string>
-export type WidgetType = typeof WidgetFactory.widgetTypes[number]
 
 class WidgetFactory {
     static widgetTypes: Record<string, string> = {}

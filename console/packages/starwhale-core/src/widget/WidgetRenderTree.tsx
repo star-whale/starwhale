@@ -1,22 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
+
+// @FIXME move out
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { updatePanelSetting } from '@/domain/panel/services/panel'
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
+
 import { toaster } from 'baseui/toast'
+import _ from 'lodash'
+import produce from 'immer'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
-import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
 import { WidgetProps } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
-import { PanelEditEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
+import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
-import _ from 'lodash'
-import produce from 'immer'
 import WidgetFormModal from '../form/WidgetFormModal'
 import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
+import WidgetPreviewModal from '../form/WidgetPreviewModal'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -42,12 +48,14 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
 
 export function WidgetRenderTree() {
     const { store, eventBus, dynamicVars } = useEditorContext()
-    const { prefix, storeKey: key, projectId } = dynamicVars
+    const { storeKey: key, projectId } = dynamicVars
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
+    const [viewWidget, setViewWidget] = useState<PanelPreviewEvent>()
+    const [isPanelPreviewModalOpen, setisPanelPreviewModalOpen] = React.useState(false)
 
     // @ts-ignore
     const handleAddSection = ({ path, type }) => {
@@ -77,6 +85,11 @@ export function WidgetRenderTree() {
         })
     }
 
+    const handelDeletePanel = (evt: PanelDeleteEvent) => {
+        const { id } = evt?.payload
+        api.onWidgetDelete(id)
+    }
+
     const actions = {
         [PanelAddEvent.type]: handleAddPanel,
         [PanelEditEvent.type]: handleEditPanel,
@@ -89,12 +102,13 @@ export function WidgetRenderTree() {
         // @FIXME make sure dynamicVars to be exists!
         if (setting.data && dynamicVars?.prefix) {
             try {
-                let data = JSON.parse(setting.data)
-                for (let id in data?.widgets) {
+                const data = JSON.parse(setting.data)
+                Object.keys(data?.widgets).forEach((id) => {
                     _.set(data.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars))
-                }
+                })
                 if (store.getState().time < data?.time) store.setState(data)
             } catch (e) {
+                // eslint-disable-next-line no-console
                 console.log(e)
             }
         }
@@ -106,7 +120,6 @@ export function WidgetRenderTree() {
         subscription.add(
             eventBus.getStream(PanelAddEvent).subscribe({
                 next: (evt) => {
-                    console.log(evt)
                     setisPanelModalOpen(true)
                     setEditWidget(evt)
                 },
@@ -115,44 +128,55 @@ export function WidgetRenderTree() {
         subscription.add(
             eventBus.getStream(PanelEditEvent).subscribe({
                 next: (evt) => {
-                    console.log(evt)
                     setisPanelModalOpen(true)
                     setEditWidget(evt)
                 },
             })
         )
         subscription.add(
+            eventBus.getStream(PanelDeleteEvent).subscribe({
+                next: (evt) => handelDeletePanel(evt),
+            })
+        )
+        subscription.add(
+            eventBus.getStream(PanelPreviewEvent).subscribe({
+                next: (evt) => {
+                    setisPanelPreviewModalOpen(true)
+                    setViewWidget(evt)
+                },
+            })
+        )
+        subscription.add(
             eventBus.getStream(SectionAddEvent).subscribe({
                 next: (evt) => {
-                    console.log(evt)
                     handleAddSection(evt.payload)
                 },
             })
         )
         subscription.add(
             eventBus.getStream(PanelSaveEvent).subscribe({
-                next: async (evt) => {
+                next: async () => {
                     store.setState({
                         key,
                         time: Date.now(),
                     })
                     let data = store.getState()
-                    if (key) {
-                        for (let id in data?.widgets) {
-                            data = produce(data, (temp) => {
-                                _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
-                            })
-                        }
-                        await updatePanelSetting(projectId, key, data)
-                        toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
-                    }
+                    if (!key) return
+                    Object.keys(data?.widgets).forEach((id) => {
+                        data = produce(data, (temp) => {
+                            _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
+                        })
+                    })
+                    await updatePanelSetting(projectId, key, data)
+                    toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
                 },
             })
         )
         return () => {
             subscription.unsubscribe()
         }
-    }, [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [projectId, store, key, eventBus])
 
     const Nodes = useMemo(() => {
         return tree.map((node, i) => (
@@ -162,7 +186,7 @@ export function WidgetRenderTree() {
 
     const form = new WidgetFormModel().initPanelSchema()
 
-    console.log('tree', tree)
+    // console.log('tree', tree)
     return (
         <div>
             {Nodes}
@@ -177,6 +201,12 @@ export function WidgetRenderTree() {
                     actions[editWidget?.type]?.(formData)
                     setisPanelModalOpen(false)
                 }}
+            />
+            <WidgetPreviewModal
+                id={viewWidget?.payload?.id}
+                isShow={isPanelPreviewModalOpen}
+                setIsShow={setisPanelPreviewModalOpen}
+                store={store}
             />
         </div>
     )
