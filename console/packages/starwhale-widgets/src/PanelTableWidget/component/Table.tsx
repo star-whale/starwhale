@@ -12,6 +12,11 @@ export default function PanelTable({ columns, data }) {
                         height: '100%',
                     },
                 },
+                TableHeadCell: {
+                    style: {
+                        backgroundColor: '#F3F5F9',
+                    },
+                },
             }}
             columns={columns}
             data={data}

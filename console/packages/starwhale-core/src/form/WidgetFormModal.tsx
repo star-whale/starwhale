@@ -85,7 +85,7 @@ export default function WidgetFormModal({
             }}
         >
             <ModalHeader>Add Chart</ModalHeader>
-            <ModalBody style={{ display: 'flex', gap: '30px' }}>
+            <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
                         flexBasis: '600px',

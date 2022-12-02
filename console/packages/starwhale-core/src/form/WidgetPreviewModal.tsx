@@ -63,7 +63,7 @@ export default function WidgetPreviewModal({
             }}
         >
             <ModalHeader />
-            <ModalBody style={{ display: 'flex', gap: '30px', flex: 1 }}>
+            <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
                         flexGrow: '1',
