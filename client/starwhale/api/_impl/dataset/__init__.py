@@ -5,7 +5,6 @@ from starwhale.core.dataset.type import (
     Image,
     Video,
     Binary,
-    JsonDict,
     LinkAuth,
     LinkType,
     MIMEType,
@@ -24,7 +23,6 @@ from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 __all__ = [
     "get_data_loader",
     "Link",
-    "JsonDict",
     "LinkAuth",
     "DefaultS3LinkAuth",
     "LocalFSLinkAuth",
