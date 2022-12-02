@@ -1,35 +1,12 @@
 /* eslint-disable */
 /* @ts-nocheck */
 import create from 'zustand'
-import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
+import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import _ from 'lodash'
-import WidgetFactory, { WidgetType } from '../widget/WidgetFactory'
+import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
-import { WidgetConfig } from '../types'
-
-export type LayoutWidget = ''
-export type WidgetLayoutType = {
-    dndList: 'dndList'
-}
-
-export type WidgetTreeNode = {
-    id?: string
-    type: string
-    children?: WidgetTreeNode[]
-}
-export type WidgetStoreState = {
-    key: string
-    time: number
-    tree: WidgetTreeNode[]
-    widgets: Record<string, any>
-    defaults: Record<string, any>
-    onConfigChange: any
-    onLayoutOrderChange: any
-    onLayoutChildrenChange: any
-    onWidgetChange: any
-    onWidgetDelete: any
-}
+import { WidgetConfig, WidgetStoreState } from '../types'
 
 export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
     console.log('store init')

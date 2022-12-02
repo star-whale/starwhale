@@ -1,4 +1,5 @@
-import { BusEventWithPayload, BusEvent, BusEventBase } from './types'
+// eslint-disable-next-line max-classes-per-file
+import { BusEventWithPayload, BusEventBase } from './types'
 
 type PanelAddPayload = { path: any[] }
 export class PanelAddEvent extends BusEventWithPayload<PanelAddPayload> {

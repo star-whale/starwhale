@@ -1,10 +1,29 @@
-import { WidgetStoreState, WidgetTreeNode } from '../store/store'
-import { WidgetType } from '../widget/WidgetFactory'
+import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { EventBus } from '../events/types'
 import { Matcher } from '../utils/replacer'
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
 
 export type WidgetMeta = Record<string, unknown>
+export type WidgetType = string
+
+// -----------store---------------
+
+export type WidgetTreeNode = {
+    id?: string
+    type: string
+    children?: WidgetTreeNode[]
+}
+export type WidgetStoreState = {
+    key: string
+    time: number
+    tree: WidgetTreeNode[]
+    widgets: Record<string, any>
+    defaults: Record<string, any>
+    onConfigChange: any
+    onLayoutOrderChange: any
+    onLayoutChildrenChange: any
+    onWidgetChange: any
+    onWidgetDelete: any
+}
 
 // -----------the config of options/field---------------
 
@@ -96,13 +115,3 @@ export enum WidgetGroupType {
     PANEL = 'PANEL',
     LIST = 'LIST',
 }
-
-type PanelTableProps = WidgetBaseConfig
-
-// export type WidgetState = Record<string, unknown>
-// export interface WidgetBuilder<
-//   T extends WidgetProps,
-//   S extends WidgetState
-// > {
-//   buildWidget(widgetProps: T): JSX.Element;
-// }

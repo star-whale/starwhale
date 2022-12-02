@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo } from 'react'
 import log from 'loglevel'
 import EditorContextProvider from '../context/EditorContextProvider'

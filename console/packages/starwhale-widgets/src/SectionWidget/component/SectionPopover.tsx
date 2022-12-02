@@ -56,7 +56,7 @@ export default function SectionPopover({ onOptionSelect }) {
                                         return (
                                             <ConfirmButton
                                                 as='link'
-                                                title={'Are you sure to delete this panel?'}
+                                                title='Are you sure to delete this panel?'
                                                 onClick={async (e) => {
                                                     e.preventDefault
                                                     onOptionSelect(item)

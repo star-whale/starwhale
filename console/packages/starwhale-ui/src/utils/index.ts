@@ -1,7 +1,8 @@
 /* eslint-disable  @typescript-eslint/ban-ts-comment */
 /* @ts-ignore */
-export { useOverrides, mergeOverrides } from 'baseui/helpers/overrides'
 import _ from 'lodash'
+
+export { useOverrides, mergeOverrides } from 'baseui/helpers/overrides'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isPromise = (obj: any) =>

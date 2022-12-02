@@ -1,18 +1,13 @@
-import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import React, { useEffect } from 'react'
+import Button from '@starwhale/ui/Button'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
-import { Button } from '@/components/Button'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import WidgetEditForm from './WidgetForm'
-import useDatastoreTables from '../datastore/hooks/useDatastoreTables'
 import { StoreType, useEditorContext } from '../context/EditorContextProvider'
 import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
 import WidgetFormModel from './WidgetFormModel'
-import useForceUpdate from '../utils/useForceUpdate'
-import deepEqual from 'fast-deep-equal'
-import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
 import WidgetModel from '../widget/WidgetModel'
 
 const PAGE_TABLE_SIZE = 100
@@ -35,13 +30,12 @@ export default function WidgetFormModal({
     // @FIXME use event bus handle global state
     const { dynamicVars } = useEditorContext()
     const { prefix } = dynamicVars
-    const [t] = useTranslation()
     const config = store(getWidget(editWidgetId)) ?? {}
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
 
-    const handleFormChange = (formData: any) => {
-        setFormData(formData)
+    const handleFormChange = (data: any) => {
+        setFormData(data)
     }
 
     const type = formData?.chartType
@@ -68,9 +62,8 @@ export default function WidgetFormModal({
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editWidgetId])
-
-    // console.log('WidgetFormModel', form, formData)
 
     return (
         <Modal
@@ -149,7 +142,7 @@ export default function WidgetFormModal({
                             setisPanelModalOpen(false)
                         }}
                     >
-                        {t('Cancel')}
+                        Cancel
                     </Button>
                     &nbsp;&nbsp;
                     <Button

@@ -1,12 +1,4 @@
-import { WidgetBaseConfig, WidgetConfig, WidgetFieldConfig, WidgetGroupType, WidgetMeta } from '../types/index'
-import { WidgetType } from '../widget/WidgetFactory'
-import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
-import { generateId } from '../utils/generators'
-import { Matcher, PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
-import { klona } from 'klona/full'
 import _ from 'lodash'
-import { StoreType } from '../context'
-import { WidgetStoreState } from '../store/store'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import {
     chartTitleField,
@@ -18,6 +10,7 @@ import {
 } from './schemas/fields'
 import WidgetModel from '../widget/WidgetModel'
 import { ColumnSchemaDesc } from '../datastore'
+import { WidgetConfig, WidgetFieldConfig } from '../types'
 
 const PersistProperty = {
     type: true,
@@ -40,10 +33,13 @@ const PanelUISchema: UiSchema = {
 // @FIXME remove none schema property
 class WidgetFormModel implements WidgetFieldConfig {
     schema: RJSFSchema = {}
+
     uiSchema: UiSchema<any, RJSFSchema, any> = {}
+
     data: any
 
     widget?: WidgetModel
+
     $fields: RJSFSchema['properties']
 
     constructor(widget?: any) {
@@ -58,14 +54,15 @@ class WidgetFormModel implements WidgetFieldConfig {
     }
 
     resetField() {
-        for (const field in this.$fields) {
-            if (DefaultFields.includes(field)) continue
-            delete this.$fields[field]
-        }
+        Object.keys(this.$fields ?? {}).forEach((field) => {
+            if (DefaultFields.includes(field)) return
+            delete this.$fields?.[field]
+        })
+        return this
     }
 
     addField(property?: RJSFSchema) {
-        if (!property) return
+        if (!property) return this
 
         this.$fields = {
             ...this.$fields,
@@ -75,20 +72,22 @@ class WidgetFormModel implements WidgetFieldConfig {
     }
 
     addDataTableNamesField(tables?: any[]) {
-        if (!tables) return
+        if (!tables) return this
 
         this.addField(tableNameField(tables, this.widget?.config?.fieldConfig?.schema))
+        return this
     }
 
     addDataTableColumnsField(columnTypes?: ColumnSchemaDesc[]) {
-        if (!columnTypes) return
+        if (!columnTypes) return this
 
-        const { schema, uiSchema } = this.widget?.config?.fieldConfig ?? {}
-        for (const property in uiSchema) {
+        const { schema, uiSchema = {} } = this.widget?.config?.fieldConfig ?? {}
+        Object.keys(uiSchema).forEach((property) => {
             if (uiSchema[property]?.[UI_DATA_KEY] === UI_DATA.DataTableColumns) {
                 this.addField(dataTableColumnsField(property, columnTypes, schema, uiSchema))
             }
-        }
+        })
+        return this
     }
 
     initPanelSchema() {
@@ -110,13 +109,15 @@ class WidgetFormModel implements WidgetFieldConfig {
 
     getPersistProperty(): WidgetConfig {
         const properties = {} as WidgetConfig
-        for (const key in PersistProperty) {
+        Object.keys(PersistProperty).forEach((key) => {
             ;(properties as any)[key] = (this as any)[key]
-        }
+        })
         return properties
     }
 
-    saveToStore(api: WidgetStoreState) {}
+    // saveToStore(api: WidgetStoreState) {
+    //     return this
+    // }
 }
 
 export default WidgetFormModel

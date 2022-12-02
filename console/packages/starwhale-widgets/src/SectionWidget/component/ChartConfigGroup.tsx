@@ -1,8 +1,7 @@
 import React from 'react'
-import ChartConfigPopover from './ChartConfigPopover'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
-import Button from '@starwhale/ui/Button'
+import ChartConfigPopover from './ChartConfigPopover'
 
 const useStyles = createUseStyles({
     chartGroup: {

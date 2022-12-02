@@ -1,12 +1,10 @@
-import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import React, { useEffect } from 'react'
+import Button from '@starwhale/ui/Button'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
-import { Button } from '@/components/Button'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
-import { StoreType, useEditorContext } from '../context/EditorContextProvider'
-import WidgetFormModel from './WidgetFormModel'
+import { StoreType } from '../context/EditorContextProvider'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -17,16 +15,10 @@ export default function WidgetPreviewModal({
     setIsShow: setisPanelModalOpen = () => {},
 }: {
     store: StoreType
-    form: WidgetFormModel
     isShow?: boolean
     setIsShow?: any
-    handleFormSubmit: (args: any) => void
     id?: string
 }) {
-    // @FIXME use event bus handle global state
-    const { dynamicVars } = useEditorContext()
-    const { prefix } = dynamicVars
-    const [t] = useTranslation()
     const config = store(getWidget(editWidgetId)) ?? {}
     const [formData, setFormData] = React.useState<Record<string, any>>({})
 
@@ -47,6 +39,7 @@ export default function WidgetPreviewModal({
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editWidgetId])
 
     return (
@@ -69,7 +62,7 @@ export default function WidgetPreviewModal({
                 },
             }}
         >
-            <ModalHeader></ModalHeader>
+            <ModalHeader />
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1 }}>
                 <div
                     style={{
@@ -118,7 +111,7 @@ export default function WidgetPreviewModal({
                             setisPanelModalOpen(false)
                         }}
                     >
-                        {t('Cancel')}
+                        Cancel
                     </Button>
                 </div>
             </ModalFooter>

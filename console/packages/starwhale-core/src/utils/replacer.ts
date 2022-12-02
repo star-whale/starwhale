@@ -1,6 +1,5 @@
 import produce from 'immer'
 import _ from 'lodash'
-import { DataHoverClearEvent } from '../events/common'
 
 export type Matcher = {
     matcher: RegExp
@@ -20,15 +19,16 @@ export const PANEL_DYNAMIC_MATCHES: Matcher[] = [
         isSave: true,
     },
 ]
+export const isDynamicValue = (value: string): boolean => DATA_BIND_REGEX.test(value)
 
 export type Replacer = ReturnType<typeof replacer>
 
 export const replacer = (matches: Matcher[]) => {
     return {
-        toTemplate: (raw: any, isSaveInjectVars: boolean = false) => {
+        toTemplate: (raw: any, isSaveInjectVars = false) => {
             let data: any = raw
 
-            matches.map((m) => {
+            matches.forEach((m) => {
                 const { matcher, injectKey, property, isSave } = m
                 const rawValue = _.get(raw, property, '')
                 if (rawValue && rawValue.match(matcher)) {
@@ -47,8 +47,8 @@ export const replacer = (matches: Matcher[]) => {
         },
         toOrigin: (raw: any, injected: any) => {
             let data: any = raw
-            matches.map((m) => {
-                const { injectKey, property, isSave } = m
+            matches.forEach((m) => {
+                const { injectKey, property } = m
                 const rawValue = _.get(raw, property)
                 if (isDynamicValue(rawValue) && injected?.[injectKey]) {
                     const origin = rawValue.replace(`{{${injectKey}}}`, injected[injectKey])
@@ -64,19 +64,18 @@ export const replacer = (matches: Matcher[]) => {
     }
 }
 
-export const isDynamicValue = (value: string): boolean => DATA_BIND_REGEX.test(value)
-
 export function getDynamicStringSegments(dynamicString: string): string[] {
     let stringSegments = []
     const indexOfDoubleParanStart = dynamicString.indexOf('{{')
     if (indexOfDoubleParanStart === -1) {
         return [dynamicString]
     }
-    //{{}}{{}}}
+
     const firstString = dynamicString.substring(0, indexOfDoubleParanStart)
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     firstString && stringSegments.push(firstString)
     let rest = dynamicString.substring(indexOfDoubleParanStart, dynamicString.length)
-    //{{}}{{}}}
+
     let sum = 0
     for (let i = 0; i <= rest.length - 1; i++) {
         const char = rest[i]

@@ -91,7 +91,7 @@ function DNDListWidget(props: WidgetRendererProps) {
         parent: undefined,
     })
 
-    const calcContent = (itemIndex: number = 0) => {
+    const calcContent = (itemIndex = 0) => {
         if (ref.current) {
             const rects = Array.from(ref.current.querySelectorAll('.item')).map((child) =>
                 child.getBoundingClientRect()

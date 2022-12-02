@@ -1,6 +1,4 @@
 import { isEqual } from 'lodash'
-import React from 'react'
-import { useStore } from 'zustand'
 import { useEditorContext } from '../../context/EditorContextProvider'
 import { WidgetStoreState } from '../store'
 

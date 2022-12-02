@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
-import { mergeOverrides } from '../utils'
 import { useStyletron } from 'baseui'
+import { mergeOverrides } from '../utils'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent' | 'withIcon'

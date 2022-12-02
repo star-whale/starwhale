@@ -84,7 +84,7 @@ const hijacked = {
     setting2: settingSvg,
     google: googleSvg,
     empty: emptySvg,
-    emptyChart: emptyChart,
+    emptyChart,
     searchEmpty: searchEmptySvg,
 }
 

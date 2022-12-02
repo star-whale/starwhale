@@ -1,3 +1,3 @@
 export * from './path'
 export * from './generators'
-export * from './useForceUpdate'
+export { default as useForceUpdate } from './useForceUpdate'
