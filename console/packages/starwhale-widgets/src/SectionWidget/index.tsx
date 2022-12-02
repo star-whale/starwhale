@@ -6,11 +6,13 @@ import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/c
 import { GridLayout } from './component/GridBasicLayout'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
-import { PanelAddEvent, PanelEditEvent } from '@starwhale/core/events'
+import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
 import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
 import { Subscription } from 'rxjs'
+import ChartConfigPopover from './component/ChartConfigPopover'
+import ChartConfigGroup from './component/ChartConfigGroup'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -18,7 +20,7 @@ export const CONFIG: WidgetConfig = {
     group: WidgetGroupType.LIST,
     description: 'ui layout for dynamic grid view',
     optionConfig: {
-        title: 'Section',
+        title: 'Panel',
         isExpaned: true,
         layoutConfig: {
             gutter: 10,
@@ -76,6 +78,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const handleEditPanel = (id: string) => {
         eventBus.publish(new PanelEditEvent({ id }))
     }
+    const handleDeletePanel = (id: string) => {
+        eventBus.publish(new PanelDeleteEvent({ id }))
+    }
+    const handlePreviewPanel = (id: string) => {
+        eventBus.publish(new PanelPreviewEvent({ id }))
+    }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
             isExpaned: expanded,
@@ -113,7 +121,6 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
                 onPanelAdd={() => {
-                    console.log('add panel')
                     // @FIXME abatract events
                     eventBus.publish(
                         new PanelAddEvent({
@@ -146,58 +153,26 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     margin={[20, 20]}
                 >
                     {/* @ts-ignore */}
-                    {React.Children.map(children, (child: React.ReactChild, i: number) => (
-                        <div
-                            key={i}
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                overflow: 'auto',
-                                padding: '40px 20px 20px',
-                                backgroundColor: '#fff',
-                                border: '1px solid #CFD7E6',
-                                borderRadius: '4px',
-                                position: 'relative',
-                            }}
-                        >
-                            {child}
+                    {React.Children.map(children, (child: React.ReactElement, i: number) => (
+                        <div key={String(child.props.id)}>
                             <div
                                 style={{
-                                    position: 'absolute',
-                                    right: '20px',
-                                    top: '16px',
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto',
+                                    padding: '40px 20px 20px',
+                                    backgroundColor: '#fff',
+                                    border: '1px solid #CFD7E6',
+                                    borderRadius: '4px',
+                                    position: 'relative',
                                 }}
                             >
-                                <Button
-                                    // @FIXME direct used child props here ?
-                                    // @ts-ignore
-                                    onClick={() => handleEditPanel(child.props.id)}
-                                    size='compact'
-                                    kind='secondary'
-                                    overrides={{
-                                        BaseButton: {
-                                            style: {
-                                                'display': 'flex',
-                                                'fontSize': '12px',
-                                                'backgroundColor': '#F4F5F7',
-                                                'width': '20px',
-                                                'height': '20px',
-                                                'textDecoration': 'none',
-                                                'color': 'gray !important',
-                                                'paddingLeft': '10px',
-                                                'paddingRight': '10px',
-                                                ':hover span': {
-                                                    color: ' #5181E0  !important',
-                                                },
-                                                ':hover': {
-                                                    backgroundColor: '#F0F4FF',
-                                                },
-                                            },
-                                        },
-                                    }}
-                                >
-                                    <IconFont type='edit' size={10} />
-                                </Button>
+                                {child}
+                                <ChartConfigGroup
+                                    onEdit={() => handleEditPanel(child.props.id)}
+                                    onDelete={() => handleDeletePanel(child.props?.id)}
+                                    onPreview={() => handlePreviewPanel(child.props?.id)}
+                                />
                             </div>
                         </div>
                     ))}
@@ -213,11 +188,27 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     )
 }
 
+const ChartSettingGroup = () => {
+    // onClick={() => handleEditPanel(child.props.id)}
+    //
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                right: '20px',
+                top: '16px',
+            }}
+        >
+            <ChartConfigPopover onOptionSelect={() => {}} />
+        </div>
+    )
+}
+
 const EmptyPlaceholder = () => {
     return (
         <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
             <IconFont type='emptyChart' size={64} />
-            <span>Click "Add Panel" to add visualizations</span>
+            <span>Click "Add Chart" to add visualizations</span>
         </BusyPlaceholder>
     )
 }

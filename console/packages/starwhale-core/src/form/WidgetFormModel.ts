@@ -16,7 +16,6 @@ import {
     UI_DATA,
     UI_DATA_KEY,
 } from './schemas/fields'
-import { Console } from 'console'
 import WidgetModel from '../widget/WidgetModel'
 import { ColumnSchemaDesc } from '../datastore'
 
@@ -26,6 +25,8 @@ const PersistProperty = {
     group: true,
     description: true,
 }
+
+const DefaultFields = ['tableName', 'chartType', 'chartTitle']
 
 const PanelUISchema: UiSchema = {
     'tableName': {
@@ -52,7 +53,15 @@ class WidgetFormModel implements WidgetFieldConfig {
 
     setWidget(widget: WidgetModel) {
         this.widget = widget
+        this.resetField()
         return this
+    }
+
+    resetField() {
+        for (const field in this.$fields) {
+            if (DefaultFields.includes(field)) continue
+            delete this.$fields[field]
+        }
     }
 
     addField(property?: RJSFSchema) {

@@ -86,7 +86,7 @@ const Header = React.forwardRef((props, ref) => {
                     },
                 }}
             >
-                Add Panel
+                Add Chart
             </Button>
         </div>
     )

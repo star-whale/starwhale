@@ -28,6 +28,7 @@ export type WidgetStoreState = {
     onLayoutOrderChange: any
     onLayoutChildrenChange: any
     onWidgetChange: any
+    onWidgetDelete: any
 }
 
 export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
@@ -86,6 +87,21 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                 }
 
                                 state.widgets[id] = _.merge({}, state.widgets?.[id], widgets)
+                            })
+                        ),
+                    onWidgetDelete: (id: string) =>
+                        set(
+                            produce((state) => {
+                                const { type } = state.widgets?.[id] ?? {}
+                                if (!id || !type) return
+                                const { current, parent } = getTreePath(state, id)
+                                console.log(id, type, current)
+                                const currentIndex = getCurrentIndex(current)
+                                const currentParent = _.get(state, parent) ?? []
+                                const darr = currentParent.slice()
+                                darr.splice(currentIndex, 1)
+                                _.set(state, parent, darr)
+                                delete state.widgets[id]
                             })
                         ),
                     onLayoutChildrenChange: (

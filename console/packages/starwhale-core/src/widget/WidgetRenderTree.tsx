@@ -11,12 +11,13 @@ import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
 import { WidgetProps } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
-import { PanelEditEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
+import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
 import _ from 'lodash'
 import produce from 'immer'
 import WidgetFormModal from '../form/WidgetFormModal'
 import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
+import WidgetPreviewModal from '../form/WidgetPreviewModal'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -48,6 +49,8 @@ export function WidgetRenderTree() {
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
+    const [viewWidget, setViewWidget] = useState<PanelPreviewEvent>()
+    const [isPanelPreviewModalOpen, setisPanelPreviewModalOpen] = React.useState(false)
 
     // @ts-ignore
     const handleAddSection = ({ path, type }) => {
@@ -75,6 +78,11 @@ export function WidgetRenderTree() {
                 data: formData,
             },
         })
+    }
+
+    const handelDeletePanel = (evt: PanelDeleteEvent) => {
+        const { id } = evt?.payload
+        api.onWidgetDelete(id)
     }
 
     const actions = {
@@ -118,6 +126,19 @@ export function WidgetRenderTree() {
                     console.log(evt)
                     setisPanelModalOpen(true)
                     setEditWidget(evt)
+                },
+            })
+        )
+        subscription.add(
+            eventBus.getStream(PanelDeleteEvent).subscribe({
+                next: (evt) => handelDeletePanel(evt),
+            })
+        )
+        subscription.add(
+            eventBus.getStream(PanelPreviewEvent).subscribe({
+                next: (evt) => {
+                    setisPanelPreviewModalOpen(true)
+                    setViewWidget(evt)
                 },
             })
         )
@@ -177,6 +198,12 @@ export function WidgetRenderTree() {
                     actions[editWidget?.type]?.(formData)
                     setisPanelModalOpen(false)
                 }}
+            />
+            <WidgetPreviewModal
+                id={viewWidget?.payload?.id}
+                isShow={isPanelPreviewModalOpen}
+                setIsShow={setisPanelPreviewModalOpen}
+                store={store}
             />
         </div>
     )

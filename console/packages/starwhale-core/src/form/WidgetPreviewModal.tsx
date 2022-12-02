@@ -5,25 +5,16 @@ import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { Button } from '@/components/Button'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
-import WidgetEditForm from './WidgetForm'
-import useDatastoreTables from '../datastore/hooks/useDatastoreTables'
 import { StoreType, useEditorContext } from '../context/EditorContextProvider'
-import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
 import WidgetFormModel from './WidgetFormModel'
-import useForceUpdate from '../utils/useForceUpdate'
-import deepEqual from 'fast-deep-equal'
-import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
-import WidgetModel from '../widget/WidgetModel'
 
 const PAGE_TABLE_SIZE = 100
 
-export default function WidgetFormModal({
+export default function WidgetPreviewModal({
     store,
-    handleFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
-    form,
 }: {
     store: StoreType
     form: WidgetFormModel
@@ -38,11 +29,6 @@ export default function WidgetFormModal({
     const [t] = useTranslation()
     const config = store(getWidget(editWidgetId)) ?? {}
     const [formData, setFormData] = React.useState<Record<string, any>>({})
-    const formRef = React.useRef(null)
-
-    const handleFormChange = (formData: any) => {
-        setFormData(formData)
-    }
 
     const type = formData?.chartType
     const query = React.useMemo(() => {
@@ -57,20 +43,11 @@ export default function WidgetFormModal({
         }
     }, [formData?.tableName])
 
-    const { tables } = useDatastoreTablesByPrefix(prefix)
     const info = useQueryDatastore(query)
-
-    if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
-        form.setWidget(new WidgetModel({ type: formData.chartType }))
-    }
-    form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(info.data?.columnTypes)
 
     useEffect(() => {
         setFormData(config.fieldConfig?.data ?? {})
     }, [editWidgetId])
-
-    // console.log('WidgetFormModel', form, formData)
 
     return (
         <Modal
@@ -83,22 +60,21 @@ export default function WidgetFormModal({
                 Dialog: {
                     style: {
                         width: '90vw',
-                        maxWidth: '1080px',
+                        height: '90vh',
+                        // maxWidth: '1080px',
                         display: 'flex',
                         flexDirection: 'column',
                     },
                 },
             }}
         >
-            <ModalHeader>Add Chart</ModalHeader>
-            <ModalBody style={{ display: 'flex', gap: '30px' }}>
+            <ModalHeader></ModalHeader>
+            <ModalBody style={{ display: 'flex', gap: '30px', flex: 1 }}>
                 <div
                     style={{
-                        flexBasis: '600px',
                         flexGrow: '1',
-                        maxHeight: '70vh',
                         minHeight: '348px',
-                        height: 'auto',
+                        height: '100%',
                         overflow: 'auto',
                         backgroundColor: '#F7F8FA',
                         display: 'grid',
@@ -106,7 +82,6 @@ export default function WidgetFormModal({
                         position: 'relative',
                     }}
                 >
-                    {!type && 'Select a metric to visalize in this chart'}
                     {type && (
                         <div
                             style={{
@@ -131,13 +106,6 @@ export default function WidgetFormModal({
                         </div>
                     )}
                 </div>
-                <WidgetEditForm
-                    ref={formRef}
-                    form={form}
-                    formData={formData}
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                />
             </ModalBody>
             <ModalFooter>
                 <div style={{ display: 'flex' }}>
@@ -150,16 +118,6 @@ export default function WidgetFormModal({
                         }}
                     >
                         {t('Cancel')}
-                    </Button>
-                    &nbsp;&nbsp;
-                    <Button
-                        size='compact'
-                        onClick={() => {
-                            // @ts-ignore
-                            formRef.current?.submit()
-                        }}
-                    >
-                        Submit
                     </Button>
                 </div>
             </ModalFooter>

@@ -4,16 +4,16 @@ import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
 // @FIXME move to ui
 import { ConfirmButton } from '@/components/Modal/confirm'
+import { expandMargin } from '@starwhale/ui/utils'
+import { expandPadding } from '../../../../../src/utils/index'
 
 const COLUMN_OPTIONS = [
-    { label: 'Rename', type: 'rename' },
-    { label: 'Add above', type: 'addAbove' },
-    { label: 'Add belove', type: 'addBelow' },
-    { label: 'Delete', type: 'delete' },
+    { label: 'Edit', type: 'edit' },
+    { label: 'Remove', type: 'delete' },
 ]
 
 // @ts-ignore
-export default function SectionPopover({ onOptionSelect }) {
+export default function ChartConfigPopover({ onOptionSelect }) {
     return (
         <StatefulPopover
             focusLock
@@ -22,21 +22,15 @@ export default function SectionPopover({ onOptionSelect }) {
                 <StatefulMenu
                     items={COLUMN_OPTIONS}
                     onItemSelect={({ item }) => {
-                        if (item.type === 'delete') return close()
+                        if (item.type === 'delete') return
                         onOptionSelect(item)
                         close()
                     }}
                     overrides={{
-                        List: { style: { height: '160px', width: '150px' } },
+                        List: { style: { height: 'auto', width: '150px' } },
                         Option: {
                             props: {
                                 getItemLabel: (item: { label: string; type: string }) => {
-                                    const icon = {
-                                        rename: <IconFont type='edit' />,
-                                        addAbove: <IconFont type='a-Addabove' />,
-                                        addBelow: <IconFont type='a-Addbelow' />,
-                                        delete: <IconFont type='delete' style={{ color: '#CC3D3D' }} />,
-                                    }
                                     const menu = (
                                         <div
                                             style={{
@@ -47,16 +41,14 @@ export default function SectionPopover({ onOptionSelect }) {
                                                 alignItems: 'center',
                                             }}
                                         >
-                                            {icon?.[item.type as keyof typeof icon]}
                                             {item.label}
                                         </div>
                                     )
-
                                     if (item.type === 'delete') {
                                         return (
                                             <ConfirmButton
                                                 as='link'
-                                                title={'Are you sure to delete this panel?'}
+                                                title={'Are you sure to delete this chart?'}
                                                 onClick={async (e) => {
                                                     e.preventDefault
                                                     onOptionSelect(item)
@@ -68,8 +60,8 @@ export default function SectionPopover({ onOptionSelect }) {
                                                             width: 'calc(100% + 32px)',
                                                             textAlign: 'left',
                                                             justifyContent: 'flex-start',
-                                                            margin: '-8px -16px',
-                                                            padding: '8px 16px',
+                                                            ...expandMargin('-8px', '-16px', '-8px', '-16px'),
+                                                            ...expandPadding('8px', '16px', '8px', '16px'),
                                                             height: '36px',
                                                         },
                                                     },
@@ -79,7 +71,6 @@ export default function SectionPopover({ onOptionSelect }) {
                                             </ConfirmButton>
                                         )
                                     }
-
                                     return menu
                                 },
                             },
@@ -92,17 +83,17 @@ export default function SectionPopover({ onOptionSelect }) {
                 style={{
                     alignItems: 'center',
                     marginLeft: 'auto',
-                    right: 0,
-                    top: -6,
+                    // right: 0,
+                    // top: -6,
                     display: 'flex',
                     backgroundColor: '#F4F5F7',
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    padding: '12px 9px',
-                    height: '32px',
+                    padding: '4px',
+                    height: '20px',
                 }}
             >
-                <IconFont type='more' size={14} />
+                <IconFont type='setting' size={12} />
             </div>
         </StatefulPopover>
     )

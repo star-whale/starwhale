@@ -182,7 +182,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                         )
                     }
                 >
-                    Add Section
+                    Add Panel
                 </Button>
             </div>
         </div>
