@@ -24,11 +24,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@Slf4j
 public class KeyLockTest {
     String key1 = "1";
     String key2 = "2";
@@ -51,7 +53,7 @@ public class KeyLockTest {
         AtomicBoolean anotherThreadWasExecutedBeforeLock = new AtomicBoolean(false);
         AtomicBoolean anotherThreadWasExecutedAfterLock = new AtomicBoolean(false);
         try {
-            Future<?> x = executor.submit(() -> {
+            Future<String> x = executor.submit(() -> {
                 KeyLock<Object> anotherLock = new KeyLock<>(key2);
                 anotherThreadWasExecutedBeforeLock.set(true);
                 anotherLock.lock();
@@ -62,8 +64,9 @@ public class KeyLockTest {
                 }
                 return "success";
             });
-
-            Assertions.assertEquals("success", x.get(1000, TimeUnit.MICROSECONDS));
+            Assertions.assertEquals("success", x.get());
+        } catch (Exception e) {
+            log.error("occur error!", e);
         } finally {
             Assertions.assertTrue(anotherThreadWasExecutedBeforeLock.get());
             Assertions.assertTrue(anotherThreadWasExecutedAfterLock.get());
