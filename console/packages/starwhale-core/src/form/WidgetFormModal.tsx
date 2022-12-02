@@ -76,7 +76,8 @@ export default function WidgetFormModal({
                 Dialog: {
                     style: {
                         width: '90vw',
-                        maxWidth: '1080px',
+                        maxWidth: '1200px',
+                        maxHeight: '640px',
                         display: 'flex',
                         flexDirection: 'column',
                     },
