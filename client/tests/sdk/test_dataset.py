@@ -43,6 +43,7 @@ from starwhale.core.dataset.type import (
     Image,
     Video,
     Binary,
+    JsonDict,
     MIMEType,
     ClassLabel,
     BoundingBox,
@@ -275,18 +276,109 @@ class TestDatasetCopy(BaseTestCase):
         assert {
             "type": "OBJECT",
             "attributes": [
-                {"type": "STRING", "name": "_type"},
-                {"type": "INT64", "name": "x"},
-                {"type": "INT64", "name": "y"},
-                {"type": "INT64", "name": "width"},
-                {"type": "INT64", "name": "height"},
+                {"type": "INT64", "name": "index"},
+                {"type": "STRING", "name": "label_str"},
+                {"type": "FLOAT64", "name": "label_float"},
+                {"type": "LIST", "elementType": {"type": "INT64"}, "name": "list_int"},
+                {"type": "BYTES", "name": "bytes"},
+                {
+                    "type": "OBJECT",
+                    "attributes": [
+                        {"type": "STRING", "name": "uri"},
+                        {"type": "STRING", "name": "display_text"},
+                        {"type": "UNKNOWN", "name": "mime_type"},
+                    ],
+                    "pythonType": "LINK",
+                    "name": "link",
+                },
+                {
+                    "type": "OBJECT",
+                    "attributes": [
+                        {"type": "STRING", "name": "_type"},
+                        {"type": "INT64", "name": "x"},
+                        {"type": "INT64", "name": "y"},
+                        {"type": "INT64", "name": "width"},
+                        {"type": "INT64", "name": "height"},
+                    ],
+                    "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                    "name": "bbox",
+                },
+                {
+                    "type": "LIST",
+                    "elementType": {
+                        "type": "OBJECT",
+                        "attributes": [
+                            {"type": "STRING", "name": "_type"},
+                            {"type": "INT64", "name": "x"},
+                            {"type": "INT64", "name": "y"},
+                            {"type": "INT64", "name": "width"},
+                            {"type": "INT64", "name": "height"},
+                        ],
+                        "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                    },
+                    "name": "list_bbox",
+                },
+                {
+                    "type": "OBJECT",
+                    "attributes": [
+                        {"type": "STRING", "name": "_type"},
+                        {"type": "INT64", "name": "id"},
+                        {"type": "INT64", "name": "image_id"},
+                        {"type": "INT64", "name": "category_id"},
+                        {
+                            "type": "LIST",
+                            "elementType": {"type": "INT64"},
+                            "name": "bbox",
+                        },
+                        {"type": "INT64", "name": "area"},
+                        {"type": "INT64", "name": "iscrowd"},
+                        {
+                            "type": "LIST",
+                            "elementType": {"type": "INT64"},
+                            "name": "_segmentation_polygon",
+                        },
+                    ],
+                    "pythonType": "starwhale.core.dataset.type.COCOObjectAnnotation",
+                    "name": "coco",
+                },
+                {
+                    "type": "OBJECT",
+                    "attributes": [
+                        {"type": "STRING", "name": "_type"},
+                        {"type": "STRING", "name": "uri"},
+                        {"type": "INT64", "name": "offset"},
+                        {"type": "INT64", "name": "size"},
+                        {"type": "UNKNOWN", "name": "auth"},
+                        {
+                            "type": "OBJECT",
+                            "attributes": [
+                                {"type": "BOOL", "name": "as_mask"},
+                                {"type": "STRING", "name": "mask_uri"},
+                                {"type": "STRING", "name": "fp"},
+                                {"type": "STRING", "name": "_type"},
+                                {"type": "STRING", "name": "display_name"},
+                                {"type": "STRING", "name": "_mime_type"},
+                                {
+                                    "type": "LIST",
+                                    "elementType": {"type": "INT64"},
+                                    "name": "shape",
+                                },
+                                {"type": "STRING", "name": "encoding"},
+                            ],
+                            "pythonType": "starwhale.core.dataset.type.Image",
+                            "name": "data_type",
+                        },
+                        {"type": "BOOL", "name": "with_local_fs_data"},
+                        {"type": "STRING", "name": "_local_fs_uri"},
+                        {"type": "STRING", "name": "_signed_uri"},
+                    ],
+                    "pythonType": "starwhale.core.dataset.type.Link",
+                    "name": "artifact_s3_link",
+                },
             ],
-            "pythonType": "starwhale.core.dataset.type.BoundingBox",
-            "name": "_annotation_bbox",
+            "pythonType": "starwhale.core.dataset.type.JsonDict",
+            "name": "annotations",
         } in content["tableSchemaDesc"]["columnSchemaList"]
-        assert {"type": "BYTES", "name": "_annotation_bytes"} in content[
-            "tableSchemaDesc"
-        ]["columnSchemaList"]
         assert len(content["records"]) > 0
 
     @patch("os.environ", {})
@@ -342,14 +434,21 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "type": "OBJECT",
                             "attributes": [
-                                {"type": "STRING", "name": "_type"},
-                                {"type": "INT64", "name": "x"},
-                                {"type": "INT64", "name": "y"},
-                                {"type": "INT64", "name": "width"},
-                                {"type": "INT64", "name": "height"},
+                                {
+                                    "type": "OBJECT",
+                                    "name": "bbox",
+                                    "attributes": [
+                                        {"type": "STRING", "name": "_type"},
+                                        {"type": "INT64", "name": "x"},
+                                        {"type": "INT64", "name": "y"},
+                                        {"type": "INT64", "name": "width"},
+                                        {"type": "INT64", "name": "height"},
+                                    ],
+                                    "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                                },
                             ],
-                            "pythonType": "starwhale.core.dataset.type.BoundingBox",
-                            "name": "_annotation_bbox",
+                            "pythonType": "starwhale.core.dataset.type.JsonDict",
+                            "name": "annotations",
                         },
                         {"type": "STRING", "name": "data_type"},
                     ],
@@ -375,11 +474,13 @@ class TestDatasetCopy(BaseTestCase):
                             "auth_name": "",
                             "_swds_bin_offset": "0000000000000030",
                             "_append_seq_id": "0000000000000002",
-                            "_annotation_bbox": {
-                                "x": "0000000000000002",
-                                "y": "0000000000000002",
-                                "width": "0000000000000003",
-                                "height": "0000000000000004",
+                            "annotations": {
+                                "bbox": {
+                                    "x": "0000000000000002",
+                                    "y": "0000000000000002",
+                                    "width": "0000000000000003",
+                                    "height": "0000000000000004",
+                                },
                             },
                             "data_type": json.dumps({"type": "text"}),
                         }
@@ -1373,12 +1474,11 @@ class TestTabularDataset(TestCase):
             "object_store_type": "local",
             "auth_name": "",
             "data_type": "{}",
-            "_annotation_a": 1,
+            "annotations": JsonDict({"a": 1}),
         }
 
         u_row_dict = u_row.asdict()
-        assert u_row_dict["_annotation_a"] == 1
-        assert u_row_dict["_annotation_b"] == {"c": 1}
+        assert u_row_dict["annotations"] == JsonDict({"a": 1, "b": {"c": 1}})
         assert u_row_dict["data_type"] == json.dumps(data_type, separators=(",", ":"))
         assert l_row.asdict()["id"] == "path/1"
 

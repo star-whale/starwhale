@@ -16,7 +16,10 @@ export const RAW_COLORS = [
 export const COLORS = RAW_COLORS.map((c) => Color(c).rgb().array() as [number, number, number])
 
 export const loadImage = (label: any, url: string) => {
-    const src = url.startsWith('http') || url.startsWith('data:image') ? url : `data:image/png;base64,${url}`
+    const src =
+        url.startsWith('http') || url.startsWith('data:image') || url.startsWith('/api')
+            ? url
+            : `data:image/png;base64,${url}`
     return new Promise<{ label: any; img: ImageData }>((resolve, reject) => {
         const img = new Image()
         img.onload = () => {

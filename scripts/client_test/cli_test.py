@@ -171,13 +171,15 @@ class TestCli:
             return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
         return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
 
-    def local_evl(self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI) -> t.Any:
+    def local_evl(
+        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: t.Optional[URI] = None
+    ) -> t.Any:
         logger.info("running evaluation at local...")
         self.select_local_instance()
         _job_id = self.evaluation_api.run(
             model=_model_uri.full_uri,
             datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
-            runtime=_rt_uri.full_uri,
+            runtime=_rt_uri.full_uri if _rt_uri else "",
         )
         assert _job_id
         assert len(self.evaluation_api.list())
@@ -240,7 +242,7 @@ class TestCli:
         # 3.runtime build
         _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
 
-        self.local_evl([_ds_uri], _model_uri, _rt_uri)
+        self.local_evl([_ds_uri], _model_uri)
         if self.server_url:
             _js = self.remote_eval(
                 [_ds_uri], _model_uri, _rt_uri, step_spec_f("step_spec_cpu_mini.yaml")
