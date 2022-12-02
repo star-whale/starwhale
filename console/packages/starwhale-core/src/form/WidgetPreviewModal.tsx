@@ -61,7 +61,8 @@ export default function WidgetPreviewModal({
                     style: {
                         width: '90vw',
                         height: '90vh',
-                        // maxWidth: '1080px',
+                        maxWidth: '1200px',
+                        maxHeight: '640px',
                         display: 'flex',
                         flexDirection: 'column',
                     },

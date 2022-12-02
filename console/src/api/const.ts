@@ -10,6 +10,7 @@ export const Privileges = {
     'runtime.version.revert': true,
     'model.version.revert': true,
     'dataset.version.revert': true,
+    'evaluation.panel.save': true,
 }
 export type IPrivileges = typeof Privileges
 

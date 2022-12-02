@@ -8,6 +8,7 @@ import IconFont from '@/components/IconFont'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent } from '@starwhale/core/events/common'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
@@ -169,7 +170,10 @@ function DNDListWidget(props: WidgetRendererProps) {
             </ReactSortable>
             <div style={{ flex: 1 }} />
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>Save</Button>
+                <WithCurrentAuth id='evaluation.panel.save'>
+                    <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>Save</Button>
+                </WithCurrentAuth>
+
                 <Button
                     onClick={() =>
                         eventBus.publish(
