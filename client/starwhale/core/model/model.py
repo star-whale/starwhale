@@ -183,11 +183,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.yaml_name = DefaultYAMLName.MODEL
         self._version = uri.object.version
 
-    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
-        self.tag.add(tags, quiet)
+    def list_tags(self) -> t.List[str]:
+        return self.tag.list()
 
-    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
-        self.tag.remove(tags, quiet)
+    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+        self.tag.add(tags, ignore_errors)
+
+    def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+        self.tag.remove(tags, ignore_errors)
 
     def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
         if typ == EvalHandlerType.DEFAULT:
@@ -430,7 +433,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
         return rs, {}
 
-    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:
+    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
         yaml_name = kw.get("yaml_name", DefaultYAMLName.MODEL)
         _mp = workdir / yaml_name
         _model_config = self.load_model_config(_mp)
@@ -559,5 +562,5 @@ class CloudModel(CloudBundleModelMixin, Model):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.MODEL, page, size)
 
-    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
+    def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")

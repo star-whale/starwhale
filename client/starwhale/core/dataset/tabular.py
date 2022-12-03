@@ -213,6 +213,9 @@ class TabularDataset:
     def put(self, row: TabularDatasetRow) -> None:
         self._ds_wrapper.put(row.id, **row.asdict())
 
+    def delete(self, row_id: t.Union[str, int]) -> None:
+        self._ds_wrapper.delete(row_id)
+
     def flush(self) -> None:
         self._ds_wrapper.flush()
 
@@ -220,6 +223,7 @@ class TabularDataset:
         self,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
+        end_inclusive: bool = False,
     ) -> t.Generator[TabularDatasetRow, None, None]:
         if start is None or (self.start is not None and start < self.start):
             start = self.start
@@ -227,7 +231,7 @@ class TabularDataset:
         if end is None or (self.end is not None and end > self.end):
             end = self.end
 
-        for _d in self._ds_wrapper.scan(start, end):
+        for _d in self._ds_wrapper.scan(start, end, end_inclusive):
             for k, v in self._map_types.items():
                 if k not in _d:
                     continue
@@ -250,6 +254,7 @@ class TabularDataset:
             yield batch
 
     def close(self) -> None:
+        self.flush()
         self._ds_wrapper.close()
 
     def __enter__(self: _TDType) -> _TDType:
@@ -261,7 +266,7 @@ class TabularDataset:
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
-        if value:
+        if value:  # pragma: no cover
             logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()

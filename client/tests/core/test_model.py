@@ -55,7 +55,7 @@ class StandaloneModelTestCase(TestCase):
     def test_build_workflow(self, m_copy_fs: MagicMock, m_copy_file: MagicMock) -> None:
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
-        sm.build(Path(self.workdir))
+        sm.build(workdir=Path(self.workdir))
 
         build_version = sm.uri.object.version
 

@@ -11,7 +11,19 @@ import importlib
 import threading
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
-from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
+from typing import (
+    Any,
+    Set,
+    cast,
+    Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Callable,
+    Iterator,
+    Optional,
+)
 
 import dill
 import numpy as np
@@ -665,6 +677,7 @@ def _scan_parquet_file(
     start: Optional[Any] = None,
     end: Optional[Any] = None,
     keep_none: bool = False,
+    end_inclusive: bool = False,
 ) -> Iterator[dict]:
     f = pq.ParquetFile(path)
     schema_arrow = f.schema_arrow
@@ -708,7 +721,10 @@ def _scan_parquet_file(
         n_cols = len(names)
         for j in range(n_rows):
             key = types[0].deserialize(table[0][j].as_py())
-            if (start is not None and key < start) or (end is not None and key >= end):
+            _end_check: Callable = lambda x, y: x > y if end_inclusive else x >= y
+            if (start is not None and key < start) or (
+                end is not None and _end_check(key, end)
+            ):
                 continue
             d = {"*": key}
             if key_alias is not None:
@@ -828,6 +844,7 @@ def _scan_table(
     start: Optional[Any] = None,
     end: Optional[Any] = None,
     keep_none: bool = False,
+    end_inclusive: bool = False,
 ) -> Iterator[dict]:
     iters = []
     for file in _get_table_files(path):
@@ -835,7 +852,7 @@ def _scan_table(
             keep = True
         else:
             keep = keep_none
-        iters.append(_scan_parquet_file(file, columns, start, end, keep))
+        iters.append(_scan_parquet_file(file, columns, start, end, keep, end_inclusive))
     return _merge_scan(iters, keep_none)
 
 
@@ -911,16 +928,24 @@ class MemoryTable:
         start: Optional[Any] = None,
         end: Optional[Any] = None,
         keep_none: bool = False,
+        end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
+        _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
+
         with self.lock:
             schema = self.schema.copy()
-            records = [
-                {self.schema.key_column: key, "-": True}
-                for key in self.deletes
-                if (start is None or key >= start) and (end is None or key < end)
-            ]
+
+            records = []
+            for key in self.deletes:
+                if (start is None or key >= start) and (
+                    end is None or _end_check(key, end)
+                ):
+                    records.append({self.schema.key_column: key, "-": True})
+
             for k, v in self.records.items():
-                if (start is None or k >= start) and (end is None or k < end):
+                if (start is None or k >= start) and (
+                    end is None or _end_check(k, end)
+                ):
                     records.append(v)
         records.sort(key=lambda x: cast(str, x[self.schema.key_column]))
         for r in records:
@@ -1105,6 +1130,7 @@ class LocalDataStore:
         start: Optional[Any] = None,
         end: Optional[Any] = None,
         keep_none: bool = False,
+        end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         class TableInfo:
             def __init__(
@@ -1163,9 +1189,14 @@ class LocalDataStore:
                                     start,
                                     end,
                                     info.keep_none,
+                                    end_inclusive,
                                 ),
                                 self.tables[info.name].scan(
-                                    info.columns, start, end, True
+                                    info.columns,
+                                    start,
+                                    end,
+                                    True,
+                                    end_inclusive,
                                 ),
                             ],
                             info.keep_none,
@@ -1174,7 +1205,11 @@ class LocalDataStore:
                 else:
                     iters.append(
                         self.tables[info.name].scan(
-                            info.columns, start, end, info.keep_none
+                            info.columns,
+                            start,
+                            end,
+                            info.keep_none,
+                            end_inclusive,
                         )
                     )
             else:
@@ -1185,6 +1220,7 @@ class LocalDataStore:
                         start,
                         end,
                         info.keep_none,
+                        end_inclusive,
                     )
                 )
         for record in _merge_scan(iters, keep_none):
@@ -1284,6 +1320,7 @@ class RemoteDataStore:
         start: Optional[Any] = None,
         end: Optional[Any] = None,
         keep_none: bool = False,
+        end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         post_data: Dict[str, Any] = {"tables": [table.to_dict() for table in tables]}
         key_type = _get_type(start)
@@ -1294,6 +1331,8 @@ class RemoteDataStore:
         post_data["limit"] = 1000
         if keep_none:
             post_data["keepNone"] = True
+        if end_inclusive:
+            post_data["endInclusive"] = True
         assert self.token is not None
         while True:
             resp_json = self._do_scan_table_request(post_data)
@@ -1338,6 +1377,7 @@ class DataStore(Protocol):
         start: Optional[Any] = None,
         end: Optional[Any] = None,
         keep_none: bool = False,
+        end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         ...
 

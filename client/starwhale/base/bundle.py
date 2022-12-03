@@ -51,11 +51,15 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+    def list_tags(self) -> t.List[str]:
         raise NotImplementedError
 
     @abstractmethod
-    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -87,7 +91,7 @@ class BaseBundle(metaclass=ABCMeta):
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
         raise NotImplementedError
 
-    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
+    def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         # TODO: remove yaml_name in build function
         self.store.building = True  # type: ignore
 
@@ -103,11 +107,15 @@ class BaseBundle(metaclass=ABCMeta):
 
         with ExitStack() as stack:
             stack.callback(when_exit)
-            kw["yaml_name"] = yaml_name or self.yaml_name
-            self.buildImpl(workdir, **kw)
+            kwargs["yaml_name"] = kwargs.get("yaml_name", self.yaml_name)
+            self.buildImpl(*args, **kwargs)
 
-    def buildImpl(self, workdir: Path, **kw: t.Any) -> None:
+    def buildImpl(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NotImplementedError
+
+    @property
+    def version(self) -> str:
+        return getattr(self, "_version", "") or self.uri.object.version
 
 
 class LocalStorageBundleMixin:
@@ -119,6 +127,8 @@ class LocalStorageBundleMixin:
             os=platform.system(),
             sw_version=STARWHALE_VERSION,
         )
+        self._manifest["version"] = self._version  # type: ignore
+        self._manifest["created_at"] = now_str()
 
         # TODO: add signature for import files: model, config
         _fpath = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
@@ -131,13 +141,11 @@ class LocalStorageBundleMixin:
             self._version = gen_uniq_version()
 
         self.uri.object.version = self._version  # type:ignore
-        self._manifest["version"] = self._version  # type: ignore
-        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 
     def _make_auto_tags(self) -> None:
-        self.tag.add([LATEST_TAG], quiet=True)  # type: ignore
+        self.tag.add([LATEST_TAG], ignore_errors=True)  # type: ignore
         self.tag.add_fast_tag()  # type: ignore
 
     def _make_tar(self, ftype: str = "") -> None:

@@ -280,7 +280,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir), enable_lock=True, env_prefix_path=venv_dir)
+        sr.build(workdir=Path(workdir), enable_lock=True, env_prefix_path=venv_dir)
         assert sr.uri.object.version != ""
         assert len(sr._version) == 40
         build_version = sr._version
@@ -477,7 +477,7 @@ class StandaloneRuntimeTestCase(TestCase):
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         sr.build(
-            Path(workdir),
+            workdir=Path(workdir),
             enable_lock=True,
             env_prefix_path=venv_dir,
             gen_all_bundles=True,
@@ -539,7 +539,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(os.path.join(workdir, "dummy.whl"), contents="")
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir), env_use_shell=True)
+        sr.build(workdir=Path(workdir), env_use_shell=True)
         sr.info()
         sr.history()
 
@@ -604,7 +604,7 @@ class StandaloneRuntimeTestCase(TestCase):
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         with self.assertRaises(ConfigFormatError):
-            sr.build(Path(workdir), env_use_shell=True)
+            sr.build(workdir=Path(workdir), env_use_shell=True)
 
         assert m_check_call.call_args[0][0][:6] == [
             "conda",
@@ -622,7 +622,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_py_ver.assert_called_once()
 
         m_py_ver.return_value = "3.10"
-        sr.build(Path(workdir), env_use_shell=True)
+        sr.build(workdir=Path(workdir), env_use_shell=True)
         m_py_ver.assert_has_calls([call(), call()])
 
         sw = SWCliConfigMixed()
@@ -668,13 +668,14 @@ class StandaloneRuntimeTestCase(TestCase):
         yaml_content = {
             "name": name,
             "mode": "conda",
+            "environment": {},
         }
         yaml_file = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(Path(workdir), env_use_shell=True)
+        sr.build(workdir=Path(workdir), env_use_shell=True)
 
         sw = SWCliConfigMixed()
         runtime_workdir = os.path.join(
@@ -694,7 +695,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.remove_object(yaml_file)
         self.fs.create_file(yaml_file, contents=yaml.safe_dump(yaml_content))
         sr = StandaloneRuntime(URI(name, expected_type=URIType.RUNTIME))
-        sr.build(Path(workdir), env_use_shell=True)
+        sr.build(workdir=Path(workdir), env_use_shell=True)
         runtime_workdir = os.path.join(
             sw.rootdir,
             "self",

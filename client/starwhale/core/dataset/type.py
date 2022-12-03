@@ -11,6 +11,7 @@ from functools import partial
 from urllib.parse import urlparse
 
 import requests
+from numpy import ndarray
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
@@ -267,6 +268,20 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             return _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
+
+    def to_numpy(self) -> ndarray:
+        raise NotImplementedError
+
+    def to_json(self) -> str:
+        raise NotImplementedError
+
+    def to_tensor(self) -> t.Any:
+        raise NotImplementedError
+
+    to_pt_tensor = to_tensor
+
+    def to_tf_tensor(self) -> t.Any:
+        ...
 
     def carry_raw_data(self: _TBAType) -> _TBAType:
         self._raw_base64_data = base64.b64encode(self.to_bytes()).decode()
@@ -654,7 +669,7 @@ class DatasetConfig(ASDictMixin):
     def __init__(
         self,
         name: str = "",
-        handler: str = "",
+        handler: t.Any = "",
         pkg_data: t.List[str] = [],
         exclude_pkg_data: t.List[str] = [],
         desc: str = "",
@@ -685,7 +700,7 @@ class DatasetConfig(ASDictMixin):
         if not _ok:
             raise FieldTypeOrValueError(f"name field:({self.name}) error: {_reason}")
 
-        if ":" not in self.handler:
+        if isinstance(self.handler, str) and ":" not in self.handler:
             raise Exception(
                 f"please use module:class format, current is: {self.handler}"
             )
@@ -702,6 +717,11 @@ class DatasetConfig(ASDictMixin):
         c = load_yaml(fpath)
 
         return cls(**c)
+
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        d = super().asdict(["handler"])
+        d["handler"] = getattr(self.handler, "__name__", None) or str(self.handler)
+        return d
 
 
 class JsonDict(SwObject):

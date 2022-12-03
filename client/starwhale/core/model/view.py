@@ -116,14 +116,16 @@ class ModelTermView(BaseTermView):
             project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
+        kwargs = {"yaml_name": yaml_name}
         if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=_m.build,
-                args=(Path(workdir), yaml_name),
+                args=(Path(workdir),),
+                kwargs=kwargs,
             ).run()
         else:
-            _m.build(Path(workdir), yaml_name)
+            _m.build(Path(workdir), **kwargs)
         return _model_uri
 
     @classmethod
@@ -138,13 +140,15 @@ class ModelTermView(BaseTermView):
         console.print(":clap: copy done.")
 
     @BaseTermView._header
-    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
+    def tag(
+        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
+    ) -> None:
         if remove:
             console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.model.remove_tags(tags, quiet)
+            self.model.remove_tags(tags, ignore_errors)
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.model.add_tags(tags, quiet)
+            self.model.add_tags(tags, ignore_errors)
 
 
 class ModelTermViewRich(ModelTermView):

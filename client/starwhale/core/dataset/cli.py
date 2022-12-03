@@ -8,6 +8,7 @@ from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZ
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.cli import AliasedGroup
+from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
 from starwhale.core.dataset.type import MIMEType, DatasetAttr, DatasetConfig
 
@@ -54,6 +55,7 @@ def dataset_cmd(ctx: click.Context) -> None:
 @click.option("-a", "--append", is_flag=True, default=None, help="Only append new data")
 @click.option("-af", "--append-from", help="Append from dataset version")
 @click.option("-r", "--runtime", help="runtime uri")
+@click.option("-dcs", "--disable-copy-src", help="disable copy src dir")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -69,6 +71,7 @@ def _build(
     append: bool,
     append_from: str,
     runtime: str,
+    disable_copy_src: bool,
 ) -> None:
     # TODO: add dry-run
     # TODO: add compress args
@@ -81,7 +84,8 @@ def _build(
         config = DatasetConfig.create_by_yaml(yaml_path)
 
     config.name = name or config.name or Path(workdir).absolute().name
-    config.handler = handler or config.handler
+    handler = handler or config.handler
+    config.handler = import_object(workdir, handler)
     config.runtime_uri = runtime or config.runtime_uri
     config.project_uri = project or config.project_uri
     # TODO: support README.md as the default desc
@@ -97,11 +101,8 @@ def _build(
     if append is not None:
         config.append = append
 
-    print(config.name)
-    print(config.handler)
-
     config.do_validate()
-    view.build(workdir, config)
+    view.build(workdir, config, disable_copy_src)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")

@@ -147,6 +147,20 @@ class TestBasicFunctions(BaseTestCase):
             ),
             "with start and end",
         )
+
+        self.assertEqual(
+            [{"*": 1, "-": True, "i": "y", "j": 11}, {"*": 2, "i": "z"}],
+            list(
+                data_store._scan_parquet_file(
+                    path,
+                    columns={"b": "i", "c": "j"},
+                    start=1,
+                    end=2,
+                    end_inclusive=True,
+                )
+            ),
+            "with start and end, with end inclusive",
+        )
         self.assertEqual(
             [
                 {"*": 0, "a": 0, "b": "x", "c": 10},
@@ -543,6 +557,19 @@ class TestBasicFunctions(BaseTestCase):
                 )
             ),
             "with start and end",
+        )
+        self.assertEqual(
+            [{"*": 2, "j": "2"}, {"*": 3, "i": "3"}],
+            list(
+                data_store._scan_table(
+                    self.datastore_root,
+                    {"a": "i", "b": "j"},
+                    start=2,
+                    end=3,
+                    end_inclusive=True,
+                )
+            ),
+            "with start and end(inclusive)",
         )
         self.assertEqual(
             [
@@ -972,6 +999,13 @@ class TestMemoryTable(BaseTestCase):
             ],
             list(table.scan(keep_none=True)),
             "keep none",
+        )
+        self.assertEqual(
+            [
+                {"*": 0, "k": 0, "a": "0"},
+            ],
+            list(table.scan(start=0, end=0, end_inclusive=True)),
+            "one row",
         )
         self.assertEqual(
             [

@@ -125,8 +125,8 @@ class RuntimeTermView(BaseTermView):
 
         _rt = Runtime.get_runtime(_runtime_uri)
         _rt.build(
-            Path(workdir),
-            yaml_name,
+            workdir=Path(workdir),
+            yaml_name=yaml_name,
             gen_all_bundles=gen_all_bundles,
             include_editable=include_editable,
             disable_env_lock=disable_env_lock,
@@ -226,14 +226,16 @@ class RuntimeTermView(BaseTermView):
         console.print(":clap: copy done.")
 
     @BaseTermView._header
-    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
+    def tag(
+        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
+    ) -> None:
         # TODO: refactor model/runtime/dataset tag view-model
         if remove:
             console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.remove_tags(tags, quiet)
+            self.runtime.remove_tags(tags, ignore_errors)
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.add_tags(tags, quiet)
+            self.runtime.add_tags(tags, ignore_errors)
 
 
 class RuntimeTermViewRich(RuntimeTermView):

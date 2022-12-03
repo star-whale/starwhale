@@ -319,8 +319,11 @@ class CloudBundleModelMixin(CloudRequestMixed):
             instance_uri=uri,
         )
 
-    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+    def list_tags(self) -> t.List[str]:
+        raise NoSupportError("no support list tags for dataset in the cloud instance")
+
+    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         raise NoSupportError("no support add tags for dataset in the cloud instance")
 
-    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+    def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         raise NoSupportError("no support remove tags for dataset in the cloud instance")

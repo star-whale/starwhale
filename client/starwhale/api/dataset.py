@@ -5,6 +5,7 @@ from ._impl.dataset import (
     Image,
     Video,
     Binary,
+    Dataset,
     LinkAuth,
     LinkType,
     MIMEType,
@@ -49,4 +50,5 @@ __all__ = [
     "BoundingBox",
     "GrayscaleImage",
     "COCOObjectAnnotation",
+    "Dataset",
 ]

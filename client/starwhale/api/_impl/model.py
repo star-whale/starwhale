@@ -161,7 +161,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._sw_logger.debug(
             f"execute {self.context.step}-{self.context.index} exit func..."
         )
-        if value:
+        if value:  # pragma: no cover
             print(f"type:{type}, exception:{value}, traceback:{trace}")
 
         if self._stdout_changed:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 from abc import ABCMeta, abstractmethod
+from functools import total_ordering
 
 import loguru
 from loguru import logger as _logger
@@ -23,7 +24,55 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetSessionConsumption,
 )
 
-_LDType = t.Tuple[t.Union[str, int], t.Any, t.Dict]
+
+@total_ordering
+class DataRow:
+    def __init__(
+        self,
+        index: t.Union[str, int],
+        data: t.Optional[t.Union[BaseArtifact, Link]],
+        annotations: t.Dict,
+    ) -> None:
+        self.index = index
+        self.data = data
+        self.annotations = annotations
+
+        self._do_validate()
+
+    def __str__(self) -> str:
+        return f"{self.index}"
+
+    def __repr__(self) -> str:
+        return f"index:{self.index}, data:{self.data}, annotations:{self.annotations}"
+
+    def __iter__(self) -> t.Iterator:
+        return iter((self.index, self.data, self.annotations))
+
+    def __getitem__(self, i: int) -> t.Any:
+        return (self.index, self.data, self.annotations)[i]
+
+    def __len__(self) -> int:
+        return len(self.__dict__)
+
+    def _do_validate(self) -> None:
+        if not isinstance(self.index, (str, int)):
+            raise TypeError(f"index({self.index}) is not int or str type")
+
+        if self.data is not None and not isinstance(self.data, (BaseArtifact, Link)):
+            raise TypeError(f"data({self.data}) is not BaseArtifact or Link type")
+
+        if not isinstance(self.annotations, dict):
+            raise TypeError(f"annotations({self.annotations}) is not dict type")
+
+    def __lt__(self, obj: DataRow) -> bool:
+        return str(self.index) < str(obj.index)
+
+    def __eq__(self, obj: t.Any) -> bool:
+        return bool(
+            self.index == obj.index
+            and self.data == obj.data
+            and self.annotations == obj.annotations
+        )
 
 
 class DataLoader(metaclass=ABCMeta):
@@ -134,6 +183,7 @@ class DataLoader(metaclass=ABCMeta):
 
     def _iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
+            # TODO: refactor for batch-signed urls
             for row in self.tabular_dataset.scan():
                 yield row
         else:
@@ -164,17 +214,22 @@ class DataLoader(metaclass=ABCMeta):
                     for row in self.tabular_dataset.scan(rt[0], rt[1]):
                         yield row
 
-    def _unpack_row(self, row: TabularDatasetRow) -> _LDType:
+    def _unpack_row(
+        self, row: TabularDatasetRow, skip_fetch_data: bool = False
+    ) -> DataRow:
+        if skip_fetch_data:
+            return DataRow(index=row.id, data=None, annotations=row.annotations)
+
         store = self._get_store(row)
         key_compose = self._get_key_compose(row, store)
         file = store.backend._make_file(store.bucket, key_compose)
         data_content, _ = self._read_data(file, row)
         data = BaseArtifact.reflect(data_content, row.data_type)
-        return row.id, data, row.annotations
+        return DataRow(index=row.id, data=data, annotations=row.annotations)
 
     def __iter__(
         self,
-    ) -> t.Generator[_LDType, None, None]:
+    ) -> t.Generator[DataRow, None, None]:
         for row in self._iter_row():
             # TODO: tune performance by fetch in batch
             yield self._unpack_row(row)

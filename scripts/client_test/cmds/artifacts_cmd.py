@@ -2,6 +2,7 @@ import json
 import typing as t
 from pathlib import Path
 
+from starwhale.utils.load import import_object
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.dataset.view import DatasetTermView
@@ -213,7 +214,7 @@ class Dataset(BaseArtifact):
         config = DatasetConfig()
         if yaml_path.exists():
             config = DatasetConfig.create_by_yaml(yaml_path)
-        config.handler = handler or config.handler
+        config.handler = import_object(workdir, handler or config.handler)
         _uri = DatasetTermView.build(workdir, config)
         LocalDataStore.get_instance().dump()
         return _uri

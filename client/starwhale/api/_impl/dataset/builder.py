@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import os
+import time
+import queue
 import struct
 import typing as t
 import inspect
 import tempfile
+import threading
 from abc import ABCMeta, abstractmethod
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
 
 import jsonlines
+from loguru import logger
 
-from starwhale.consts import AUTH_ENV_FNAME, SWDS_DATA_FNAME_FMT
+from starwhale.consts import AUTH_ENV_FNAME, DEFAULT_PROJECT, SWDS_DATA_FNAME_FMT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.base.type import DataFormatType, DataOriginType, ObjectStoreType
@@ -29,6 +35,7 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
+from starwhale.api._impl.dataset.loader import DataRow
 
 # TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
@@ -98,9 +105,11 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
-        if value:
+        if value:  # pragma: no cover
             print(f"type:{type}, exception:{value}, traceback:{trace}")
+        self.close()
 
+    def close(self) -> None:
         try:
             self.tabular_dataset.close()
         except Exception as e:
@@ -136,6 +145,31 @@ class BaseBuildExecutor(metaclass=ABCMeta):
     @property
     def data_format_type(self) -> DataFormatType:
         raise NotImplementedError
+
+    def _unpack_row_content(
+        self, row_content: t.Union[t.Tuple, DataRow], append_seq_id: int
+    ) -> t.Tuple[t.Union[str, int], BaseArtifact, t.Dict]:
+        if isinstance(row_content, DataRow):
+            idx, row_data, row_annotations = row_content
+        elif isinstance(row_content, tuple):
+            if len(row_content) == 2:
+                idx = append_seq_id
+                row_data, row_annotations = row_content
+            elif len(row_content) == 3:
+                idx, row_data, row_annotations = row_content
+            else:
+                raise FormatError(
+                    f"iter_item must return (data, annotations) or (id, data, annotations): {row_content}"
+                )
+        else:
+            raise FormatError(
+                f"row content not return tuple or DataRow type: {row_content}"
+            )
+
+        if not isinstance(row_annotations, dict):
+            raise FormatError(f"annotations({row_annotations}) must be dict type")
+
+        return idx, row_data, row_annotations
 
 
 class SWDSBinBuildExecutor(BaseBuildExecutor):
@@ -206,21 +240,9 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
         for append_seq_id, item_content in enumerate(
             self.iter_item(), start=self._forked_last_seq_id + 1
         ):
-            if not isinstance(item_content, tuple):
-                raise FormatError(f"iter_item not return tuple type: {item_content}")
-
-            if len(item_content) == 2:
-                idx = append_seq_id
-                row_data, row_annotations = item_content
-            elif len(item_content) == 3:
-                idx, row_data, row_annotations = item_content
-            else:
-                raise FormatError(
-                    f"iter_item must return (data, annotations) or (id, data, annotations): {item_content}"
-                )
-
-            if not isinstance(row_annotations, dict):
-                raise FormatError(f"annotations({row_annotations}) must be dict type")
+            idx, row_data, row_annotations = self._unpack_row_content(
+                item_content, append_seq_id
+            )
 
             _artifact: BaseArtifact
             if isinstance(row_data, bytes):
@@ -332,7 +354,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
         increased_rows = 0
         total_data_size = 0
-        auth_candidates = {}
+        auth_candidates: t.Dict[str, LinkAuth] = {}
         include_link = False
 
         map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
@@ -342,18 +364,9 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             self.iter_item(),
             start=self._forked_last_seq_id + 1,
         ):
-            if len(item_content) == 2:
-                idx = append_seq_id
-                row_data, row_annotations = item_content
-            elif len(item_content) == 3:
-                idx, row_data, row_annotations = item_content
-            else:
-                raise FormatError(
-                    f"iter_item must return (data, annotations) or (id, data, annotations): {item_content}"
-                )
-
-            if not isinstance(row_annotations, dict):
-                raise FormatError(f"annotations({row_annotations}) must be dict type")
+            idx, row_data, row_annotations = self._unpack_row_content(
+                item_content, append_seq_id
+            )
 
             if not dataset_annotations:
                 # TODO: check annotations type and name
@@ -377,7 +390,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                     if isinstance(obj, Link):
                         if not obj.with_local_fs_data:
                             raise NoSupportError(
-                                f"Local Link only suuports local link annotations: {obj}"
+                                f"Local Link only supports local link annotations: {obj}"
                             )
                         if obj.uri not in map_path_sign:
                             map_path_sign[obj.uri] = DatasetStorage.save_data_file(
@@ -482,26 +495,152 @@ def create_generic_cls(
         for _item in items_iter:
             yield _item
 
-    attrs = {"iter_item": _do_iter_item}
-
-    if len(item) == 2:
-        data = item[0]
-    elif len(item) == 3:
-        data = item[1]
+    if isinstance(item, DataRow):
+        data = item.data
+    elif isinstance(item, (tuple, list)):
+        if len(item) == 2:
+            data = item[0]
+        elif len(item) == 3:
+            data = item[1]
+        else:
+            raise FormatError(f"wrong item format: {item}")
     else:
-        raise FormatError(f"wrong item format: {item}")
+        raise TypeError(f"item only supports tuple, list or DataRow type: {item}")
 
-    if isinstance(data, Link):
-        _cls = type(
-            "GenericUserRawHandler",
-            (UserRawBuildExecutor,),
-            attrs,
-        )
-    else:
+    use_swds_bin = not isinstance(data, Link)
+    return create_generic_cls_by_mode(use_swds_bin, _do_iter_item)
+
+
+def create_generic_cls_by_mode(
+    use_swds_bin: bool, iter_func: t.Callable
+) -> t.Type[BaseBuildExecutor]:
+    attrs = {"iter_item": iter_func}
+    if use_swds_bin:
         _cls = type(
             "GenericSWDSBinHandler",
             (SWDSBinBuildExecutor,),
             attrs,
         )
-
+    else:
+        _cls = type(
+            "GenericUserRawHandler",
+            (UserRawBuildExecutor,),
+            attrs,
+        )
     return _cls
+
+
+class RowWriter(threading.Thread):
+    def __init__(
+        self,
+        dataset_name: str,
+        dataset_version: str,
+        project_name: str = DEFAULT_PROJECT,
+        workdir: Path = Path(".dataset_tmp"),
+        alignment_bytes_size: int = D_ALIGNMENT_SIZE,
+        volume_bytes_size: int = D_FILE_VOLUME_SIZE,
+        append: bool = False,
+        append_from_version: str = "",
+        append_from_uri: t.Optional[URI] = None,
+        append_with_swds_bin: bool = True,
+    ) -> None:
+        super().__init__(
+            name=f"RowWriter-{dataset_name}-{dataset_version}-{project_name}"
+        )
+
+        self._kw = {
+            "dataset_name": dataset_name,
+            "dataset_version": dataset_version,
+            "project_name": project_name,
+            "workdir": workdir,
+            "alignment_bytes_size": alignment_bytes_size,
+            "volume_bytes_size": volume_bytes_size,
+            "append": append,
+            "append_from_version": append_from_version,
+            "append_from_uri": append_from_uri,
+        }
+
+        self._queue: queue.Queue[t.Optional[DataRow]] = queue.Queue()
+        self._summary = DatasetSummary()
+        self._lock = threading.Lock()
+
+        self._run_exception: t.Optional[Exception] = None
+
+        self.setDaemon(True)
+        self._builder: t.Optional[BaseBuildExecutor] = None
+        if append and append_from_version:
+            _cls = create_generic_cls_by_mode(append_with_swds_bin, self.__iter__)
+            self._builder = _cls(**self._kw)  # type: ignore
+            self.start()
+
+    def _raise_run_exception(self) -> None:
+        if self._run_exception is not None:
+            _e = self._run_exception
+            self._run_exception = None
+            raise threading.ThreadError(f"RowWriter Thread raise exception: {_e}")
+
+    @property
+    def summary(self) -> DatasetSummary:
+        return self._summary
+
+    def __enter__(self) -> RowWriter:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:  # pragma: no cover
+            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+
+        self.close()
+
+    def flush(self) -> None:
+        while not self._queue.empty():
+            # TODO: tune flush with thread condition
+            time.sleep(0.1)
+
+    def close(self) -> None:
+        self._queue.put(None)
+
+        self.join()
+        if self._builder:
+            self._builder.close()
+
+        self._raise_run_exception()
+
+    def update(self, row_item: DataRow) -> None:
+        self._raise_run_exception()
+        self._queue.put(row_item)
+
+        with self._lock:
+            if self._builder is None:
+                _cls = create_generic_cls(self.__iter__)
+                self._builder = _cls(**self._kw)  # type: ignore
+                self.start()
+
+    def __iter__(self) -> t.Generator[DataRow, None, None]:
+        while True:
+            item = self._queue.get(block=True, timeout=None)
+            if item is None:
+                if self._queue.qsize() > 0:
+                    continue
+                else:
+                    break
+
+            if not isinstance(item, DataRow):
+                continue
+
+            yield item
+
+    def run(self) -> None:
+        try:
+            if self._builder is None:
+                raise RuntimeError("dataset builder object wasn't initialized")
+            self._summary = self._builder.make_swds()
+        except Exception as e:
+            logger.exception(e)
+            self._run_exception = e
+            raise

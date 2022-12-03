@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
+import pytest
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
@@ -50,6 +51,7 @@ from starwhale.core.dataset.type import (
     ArtifactType,
     BaseArtifact,
     GrayscaleImage,
+    DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
 from starwhale.core.dataset.store import DatasetStorage
@@ -63,7 +65,9 @@ from starwhale.core.dataset.tabular import (
     local_standalone_tdsc,
     get_dataset_consumption,
 )
+from starwhale.api._impl.dataset.loader import DataRow
 from starwhale.api._impl.dataset.builder import (
+    RowWriter,
     _data_magic,
     _header_size,
     _header_magic,
@@ -1506,3 +1510,260 @@ class TestTabularDataset(TestCase):
         for r in (s_row, u_row, l_row):
             copy_r = TabularDatasetRow.from_datastore(**r.asdict())
             assert copy_r == r
+
+
+class TestRowWriter(BaseTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+
+    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    def test_update(self, m_make_swds: MagicMock) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+
+        assert rw._builder is None
+        assert not rw.is_alive()
+        assert rw._queue.empty()
+
+        rw._builder = MagicMock()
+
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        first_builder = rw._builder
+        assert rw._builder is not None
+        assert rw._queue.qsize() == 1
+
+        rw.update(DataRow(index=2, data=Binary(b"test"), annotations={"label": 2}))
+        second_builder = rw._builder
+        assert first_builder == second_builder
+        assert rw._queue.qsize() == 2
+
+        rw._builder = None
+        rw.update(DataRow(index=3, data=Binary(b"test"), annotations={"label": 3}))
+        assert rw._builder is not None
+        assert rw.isDaemon()
+        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+        assert m_make_swds.call_count == 1
+
+    @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
+    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    def test_update_exception(self, m_make_swds: MagicMock) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+
+        assert rw._raise_run_exception() is None
+        rw._builder = MagicMock()
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        assert rw._run_exception is None
+
+        rw._run_exception = ValueError("test")
+        with self.assertRaises(threading.ThreadError):
+            rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+
+        rw._run_exception = None
+        rw._builder = None
+        m_make_swds.side_effect = TypeError("thread test")
+        with self.assertRaises(threading.ThreadError):
+            rw.update(DataRow(index=2, data=Binary(b"test"), annotations={"label": 2}))
+            rw.join()
+            rw.update(DataRow(index=3, data=Binary(b"test"), annotations={"label": 3}))
+
+    def test_iter(self) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw._builder = MagicMock()
+        size = 10
+        for i in range(0, size):
+            rw.update(DataRow(index=i, data=Binary(b"test"), annotations={"label": i}))
+
+        rw.update(None)  # type: ignore
+        assert not rw.is_alive()
+        assert rw._queue.qsize() == size + 1
+
+        items = list(rw)
+        assert len(items) == size
+        assert items[0].index == 0
+        assert items[9].index == 9
+
+    def test_iter_block(self) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw._builder = MagicMock()
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+
+        thread = threading.Thread(target=lambda: list(rw), daemon=True)
+        thread.start()
+        assert thread.is_alive()
+        time.sleep(1)
+        assert thread.is_alive()
+
+        rw.update(None)  # type: ignore
+        time.sleep(0.1)
+        assert not thread.is_alive()
+
+    def test_iter_none(self) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw._builder = MagicMock()
+        size = 10
+        for _ in range(0, size):
+            rw.update(None)  # type: ignore
+
+        assert rw._queue.qsize() == size
+        assert len(list(rw)) == 0
+
+    def test_iter_merge_none(self) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw._builder = MagicMock()
+        size = 10
+        for _ in range(0, size):
+            rw.update(None)  # type: ignore
+
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(None)  # type: ignore
+
+        assert rw._queue.qsize() == size + 2
+        items = list(rw)
+        assert len(items) == 1
+        assert items[0].index == 1
+
+    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    def test_close(self, m_make_swds: MagicMock) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.close()
+        assert not rw.is_alive()
+
+        with RowWriter(dataset_name="mnist", dataset_version="123456") as context_rw:
+            context_rw.update(
+                DataRow(index=1, data=Binary(b"test"), annotations={"label": 1})
+            )
+        assert not rw.is_alive()
+
+    def test_make_swds_bin(self) -> None:
+        workdir = Path(self.local_storage) / ".user" / "workdir"
+
+        assert not workdir.exists()
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
+        assert rw._builder is None
+        size = 100
+        for i in range(0, size):
+            rw.update(DataRow(index=i, data=Binary(b"test"), annotations={"label": i}))
+        rw.close()
+
+        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+        assert rw._queue.qsize() == 0
+        assert rw.summary.rows == size
+        assert not rw.summary.include_link
+        assert rw.summary.annotations == ["label"]
+
+        data_dir = workdir / "data"
+        assert data_dir.exists()
+        files = list(data_dir.iterdir())
+        assert len(files) == 1
+        assert files[0].is_symlink()
+
+    def test_make_user_raw(self) -> None:
+        user_dir = Path(self.local_storage) / ".user"
+        raw_data_file = user_dir / "data_file"
+        raw_content = "123"
+        ensure_dir(user_dir)
+        ensure_file(raw_data_file, content=raw_content)
+
+        workdir = user_dir / "workdir"
+        assert not workdir.exists()
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
+        assert rw._builder is None
+        size = 100
+        for i in range(0, size):
+            rw.update(
+                DataRow(
+                    index=i,
+                    data=Link(uri=raw_data_file, with_local_fs_data=True),
+                    annotations={"label": i, "label2": 2},
+                )
+            )
+        rw.close()
+
+        assert isinstance(rw._builder, UserRawBuildExecutor)
+        assert rw._queue.qsize() == 0
+        assert rw.summary.rows == size
+        assert not rw.summary.include_link
+        assert rw.summary.include_user_raw
+        assert rw.summary.annotations == ["label", "label2"]
+
+        data_dir = workdir / "data"
+        assert data_dir.exists()
+        files = list(data_dir.iterdir())
+
+        assert len(files) == 1
+        assert files[0].is_symlink()
+        assert files[0].read_text() == raw_content
+
+    def test_make_link(self) -> None:
+        user_dir = Path(self.local_storage) / ".user"
+        raw_data_file = user_dir / "data_file"
+        raw_content = "123"
+        ensure_dir(user_dir)
+        ensure_file(raw_data_file, content=raw_content)
+
+        workdir = user_dir / "workdir"
+        assert not workdir.exists()
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
+        assert rw._builder is None
+        size = 100
+        for i in range(0, size):
+            rw.update(
+                DataRow(
+                    index=i,
+                    data=Link(uri="minio://1/1/1/", auth=DefaultS3LinkAuth),
+                    annotations={"label": i, "label2": 2},
+                )
+            )
+        rw.close()
+
+        assert isinstance(rw._builder, UserRawBuildExecutor)
+        assert rw._queue.qsize() == 0
+        assert rw.summary.rows == size
+        assert rw.summary.include_link
+        assert rw.summary.include_user_raw
+        assert rw.summary.annotations == ["label", "label2"]
+
+        data_dir = workdir / "data"
+        assert data_dir.exists()
+        files = list(data_dir.iterdir())
+        assert len(files) == 0
+
+    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    def test_append_swds_bin(self, m_make_swds: MagicMock) -> None:
+        rw = RowWriter(
+            dataset_name="mnist",
+            dataset_version="123456",
+            append=True,
+            append_from_version="abcdefg",
+            append_with_swds_bin=True,
+        )
+        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+
+    @patch("starwhale.api._impl.dataset.builder.UserRawBuildExecutor.make_swds")
+    def test_append_user_raw(self, m_make_swds: MagicMock) -> None:
+        rw = RowWriter(
+            dataset_name="mnist",
+            dataset_version="123456",
+            append=True,
+            append_from_version="abcdefg",
+            append_with_swds_bin=False,
+        )
+        assert isinstance(rw._builder, UserRawBuildExecutor)
+
+    def test_flush(self) -> None:
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw._builder = MagicMock()
+        rw.flush()
+
+        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        thread = threading.Thread(target=rw.flush, daemon=True)
+        thread.start()
+        time.sleep(0.2)
+        assert thread.is_alive()
+
+        item = rw._queue.get(block=True)
+        assert item.index == 1  # type: ignore
+        time.sleep(0.2)
+        assert not thread.is_alive()
+
+        rw.flush()

@@ -74,13 +74,13 @@ class StandaloneTag:
     def add(
         self,
         tags: t.List[str],
-        quiet: bool = False,
+        ignore_errors: bool = False,
         manifest: t.Optional[t.Dict] = None,
     ) -> None:
         _manifest = manifest or self._get_manifest()
         _version = self.uri.object.version
 
-        if not _version and not quiet:
+        if not _version and not ignore_errors:
             raise MissingFieldError(f"uri version, {self.uri}")
 
         for _t in tags:
@@ -90,7 +90,7 @@ class StandaloneTag:
 
             _ok, _reason = validate_obj_name(_t)
             if not _ok:
-                if quiet:
+                if ignore_errors:
                     continue
                 else:
                     raise FormatError(f"{_t}, reason:{_reason}")
@@ -109,13 +109,13 @@ class StandaloneTag:
 
         self._save_manifest(_manifest)
 
-    def remove(self, tags: t.List[str], quiet: bool = False) -> None:
+    def remove(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         _manifest = self._get_manifest()
         for _t in tags:
             _version = _manifest["tags"].pop(_t, "")
 
             if _version not in _manifest["versions"]:
-                if quiet:
+                if ignore_errors:
                     continue
                 else:
                     raise NotFoundError(f"tag:{_t}, version:{_version}")
@@ -125,6 +125,10 @@ class StandaloneTag:
                 _manifest["versions"].pop(_version, None)
 
         self._save_manifest(_manifest)
+
+    def __iter__(self) -> t.Generator[str, None, None]:
+        for tag in self.list():
+            yield tag
 
     def list(self) -> t.List[str]:
         _manifest = self._get_manifest()
