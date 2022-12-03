@@ -24,6 +24,7 @@ from starwhale.consts import (
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
+    DEFAULT_EVALUATION_SVC_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -32,9 +33,11 @@ from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
+from starwhale.utils.load import load_module
+from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.api._impl.job import Parser
+from starwhale.api._impl.job import Parser, Context, context_holder
 from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.eval.store import EvaluationStorage
@@ -193,12 +196,50 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, ignore_errors)
 
     def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
+        d = self.store.snapshot_workdir / "src"
+        svc = self._get_service(ppl, workdir)
+        _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
+        apis = {k: v.to_yaml() for k, v in svc.apis.items()}
+        ensure_file(_f, yaml.safe_dump(apis, default_flow_style=False))
+
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
-        _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+        _f = d / DEFAULT_EVALUATION_JOBS_FNAME
         logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
         Parser.generate_job_yaml(ppl, workdir, _f)
+
+    @staticmethod
+    def _get_service(module: str, pkg: Path) -> Service:
+        module, _, attr = module.partition(":")
+        m = load_module(module, pkg)
+        apis = dict()
+        svc: t.Optional[Service] = None
+
+        # TODO: check duplication
+        for k, v in m.__dict__.items():
+            if isinstance(v, Service):
+                apis.update(v.apis)
+                # use Service in module
+                svc = v
+        if attr:
+            cls = getattr(m, attr)
+            # TODO: refine this ugly ad hoc
+            context_holder.context = Context(
+                Path("."), version="-1", project="tmp-project-for-build"
+            )
+            ins = cls()
+            apis.update(ins.svc.apis)
+
+        from starwhale.api._impl.service import internal_api_list
+
+        apis.update(internal_api_list())
+
+        if svc is None:
+            svc = Service()
+        for api in apis.values():
+            svc.add_api_instance(api)
+        return svc
 
     @classmethod
     def get_pipeline_handler(
@@ -208,9 +249,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> str:
         _mp = workdir / yaml_name
         _model_config = cls.load_model_config(_mp)
-        if _model_config.run.typ == EvalHandlerType.DEFAULT:
-            return DEFAULT_EVALUATION_PIPELINE
-        return _model_config.run.handler
+        return cls._get_module(_model_config)
 
     @classmethod
     def eval_user_handler(
@@ -244,22 +283,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
         ensure_dir(_run_dir)
 
-        if _model_config.run.typ == EvalHandlerType.DEFAULT:
-            _module = DEFAULT_EVALUATION_PIPELINE
-        else:
-            _module = _model_config.run.handler
-
+        _module = cls._get_module(_model_config)
         _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
 
         # generate if not exists
         if not os.path.exists(_yaml_path):
-            if _model_config.run.typ == EvalHandlerType.DEFAULT:
-                _ppl = DEFAULT_EVALUATION_PIPELINE
-            else:
-                _ppl = _model_config.run.handler
-
             _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
-            Parser.generate_job_yaml(_ppl, workdir, _new_yaml_path)
+            Parser.generate_job_yaml(_module, workdir, _new_yaml_path)
             _yaml_path = str(_new_yaml_path)
 
         # parse job steps from yaml
@@ -331,6 +361,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print(
                 f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
+
+    @classmethod
+    def _get_module(cls, _model_config: ModelConfig) -> str:
+        if _model_config.run.typ == EvalHandlerType.DEFAULT:
+            return DEFAULT_EVALUATION_PIPELINE
+        else:
+            return _model_config.run.handler
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
@@ -544,6 +581,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
         return self._do_extract(force, target)
+
+    @classmethod
+    def serve(
+        cls,
+        model_yaml: str,
+        workdir: Path,
+        host: str,
+        port: int,
+        handlers: t.Optional[t.List[str]] = None,
+    ) -> None:
+        _model_config = cls.load_model_config(workdir / model_yaml)
+        svc = cls._get_service(_model_config.run.handler, workdir)
+        svc.serve(host, port, handlers)
 
 
 class CloudModel(CloudBundleModelMixin, Model):

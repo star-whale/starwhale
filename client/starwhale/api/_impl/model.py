@@ -21,10 +21,12 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
+from starwhale.api.service import Service
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
+from starwhale.api._impl.service import Request, Response
 from starwhale.core.dataset.tabular import get_dataset_consumption
 from starwhale.api._impl.dataset.loader import get_data_loader
 
@@ -78,6 +80,7 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
         flush_result: bool = False,
     ) -> None:
+        self.svc = Service()
         self.context: Context = context_holder.context
 
         # TODO: add args for compare result and label directly
@@ -283,3 +286,11 @@ class PipelineHandler(metaclass=ABCMeta):
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME
         ensure_file(fpath, status)
+
+    def add_api(
+        self, req: Request, resp: Response, func: t.Callable, name: str
+    ) -> None:
+        self.svc.add_api(req, resp, func, name)
+
+    def serve(self, addr: str, port: int) -> None:
+        self.svc.serve(addr, port)

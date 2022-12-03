@@ -23,6 +23,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
+from starwhale.api.service import Request
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
@@ -170,7 +171,6 @@ class MIMEType(Enum):
 LocalFSLinkAuth = partial(LinkAuth, ltype=LinkType.LocalFS)
 DefaultS3LinkAuth = S3LinkAuth()
 
-
 _T = t.TypeVar("_T")
 _TupleOrList = t.Union[t.Tuple[_T, ...], t.List[_T]]
 _TShape = _TupleOrList[t.Optional[int]]
@@ -190,7 +190,7 @@ class ArtifactType(Enum):
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
 
 
-class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
+class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -304,6 +304,19 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
 
     __repr__ = __str__
 
+    def load(self, data: t.Union[str, bytes, t.Dict[str, t.Any]]) -> BaseArtifact:
+        if isinstance(data, bytes):
+            raw = data
+        elif isinstance(data, str):
+            raw = base64.b64decode(data)
+        elif isinstance(data, dict):
+            raw = base64.b64decode(data["data"])
+            return self.reflect(raw, data)
+        else:
+            raise NoSupportError(f"load raw for type:{type(data)}")
+        self.fp = raw
+        return self
+
 
 class Binary(BaseArtifact, SwObject):
     def __init__(
@@ -320,7 +333,7 @@ class Image(BaseArtifact, SwObject):
         fp: _TArtifactFP = "",
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
-        mime_type: t.Optional[MIMEType] = None,
+        mime_type: MIMEType = MIMEType.UNDEFINED,
         as_mask: bool = False,
         mask_uri: str = "",
     ) -> None:

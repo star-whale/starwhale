@@ -50,9 +50,12 @@ class StandaloneModelTestCase(TestCase):
         ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
 
+    @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
-    def test_build_workflow(self, m_copy_fs: MagicMock, m_copy_file: MagicMock) -> None:
+    def test_build_workflow(
+        self, m_copy_fs: MagicMock, m_copy_file: MagicMock, m_get_service: MagicMock
+    ) -> None:
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
         sm.build(workdir=Path(self.workdir))

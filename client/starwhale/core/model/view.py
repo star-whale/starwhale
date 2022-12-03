@@ -61,17 +61,10 @@ class ModelTermView(BaseTermView):
         task_num: int = 0,
         runtime_uri: str = "",
     ) -> None:
-        if in_production() or (os.path.exists(target) and os.path.isdir(target)):
-            workdir = Path(target)
-        else:
-            _uri = URI(target, URIType.MODEL)
-            _store = ModelStorage(_uri)
-            workdir = _store.loc
-
         kw = dict(
             project=project,
             version=version,
-            workdir=workdir,
+            workdir=cls._get_workdir(target),
             dataset_uris=dataset_uris,
             step_name=step,
             task_index=task_index,
@@ -86,6 +79,16 @@ class ModelTermView(BaseTermView):
             ).run()
         else:
             StandaloneModel.eval_user_handler(**kw)  # type: ignore
+
+    @classmethod
+    def _get_workdir(cls, target: str) -> Path:
+        if in_production() or (os.path.exists(target) and os.path.isdir(target)):
+            workdir = Path(target)
+        else:
+            _uri = URI(target, URIType.MODEL)
+            _store = ModelStorage(_uri)
+            workdir = _store.loc
+        return workdir
 
     @classmethod
     def list(
@@ -149,6 +152,19 @@ class ModelTermView(BaseTermView):
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
             self.model.add_tags(tags, ignore_errors)
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def serve(
+        cls,
+        target: str,
+        model_yaml: str,
+        host: str,
+        port: int,
+        handlers: t.Optional[t.List[str]] = None,
+    ) -> None:
+        workdir = cls._get_workdir(target)
+        StandaloneModel.serve(model_yaml, workdir, host, port, handlers)
 
 
 class ModelTermViewRich(ModelTermView):
