@@ -426,8 +426,6 @@ class TestDatasetSDK(BaseTestCase):
         ds.append(DataRow(index=1, data=Binary(b""), annotations={"label": 101}))
         ds.append(DataRow(index=100, data=Binary(b""), annotations={"label": 100}))
         ds.append(DataRow(index=101, data=Binary(b""), annotations={"label": 101}))
-        ds.flush()
-        assert len(ds) == 12
         ds.commit()
         ds.close()
 
@@ -436,6 +434,9 @@ class TestDatasetSDK(BaseTestCase):
         _summary = ds.summary()
         assert _summary is not None
         assert _summary.rows == 12
+
+        load_ds = dataset(ds.uri)
+        assert len(load_ds) == 12
 
     def test_load_from_empty(self) -> None:
         with self.assertRaises(ValueError):

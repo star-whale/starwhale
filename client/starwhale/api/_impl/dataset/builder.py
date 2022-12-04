@@ -122,6 +122,9 @@ class BaseBuildExecutor(metaclass=ABCMeta):
 
         print("cleanup done.")
 
+    def flush(self) -> None:
+        self.tabular_dataset.flush()
+
     @abstractmethod
     def iter_item(self) -> t.Generator[t.Tuple, None, None]:
         raise NotImplementedError
@@ -288,7 +291,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
             increased_rows += 1
 
-        self.tabular_dataset.flush()
+        self.flush()
 
         try:
             empty = dwriter.tell() == 0
@@ -601,6 +604,9 @@ class RowWriter(threading.Thread):
         while not self._queue.empty():
             # TODO: tune flush with thread condition
             time.sleep(0.1)
+
+        if self._builder:
+            self._builder.flush()
 
     def close(self) -> None:
         self._queue.put(None)
