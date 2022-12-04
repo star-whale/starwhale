@@ -17,4 +17,5 @@ prepare-data:
 	[ -d models ] ||  mkdir -p models
 	[ -f models/model.i ] || ([ -z $(CN) ] && curl -o models/model.i https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ag_news/models/model.i) || curl -o models/model.i https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ag_news/models/model.i
 	[ -f models/vocab.i ] || ([ -z $(CN) ] && curl -o models/vocab.i https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ag_news/models/vocab.i) || curl -o models/vocab.i https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ag_news/models/vocab.i
+	python3 -m pip install -r requirements.txt
 
