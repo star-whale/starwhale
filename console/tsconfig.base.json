@@ -37,8 +37,9 @@
     "src/stories",
     "**/iconfont.js",
     "baseui/helpers/overrides",
-    "node_modules/baseui/helpers/**",
-    "node_modules/baseui/helpers/overrides.js",
-    "**/__generated__/**"
+    "**/node_modules/**",
+    "**/__generated__/**",
+    "**/build/**"
+
   ]
 }
