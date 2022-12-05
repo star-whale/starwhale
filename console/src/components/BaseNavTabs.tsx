@@ -7,7 +7,6 @@ import _ from 'lodash'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { mergeOverrides } from '@/utils/baseui'
 import { INavItem } from './BaseSidebar'
-import qs from 'qs'
 
 export interface IComposedNavTabsProps {
     style?: React.CSSProperties

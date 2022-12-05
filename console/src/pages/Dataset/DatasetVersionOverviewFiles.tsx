@@ -17,7 +17,6 @@ import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
-import useEffect from 'react'
 
 const useCardStyles = createUseStyles({
     wrapper: {

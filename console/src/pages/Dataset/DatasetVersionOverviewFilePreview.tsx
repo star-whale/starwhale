@@ -2,12 +2,11 @@ import React from 'react'
 import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
-import useTranslation from '../../hooks/useTranslation'
 import IconFont from '../../components/IconFont/index'
 import { DatasetObject } from '../../domain/dataset/sdk'
 import { RAW_COLORS } from '../../components/Viewer/utils'
-import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 
 const useStyles = createUseStyles({
     cardImg: {
@@ -119,7 +118,6 @@ export default function DatasetVersionFilePreview({
     }, [datasets, fileId])
 
     const styles = useStyles()
-    const [t] = useTranslation()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
@@ -163,7 +161,7 @@ export default function DatasetVersionFilePreview({
                 },
             }}
         >
-            <ModalHeader></ModalHeader>
+            <ModalHeader />
             <ModalBody
                 style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}
                 className={styles.layoutNormal}
@@ -186,7 +184,7 @@ export default function DatasetVersionFilePreview({
                     </div>
                 </div>
             </ModalBody>
-            <ModalFooter></ModalFooter>
+            <ModalFooter />
         </Modal>
     )
 }

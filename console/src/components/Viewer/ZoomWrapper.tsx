@@ -1,3 +1,4 @@
+import Button from '@starwhale/ui/Button'
 import React from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 
@@ -11,25 +12,10 @@ export default function ZoomWrapper({ children, isTools }: any) {
             maxScale={10}
             minScale={0.5}
         >
+            {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
             {({ zoomIn, zoomOut, resetTransform, centerView }) => (
-                <TransformComponent
-                    wrapperStyle={{
-                        width: '100%',
-                        height: '100%',
-                    }}
-                    contentStyle={{
-                        display: 'flex',
-                        flexWrap: 'nowrap',
-                    }}
-                >
-                    {children}
-                </TransformComponent>
-            )}
-        </TransformWrapper>
-    )
-}
-
-/* {isTools && (
+                <>
+                    {isTools && (
                         <div
                             className='flow-tools'
                             style={{
@@ -58,4 +44,21 @@ export default function ZoomWrapper({ children, isTools }: any) {
                                 Reset
                             </Button>
                         </div>
-                    )} */
+                    )}
+                    <TransformComponent
+                        wrapperStyle={{
+                            width: '100%',
+                            height: '100%',
+                        }}
+                        contentStyle={{
+                            display: 'flex',
+                            flexWrap: 'nowrap',
+                        }}
+                    >
+                        {children}
+                    </TransformComponent>
+                </>
+            )}
+        </TransformWrapper>
+    )
+}
