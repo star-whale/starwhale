@@ -32,15 +32,22 @@ import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
+import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.exporter.RecordsExporter;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +62,10 @@ public class DataStoreController implements DataStoreApi {
     @Resource
     @Setter
     private DataStore dataStore;
+
+    @Resource
+    @Setter
+    private RecordsExporter recordsExporter;
 
     public ResponseEntity<ResponseMessage<TableNameListVo>> listTables(ListTablesRequest request) {
         return ResponseEntity.ok(
@@ -103,21 +114,7 @@ public class DataStoreController implements DataStoreApi {
     @Override
     public ResponseEntity<ResponseMessage<RecordListVo>> queryTable(QueryTableRequest request) {
         try {
-            if (request.getTableName() == null) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        "table name should not be null");
-            }
-            var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
-                    .tableName(request.getTableName())
-                    .columns(DataStoreController.convertColumns(request.getColumns()))
-                    .filter(DataStoreController.convertFilter(request.getFilter()))
-                    .orderBy(request.getOrderBy())
-                    .start(request.getStart())
-                    .limit(request.getLimit())
-                    .keepNone(request.isKeepNone())
-                    .rawResult(request.isRawResult())
-                    .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
-                    .build());
+            RecordList recordList = queryRecordList(request);
             return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
                     .columnTypes(recordList.getColumnTypeMap().entrySet().stream()
                             .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
@@ -174,6 +171,43 @@ public class DataStoreController implements DataStoreApi {
         } catch (SwValidationException e) {
             throw new SwValidationException(e, "request=" + request);
         }
+    }
+
+    @Override
+    public void queryAndExport(QueryTableRequest request, HttpServletResponse httpResponse) {
+        try {
+            RecordList recordList = queryRecordList(request);
+            byte[] bytes = recordsExporter.asBytes(recordList);
+            httpResponse.addHeader("Content-Disposition",
+                    "attachment; filename=\"" + request.getTableName() + ".csv\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
+            ServletOutputStream outputStream = httpResponse.getOutputStream();
+            outputStream.write(bytes);
+            outputStream.flush();
+        } catch (SwValidationException e) {
+            throw new SwValidationException(e, "request=" + request);
+        } catch (IOException e) {
+            log.error("writing response failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
+        }
+    }
+
+    private RecordList queryRecordList(QueryTableRequest request) {
+        if (request.getTableName() == null) {
+            throw new SwValidationException(ValidSubject.DATASTORE,
+                    "table name should not be null");
+        }
+        return this.dataStore.query(DataStoreQueryRequest.builder()
+                .tableName(request.getTableName())
+                .columns(DataStoreController.convertColumns(request.getColumns()))
+                .filter(DataStoreController.convertFilter(request.getFilter()))
+                .orderBy(request.getOrderBy())
+                .start(request.getStart())
+                .limit(request.getLimit())
+                .keepNone(request.isKeepNone())
+                .rawResult(request.isRawResult())
+                .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
+                .build());
     }
 
     private static TableQueryFilter convertFilter(TableQueryFilterDesc input) {

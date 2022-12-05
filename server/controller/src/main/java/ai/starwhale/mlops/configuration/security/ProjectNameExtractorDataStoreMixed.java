@@ -80,7 +80,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             } else if (PATH_UPDATE_TABLE.equals(path)) {
                 UpdateTableRequest req = objectMapper.readValue(bytes, UpdateTableRequest.class);
                 return singleToSet(tableName2ProjectName(req.getTableName()));
-            } else if (PATH_QUERY_TABLE.equals(path)) {
+            } else if (path.startsWith(PATH_QUERY_TABLE)) {
                 QueryTableRequest req = objectMapper.readValue(bytes, QueryTableRequest.class);
                 return singleToSet(tableName2ProjectName(req.getTableName()));
             } else if (PATH_SCAN_TABLE.equals(path)) {

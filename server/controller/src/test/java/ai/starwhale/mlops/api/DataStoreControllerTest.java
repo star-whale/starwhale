@@ -21,7 +21,11 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
@@ -36,18 +40,23 @@ import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
+import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
+import ai.starwhale.mlops.datastore.exporter.RecordsExporter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import brave.internal.collect.Lists;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -1315,5 +1324,26 @@ public class DataStoreControllerTest {
                     () -> DataStoreControllerTest.this.controller.scanTable(this.req),
                     "");
         }
+    }
+
+    @Test
+    public void testExport() throws IOException {
+        DataStoreController controller = new DataStoreController();
+        RecordsExporter exporter = mock(RecordsExporter.class);
+        controller.setRecordsExporter(exporter);
+        DataStore dataStore = mock(DataStore.class);
+        controller.setDataStore(dataStore);
+        byte[] content = "hello".getBytes();
+        when(exporter.asBytes(any())).thenReturn(content);
+        when(dataStore.query(any())).thenReturn(new RecordList(null, null, null));
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+        controller.queryAndExport(new QueryTableRequest() {
+            {
+                setTableName("t1");
+            }
+        }, response);
+        verify(outputStream).write(content);
     }
 }
