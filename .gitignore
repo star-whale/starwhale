@@ -41,10 +41,11 @@ build/
 
 # User Test Data
 example/.idea/
-example/mnist/data
+example/mnist/data/
 example/mnist/runtime.yaml
-example/mnist/sw_output
+example/mnist/sw_output/
 example/mnist/test/task_volume
+example/mnist/models/
 example/cifar10/data/
 example/cifar10/models/
 example/PennFudanPed/data/
