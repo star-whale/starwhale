@@ -22,7 +22,7 @@ install_requires = [
     "commonmark>=0.9.1",
     "textual==0.1.18",
     "jsonlines==3.0.0",
-    "boto3==1.21.0",
+    "boto3==1.26.22",
     "scikit-learn>=0.20.0",
     # Python 3.11 needs dill >= 0.3.6
     "dill>=0.3.6",
