@@ -134,8 +134,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
             },
             {
                 title: t('Files'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files`,
-                pattern: '/\\/files\\/?',
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?layout=1`,
+                pattern: '/\\/files\\/',
             },
         ]
         return items

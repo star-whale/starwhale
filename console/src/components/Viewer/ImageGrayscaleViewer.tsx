@@ -39,6 +39,8 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
         <div className='dataset-viewer image-grayscale fullsize'>
             <ZoomWrapper>
                 <canvas
+                    width={500}
+                    height={500}
                     ref={canvasRef}
                     style={{
                         zIndex: 1,

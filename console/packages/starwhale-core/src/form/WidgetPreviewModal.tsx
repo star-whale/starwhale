@@ -101,20 +101,7 @@ export default function WidgetPreviewModal({
                     )}
                 </div>
             </ModalBody>
-            <ModalFooter>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1 }} />
-                    <Button
-                        size='compact'
-                        kind='secondary'
-                        onClick={() => {
-                            setisPanelModalOpen(false)
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                </div>
-            </ModalFooter>
+            <ModalFooter></ModalFooter>
         </Modal>
     )
 }

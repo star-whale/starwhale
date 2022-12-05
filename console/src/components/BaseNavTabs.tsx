@@ -7,6 +7,7 @@ import _ from 'lodash'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { mergeOverrides } from '@/utils/baseui'
 import { INavItem } from './BaseSidebar'
+import qs from 'qs'
 
 export interface IComposedNavTabsProps {
     style?: React.CSSProperties
@@ -28,7 +29,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
         const item = navItems
             .slice()
             .reverse()
-            .find((item_) => _.startsWith(location.pathname, item_.path))
+            .find((item_) => _.startsWith(item_.path, location.pathname))
         return item?.path
     }, [location.pathname, navItems])
 

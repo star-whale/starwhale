@@ -17,6 +17,7 @@ import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import useEffect from 'react'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -172,6 +173,10 @@ export default function DatasetVersionFiles() {
         }
     }, [page, layoutKey])
 
+    React.useEffect(() => {
+        setLayoutKey(layoutParam)
+    }, [layoutParam])
+
     const tables = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
 
     const rowCount = React.useMemo(() => {
@@ -206,7 +211,6 @@ export default function DatasetVersionFiles() {
     )
 
     const Records = React.useMemo(() => {
-        // if (fileId || !tables.data) return <></>
         const { summary = {} } = datasets?.[0] ?? {}
 
         const rowAction = [
@@ -237,7 +241,10 @@ export default function DatasetVersionFiles() {
 
                     switch (row.type) {
                         case TYPES.IMAGE:
-                            wrapperStyle = { minHeight: '90px', maxWidth: '100px' }
+                            wrapperStyle = {
+                                minHeight: '90px',
+                                maxWidth: layoutKey === LAYOUT.GRID ? undefined : '100px',
+                            }
                             break
                         case TYPES.AUDIO:
                             wrapperStyle = { minHeight: '90px' }
@@ -296,7 +303,7 @@ export default function DatasetVersionFiles() {
                     style={{
                         display: 'grid',
                         gap: '9px',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 200px))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
                         placeItems: 'center',
                     }}
                 >
