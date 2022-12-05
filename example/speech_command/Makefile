@@ -10,5 +10,6 @@ prepare-data:
 	[ -f data/SpeechCommands/speech_commands_v0.02/validation_list.txt ] || tar -xzf data/speech_commands_v0.02.tar.gz -C data/SpeechCommands/speech_commands_v0.02
 	[ -d models ] ||  mkdir -p models
 	[ -f models/m5.pth ] || ([ -z $(CN) ] && curl -o models/m5.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/speech_cmd_m5.pth) || curl -o models/m5.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/speech_cmd_m5.pth
+	python3 -m pip install -r requirements.txt
 
 

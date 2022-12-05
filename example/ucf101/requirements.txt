@@ -1,1 +1,3 @@
 torch
+numpy
+opencv-python-headless

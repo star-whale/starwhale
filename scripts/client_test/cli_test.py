@@ -306,7 +306,7 @@ class TestCli:
         workdir_ = str(expl["workdir"])
 
         p = subprocess.Popen(
-            ["make", "prepare-e2e-data"],
+            ["make", "prepare-data"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=workdir_,
