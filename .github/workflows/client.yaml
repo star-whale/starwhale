@@ -93,6 +93,11 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
+        exclude:
+          # https://github.com/pytorch/pytorch/issues/86566
+          # pytorch does not release python 3.11 wheel package for macosx os yet.
+          - os: macos-latest
+            python-version: "3.11"
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -100,7 +105,7 @@ jobs:
 
     needs:
       - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
+    if: ${{(github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push'}}
 
     steps:
       - uses: actions/checkout@v3
