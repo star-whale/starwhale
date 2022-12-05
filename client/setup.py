@@ -24,7 +24,8 @@ install_requires = [
     "jsonlines==3.0.0",
     "boto3==1.21.0",
     "scikit-learn>=0.20.0",
-    "dill==0.3.5.1",
+    # Python 3.11 needs dill >= 0.3.6
+    "dill>=0.3.6",
     "packaging>=21.3",
     "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
@@ -76,7 +77,7 @@ setup(
       sw = starwhale.cli:cli
       starwhale = starwhale.cli:cli
       """,
-    python_requires=">=3.7, <3.11",
+    python_requires=">=3.7, <=3.11",
     scripts=[
         "scripts/sw-docker-entrypoint",
     ],
@@ -91,6 +92,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",

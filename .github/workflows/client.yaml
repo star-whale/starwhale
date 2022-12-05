@@ -37,7 +37,7 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-
+          - "3.11"
     needs:
       - filter
     if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
@@ -89,6 +89,7 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
         os:
           - macos-latest
           - ubuntu-latest
@@ -149,6 +150,7 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
     defaults:
       run:
         shell: bash
