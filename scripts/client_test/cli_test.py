@@ -255,18 +255,17 @@ class TestCli:
         for name, rt in RUNTIMES.items():
             self.build_runtime(rt["workdir"])
 
-        processes = [
-            subprocess.Popen(
+        for name, expl in EXAMPLES.items():
+            p = subprocess.Popen(
                 ["make", "CN=1", "prepare-data"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=expl["workdir"],
             )
-            for name, expl in EXAMPLES.items()
-        ]
-
-        for p in processes:
-            p.wait()
+            with p.stdout:  # type: ignore
+                for line in iter(p.stdout.readline, b""):  # type: ignore
+                    logging.info("got line from subprocess: %r", line)
+            assert not p.wait()
 
         for name, expl in EXAMPLES.items():
             workdir_ = expl["workdir"]
