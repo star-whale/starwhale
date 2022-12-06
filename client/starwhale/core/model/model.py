@@ -204,8 +204,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         d = self.store.src_dir
         svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
-        apis = {k: v.to_yaml() for k, v in svc.apis.items()}
-        ensure_file(_f, yaml.safe_dump(apis, default_flow_style=False))
+        ensure_file(
+            _f, yaml.safe_dump(svc.get_spec().to_dict(), default_flow_style=False)
+        )
 
         if typ == EvalHandlerType.DEFAULT:
             # use default
@@ -219,7 +220,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         module, _, attr = module.partition(":")
         m = load_module(module, pkg)
         apis = dict()
+        ins: t.Any = None
         svc: t.Optional[Service] = None
+
+        # TODO: refine this ugly ad hoc
+        context_holder.context = Context(
+            pkg, version="-1", project="tmp-project-for-build"
+        )
 
         # TODO: check duplication
         for k, v in m.__dict__.items():
@@ -229,10 +236,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 svc = v
         if attr:
             cls = getattr(m, attr)
-            # TODO: refine this ugly ad hoc
-            context_holder.context = Context(
-                Path("."), version="-1", project="tmp-project-for-build"
-            )
             ins = cls()
             apis.update(ins.svc.apis)
 
@@ -240,10 +243,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         apis.update(internal_api_list())
 
+        # check if we need to instance the model when using custom handler
+        if ins is None:
+            for i in apis.values():
+                fn = i.func.__qualname__
+                if "." in fn:
+                    ins = getattr(m, fn.split(".", 1)[0])()
+                    break
+
         if svc is None:
             svc = Service()
         for api in apis.values():
             svc.add_api_instance(api)
+        svc.api_instance = ins
         return svc
 
     @classmethod

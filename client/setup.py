@@ -9,9 +9,9 @@ install_requires = [
     # flake8 require importlib-metadata < 4.3.0
     # importlib-metadata supplies a backport of 'importlib.metadata'; Python 3.8 makes 'importlib' part of the standard lib.
     "importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'",
-    "attrs==21.4.0",
+    "attrs>=21.4.0",
     "pyyaml==6.0",
-    "cattrs==1.7.1",
+    "cattrs>=1.7.1",
     "requests>=2.1.0",
     "requests-toolbelt>=0.9.0",
     "loguru==0.6.0",

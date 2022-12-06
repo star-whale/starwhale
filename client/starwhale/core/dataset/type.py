@@ -23,7 +23,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
-from starwhale.api.service import Request
+from starwhale.api.service import Input, Request
 from starwhale.utils.error import (
     NoSupportError,
     FieldTypeOrValueError,
@@ -31,6 +31,12 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
+from starwhale.base.spec.openapi.components import (
+    Schema,
+    MediaType,
+    RequestBody,
+    SpecComponent,
+)
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -194,7 +200,7 @@ class ArtifactType(Enum):
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
 
 
-class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
+class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -307,18 +313,34 @@ class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
 
     __repr__ = __str__
 
-    def load(self, data: t.Union[str, bytes, t.Dict[str, t.Any]]) -> BaseArtifact:
-        if isinstance(data, bytes):
-            raw = data
-        elif isinstance(data, str):
-            raw = base64.b64decode(data)
-        elif isinstance(data, dict):
+    def load(self, req: Request) -> BaseArtifact:
+        if req.is_json:
+            import json
+
+            data = json.loads(req.body)
             raw = base64.b64decode(data["data"])
-            return self.reflect(raw, data)
-        else:
-            raise NoSupportError(f"load raw for type:{type(data)}")
-        self.fp = raw
+            del data["data"]
+            return self.reflect(raw, **data)
+
+        self.fp = req.body
         return self
+
+    def spec(self) -> SpecComponent:
+        req = RequestBody(
+            description=f"starwhale builtin model serving specification for type {self._type}",
+            content={
+                "multipart/form-data": MediaType(
+                    schema=Schema(
+                        type="object",
+                        required=["data"],
+                        properties={
+                            "data": Schema(type="string", format="binary"),
+                        },
+                    ),
+                )
+            },
+        )
+        return SpecComponent(requestBody=req)
 
 
 class Binary(BaseArtifact, SwObject):

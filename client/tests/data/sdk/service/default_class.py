@@ -2,14 +2,19 @@ import typing as t
 
 from starwhale import PipelineHandler, PPLResultIterator
 from starwhale.api import service
+from starwhale.base.spec.openapi.components import RequestBody, SpecComponent
 
 
-class Input(service.Request):
+class Input(service.Input):
     def load(self, req: t.Any) -> t.Any:
         return req
 
+    def spec(self) -> SpecComponent:
+        req = RequestBody(description="starwhale builtin model serving specification")
+        return dict(requestBody=req)
 
-class Output(service.Response):
+
+class Output(service.JsonOutput):
     def dump(self, resp: t.Any) -> bytes:
         return resp
 
