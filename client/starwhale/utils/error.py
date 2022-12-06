@@ -64,3 +64,7 @@ class ExclusiveArgsError(Exception):
 
 class InvalidObjectName(Exception):
     pass
+
+
+class MissingDependencyError(Exception):
+    pass

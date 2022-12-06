@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
+import torch
 import pytest
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -990,6 +991,7 @@ class TestDatasetType(TestCase):
         assert _asdict["y"] == 2
         assert _asdict["width"] == 3
         assert _asdict["height"] == 4
+        assert torch.equal(bbox.to_tensor(), torch.Tensor([1, 2, 3, 4]))
 
     def test_text(self) -> None:
         text = Text("test")

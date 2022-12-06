@@ -32,6 +32,16 @@ install_requires = [
     "flask~=2.2.2",
 ]
 
+extras_require = {
+    "image": ["pillow"],
+    "audio": ["soundfile"],
+}
+
+all_requires = list(
+    set(install_requires + [r for v in extras_require.values() for r in v])
+)
+extras_require["all"] = all_requires
+
 
 def _format_version() -> str:
     _v = os.environ.get("PYPI_RELEASE_VERSION", "0.0.0.dev")
@@ -58,6 +68,7 @@ setup(
     packages=find_packages(exclude=["ez_setup", "tests*"]),
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extras_require,
     zip_safe=False,
     entry_points="""
       [console_scripts]

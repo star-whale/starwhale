@@ -10,8 +10,8 @@ from pathlib import Path
 from functools import partial
 from urllib.parse import urlparse
 
+import numpy
 import requests
-from numpy import ndarray
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
@@ -24,7 +24,11 @@ from starwhale.utils.fs import FilePosition
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
 from starwhale.api.service import Request
-from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.utils.error import (
+    NoSupportError,
+    FieldTypeOrValueError,
+    MissingDependencyError,
+)
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
@@ -255,7 +259,6 @@ class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
         else:
             raise NoSupportError(f"Artifact reflect error: {data_type}")
 
-    # TODO: add to_tensor, to_numpy method
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
         if isinstance(self.fp, bytes):
             return self.fp
@@ -269,7 +272,7 @@ class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
-    def to_numpy(self) -> ndarray:
+    def to_numpy(self) -> numpy.ndarray:
         raise NotImplementedError
 
     def to_json(self) -> str:
@@ -281,7 +284,7 @@ class BaseArtifact(ASDictMixin, Request, metaclass=ABCMeta):
     to_pt_tensor = to_tensor
 
     def to_tf_tensor(self) -> t.Any:
-        ...
+        raise NotImplementedError
 
     def carry_raw_data(self: _TBAType) -> _TBAType:
         self._raw_base64_data = base64.b64encode(self.to_bytes()).decode()
@@ -360,6 +363,24 @@ class Image(BaseArtifact, SwObject):
         ):
             raise NoSupportError(f"Image type: {self.mime_type}")
 
+    def to_pil(self) -> t.Any:
+        try:
+            from PIL import Image as PILImage
+        except ImportError:  # pragma: no cover
+            raise MissingDependencyError(
+                "pillow is required to convert Starwhale Image to Pillow Image, please install pillow with 'pip install pillow' or 'pip install starwhale[image]'."
+            )
+
+        return PILImage.open(io.BytesIO(self.to_bytes()))
+
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_pil())
+
+    def to_tensor(self) -> t.Any:
+        from starwhale.integrations.pytorch import convert_numpy_to_tensor
+
+        return convert_numpy_to_tensor(self.to_numpy())
+
 
 class GrayscaleImage(Image):
     def __init__(
@@ -388,7 +409,9 @@ class Audio(BaseArtifact, SwObject):
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
+        dtype: str = "float64",
     ) -> None:
+        self.dtype = dtype
         shape = shape or (None,)
         super().__init__(fp, ArtifactType.Audio, display_name, shape, mime_type)
 
@@ -399,6 +422,24 @@ class Audio(BaseArtifact, SwObject):
             MIMEType.UNDEFINED,
         ):
             raise NoSupportError(f"Audio type: {self.mime_type}")
+
+    def to_numpy(self) -> numpy.ndarray:
+        try:
+            import soundfile
+        except ImportError:  # pragma: no cover
+            raise MissingDependencyError(
+                "soundfile is required to convert Starwhale Auto to numpy ndarray, please install soundfile with 'pip install soundfile' or 'pip install starwhale[audio]'."
+            )
+
+        array, _ = soundfile.read(
+            io.BytesIO(self.to_bytes()), dtype=self.dtype, always_2d=True
+        )
+        return array  # type: ignore[no-any-return]
+
+    def to_tensor(self) -> t.Any:
+        from starwhale.integrations.pytorch import convert_numpy_to_tensor
+
+        return convert_numpy_to_tensor(self.to_numpy())
 
 
 class Video(BaseArtifact, SwObject):
@@ -411,6 +452,8 @@ class Video(BaseArtifact, SwObject):
     ) -> None:
         shape = shape or (None,)
         super().__init__(fp, ArtifactType.Video, display_name, shape, mime_type)
+
+    # TODO： support to_numpy, to_tensor methods
 
     def _do_validate(self) -> None:
         if self.mime_type not in (
@@ -455,6 +498,11 @@ class BoundingBox(ASDictMixin, SwObject):
 
     def to_list(self) -> t.List[float]:
         return [self.x, self.y, self.width, self.height]
+
+    def to_tensor(self) -> t.Any:
+        from starwhale.integrations.pytorch import convert_list_to_tensor
+
+        return convert_list_to_tensor(self.to_list())
 
     def __str__(self) -> str:
         return f"BoundingBox: point:({self.x}, {self.y}), width: {self.width}, height: {self.height})"
@@ -780,7 +828,7 @@ class JsonDict(SwObject):
     @classmethod
     def to_data(cls, d: t.Any) -> t.Any:
         """
-        unwrapp JsonDict to dict
+        unwrap JsonDict to dict
         """
         if isinstance(d, JsonDict):
             return d.asdict()
