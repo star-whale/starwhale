@@ -92,8 +92,8 @@ const PAGE_TABLE_SIZE = 10
 const PAGE_CARD_SIZE = 50
 
 enum LAYOUT {
-    GRID = '0',
-    LIST = '1',
+    GRID = '1',
+    LIST = '0',
 }
 
 function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
@@ -141,8 +141,8 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
                 }}
                 activeKey={value}
             >
-                <Tab title={<IconFont type='grid' />} />
-                <Tab title={<IconFont type='view' />} />
+                <Tab title={<IconFont type='grid' />} key={LAYOUT.GRID} />
+                <Tab title={<IconFont type='view' />} key={LAYOUT.LIST} />
             </Tabs>
         </div>
     )
@@ -156,7 +156,7 @@ export default function DatasetVersionFiles() {
     }>()
     // @FIXME layoutParam missing when build
     const layoutParam = useSearchParam('layout') as string
-    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '1')
+    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '0')
     const [page, setPage] = usePage()
     const { token } = useAuth()
     const history = useHistory()
@@ -171,6 +171,10 @@ export default function DatasetVersionFiles() {
             layout: layoutKey,
         }
     }, [page, layoutKey])
+
+    React.useEffect(() => {
+        setLayoutKey(layoutParam ?? '0')
+    }, [layoutParam])
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
 
@@ -206,7 +210,6 @@ export default function DatasetVersionFiles() {
     )
 
     const Records = React.useMemo(() => {
-        // if (fileId || !tables.data) return <></>
         const { summary = {} } = datasets?.[0] ?? {}
 
         const rowAction = [
@@ -237,7 +240,10 @@ export default function DatasetVersionFiles() {
 
                     switch (row.type) {
                         case TYPES.IMAGE:
-                            wrapperStyle = { minHeight: '90px', maxWidth: '100px' }
+                            wrapperStyle = {
+                                minHeight: '90px',
+                                maxWidth: layoutKey === LAYOUT.GRID ? undefined : '100px',
+                            }
                             break
                         case TYPES.AUDIO:
                             wrapperStyle = { minHeight: '90px' }
@@ -296,7 +302,7 @@ export default function DatasetVersionFiles() {
                     style={{
                         display: 'grid',
                         gap: '9px',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 200px))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
                         placeItems: 'center',
                     }}
                 >

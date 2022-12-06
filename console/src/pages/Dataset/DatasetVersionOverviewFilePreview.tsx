@@ -2,8 +2,8 @@ import React from 'react'
 import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
-import useTranslation from '../../hooks/useTranslation'
 import IconFont from '../../components/IconFont/index'
 import { DatasetObject } from '../../domain/dataset/sdk'
 import { RAW_COLORS } from '../../components/Viewer/utils'
@@ -40,6 +40,9 @@ const useStyles = createUseStyles({
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
+        marginTop: 0,
+        marginBottom: 0,
+        border: '1px solid #CFD7E6',
     },
     layoutFullscreen: {
         position: 'fixed',
@@ -49,13 +52,6 @@ const useStyles = createUseStyles({
         bottom: 0,
         top: 0,
         zIndex: 20,
-    },
-    exitFullscreen: {
-        height: '56px',
-        paddingLeft: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        borderBottom: '1px solid #E2E7F0',
     },
     wrapper: {
         minHeight: '500px',
@@ -122,7 +118,6 @@ export default function DatasetVersionFilePreview({
     }, [datasets, fileId])
 
     const styles = useStyles()
-    const [t] = useTranslation()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
@@ -139,6 +134,7 @@ export default function DatasetVersionFilePreview({
                 />
             )
         }
+        if (!data?.summary || Object.keys(data?.summary).length === 0) return undefined
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return <Summary data={data?.summary ?? {}} />
@@ -147,33 +143,49 @@ export default function DatasetVersionFilePreview({
     if (!isFullscreen) return <></>
 
     return (
-        <div className={isFullscreen ? styles.layoutFullscreen : styles.layoutNormal}>
-            {isFullscreen && (
-                <div className={styles.exitFullscreen}>
-                    <Button
-                        as='link'
-                        startEnhancer={() => <IconFont type='close' />}
-                        onClick={() => setIsFullscreen(false)}
-                    >
-                        {t('Exit Fullscreen')}
-                    </Button>
-                </div>
-            )}
-            <div className={styles.wrapper}>
-                <div className={styles.panel}>{Panel}</div>
-                <div className={styles.card}>
-                    <div
-                        role='button'
-                        tabIndex={0}
-                        className={styles.cardFullscreen}
-                        onClick={() => setIsFullscreen((v: boolean) => !v)}
-                    >
-                        <IconFont type='fullscreen' />
+        <Modal
+            isOpen={isFullscreen}
+            onClose={() => setIsFullscreen(false)}
+            closeable
+            animate
+            autoFocus
+            overrides={{
+                Dialog: {
+                    style: {
+                        width: '90vw',
+                        maxWidth: '1200px',
+                        maxHeight: '640px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    },
+                },
+            }}
+        >
+            <ModalHeader />
+            <ModalBody
+                style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}
+                className={styles.layoutNormal}
+            >
+                <div className={styles.wrapper}>
+                    {Panel && <div className={styles.panel}>{Panel}</div>}
+                    <div className={styles.card}>
+                        {!isFullscreen && (
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className={styles.cardFullscreen}
+                                onClick={() => setIsFullscreen((v: boolean) => !v)}
+                            >
+                                <IconFont type='fullscreen' />
+                            </div>
+                        )}
+
+                        <DatasetViewer data={data} isZoom hiddenLabels={hiddenLabels} />
                     </div>
-                    <DatasetViewer data={data} isZoom hiddenLabels={hiddenLabels} />
                 </div>
-            </div>
-        </div>
+            </ModalBody>
+            <ModalFooter />
+        </Modal>
     )
 }
 

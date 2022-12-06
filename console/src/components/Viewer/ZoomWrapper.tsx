@@ -1,6 +1,6 @@
+import Button from '@starwhale/ui/Button'
 import React from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
-import { Button } from '@/components/Button'
 
 export default function ZoomWrapper({ children, isTools }: any) {
     return (
@@ -12,6 +12,7 @@ export default function ZoomWrapper({ children, isTools }: any) {
             maxScale={10}
             minScale={0.5}
         >
+            {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
             {({ zoomIn, zoomOut, resetTransform, centerView }) => (
                 <>
                     {isTools && (
