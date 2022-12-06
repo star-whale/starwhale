@@ -14,49 +14,25 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.model;
+package ai.starwhale.mlops.api.protocol.dataset.upload;
 
+import ai.starwhale.mlops.api.protocol.upload.UploadRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.springframework.validation.annotation.Validated;
 
-/**
- * request protocol of client
- */
+@Validated
 @Data
-public class ClientModelRequest {
-
-    static final String SEPERATOR = ":";
-
-    /**
-     * LATEST is not allowed in upload phase
-     */
-    static final String VERSION_LATEST = "LATEST";
-
-    /**
-     * in formation of name:version
-     */
-    String swmp;
-
-    String project;
-
-    String force;
-
-    String manifest;
+@EqualsAndHashCode(callSuper = true)
+public class DatasetUploadRequest extends UploadRequest {
+    String swds;
 
     public String name() {
-        return swmp.split(SEPERATOR)[0];
+        return swds.split(SEPARATOR)[0];
     }
 
     public String version() {
-        return swmp.split(SEPERATOR)[1];
+        return swds.split(SEPARATOR)[1];
     }
 
-    static final String FORCE = "1";
-
-    public boolean force() {
-        return FORCE.equals(force);
-    }
-
-    public String getProject() {
-        return null == project ? "" : project;
-    }
 }

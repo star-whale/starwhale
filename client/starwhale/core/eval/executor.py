@@ -7,7 +7,7 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
-from starwhale.consts import DefaultYAMLName, CNTR_DEFAULT_PIP_CACHE_DIR
+from starwhale.consts import CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
@@ -84,7 +84,9 @@ class EvalExecutor:
         self.sw_config = SWCliConfigMixed()
 
         self._workdir = Path()
-        self._model_dir = Path()
+
+        _m = StandaloneModel(URI(self.model_uri, expected_type=URIType.MODEL))
+        self._src_dir = _m.store.src_dir
         self._runtime_dir = Path()
 
         self._do_validate()
@@ -115,7 +117,6 @@ class EvalExecutor:
     def _do_run(self) -> None:
         operations = [
             (self._prepare_workdir, 5, "prepare workdir"),
-            (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
             (self._do_run_cmd, 70, "run eval job"),
         ]
@@ -134,18 +135,6 @@ class EvalExecutor:
 
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
-    def _extract_swmp(self) -> None:
-        _workdir = Path(self.model_uri)
-        _model_yaml_path = _workdir / DefaultYAMLName.MODEL
-
-        if _workdir.exists() and _model_yaml_path.exists() and not self.use_docker:
-            self._model_dir = _workdir
-        else:
-            console.print("start to uncompress swmp...")
-            model_uri = URI(self.model_uri, expected_type=URIType.MODEL)
-            _m = StandaloneModel(model_uri)
-            self._model_dir = _m.extract() / "src"
-
     def _extract_swrt(self) -> None:
         if self.runtime and self.use_docker:
             # avoid conflict with normal process with venv or conda
@@ -163,7 +152,7 @@ class EvalExecutor:
         StandaloneModel.eval_user_handler(
             project=self.project_uri.project,
             version=self._version,
-            workdir=self._model_dir,
+            workdir=self._src_dir,
             dataset_uris=[u.full_uri for u in self.dataset_uris],
             step_name=self.step,
             task_index=self.task_index,
@@ -173,7 +162,7 @@ class EvalExecutor:
                 name=self.name,
                 desc=self.desc,
                 model=self.model_uri,
-                model_dir=str(self._model_dir),
+                model_dir=str(self._src_dir),
                 datasets=[u.full_uri for u in self.dataset_uris],
                 runtime=self.runtime_uri,
                 created_at=now_str(),

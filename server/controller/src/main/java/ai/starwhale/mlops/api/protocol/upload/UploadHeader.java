@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.upload;
+package ai.starwhale.mlops.api.protocol.upload;
 
-public enum UploadPhase {
-    MANIFEST, BLOB, END, CANCEL
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+
+@Data
+public class UploadHeader {
+
+    @JsonProperty("X-SW-UPLOAD-ID")
+    String uploadId;
+    @JsonProperty("Authorization")
+    String token;
+
 }

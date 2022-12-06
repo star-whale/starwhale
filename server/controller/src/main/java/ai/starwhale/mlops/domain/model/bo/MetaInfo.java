@@ -14,19 +14,35 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.upload;
+package ai.starwhale.mlops.domain.model.bo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class UploadResult {
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class MetaInfo {
 
-    @JsonProperty("upload_id")
-    String uploadId;
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class FileDesc {
+        String path;
+        String name;
+        String signature;
+        @JsonProperty("duplicate_check")
+        boolean duplicateCheck;
+    }
+
+    List<FileDesc> resources;
 
 }

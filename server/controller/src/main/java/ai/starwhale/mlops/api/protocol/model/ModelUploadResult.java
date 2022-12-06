@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.upload;
+package ai.starwhale.mlops.api.protocol.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import ai.starwhale.mlops.api.protocol.upload.UploadResult;
+import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-public class UploadHeader {
-
-    @JsonProperty("X-SW-UPLOAD-ID")
-    String uploadId;
-    @JsonProperty("Authorization")
-    String token;
-
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class ModelUploadResult extends UploadResult {
+    private Set<String> existed;
 }

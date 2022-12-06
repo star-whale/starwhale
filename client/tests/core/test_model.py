@@ -53,9 +53,18 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
+    @patch("starwhale.core.model.model.Walker.files")
+    @patch("starwhale.core.model.model.blake2b_file")
     def test_build_workflow(
-        self, m_copy_fs: MagicMock, m_copy_file: MagicMock, m_get_service: MagicMock
+        self,
+        m_blake_file: MagicMock,
+        m_walker_files: MagicMock,
+        m_copy_fs: MagicMock,
+        m_copy_file: MagicMock,
+        m_get_service: MagicMock,
     ) -> None:
+        m_blake_file.return_value = "123456"
+        m_walker_files.return_value = []
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
         sm.build(workdir=Path(self.workdir))
@@ -71,27 +80,17 @@ class StandaloneModelTestCase(TestCase):
             / f"{build_version}{BundleType.MODEL}"
         )
 
-        snapshot_workdir = (
-            self.sw.rootdir
-            / "self"
-            / "workdir"
-            / URIType.MODEL
-            / self.name
-            / build_version[:VERSION_PREFIX_CNT]
-            / build_version
-        )
-        assert snapshot_workdir.exists()
-        assert (snapshot_workdir / "src").exists()
-        assert (snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
+        assert bundle_path.exists()
+        assert (bundle_path / "src").exists()
+        assert (bundle_path / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
 
-        _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
+        _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
         assert "name" not in _manifest
         assert _manifest["version"] == build_version
 
-        assert m_copy_file.call_count == 3
-        assert m_copy_file.call_args_list[0][0][1] == "model.yaml"
-        assert m_copy_file.call_args_list[1][0][1] == "config/hyperparam.json"
-        assert m_copy_file.call_args_list[2][0][1] == "models/mnist_cnn.pt"
+        assert m_copy_file.call_count == 2
+        assert m_copy_file.call_args_list[0][0][1] == "config/hyperparam.json"
+        assert m_copy_file.call_args_list[1][0][1] == "models/mnist_cnn.pt"
 
         assert bundle_path.exists()
         assert "latest" in sm.tag.list()
@@ -108,7 +107,7 @@ class StandaloneModelTestCase(TestCase):
 
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
-        ensure_dir(sm.store.bundle_dir / f"xx{sm.store.bundle_type}")
+        ensure_dir(sm.store.bundle_dir / f"{sm.store.bundle_type}")
         _info = sm.info()
 
         assert len(_info["history"]) == 1

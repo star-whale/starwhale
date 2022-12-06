@@ -154,20 +154,6 @@ def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
 
-@model_cmd.command(
-    "extract", help="[ONLY Standalone]Extract local model bundle tar file into workdir"
-)
-@click.argument("model")
-@click.option("-f", "--force", is_flag=True, help="Force to extract model bundle")
-@click.option(
-    "--target-dir",
-    default="",
-    help="Extract target dir.if omitted, swcli will use starwhale default workdir",
-)
-def _extract(model: str, force: bool, target_dir: str) -> None:
-    ModelTermView(model).extract(force, target_dir)
-
-
 @model_cmd.command("eval")
 @click.argument("target")
 @click.option(

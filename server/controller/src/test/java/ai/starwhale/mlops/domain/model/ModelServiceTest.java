@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.ArchiveFileConsumer;
@@ -51,6 +52,7 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.model.bo.MetaInfo;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -72,7 +74,9 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -103,6 +107,8 @@ public class ModelServiceTest {
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
     private TrashService trashService;
+
+    private YAMLMapper yamlMapper;
 
     @SneakyThrows
     @BeforeEach
@@ -146,6 +152,7 @@ public class ModelServiceTest {
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
+        yamlMapper = mock(YAMLMapper.class);
 
         service = new ModelService(
                 modelMapper,
@@ -161,7 +168,8 @@ public class ModelServiceTest {
                 userService,
                 projectManager,
                 jobHolder,
-                trashService);
+                trashService,
+                yamlMapper);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -380,7 +388,7 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testUpload() {
+    public void testUpload() throws IOException {
         given(projectManager.getProject(anyString()))
                 .willReturn(ProjectEntity.builder().id(1L).build());
         given(modelMapper.findByName(anyString(), same(1L), any()))
@@ -402,24 +410,59 @@ public class ModelServiceTest {
         try (var mock = mockStatic(TarFileUtil.class)) {
             mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
                     .thenReturn(new byte[]{1});
+            given(modelVersionMapper.find(3L))
+                    .willReturn(ModelVersionEntity.builder()
+                            .id(1L)
+                            .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
+                            .build()
+                    );
 
-            ClientModelRequest request = new ClientModelRequest();
+            ModelUploadRequest request = new ModelUploadRequest();
             request.setProject("1");
             request.setSwmp("m1:v1");
 
             MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
-            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(dsFile, request));
 
             request.setForce("1");
-            assertThrows(StarwhaleApiException.class, () -> service.upload(dsFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(dsFile, request));
 
             request.setSwmp("m3:v3");
-            service.upload(dsFile, request);
+            var manifestContent = "build:\n"
+                    + "  os: Linux\n"
+                    + "  sw_version: 0.0.0.dev0\n"
+                    + "created_at: 2022-12-01 22:17:19 CST\n"
+                    + "resources:\n"
+                    + "- name: empty.pt\n"
+                    + "  path: src/model/empty.pt\n"
+                    + "  signature: 786a02f742015903c6\n"
+                    + "version: kjvunxjq24iif5grsbazgae7xwbe3om7ogd65eey\n";
+            mock.when(() -> TarFileUtil.getContent(any())).thenReturn(manifestContent.getBytes());
+            given(yamlMapper.readValue(anyString(), eq(MetaInfo.class)))
+                    .willReturn(MetaInfo.builder()
+                        .resources(List.of(
+                            new MetaInfo.FileDesc("src/model/empty.pt", "empty.pt", "786a02f742015903c6", true))
+                        ).build());
+            service.uploadManifest(dsFile, request);
+            verify(yamlMapper, times(1)).readValue(anyString(), eq(MetaInfo.class));
+
+            service.uploadSrc(3L, dsFile, request);
             mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
-            request.setProject("2");
-            service.upload(dsFile, request);
-            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1 + 1));
+            service.uploadModel(3L, "123456", dsFile, request);
+            verify(storageAccessService, times(1)).put(any(), any(InputStream.class));
+
+
+            given(modelVersionMapper.find(3L))
+                    .willReturn(ModelVersionEntity.builder()
+                        .id(3L)
+                        .status(ModelVersionEntity.STATUS_AVAILABLE)
+                        .build()
+                    );
+            request.setProject("1");
+            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, dsFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", dsFile, request));
+
         }
     }
 
@@ -436,34 +479,38 @@ public class ModelServiceTest {
 
         HttpServletResponse response = mock(HttpServletResponse.class);
         assertThrows(BundleException.class,
-                () -> service.pull("1", "m1", "v4", response));
+                () -> service.pullSrc("fName", "1", "m1", "v4", response));
 
-        given(storageAccessService.list(anyString())).willThrow(IOException.class);
-        given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
-        given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
+        // error mock
+        given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/file1"));
+        given(storageAccessService.list("path2/src")).willReturn(Stream.of());
+        given(storageAccessService.list("path3/src")).willThrow(IOException.class);
         assertThrows(SwValidationException.class,
-                () -> service.pull("1", "m1", "v2", response));
+                () -> service.pullSrc("fName", "1", "m1", "v2", response));
         assertThrows(SwProcessException.class,
-                () -> service.pull("1", "m1", "v3", response));
+                () -> service.pullSrc("fName", "1", "m1", "v3", response));
+        assertThrows(SwValidationException.class,
+                () -> service.pullModelFile("mName", "qwer", "1", response));
 
+        // normal mock
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
                 ServletOutputStream outputStream = mock(ServletOutputStream.class);
                 MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
-            // case 1: only download .swmp file
-            given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/123456.swmp"));
+            // case 1: download file
+            given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/c.py"));
             given(storageAccessService.get(anyString())).willReturn(fileInputStream);
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
 
-            service.pull("1", "m1", "v1", response);
-            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(0));
-            verify(storageAccessService, times(1)).get("path1/123456.swmp");
-
-            // case 2: download extract file
-            given(storageAccessService.list(same("path1")))
-                    .willReturn(Stream.of("path1/123456.py", "path1/model/u.pth"));
-            service.pull("1", "m1", "v1", response);
+            service.pullSrc("fName", "1", "m1", "v1", response);
             tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
+
+            var modelPath = "model/qwer/mName";
+            var modelFile = "model/qwer/mName/file1";
+            given(storagePathCoordinator.allocateCommonModelPoolPath("1", "qwer")).willReturn(modelPath);
+            given(storageAccessService.list(same(modelPath))).willReturn(Stream.of(modelFile));
+            service.pullModelFile("mName", "qwer", "1", response);
+            verify(storageAccessService, times(1)).get(modelFile);
         }
     }
 

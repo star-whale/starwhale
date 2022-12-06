@@ -60,7 +60,6 @@ class CloudRequestMixed:
                 if progress:
                     progress.update(task_id, total=total, advance=len(chunk))
                 f.write(chunk)
-
         if progress:
             # TODO: remove the hack code when api support content-length header
             progress.update(task_id, total=1, completed=1)
@@ -92,10 +91,8 @@ class CloudRequestMixed:
             # default chunk is 8192 Bytes
             _encoder._read = _encoder.read  # type: ignore
             _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
-
             _headers["Content-Type"] = _encoder.content_type
             _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
-
             return self.do_http_request(  # type: ignore
                 url_path,
                 instance_uri=instance_uri,

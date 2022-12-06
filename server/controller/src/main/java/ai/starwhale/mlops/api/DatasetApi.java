@@ -26,8 +26,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
+import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
+import ai.starwhale.mlops.api.protocol.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -229,7 +229,7 @@ public interface DatasetApi {
             @PathVariable(name = "datasetName") String datasetName,
             @PathVariable(name = "versionName") String versionName,
             @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile dsFile,
-            UploadRequest uploadRequest);
+            DatasetUploadRequest uploadRequest);
 
     @Operation(summary = "Pull Dataset files",
             description = "Pull Dataset files part by part. ")

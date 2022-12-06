@@ -25,8 +25,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadRequest;
-import ai.starwhale.mlops.api.protocol.dataset.upload.UploadResult;
+import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
+import ai.starwhale.mlops.api.protocol.upload.UploadResult;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -172,7 +172,7 @@ public class DatasetController implements DatasetApi {
     @Override
     public ResponseEntity<ResponseMessage<UploadResult>> uploadDs(String uploadId, String uri,
             String projectUrl, String datasetUrl, String versionUrl,
-            MultipartFile dsFile, UploadRequest uploadRequest) {
+            MultipartFile dsFile, DatasetUploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
         switch (uploadRequest.getPhase()) {

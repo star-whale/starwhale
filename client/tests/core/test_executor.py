@@ -43,14 +43,7 @@ class StandaloneEvalExecutor(TestCase):
             / "gn"
             / "gnstmntggi4t111111111111.swmp"
         )
-        model_workdir_path = (
-            project_dir
-            / "workdir"
-            / URIType.MODEL
-            / "mnist"
-            / "gn"
-            / "gnstmntggi4t111111111111"
-        )
+
         dataset_bundle_path = (
             project_dir
             / URIType.DATASET
@@ -74,16 +67,14 @@ class StandaloneEvalExecutor(TestCase):
             / "ga4doztfg4yw11111111111111"
         )
 
-        ensure_dir(model_bundle_path.parent)
-        ensure_file(model_bundle_path, " ")
-        ensure_dir(model_workdir_path)
-        ensure_file(model_workdir_path / DEFAULT_MANIFEST_NAME, "{}")
-        ensure_dir(model_workdir_path / "src")
-        ensure_file(model_workdir_path / "src" / DefaultYAMLName.MODEL, _model_yaml)
-        ensure_dir(model_workdir_path / "src" / "models")
-        ensure_dir(model_workdir_path / "src" / "config")
-        ensure_file(model_workdir_path / "src" / "models" / "mnist_cnn.pt", " ")
-        ensure_file(model_workdir_path / "src" / "config" / "hyperparam.json", " ")
+        ensure_dir(model_bundle_path)
+        ensure_file(model_bundle_path / DEFAULT_MANIFEST_NAME, "{}")
+        ensure_dir(model_bundle_path / "src")
+        ensure_file(model_bundle_path / "src" / DefaultYAMLName.MODEL, _model_yaml)
+        ensure_dir(model_bundle_path / "src" / "models")
+        ensure_dir(model_bundle_path / "src" / "config")
+        ensure_file(model_bundle_path / "src" / "models" / "mnist_cnn.pt", " ")
+        ensure_file(model_bundle_path / "src" / "config" / "hyperparam.json", " ")
 
         ensure_dir(dataset_bundle_path)
         ensure_file(dataset_bundle_path / DEFAULT_MANIFEST_NAME, _dataset_manifest)

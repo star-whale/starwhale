@@ -19,9 +19,10 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
+import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
@@ -47,6 +48,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -273,10 +275,12 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/model/{modelName}/version/{versionName}/file",
-            produces = {"application/json"},
-            consumes = {"multipart/form-data"})
+            produces = {"application/json"})
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<String>> upload(
+    ResponseEntity<ResponseMessage<Object>> upload(
+            @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileType fileType,
+            @RequestHeader(name = "X-SW-UPLOAD-OBJECT-HASH", required = false) String signature,
+            @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) Long uploadId,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project url",
@@ -288,8 +292,8 @@ public interface ModelApi {
             @PathVariable("modelName") String modelName,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionName") String versionName,
-            @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
-            ClientModelRequest uploadRequest);
+            @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile file,
+            ModelUploadRequest uploadRequest);
 
     @Operation(summary = "Pull file of a model version",
             description = "Create a new version of the model. ")
@@ -299,6 +303,9 @@ public interface ModelApi {
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
+            @RequestHeader(name = "X-SW-DOWNLOAD-TYPE", required = false) FileType fileType,
+            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-NAME", required = false) String name,
+            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-HASH", required = false) String signature,
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is not invalid.")

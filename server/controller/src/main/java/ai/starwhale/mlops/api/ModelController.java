@@ -18,9 +18,10 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.model.ClientModelRequest;
+import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
@@ -182,17 +183,67 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> upload(String projectUrl, String modelUrl, String versionUrl,
-            MultipartFile dsFile, ClientModelRequest uploadRequest) {
+    public ResponseEntity<ResponseMessage<Object>> upload(
+            FileType fileType, String signature, Long uploadId,
+            String projectUrl, String modelUrl, String versionUrl,
+            MultipartFile file, ModelUploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwmp(modelUrl + ":" + versionUrl);
-        modelService.upload(dsFile, uploadRequest);
+        switch (uploadRequest.getPhase()) {
+            case MANIFEST:
+                return ResponseEntity.ok(Code.success.asResponse(
+                    modelService.uploadManifest(file, uploadRequest)));
+            case BLOB:
+                switch (fileType) {
+                    case MODEL:
+                        modelService.uploadModel(uploadId, signature, file, uploadRequest);
+                        break;
+                    case SRC_TAR:
+                        modelService.uploadSrc(uploadId, file, uploadRequest);
+                        break;
+                    default:
+                        throw new StarwhaleApiException(
+                                new SwValidationException(ValidSubject.MODEL, "don't support fileType" + fileType),
+                                HttpStatus.BAD_REQUEST);
+                }
+                break;
+            case CANCEL:
+                // TODO need use a tmp record otherwise the origin record will be removed when use force
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "don't support cancel"),
+                        HttpStatus.BAD_REQUEST);
+            case END:
+                modelService.end(uploadId);
+                break;
+            default:
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "unknown phase " + uploadRequest.getPhase()),
+                        HttpStatus.BAD_REQUEST);
+        }
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
     @Override
-    public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
-        modelService.pull(projectUrl, modelUrl, versionUrl, httpResponse);
+    public void pull(FileType fileType, String name, String signature,
+                     String projectUrl, String modelUrl, String versionUrl,
+                     HttpServletResponse httpResponse) {
+        switch (fileType) {
+            case MANIFEST:
+                modelService.pullManifest(name, projectUrl, modelUrl, versionUrl, httpResponse);
+                break;
+            case SRC_TAR:
+                modelService.pullSrc(name, projectUrl, modelUrl, versionUrl, httpResponse);
+                break;
+            case MODEL:
+                modelService.pullModelFile(name, signature, projectUrl, httpResponse);
+                break;
+            default:
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "unsupport type " + fileType),
+                        HttpStatus.BAD_REQUEST
+                );
+        }
+
     }
 
     @Override
