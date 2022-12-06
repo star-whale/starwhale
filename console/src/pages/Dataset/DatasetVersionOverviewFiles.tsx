@@ -17,6 +17,7 @@ import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { List } from 'rc-field-form'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -92,8 +93,8 @@ const PAGE_TABLE_SIZE = 10
 const PAGE_CARD_SIZE = 50
 
 enum LAYOUT {
-    GRID = '0',
-    LIST = '1',
+    GRID = '1',
+    LIST = '0',
 }
 
 function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
@@ -141,8 +142,8 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
                 }}
                 activeKey={value}
             >
-                <Tab title={<IconFont type='grid' />} />
-                <Tab title={<IconFont type='view' />} />
+                <Tab title={<IconFont type='grid' />} key={LAYOUT.GRID} />
+                <Tab title={<IconFont type='view' />} key={LAYOUT.LIST} />
             </Tabs>
         </div>
     )
@@ -156,7 +157,7 @@ export default function DatasetVersionFiles() {
     }>()
     // @FIXME layoutParam missing when build
     const layoutParam = useSearchParam('layout') as string
-    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '1')
+    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '0')
     const [page, setPage] = usePage()
     const { token } = useAuth()
     const history = useHistory()
@@ -173,7 +174,7 @@ export default function DatasetVersionFiles() {
     }, [page, layoutKey])
 
     React.useEffect(() => {
-        setLayoutKey(layoutParam)
+        setLayoutKey(layoutParam ?? '0')
     }, [layoutParam])
 
     const tables = useQueryDatasetList(datasetVersion?.indexTable, $page, true)

@@ -28,7 +28,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
         const item = navItems
             .slice()
             .reverse()
-            .find((item_) => _.startsWith(item_.path, location.pathname))
+            .find((item_) => _.startsWith(location.pathname, item_.path))
         return item?.path
     }, [location.pathname, navItems])
 
