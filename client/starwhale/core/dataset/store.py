@@ -110,7 +110,7 @@ class DatasetStorage(BaseStorage):
             raise NotFoundError(f"data origin file: {src}")
 
         if not src.is_file():
-            raise NoSupportError(f"{src} is not file type")
+            raise NoSupportError(f"{src} is not file")
 
         sign_name = blake2b_file(src)
         dest = cls._get_object_store_path(sign_name)
