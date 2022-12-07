@@ -46,6 +46,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.8 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.9 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 \
     && python3.10 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
     && python3.11 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3 -m pip install yq && python3 -m pip cache purge
