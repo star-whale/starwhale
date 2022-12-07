@@ -16,6 +16,7 @@ import { Panel } from 'baseui/accordion'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
+import Search from '@starwhale/ui/Search'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -196,6 +197,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                 </Button>
                             )}
                         </div>
+                        {datasetVersionId && <Search />}
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}
