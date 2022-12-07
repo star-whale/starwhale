@@ -31,13 +31,13 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 
-import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.upload.UploadPhase;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -47,6 +47,7 @@ import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,6 +87,14 @@ public class ModelControllerTest {
                 notNullValue(),
                 hasProperty("list", iterableWithSize(2))
         ));
+    }
+
+    @Test
+    public void testModelDiff() {
+        given(modelService.getModelDiff(any(), any(), any(), any()))
+                .willReturn(Map.of("baseVersion", List.of(), "compareVersion", List.of()));
+        var res = controller.getModelDiff("p", "m", "b1", "c1");
+        assertThat(res.getStatusCode(), is(HttpStatus.OK));
     }
 
     @Test
@@ -196,16 +205,16 @@ public class ModelControllerTest {
         var request = new ModelUploadRequest();
         request.setPhase(UploadPhase.MANIFEST);
         var resp = controller.upload(
-                FileType.MANIFEST, "", 1L, "p1", "m1", "v1", null, request);
+                FileDesc.MANIFEST, "", 1L, "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         request.setPhase(UploadPhase.BLOB);
         resp = controller.upload(
-                FileType.SRC_TAR, "", 1L, "p1", "m1", "v1", null, request);
+                FileDesc.SRC_TAR, "", 1L, "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         resp = controller.upload(
-                FileType.MODEL, "qwerty", 1L, "p1", "m1", "v1", null, request);
+                FileDesc.MODEL, "qwerty", 1L, "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         request.setPhase(UploadPhase.CANCEL);
@@ -221,11 +230,11 @@ public class ModelControllerTest {
     @Test
     public void testPull() {
         controller.pull(
-                FileType.MANIFEST, "qwer", "", "p1", "m1", "v1", null);
+                FileDesc.MANIFEST, "manifest.yaml", "manifest.yaml", "", "p1", "m1", "v1", null);
         controller.pull(
-                FileType.SRC_TAR, "qwer", "", "p1", "m1", "v1", null);
+                FileDesc.SRC_TAR, "model.yaml", "src/model.yaml", "", "p1", "m1", "v1", null);
         controller.pull(
-                FileType.MODEL, "qwer", "qwer", "p1", "m1", "v1", null);
+                FileDesc.MODEL, "mnist.pth", "src/models/mnist.pth", "qwer", "p1", "m1", "v1", null);
     }
 
     @Test

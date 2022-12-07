@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.runtime;
 
-import ai.starwhale.mlops.api.protocol.StorageFileVo;
+import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -58,7 +58,7 @@ public class RuntimeInfoVo implements Serializable {
 
     @JsonProperty("files")
     @Valid
-    private List<StorageFileVo> files;
+    private List<FlattenFileVo> files;
 
     public static RuntimeInfoVo empty() {
         return new RuntimeInfoVo("", "", "", "", "", "", "", 0L, List.of());
