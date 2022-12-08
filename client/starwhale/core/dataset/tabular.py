@@ -284,7 +284,6 @@ class TabularDataset:
             )
             _row.data_origin = DataOriginType.INHERIT
             self.put(_row)
-
         self.flush()
         return last_append_seq_id, rows_cnt
 

@@ -208,6 +208,7 @@ class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
+        dtype: t.Any = numpy.int8,
         encoding: str = "",
     ) -> None:
         self.fp = str(fp) if isinstance(fp, Path) else fp
@@ -217,11 +218,16 @@ class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
         self.display_name = display_name or os.path.basename(_fpath)
         self._mime_type = (mime_type or MIMEType.create_by_file_suffix(_fpath)).value
         self.shape = list(shape) if shape else shape
+        self._dtype_name: str = numpy.dtype(dtype).name
         self.encoding = encoding
         self._do_validate()
 
     def _do_validate(self) -> None:
         ...
+
+    @property
+    def dtype(self) -> numpy.dtype:
+        return numpy.dtype(self._dtype_name)
 
     @property
     def type(self) -> ArtifactType:
@@ -289,9 +295,6 @@ class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
 
     to_pt_tensor = to_tensor
 
-    def to_tf_tensor(self) -> t.Any:
-        raise NotImplementedError
-
     def carry_raw_data(self: _TBAType) -> _TBAType:
         self._raw_base64_data = base64.b64encode(self.to_bytes()).decode()
         return self
@@ -348,8 +351,12 @@ class Binary(BaseArtifact, SwObject):
         self,
         fp: _TArtifactFP = b"",
         mime_type: MIMEType = MIMEType.UNDEFINED,
+        dtype: t.Type = numpy.bytes_,
     ) -> None:
-        super().__init__(fp, ArtifactType.Binary, "", (1,), mime_type)
+        super().__init__(fp, ArtifactType.Binary, "", (), mime_type, dtype=dtype)
+
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_bytes(), dtype=self.dtype)
 
 
 class Image(BaseArtifact, SwObject):
@@ -361,6 +368,7 @@ class Image(BaseArtifact, SwObject):
         mime_type: MIMEType = MIMEType.UNDEFINED,
         as_mask: bool = False,
         mask_uri: str = "",
+        dtype: t.Type = numpy.uint8,
     ) -> None:
         self.as_mask = as_mask
         self.mask_uri = mask_uri
@@ -370,6 +378,7 @@ class Image(BaseArtifact, SwObject):
             display_name=display_name,
             shape=shape or (None, None, 3),
             mime_type=mime_type,
+            dtype=dtype,
         )
 
     def _do_validate(self) -> None:
@@ -412,6 +421,7 @@ class GrayscaleImage(Image):
         shape: t.Optional[_TShape] = None,
         as_mask: bool = False,
         mask_uri: str = "",
+        dtype: t.Type = numpy.uint8,
     ) -> None:
         shape = shape or (None, None)
         super().__init__(
@@ -421,6 +431,7 @@ class GrayscaleImage(Image):
             mime_type=MIMEType.GRAYSCALE,
             as_mask=as_mask,
             mask_uri=mask_uri,
+            dtype=dtype,
         )
 
 
@@ -431,11 +442,12 @@ class Audio(BaseArtifact, SwObject):
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
-        dtype: str = "float64",
+        dtype: t.Type = numpy.float64,
     ) -> None:
-        self.dtype = dtype
         shape = shape or (None,)
-        super().__init__(fp, ArtifactType.Audio, display_name, shape, mime_type)
+        super().__init__(
+            fp, ArtifactType.Audio, display_name, shape, mime_type, dtype=dtype
+        )
 
     def _do_validate(self) -> None:
         if self.mime_type not in (
@@ -454,7 +466,7 @@ class Audio(BaseArtifact, SwObject):
             )
 
         array, _ = soundfile.read(
-            io.BytesIO(self.to_bytes()), dtype=self.dtype, always_2d=True
+            io.BytesIO(self.to_bytes()), dtype=self.dtype.name, always_2d=True
         )
         return array  # type: ignore[no-any-return]
 
@@ -471,11 +483,18 @@ class Video(BaseArtifact, SwObject):
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
+        dtype: t.Type = numpy.uint8,
     ) -> None:
         shape = shape or (None,)
-        super().__init__(fp, ArtifactType.Video, display_name, shape, mime_type)
+        super().__init__(
+            fp, ArtifactType.Video, display_name, shape, mime_type, dtype=dtype
+        )
 
-    # TODO： support to_numpy, to_tensor methods
+    # TODO： support to_tensor methods
+
+    def to_numpy(self) -> numpy.ndarray:
+        # TODO: support video encode/decode
+        return numpy.array(self.to_bytes(), dtype=self.dtype)
 
     def _do_validate(self) -> None:
         if self.mime_type not in (
@@ -518,8 +537,22 @@ class BoundingBox(ASDictMixin, SwObject):
         self.width = width
         self.height = height
 
+    @property
+    def shape(self) -> t.Tuple[int]:
+        return (4,)
+
+    @property
+    def dtype(self) -> numpy.dtype:
+        return numpy.dtype(numpy.float64)
+
     def to_list(self) -> t.List[float]:
         return [self.x, self.y, self.width, self.height]
+
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_list(), self.dtype)
+
+    def to_bytes(self) -> bytes:
+        return self.to_numpy().tobytes()
 
     def to_tensor(self) -> t.Any:
         from starwhale.integrations.pytorch import convert_list_to_tensor
@@ -542,18 +575,23 @@ class Text(BaseArtifact, SwObject):
             fp=b"",
             type=ArtifactType.Text,
             display_name=f"{content[:SHORT_VERSION_CNT]}...",
-            shape=(1,),
+            shape=(),
             mime_type=MIMEType.PLAIN,
             encoding=encoding,
+            dtype=numpy.str_,
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
         return self.content.encode(encoding or self.encoding)
 
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_str(), dtype=self.dtype)
+
     def to_str(self) -> str:
         return self.content
 
 
+# TODO: support tensorflow transform
 # https://cocodataset.org/#format-data
 class COCOObjectAnnotation(ASDictMixin, SwObject):
     def __init__(
@@ -608,6 +646,7 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
             )
 
 
+# TODO: support tensorflow transform
 class Link(ASDictMixin, SwObject):
     def __init__(
         self,

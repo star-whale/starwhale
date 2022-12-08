@@ -406,6 +406,11 @@ class Dataset:
         # TODO: render artifact in JupyterNotebook
         return self.__core_dataset.head(n, show_raw_data)
 
+    def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
+        loader = self._get_data_loader(disable_consumption=True)
+        row = next(loader.tabular_dataset.scan())
+        return loader._unpack_row(row, skip_fetch_data)
+
     def to_pytorch(
         self,
         transform: t.Optional[t.Callable] = None,
@@ -421,8 +426,13 @@ class Dataset:
             skip_default_transform=skip_default_transform,
         )
 
-    def to_tensorflow(self) -> t.Any:
-        raise NotImplementedError
+    def to_tensorflow(
+        self,
+        drop_index: bool = True,
+    ) -> t.Any:
+        from starwhale.integrations.tensorflow import to_tf_dataset
+
+        return to_tf_dataset(dataset=self, drop_index=drop_index)
 
     @_check_readonly
     @_forbid_handler_build
