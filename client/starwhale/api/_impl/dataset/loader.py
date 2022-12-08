@@ -121,6 +121,7 @@ class DataLoader(metaclass=ABCMeta):
             else:
                 _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
+        self.logger.info(f"new store backend created for key {_k}")
         self._stores[_k] = _store
         return _store
 
