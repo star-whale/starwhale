@@ -1,214 +1,169 @@
+import { ColumnModel } from '@starwhale/core/datastore'
+import { InputContainer } from 'baseui/input/styled-components'
+import { Popover } from 'baseui/popover'
 import { SelectProps } from 'baseui/select'
-import React from 'react'
+import React, { useRef, useState } from 'react'
+import AutosizeInput from '../base/select/autosize-input'
+import Button from '../Button'
 import Input from '../Input'
 import Select from '../Select'
-// eslint-disable-next-line
-import { ColumnT, FilterTypes } from './types'
+import { OPERATOR } from './constants'
+import FilterString from './FilterString'
+import { FilterPropsT, ValueT } from './types'
 
-export interface IFilterOperateSelectorProps {
-    columns: ColumnT[]
-    value?: FilterOperateSelectorValueT
-    onChange?: (newValue: FilterOperateSelectorValueT) => void
-    overrides?: SelectProps['overrides']
-    disabled?: boolean
-}
+export default function FilterRenderer({
+    value: rawValues = {},
+    onChange = () => {},
+    isDisabled = false,
+    isEditing = false,
+    fields = [],
+}: FilterPropsT) {
+    const [values, setValues] = useState<ValueT>(rawValues)
+    const [value, setValue] = useState<any>(rawValues?.value)
+    const [property, setProperty] = useState<string>(rawValues?.property ?? 'property')
+    const [op, setOp] = useState<string>(rawValues?.op ?? '=')
+    const [editing, setEditing] = useState(false)
+    const [removing, setRemoving] = useState(false)
 
-// is / is not / = / ≠ / in / not in / >= / <= / exists / not exists / contains / not contains
-export type FilterOperateSelectorValueT = {
-    disable?: boolean
-    key?: string
-    value?: any
-    op?: OperatorT
-}
+    const column = new ColumnModel(fields)
 
-export type OperatorT = {
-    label: string
-    op: string
-    key?: string
-    buildFilter?: (args: FilterOperateSelectorValueT) => (data: any, row?: any, column?: any) => any
-}
+    const $columns = React.useMemo(() => {
+        return column.getSearchColumns()
+    }, [fields])
 
-export const Operators: Record<string, OperatorT> = {
-    is: {
-        key: 'is',
-        label: 'is',
-        op: '=',
-        buildFilter: () => () => true,
-    },
-    isNot: {
-        key: 'isNot',
-        label: 'is not',
-        op: '!=',
-        buildFilter: () => () => true,
-    },
-    equal: {
-        key: 'equal',
-        label: '=',
-        op: '=',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return value === String(data).trim()
-            }
-        },
-    },
-    notEqual: {
-        key: 'notEqual',
-        label: '≠',
-        op: '≠',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return value !== String(data).trim()
-            }
-        },
-    },
-    greaterEqual: {
-        key: 'greaterEqual',
-        label: '>=',
-        op: '>=',
-        buildFilter: ({ value = '' }) => {
-            return (data: number) => {
-                return value <= data
-            }
-        },
-    },
-    smallerEqual: {
-        key: 'smallerEqual',
-        label: '<=',
-        op: '<=',
-        buildFilter: ({ value = '' }) => {
-            return (data: number) => {
-                return value >= data
-            }
-        },
-    },
-    exists: {
-        key: 'exists',
-        label: 'exists',
-        op: 'exists',
-        // @ts-ignore
-        buildFilter: () => {
-            return (data: string, row: any, column: any) => {
-                return column.key in row || column.key in row?.attributes
-            }
-        },
-    },
-    notExists: {
-        key: 'notExists',
-        label: 'not exists',
-        op: 'not exists',
-        buildFilter: () => {
-            return (data: string, row: any, column: any) => {
-                return !(column.key in row) && !(column.key in row?.attributes)
-            }
-        },
-    },
-    contains: {
-        key: 'contains',
-        label: 'contains',
-        op: 'contains',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return String(data ?? '')
-                    .trim()
-                    .includes(value)
-            }
-        },
-    },
-    notContains: {
-        key: 'notContains',
-        label: 'not contains',
-        op: 'notContains',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return !data.trim().includes(value)
-            }
-        },
-    },
-    in: {
-        key: 'in',
-        label: 'in',
-        op: 'in',
-        buildFilter: () => () => true,
-    },
-    notIn: {
-        key: 'notIn',
-        label: 'not in',
-        op: 'not in',
-        buildFilter: ({ value = [] }) => {
-            return (data) => {
-                return !value.has(data)
-            }
-        },
-    },
-}
-
-export const FilterTypeOperators = {
-    [FilterTypes.sysDefault]: ['equal', 'notEqual', 'contains', 'notContains'],
-    [FilterTypes.default]: ['equal', 'notEqual', 'greaterEqual', 'smallerEqual', 'exists', 'notExists'],
-    [FilterTypes.enum]: ['equal', 'notEqual'],
-    [FilterTypes.string]: ['equal', 'notEqual', 'contains', 'notContains'],
-    [FilterTypes.number]: ['equal', 'notEqual', 'greaterEqual', 'smallerEqual', 'exists', 'notExists'],
-}
-
-export default function FilterOperateSelector({
-    value: raw = {},
-    onChange,
-    overrides,
-    disabled,
-    columns,
-}: IFilterOperateSelectorProps) {
-    const { key = '', value = '', op = Operators.equal } = raw
-
-    const $keys = React.useMemo(() => {
-        return columns.map((column) => {
+    const $fieldOptions = React.useMemo(() => {
+        return $columns.map((column) => {
             return {
-                id: column.key,
-                label: column.title,
+                id: column.path,
+                label: column.label,
             }
         })
-    }, [columns])
+    }, [$columns])
 
-    // eslint-disable-next-line no-param-reassign
-    overrides = overrides || {
-        Popover: {
-            props: {
-                overrides: {},
-            },
-        },
+    // const $operators = React.useMemo(() => {
+    //     const kind = columns.find((column) => column.key === key)?.filterType
+    //     if (kind && kind in FilterTypeOperators) {
+    //         return FilterTypeOperators?.[kind].map((opV) => Operators[opV])
+    //     }
+    //     return FilterTypeOperators.sysDefault.map((opV) => Operators[opV])
+    // }, [columns, key])
+
+    // const OperatorSelector = filter
+    const handleClick = () => {
+        setEditing(!editing)
+    }
+    const handleClose = () => {
+        setEditing(false)
     }
 
-    const $operators = React.useMemo(() => {
-        const kind = columns.find((column) => column.key === key)?.filterType
-        if (kind && kind in FilterTypeOperators) {
-            return FilterTypeOperators?.[kind].map((opV) => Operators[opV])
+    const filter = FilterString()
+    console.log(filter)
+    const FilterValue = filter.renderFieldValue ?? <></>
+    const FilterOperator = filter.renderOperator ?? <></>
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        console.log(event.keyCode, removing && !value, value, op, property)
+        switch (event.keyCode) {
+            case 13:
+                onChange?.(values)
+                break
+            case 8: // backspace
+                // event.preventDefault()
+                event.stopPropagation()
+
+                if (removing && !value) {
+                    if (op) {
+                        console.log('remove op')
+                        setOp(undefined)
+                        return
+                    }
+                    if (property) {
+                        console.log('remove property')
+                        setProperty(undefined)
+                    }
+                    // update values
+                    // setValues({})
+                    setRemoving(false)
+                }
+
+                if (!value) {
+                    setRemoving(true)
+                }
+
+                break
         }
-        return FilterTypeOperators.sysDefault.map((opV) => Operators[opV])
-    }, [columns, key])
+    }
+
+    const backspaceCount = useRef(0)
+
+    const handleInputChange = (e) => {
+        // e.preventDefault()
+        setValue(event.target.value)
+    }
+
+    const handleInit = () => {
+        setProperty(values.property)
+        setOp(values.op ?? '=')
+        setValue(values.value)
+        setRemoving(false)
+        setEditing(false)
+    }
 
     return (
         <div
             className='filter-ops'
-            style={{ position: 'relative', display: 'grid', gridTemplateColumns: '200px 120px 200px', gap: '8px' }}
+            style={{ position: 'relative', display: 'flex', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}
+            onKeyDown={handleKeyDown}
+            onBlur={handleInit}
         >
-            <Select
-                size='compact'
-                disabled={disabled}
-                overrides={overrides}
-                options={$keys}
-                placeholder='-'
-                clearable={false}
-                onChange={(params) => {
-                    if (!params.option) {
-                        return
-                    }
-                    onChange?.({ value: '', op, key: params.option?.id as string })
+            {/* <Popover
+                isOpen={false}
+                focusLock
+                returnFocus
+                content={() => {
+                    return <></>
                 }}
-                value={key ? [{ id: key }] : []}
-            />
-            <Select
+                onClickOutside={handleClose}
+                onEsc={handleClose}
+                ignoreBoundary
+            > */}
+            <Button onClick={handleClick}>{values.property}</Button>
+            {/* </Popover> */}
+            <div style={{ display: 'inline-block', width: '200px' }}>
+                <Select
+                    size='compact'
+                    options={$fieldOptions}
+                    placeholder='-'
+                    clearable={false}
+                    onChange={(params) => {
+                        if (!params.option) {
+                            return
+                        }
+                        setValues({ ...value, property: params.option?.id as string })
+                        setProperty(params.option?.id as string)
+
+                        // if (values.property && values.op) onChange?.({ ...value, property: params.option?.id as string })
+                    }}
+                    value={values.property ? [{ id: values.property }] : []}
+                />
+            </div>
+            {property && <div style={{ display: 'inline-block', width: '200px' }}>{property} </div>}
+            {op && (
+                <div style={{ display: 'inline-block', width: '100px' }}>
+                    <FilterOperator isEditing={editing && property && !op} value={op} onChange={setOp} />
+                </div>
+            )}
+            <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} />
+
+            <div
+                style={{ minWidth: '100px', display: 'inline-block', maxWidth: '100%', position: 'relative', flex: 1 }}
+            >
+                <AutosizeInput value={value} $style={{ width: '100%' }} onChange={handleInputChange} />
+            </div>
+
+            {/* <Select
                 size='compact'
                 disabled={disabled}
-                overrides={overrides}
                 placeholder='='
                 clearable={false}
                 options={$operators.map((item) => ({
@@ -227,7 +182,6 @@ export default function FilterOperateSelector({
                 <Input
                     size='compact'
                     disabled={disabled}
-                    overrides={overrides}
                     placeholder=''
                     clearable={false}
                     onChange={(e: any) => {
@@ -235,7 +189,7 @@ export default function FilterOperateSelector({
                     }}
                     value={value}
                 />
-            )}
+            )} */}
         </div>
     )
 }

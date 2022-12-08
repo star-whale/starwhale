@@ -241,19 +241,19 @@ export default function DatasetVersionFiles() {
                     switch (row.type) {
                         case TYPES.IMAGE:
                             wrapperStyle = {
-                                minHeight: '90px',
-                                maxWidth: layoutKey === LAYOUT.GRID ? undefined : '100px',
+                                height: '90px',
+                                textAlign: 'center',
                             }
                             break
                         case TYPES.AUDIO:
-                            wrapperStyle = { minHeight: '90px' }
+                            wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
                             break
                         case TYPES.VIDEO:
                             wrapperStyle = { maxWidth: '300px' }
                             break
                         default:
                         case TYPES.TEXT:
-                            wrapperStyle = { minHeight: '60px' }
+                            wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
                             break
                     }
 

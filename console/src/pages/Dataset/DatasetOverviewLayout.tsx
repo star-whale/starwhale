@@ -17,6 +17,7 @@ import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 import Search from '@starwhale/ui/Search'
+import { useQueryDatasetList } from '@starwhale/core/datastore'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -31,7 +32,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetInfo = useFetchDataset(projectId, datasetId)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
-    const { setDatasetVersion } = useDatasetVersion()
+    const { datasetVersion, setDatasetVersion } = useDatasetVersion()
     const [page] = usePage()
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
@@ -53,6 +54,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
             setDatasetVersion(datasetVersionInfo.data)
         }
     }, [datasetVersionInfo.data, setDatasetVersion])
+
+    const datastore = useQueryDatasetList(datasetVersion?.indexTable, { pageNum: 1, pageSize: 1 }, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -197,7 +200,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                 </Button>
                             )}
                         </div>
-                        {datasetVersionId && <Search />}
+                        {datasetVersionId && <Search fields={datastore.data?.columnTypes} />}
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}

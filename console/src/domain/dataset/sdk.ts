@@ -103,7 +103,7 @@ export class DatasetObject {
                         this.summary[k] = v
                     }
                 })
-                value.annotations.forEach((item?: any) => this.setProps(item))
+                value.annotations?.forEach((item?: any) => this.setProps(item))
                 this.setProps(value.mask)
             } catch (e) {
                 // eslint-disable-next-line no-console

@@ -34,6 +34,12 @@ export function hexlify(str: Uint8Array) {
     return result
 }
 
+// @TODO
+// * <li>LIST</li>
+// * <li>TUPLE</li>
+// * <li>MAP</li>
+// * <li>OBJECT < /li>
+
 export type IDataType =
     | 'UNKNOWN'
     | 'BOOL'
