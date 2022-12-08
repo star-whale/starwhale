@@ -158,7 +158,7 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
 
     pwd = os.getcwd();
 
-    swcli_config = config.load_swcli_config()
+    rootdir = config.load_swcli_config()["storage"]["root"]
     config_path = config.get_swcli_config_path()
     cmd = [
         "docker",
@@ -174,9 +174,9 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
         "-e",
         "SW_USER_GROUP_ID=0",
         "-e",
-        f"SW_LOCAL_STORAGE={swcli_config.rootdir}",
+        f"SW_LOCAL_STORAGE={rootdir}",
         "-v",
-        f"{swcli_config.rootdir}:{swcli_config.rootdir}",
+        f"{rootdir}:{rootdir}",
         "-e",
         f"SW_CLI_CONFIG={config_path}",
         "-v",
@@ -190,7 +190,7 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
     if name:
         cmd += [
             "--name",
-            name,
+            f"\"{name}\"",
         ]
 
     if mnt_paths:
@@ -201,7 +201,7 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
             ]
 
     if env_vars:
-        for _k, _v in env_vars:
+        for _k, _v in env_vars.items():
             cmd.extend(["-e", f"{_k}={_v}"])
 
 
@@ -220,6 +220,6 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
         cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
     sw_cmd = ' '.join([item for item in sys.argv[1:] if 'use-docker' not in item])
-    cmd.extend(["-e", f"SW_CMD={sw_cmd}"])
-    cmd += [image]
+    cmd.extend(["-e", f"SW_CMD=\"{sw_cmd}\""])
+    cmd.append(image)
     return " ".join(cmd)

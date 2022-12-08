@@ -96,8 +96,8 @@ class EvalExecutor:
 
     def _do_validate(self) -> None:
         if self.use_docker:
-            if not self.runtime_uri:
-                raise FieldTypeOrValueError("runtime_uri is none")
+            if not self.runtime_uri and not self.image:
+                raise FieldTypeOrValueError("runtime_uri and image both are none")
             if is_darwin(arm=True):
                 raise NoSupportError(
                     "use docker as the evaluation job environment in macOS system (Apple Silicon processor)"
@@ -177,7 +177,7 @@ class EvalExecutor:
         if not _img:
             raise ValueError("either image or runtime should be specified if docker is used")
         cmd = docker.gen_docker_cmd(_img, env_vars={SWEnv.runtime_version: self.runtime_uri},
-                                    name={self._version} - {self.step} - {self.task_index})
+                                    name=f"{self._version} - {self.step} - {self.task_index}")
         # cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
         console.rule(f":elephant: {self.type} docker cmd", align="left")
         console.print(f"{cmd}\n")
