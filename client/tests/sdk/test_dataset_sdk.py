@@ -42,7 +42,6 @@ class TestDatasetSDK(BaseTestCase):
                     )
                 )
             ds.commit()
-            ds.close()
         return ds.uri
 
     def _init_simple_dataset_with_str_id(self) -> URI:
@@ -56,7 +55,6 @@ class TestDatasetSDK(BaseTestCase):
                     )
                 )
             ds.commit()
-            ds.close()
         return ds.uri
 
     def test_create_from_empty(self) -> None:
