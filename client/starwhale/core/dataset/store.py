@@ -6,6 +6,7 @@ import sys
 import json
 import shutil
 import typing as t
+import threading
 from abc import ABCMeta, abstractmethod
 from types import TracebackType
 from pathlib import Path
@@ -361,29 +362,32 @@ class StorageBackend(metaclass=ABCMeta):
 
 
 class S3StorageBackend(StorageBackend):
+
+    lock_s3_creation = threading.Lock()
+
     def __init__(
         self,
         conn: S3Connection,
     ):
         super().__init__(kind=SWDSBackendType.S3)
-
-        self.s3 = boto3.resource(
-            "s3",
-            endpoint_url=conn.endpoint,
-            aws_access_key_id=conn.access_key,
-            aws_secret_access_key=conn.secret_key,
-            config=S3Config(
-                s3=conn.extra_s3_configs,
-                connect_timeout=conn.connect_timeout,
-                read_timeout=conn.read_timeout,
-                signature_version="s3v4",
-                retries={
-                    "total_max_attempts": conn.total_max_attempts,
-                    "mode": "standard",
-                },
-            ),
-            region_name=conn.region,
-        )
+        with S3StorageBackend.lock_s3_creation:
+            self.s3 = boto3.resource(
+                "s3",
+                endpoint_url=conn.endpoint,
+                aws_access_key_id=conn.access_key,
+                aws_secret_access_key=conn.secret_key,
+                config=S3Config(
+                    s3=conn.extra_s3_configs,
+                    connect_timeout=conn.connect_timeout,
+                    read_timeout=conn.read_timeout,
+                    signature_version="s3v4",
+                    retries={
+                        "total_max_attempts": conn.total_max_attempts,
+                        "mode": "standard",
+                    },
+                ),
+                region_name=conn.region,
+            )
 
     def _make_file(
         self, bucket: str, key_compose: t.Tuple[Link, int, int]
