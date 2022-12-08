@@ -24,7 +24,8 @@ class BaseTestCase(unittest.TestCase):
         self.mock_atexit.start()
 
     def tearDown(self) -> None:
-        empty_dir(self.local_storage)
+        # use ignore_errors = True to prevent errors like "Directory not empty" caused by missing close action in test
+        empty_dir(self.local_storage, ignore_errors=True)
         os.environ.pop(ENV_SW_CLI_CONFIG, "")
         os.environ.pop(ENV_SW_LOCAL_STORAGE, "")
 
