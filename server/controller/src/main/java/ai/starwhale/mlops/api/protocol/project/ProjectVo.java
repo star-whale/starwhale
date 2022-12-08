@@ -41,6 +41,8 @@ public class ProjectVo implements Serializable {
 
     private String privacy;
 
+    private Integer isDefault;
+
     private Long createdTime;
 
     private UserVo owner;
@@ -49,12 +51,12 @@ public class ProjectVo implements Serializable {
 
     public static ProjectVo empty() {
         return new ProjectVo("", "", "",
-                Privacy.PRIVATE.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
+            Privacy.PRIVATE.toString(), 0, -1L, UserVo.empty(), StatisticsVo.empty());
     }
 
     public static ProjectVo system() {
         return new ProjectVo("0", "SYSTEM", "System",
-                Privacy.PUBLIC.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
+            Privacy.PUBLIC.toString(), 0, -1L, UserVo.empty(), StatisticsVo.empty());
     }
 
     public static ProjectVo fromEntity(ProjectEntity entity, IdConverter idConvertor, UserVo owner) {
@@ -65,10 +67,11 @@ public class ProjectVo implements Serializable {
             return ProjectVo.system();
         }
         return ProjectVo.builder()
-                .id(idConvertor.convert(entity.getId()))
-                .name(entity.getProjectName()).owner(Optional.ofNullable(owner).orElse(UserVo.empty()))
-                .createdTime(entity.getCreatedTime().getTime())
-                .privacy(Privacy.fromValue(entity.getPrivacy()).name())
+            .id(idConvertor.convert(entity.getId()))
+            .name(entity.getProjectName()).owner(Optional.ofNullable(owner).orElse(UserVo.empty()))
+            .createdTime(entity.getCreatedTime().getTime())
+            .privacy(Privacy.fromValue(entity.getPrivacy()).name())
+            .isDefault(entity.getIsDefault())
                 .description(entity.getProjectDescription())
                 .statistics(StatisticsVo.empty())
                 .build();
