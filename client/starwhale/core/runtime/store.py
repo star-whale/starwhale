@@ -40,3 +40,6 @@ class RuntimeStorage(BaseStorage):
 
     def get_docker_base_image(self) -> str:
         return self.manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)
+
+    def get_python_version(self) -> str:
+        return self.manifest.get("environment", {}).get("python", "")

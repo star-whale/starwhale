@@ -177,6 +177,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             task_index=task_index,
             task_num=task_num,
             gencmd=kw.get("gencmd", False),
+            image=kw.get("image", ""),
             use_docker=use_docker,
         )
         if runtime_uri and not use_docker:

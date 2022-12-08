@@ -11,7 +11,6 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-'root'}"/.cache/pip}
 VERBOSE="-vvvv"
-TASK_NUM=${SW_TASK_NUM:-0}
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
@@ -101,12 +100,8 @@ welcome() {
 eval_task_prepare(){
     welcome $1
     pre_config
-    if [ "${SW_INSTANCE_URI}" != "local" ]
-    then
-        # only remote
-        pull_model_and_runtime
-    fi
-    [ ! -z ${SW_RUNTIME_VERSION} ] && set_python
+    [ -z ${SW_TOKEN} ] || pull_model_and_runtime
+    [ -z ${SW_RUNTIME_VERSION} ] || set_python
     set_pip_cache
 }
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
+from starwhale.utils import console, now_str, is_darwin, gen_uniq_version, docker
 from starwhale.consts import CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -38,9 +38,11 @@ class EvalExecutor:
         task_index: int = 0,
         task_num: int = 0,
         gencmd: bool = False,
+        image: str = "",
         use_docker: bool = False,
     ) -> None:
         self.name = name
+        self.image = image
         self.job_name = job_name
 
         if step:
@@ -65,6 +67,7 @@ class EvalExecutor:
                 URI(runtime_uri, expected_type=URIType.RUNTIME)
             )
             self.baseimage = self.runtime.store.get_docker_base_image()
+            self.python_version = self.runtime.store.get_python_version()
         else:
             self.runtime = None
             self.baseimage = ""
@@ -170,7 +173,12 @@ class EvalExecutor:
         )
 
     def _do_run_cmd_in_container(self) -> None:
-        cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
+        _img = self.image or self.baseimage
+        if not _img:
+            raise ValueError("either image or runtime should be specified if docker is used")
+        cmd = docker.gen_docker_cmd(_img, env_vars={SWEnv.runtime_version: self.runtime_uri},
+                                    name={self._version} - {self.step} - {self.task_index})
+        # cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
         console.rule(f":elephant: {self.type} docker cmd", align="left")
         console.print(f"{cmd}\n")
         console.print(

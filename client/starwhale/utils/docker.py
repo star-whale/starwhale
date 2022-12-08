@@ -6,10 +6,8 @@ from pathlib import Path
 import getpass as gt
 from pwd import getpwnam
 
-from starwhale.consts.env import SWEnv
-from starwhale.utils import console
+from starwhale.utils import console, config
 from starwhale.consts import SupportArch, CNTR_DEFAULT_PIP_CACHE_DIR
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.error import NoSupportError, MissingFieldError
 from starwhale.utils.process import check_call
 
@@ -156,11 +154,12 @@ def buildx(
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
 
 
-# config default runtime
-def gen_docker_cmd(sw_config: SWCliConfigMixed, image: str, python_v: str, cared_paths: t.List[str], name: str, ) -> str:
+def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List[str] = [], name: str = "", ) -> str:
 
     pwd = os.getcwd();
 
+    swcli_config = config.load_swcli_config()
+    config_path = config.get_swcli_config_path()
     cmd = [
         "docker",
         "run",
@@ -175,7 +174,13 @@ def gen_docker_cmd(sw_config: SWCliConfigMixed, image: str, python_v: str, cared
         "-e",
         "SW_USER_GROUP_ID=0",
         "-e",
-        f"SW_LOCAL_STORAGE={sw_config.rootdir}",
+        f"SW_LOCAL_STORAGE={swcli_config.rootdir}",
+        "-v",
+        f"{swcli_config.rootdir}:{swcli_config.rootdir}",
+        "-e",
+        f"SW_CLI_CONFIG={config_path}",
+        "-v",
+        f"{config_path}:{config_path}",
         "-v",
         f"{pwd}:{pwd}",
         "-w",
@@ -188,19 +193,17 @@ def gen_docker_cmd(sw_config: SWCliConfigMixed, image: str, python_v: str, cared
             name,
         ]
 
-    cmd += [
-        "-v",
-        f"{sw_config.rootdir}:{sw_config.rootdir}",
-    ]
+    if mnt_paths:
+        for cp in mnt_paths:
+            cmd += [
+                "-v",
+                f"{cp}:{cp}",
+            ]
 
-    for cp in cared_paths:
-        cmd += [
-            "-v",
-            f"{cp}:{cp}",
-        ]
+    if env_vars:
+        for _k, _v in env_vars:
+            cmd.extend(["-e", f"{_k}={_v}"])
 
-    if python_v:
-        cmd.extend(["-e", f"SW_PYTHON_VERSION={python_v}"])
 
     cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
     host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
