@@ -1,10 +1,15 @@
 import os
+import sys
 import typing as t
 import subprocess
 from pathlib import Path
+import getpass as gt
+from pwd import getpwnam
 
+from starwhale.consts.env import SWEnv
 from starwhale.utils import console
-from starwhale.consts import SupportArch
+from starwhale.consts import SupportArch, CNTR_DEFAULT_PIP_CACHE_DIR
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.error import NoSupportError, MissingFieldError
 from starwhale.utils.process import check_call
 
@@ -149,3 +154,69 @@ def buildx(
     else:
         console.print(":panda_face: start to build image with buildx...")
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
+
+
+# config default runtime
+def gen_docker_cmd(sw_config: SWCliConfigMixed, image: str, python_v: str, cared_paths: t.List[str], name: str, ) -> str:
+
+    pwd = os.getcwd();
+
+    cmd = [
+        "docker",
+        "run",
+        "--net=host",
+        "--rm",
+        "-e",
+        "DEBUG=1",
+        "-e",
+        f"SW_USER={gt.getuser()}",
+        "-e",
+        f"SW_USER_ID={getpwnam(gt.getuser()).pw_uid}",
+        "-e",
+        "SW_USER_GROUP_ID=0",
+        "-e",
+        f"SW_LOCAL_STORAGE={sw_config.rootdir}",
+        "-v",
+        f"{pwd}:{pwd}",
+        "-w",
+        f"{pwd}"
+    ]
+
+    if name:
+        cmd += [
+            "--name",
+            name,
+        ]
+
+    cmd += [
+        "-v",
+        f"{sw_config.rootdir}:{sw_config.rootdir}",
+    ]
+
+    for cp in cared_paths:
+        cmd += [
+            "-v",
+            f"{cp}:{cp}",
+        ]
+
+    if python_v:
+        cmd.extend(["-e", f"SW_PYTHON_VERSION={python_v}"])
+
+    cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
+    host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
+    cmd += ["-v", f"{host_cache_dir}:{cntr_cache_dir}"]
+
+    _env = os.environ
+    for _ee in (
+        "SW_PYPI_INDEX_URL",
+        "SW_PYPI_EXTRA_INDEX_URL",
+        "SW_PYPI_TRUSTED_HOST",
+    ):
+        if _ee not in _env:
+            continue
+        cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
+
+    sw_cmd = ' '.join([item for item in sys.argv[1:] if 'use-docker' not in item])
+    cmd.extend(["-e", f"SW_CMD={sw_cmd}"])
+    cmd += [image]
+    return " ".join(cmd)

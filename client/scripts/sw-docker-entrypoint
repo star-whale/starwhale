@@ -11,8 +11,6 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-'root'}"/.cache/pip}
 VERBOSE="-vvvv"
-STEP=${SW_TASK_STEP:-""}
-TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
 
 _update_python_alter() {
@@ -74,14 +72,15 @@ pull_model_and_runtime() {
     echo '--> pulling model and runtime ...'
 
     swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
-    swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
-    swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
+    [ ! -z ${SW_MODEL_VERSION} ] && swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+    [ ! -z ${SW_RUNTIME_VERSION} ] && swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
 }
 
 run() {
-    echo "--> start to run evaluation: ${STEP}, use $(which swcli) cli ..."
 
-    swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
+#    swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
+
+    swcli ${VERBOSE} ${SW_CMD} || exit 1
 }
 
 welcome() {
@@ -89,9 +88,7 @@ welcome() {
     echo "StarWhale Docker Entrypoint"
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Version: `swcli --version`"
-    echo "Run: $1 "
-    echo "Model Version: ${SW_MODEL_VERSION}"
-    echo "Runtime Version: ${SW_RUNTIME_VERSION}"
+    echo "Run: swcli ${SW_CMD} "
     echo "Local User: ${SW_USER:-'root'}"
     echo "===================================="
     if [ ! -z "${SW_USER}" ];
@@ -109,7 +106,7 @@ eval_task_prepare(){
         # only remote
         pull_model_and_runtime
     fi
-    set_python
+    [ ! -z ${SW_RUNTIME_VERSION} ] && set_python
     set_pip_cache
 }
 
@@ -124,3 +121,4 @@ case "$1" in
         exec "$@"
         ;;
 esac
+
