@@ -203,7 +203,7 @@ class CloudProject(Project, CloudRequestMixed):
                     id=_p["id"],
                     name=_p["name"],
                     created_at=crm.fmt_timestamp(_p["createdTime"]),  # type: ignore
-                    is_default=_p["isDefault"],
+                    is_default=_p.get("isDefault", 0),
                     owner=owner,
                 )
             )
