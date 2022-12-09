@@ -97,7 +97,7 @@ class EvalExecutor:
     def _do_validate(self) -> None:
         if self.use_docker:
             if not self.runtime_uri and not self.image:
-                raise FieldTypeOrValueError("runtime_uri and image both are none")
+                raise FieldTypeOrValueError("runtime_uri and image both are none when use_docker")
             if is_darwin(arm=True):
                 raise NoSupportError(
                     "use docker as the evaluation job environment in macOS system (Apple Silicon processor)"
