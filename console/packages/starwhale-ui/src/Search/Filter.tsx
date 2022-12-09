@@ -1,6 +1,10 @@
+import { StatefulMenu } from 'baseui/menu'
+import { PLACEMENT, Popover, StatefulPopover } from 'baseui/popover'
 import Select from '../Select'
 import { KIND, Operators } from './constants'
-import { FilterT } from './types'
+import { FilterPropsT, FilterT } from './types'
+import { useState, useEffect } from 'react'
+import { useStyles } from './Search'
 
 // a = 1 : label + operator + field
 
@@ -9,6 +13,7 @@ function Filter(options: FilterT): FilterT {
         const operator = Operators[key]
         return {
             id: operator.key,
+            type: operator.key,
             label: operator.label,
         }
     })
@@ -16,31 +21,83 @@ function Filter(options: FilterT): FilterT {
     return {
         kind: options.kind,
         operators: options.operators,
-        renderOperator: function RenderOperator(props: any) {
-            return <OperatorSelector {...props} options={operatorOptions} />
+        renderField: function RenderField({ options = [], isEditing = false, ...rest }) {
+            return (
+                <PopoverContainer
+                    {...rest}
+                    options={options}
+                    isOpen={isEditing}
+                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
+                >
+                    {rest.value}
+                </PopoverContainer>
+            )
         },
-        renderFieldValue: options?.renderFieldValue ?? <></>,
+        renderOperator: function RenderOperator({ isEditing = false, ...rest }: FilterPropsT) {
+            return (
+                <PopoverContainer
+                    {...rest}
+                    options={operatorOptions}
+                    isOpen={isEditing}
+                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
+                >
+                    {operatorOptions.find((v) => v.type === rest.value)?.label ?? ''}
+                </PopoverContainer>
+            )
+        },
+        // renderFieldValue: options?.renderFieldValue ?? <></>,
     }
 }
 export default Filter
 
-function OperatorSelector(props: any) {
-    const { value, onChange, options } = props
+function PopoverContainer(props: {
+    onItemSelect?: (props: { item: { label: string; type: string } }) => void
+    options: any[]
+    isOpen: boolean
+    mountNode?: HTMLElement
+    children: React.ReactNode
+    innerRef?: React.RefObject<HTMLElement>
+}) {
+    const [isOpen, setIsOpen] = useState(false)
+    const styles = useStyles()
+
+    useEffect(() => {
+        setIsOpen(props.isOpen)
+    }, [props.isOpen])
+
+    const handleClose = () => setIsOpen(false)
+
     return (
-        <Select
-            value={
-                value
-                    ? [
-                          {
-                              id: value,
-                          },
-                      ]
-                    : []
-            }
-            onChange={(param: any) => onChange?.(param.option.id)}
-            options={options}
-            size='compact'
-            clearable={false}
-        />
+        <Popover
+            returnFocus
+            autoFocus
+            placement={PLACEMENT.bottomLeft}
+            isOpen={isOpen}
+            ignoreBoundary
+            mountNode={props.mountNode}
+            content={() => (
+                <StatefulMenu
+                    rootRef={props.innerRef}
+                    items={props.options}
+                    onItemSelect={(args) => {
+                        // @ts-ignore
+                        props.onItemSelect?.(args)
+                        handleClose()
+                    }}
+                    overrides={{
+                        List: {
+                            style: { minHeight: '150px', minWidth: '150px', maxHeight: '500px', overflow: 'auto' },
+                        },
+                    }}
+                />
+            )}
+        >
+            <p
+                className={props.children ? styles.label : ''}
+                title={typeof props.children === 'string' ? props.children : ''}
+            >
+                {props.children}
+            </p>
+        </Popover>
     )
 }

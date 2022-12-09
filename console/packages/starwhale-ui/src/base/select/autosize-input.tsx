@@ -10,6 +10,7 @@ import { StyledInput, StyledInputSizer } from './styled-components'
 import { getOverrides } from 'baseui/helpers/overrides'
 import type { AutosizeInputProps, AutosizeInputState } from './types'
 import type { ComponentProps } from 'react'
+import usePrevious from '../../../../../src/hooks/usePrevious'
 
 export default class AutosizeInput extends React.Component<
     AutosizeInputProps & Omit<ComponentProps<typeof StyledInput>, keyof AutosizeInputProps>,
@@ -65,6 +66,7 @@ export default class AutosizeInput extends React.Component<
             ...restProps,
             $width: `${this.state.inputWidth}px`,
         }
+
         return (
             <React.Fragment>
                 {/* @ts-ignore TS2786 error with web-eats-v2, can remove once React 18 migration complete */}

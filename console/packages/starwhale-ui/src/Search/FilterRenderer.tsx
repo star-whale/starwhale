@@ -1,29 +1,30 @@
 import { ColumnModel } from '@starwhale/core/datastore'
-import { InputContainer } from 'baseui/input/styled-components'
-import { Popover } from 'baseui/popover'
-import { SelectProps } from 'baseui/select'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AutosizeInput from '../base/select/autosize-input'
-import Button from '../Button'
-import Input from '../Input'
-import Select from '../Select'
-import { OPERATOR } from './constants'
 import FilterString from './FilterString'
 import { FilterPropsT, ValueT } from './types'
+import { useClickAway } from 'react-use'
+import { useStyles } from './Search'
 
 export default function FilterRenderer({
     value: rawValues = {},
     onChange = () => {},
     isDisabled = false,
     isEditing = false,
+    isFocus = false,
     fields = [],
-}: FilterPropsT) {
+    style = {},
+    containerRef,
+}: FilterPropsT & { fields: any[]; style: React.CSSProperties; containerRef: React.RefObject<HTMLDivElement> }) {
     const [values, setValues] = useState<ValueT>(rawValues)
     const [value, setValue] = useState<any>(rawValues?.value)
-    const [property, setProperty] = useState<string>(rawValues?.property ?? 'property')
-    const [op, setOp] = useState<string>(rawValues?.op ?? '=')
+    const [property, setProperty] = useState<string | undefined>(rawValues?.property)
+    const [op, setOp] = useState<string | undefined>(rawValues?.op)
     const [editing, setEditing] = useState(false)
     const [removing, setRemoving] = useState(false)
+    const styles = useStyles()
+    const ref = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
 
     const column = new ColumnModel(fields)
 
@@ -35,161 +36,163 @@ export default function FilterRenderer({
         return $columns.map((column) => {
             return {
                 id: column.path,
+                type: column.path,
                 label: column.label,
             }
         })
     }, [$columns])
 
-    // const $operators = React.useMemo(() => {
-    //     const kind = columns.find((column) => column.key === key)?.filterType
-    //     if (kind && kind in FilterTypeOperators) {
-    //         return FilterTypeOperators?.[kind].map((opV) => Operators[opV])
-    //     }
-    //     return FilterTypeOperators.sysDefault.map((opV) => Operators[opV])
-    // }, [columns, key])
-
-    // const OperatorSelector = filter
-    const handleClick = () => {
-        setEditing(!editing)
-    }
-    const handleClose = () => {
-        setEditing(false)
-    }
-
-    const filter = FilterString()
-    console.log(filter)
-    const FilterValue = filter.renderFieldValue ?? <></>
-    const FilterOperator = filter.renderOperator ?? <></>
+    const { filter, FilterOperator, FilterField } = useMemo(() => {
+        const filter = FilterString()
+        const FilterValue = filter.renderFieldValue
+        const FilterOperator = filter.renderOperator
+        const FilterField = filter.renderField
+        return {
+            filter,
+            FilterOperator,
+            FilterField,
+        }
+    }, [])
 
     const handleKeyDown = (event: KeyboardEvent) => {
         console.log(event.keyCode, removing && !value, value, op, property)
         switch (event.keyCode) {
-            case 13:
-                onChange?.(values)
+            case 13: // enter
+                if (value && op && property) {
+                    const newValues = {
+                        value,
+                        op,
+                        property,
+                    }
+                    setValues(newValues)
+                    onChange?.(newValues)
+                    setEditing(false)
+                }
                 break
             case 8: // backspace
-                // event.preventDefault()
                 event.stopPropagation()
 
                 if (removing && !value) {
+                    // first remove op
                     if (op) {
-                        console.log('remove op')
                         setOp(undefined)
                         return
                     }
-                    if (property) {
-                        console.log('remove property')
-                        setProperty(undefined)
-                    }
-                    // update values
-                    // setValues({})
+                    // second remove property
+                    if (property) setProperty(undefined)
+                    // third trigger remove all
                     setRemoving(false)
+                    onChange?.(undefined)
                 }
-
                 if (!value) {
                     setRemoving(true)
                 }
-
                 break
         }
     }
 
-    const backspaceCount = useRef(0)
-
-    const handleInputChange = (e) => {
-        // e.preventDefault()
-        setValue(event.target.value)
+    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
+        setValue((event.target as any)?.value)
     }
 
-    const handleInit = () => {
-        setProperty(values.property)
-        setOp(values.op ?? '=')
+    const handleReset = () => {
+        setProperty(values?.property)
+        setOp(values?.op)
         setValue(values.value)
         setRemoving(false)
         setEditing(false)
     }
 
-    return (
-        <div
-            className='filter-ops'
-            style={{ position: 'relative', display: 'flex', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}
-            onKeyDown={handleKeyDown}
-            onBlur={handleInit}
-        >
-            {/* <Popover
-                isOpen={false}
-                focusLock
-                returnFocus
-                content={() => {
-                    return <></>
-                }}
-                onClickOutside={handleClose}
-                onEsc={handleClose}
-                ignoreBoundary
-            > */}
-            <Button onClick={handleClick}>{values.property}</Button>
-            {/* </Popover> */}
-            <div style={{ display: 'inline-block', width: '200px' }}>
-                <Select
-                    size='compact'
-                    options={$fieldOptions}
-                    placeholder='-'
-                    clearable={false}
-                    onChange={(params) => {
-                        if (!params.option) {
-                            return
-                        }
-                        setValues({ ...value, property: params.option?.id as string })
-                        setProperty(params.option?.id as string)
+    const handleFocus = () => {
+        setEditing(true)
+        inputRef.current?.focus()
+    }
 
-                        // if (values.property && values.op) onChange?.({ ...value, property: params.option?.id as string })
-                    }}
-                    value={values.property ? [{ id: values.property }] : []}
-                />
-            </div>
-            {property && <div style={{ display: 'inline-block', width: '200px' }}>{property} </div>}
-            {op && (
-                <div style={{ display: 'inline-block', width: '100px' }}>
-                    <FilterOperator isEditing={editing && property && !op} value={op} onChange={setOp} />
+    const fieldDropdownRef = useRef(null)
+    const opDropdownRef = useRef(null)
+
+    // reset to raw status
+    useClickAway(ref, (e) => {
+        if (containsNode(fieldDropdownRef.current, event.target)) return
+        if (containsNode(opDropdownRef.current, event.target)) return
+        handleReset()
+    })
+    // keep focus when editing
+    useEffect(() => {
+        if (editing && op) {
+            inputRef.current?.focus()
+        }
+    }, [editing, op])
+
+    // keep focus by parent component
+    useEffect(() => {
+        if (isFocus) {
+            setEditing(true)
+            inputRef.current?.focus()
+        }
+    }, [isFocus, inputRef.current])
+
+    // truncate values when first item is empty but with the same react key
+    useEffect(() => {
+        if (!rawValues.op && !rawValues.property && !rawValues.value) {
+            setValues({})
+            setOp(undefined)
+            setProperty(undefined)
+            setValue(undefined)
+        }
+    }, [rawValues])
+
+    return (
+        <div ref={ref} className={styles.filters} onKeyDown={handleKeyDown} onClick={handleFocus} style={style}>
+            <FilterField
+                isEditing={editing && !property}
+                value={property}
+                onChange={(item: any) => setProperty(item)}
+                options={$fieldOptions}
+                mountNode={document.body}
+                innerRef={fieldDropdownRef}
+            />
+            <FilterOperator
+                isEditing={!!(editing && property && !op)}
+                value={op}
+                onChange={(item: any) => {
+                    setOp(item)
+                    inputRef.current?.focus()
+                }}
+                innerRef={opDropdownRef}
+                mountNode={document.body}
+            />
+            {/* <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} /> */}
+
+            {!editing && value && (
+                <div className={styles.label} title={value}>
+                    {value}
                 </div>
             )}
-            <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} />
-
             <div
-                style={{ minWidth: '100px', display: 'inline-block', maxWidth: '100%', position: 'relative', flex: 1 }}
-            >
-                <AutosizeInput value={value} $style={{ width: '100%' }} onChange={handleInputChange} />
-            </div>
-
-            {/* <Select
-                size='compact'
-                disabled={disabled}
-                placeholder='='
-                clearable={false}
-                options={$operators.map((item) => ({
-                    id: item.key,
-                    label: item.label,
-                }))}
-                onChange={(params) => {
-                    if (!params.option) {
-                        return
-                    }
-                    onChange?.({ value, key, op: Operators?.[params.option.id as string] })
+                style={{
+                    minWidth: editing ? '100px' : 0,
+                    display: 'inline-block',
+                    maxWidth: '100%',
+                    position: 'relative',
+                    flex: 1,
+                    flexBasis: editing ? '100px' : 0,
+                    width: editing ? '100%' : 0,
+                    height: editing ? '100%' : 0,
                 }}
-                value={op ? [{ id: op.key }] : []}
-            />
-            {!['exists', 'notExists'].includes(op.key as string) && (
-                <Input
-                    size='compact'
-                    disabled={disabled}
-                    placeholder=''
-                    clearable={false}
-                    onChange={(e: any) => {
-                        onChange?.({ key, op, value: e.target.value as string })
-                    }}
+            >
+                {/* @ts-ignore */}
+                <AutosizeInput
+                    inputRef={inputRef as any}
                     value={value}
+                    onChange={handleInputChange}
+                    $style={{ width: '100%', height: '100%' }}
                 />
-            )} */}
+            </div>
         </div>
     )
+}
+// @ts-ignore
+const containsNode = (parent, child) => {
+    return child && parent && parent.contains(child as any)
 }

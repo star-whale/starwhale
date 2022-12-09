@@ -6,12 +6,13 @@ export type KindT = keyof typeof KIND
 export type FilterSharedPropsT = {
     isDisabled?: boolean
     isEditing?: boolean
+    isFocus?: boolean
 }
 
 export interface FilterPropsT extends FilterSharedPropsT {
     value?: ValueT
-    onChange?: (newValue: ValueT) => void
-    fields: ColumnSchemaDesc[]
+    onChange?: (newValue?: ValueT) => void
+    options?: any[]
 }
 
 export type ValueT = {
@@ -38,7 +39,7 @@ export type FilterT = {
     operators: OPERATOR[]
 
     // buildFilter?: (args: FilterValueT<ValueT>) => (data: any) => any
-    renderField?: (args: FilterPropsT) => React.ReactNode
-    renderFieldValue?: (args: FilterPropsT) => React.ReactNode
-    renderOperator?: (args: FilterPropsT) => React.ReactNode
+    renderField?: (args: FilterPropsT) => React.ReactElement
+    renderFieldValue?: (args: FilterPropsT) => React.ReactElement
+    renderOperator?: (args: FilterPropsT) => React.ReactElement
 }
