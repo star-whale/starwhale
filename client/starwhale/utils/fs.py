@@ -45,7 +45,11 @@ def ensure_file(
     os.chmod(path, mode)
 
 
-def empty_dir(p: t.Union[str, Path]) -> None:
+def empty_dir(
+    p: t.Union[str, Path],
+    ignore_errors: bool = False,
+    onerror: t.Optional[t.Callable] = None,
+) -> None:
     if not p:
         return
 
@@ -55,7 +59,7 @@ def empty_dir(p: t.Union[str, Path]) -> None:
 
     def _self_empty() -> None:
         if path.is_dir():
-            shutil.rmtree(str(path.resolve()))
+            shutil.rmtree(str(path.resolve()), ignore_errors, onerror)
         else:
             path.unlink()
 
