@@ -39,6 +39,9 @@ class Request:
             if len(files) > 0:
                 # support only one file for now
                 body = files[0].stream.read()
+            else:
+                # TODO: refactor request and support multiple files & form
+                raise Exception("multiple files not supported")
         if not body:
             # try json
             if request.json is not None:

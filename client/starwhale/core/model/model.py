@@ -14,6 +14,7 @@ from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs.tarfs import TarFS
 
+from starwhale import PipelineHandler
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
     FileType,
@@ -237,7 +238,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if attr:
             cls = getattr(m, attr)
             ins = cls()
-            apis.update(ins.svc.apis)
+            if isinstance(ins, PipelineHandler):
+                apis.update(ins.svc.apis)
 
         from starwhale.api._impl.service import internal_api_list
 
@@ -247,6 +249,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if ins is None:
             for i in apis.values():
                 fn = i.func.__qualname__
+                # TODO: support deep path classes (also modules)
                 if "." in fn:
                     ins = getattr(m, fn.split(".", 1)[0])()
                     break
