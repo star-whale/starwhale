@@ -221,5 +221,5 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
 
     sw_cmd = ' '.join([item for item in sys.argv[1:] if 'use-docker' not in item])
     cmd.extend(["-e", f"SW_CMD=\"{sw_cmd}\""])
-    cmd.append(image)
+    cmd.extend([image,"run"])
     return " ".join(cmd)
