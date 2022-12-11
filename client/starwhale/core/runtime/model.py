@@ -665,8 +665,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         include_editable: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
-    ) -> None:
-        StandaloneRuntime.lock(
+    ) -> str:
+        return StandaloneRuntime.lock(
             target_dir,
             yaml_name,
             env_name,
@@ -698,6 +698,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}
         self._version = uri.object.version
+        self._detected_sw_version: str = ""
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -765,7 +766,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.print(
                 f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
             )
-            self.lock(
+            content = self.lock(
                 target_dir=workdir,
                 yaml_name=yaml_name,
                 env_name=env_name,
@@ -775,6 +776,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 include_editable=include_editable,
                 env_use_shell=env_use_shell,
             )
+            # try getting starwhale version
+            for line in content.splitlines():
+                if line.startswith("starwhale=="):
+                    self._detected_sw_version = line.split("==")[1].strip()
+                    break
 
         # TODO: tune for no runtime.yaml file
         _swrt_config = self._load_runtime_config(workdir / yaml_name)
@@ -950,7 +956,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["environment"].update(
             {
                 "lock": {
-                    "starwhale_version": STARWHALE_VERSION,
+                    "starwhale_version": self._detected_sw_version or STARWHALE_VERSION,
                     "system": platform.system(),
                     "shell": {
                         "python_env": sh_py_env,
@@ -1241,7 +1247,20 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         include_editable: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
-    ) -> None:
+    ) -> str:
+        """
+        Install dependencies and save or print lock file
+        :param target_dir: runtime work directory which contains the configured runtime.yaml
+        :param yaml_name: runtime config file name
+        :param env_name: conda environment name (used by conda env)
+        :param env_prefix_path: python env prefix path (used by both venv and conda)
+        :param disable_auto_inject: disable putting lock file info into configured runtime yaml file
+        :param stdout: just print the lock info into stdout without saving lock file
+        :param include_editable: include the editable pkg (only for venv)
+        :param emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
+        :param env_use_shell: automatically detect env in current shell session
+        :return: the lock file content
+        """
         target_dir = Path(target_dir)
         runtime_fpath = target_dir / yaml_name
         if not runtime_fpath.exists():
@@ -1258,7 +1277,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 f"env_name({env_name}), env_prefix_path({env_prefix_path}) and env_use_shell({env_use_shell}) are the mutex arguments"
             )
 
-        prefix_path = ""
         if env_name:
             if mode == PythonRunEnv.VENV:
                 raise NoSupportError(
@@ -1308,10 +1326,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 f"{mode}: expected python({expected_pyver}) is not equal to detected python({detected_pyver})"
             )
 
+        with open(temp_lock_path) as f:
+            content = f.read()
+
         if stdout:
             console.rule("dependencies lock")
-            with open(temp_lock_path) as f:
-                console.print(f.read())
+            console.print(content)
             os.unlink(temp_lock_path)
         else:
             dest_fname = (
@@ -1324,6 +1344,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
             if not disable_auto_inject and runtime_fpath.exists():
                 cls._update_runtime_dep_lock_field(runtime_fpath, dest_fname)
+
+        return content
 
     @staticmethod
     def _update_runtime_dep_lock_field(runtime_fpath: Path, lock_fname: str) -> None:
