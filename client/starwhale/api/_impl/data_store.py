@@ -1436,7 +1436,7 @@ class TableWriter(threading.Thread):
         self._queue_run_exceptions: List[Exception] = []
         self._run_exceptions_limits = max(run_exceptions_limits, 0)
 
-        self.setDaemon(True)
+        self.daemon = True
         atexit.register(self.close)
         self.start()
 
