@@ -1,10 +1,13 @@
 import os
+import sys
 import typing as t
+import getpass as gt
 import subprocess
+from pwd import getpwnam
 from pathlib import Path
 
-from starwhale.utils import console
-from starwhale.consts import SupportArch
+from starwhale.utils import console, config
+from starwhale.consts import SupportArch, CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.utils.error import NoSupportError, MissingFieldError
 from starwhale.utils.process import check_call
 
@@ -149,3 +152,79 @@ def buildx(
     else:
         console.print(":panda_face: start to build image with buildx...")
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
+
+def gen_swcli_docker_cmd(
+    image: str,
+    env_vars: t.Dict[str, str] = {},
+    mnt_paths: t.List[str] = [],
+    name: str = "",
+) -> str:
+
+    if not image:
+        raise ValueError("image should have value")
+    pwd = os.getcwd()
+
+    rootdir = config.load_swcli_config()["storage"]["root"]
+    config_path = config.get_swcli_config_path()
+    cmd = [
+        "docker",
+        "run",
+        "--net=host",
+        "--rm",
+        "-e",
+        "DEBUG=1",
+        "-e",
+        f"SW_USER={gt.getuser()}",
+        "-e",
+        f"SW_USER_ID={getpwnam(gt.getuser()).pw_uid}",
+        "-e",
+        "SW_USER_GROUP_ID=0",
+        "-e",
+        f"SW_LOCAL_STORAGE={rootdir}",
+        "-v",
+        f"{rootdir}:{rootdir}",
+        "-e",
+        f"SW_CLI_CONFIG={config_path}",
+        "-v",
+        f"{config_path}:{config_path}",
+        "-v",
+        f"{pwd}:{pwd}",
+        "-w",
+        f"{pwd}",
+    ]
+
+    if name:
+        cmd += [
+            "--name",
+            f'"{name}"',
+        ]
+
+    if mnt_paths:
+        for cp in mnt_paths:
+            cmd += [
+                "-v",
+                f"{cp}:{cp}",
+            ]
+
+    if env_vars:
+        for _k, _v in env_vars.items():
+            cmd.extend(["-e", f"{_k}={_v}"])
+
+    cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
+    host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
+    cmd += ["-v", f"{host_cache_dir}:{cntr_cache_dir}"]
+
+    _env = os.environ
+    for _ee in (
+        "SW_PYPI_INDEX_URL",
+        "SW_PYPI_EXTRA_INDEX_URL",
+        "SW_PYPI_TRUSTED_HOST",
+    ):
+        if _ee not in _env:
+            continue
+        cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
+
+    sw_cmd = " ".join([item for item in sys.argv[1:] if "use-docker" not in item])
+
+    cmd.extend([image, f"swcli {sw_cmd}"])
+    return " ".join(cmd)

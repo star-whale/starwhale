@@ -191,6 +191,17 @@ def _recover(model: str, force: bool) -> None:
     multiple=True,
     help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
+@click.option(
+    "--use-docker",
+    is_flag=True,
+    help="[ONLY Standalone]use docker to run evaluation job",
+)
+@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
+@click.option(
+    "--image",
+    default="",
+    help="[ONLY Standalone]the image used when use docker",
+)
 def _eval(
     project: str,
     target: str,
@@ -201,6 +212,9 @@ def _eval(
     task_index: int,
     override_task_num: int,
     runtime: str,
+    use_docker: bool,
+    gencmd: bool,
+    image: str,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -217,6 +231,9 @@ def _eval(
         task_index=task_index,
         task_num=override_task_num,
         dataset_uris=datasets,
+        use_docker=use_docker,
+        gencmd=gencmd,
+        image=image,
     )
 
 
