@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import copy
 import typing as t
 import tarfile
 from abc import ABCMeta
@@ -17,6 +18,8 @@ from fs.tarfs import TarFS
 from starwhale import PipelineHandler
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
+    FileDesc,
+    FileFlag,
     FileType,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
@@ -178,6 +181,28 @@ class Model(BaseBundle, metaclass=ABCMeta):
             dest_local_project_uri=dest_local_project_uri,
         )
         bc.do()
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
+
+def resource_to_file_desc(
+    files: t.List[t.Dict[str, t.Any]], parent_path: Path
+) -> t.Dict[str, FileDesc]:
+    return {
+        _f["path"]: FileDesc(
+            path=parent_path / _f["path"],
+            name=_f.get("name", os.path.basename(_f["path"])),
+            size=_f["size"]
+            if "size" in _f
+            else (parent_path / _f["path"]).stat().st_size,
+            signature=_f["signature"]
+            if "signature" in _f
+            else blake2b_file(parent_path / _f["path"]),
+            file_type=FileType[_f["type"]],
+        )
+        for _f in files
+    }
 
 
 class StandaloneModel(Model, LocalStorageBundleMixin):
@@ -388,6 +413,57 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             return DEFAULT_EVALUATION_PIPELINE
         else:
             return _model_config.run.handler
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        """
+        - added: a node that exists in compare but not in base
+        - deleted: a node that not exists in compare but in base
+        - updated: a node that exists in both of base and compare but signature is different
+        - unchanged: a node that exists in both of base and compare, and signature is same
+        :param compare_uri:
+        :return: diff info
+        """
+        # TODO use remote get model info for cloud
+        if compare_uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(
+                f"only support standalone uri, but compare_uri({compare_uri}) is for cloud instance"
+            )
+        if self.uri.object.name != compare_uri.object.name:
+            raise NoSupportError(
+                f"only support two versions diff in one model, base model:{self.uri}, compare model:{compare_uri}"
+            )
+        _compare_model = StandaloneModel(compare_uri)
+        print(f"bb:{self.store.manifest['resources']}")
+        base_file_maps = resource_to_file_desc(
+            files=self.store.manifest["resources"],
+            parent_path=self.store.snapshot_workdir,
+        )
+        compare_file_maps = resource_to_file_desc(
+            files=_compare_model.store.manifest["resources"],
+            parent_path=_compare_model.store.snapshot_workdir,
+        )
+        all_paths = {
+            p for m in (base_file_maps, compare_file_maps) for p, _ in m.items()
+        }
+
+        for _p in all_paths:
+            if _p in base_file_maps and _p in compare_file_maps:
+                if base_file_maps[_p].signature == compare_file_maps[_p].signature:
+                    compare_file_maps[_p].flag = FileFlag.UNCHANGED
+                else:
+                    compare_file_maps[_p].flag = FileFlag.UPDATED
+            if _p in base_file_maps and _p not in compare_file_maps:
+                del_file = copy.copy(base_file_maps[_p])
+                del_file.flag = FileFlag.DELETED
+                compare_file_maps[_p] = del_file
+            if _p not in base_file_maps and _p in compare_file_maps:
+                compare_file_maps[_p].flag = FileFlag.ADDED
+
+        return {
+            "all_paths": all_paths,
+            "base_version": base_file_maps,
+            "compare_version": compare_file_maps,
+        }
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
@@ -666,3 +742,6 @@ class CloudModel(CloudBundleModelMixin, Model):
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        raise NoSupportError("no support model diff in the cloud instance")

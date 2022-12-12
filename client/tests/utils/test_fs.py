@@ -3,7 +3,14 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.utils.fs import copy_file, ensure_dir, extract_tar, is_within_dir
+from starwhale.utils.fs import (
+    copy_file,
+    ensure_dir,
+    ensure_file,
+    extract_tar,
+    is_within_dir,
+    cmp_file_content,
+)
 from starwhale.utils.error import FormatError, ExistedError, NotFoundError
 
 
@@ -45,6 +52,27 @@ class FsUtilsTestCase(TestCase):
         copy_file(src_file, dest_file)
         assert dest_file.exists() and dest_file.is_file()
         assert contents == dest_file.read_text()
+
+    def test_cmp_file(self) -> None:
+        base_file = Path("tmp/cmp/file1.txt")
+        cmp_file = Path("tmp/cmp/file2.txt")
+        ensure_dir("tmp/cmp")
+        ensure_file(base_file, "123\n456\n")
+
+        ensure_file(cmp_file, "456\n")
+        diffs = cmp_file_content(base_file, cmp_file)
+        assert len(diffs) == 1
+        assert diffs == ["-123\n"]
+
+        ensure_file(cmp_file, "1234\n456\n")
+        diffs = cmp_file_content(base_file, cmp_file)
+        assert len(diffs) == 2
+        assert diffs == ["-123\n", "+1234\n"]
+
+        ensure_file(cmp_file, "123\n456\n789\n")
+        diffs = cmp_file_content(base_file, cmp_file)
+        assert len(diffs) == 1
+        assert diffs == ["+789\n"]
 
     def test_within_dir(self) -> None:
         cases = [

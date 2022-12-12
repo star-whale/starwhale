@@ -42,6 +42,8 @@ title: Starwhale Model-模型包
   - `swcli model build`
 - 分发与复原阶段
   - `swcli model copy`
+- 可视化阶段
+  - `swcli model diff`
 - 运行阶段
   - `swcli model eval`
   - `swcli model serve`

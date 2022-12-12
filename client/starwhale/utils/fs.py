@@ -2,6 +2,7 @@ import os
 import errno
 import shutil
 import typing as t
+import difflib
 import hashlib
 import tarfile
 from enum import IntEnum
@@ -119,6 +120,31 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
             _chunk = f.read(_chunk_size)
 
     return _hash.hexdigest()
+
+
+def cmp_file_content(
+    base_path: t.Union[str, Path], cmp_path: t.Union[str, Path]
+) -> t.List[str]:
+    base_path = Path(base_path)
+    cmp_path = Path(cmp_path)
+    res = []
+    with base_path.open("r") as base, cmp_path.open("r") as cmp:
+        diff = difflib.unified_diff(
+            base.readlines(),
+            cmp.readlines(),
+            fromfile=base_path.name,
+            tofile=cmp_path.name,
+            n=0,
+        )
+        for line in diff:
+
+            def skip(content: str) -> bool:
+                prefixes = ["---", "+++", "@@", " "]
+                return not any([content.startswith(prefix) for prefix in prefixes])
+
+            if skip(content=line):
+                res.append(line)
+    return res
 
 
 def get_path_created_time(p: Path) -> str:
