@@ -54,7 +54,7 @@ class MediaType:
 
 
 @define
-class Response:
+class OpenApiResponse:
     """
     https://spec.openapis.org/oas/v3.0.0#response-object
     """
@@ -92,7 +92,7 @@ class SpecComponent:
     headers: t.Optional[t.Dict[str, Header]] = None
     parameters: t.Optional[t.Dict[str, Parameter]] = None
     requestBody: t.Optional[RequestBody] = None
-    responses: t.Optional[t.Dict[str, Response]] = None
+    responses: t.Optional[t.Dict[str, OpenApiResponse]] = None
 
 
 @define

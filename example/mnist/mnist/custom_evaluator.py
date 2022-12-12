@@ -23,9 +23,13 @@ from starwhale import (
     get_dataset_consumption,
 )
 from starwhale.api.service import Input, Output, Request, Service, Response
-from starwhale.base.spec.openapi.components import Schema
-from starwhale.base.spec.openapi.components import Response as OpenApiResponse
-from starwhale.base.spec.openapi.components import MediaType, RequestBody, SpecComponent
+from starwhale.base.spec.openapi.components import (
+    Schema,
+    MediaType,
+    RequestBody,
+    SpecComponent,
+    OpenApiResponse,
+)
 
 from .model import Net
 

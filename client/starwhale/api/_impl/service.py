@@ -6,9 +6,13 @@ from dataclasses import dataclass
 
 import flask
 
-from starwhale.base.spec.openapi.components import Schema, OpenApi
-from starwhale.base.spec.openapi.components import Response as OpenApiResponse
-from starwhale.base.spec.openapi.components import MediaType, SpecComponent
+from starwhale.base.spec.openapi.components import (
+    Schema,
+    OpenApi,
+    MediaType,
+    SpecComponent,
+    OpenApiResponse,
+)
 
 MIMETYPE_FIELD = "content-type"
 MIMETYPE_JSON = "application/json"
