@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 
 public class K8sJobTemplateTest {
 
-    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "/path");
+    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "", "/path");
 
     public K8sJobTemplateTest() throws IOException {
     }
@@ -58,7 +58,7 @@ public class K8sJobTemplateTest {
     }
 
     @Test
-    public void testRender() {
+    public void testRenderJob() {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         Map<String, String> nodeSelectors = Map.of("label.pool.bj01", "true");
         V1Job yxz = k8sJobTemplate.renderJob("yxz", "OnFailure", 10, containerSpecMap, nodeSelectors);
@@ -115,7 +115,7 @@ public class K8sJobTemplateTest {
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
 
         // empty host path
-        var template = new K8sJobTemplate("", "");
+        var template = new K8sJobTemplate("", "", "");
         job = template.renderJob("foo", "OnFailure", 10, containerSpecMap, Map.of());
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
@@ -145,5 +145,16 @@ public class K8sJobTemplateTest {
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, is(Map.of(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
                 K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true")));
+    }
+
+    @Test
+    public void testRenderModelServingOrch() {
+        var name = "stateful-set-name";
+        var envs = Map.of("foo", "bar");
+        var ss = k8sJobTemplate.renderModelServingOrch(envs, "img", name);
+        assertThat(ss.getMetadata().getName(), is(name));
+        var mainContainer = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
+        assertThat(mainContainer.getImage(), is("img"));
+        assertThat(mainContainer.getEnv(), is(List.of(new V1EnvVar().name("foo").value("bar"))));
     }
 }

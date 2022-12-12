@@ -33,6 +33,7 @@ sw:
       name-space: ${SW_K8S_NAME_SPACE:default}
       host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:}
       job-template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
+      model-serving-template-path: ${SW_K8S_MODEL_SERVING_TEMPLATE_PATH:}
   storage:
     type: ${SW_STORAGE_TYPE:minio}
     path-prefix: ${SW_STORAGE_PREFIX:starwhale}

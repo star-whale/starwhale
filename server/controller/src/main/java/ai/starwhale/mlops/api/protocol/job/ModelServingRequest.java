@@ -24,26 +24,18 @@ import org.springframework.validation.annotation.Validated;
 
 @Data
 @Validated
-public class JobRequest implements Serializable {
-
+public class ModelServingRequest implements Serializable {
     @NotNull
     @JsonProperty("modelVersionUrl")
     private String modelVersionUrl;
 
     @NotNull
-    @JsonProperty("datasetVersionUrls")
-    private String datasetVersionUrls;
-
-    @NotNull
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
-
-    @JsonProperty("comment")
-    private String comment;
 
     @JsonProperty("resourcePool")
     private String resourcePool;
 
-    @JsonProperty("stepSpecOverWrites")
-    private String stepSpecOverWrites;
+    @JsonProperty("ttlInSeconds")
+    private long ttlInSeconds;
 }

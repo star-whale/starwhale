@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
@@ -266,4 +267,18 @@ public interface JobApi {
     ResponseEntity<ResponseMessage<String>> recoverJob(
             @Valid @PathVariable("projectUrl") String projectUrl,
             @Valid @PathVariable("jobUrl") String jobUrl);
+
+    @Operation(summary = "Create a new model serving job")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(value = "/project/{projectUrl}/serving")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> createModelServing(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project Url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Valid @RequestBody ModelServingRequest request);
 }

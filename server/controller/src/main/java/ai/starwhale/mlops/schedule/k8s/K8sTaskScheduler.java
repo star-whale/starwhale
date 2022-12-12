@@ -138,7 +138,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             } catch (ApiException e) {
                 log.debug("try to delete existing k8s job {} before start it, however it doesn't exist", task.getId());
             }
-            k8sClient.deploy(k8sJob);
+            k8sClient.deployJob(k8sJob);
         } catch (ApiException k8sE) {
             log.error(" schedule task failed {}", k8sE.getResponseBody(), k8sE);
             taskFailed(task);

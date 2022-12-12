@@ -18,10 +18,13 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
@@ -34,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -53,20 +56,19 @@ public class K8sJobTemplate {
 
     public static final String DEVICE_LABEL_NAME_PREFIX = "device.starwhale.ai-";
 
-    final String template;
+    final String evalJobTemplate;
+    final String modelServingJobTemplate;
     final V1Job v1Job;
 
     public K8sJobTemplate(
-            @Value("${sw.infra.k8s.job-template-path}") String templatePath,
+            @Value("${sw.infra.k8s.job-template-path}") String evalJobTemplatePath,
+            @Value("${sw.infra.k8s.model-serving-template-path}") String msPath,
             @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
     )
             throws IOException {
-        if (!StringUtils.hasText(templatePath)) {
-            this.template = getJobDefaultTemplate();
-        } else {
-            this.template = Files.readString(Paths.get(templatePath));
-        }
-        v1Job = Yaml.loadAs(template, V1Job.class);
+        this.evalJobTemplate = getJobDefaultTemplate(evalJobTemplatePath, "template/job.yaml");
+        this.modelServingJobTemplate = getJobDefaultTemplate(msPath, "template/model-serving.yaml");
+        v1Job = Yaml.loadAs(evalJobTemplate, V1Job.class);
         this.pipCacheHostPath = pipCacheHostPath;
     }
 
@@ -80,9 +82,14 @@ public class K8sJobTemplate {
         return CollectionUtils.isEmpty(containers) ? List.of() : containers;
     }
 
-    public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
-            Map<String, ContainerOverwriteSpec> containerSpecMap, Map<String, String> nodeSelectors) {
-        V1Job job = Yaml.loadAs(template, V1Job.class);
+    public V1Job renderJob(
+            String jobName,
+            String restartPolicy,
+            int backoffLimit,
+            Map<String, ContainerOverwriteSpec> containerSpecMap,
+            Map<String, String> nodeSelectors
+    ) {
+        V1Job job = Yaml.loadAs(evalJobTemplate, V1Job.class);
         job.getMetadata().name(jobName);
         HashMap<String, String> labels = new HashMap<>();
         labels.putAll(starwhaleJobLabel);
@@ -93,6 +100,48 @@ public class K8sJobTemplate {
         jobSpec.backoffLimit(backoffLimit);
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
+
+        patchPodSpec(restartPolicy, containerSpecMap, nodeSelectors, podSpec);
+        patchPipCacheVolume(job.getSpec().getTemplate().getSpec().getVolumes());
+        addDeviceInfoLabel(jobSpec.getTemplate(), containerSpecMap);
+
+        return job;
+    }
+
+    public V1StatefulSet renderModelServingOrch(Map<String, String> envs, String image, String name) {
+        var ss = Yaml.loadAs(this.modelServingJobTemplate, V1StatefulSet.class);
+        Objects.requireNonNull(ss.getMetadata());
+        ss.getMetadata().name(name);
+        var spec = ss.getSpec();
+        Objects.requireNonNull(spec);
+        var labels = Map.of("app", name);
+        spec.getSelector().matchLabels(labels);
+        Objects.requireNonNull(spec.getTemplate().getMetadata());
+        spec.getTemplate().getMetadata().labels(labels);
+        var podSpec = spec.getTemplate().getSpec();
+        Objects.requireNonNull(podSpec);
+
+        final String containerName = "worker";
+        var cos = new ContainerOverwriteSpec();
+        cos.setName(containerName);
+        cos.setImage(image);
+        cos.setEnvs(envs.entrySet().stream().map(K8sJobTemplate::toEnvVar).collect(Collectors.toList()));
+        var containerSpecMap = new HashMap<String, ContainerOverwriteSpec>();
+        containerSpecMap.put(containerName, cos);
+
+        patchPodSpec("Always", containerSpecMap, null, podSpec);
+        patchPipCacheVolume(ss.getSpec().getTemplate().getSpec().getVolumes());
+        addDeviceInfoLabel(spec.getTemplate(), containerSpecMap);
+
+        return ss;
+    }
+
+    private static void patchPodSpec(
+            String restartPolicy,
+            Map<String, ContainerOverwriteSpec> containerSpecMap,
+            Map<String, String> nodeSelectors,
+            V1PodSpec podSpec
+    ) {
         podSpec.restartPolicy(restartPolicy);
         if (null != nodeSelectors) {
             Map<String, String> templateSelector = podSpec.getNodeSelector();
@@ -125,9 +174,12 @@ public class K8sJobTemplate {
             }
 
         });
+    }
 
-        // patch pip cache volume
-        List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
+    private void patchPipCacheVolume(List<V1Volume> volumes) {
+        if (volumes == null) {
+            return;
+        }
         var volume = volumes.stream().filter(v -> v.getName().equals(PIP_CACHE_VOLUME_NAME))
                 .findFirst().orElse(null);
         if (volume != null) {
@@ -139,27 +191,36 @@ public class K8sJobTemplate {
                 volume.getHostPath().path(pipCacheHostPath);
             }
         }
-
-        if (jobSpec.getTemplate().getMetadata() == null) {
-            jobSpec.getTemplate().metadata(new V1ObjectMeta());
-        }
-        var meta = jobSpec.getTemplate().getMetadata();
-        addDeviceInfoLabel(meta, containerSpecMap);
-
-        return job;
     }
 
-    private String getJobDefaultTemplate() throws IOException {
-        String file = "template/job.yaml";
-        InputStream is = this.getClass().getClassLoader()
-                .getResourceAsStream(file);
+    /**
+     * getJobDefaultTemplate returns the template content, prefer using the sysFsPath than fallbackRc
+     *
+     * @param sysFsPath  system filesystem path, return the filesystem file contents when not empty
+     * @param fallbackRc resource path when system filesystem path not specified
+     * @return template file content
+     * @throws IOException when reading template file
+     */
+    private String getJobDefaultTemplate(String sysFsPath, String fallbackRc) throws IOException {
+        if (StringUtils.hasText(sysFsPath)) {
+            return Files.readString(Paths.get(sysFsPath));
+        }
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream(fallbackRc);
         return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    private void addDeviceInfoLabel(V1ObjectMeta meta, Map<String, ContainerOverwriteSpec> specs) {
-        if (meta == null) {
-            return;
+    /**
+     * add device info to the spec, mainly used for ali ask eci-profile
+     * <a href="https://www.alibabacloud.com/help/en/elastic-container-instance/latest/configure-elastic-container-instance-profile">more</a>
+     *
+     * @param podTemplateSpec which device info labels will be patched to
+     * @param specs           which contains the device info
+     */
+    private void addDeviceInfoLabel(V1PodTemplateSpec podTemplateSpec, Map<String, ContainerOverwriteSpec> specs) {
+        if (podTemplateSpec.getMetadata() == null) {
+            podTemplateSpec.metadata(new V1ObjectMeta());
         }
+        var meta = podTemplateSpec.getMetadata();
         if (meta.getLabels() == null) {
             meta.labels(new HashMap<>());
         }
@@ -173,5 +234,12 @@ public class K8sJobTemplate {
             }
             request.keySet().forEach(rc -> meta.getLabels().put(DEVICE_LABEL_NAME_PREFIX + rc, "true"));
         });
+    }
+
+    public static V1EnvVar toEnvVar(Map.Entry<String, String> item) {
+        var env = new V1EnvVar();
+        env.setName(item.getKey());
+        env.setValue(item.getValue());
+        return env;
     }
 }
