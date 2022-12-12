@@ -638,6 +638,78 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         assert _manifest["environment"]["python"] == m_py_ver.return_value
 
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.core.runtime.model.check_valid_conda_prefix")
+    @patch("tempfile.mkstemp")
+    def test_lock_ret_val(self, m_mkstemp: MagicMock, m_check: MagicMock, *args: t.Any):
+        target_dir = "/home/starwhale/workdir"
+        ensure_dir(target_dir)
+        ensure_file(
+            f"{target_dir}/{DefaultYAMLName.RUNTIME}",
+            yaml.safe_dump(
+                {
+                    "name": "test",
+                    "mode": "conda",
+                }
+            ),
+        )
+        m_check.return_value = True
+        lock_file = "/sw-dep-lock"
+        m_mkstemp.return_value = (None, lock_file)
+        ensure_file(lock_file, "foo")
+        content = StandaloneRuntime.lock(target_dir)
+        assert content == "foo"
+
+    @patch("starwhale.base.bundle.LocalStorageBundleMixin._gen_version")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._prepare_snapshot")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_context")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_dependencies")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_base_image")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._copy_src")
+    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tar")
+    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_auto_tags")
+    @patch("starwhale.core.runtime.model.get_user_python_version")
+    @patch("starwhale.core.runtime.model.guess_current_py_env")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._load_runtime_config")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime.lock")
+    def test_sw_ver_detection_when_build(
+        self,
+        m_lock: MagicMock,
+        m_rt_conf: MagicMock,
+        m_py_env: MagicMock,
+        m_py_ver: MagicMock,
+        *args: t.Any,
+    ):
+        name = "foo"
+        m_rt_conf.return_value = RuntimeConfig(name)
+        m_py_env.return_value = "venv"
+        m_py_ver.return_value = "0.0.1"
+        sw = SWCliConfigMixed()
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+        )
+
+        m_lock.return_value = "#foo\nbar==1.1\nstarwhale==a.b.c\nbaz"
+        ensure_dir(runtime_workdir)
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        sr.build(workdir=Path("."), enable_lock=True, env_prefix_path="/bar")
+        assert sr._detected_sw_version == "a.b.c"
+        runtime_workdir = os.path.join(
+            runtime_workdir,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        assert _manifest["environment"]["lock"]["starwhale_version"] == "a.b.c"
+
     @patch("os.environ", {})
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.core.runtime.model.is_venv")
