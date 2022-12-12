@@ -6,7 +6,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.utils import console, now_str, is_darwin, gen_uniq_version, docker
+from starwhale.utils import docker, console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -97,7 +97,9 @@ class EvalExecutor:
     def _do_validate(self) -> None:
         if self.use_docker:
             if not self.runtime_uri and not self.image:
-                raise FieldTypeOrValueError("runtime_uri and image both are none when use_docker")
+                raise FieldTypeOrValueError(
+                    "runtime_uri and image both are none when use_docker"
+                )
             if is_darwin(arm=True):
                 raise NoSupportError(
                     "use docker as the evaluation job environment in macOS system (Apple Silicon processor)"
@@ -175,10 +177,16 @@ class EvalExecutor:
     def _do_run_cmd_in_container(self) -> None:
         _img = self.image or self.baseimage
         if not _img:
-            raise ValueError("either image or runtime should be specified if docker is used")
+            raise ValueError(
+                "either image or runtime should be specified if docker is used"
+            )
         env_vars = {SWEnv.runtime_version: self.runtime_uri} if self.runtime_uri else {}
-        cmd = docker.gen_docker_cmd(self.baseimage, self.image, env_vars=env_vars,
-                                    name=f"{self._version}-{self.step}-{self.task_index}")
+        cmd = docker.gen_docker_cmd(
+            self.baseimage,
+            self.image,
+            env_vars=env_vars,
+            name=f"{self._version}-{self.step}-{self.task_index}",
+        )
         # cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
         console.rule(f":elephant: {self.type} docker cmd", align="left")
         console.print(f"{cmd}\n")

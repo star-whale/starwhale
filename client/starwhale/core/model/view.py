@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, load_yaml, pretty_bytes, in_production, docker
+from starwhale.utils import docker, console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -11,9 +11,9 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Model, StandaloneModel
-from ..runtime.model import StandaloneRuntime
 from ...consts.env import SWEnv
 from ...utils.error import FieldTypeOrValueError
+from ..runtime.model import StandaloneRuntime
 from ...utils.process import check_call
 
 
@@ -64,18 +64,28 @@ class ModelTermView(BaseTermView):
     ) -> None:
         if use_docker:
             if not runtime_uri and not image:
-                raise FieldTypeOrValueError("runtime_uri and image both are none when use_docker")
-            sw_img=""
+                raise FieldTypeOrValueError(
+                    "runtime_uri and image both are none when use_docker"
+                )
+            sw_img = ""
             if runtime_uri:
                 runtime: t.Optional[StandaloneRuntime] = StandaloneRuntime(
                     URI(runtime_uri, expected_type=URIType.RUNTIME)
                 )
-                sw_img=runtime.store.get_docker_base_image()
-            mnt_paths = [os.path.abspath(target)] if in_production() or (os.path.exists(target) and os.path.isdir(target)) else []
+                sw_img = runtime.store.get_docker_base_image()
+            mnt_paths = (
+                [os.path.abspath(target)]
+                if in_production() or (os.path.exists(target) and os.path.isdir(target))
+                else []
+            )
             env_vars = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
-            cmd = docker.gen_docker_cmd( sw_img, image, env_vars=env_vars,
-                                        mnt_paths=mnt_paths,
-                                        name=f"sw-{version}-{step}-{task_index}")
+            cmd = docker.gen_docker_cmd(
+                sw_img,
+                image,
+                env_vars=env_vars,
+                mnt_paths=mnt_paths,
+                name=f"sw-{version}-{step}-{task_index}",
+            )
             console.rule(f":elephant: docker cmd", align="left")
             console.print(f"{cmd}\n")
             if gencmd:

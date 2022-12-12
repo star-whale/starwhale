@@ -95,7 +95,11 @@ def _list(
     help="[ONLY Standalone]use docker to run evaluation job",
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option("--image", default="", help="[ONLY Standalone]the image used when in docker if empty runtime image is used")
+@click.option(
+    "--image",
+    default="",
+    help="[ONLY Standalone]the image used when use docker",
+)
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=-1, help="Index of tasks in the current step")
 @click.option(

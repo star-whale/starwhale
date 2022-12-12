@@ -1,12 +1,12 @@
 import os
 import sys
 import typing as t
-import subprocess
-from pathlib import Path
 import getpass as gt
+import subprocess
 from pwd import getpwnam
+from pathlib import Path
 
-from starwhale.utils import console, config
+from starwhale.utils import config, console
 from starwhale.consts import SupportArch, CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.utils.error import NoSupportError, MissingFieldError
 from starwhale.utils.process import check_call
@@ -154,11 +154,17 @@ def buildx(
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
 
 
-def gen_docker_cmd(image_sw: str, image_user: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List[str] = [], name: str = "", ) -> str:
+def gen_docker_cmd(
+    image_sw: str,
+    image_user: str,
+    env_vars: t.Dict[str, str] = {},
+    mnt_paths: t.List[str] = [],
+    name: str = "",
+) -> str:
 
     if not image_user and not image_sw:
         raise ValueError("image_user or image_sw should have value")
-    pwd = os.getcwd();
+    pwd = os.getcwd()
 
     rootdir = config.load_swcli_config()["storage"]["root"]
     config_path = config.get_swcli_config_path()
@@ -186,13 +192,13 @@ def gen_docker_cmd(image_sw: str, image_user: str, env_vars: t.Dict[str, str] ={
         "-v",
         f"{pwd}:{pwd}",
         "-w",
-        f"{pwd}"
+        f"{pwd}",
     ]
 
     if name:
         cmd += [
             "--name",
-            f"\"{name}\"",
+            f'"{name}"',
         ]
 
     if mnt_paths:
@@ -205,7 +211,6 @@ def gen_docker_cmd(image_sw: str, image_user: str, env_vars: t.Dict[str, str] ={
     if env_vars:
         for _k, _v in env_vars.items():
             cmd.extend(["-e", f"{_k}={_v}"])
-
 
     cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
     host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
@@ -221,14 +226,13 @@ def gen_docker_cmd(image_sw: str, image_user: str, env_vars: t.Dict[str, str] ={
             continue
         cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
-    sw_cmd = ' '.join([item for item in sys.argv[1:] if 'use-docker' not in item])
+    sw_cmd = " ".join([item for item in sys.argv[1:] if "use-docker" not in item])
 
     if image_sw:
-        cmd.extend(["-e", f"SW_CMD=\"{sw_cmd}\""])
+        cmd.extend(["-e", f'SW_CMD="{sw_cmd}"'])
         cmd.extend([image_sw, "run"])
         return " ".join(cmd)
 
     cmd.extend(["--entrypoint", f"swcli"])
     cmd.extend([image_user, sw_cmd])
     return " ".join(cmd)
-

@@ -197,7 +197,11 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY Standalone]use docker to run evaluation job",
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option("--image", default="", help="[ONLY Standalone]the image used when in docker if empty runtime image is used")
+@click.option(
+    "--image",
+    default="",
+    help="[ONLY Standalone]the image used when use docker",
+)
 def _eval(
     project: str,
     target: str,
