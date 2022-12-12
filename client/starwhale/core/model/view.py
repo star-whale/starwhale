@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, load_yaml, pretty_bytes, in_production, docker
+from starwhale.utils import docker, console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -11,9 +11,9 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Model, StandaloneModel
-from ..runtime.model import StandaloneRuntime
 from ...consts.env import SWEnv
 from ...utils.error import FieldTypeOrValueError
+from ..runtime.model import StandaloneRuntime
 from ...utils.process import check_call
 
 
@@ -116,7 +116,7 @@ class ModelTermView(BaseTermView):
         else:
             _uri = URI(target, URIType.MODEL)
             _store = ModelStorage(_uri)
-            workdir = _store.loc
+            workdir = _store.src_dir
         return workdir
 
     @classmethod

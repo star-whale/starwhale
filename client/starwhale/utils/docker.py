@@ -6,7 +6,7 @@ import subprocess
 from pwd import getpwnam
 from pathlib import Path
 
-from starwhale.utils import console, config
+from starwhale.utils import config, console
 from starwhale.consts import SupportArch, CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.utils.error import NoSupportError, MissingFieldError
 from starwhale.utils.process import check_call
@@ -152,6 +152,7 @@ def buildx(
     else:
         console.print(":panda_face: start to build image with buildx...")
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
+
 
 def gen_swcli_docker_cmd(
     image: str,
