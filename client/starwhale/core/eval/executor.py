@@ -176,8 +176,9 @@ class EvalExecutor:
         _img = self.image or self.baseimage
         if not _img:
             raise ValueError("either image or runtime should be specified if docker is used")
-        cmd = docker.gen_docker_cmd(_img, env_vars={SWEnv.runtime_version: self.runtime_uri},
-                                    name=f"{self._version} - {self.step} - {self.task_index}")
+        env_vars = {SWEnv.runtime_version: self.runtime_uri} if self.runtime_uri else {}
+        cmd = docker.gen_docker_cmd(self.baseimage, self.image, env_vars=env_vars,
+                                    name=f"{self._version}-{self.step}-{self.task_index}")
         # cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
         console.rule(f":elephant: {self.type} docker cmd", align="left")
         console.print(f"{cmd}\n")
@@ -185,7 +186,6 @@ class EvalExecutor:
             f":fish: eval run:{self.type} dir @ [green blink]{self._workdir}/{self.type}[/]"
         )
         if not self.gencmd:
-            check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
     def _gen_run_container_cmd(self, typ: str, step: str, task_index: int) -> str:

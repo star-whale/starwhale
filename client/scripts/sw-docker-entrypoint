@@ -76,9 +76,6 @@ pull_model_and_runtime() {
 }
 
 run() {
-
-#    swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
-
     swcli ${VERBOSE} ${SW_CMD} || exit 1
 }
 

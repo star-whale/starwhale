@@ -65,20 +65,21 @@ class ModelTermView(BaseTermView):
         if use_docker:
             if not runtime_uri and not image:
                 raise FieldTypeOrValueError("runtime_uri and image both are none when use_docker")
+            sw_img=""
             if runtime_uri:
                 runtime: t.Optional[StandaloneRuntime] = StandaloneRuntime(
                     URI(runtime_uri, expected_type=URIType.RUNTIME)
                 )
-                image = runtime.store.get_docker_base_image()
+                sw_img=runtime.store.get_docker_base_image()
             mnt_paths = [os.path.abspath(target)] if in_production() or (os.path.exists(target) and os.path.isdir(target)) else []
-            cmd = docker.gen_docker_cmd(image, env_vars={SWEnv.runtime_version: runtime_uri},
+            env_vars = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
+            cmd = docker.gen_docker_cmd( sw_img, image, env_vars=env_vars,
                                         mnt_paths=mnt_paths,
                                         name=f"sw-{version}-{step}-{task_index}")
             console.rule(f":elephant: docker cmd", align="left")
             console.print(f"{cmd}\n")
             if gencmd:
                 return
-            check_call(f"docker pull {image}", shell=True)
             check_call(cmd, shell=True)
             return
 

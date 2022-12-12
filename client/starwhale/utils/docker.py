@@ -154,8 +154,10 @@ def buildx(
         check_call(cmd, log=console.print, env=_BUILDX_CMD_ENV)
 
 
-def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List[str] = [], name: str = "", ) -> str:
+def gen_docker_cmd(image_sw: str, image_user: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List[str] = [], name: str = "", ) -> str:
 
+    if not image_user and not image_sw:
+        raise ValueError("image_user or image_sw should have value")
     pwd = os.getcwd();
 
     rootdir = config.load_swcli_config()["storage"]["root"]
@@ -220,6 +222,13 @@ def gen_docker_cmd(image: str, env_vars: t.Dict[str, str] ={}, mnt_paths: t.List
         cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
     sw_cmd = ' '.join([item for item in sys.argv[1:] if 'use-docker' not in item])
-    cmd.extend(["-e", f"SW_CMD=\"{sw_cmd}\""])
-    cmd.extend([image,"run"])
+
+    if image_sw:
+        cmd.extend(["-e", f"SW_CMD=\"{sw_cmd}\""])
+        cmd.extend([image_sw, "run"])
+        return " ".join(cmd)
+
+    cmd.extend(["--entrypoint", f"swcli"])
+    cmd.extend([image_user, sw_cmd])
     return " ".join(cmd)
+
