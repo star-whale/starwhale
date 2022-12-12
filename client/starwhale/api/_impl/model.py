@@ -21,12 +21,11 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.api.service import Service
+from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.api._impl.service import Request, Response
 from starwhale.core.dataset.tabular import get_dataset_consumption
 from starwhale.api._impl.dataset.loader import get_data_loader
 
@@ -288,9 +287,9 @@ class PipelineHandler(metaclass=ABCMeta):
         ensure_file(fpath, status)
 
     def add_api(
-        self, req: Request, resp: Response, func: t.Callable, name: str
+        self, input: Input, output: Output, func: t.Callable, name: str
     ) -> None:
-        self.svc.add_api(req, resp, func, name)
+        self.svc.add_api(input, output, func, name)
 
     def serve(self, addr: str, port: int) -> None:
         self.svc.serve(addr, port)

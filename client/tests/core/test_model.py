@@ -19,6 +19,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
+from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
@@ -26,6 +27,7 @@ from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel
 from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.spec.openapi.components import OpenApi
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -65,6 +67,13 @@ class StandaloneModelTestCase(TestCase):
     ) -> None:
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
+
+        open_api = MagicMock(spec=OpenApi)
+        open_api.to_dict.return_value = {}
+        svc = MagicMock(spec=Service)
+        svc.get_spec.return_value = open_api
+        m_get_service.return_value = svc
+
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
         sm.build(workdir=Path(self.workdir))

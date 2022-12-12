@@ -4,9 +4,11 @@ import uuid
 from pathlib import Path
 from unittest import TestCase
 
+from openapi_spec_validator import validate_spec, openapi_v30_spec_validator
+
 from tests import ROOT_DIR
 from starwhale import Image
-from starwhale.api.service import Response
+from starwhale.api.service import Output
 from starwhale.core.model.model import StandaloneModel
 
 
@@ -19,18 +21,21 @@ class ServiceTestCase(TestCase):
         assert list(svc.apis.keys()) == ["handler_foo", "bar", "baz"]
 
         api_foo = svc.apis["handler_foo"]
-        assert isinstance(api_foo.request, Image)
-        assert isinstance(api_foo.response, Response)
+        assert isinstance(api_foo.input, Image)
+        assert isinstance(api_foo.output, Output)
 
         api_bar = svc.apis["bar"]
-        assert api_bar.request.load("foo") == "foo"
-        assert api_bar.request.load("bar") == "bar"
-        assert api_bar.response.dump("foo") == "hello foo".encode("utf-8")
+        assert api_bar.input.load("foo") == "foo"
+        assert api_bar.input.load("bar") == "bar"
+        assert api_bar.output.dump("foo") == "hello foo".encode("utf-8")
 
         api_baz = svc.apis["baz"]
-        print(api_baz.request)
-        assert api_baz.request.__class__.__name__ == "CustomInput"
-        assert api_baz.response.__class__.__name__ == "CustomOutput"
+        assert api_baz.input.__class__.__name__ == "CustomInput"
+        assert api_baz.output.__class__.__name__ == "CustomOutput"
+
+        spec = svc.get_spec()
+        assert list(spec.paths.keys()) == ["/handler_foo", "/bar", "/baz"]
+        validate_spec(spec.to_dict(), validator=openapi_v30_spec_validator)
 
     def test_default_class(self):
         svc = StandaloneModel._get_service("default_class:MyDefaultClass", self.root)

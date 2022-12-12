@@ -1,19 +1,21 @@
 from ._impl.service import (
     Api,
     api,
+    Input,
+    Output,
     Request,
     Service,
     Response,
-    RawResponse,
-    JsonResponse,
+    JsonOutput,
 )
 
 __all__ = [
     "Service",
     "Request",
-    "RawResponse",
-    "JsonResponse",
+    "JsonOutput",
     "Api",
     "api",
+    "Input",
+    "Output",
     "Response",
 ]
