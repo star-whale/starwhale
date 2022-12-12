@@ -1,5 +1,4 @@
-import { FilterTypeOperators, KIND, OPERATOR } from './constants'
-import { ColumnSchemaDesc } from '@starwhale/core/datastore'
+import { KIND, OPERATOR } from './constants'
 
 export type KindT = keyof typeof KIND
 
@@ -32,6 +31,12 @@ export type OperatorT = {
     buildFilter?: (args: FilterValueT) => (data: any) => any
 }
 
+export interface FilterRenderPropsT extends FilterSharedPropsT {
+    value?: ValueT
+    onChange?: (newValue?: string) => void
+    options?: any[]
+}
+
 export type FilterT = {
     key?: string
     label?: string
@@ -39,7 +44,7 @@ export type FilterT = {
     operators: OPERATOR[]
 
     // buildFilter?: (args: FilterValueT<ValueT>) => (data: any) => any
-    renderField?: (args: FilterPropsT) => React.ReactElement
-    renderFieldValue?: (args: FilterPropsT) => React.ReactElement
-    renderOperator?: (args: FilterPropsT) => React.ReactElement
+    renderField?: (args: FilterRenderPropsT) => React.ReactElement
+    renderFieldValue?: (args: FilterRenderPropsT) => React.ReactElement
+    renderOperator?: (args: FilterRenderPropsT) => React.ReactElement
 }

@@ -3,6 +3,7 @@ import base64 from 'base64-js'
 import struct from '@aksel/structjs'
 import { ColumnSchemaDesc } from './schemas/datastore'
 import { flattenObject } from '../../../starwhale-ui/src/utils/index'
+import { ColumnDesc } from '../../../../src/__generated__/MySuperbApi'
 
 export function unhexlify(str: string) {
     const f = new Uint8Array(8)
@@ -144,7 +145,7 @@ export type ColumnSchemaFlatternT = {
     type: string
     path: string
     label: string
-}
+} & ColumnDesc
 
 const SEARCH_COLUMNS = ['data_size', 'annotations']
 export class ColumnModel {
@@ -164,17 +165,18 @@ export class ColumnModel {
         const columns = this.columnTypes.filter((column) => isSearchColumns(column.name))
         const arr: ColumnSchemaFlatternT[] = []
         columns.forEach((column) => {
-            if (column.type === 'OBJECT') {
-                const { attributes = [] } = column
-                attributes.forEach((value) => {
-                    arr.push({
-                        name: value.name,
-                        type: value.type,
-                        path: `${column.name}.${value.name}`,
-                        label: `${column.name}/${value.name}`,
-                    })
-                })
-            } else if (isBasicType(column.type)) {
+            // if (column.type === 'OBJECT') {
+            //     const { attributes = [] } = column
+            //     attributes.forEach((value) => {
+            //         arr.push({
+            //             name: value.name,
+            //             type: value.type,
+            //             path: `${column.name}.${value.name}`,
+            //             label: `${column.name}/${value.name}`,
+            //         })
+            //     })
+            // } else
+            if (isBasicType(column.type)) {
                 arr.push({
                     ...column,
                     path: column.name,

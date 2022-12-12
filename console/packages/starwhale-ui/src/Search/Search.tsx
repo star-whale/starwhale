@@ -1,6 +1,6 @@
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import { useClickAway } from 'react-use'
@@ -41,6 +41,8 @@ export const useStyles = createUseStyles({
         textOverflow: 'ellipsis',
         maxWidth: '100px',
         overflow: ' hidden',
+        display: 'flex',
+        alignItems: 'center',
     },
 })
 
@@ -59,7 +61,9 @@ export default function Search({ ...props }: ISearchProps) {
 
     useClickAway(ref, () => setIsEditing(false))
 
-    console.log('--', items)
+    useEffect(() => {
+        console.log('--', items)
+    }, [items])
 
     return (
         <div
@@ -94,7 +98,7 @@ export default function Search({ ...props }: ISearchProps) {
                             setItems(newItems)
 
                             if (value && value.property && value.op && value.value) {
-                                setItems([...items, {}])
+                                setItems([...newItems, {}])
                                 setIsEditing(true)
                             }
                         }}

@@ -1,4 +1,8 @@
-import { OperatorT } from './types'
+import { IDataType } from '@starwhale/core/datastore'
+import { FilterT, OperatorT } from './types'
+import FilterString from './filterString'
+import FilterBoolean from './filterBoolean'
+import FilterNumberical from './filterNumberical'
 
 export enum KIND {
     BOOLEAN = 'BOOLEAN',
@@ -11,11 +15,11 @@ export enum KIND {
 
 export enum OPERATOR {
     EQUAL = 'EQUAL',
-    GREATER_THAN = 'GREATER_THAN',
-    GREATER_THAN_OR_EQUAL = 'GREATER_THAN_OR_EQUAL',
-    LESS_THAN = 'LESS_THAN',
-    LESS_THAN_OR_EQUAL = 'LESS_THAN_OR_EQUAL',
-    NOT_EQUAL = 'NOT_EQUAL',
+    GREATER = 'GREATER',
+    GREATER_EQUAL = 'GREATER_EQUAL',
+    LESS = 'LESS',
+    LESS_EQUAL = 'LESS_EQUAL',
+    NOT = 'NOT',
     IN = 'IN',
     NOT_IN = 'NOT_IN',
     CONTAINS = 'CONTAINS',
@@ -27,19 +31,58 @@ export enum OPERATOR {
 }
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
-    [KIND.CATEGORICAL]: [OPERATOR.EQUAL, OPERATOR.NOT_EQUAL, OPERATOR.IN, OPERATOR.NOT_IN],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT_EQUAL, OPERATOR.CONTAINS, OPERATOR.NOT_CONTAINS],
+    [KIND.CATEGORICAL]: [OPERATOR.EQUAL, OPERATOR.NOT, OPERATOR.IN, OPERATOR.NOT_IN],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT, OPERATOR.EXISTS, OPERATOR.NOT_EXISTS],
     [KIND.NUMERICAL]: [
         OPERATOR.EQUAL,
-        OPERATOR.NOT_EQUAL,
-        OPERATOR.GREATER_THAN,
-        OPERATOR.GREATER_THAN_OR_EQUAL,
-        OPERATOR.LESS_THAN,
-        OPERATOR.LESS_THAN_OR_EQUAL,
+        OPERATOR.NOT,
+        OPERATOR.GREATER,
+        OPERATOR.GREATER_EQUAL,
+        OPERATOR.LESS,
+        OPERATOR.LESS_EQUAL,
+        OPERATOR.EXISTS,
+        OPERATOR.NOT_EXISTS,
     ],
-    BOOLEAN: [OPERATOR.EQUAL, OPERATOR.NOT_EQUAL],
+    BOOLEAN: [OPERATOR.EQUAL, OPERATOR.NOT],
     CUSTOM: [],
     DATETIME: [],
+}
+
+export const dataStoreToFilter = (dataStoreKind?: IDataType): (() => FilterT) => {
+    switch (dataStoreKind) {
+        default:
+        case 'STRING':
+            return FilterString
+        case 'BOOL':
+            return FilterBoolean
+        case 'INT8':
+        case 'INT16':
+        case 'INT32':
+        case 'INT64':
+        case 'FLOAT16':
+        case 'FLOAT32':
+        case 'FLOAT64':
+            return FilterNumberical
+    }
+}
+
+export const dataStoreToFilterKind = (dataStoreKind: IDataType): KIND => {
+    switch (dataStoreKind) {
+        case 'BOOL':
+            return KIND.BOOLEAN
+        case 'INT8':
+        case 'INT16':
+        case 'INT32':
+        case 'INT64':
+        case 'FLOAT16':
+        case 'FLOAT32':
+        case 'FLOAT64':
+            return KIND.NUMERICAL
+        case 'STRING':
+            return KIND.STRING
+        default:
+            return KIND.STRING
+    }
 }
 
 export const Operators: Record<string, OperatorT> = {
@@ -65,8 +108,8 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
-    [OPERATOR.NOT_EQUAL]: {
-        key: OPERATOR.NOT_EQUAL,
+    [OPERATOR.NOT]: {
+        key: OPERATOR.NOT,
         label: '≠',
         value: '≠',
         buildFilter: ({ value = '' }) => {
@@ -75,8 +118,18 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
-    [OPERATOR.GREATER_THAN_OR_EQUAL]: {
-        key: OPERATOR.GREATER_THAN_OR_EQUAL,
+    [OPERATOR.GREATER]: {
+        key: OPERATOR.GREATER,
+        label: '>',
+        value: '>',
+        buildFilter: ({ value = 0 }) => {
+            return (data: number) => {
+                return value < data
+            }
+        },
+    },
+    [OPERATOR.GREATER_EQUAL]: {
+        key: OPERATOR.GREATER_EQUAL,
         label: '>=',
         value: '>=',
         buildFilter: ({ value = 0 }) => {
@@ -85,8 +138,18 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
-    [OPERATOR.LESS_THAN_OR_EQUAL]: {
-        key: OPERATOR.LESS_THAN_OR_EQUAL,
+    [OPERATOR.LESS]: {
+        key: OPERATOR.LESS,
+        label: '<',
+        value: '<',
+        buildFilter: ({ value = 0 }) => {
+            return (data: number) => {
+                return value > data
+            }
+        },
+    },
+    [OPERATOR.LESS_EQUAL]: {
+        key: OPERATOR.LESS_EQUAL,
         label: '<=',
         value: '<=',
         buildFilter: ({ value = 0 }) => {

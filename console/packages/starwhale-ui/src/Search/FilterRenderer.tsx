@@ -1,10 +1,15 @@
 import { ColumnModel } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AutosizeInput from '../base/select/autosize-input'
-import FilterString from './FilterString'
+import FilterString from './filterString'
 import { FilterPropsT, ValueT } from './types'
 import { useClickAway } from 'react-use'
 import { useStyles } from './Search'
+import IconFont from '../IconFont'
+import { Button } from '../Button'
+import { dataStoreToFilter } from './constants'
+import { IDataType } from '../../../starwhale-core/src/datastore/sdk'
+import { ColumnDesc } from '../../../../src/__generated__/MySuperbApi'
 
 export default function FilterRenderer({
     value: rawValues = {},
@@ -43,7 +48,8 @@ export default function FilterRenderer({
     }, [$columns])
 
     const { filter, FilterOperator, FilterField } = useMemo(() => {
-        const filter = FilterString()
+        const field = $columns.find((field) => field.name === property)
+        const filter = dataStoreToFilter(field?.type as IDataType)()
         const FilterValue = filter.renderFieldValue
         const FilterOperator = filter.renderOperator
         const FilterField = filter.renderField
@@ -52,7 +58,7 @@ export default function FilterRenderer({
             FilterOperator,
             FilterField,
         }
-    }, [])
+    }, [property, $columns])
 
     const handleKeyDown = (event: KeyboardEvent) => {
         console.log(event.keyCode, removing && !value, value, op, property)
@@ -116,6 +122,8 @@ export default function FilterRenderer({
         if (containsNode(fieldDropdownRef.current, event.target)) return
         if (containsNode(opDropdownRef.current, event.target)) return
         handleReset()
+        // setRemoving(false)
+        // setEditing(false)
     })
     // keep focus when editing
     useEffect(() => {
@@ -167,6 +175,20 @@ export default function FilterRenderer({
             {!editing && value && (
                 <div className={styles.label} title={value}>
                     {value}
+                    <div role='button' onClick={() => onChange?.(undefined)} tabIndex={0}>
+                        <IconFont
+                            type='close'
+                            style={{
+                                width: '12px',
+                                height: '12px',
+                                borderRadius: '50%',
+                                backgroundColor: ' rgba(2,16,43,0.20)',
+                                color: '#FFF',
+                                marginLeft: '6px',
+                            }}
+                            size={12}
+                        />
+                    </div>
                 </div>
             )}
             <div

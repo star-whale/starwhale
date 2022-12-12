@@ -33,7 +33,7 @@ function Filter(options: FilterT): FilterT {
                 </PopoverContainer>
             )
         },
-        renderOperator: function RenderOperator({ isEditing = false, ...rest }: FilterPropsT) {
+        renderOperator: function RenderOperator({ isEditing = false, ...rest }) {
             return (
                 <PopoverContainer
                     {...rest}

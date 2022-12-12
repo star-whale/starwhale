@@ -1,13 +1,13 @@
 import { Popover } from 'baseui/popover'
 import Input from '../Input'
 import { FilterTypeOperators, KIND } from './constants'
-import Filter from './Filter'
+import Filter from './filter'
 import { FilterT } from './types'
 
-function FilterString(): FilterT {
+function FilterNumberical(): FilterT {
     return Filter({
-        kind: KIND.STRING,
-        operators: FilterTypeOperators[KIND.STRING],
+        kind: KIND.NUMERICAL,
+        operators: FilterTypeOperators[KIND.NUMERICAL],
     })
 }
-export default FilterString
+export default FilterNumberical
