@@ -27,6 +27,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.schedule.CmdGenerator;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
@@ -75,6 +76,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final int backoffLimit;
     final StorageAccessService storageAccessService;
 
+    final List<CmdGenerator> cmdGenerators;
+
     public K8sTaskScheduler(K8sClient k8sClient,
             TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
@@ -85,7 +88,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
-            StorageAccessService storageAccessService) {
+            StorageAccessService storageAccessService, List<CmdGenerator> cmdGenerators) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
@@ -98,6 +101,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
+        this.cmdGenerators = cmdGenerators;
     }
 
     @Override
@@ -188,27 +192,13 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         var model = swJob.getModel();
         var runtime = swJob.getJobRuntime();
         Map<String, String> coreContainerEnvs = new HashMap<>();
-        coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
-        // support multi dataset uris
-        var datasetUri = swJob.getDataSets().stream()
-                    .map(dataSet -> String.format(
-                            FORMATTER_URI_DATASET,
-                            instanceUri,
-                            project.getName(),
-                            dataSet.getName(),
-                            dataSet.getVersion())
-                    ).collect(Collectors.joining(" "));
-        coreContainerEnvs.put("SW_DATASET_URI", datasetUri);
         coreContainerEnvs.put("SW_MODEL_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,
                         model.getName(), model.getVersion()));
         coreContainerEnvs.put("SW_RUNTIME_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,
                         runtime.getName(), runtime.getVersion()));
-        coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
-        coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
@@ -217,6 +207,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
         coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
+        for (var cmdGenerator : cmdGenerators) {
+            if (cmdGenerator.apply(swJob.getType())) {
+                coreContainerEnvs.put("SW_CMD", cmdGenerator.genCmd(task));
+            }
+        }
 
         // GPU resource
         var resources = task.getTaskRequest().getRuntimeResources().stream();

@@ -84,7 +84,7 @@ public class K8sTaskSchedulerTest {
                 null,
                 null, "http://instanceUri", 50,
                 "OnFailure", 10,
-                storageAccessService);
+                storageAccessService, cmdGenerators);
         return scheduler;
     }
 
@@ -115,8 +115,8 @@ public class K8sTaskSchedulerTest {
                 50,
                 "OnFailure",
                 10,
-                mock(StorageAccessService.class)
-        );
+                mock(StorageAccessService.class),
+                cmdGenerators);
         var task = mockTask();
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);

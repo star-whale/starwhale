@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.schedule;
 
-public enum JobType {
-    EVALUATION, EXPERIMENT, SERVING
+import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.task.bo.Task;
+
+public interface CmdGenerator {
+
+    String genCmd(Task task);
+
+    boolean apply(JobType type);
 }
