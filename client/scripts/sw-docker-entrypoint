@@ -76,7 +76,7 @@ pull_model_and_runtime() {
 }
 
 run() {
-    swcli ${VERBOSE} ${SW_CMD} || exit 1
+    ${SW_CMD} || exit 1
 }
 
 welcome() {

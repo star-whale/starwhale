@@ -229,10 +229,10 @@ def gen_docker_cmd(
     sw_cmd = " ".join([item for item in sys.argv[1:] if "use-docker" not in item])
 
     if image_sw:
-        cmd.extend(["-e", f'SW_CMD="{sw_cmd}"'])
+        cmd.extend(["-e", f'SW_CMD="swcli {sw_cmd}"'])
         cmd.extend([image_sw, "run"])
         return " ".join(cmd)
 
-    cmd.extend(["--entrypoint", f"swcli"])
+    cmd.extend(["--entrypoint", "swcli"])
     cmd.extend([image_user, sw_cmd])
     return " ".join(cmd)

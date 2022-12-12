@@ -67,7 +67,6 @@ class EvalExecutor:
                 URI(runtime_uri, expected_type=URIType.RUNTIME)
             )
             self.baseimage = self.runtime.store.get_docker_base_image()
-            self.python_version = self.runtime.store.get_python_version()
         else:
             self.runtime = None
             self.baseimage = ""

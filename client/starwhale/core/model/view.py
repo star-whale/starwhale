@@ -69,7 +69,7 @@ class ModelTermView(BaseTermView):
                 )
             sw_img = ""
             if runtime_uri:
-                runtime: t.Optional[StandaloneRuntime] = StandaloneRuntime(
+                runtime = StandaloneRuntime(
                     URI(runtime_uri, expected_type=URIType.RUNTIME)
                 )
                 sw_img = runtime.store.get_docker_base_image()
@@ -86,7 +86,7 @@ class ModelTermView(BaseTermView):
                 mnt_paths=mnt_paths,
                 name=f"sw-{version}-{step}-{task_index}",
             )
-            console.rule(f":elephant: docker cmd", align="left")
+            console.rule(":elephant: docker cmd", align="left")
             console.print(f"{cmd}\n")
             if gencmd:
                 return
