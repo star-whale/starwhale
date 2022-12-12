@@ -176,7 +176,7 @@ class TabularDataset:
         project: str,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
-        instance_uri: str = "",
+        instance_name: str = "",
         token: str = "",
     ) -> None:
         self.name = name
@@ -184,7 +184,7 @@ class TabularDataset:
         self.project = project
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
         self._ds_wrapper = DatastoreWrapperDataset(
-            self.table_name, project, instance_uri=instance_uri, token=token
+            self.table_name, project, instance_name=instance_name, token=token
         )
 
         self.start = start
@@ -306,7 +306,7 @@ class TabularDataset:
             uri.project,
             start=start,
             end=end,
-            instance_uri=uri.instance,
+            instance_name=uri.instance,
         )
 
 

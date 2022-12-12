@@ -161,7 +161,7 @@ class Evaluation(Logger):
 
 class Dataset(Logger):
     def __init__(
-        self, dataset_id: str, project: str, instance_uri: str = "", token: str = ""
+        self, dataset_id: str, project: str, instance_name: str = "", token: str = ""
     ) -> None:
         if not dataset_id:
             raise RuntimeError("id should not be None")
@@ -172,7 +172,7 @@ class Dataset(Logger):
         self.dataset_id = dataset_id
         self.project = project
         self._meta_table_name = f"project/{self.project}/dataset/{self.dataset_id}/meta"
-        self._data_store = data_store.get_data_store(instance_uri, token)
+        self._data_store = data_store.get_data_store(instance_name, token)
         self._init_writers([self._meta_table_name])
 
     def put(self, data_id: Union[str, int], **kwargs: Any) -> None:

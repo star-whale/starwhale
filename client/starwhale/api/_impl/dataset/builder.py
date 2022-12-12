@@ -16,10 +16,20 @@ from binascii import crc32
 import jsonlines
 from loguru import logger
 
-from starwhale.consts import AUTH_ENV_FNAME, DEFAULT_PROJECT, SWDS_DATA_FNAME_FMT
+from starwhale.consts import (
+    AUTH_ENV_FNAME,
+    DEFAULT_PROJECT,
+    STANDALONE_INSTANCE,
+    SWDS_DATA_FNAME_FMT,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
-from starwhale.base.type import DataFormatType, DataOriginType, ObjectStoreType
+from starwhale.base.type import (
+    InstanceType,
+    DataFormatType,
+    DataOriginType,
+    ObjectStoreType,
+)
 from starwhale.utils.error import FormatError, NoSupportError
 from starwhale.core.dataset import model
 from starwhale.core.dataset.type import (
@@ -61,6 +71,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         append_from_version: str = "",
         append_from_uri: t.Optional[URI] = None,
         data_mime_type: MIMEType = MIMEType.UNDEFINED,
+        instance_name: str = STANDALONE_INSTANCE,
     ) -> None:
         # TODO: add more docstring for args
         # TODO: validate group upper and lower?
@@ -80,11 +91,20 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         self.dataset_name = dataset_name
         self.dataset_version = dataset_version
         self.tabular_dataset = TabularDataset(
-            dataset_name, dataset_version, project_name
+            dataset_name,
+            dataset_version,
+            project_name,
+            instance_name=instance_name,
         )
 
         self._forked_summary: t.Optional[DatasetSummary]
         if append and append_from_uri:
+            # TODO： controller supports cloud dataset fork api
+            if append_from_uri.instance_type == InstanceType.CLOUD:
+                raise NoSupportError(
+                    f"Can't build dataset from existed cloud dataset: {append_from_uri}"
+                )
+
             self._forked_last_seq_id, self._forked_rows = self.tabular_dataset.fork(
                 append_from_version
             )
@@ -546,6 +566,7 @@ class RowWriter(threading.Thread):
         append_from_version: str = "",
         append_from_uri: t.Optional[URI] = None,
         append_with_swds_bin: bool = True,
+        instance_name: str = STANDALONE_INSTANCE,
     ) -> None:
         super().__init__(
             name=f"RowWriter-{dataset_name}-{dataset_version}-{project_name}"
@@ -561,6 +582,7 @@ class RowWriter(threading.Thread):
             "append": append,
             "append_from_version": append_from_version,
             "append_from_uri": append_from_uri,
+            "instance_name": instance_name,
         }
 
         self._queue: queue.Queue[t.Optional[DataRow]] = queue.Queue()
