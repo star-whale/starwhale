@@ -1541,7 +1541,7 @@ class TestRowWriter(BaseTestCase):
         rw._builder = None
         rw.update(DataRow(index=3, data=Binary(b"test"), annotations={"label": 3}))
         assert rw._builder is not None
-        assert rw.isDaemon()
+        assert rw.daemon
         assert isinstance(rw._builder, SWDSBinBuildExecutor)
         assert m_make_swds.call_count == 1
 

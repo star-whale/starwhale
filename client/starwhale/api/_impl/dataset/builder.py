@@ -569,7 +569,7 @@ class RowWriter(threading.Thread):
 
         self._run_exception: t.Optional[Exception] = None
 
-        self.setDaemon(True)
+        self.daemon = True
         self._builder: t.Optional[BaseBuildExecutor] = None
         if append and append_from_version:
             _cls = create_generic_cls_by_mode(append_with_swds_bin, self.__iter__)
