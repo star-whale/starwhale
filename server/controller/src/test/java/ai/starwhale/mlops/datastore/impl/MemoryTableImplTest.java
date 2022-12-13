@@ -2024,6 +2024,41 @@ public class MemoryTableImplTest {
         }
 
         @Test
+        public void testQueryFilterMultiAnd() {
+            var columns = Map.of("a", "a", "b", "b", "d", "d");
+            var results = ImmutableList.copyOf(
+                    this.memoryTable.query(
+                            columns,
+                            List.of(new OrderByDesc("a"), new OrderByDesc("b"), new OrderByDesc("d")),
+                            TableQueryFilter.builder()
+                                    .operator(TableQueryFilter.Operator.AND)
+                                    .operands(List.of(
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.LESS)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("d"),
+                                                            createConstant(5)))
+                                                    .build(),
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.LESS)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("b"),
+                                                            createConstant(8)))
+                                                    .build(),
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.EQUAL)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("a"),
+                                                            createConstant(true)))
+                                                    .build()))
+                                    .build(),
+                            false,
+                            false));
+            assertThat(results,
+                    is(List.of(new MemoryTable.RecordResult(2, Map.of("a", true, "b", Byte.parseByte("2"), "d", 4)))));
+        }
+
+        @Test
         public void testQueryFilterOr() {
             var columns = Map.of("a", "a", "d", "d");
             var results = ImmutableList.copyOf(
@@ -2057,6 +2092,48 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(2, Map.of("a", true, "d", 4)),
                             new MemoryTable.RecordResult(4, Map.of("a", true, "d", 6)),
                             new MemoryTable.RecordResult(6, Map.of("a", true, "d", 8)))));
+        }
+
+        @Test
+        public void testQueryFilterMultiOr() {
+            var columns = Map.of("a", "a", "b", "b", "d", "d");
+            var results = ImmutableList.copyOf(
+                    this.memoryTable.query(
+                            columns,
+                            List.of(new OrderByDesc("a"), new OrderByDesc("d")),
+                            TableQueryFilter.builder()
+                                    .operator(TableQueryFilter.Operator.OR)
+                                    .operands(List.of(
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.LESS)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("d"),
+                                                            createConstant(5)))
+                                                    .build(),
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.LESS)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("b"),
+                                                            createConstant(2)))
+                                                    .build(),
+                                            TableQueryFilter.builder()
+                                                    .operator(TableQueryFilter.Operator.EQUAL)
+                                                    .operands(List.of(
+                                                            new TableQueryFilter.Column("a"),
+                                                            createConstant(true)))
+                                                    .build()))
+                                    .build(),
+                            false,
+                            false));
+            assertThat(results,
+                    is(List.of(new MemoryTable.RecordResult(0, Map.of("b", Byte.parseByte("0"), "d", 2)),
+                            new MemoryTable.RecordResult(7, Map.of("a", false, "b", Byte.parseByte("7"))),
+                            new MemoryTable.RecordResult(9, Map.of("a", false, "d", 1)),
+                            new MemoryTable.RecordResult(1, Map.of("a", false, "b", Byte.parseByte("1"), "d", 3)),
+                            new MemoryTable.RecordResult(8, Map.of("a", true, "b", Byte.parseByte("8"), "d", 0)),
+                            new MemoryTable.RecordResult(2, Map.of("a", true, "b", Byte.parseByte("2"), "d", 4)),
+                            new MemoryTable.RecordResult(4, Map.of("a", true, "b", Byte.parseByte("4"), "d", 6)),
+                            new MemoryTable.RecordResult(6, Map.of("a", true, "b", Byte.parseByte("6"), "d", 8)))));
         }
 
         @Test
