@@ -7,6 +7,7 @@ import { getMetaRow } from '@/domain/dataset/utils'
 import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
+import { useQueryArgs } from '@/hooks/useQueryArgs'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { getReadableStorageQuantityStr } from '@/utils'
@@ -17,7 +18,6 @@ import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
-import { useQueryArgs } from '@/hooks/useQueryArgs'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -173,7 +173,7 @@ export default function DatasetVersionFiles() {
             layout: layoutKey,
             filter: query.filter,
         }
-    }, [page, layoutKey])
+    }, [page, layoutKey, query.filter])
 
     React.useEffect(() => {
         setLayoutKey(layoutParam ?? '0')

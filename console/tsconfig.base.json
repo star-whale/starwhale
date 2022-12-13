@@ -31,7 +31,7 @@
   "include": [
     "src",
     "types",
-    "packages"
+    // "packages"
   ],
   "exclude": [
     "src/stories",
@@ -39,7 +39,7 @@
     "baseui/helpers/overrides",
     "**/node_modules/**",
     "**/__generated__/**",
+    "**/__tests__/**",
     "**/build/**"
-
   ]
 }

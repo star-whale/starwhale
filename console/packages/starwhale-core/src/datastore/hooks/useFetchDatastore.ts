@@ -14,8 +14,8 @@ export function useScanDatastore(query: any, enabled = false) {
     return info
 }
 
-export function useQueryDatastore(query: QueryTableRequest, enabled = false) {
-    const info = useQuery(`queryDatastore:${qs.stringify(query)}`, () => queryTable(query), {
+export function useQueryDatastore(query?: QueryTableRequest) {
+    const info = useQuery(`queryDatastore:${qs.stringify(query)}`, () => queryTable(query as QueryTableRequest), {
         refetchOnWindowFocus: false,
         enabled: !!query?.tableName,
     })
@@ -65,7 +65,7 @@ export function useQueryDatasetList(
             ignoreNonExistingTable: true,
         }
         return filter ? { ...raw, filter } : raw
-    }, [options?.filter, columnInfo.data?.columnTypes])
+    }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName])
 
     const recordInfo = useQueryDatastore(recordQuery)
 

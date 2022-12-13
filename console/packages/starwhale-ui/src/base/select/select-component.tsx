@@ -40,6 +40,7 @@ function Noop() {
 }
 
 const __BROWSER__ = true
+const __DEV__ = true
 
 // @ts-ignore
 const isClick = (event) => event.type === 'click'

@@ -1,7 +1,6 @@
 import base64 from 'base64-js'
 // @ts-ignore
 import struct from '@aksel/structjs'
-import { ColumnDesc, ColumnSchemaDesc } from './schemas/datastore'
 import { DataNameT, DataTypeT } from './types'
 import { hexlify, unhexlify } from './utils'
 

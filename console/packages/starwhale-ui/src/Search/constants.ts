@@ -15,7 +15,7 @@ export enum KIND {
 }
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
-    [KIND.CATEGORICAL]: [OPERATOR.EQUAL, OPERATOR.NOT, OPERATOR.IN, OPERATOR.NOT_IN],
+    [KIND.CATEGORICAL]: [],
     [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT, OPERATOR.EXISTS, OPERATOR.NOT_EXISTS],
     [KIND.NUMERICAL]: [
         OPERATOR.EQUAL,
@@ -86,6 +86,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.EQUAL,
         label: '=',
         value: '=',
+        // @ts-ignore
         buildFilter: ({ value = '' }) => {
             return (data: string) => {
                 return value === String(data).trim()
@@ -96,6 +97,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.NOT,
         label: '≠',
         value: '≠',
+        // @ts-ignore
         buildFilter: ({ value = '' }) => {
             return (data: string) => {
                 return value !== String(data).trim()
@@ -106,6 +108,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.GREATER,
         label: '>',
         value: '>',
+        // @ts-ignore
         buildFilter: ({ value = 0 }) => {
             return (data: number) => {
                 return value < data
@@ -116,6 +119,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.GREATER_EQUAL,
         label: '>=',
         value: '>=',
+        // @ts-ignore
         buildFilter: ({ value = 0 }) => {
             return (data: number) => {
                 return value <= data
@@ -126,6 +130,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.LESS,
         label: '<',
         value: '<',
+        // @ts-ignore
         buildFilter: ({ value = 0 }) => {
             return (data: number) => {
                 return value > data
@@ -136,6 +141,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.LESS_EQUAL,
         label: '<=',
         value: '<=',
+        // @ts-ignore
         buildFilter: ({ value = 0 }) => {
             return (data: number) => {
                 return value >= data
@@ -157,6 +163,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.NOT_EXISTS,
         label: 'not exists',
         value: 'not exists',
+        // @ts-ignore
         buildFilter: () => {
             return (data: string, row: any, column: any) => {
                 return !(column.key in row) && !(column.key in row?.attributes)

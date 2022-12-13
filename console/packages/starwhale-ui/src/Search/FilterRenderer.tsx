@@ -59,7 +59,7 @@ export default function FilterRenderer({
     }, [property, $columns])
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        console.log(event.keyCode, removing && !value, value, op, property)
+        // console.log(event.keyCode, removing && !value, value, op, property)
         switch (event.keyCode) {
             case 13: // enter
                 if (value && op && property) {
@@ -117,11 +117,9 @@ export default function FilterRenderer({
 
     // reset to raw status
     useClickAway(ref, (e) => {
-        if (containsNode(fieldDropdownRef.current, event.target)) return
-        if (containsNode(opDropdownRef.current, event.target)) return
+        if (containsNode(fieldDropdownRef.current, e.target)) return
+        if (containsNode(opDropdownRef.current, e.target)) return
         handleReset()
-        // setRemoving(false)
-        // setEditing(false)
     })
     // keep focus when editing
     useEffect(() => {
@@ -149,25 +147,30 @@ export default function FilterRenderer({
     }, [rawValues])
 
     return (
+        // @ts-ignore
         <div ref={ref} className={styles.filters} onKeyDown={handleKeyDown} onClick={handleFocus} style={style}>
-            <FilterField
-                isEditing={editing && !property}
-                value={property}
-                onChange={(item: any) => setProperty(item)}
-                options={$fieldOptions}
-                mountNode={document.body}
-                innerRef={fieldDropdownRef}
-            />
-            <FilterOperator
-                isEditing={!!(editing && property && !op)}
-                value={op}
-                onChange={(item: any) => {
-                    setOp(item)
-                    inputRef.current?.focus()
-                }}
-                innerRef={opDropdownRef}
-                mountNode={document.body}
-            />
+            {FilterField && (
+                <FilterField
+                    isEditing={editing && !property}
+                    value={property as any}
+                    onChange={(item: any) => setProperty(item)}
+                    options={$fieldOptions}
+                    mountNode={document.body}
+                    innerRef={fieldDropdownRef}
+                />
+            )}
+            {FilterOperator && (
+                <FilterOperator
+                    isEditing={!!(editing && property && !op)}
+                    value={op as any}
+                    onChange={(item: any) => {
+                        setOp(item)
+                        inputRef.current?.focus()
+                    }}
+                    innerRef={opDropdownRef}
+                    mountNode={document.body}
+                />
+            )}
             {/* <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} /> */}
 
             {!editing && value && (

@@ -6,8 +6,6 @@ import { FilterPropsT, FilterT } from './types'
 import { useState, useEffect } from 'react'
 import { useStyles } from './Search'
 
-// a = 1 : label + operator + field
-
 function Filter(options: FilterT): FilterT {
     const operatorOptions = options.operators.map((key: string) => {
         const operator = Operators[key]

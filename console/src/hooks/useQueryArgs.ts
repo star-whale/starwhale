@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import qs from 'qs'
 import { useCallback, useMemo, useRef } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'

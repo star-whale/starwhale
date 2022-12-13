@@ -1,6 +1,5 @@
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import React, { useEffect } from 'react'
-import Button from '@starwhale/ui/Button'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
@@ -101,7 +100,7 @@ export default function WidgetPreviewModal({
                     )}
                 </div>
             </ModalBody>
-            <ModalFooter></ModalFooter>
+            <ModalFooter />
         </Modal>
     )
 }

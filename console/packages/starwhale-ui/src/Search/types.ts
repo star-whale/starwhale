@@ -29,13 +29,16 @@ export type OperatorT = {
     label: string
     value: string
     key?: string
+    // @ts-ignore
     buildFilter?: (args: FilterValueT) => (data: any) => any
 }
 
 export interface FilterRenderPropsT extends FilterSharedPropsT {
-    value?: ValueT
+    value?: string
     onChange?: (newValue?: string) => void
     options?: any[]
+    mountNode?: HTMLElement
+    innerRef?: React.RefObject<any>
 }
 
 export type FilterT = {
@@ -44,8 +47,7 @@ export type FilterT = {
     kind: KindT
     operators: OPERATOR[]
 
-    // buildFilter?: (args: FilterValueT<ValueT>) => (data: any) => any
-    renderField?: (args: FilterRenderPropsT) => React.ReactElement
-    renderFieldValue?: (args: FilterRenderPropsT) => React.ReactElement
-    renderOperator?: (args: FilterRenderPropsT) => React.ReactElement
+    renderField?: React.FC<FilterRenderPropsT>
+    renderFieldValue?: React.FC<FilterRenderPropsT>
+    renderOperator?: React.FC<FilterRenderPropsT>
 }

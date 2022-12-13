@@ -2,17 +2,6 @@ import React, { useEffect, useMemo } from 'react'
 import { useListDatastoreTables } from './useFetchDatastore'
 import { tablesOfEvaluation } from '../utils'
 
-export default function useDatastoreTables(projectName: string, jobUuid: string) {
-    const queryAllTables = useMemo(() => {
-        if (!projectName || !jobUuid) return
-        return {
-            prefix: tablesOfEvaluation(projectName, jobUuid),
-        }
-    }, [projectName, jobUuid])
-
-    return useDatastoreTablesByPrefix(queryAllTables?.prefix as string)
-}
-
 export function useDatastoreTablesByPrefix(prefix: string) {
     const allTables = useListDatastoreTables({ prefix })
 
@@ -36,4 +25,15 @@ export function useDatastoreTablesByPrefix(prefix: string) {
             }
         }),
     }
+}
+
+export default function useDatastoreTables(projectName: string, jobUuid: string) {
+    const queryAllTables = useMemo(() => {
+        if (!projectName || !jobUuid) return undefined
+        return {
+            prefix: tablesOfEvaluation(projectName, jobUuid),
+        }
+    }, [projectName, jobUuid])
+
+    return useDatastoreTablesByPrefix(queryAllTables?.prefix as string)
 }

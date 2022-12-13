@@ -9,6 +9,7 @@ import { useListDatastoreTables, useQueryDatastore } from '@starwhale/core/datas
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useParseConfusionMatrix, useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import Table from '@/components/Table'
+import { QueryTableRequest } from '../../../packages/starwhale-core/src/datastore/schemas/datastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -108,7 +109,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
         [table, filter]
     )
 
-    const info = useQueryDatastore(query, true)
+    const info = useQueryDatastore(query as QueryTableRequest)
 
     const columns = React.useMemo(() => {
         return info.data?.columnTypes?.map((column) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []
