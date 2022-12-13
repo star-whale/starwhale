@@ -1,10 +1,9 @@
 from pyfakefs.fake_filesystem_unittest import TestCase
-
-from tests import get_predefined_config_yaml
-from starwhale.utils import config as sw_config
-from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
+from starwhale.base.uri import URI
+from starwhale.utils import config as sw_config
 from starwhale.utils.config import get_swcli_config_path
+from tests import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
 
@@ -122,6 +121,11 @@ class URITestCase(TestCase):
         assert uri.instance_type == InstanceType.CLOUD
         assert uri.project == "project_for_test1"
 
+        uri = URI("starwhale:project_for_test1", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.instance_type == InstanceType.CLOUD
+        assert uri.project == "starwhale:project_for_test1"
+
         uri = URI("test", expected_type=URIType.MODEL)
         assert uri.instance == "http://1.1.1.1:8182"
         assert uri.instance_type == InstanceType.CLOUD
@@ -148,6 +152,11 @@ class URITestCase(TestCase):
         uri = URI("http://12.2.2.2:8080/project/test2", expected_type=URIType.PROJECT)
         assert uri.instance == "http://12.2.2.2:8080"
         assert uri.project == "test2"
+        assert uri.object.name == ""
+
+        uri = URI("http://12.2.2.2:8080/project/st:pro", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://12.2.2.2:8080"
+        assert uri.project == "st:pro"
         assert uri.object.name == ""
 
         uri = URI("mnist/version/g4zwkyjumm2d", expected_type=URIType.RUNTIME)

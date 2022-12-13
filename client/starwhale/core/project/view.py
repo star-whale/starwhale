@@ -1,15 +1,14 @@
 import sys
 import typing as t
 
-from rich.tree import Tree
 from rich.panel import Panel
 from rich.pretty import Pretty
-
-from starwhale.utils import console, pretty_bytes
-from starwhale.consts import DEFAULT_PROJECT, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.uri import URI
+from rich.tree import Tree
 from starwhale.base.type import URIType
+from starwhale.base.uri import URI
 from starwhale.base.view import BaseTermView
+from starwhale.consts import DEFAULT_PROJECT, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.utils import console, pretty_bytes
 
 from .model import Project, ProjectObjType
 
@@ -41,14 +40,16 @@ class ProjectTermView(BaseTermView):
         result = list()
         for _p in projects:
             _name = _p["name"]
-            _is_current = _name == _current_project
+            _owner = _p.get("owner", "")
+            _c_project, _c_owner = URI.uri_to_project_and_owner(_current_project)
+            _is_current = _name == _c_project and (_c_owner == "" or _owner == _c_owner)
 
             result.append(
                 {
                     "in_use": _is_current,
                     "name": _name,
                     "location": _p.get("location", ""),
-                    "owner": _p.get("owner", ""),
+                    "owner": _owner,
                     "created_at": _p["created_at"],
                 }
             )
