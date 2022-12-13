@@ -43,6 +43,9 @@ DEFAULT_CONSUMPTION_BATCH_SIZE = 50
 
 
 class TabularDatasetRow(ASDictMixin):
+
+    ANNOTATION_PREFIX = "annotation/"
+
     def __init__(
         self,
         id: t.Union[str, int],
@@ -84,9 +87,16 @@ class TabularDatasetRow(ASDictMixin):
         data_origin: str = DataOriginType.NEW.value,
         data_type: str = "",
         auth_name: str = "",
-        annotations: JsonDict = JsonDict(),
         **kw: t.Any,
     ) -> TabularDatasetRow:
+        _annotations = {}
+        _extra_kw = {}
+        for k, v in kw.items():
+            if k.startswith(cls.ANNOTATION_PREFIX):
+                _, name = k.split(cls.ANNOTATION_PREFIX, 1)
+                _annotations[name] = JsonDict.to_data(v)
+            else:
+                _extra_kw[k] = v
 
         return cls(
             id=id,
@@ -98,8 +108,8 @@ class TabularDatasetRow(ASDictMixin):
             data_origin=DataOriginType(data_origin),
             auth_name=auth_name,
             data_type=json.loads(data_type),
-            annotations=annotations.asdict(),
-            **kw,
+            annotations=_annotations,
+            **_extra_kw,
         )
 
     def __eq__(self, o: object) -> bool:
@@ -150,7 +160,8 @@ class TabularDatasetRow(ASDictMixin):
             or ["annotations", "extra_kw", "data_type", "data_link"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
-        d["annotations"] = JsonDict(self.annotations)
+        for k, v in self.annotations.items():
+            d[f"{self.ANNOTATION_PREFIX}{k}"] = JsonDict.from_data(v)
         # TODO: use data_store SwObject to store data_type
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
