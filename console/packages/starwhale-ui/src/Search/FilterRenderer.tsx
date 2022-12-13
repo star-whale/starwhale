@@ -177,6 +177,7 @@ export default function FilterRenderer({
                 <div className={styles.label} title={value}>
                     {value}
                     <div
+                        className='filter-remove'
                         role='button'
                         onClick={(e) => {
                             console.log('button click')

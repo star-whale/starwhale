@@ -387,7 +387,7 @@ export default function DatasetVersionFiles() {
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
                                     ...$page,
-                                    pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
+                                    pageNum: Math.max(Math.floor((page.pageSize * (page.pageNum - 1)) / newSize), 1),
                                     pageSize: newSize,
                                     layout: key,
                                 }

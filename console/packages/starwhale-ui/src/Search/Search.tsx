@@ -80,7 +80,10 @@ export default function Search({ ...props }: ISearchProps) {
             className={styles.searchBar}
             ref={ref}
             style={{ borderColor: isEditing ? '#799EE8' : '#CFD7E6' }}
-            onFocus={() => setIsEditing(true)}
+            onFocus={(e) => {
+                if (e.target.classList.contains('filter-remove')) return
+                setIsEditing(true)
+            }}
         >
             {items.map((item, index) => {
                 return (
