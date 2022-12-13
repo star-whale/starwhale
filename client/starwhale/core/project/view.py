@@ -41,14 +41,18 @@ class ProjectTermView(BaseTermView):
         result = list()
         for _p in projects:
             _name = _p["name"]
-            _is_current = _name == _current_project
+            _owner = _p.get("owner", "")
+            _c_project, _c_owner = URI.uri_to_project_and_owner(
+                _current_project)
+            _is_current = _name == _c_project and (
+                    _c_owner == "" or _owner == _c_owner)
 
             result.append(
                 {
                     "in_use": _is_current,
                     "name": _name,
                     "location": _p.get("location", ""),
-                    "owner": _p.get("owner", ""),
+                    "owner": _owner,
                     "created_at": _p["created_at"],
                 }
             )

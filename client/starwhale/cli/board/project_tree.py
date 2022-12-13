@@ -10,6 +10,7 @@ from textual.widgets import NodeID, TreeNode, TreeClick, TreeControl
 
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import Project
+from starwhale.base.uri import URI
 
 
 @dataclass
@@ -84,7 +85,7 @@ class ProjectTree(TreeControl[ProjectEntry]):
         ins = node.data.path
         ps, _ = Project.list(ins)
         for i in ps:
-            proj = i["name"]
+            proj = URI.project_and_owner_to_uri(i["name"], i.get("owner"))
             path = f"{ins}/{proj}"
             await node.add(proj, ProjectEntry(path, True))
 
