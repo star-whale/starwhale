@@ -2,8 +2,7 @@ import { FilterT, OperatorT } from './types'
 import FilterString from './filterString'
 import FilterBoolean from './filterBoolean'
 import FilterNumberical from './filterNumberical'
-import { DataTypeT } from '../../../starwhale-core/src/datastore/types'
-import { OPERATOR } from '@starwhale/core/datastore'
+import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
 
 export enum KIND {
     BOOLEAN = 'BOOLEAN',
@@ -16,16 +15,9 @@ export enum KIND {
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT],
-    [KIND.NUMERICAL]: [
-        OPERATOR.EQUAL,
-        OPERATOR.NOT,
-        OPERATOR.GREATER,
-        OPERATOR.GREATER_EQUAL,
-        OPERATOR.LESS,
-        OPERATOR.LESS_EQUAL,
-    ],
-    BOOLEAN: [OPERATOR.EQUAL, OPERATOR.NOT],
+    [KIND.STRING]: [OPERATOR.EQUAL],
+    [KIND.NUMERICAL]: [OPERATOR.EQUAL, OPERATOR.GREATER, OPERATOR.GREATER_EQUAL, OPERATOR.LESS, OPERATOR.LESS_EQUAL],
+    BOOLEAN: [OPERATOR.EQUAL],
     CUSTOM: [],
     DATETIME: [],
 }
