@@ -1,5 +1,6 @@
 import os
 import typing as t
+import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -298,3 +299,15 @@ class StandaloneModelTestCase(TestCase):
         )
         context_holder.context = context
         default_handler._invoke(context, "some")
+
+    @patch("starwhale.utils.process.check_call")
+    @patch("starwhale.utils.docker.gen_swcli_docker_cmd")
+    def test_use_docker(self, m_gencmd: MagicMock, m_call: MagicMock):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            m_gencmd.return_value = "hi"
+            m_call.return_value = 0
+            ModelTermView.eval("", tmpdirname, [], use_docker=True, image="img1")
+            m_gencmd.assert_called_once_with(
+                "img1", env_vars={}, mnt_paths=[tmpdirname]
+            )
+            m_call.assert_called_once_with("hi", shell=True)
