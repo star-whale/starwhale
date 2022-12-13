@@ -1,9 +1,10 @@
 from pyfakefs.fake_filesystem_unittest import TestCase
-from starwhale.base.type import URIType, InstanceType
-from starwhale.base.uri import URI
-from starwhale.utils import config as sw_config
-from starwhale.utils.config import get_swcli_config_path
+
 from tests import get_predefined_config_yaml
+from starwhale.utils import config as sw_config
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType, InstanceType
+from starwhale.utils.config import get_swcli_config_path
 
 _existed_config_contents = get_predefined_config_yaml()
 

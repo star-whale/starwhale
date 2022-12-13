@@ -2,14 +2,15 @@ import typing as t
 from dataclasses import dataclass
 
 import rich.repr
-from rich.text import Text
-from starwhale.base.uri import URI
-from starwhale.core.instance.view import InstanceTermView
-from starwhale.core.project.model import Project
 from textual import events
+from rich.text import Text
 from textual._types import MessageTarget
 from textual.widget import Style, Message, RenderableType
 from textual.widgets import NodeID, TreeNode, TreeClick, TreeControl
+
+from starwhale.base.uri import URI
+from starwhale.core.instance.view import InstanceTermView
+from starwhale.core.project.model import Project
 
 
 @dataclass
