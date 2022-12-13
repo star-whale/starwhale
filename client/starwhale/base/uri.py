@@ -257,11 +257,11 @@ class URI:
 
     @staticmethod
     def uri_to_project_and_owner(proj: str) -> t.Tuple[str, str]:
-        _np = proj.split(":", 1)
-        if len(_np) > 1:
-            return _np[1], _np[0]
+        _op = proj.split(":", 1)
+        if len(_op) > 1:
+            return _op[1], _op[0]
         else:
-            return _np[0], ""
+            return _op[0], ""
 
     @classmethod
     def capsulate_uri_str(
