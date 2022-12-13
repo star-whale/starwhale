@@ -155,7 +155,8 @@ class URITestCase(TestCase):
         assert uri.project == "test2"
         assert uri.object.name == ""
 
-        uri = URI("http://12.2.2.2:8080/project/starwhale:test2", expected_type=URIType.PROJECT)
+        uri = URI("http://12.2.2.2:8080/project/starwhale:test2",
+                  expected_type=URIType.PROJECT)
         assert uri.instance == "http://12.2.2.2:8080"
         assert uri.project == "starwhale:test2"
         assert uri.object.name == ""

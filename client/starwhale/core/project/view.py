@@ -45,7 +45,7 @@ class ProjectTermView(BaseTermView):
             _c_project, _c_owner = URI.uri_to_project_and_owner(
                 _current_project)
             _is_current = _name == _c_project and (
-                    _c_owner == "" or _owner == _c_owner)
+                _c_owner == "" or _owner == _c_owner)
 
             result.append(
                 {
