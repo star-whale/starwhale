@@ -244,9 +244,7 @@ class URI:
 
     @project.setter
     def project(self, proj: str) -> None:
-        project, owner = self.uri_to_project_and_owner(proj)
-        self._owner = owner
-        self._project = project
+        self._project, self._owner = URI.uri_to_project_and_owner(proj)
 
     @staticmethod
     def project_and_owner_to_uri(proj: str, owner: str) -> str:
