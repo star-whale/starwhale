@@ -412,11 +412,19 @@ public class MemoryTableImpl implements MemoryTable {
             case NOT:
                 return !this.match((TableQueryFilter) filter.getOperands().get(0), record);
             case AND:
-                return this.match((TableQueryFilter) filter.getOperands().get(0), record)
-                        && this.match((TableQueryFilter) filter.getOperands().get(1), record);
+                for (Object operand : filter.getOperands()) {
+                    if (!this.match((TableQueryFilter) operand, record)) {
+                        return false;
+                    }
+                }
+                return true;
             case OR:
-                return this.match((TableQueryFilter) filter.getOperands().get(0), record)
-                        || this.match((TableQueryFilter) filter.getOperands().get(1), record);
+                for (Object operand : filter.getOperands()) {
+                    if (this.match((TableQueryFilter) operand, record)) {
+                        return true;
+                    }
+                }
+                return false;
             default:
                 var result = ColumnType.compare(
                         this.getType(filter.getOperands().get(0)),

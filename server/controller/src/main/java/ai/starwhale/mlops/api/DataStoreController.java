@@ -240,6 +240,11 @@ public class DataStoreController implements DataStoreApi {
                 break;
             case AND:
             case OR:
+                if (input.getOperands().size() < 2) {
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "'AND'/'OR' should have 2 operands at least. " + input);
+                }
+                break;
             case EQUAL:
             case LESS:
             case LESS_EQUAL:
