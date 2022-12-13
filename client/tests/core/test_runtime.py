@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import call, patch, MagicMock
 
 import yaml
+from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
@@ -33,6 +34,7 @@ from starwhale.utils.error import (
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.runtime.cli import _build as runtime_build_cli
 from starwhale.core.runtime.view import (
     get_term_view,
     RuntimeTermView,
@@ -226,6 +228,80 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_bundle_copy.call_count == 1
         assert m_extract.call_count == 1
         assert m_restore.call_args[0] == (extract_dir, venv_dir)
+
+    @patch("starwhale.core.runtime.model.StandaloneRuntime.build")
+    def test_build_render_yaml_venv(self, build_mock: MagicMock) -> None:
+        workdir = Path("/home/starwhale/myproject")
+        ensure_dir(workdir)
+        manifest_fpath = workdir / "runtime.yaml"
+        lock_fpath = workdir / "requirements-sw-lock.txt"
+
+        assert not manifest_fpath.exists()
+        assert not lock_fpath.exists()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_build_cli,
+            [str(workdir)],
+            input="\n".join(["y", "venv", "3.8", "Pillow,numpy", "N", "y"]),
+        )
+        assert result.exit_code == 0
+        assert "start to build runtime" in result.output
+
+        assert manifest_fpath.exists()
+        manifest_content = load_yaml(manifest_fpath)
+        assert manifest_content == {
+            "api_version": "1.1",
+            "dependencies": [
+                "requirements-sw-lock.txt",
+                {"pip": ["Pillow", "numpy", "starwhale"]},
+            ],
+            "environment": {"arch": "noarch", "os": "ubuntu:20.04", "python": "3.8"},
+            "mode": "venv",
+            "name": "myproject",
+        }
+
+        assert lock_fpath.exists()
+        assert lock_fpath.read_text() == ""
+        assert build_mock.called
+
+    @patch("starwhale.core.runtime.model.StandaloneRuntime.build")
+    def test_build_render_yaml_conda(self, build_mock: MagicMock) -> None:
+        workdir = Path("/home/starwhale/myproject")
+        ensure_dir(workdir)
+        manifest_fpath = workdir / "runtime.yaml"
+        lock_fpath = workdir / "conda-sw-lock.yaml"
+
+        assert not manifest_fpath.exists()
+        assert not lock_fpath.exists()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_build_cli,
+            [str(workdir), "-ie"],
+            input="\n".join(["y", "conda", "3.9", "", "y", "11.4", "y"]),
+        )
+        assert result.exit_code == 0
+        assert "start to build runtime" in result.output
+
+        assert manifest_fpath.exists()
+        manifest_content = load_yaml(manifest_fpath)
+        assert manifest_content == {
+            "api_version": "1.1",
+            "dependencies": ["conda-sw-lock.yaml", {"pip": ["starwhale"]}],
+            "environment": {
+                "arch": "noarch",
+                "cuda": "11.4",
+                "os": "ubuntu:20.04",
+                "python": "3.9",
+            },
+            "mode": "conda",
+            "name": "myproject",
+        }
+
+        assert lock_fpath.exists()
+        assert lock_fpath.read_text() == "name: myproject"
+        assert build_mock.called
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.check_call")

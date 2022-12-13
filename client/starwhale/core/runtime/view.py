@@ -2,8 +2,11 @@ import os
 import typing as t
 from pathlib import Path
 
+import click
+
 from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import (
+    PythonRunEnv,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -12,10 +15,11 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.utils.venv import get_python_version
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 
-from .model import Runtime, StandaloneRuntime
+from .model import Runtime, _SUPPORT_CUDA, StandaloneRuntime, _SUPPORT_PYTHON_VERSIONS
 
 
 class RuntimeTermView(BaseTermView):
@@ -100,7 +104,7 @@ class RuntimeTermView(BaseTermView):
     @BaseTermView._only_standalone
     def build(
         cls,
-        workdir: str,
+        workdir: t.Union[str, Path],
         project: str = "",
         yaml_name: str = DefaultYAMLName.RUNTIME,
         gen_all_bundles: bool = False,
@@ -110,7 +114,57 @@ class RuntimeTermView(BaseTermView):
         env_name: str = "",
         env_use_shell: bool = False,
     ) -> URI:
-        _config = load_yaml(Path(workdir) / yaml_name)
+        workdir = Path(workdir)
+        yaml_fpath = workdir / yaml_name
+        if not yaml_fpath.exists():
+            click.confirm(
+                f"Do you want to render {yaml_name}@{workdir.absolute()}?",
+                abort=True,
+            )
+            mode = click.prompt(
+                "Choose python env:",
+                type=click.Choice([PythonRunEnv.VENV, PythonRunEnv.CONDA]),
+                default=PythonRunEnv.VENV,
+            )
+            _default_python_version = get_python_version()
+            python_version = click.prompt(
+                "Choose python version:",
+                type=click.Choice(_SUPPORT_PYTHON_VERSIONS),
+                default=_default_python_version,
+            )
+
+            pkgs_input = click.prompt(
+                "Input python dependencies, split by the comma",
+                type=str,
+                default="",
+            )
+
+            if click.confirm("Do you want to enable cuda?"):
+                cuda_version = click.prompt(
+                    "Choose cuda version:",
+                    type=click.Choice(_SUPPORT_CUDA),
+                    default="11.4",
+                )
+            else:
+                cuda_version = None
+
+            StandaloneRuntime.render_runtime_yaml(
+                workdir=workdir,
+                name=workdir.absolute().name,
+                mode=mode,
+                python_version=python_version,
+                pkgs=pkgs_input.split(","),
+                force=True,
+                auto_inject_sw=True,
+                cuda_version=cuda_version,
+            )
+
+            click.confirm(
+                f"{yaml_name} has been generated, do you want to continue build?",
+                abort=True,
+            )
+
+        _config = load_yaml(yaml_fpath)
         _runtime_uri = cls.prepare_build_bundle(
             project=project, bundle_name=_config.get("name"), typ=URIType.RUNTIME
         )
