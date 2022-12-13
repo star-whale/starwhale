@@ -137,21 +137,21 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         const items = [
             {
                 title: t('Overview'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview/?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/overview\\/?',
             },
             {
                 title: t('Metadata'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta/?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/meta\\/?',
             },
             {
                 title: t('Files'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/files\\/?',
