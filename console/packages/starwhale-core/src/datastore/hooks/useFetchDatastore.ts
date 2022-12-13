@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { scanTable, queryTable, listTables } from '../services/datastore'
+import { QueryTableRequest } from '../schemas/datastore'
+import { ColumnFilterModel } from '../filter'
 
 export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
@@ -12,7 +14,7 @@ export function useScanDatastore(query: any, enabled = false) {
     return info
 }
 
-export function useQueryDatastore(query: any, enabled = false) {
+export function useQueryDatastore(query: QueryTableRequest, enabled = false) {
     const info = useQuery(`queryDatastore:${qs.stringify(query)}`, () => queryTable(query), {
         refetchOnWindowFocus: false,
         enabled: !!query?.tableName,
@@ -28,31 +30,58 @@ export function useListDatastoreTables(query: any, enabled = false) {
     return info
 }
 
-export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema, rawResult = false) {
+export function useQueryDatasetList(
+    tableName?: string,
+    options?: IListQuerySchema & {
+        filter?: any
+    },
+    rawResult = false
+) {
     const { start, limit } = React.useMemo(() => {
-        const { pageNum = 1, pageSize = 10 } = page || {}
+        const { pageNum = 1, pageSize = 10 } = options || {}
 
         return {
             start: (pageNum - 1) * pageSize ?? 0,
             limit: pageSize ?? 0,
         }
-    }, [page])
+    }, [options])
 
-    const info = useQueryDatastore({
+    const columnInfo = useQueryDatastore({
         tableName,
-        start,
-        limit,
+        start: 0,
+        limit: 0,
         rawResult,
-        // https://github.com/star-whale/starwhale/pull/1128
         ignoreNonExistingTable: true,
     })
 
+    const recordQuery = useMemo(() => {
+        const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
+        const filter = options?.filter ? column.toQuery(options?.filter) : undefined
+        const raw = {
+            tableName,
+            start,
+            limit,
+            rawResult,
+            ignoreNonExistingTable: true,
+        }
+        return filter ? { ...raw, filter } : raw
+    }, [options?.filter, columnInfo.data?.columnTypes])
+
+    const recordInfo = useQueryDatastore(recordQuery)
+
     React.useEffect(() => {
         if (tableName) {
-            info.refetch()
+            columnInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tableName, start, limit])
 
-    return info
+    React.useEffect(() => {
+        if (recordQuery.tableName) {
+            recordInfo.refetch()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recordQuery])
+
+    return recordInfo
 }

@@ -1,77 +1,20 @@
 import base64 from 'base64-js'
 // @ts-ignore
 import struct from '@aksel/structjs'
-import { ColumnSchemaDesc } from './schemas/datastore'
-import { flattenObject } from '../../../starwhale-ui/src/utils/index'
-import { ColumnDesc } from '../../../../src/__generated__/MySuperbApi'
-
-export function unhexlify(str: string) {
-    const f = new Uint8Array(8)
-    let j = 0
-    for (let i = 0, l = str.length; i < l; i += 2) {
-        f[j] = parseInt(str.substr(i, 2), 16)
-        j++
-    }
-    return f
-}
-
-export function hexlifyString(str: string) {
-    let result = ''
-    const padding = '00'
-    for (let i = 0, l = str.length; i < l; i++) {
-        const digit = str.charCodeAt(i).toString(16)
-        const padded = (padding + digit).slice(-2)
-        result += padded
-    }
-    return result
-}
-
-export function hexlify(str: Uint8Array) {
-    let result = ''
-    const padding = '00'
-    for (let i = 0, l = str.length; i < l; i++) {
-        const digit = str[i].toString(16)
-        const padded = (padding + digit).slice(-2)
-        result += padded
-    }
-    return result
-}
-
-// @TODO
-// * <li>LIST</li>
-// * <li>TUPLE</li>
-// * <li>MAP</li>
-// * <li>OBJECT < /li>
-
-export type IDataType =
-    | 'UNKNOWN'
-    | 'BOOL'
-    | 'INT8'
-    | 'INT16'
-    | 'INT32'
-    | 'INT64'
-    | 'FLOAT16'
-    | 'FLOAT32'
-    | 'FLOAT64'
-    | 'STRING'
-    | 'BYTES'
-export type IDataName = 'unknown' | 'int' | 'float' | 'bool' | 'string' | 'bytes'
-
-export const isBasicType = (v: string) =>
-    ['BOOL', 'INT8', 'INT16', 'INT32', 'INT64', 'FLOAT16', 'FLOAT32', 'FLOAT64', 'STRING'].includes(v)
-
-export const isSearchColumns = (v: string) => !v.startsWith('_')
+import { ColumnDesc, ColumnSchemaDesc } from './schemas/datastore'
+import { DataNameT, DataTypeT } from './types'
+import { hexlify, unhexlify } from './utils'
 
 export class Typer {
-    name: IDataName
+    name: DataNameT
 
-    rawType: IDataType
+    rawType: DataTypeT
 
     nbits: number
 
     defaultValue: any
 
-    constructor(name: IDataName, rawType: IDataType, nbits: number, defaultValue: any) {
+    constructor(name: DataNameT, rawType: DataTypeT, nbits: number, defaultValue: any) {
         this.name = name
         this.rawType = rawType
         this.nbits = nbits
@@ -138,52 +81,4 @@ export default {
     BOOL: new Typer('bool', 'BOOL', 1, 0),
     STRING: new Typer('string', 'STRING', 32, ''),
     BYTES: new Typer('bytes', 'BYTES', 32, new Uint8Array()),
-}
-
-export type ColumnSchemaFlatternT = {
-    name: string
-    type: string
-    path: string
-    label: string
-} & ColumnDesc
-
-const SEARCH_COLUMNS = ['data_size', 'annotations']
-export class ColumnModel {
-    columnTypes: ColumnSchemaDesc[]
-
-    constructor(columnTypes: ColumnSchemaDesc[]) {
-        this.columnTypes = columnTypes
-    }
-
-    /**
-    [(
-        { name: 'data_size', type: 'INT64', path: 'data_size' },
-        { name: 'label', type: 'INT64', path: 'annotations.label' }
-    )]
-     */
-    getSearchColumns(attribues = SEARCH_COLUMNS): ColumnSchemaFlatternT[] {
-        const columns = this.columnTypes.filter((column) => isSearchColumns(column.name))
-        const arr: ColumnSchemaFlatternT[] = []
-        columns.forEach((column) => {
-            // if (column.type === 'OBJECT') {
-            //     const { attributes = [] } = column
-            //     attributes.forEach((value) => {
-            //         arr.push({
-            //             name: value.name,
-            //             type: value.type,
-            //             path: `${column.name}.${value.name}`,
-            //             label: `${column.name}/${value.name}`,
-            //         })
-            //     })
-            // } else
-            if (isBasicType(column.type)) {
-                arr.push({
-                    ...column,
-                    path: column.name,
-                    label: column.name,
-                })
-            }
-        })
-        return arr
-    }
 }

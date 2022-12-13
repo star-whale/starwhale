@@ -1,4 +1,5 @@
-import { KIND, OPERATOR } from './constants'
+import { OPERATOR } from '@starwhale/core/datastore'
+import { KIND } from './constants'
 
 export type KindT = keyof typeof KIND
 

@@ -1,9 +1,10 @@
+import _ from 'lodash'
 import qs from 'qs'
 import { useCallback, useMemo, useRef } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
 
-export type IQueryArgs = Record<string, string>
-export type IUpdateQueryArgs = (query: Record<string, string | number | undefined>) => void
+export type IQueryArgs = Record<string, any>
+export type IUpdateQueryArgs = (query: Record<string, any>) => void
 
 export const useQueryArgs = (): {
     query: IQueryArgs
@@ -22,7 +23,7 @@ export const useQueryArgs = (): {
                     const v = newQuery[c]
                     return {
                         ...p,
-                        [c]: v === undefined ? undefined : String(v),
+                        [c]: v === undefined ? undefined : v,
                     }
                 }, {}),
             }
@@ -44,7 +45,7 @@ export const useQueryArgs = (): {
                     }
                     return {
                         ...p,
-                        [c]: String(v),
+                        [c]: v,
                     }
                 }, {}),
             [query]

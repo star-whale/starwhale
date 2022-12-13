@@ -1,5 +1,5 @@
 import React from 'react'
-import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
+import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
@@ -17,6 +17,7 @@ import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { useQueryArgs } from '@/hooks/useQueryArgs'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -164,11 +165,13 @@ export default function DatasetVersionFiles() {
     const { datasetVersion } = useDatasetVersion()
 
     const [preview, setPreview] = React.useState('')
+    const { query } = useQueryArgs()
 
     const $page = React.useMemo(() => {
         return {
             ...page,
             layout: layoutKey,
+            filter: query.filter,
         }
     }, [page, layoutKey])
 
@@ -270,7 +273,7 @@ export default function DatasetVersionFiles() {
                                     history.push(
                                         `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
                                             {
-                                                ...page,
+                                                ...$page,
                                                 layout: layoutKey,
                                             }
                                         )}`
@@ -370,7 +373,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
+    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page])
 
     return (
         <div className={styles.wrapper}>
@@ -383,6 +386,7 @@ export default function DatasetVersionFiles() {
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
+                                    ...$page,
                                     pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
                                     pageSize: newSize,
                                     layout: key,

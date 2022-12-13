@@ -1,15 +1,11 @@
-import { ColumnModel } from '@starwhale/core/datastore'
+import { ColumnFilterModel, DataTypeT } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AutosizeInput from '../base/select/autosize-input'
-import FilterString from './filterString'
 import { FilterPropsT, ValueT } from './types'
 import { useClickAway } from 'react-use'
 import { useStyles } from './Search'
 import IconFont from '../IconFont'
-import { Button } from '../Button'
 import { dataStoreToFilter } from './constants'
-import { IDataType } from '../../../starwhale-core/src/datastore/sdk'
-import { ColumnDesc } from '../../../../src/__generated__/MySuperbApi'
 
 export default function FilterRenderer({
     value: rawValues = {},
@@ -17,10 +13,14 @@ export default function FilterRenderer({
     isDisabled = false,
     isEditing = false,
     isFocus = false,
-    fields = [],
     style = {},
+    column = new ColumnFilterModel([]),
     containerRef,
-}: FilterPropsT & { fields: any[]; style: React.CSSProperties; containerRef: React.RefObject<HTMLDivElement> }) {
+}: FilterPropsT & {
+    column: ColumnFilterModel
+    style: React.CSSProperties
+    containerRef: React.RefObject<HTMLDivElement>
+}) {
     const [values, setValues] = useState<ValueT>(rawValues)
     const [value, setValue] = useState<any>(rawValues?.value)
     const [property, setProperty] = useState<string | undefined>(rawValues?.property)
@@ -31,11 +31,9 @@ export default function FilterRenderer({
     const ref = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const column = new ColumnModel(fields)
-
     const $columns = React.useMemo(() => {
         return column.getSearchColumns()
-    }, [fields])
+    }, [column])
 
     const $fieldOptions = React.useMemo(() => {
         return $columns.map((column) => {
@@ -49,7 +47,7 @@ export default function FilterRenderer({
 
     const { filter, FilterOperator, FilterField } = useMemo(() => {
         const field = $columns.find((field) => field.name === property)
-        const filter = dataStoreToFilter(field?.type as IDataType)()
+        const filter = dataStoreToFilter(field?.type as DataTypeT)()
         const FilterValue = filter.renderFieldValue
         const FilterOperator = filter.renderOperator
         const FilterField = filter.renderField
@@ -175,7 +173,16 @@ export default function FilterRenderer({
             {!editing && value && (
                 <div className={styles.label} title={value}>
                     {value}
-                    <div role='button' onClick={() => onChange?.(undefined)} tabIndex={0}>
+                    <div
+                        role='button'
+                        onClick={(e) => {
+                            console.log('button click')
+                            e.preventDefault()
+                            e.stopPropagation()
+                            onChange?.(undefined)
+                        }}
+                        tabIndex={0}
+                    >
                         <IconFont
                             type='close'
                             style={{

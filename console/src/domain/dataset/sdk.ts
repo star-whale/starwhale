@@ -1,4 +1,4 @@
-import { tableDataLink } from '../datastore/utils'
+import { tableDataLink } from '@starwhale/core/datastore'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
 export type IShape = [height: number, width: number, channels: number]

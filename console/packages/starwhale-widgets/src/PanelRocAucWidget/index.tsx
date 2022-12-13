@@ -1,6 +1,6 @@
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { getRocAucConfig } from '@/components/Indicator/utils'
-import { useParseRocAuc } from '@/domain/datastore/hooks/useParseDatastore'
+import { useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import React from 'react'
 import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'

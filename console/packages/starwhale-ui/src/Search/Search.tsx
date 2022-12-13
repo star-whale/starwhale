@@ -1,9 +1,12 @@
-import { ColumnSchemaDesc } from '@starwhale/core/datastore'
+import { ColumnFilterModel, ColumnSchemaDesc, TableQueryFilterDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import { useClickAway } from 'react-use'
+import qs from 'qs'
+import { useQueryArgs } from '../../../../src/hooks/useQueryArgs'
+import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -54,16 +57,23 @@ export default function Search({ ...props }: ISearchProps) {
     const styles = useStyles()
     const raw = [{}]
     const ref = useRef<HTMLDivElement>(null)
+    const { query, updateQuery } = useQueryArgs()
 
     const [isEditing, setIsEditing] = useState(false)
 
-    const [items, setItems] = useState<ValueT[]>(raw)
+    const [items, setItems] = useState<ValueT[]>(query.filter ? query.filter.filter((v: any) => v.value) : (raw as any))
 
     useClickAway(ref, () => setIsEditing(false))
 
+    const column = React.useMemo(() => new ColumnFilterModel(props.fields), [props.fields])
+
     useEffect(() => {
-        console.log('--', items)
-    }, [items])
+        if (!query.filter) setItems(raw as any)
+    }, [query.filter])
+
+    useDeepEffect(() => {
+        updateQuery({ filter: items.filter((v) => v.value) as any })
+    }, [items, column])
 
     return (
         <div
@@ -80,7 +90,7 @@ export default function Search({ ...props }: ISearchProps) {
                         isEditing={true}
                         isDisabled={false}
                         isFocus={index === items.length - 1 && isEditing}
-                        fields={props.fields}
+                        column={column}
                         style={{
                             flex: index === items.length - 1 ? 1 : undefined,
                         }}

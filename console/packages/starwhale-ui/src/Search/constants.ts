@@ -1,8 +1,9 @@
-import { IDataType } from '@starwhale/core/datastore'
 import { FilterT, OperatorT } from './types'
 import FilterString from './filterString'
 import FilterBoolean from './filterBoolean'
 import FilterNumberical from './filterNumberical'
+import { DataTypeT } from '../../../starwhale-core/src/datastore/types'
+import { OPERATOR } from '@starwhale/core/datastore'
 
 export enum KIND {
     BOOLEAN = 'BOOLEAN',
@@ -11,23 +12,6 @@ export enum KIND {
     DATETIME = 'DATETIME',
     NUMERICAL = 'NUMERICAL',
     STRING = 'STRING',
-}
-
-export enum OPERATOR {
-    EQUAL = 'EQUAL',
-    GREATER = 'GREATER',
-    GREATER_EQUAL = 'GREATER_EQUAL',
-    LESS = 'LESS',
-    LESS_EQUAL = 'LESS_EQUAL',
-    NOT = 'NOT',
-    IN = 'IN',
-    NOT_IN = 'NOT_IN',
-    CONTAINS = 'CONTAINS',
-    NOT_CONTAINS = 'NOT_CONTAINS',
-    IS = 'IS',
-    IS_NOT = 'IS_NOT',
-    EXISTS = 'EXISTS',
-    NOT_EXISTS = 'NOT_EXISTS',
 }
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
@@ -48,7 +32,7 @@ export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     DATETIME: [],
 }
 
-export const dataStoreToFilter = (dataStoreKind?: IDataType): (() => FilterT) => {
+export const dataStoreToFilter = (dataStoreKind?: DataTypeT): (() => FilterT) => {
     switch (dataStoreKind) {
         default:
         case 'STRING':
@@ -66,7 +50,7 @@ export const dataStoreToFilter = (dataStoreKind?: IDataType): (() => FilterT) =>
     }
 }
 
-export const dataStoreToFilterKind = (dataStoreKind: IDataType): KIND => {
+export const dataStoreToFilterKind = (dataStoreKind: DataTypeT): KIND => {
     switch (dataStoreKind) {
         case 'BOOL':
             return KIND.BOOLEAN
@@ -86,18 +70,18 @@ export const dataStoreToFilterKind = (dataStoreKind: IDataType): KIND => {
 }
 
 export const Operators: Record<string, OperatorT> = {
-    [OPERATOR.IS]: {
-        key: OPERATOR.IS,
-        label: 'is',
-        value: '=',
-        buildFilter: () => () => true,
-    },
-    [OPERATOR.IS_NOT]: {
-        key: OPERATOR.IS_NOT,
-        label: 'is not',
-        value: '!=',
-        buildFilter: () => () => true,
-    },
+    // [OPERATOR.IS]: {
+    //     key: OPERATOR.IS,
+    //     label: 'is',
+    //     value: '=',
+    //     buildFilter: () => () => true,
+    // },
+    // [OPERATOR.IS_NOT]: {
+    //     key: OPERATOR.IS_NOT,
+    //     label: 'is not',
+    //     value: '!=',
+    //     buildFilter: () => () => true,
+    // },
     [OPERATOR.EQUAL]: {
         key: OPERATOR.EQUAL,
         label: '=',
@@ -179,42 +163,42 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
-    [OPERATOR.CONTAINS]: {
-        key: OPERATOR.CONTAINS,
-        label: 'contains',
-        value: 'contains',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return String(data ?? '')
-                    .trim()
-                    .includes(value)
-            }
-        },
-    },
-    [OPERATOR.NOT_CONTAINS]: {
-        key: OPERATOR.NOT_CONTAINS,
-        label: 'not contains',
-        value: 'notContains',
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return !data.trim().includes(value)
-            }
-        },
-    },
-    [OPERATOR.IN]: {
-        key: OPERATOR.IN,
-        label: 'in',
-        value: 'in',
-        buildFilter: () => () => true,
-    },
-    [OPERATOR.NOT_IN]: {
-        key: OPERATOR.NOT_IN,
-        label: 'not in',
-        value: 'not in',
-        buildFilter: ({ value = [] }) => {
-            return (data) => {
-                return !value.has(data)
-            }
-        },
-    },
+    // [OPERATOR.CONTAINS]: {
+    //     key: OPERATOR.CONTAINS,
+    //     label: 'contains',
+    //     value: 'contains',
+    //     buildFilter: ({ value = '' }) => {
+    //         return (data: string) => {
+    //             return String(data ?? '')
+    //                 .trim()
+    //                 .includes(value)
+    //         }
+    //     },
+    // },
+    // [OPERATOR.NOT_CONTAINS]: {
+    //     key: OPERATOR.NOT_CONTAINS,
+    //     label: 'not contains',
+    //     value: 'notContains',
+    //     buildFilter: ({ value = '' }) => {
+    //         return (data: string) => {
+    //             return !data.trim().includes(value)
+    //         }
+    //     },
+    // },
+    // [OPERATOR.IN]: {
+    //     key: OPERATOR.IN,
+    //     label: 'in',
+    //     value: 'in',
+    //     buildFilter: () => () => true,
+    // },
+    // [OPERATOR.NOT_IN]: {
+    //     key: OPERATOR.NOT_IN,
+    //     label: 'not in',
+    //     value: 'not in',
+    //     buildFilter: ({ value = [] }) => {
+    //         return (data) => {
+    //             return !value.has(data)
+    //         }
+    //     },
+    // },
 }
