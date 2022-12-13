@@ -16,7 +16,7 @@ export enum KIND {
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT, OPERATOR.EXISTS, OPERATOR.NOT_EXISTS],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.NOT],
     [KIND.NUMERICAL]: [
         OPERATOR.EQUAL,
         OPERATOR.NOT,
@@ -24,8 +24,6 @@ export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
         OPERATOR.GREATER_EQUAL,
         OPERATOR.LESS,
         OPERATOR.LESS_EQUAL,
-        OPERATOR.EXISTS,
-        OPERATOR.NOT_EXISTS,
     ],
     BOOLEAN: [OPERATOR.EQUAL, OPERATOR.NOT],
     CUSTOM: [],
