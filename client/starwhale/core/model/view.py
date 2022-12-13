@@ -7,14 +7,14 @@ from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZ
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.consts.env import SWEnv
+from starwhale.utils.error import FieldTypeOrValueError
+from starwhale.utils.process import check_call
 from starwhale.core.model.store import ModelStorage
+from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Model, StandaloneModel
-from ...consts.env import SWEnv
-from ...utils.error import FieldTypeOrValueError
-from ..runtime.model import StandaloneRuntime
-from ...utils.process import check_call
 
 
 class ModelTermView(BaseTermView):

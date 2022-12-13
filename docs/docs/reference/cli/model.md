@@ -130,7 +130,6 @@ swcli model eval [OPTIONS] MODEL
 
 - This command creates a new job for model evaluation.
 - `MODEL` argument is required. The `Model URI` or model working dir path is ok for the `MODEL` argument.
-- This command does not depend on docker, so you should activate the python environment at first.
 - `model eval` command is beneficial for you to debug ppl/cmp and evaluate models in the standalone instance.
 - Options:
 
@@ -140,7 +139,7 @@ swcli model eval [OPTIONS] MODEL
     |`--name`||❌|String|""|evaluation job name|
     |`--desc`||❌|String|""|evaluation job description|
     |`--project`|`-p`|❌|String|Selected project|Project URI|
-
+    |`--use-docker`||❌|Boolean|False|Only for standalone instance, use docker environment to run model evaluation|
 - Example:
 
     ```bash
