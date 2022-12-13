@@ -35,7 +35,13 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, blake2b_file
+from starwhale.utils.fs import (
+    move_dir,
+    file_stat,
+    ensure_dir,
+    ensure_file,
+    blake2b_file,
+)
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
@@ -192,13 +198,9 @@ def resource_to_file_desc(
     return {
         _f["path"]: FileDesc(
             path=parent_path / _f["path"],
-            name=_f.get("name", os.path.basename(_f["path"])),
-            size=_f["size"]
-            if "size" in _f
-            else (parent_path / _f["path"]).stat().st_size,
-            signature=_f["signature"]
-            if "signature" in _f
-            else blake2b_file(parent_path / _f["path"]),
+            name=_f.get("name") or os.path.basename(_f["path"]),
+            size=_f.get("size") or file_stat(parent_path / _f["path"]).st_size,
+            signature=_f.get("signature") or blake2b_file(parent_path / _f["path"]),
             file_type=FileType[_f["type"]],
         )
         for _f in files
@@ -433,7 +435,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 f"only support two versions diff in one model, base model:{self.uri}, compare model:{compare_uri}"
             )
         _compare_model = StandaloneModel(compare_uri)
-        print(f"bb:{self.store.manifest['resources']}")
         base_file_maps = resource_to_file_desc(
             files=self.store.manifest["resources"],
             parent_path=self.store.snapshot_workdir,

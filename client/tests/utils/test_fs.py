@@ -5,6 +5,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils.fs import (
     copy_file,
+    file_stat,
     ensure_dir,
     ensure_file,
     extract_tar,
@@ -52,6 +53,12 @@ class FsUtilsTestCase(TestCase):
         copy_file(src_file, dest_file)
         assert dest_file.exists() and dest_file.is_file()
         assert contents == dest_file.read_text()
+
+    def test_file_stat(self) -> None:
+        file_path = Path("tmp/dir/file.txt")
+        self.fs.create_file(file_path, contents="123456")
+        stat = file_stat(file_path)
+        assert stat.st_size == 6
 
     def test_cmp_file(self) -> None:
         base_file = Path("tmp/cmp/file1.txt")

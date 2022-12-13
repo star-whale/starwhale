@@ -55,6 +55,7 @@ class StandaloneModelTestCase(TestCase):
         ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
 
+    @patch("starwhale.core.model.model.file_stat")
     @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
@@ -67,7 +68,9 @@ class StandaloneModelTestCase(TestCase):
         m_copy_fs: MagicMock,
         m_copy_file: MagicMock,
         m_get_service: MagicMock,
+        m_stat: MagicMock,
     ) -> None:
+        m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
 
@@ -151,6 +154,9 @@ class StandaloneModelTestCase(TestCase):
         ModelTermView(self.name).history()
         fname = f"{self.name}/version/{build_version}"
         ModelTermView(fname).info()
+        ModelTermView(fname).diff(
+            URI(fname, expected_type=URIType.MODEL), show_details=False
+        )
         ModelTermView(fname).history()
         ModelTermView(fname).remove()
         ModelTermView(fname).recover()

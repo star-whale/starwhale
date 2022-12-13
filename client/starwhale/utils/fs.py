@@ -231,3 +231,9 @@ def is_within_dir(parent: t.Union[str, Path], child: t.Union[str, Path]) -> bool
 
     prefix = os.path.commonprefix([abs_parent, abs_child])
     return prefix == abs_parent
+
+
+def file_stat(path: t.Union[str, Path]) -> os.stat_result:
+    path = str(path)
+    abs_path = os.path.abspath(path)
+    return Path(abs_path).stat()
