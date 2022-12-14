@@ -2,6 +2,7 @@ import typing as t
 
 import click
 
+from starwhale import URI, URIType
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
@@ -102,6 +103,21 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
 @click.pass_obj
 def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
     view(model).info(fullname)
+
+
+@model_cmd.command("diff", help="model version diff")
+@click.argument("base_uri", required=True)
+@click.argument("compare_uri", required=True)
+@click.option(
+    "--show-details",
+    is_flag=True,
+    help="Show different detail by the model package files",
+)
+@click.pass_obj
+def _diff(
+    view: t.Type[ModelTermView], base_uri: str, compare_uri: str, show_details: bool
+) -> None:
+    view(base_uri).diff(URI(compare_uri, expected_type=URIType.MODEL), show_details)
 
 
 @model_cmd.command("list", aliases=["ls"], help="List Model")

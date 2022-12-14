@@ -17,19 +17,20 @@ swcli model [OPTIONS] COMMAND [ARGS]...
 
 ## All Sub-Commands
 
-  |Command|Standalone|Cloud|
+  | Command |Standalone|Cloud|
   |-------|----------|-----|
-  |build|✅|❌|
-  |cmp|✅|❌|
-  |ppl|✅|❌|
-  |eval|✅|❌|
-  |remove|✅|✅|
-  |recover|✅|✅|
-  |list|✅|✅|
-  |history|✅|✅|
-  |info|✅|✅|
-  |tag|✅|❌|
-  |copy|✅|✅|
+  | build   |✅|❌|
+  | cmp     |✅|❌|
+  | ppl     |✅|❌|
+  | eval    |✅|❌|
+  | remove  |✅|✅|
+  | recover |✅|✅|
+  | list    |✅|✅|
+  | history |✅|✅|
+  | info    |✅|✅|
+  | tag     |✅|❌|
+  | diff    |✅|❌|
+  | copy    |✅|✅|
 
 ## Build a model
 

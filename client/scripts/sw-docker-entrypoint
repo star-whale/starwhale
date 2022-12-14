@@ -56,16 +56,29 @@ set_pip_cache() {
     python3 -m pip cache dir || true
 }
 
-set_python() {
-    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r '.config["environment"]["python"]') || exit 1
+set_py_and_sw() {
+    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".config.environment.python") || exit 1
     _RUNTIME="python${_MANIFEST_RUNTIME}"
 
-    echo "**** DETECT RUNTIME: ${_RUNTIME}"
+    ORIGIN_SW_VER=$(swcli --version)
+    DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".config.environment.lock.starwhale_version") || exit 1
+    DETECTED_SW_VER=${DETECTED_SW_VER:-$ORIGIN_SW_VER}
 
-    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] ; then
-        _update_python_alter "$_RUNTIME"
-    else
-        _update_python_alter "python3.8"
+    echo "**** DETECT RUNTIME: python version: ${_RUNTIME}, starwhale version: ${DETECTED_SW_VER}"
+
+    # default python version
+    PY_VER="python3.8"
+    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] || [ "$_RUNTIME" = "python3.11" ] ; then
+        PY_VER="$_RUNTIME"
+    fi
+    _update_python_alter "$PY_VER"
+
+    if [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
+        # ignore the editable dev version
+        if [ "$DETECTED_SW_VER" != "0.0.0.dev0" ]; then
+          # install starwhale for current python
+          python3 -m pip install "starwhale==${DETECTED_SW_VER}" || exit 1
+        fi
     fi
 }
 
@@ -109,7 +122,7 @@ eval_task_prepare(){
         # only remote
         pull_model_and_runtime
     fi
-    set_python
+    set_py_and_sw
     set_pip_cache
 }
 

@@ -2,9 +2,22 @@ import os
 import typing as t
 from pathlib import Path
 
+from rich import box
+from rich.text import Text
+from rich.panel import Panel
+from rich.table import Table
+from rich.console import Group
+
 from starwhale.utils import console, load_yaml, pretty_bytes, in_production
-from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    FileFlag,
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+    SHORT_VERSION_CNT,
+)
 from starwhale.base.uri import URI
+from starwhale.utils.fs import cmp_file_content
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.core.model.store import ModelStorage
@@ -32,6 +45,60 @@ class ModelTermView(BaseTermView):
     @BaseTermView._header
     def info(self, fullname: bool = False) -> None:
         self._print_info(self.model.info(), fullname=fullname)
+
+    @BaseTermView._only_standalone
+    def diff(self, compare_uri: URI, show_details: bool) -> None:
+        r = self.model.diff(compare_uri)
+        text_details: t.List[Panel] = []
+        table = Table(box=box.SIMPLE, expand=False, show_lines=True)
+        table.add_column("file")
+        table.add_column("path")
+        table.add_column(
+            f"base: {self.model.version[:SHORT_VERSION_CNT]}",
+            style="magenta",
+            justify="left",
+        )
+        table.add_column(
+            f"compare: {compare_uri.object.version[:SHORT_VERSION_CNT]}",
+            style="cyan",
+            justify="left",
+        )
+        b_files = r["base_version"]
+        c_files = r["compare_version"]
+        for _p in r["all_paths"]:
+            _flag = c_files[_p].flag
+            if _flag == FileFlag.ADDED:
+                _flag_txt = f"[blue]{_flag}"
+            elif _flag == FileFlag.DELETED:
+                _flag_txt = f"[red]{_flag}"
+            elif _flag == FileFlag.UPDATED:
+                _flag_txt = f"[yellow]{_flag}"
+                if show_details:
+                    text_details.append(
+                        Panel(
+                            Text(
+                                text="".join(
+                                    cmp_file_content(
+                                        base_path=b_files[_p].path,
+                                        cmp_path=c_files[_p].path,
+                                    )
+                                )
+                            ),
+                            title=_p,
+                        )
+                    )
+            else:
+                _flag_txt = f"[green]{_flag}"
+            table.add_row(
+                os.path.basename(_p),
+                _p,
+                "existed" if _p in b_files else "-",
+                f"[green]{_flag_txt}",
+            )
+
+        console.print(Panel(table, title="diff overview"))
+        if show_details:
+            console.print(Panel(Group(*text_details), title="diff details"))
 
     @BaseTermView._pager
     @BaseTermView._header

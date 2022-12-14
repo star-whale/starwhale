@@ -10,6 +10,7 @@ from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
+    FileFlag,
     HTTPMethod,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
@@ -19,16 +20,20 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
+from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
-from starwhale.core.model.model import StandaloneModel
+from starwhale.core.model.model import StandaloneModel, resource_to_file_desc
 from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.spec.openapi.components import OpenApi
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
+_base_model_yaml = open(f"{_model_data_dir}/base_manifest.yaml").read()
+_compare_model_yaml = open(f"{_model_data_dir}/compare_manifest.yaml").read()
 
 
 class StandaloneModelTestCase(TestCase):
@@ -50,6 +55,7 @@ class StandaloneModelTestCase(TestCase):
         ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
 
+    @patch("starwhale.core.model.model.file_stat")
     @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
@@ -62,9 +68,18 @@ class StandaloneModelTestCase(TestCase):
         m_copy_fs: MagicMock,
         m_copy_file: MagicMock,
         m_get_service: MagicMock,
+        m_stat: MagicMock,
     ) -> None:
+        m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
+
+        open_api = MagicMock(spec=OpenApi)
+        open_api.to_dict.return_value = {}
+        svc = MagicMock(spec=Service)
+        svc.get_spec.return_value = open_api
+        m_get_service.return_value = svc
+
         model_uri = URI(self.name, expected_type=URIType.MODEL)
         sm = StandaloneModel(model_uri)
         sm.build(workdir=Path(self.workdir))
@@ -139,6 +154,9 @@ class StandaloneModelTestCase(TestCase):
         ModelTermView(self.name).history()
         fname = f"{self.name}/version/{build_version}"
         ModelTermView(fname).info()
+        ModelTermView(fname).diff(
+            URI(fname, expected_type=URIType.MODEL), show_details=False
+        )
         ModelTermView(fname).history()
         ModelTermView(fname).remove()
         ModelTermView(fname).recover()
@@ -151,6 +169,67 @@ class StandaloneModelTestCase(TestCase):
         assert len(_list[self.name]) == 0
 
         ModelTermView.build(self.workdir, "self")
+
+    def test_get_file_desc(self):
+        _file = Path("tmp/file.txt")
+        ensure_dir("tmp")
+        ensure_file(_file, "123456")
+        fd = resource_to_file_desc(
+            [{"path": "file.txt", "type": "SRC"}], parent_path=Path("tmp")
+        )
+        assert "file.txt" in fd
+        assert fd.get("file.txt").size == 6
+
+    def test_diff(
+        self,
+    ) -> None:
+        base_version = "base_mdklqrbwpyrb2s3eme63k5xqno4o4wwmd3n"
+        compare_version = "compare_mdklqrbwpyrb2s3eme63k5xqno4o4ww"
+
+        base_bundle_path = (
+            self.sw.rootdir
+            / "self"
+            / URIType.MODEL
+            / self.name
+            / base_version[:VERSION_PREFIX_CNT]
+            / f"{base_version}{BundleType.MODEL}"
+        )
+        ensure_dir(base_bundle_path)
+        ensure_file(base_bundle_path / DEFAULT_MANIFEST_NAME, _base_model_yaml)
+
+        compare_bundle_path = (
+            self.sw.rootdir
+            / "self"
+            / URIType.MODEL
+            / self.name
+            / compare_version[:VERSION_PREFIX_CNT]
+            / f"{compare_version}{BundleType.MODEL}"
+        )
+        ensure_dir(compare_bundle_path)
+        ensure_file(compare_bundle_path / DEFAULT_MANIFEST_NAME, _compare_model_yaml)
+
+        base_model_uri = URI(
+            f"{self.name}/version/{base_version}", expected_type=URIType.MODEL
+        )
+        sm = StandaloneModel(base_model_uri)
+
+        diff_info = sm.diff(
+            URI(f"{self.name}/version/{compare_version}", expected_type=URIType.MODEL)
+        )
+        assert len(diff_info) == 3
+        # 4 files and 1 added
+        assert len(diff_info["all_paths"]) == 5
+        assert len(diff_info["base_version"]) == 4
+        assert len(diff_info["compare_version"]) == 5
+        assert (
+            diff_info["compare_version"]["src/model/empty.pt"].flag == FileFlag.UPDATED
+        )
+        assert diff_info["compare_version"]["src/svc.yaml"].flag == FileFlag.DELETED
+        assert diff_info["compare_version"]["src/svc2.yaml"].flag == FileFlag.ADDED
+        assert (
+            diff_info["compare_version"]["src/runtime.yaml"].flag == FileFlag.UNCHANGED
+        )
+        assert diff_info["compare_version"]["src/model.yaml"].flag == FileFlag.UNCHANGED
 
     @patch("starwhale.core.job.model.Generator.generate_job_from_yaml")
     @patch("starwhale.api._impl.job.Parser.generate_job_yaml")

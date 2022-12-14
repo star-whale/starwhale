@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import copy
 import typing as t
 import tarfile
 from abc import ABCMeta
@@ -14,8 +15,11 @@ from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs.tarfs import TarFS
 
+from starwhale import PipelineHandler
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
+    FileDesc,
+    FileFlag,
     FileType,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
@@ -31,7 +35,13 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, blake2b_file
+from starwhale.utils.fs import (
+    move_dir,
+    file_stat,
+    ensure_dir,
+    ensure_file,
+    blake2b_file,
+)
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
@@ -178,6 +188,24 @@ class Model(BaseBundle, metaclass=ABCMeta):
         )
         bc.do()
 
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
+
+def resource_to_file_desc(
+    files: t.List[t.Dict[str, t.Any]], parent_path: Path
+) -> t.Dict[str, FileDesc]:
+    return {
+        _f["path"]: FileDesc(
+            path=parent_path / _f["path"],
+            name=_f.get("name") or os.path.basename(_f["path"]),
+            size=_f.get("size") or file_stat(parent_path / _f["path"]).st_size,
+            signature=_f.get("signature") or blake2b_file(parent_path / _f["path"]),
+            file_type=FileType[_f["type"]],
+        )
+        for _f in files
+    }
+
 
 class StandaloneModel(Model, LocalStorageBundleMixin):
     def __init__(self, uri: URI) -> None:
@@ -204,8 +232,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         d = self.store.src_dir
         svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
-        apis = {k: v.to_yaml() for k, v in svc.apis.items()}
-        ensure_file(_f, yaml.safe_dump(apis, default_flow_style=False))
+        ensure_file(
+            _f, yaml.safe_dump(svc.get_spec().to_dict(), default_flow_style=False)
+        )
 
         if typ == EvalHandlerType.DEFAULT:
             # use default
@@ -219,7 +248,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         module, _, attr = module.partition(":")
         m = load_module(module, pkg)
         apis = dict()
+        ins: t.Any = None
         svc: t.Optional[Service] = None
+
+        # TODO: refine this ugly ad hoc
+        context_holder.context = Context(
+            pkg, version="-1", project="tmp-project-for-build"
+        )
 
         # TODO: check duplication
         for k, v in m.__dict__.items():
@@ -229,21 +264,28 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 svc = v
         if attr:
             cls = getattr(m, attr)
-            # TODO: refine this ugly ad hoc
-            context_holder.context = Context(
-                Path("."), version="-1", project="tmp-project-for-build"
-            )
             ins = cls()
-            apis.update(ins.svc.apis)
+            if isinstance(ins, PipelineHandler):
+                apis.update(ins.svc.apis)
 
         from starwhale.api._impl.service import internal_api_list
 
         apis.update(internal_api_list())
 
+        # check if we need to instance the model when using custom handler
+        if ins is None:
+            for i in apis.values():
+                fn = i.func.__qualname__
+                # TODO: support deep path classes (also modules)
+                if "." in fn:
+                    ins = getattr(m, fn.split(".", 1)[0])()
+                    break
+
         if svc is None:
             svc = Service()
         for api in apis.values():
             svc.add_api_instance(api)
+        svc.api_instance = ins
         return svc
 
     @classmethod
@@ -373,6 +415,56 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             return DEFAULT_EVALUATION_PIPELINE
         else:
             return _model_config.run.handler
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        """
+        - added: a node that exists in compare but not in base
+        - deleted: a node that not exists in compare but in base
+        - updated: a node that exists in both of base and compare but signature is different
+        - unchanged: a node that exists in both of base and compare, and signature is same
+        :param compare_uri:
+        :return: diff info
+        """
+        # TODO use remote get model info for cloud
+        if compare_uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(
+                f"only support standalone uri, but compare_uri({compare_uri}) is for cloud instance"
+            )
+        if self.uri.object.name != compare_uri.object.name:
+            raise NoSupportError(
+                f"only support two versions diff in one model, base model:{self.uri}, compare model:{compare_uri}"
+            )
+        _compare_model = StandaloneModel(compare_uri)
+        base_file_maps = resource_to_file_desc(
+            files=self.store.manifest["resources"],
+            parent_path=self.store.snapshot_workdir,
+        )
+        compare_file_maps = resource_to_file_desc(
+            files=_compare_model.store.manifest["resources"],
+            parent_path=_compare_model.store.snapshot_workdir,
+        )
+        all_paths = {
+            p for m in (base_file_maps, compare_file_maps) for p, _ in m.items()
+        }
+
+        for _p in all_paths:
+            if _p in base_file_maps and _p in compare_file_maps:
+                if base_file_maps[_p].signature == compare_file_maps[_p].signature:
+                    compare_file_maps[_p].flag = FileFlag.UNCHANGED
+                else:
+                    compare_file_maps[_p].flag = FileFlag.UPDATED
+            if _p in base_file_maps and _p not in compare_file_maps:
+                del_file = copy.copy(base_file_maps[_p])
+                del_file.flag = FileFlag.DELETED
+                compare_file_maps[_p] = del_file
+            if _p not in base_file_maps and _p in compare_file_maps:
+                compare_file_maps[_p].flag = FileFlag.ADDED
+
+        return {
+            "all_paths": all_paths,
+            "base_version": base_file_maps,
+            "compare_version": compare_file_maps,
+        }
 
     def info(self) -> t.Dict[str, t.Any]:
         _manifest = self._get_bundle_info()
@@ -530,6 +622,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         "signature": blake2b_file(self.store.src_dir / sub_path),
                         "duplicate_check": False,
                         "type": FileType.SRC.name,
+                        "size": file_stat(self.store.src_dir / sub_path).st_size,
                     }
                 )
 
@@ -603,6 +696,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "signature": blake2b_file(self.store.src_dir / _fname),
                     "duplicate_check": True,
                     "type": FileType.MODEL.name,
+                    "size": file_stat(self.store.src_dir / _fname).st_size,
                 }
             )
         logger.info("[step:copy]finish copy files")
@@ -651,3 +745,6 @@ class CloudModel(CloudBundleModelMixin, Model):
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        raise NoSupportError("no support model diff in the cloud instance")

@@ -1,7 +1,8 @@
 import json
 import typing as t
 
-from starwhale.api.service import Request, Service, Response
+from starwhale.api.service import Input, Service, JsonOutput
+from starwhale.base.spec.openapi.components import RequestBody, SpecComponent
 
 
 class CustomService(Service):
@@ -12,16 +13,20 @@ class CustomService(Service):
 svc = CustomService()
 
 
-class CustomInput(Request):
+class CustomInput(Input):
     def load(self, req: t.Any) -> t.Any:
         return req
 
+    def spec(self) -> SpecComponent:
+        req = RequestBody(description="starwhale builtin model serving specification")
+        return dict(requestBody=req)
 
-class CustomOutput(Response):
+
+class CustomOutput(JsonOutput):
     def dump(self, req: t.Any) -> bytes:
         return req
 
 
-@svc.api(request=CustomInput(), response=CustomOutput())
+@svc.api(CustomInput(), CustomOutput())
 def baz(data: t.Any) -> t.Any:
     return data

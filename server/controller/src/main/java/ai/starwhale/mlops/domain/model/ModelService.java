@@ -16,12 +16,13 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import ai.starwhale.mlops.api.protocol.StorageFileVo;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadResult;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
+import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -37,7 +38,6 @@ import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.model.bo.MetaInfo;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -49,6 +49,7 @@ import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.storage.MetaInfo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.Trash;
@@ -62,9 +63,10 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -72,12 +74,15 @@ import com.google.common.base.Joiner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -211,21 +216,43 @@ public class ModelService {
                 .collect(Collectors.toList());
     }
 
+    public Map<String, List<FileNode>> getModelDiff(String projectUrl, String modelUrl, String baseVersion,
+                                                    String compareVersion) {
+        var baseModel = getModelVersion(projectUrl, modelUrl, baseVersion);
+        var compareModel = getModelVersion(projectUrl, modelUrl, compareVersion);
+        if (Objects.isNull(baseModel) || Objects.isNull(compareModel)) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
+                "Unable to find the compare version of model "), HttpStatus.BAD_REQUEST);
+        }
+        try {
+            var baseFiles = parseManifestFiles(baseModel.getManifest());
+            var compareFiles = parseManifestFiles(compareModel.getManifest());
+            FileNode.compare(baseFiles, compareFiles);
+            return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
+        } catch (JsonProcessingException e) {
+            throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
+        }
+    }
+
     public ModelInfoVo getModelInfo(ModelQuery query) {
-        BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getModelUrl());
+        return getModelInfo(query.getProjectUrl(), query.getModelUrl(), query.getModelVersionUrl());
+    }
+
+    public ModelInfoVo getModelInfo(String projectUrl, String modelUrl, String versionUrl) {
+        BundleUrl bundleUrl = BundleUrl.create(projectUrl, modelUrl);
         Long modelId = bundleManager.getBundleId(bundleUrl);
         ModelEntity model = modelMapper.find(modelId);
         if (model == null) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL, "Unable to find model " + query.getModelUrl()),
+                    new SwValidationException(ValidSubject.MODEL, "Unable to find model " + modelUrl),
                     HttpStatus.BAD_REQUEST);
         }
 
         ModelVersionEntity versionEntity = null;
-        if (!StrUtil.isEmpty(query.getModelVersionUrl())) {
+        if (!StrUtil.isEmpty(versionUrl)) {
             // find version by versionId
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(query.getProjectUrl(), query.getModelUrl(), query.getModelVersionUrl()));
+                    .create(projectUrl, modelUrl, versionUrl));
             versionEntity = modelVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
@@ -234,19 +261,17 @@ public class ModelService {
         }
         if (versionEntity == null) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                    "Unable to find the version of model " + query.getModelUrl()), HttpStatus.BAD_REQUEST);
+                    "Unable to find the version of model " + modelUrl), HttpStatus.BAD_REQUEST);
         }
 
         return toModelInfoVo(model, versionEntity);
     }
 
-    private ModelInfoVo toModelInfoVo(ModelEntity model,
-            ModelVersionEntity version) {
-
-        //Get file list in storage
+    private ModelInfoVo toModelInfoVo(ModelEntity model, ModelVersionEntity version) {
         try {
-            String storagePath = version.getStoragePath();
-            List<StorageFileVo> collect = storageService.listStorageFile(storagePath);
+            // Get file list from manifest
+            // TODO read from datastore
+            var manifest = version.getManifest();
 
             return ModelInfoVo.builder()
                     .id(idConvertor.convert(model.getId()))
@@ -257,12 +282,21 @@ public class ModelService {
                     .versionMeta(version.getVersionMeta())
                     .manifest(version.getManifest())
                     .createdTime(version.getCreatedTime().getTime())
-                    .files(collect)
+                    .files(parseManifestFiles(manifest))
                     .build();
 
         } catch (IOException e) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list model storage", e),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private List<FileNode> parseManifestFiles(String manifest) throws JsonProcessingException {
+        if (StringUtils.hasText(manifest)) {
+            var meta = yamlMapper.readValue(manifest, MetaInfo.class);
+            return FileNode.makeTree(meta.getResources());
+        } else {
+            return List.of();
         }
     }
 
@@ -401,7 +435,7 @@ public class ModelService {
             // parse model file's signature, valid if existed
             var metaInfo = yamlMapper.readValue(manifestContent, MetaInfo.class);
 
-            for (MetaInfo.FileDesc file : metaInfo.getResources()) {
+            for (MetaInfo.Resource file : metaInfo.getResources()) {
                 if (!file.isDuplicateCheck()) {
                     continue;
                 }
@@ -413,6 +447,7 @@ public class ModelService {
                 }
             }
             // upload manifest to oss
+            // TODO: store to datastore
             storageAccessService.put(
                     String.format(FORMATTER_STORAGE_PATH, modelPackagePath, MODEL_MANIFEST),
                     inputStream, multipartFile.getSize()
@@ -525,15 +560,78 @@ public class ModelService {
         return currentUserDetail.getIdTableKey();
     }
 
-    public void pullManifest(String name, String projectUrl, String modelUrl, String versionUrl,
+    public void pull(FileDesc fileDesc, String name, String path, String signature,
+                     String projectUrl, String modelUrl, String versionUrl,
                      HttpServletResponse httpResponse) {
-        Long versionId = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
+        ModelVersionEntity modelVersionEntity = getModelVersion(projectUrl, modelUrl, versionUrl);
         if (null == modelVersionEntity) {
             throw new SwValidationException(ValidSubject.MODEL, "model version not found");
         }
-        try (InputStream fileInputStream = new ByteArrayInputStream(modelVersionEntity.getManifest().getBytes());
+        if (fileDesc == null) {
+            if (!StringUtils.hasText(name) && !StringUtils.hasText(path)) {
+                throw new SwValidationException(ValidSubject.MODEL,
+                    "at least one of name or path is not null when download");
+            }
+            // read from manifest
+            try {
+                var metaInfo = yamlMapper.readValue(modelVersionEntity.getManifest(), MetaInfo.class);
+                // get file type by path
+                for (MetaInfo.Resource file : metaInfo.getResources()) {
+                    if (file.getPath().equals(path) || file.getName().equals(name)) {
+                        fileDesc = file.getDesc();
+                        // update correct attributes
+                        name = Objects.isNull(name) ? file.getName() : name;
+                        path = Objects.isNull(path) ? file.getPath() : path;
+                        break;
+                    }
+                }
+
+            } catch (JsonProcessingException e) {
+                throw new SwValidationException(ValidSubject.MODEL, "parse manifest error:" + e.getMessage());
+            }
+        }
+        if (fileDesc == null) {
+            throw new SwValidationException(ValidSubject.MODEL,
+                    String.format("can't find file:%s(path:%s) from model package", name, path));
+        }
+        String filePath;
+        switch (fileDesc) {
+            case MANIFEST:
+                this.pullFile(
+                        name, () -> new ByteArrayInputStream(modelVersionEntity.getManifest().getBytes()), httpResponse
+                );
+                return;
+            case SRC:
+                filePath = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), path);
+                break;
+            case MODEL:
+                filePath = storagePathCoordinator.allocateCommonModelPoolPath(projectUrl, signature);
+                break;
+            case SRC_TAR:
+                this.pullSrcTar(name,
+                        String.format(FORMATTER_STORAGE_SRC_PATH, modelVersionEntity.getStoragePath()), httpResponse);
+                return;
+            default:
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "unsupport type " + fileDesc),
+                        HttpStatus.BAD_REQUEST
+                );
+        }
+        // direct pull from oss
+        this.pullFile(
+                name, () -> {
+                    try {
+                        return storageAccessService.get(filePath);
+                    } catch (IOException e) {
+                        log.error("get file from storage failed {}", filePath, e);
+                        throw new SwProcessException(ErrorType.STORAGE);
+                    }
+                }, httpResponse);
+
+    }
+
+    public void pullFile(String name, Supplier<InputStream> streamSupplier, HttpServletResponse httpResponse) {
+        try (InputStream fileInputStream = streamSupplier.get();
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             long length = fileInputStream.transferTo(outputStream);
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
@@ -545,48 +643,12 @@ public class ModelService {
         }
     }
 
-    public void pullModelFile(String name, String signature, String projectUrl,
-                              HttpServletResponse httpResponse) {
-        String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                projectUrl, signature);
+    public void pullSrcTar(String name, String srcPath, HttpServletResponse httpResponse) {
         List<String> files;
-        try {
-            files = storageAccessService.list(modelPath).collect(Collectors.toList());
-        } catch (IOException e) {
-            log.error("listing file from storage failed {}", modelPath, e);
-            throw new SwProcessException(ErrorType.STORAGE);
-        }
-
-        if (CollectionUtils.isEmpty(files)) {
-            throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
-        }
-        String filePath = files.get(0);
-        try (InputStream fileInputStream = storageAccessService.get(filePath);
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            long length = fileInputStream.transferTo(outputStream);
-            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
-            outputStream.flush();
-        } catch (IOException e) {
-            log.error("download file from storage failed {}", modelPath, e);
-            throw new SwProcessException(ErrorType.STORAGE);
-        }
-    }
-
-    public void pullSrc(String name, String projectUrl, String modelUrl, String versionUrl,
-                        HttpServletResponse httpResponse) {
-        Long versionId = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
-        if (null == modelVersionEntity) {
-            throw new SwValidationException(ValidSubject.MODEL, "model version not found");
-        }
-        List<String> files;
-        var srcPath = String.format(FORMATTER_STORAGE_SRC_PATH, modelVersionEntity.getStoragePath());
         try {
             files = storageAccessService.list(srcPath).collect(Collectors.toList());
         } catch (IOException e) {
-            log.error("listing file from storage failed {}", modelVersionEntity.getStoragePath(), e);
+            log.error("listing file from storage failed {}", srcPath, e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
 
@@ -624,18 +686,24 @@ public class ModelService {
             httpResponse.addHeader("Content-Length", String.valueOf(length[0]));
             outputStream.flush();
         } catch (IOException | ArchiveException e) {
-            log.error("download file from storage failed {}", modelVersionEntity.getStoragePath(), e);
+            log.error("download file from storage failed {}", srcPath, e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
 
     }
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(versionId);
+        ModelVersionEntity modelVersionEntity = getModelVersion(projectUrl, modelUrl, versionUrl);
         if (null == modelVersionEntity) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL), HttpStatus.NOT_FOUND);
         }
         return "";
+    }
+
+    private ModelVersionEntity getModelVersion(
+            String projectUrl, String modelUrl, String versionUrl) {
+        Long versionId = bundleManager.getBundleVersionId(
+                BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
+        return modelVersionMapper.find(versionId);
     }
 }

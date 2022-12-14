@@ -1,4 +1,4 @@
-import base64
+import json
 import typing as t
 from pathlib import Path
 
@@ -22,19 +22,85 @@ from starwhale import (
     multi_classification,
     get_dataset_consumption,
 )
-from starwhale.api.service import Request, Service, JsonResponse
+from starwhale.api.service import Input, Output, Request, Service, Response
+from starwhale.base.spec.openapi.components import (
+    Schema,
+    MediaType,
+    RequestBody,
+    SpecComponent,
+    OpenApiResponse,
+)
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
 
-svc = Service()
+
+class CustomService(Service):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def serve(
+        self, addr: str, port: int, handler_list: t.Optional[t.List[str]] = None
+    ) -> None:
+        print(f"My CustomService running {self.apis}")
+        super().serve(addr, port, handler_list)
 
 
-class CustomGrayscaleImageRequest(Request):
-    def load(self, req: t.Any) -> GrayscaleImage:
-        raw = base64.b64decode(req["custom_field"])
-        return GrayscaleImage(raw, shape=[28, 28, 1])
+svc = CustomService()
+
+
+class CustomGrayscaleImageRequest(Input):
+    def load(self, req: Request) -> GrayscaleImage:
+        raw = req.body
+        return GrayscaleImage(raw, shape=[28, 28, 3])
+
+    def spec(self) -> SpecComponent:
+        req = RequestBody(
+            description="starwhale mnist custom grayscale image request",
+            content={
+                "multipart/form-data": MediaType(
+                    schema=Schema(
+                        type="object",
+                        required=["data"],
+                        properties={"data": Schema(type="string", format="binary")},
+                    ),
+                )
+            },
+        )
+        return SpecComponent(requestBody=req)
+
+
+class CustomOutput(Output):
+    def dump(self, *args: t.Any) -> Response:
+        return Response(
+            json.dumps(
+                {
+                    "result": args[0][0][0],
+                    "probabilities": args[0][1][0],
+                }
+            ).encode("utf-8"),
+            {"content-type": "application/json"},
+        )
+
+    def spec(self) -> SpecComponent:
+        resp = OpenApiResponse(
+            description="OK",
+            content={
+                "application/json": MediaType(
+                    schema=Schema(
+                        type="object",
+                        properties={
+                            "result": Schema(type="integer"),
+                            "probabilities": Schema(
+                                type="array", items=Schema(type="number")
+                            ),
+                        },
+                    ),
+                )
+            },
+        )
+        return SpecComponent(responses={"200": resp})
 
 
 class CustomPipelineHandler:
@@ -110,15 +176,15 @@ class CustomPipelineHandler:
         )(_image_array)
         return torch.stack([_image]).to(self.device)
 
-    @svc.api(request=CustomGrayscaleImageRequest(), response=JsonResponse())
+    @svc.api(CustomGrayscaleImageRequest(), CustomOutput())
     def ppl(self, data: Image) -> t.Tuple[t.List[int], t.List[float]]:
         data_tensor = self._pre(data)
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
     @svc.api(
-        request=CustomGrayscaleImageRequest(),
-        response=JsonResponse(),
+        CustomGrayscaleImageRequest(),
+        CustomOutput(),
         uri="custom_handler",
     )
     def custom_svc_handler(self, data: t.Any) -> t.Any:

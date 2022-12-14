@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import ai.starwhale.mlops.api.protocol.StorageFileVo;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
+import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -204,7 +204,7 @@ public class RuntimeService {
     private RuntimeInfoVo toRuntimeInfoVo(RuntimeEntity rt, RuntimeVersionEntity versionEntity) {
         try {
             String storagePath = versionEntity.getStoragePath();
-            List<StorageFileVo> collect = storageService.listStorageFile(storagePath);
+            List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
 
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))

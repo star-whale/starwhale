@@ -21,7 +21,7 @@ from .completion import completion_cmd
 
 def create_sw_cli() -> click.core.Group:
     @click.group(cls=AliasedGroup)
-    @click.version_option(version=STARWHALE_VERSION)
+    @click.version_option(version=STARWHALE_VERSION, message="%(version)s")
     @click.option(
         "-v",
         "--verbose",

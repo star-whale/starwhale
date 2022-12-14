@@ -27,7 +27,7 @@ from .. import ROOT_DIR
 from .test_base import BaseTestCase
 
 
-class TestDatasetSDK(BaseTestCase):
+class _DatasetSDKTestBase(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -57,6 +57,8 @@ class TestDatasetSDK(BaseTestCase):
             ds.commit()
         return ds.uri
 
+
+class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
         ds = dataset("mnist", create=True)
         assert ds.version != ""
@@ -428,21 +430,23 @@ class TestDatasetSDK(BaseTestCase):
         assert ds._append_from_version == existed_ds_uri.object.version
         assert ds._create_by_append
         assert len(ds) == 10
+        ds.flush()
 
         ds.append(DataRow(index=1, data=Binary(b""), annotations={"label": 101}))
+        assert len(ds) == 10
         ds.append(DataRow(index=100, data=Binary(b""), annotations={"label": 100}))
+        assert len(ds) == 11
         ds.append(DataRow(index=101, data=Binary(b""), annotations={"label": 101}))
         ds.commit()
         ds.close()
 
-        assert ds[1].annotations == {"label": 101}  # type: ignore
-
-        _summary = ds.summary()
+        load_ds = dataset(ds.uri)
+        assert load_ds[1].annotations == {"label": 101}  # type: ignore
+        assert [d.index for d in load_ds] == list(range(0, 10)) + [100, 101]
+        assert len(load_ds) == 12
+        _summary = load_ds.summary()
         assert _summary is not None
         assert _summary.rows == 12
-
-        load_ds = dataset(ds.uri)
-        assert len(load_ds) == 12
 
     def test_load_from_empty(self) -> None:
         with self.assertRaises(ValueError):
@@ -571,7 +575,7 @@ class TestDatasetSDK(BaseTestCase):
     def test_cloud_init(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/not_found/version/1234/file",
+            "http://1.1.1.1/api/v1/project/self/dataset/not_found/version/1234",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -581,7 +585,7 @@ class TestDatasetSDK(BaseTestCase):
 
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234/file",
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
@@ -604,6 +608,90 @@ class TestDatasetSDK(BaseTestCase):
         _summary = ds.summary()
         assert _summary is not None
         assert _summary.rows == 101
+
+    @Mocker()
+    def test_cloud_build_from_icode(self, rm: Mocker) -> None:
+        sw = SWCliConfigMixed()
+        sw.update_instance(
+            uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
+        )
+
+        manifest_req = rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+        scan_table_req = rm.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1/api/v1/datastore/scanTable",
+            json={"data": {}},
+        )
+
+        update_table_req = rm.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1/api/v1/datastore/updateTable",
+        )
+
+        ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
+        assert manifest_req.call_count == 0
+
+        upload_file_req = rm.request(
+            HTTPMethod.POST,
+            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}/file",
+            json={"data": {"upload_id": "123"}},
+        )
+
+        _store = ds._Dataset__core_dataset.store  # type: ignore
+        tmp_dir = _store.tmp_dir
+        snapshot_workdir = _store.snapshot_workdir
+
+        cnt = 10
+        for i in range(0, cnt):
+            ds.append(
+                DataRow(
+                    index=i, data=Binary(f"data-{i}".encode()), annotations={"label": i}
+                )
+            )
+
+        assert scan_table_req.call_count == cnt
+
+        ds.flush()
+        assert tmp_dir.exists()
+        assert len(list(tmp_dir.iterdir())) != 0
+        assert not snapshot_workdir.exists()
+        assert update_table_req.called
+        assert not upload_file_req.called
+
+        ds.commit()
+        assert not tmp_dir.exists()
+        assert not snapshot_workdir.exists()
+        assert upload_file_req.called
+
+        ds.close()
+
+    @Mocker()
+    def test_cloud_build_no_support(self, rm: Mocker) -> None:
+        with self.assertRaisesRegex(
+            NoSupportError, "no support to build cloud dataset directly"
+        ):
+            ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
+            ds.build_handler = MagicMock()
+            ds.commit()
+
+        rm.request(
+            HTTPMethod.HEAD,
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+
+        with self.assertRaisesRegex(
+            NoSupportError, "Can't build dataset from the existed cloud dataset uri"
+        ):
+            dataset(
+                "http://1.1.1.1/project/self/dataset/mnist/version/1234", create=True
+            )
 
     def test_consumption(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -754,7 +842,7 @@ class TestDatasetSDK(BaseTestCase):
         ds.copy("cloud://test/project/self")
 
 
-class TestPytorch(TestDatasetSDK):
+class TestPytorch(_DatasetSDKTestBase):
     def test_skip_default_transform_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
