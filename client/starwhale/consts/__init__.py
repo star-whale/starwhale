@@ -127,6 +127,13 @@ class FileType(Enum):
     DATA = "DATA"
 
 
+class FileFlag:
+    UNCHANGED = "unchanged"
+    ADDED = "added"
+    UPDATED = "updated"
+    DELETED = "deleted"
+
+
 @dataclass
 class FileDesc:
     path: pathlib.Path
@@ -134,6 +141,7 @@ class FileDesc:
     size: int
     file_type: FileType
     signature: str = ""
+    flag: str = ""
 
 
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN

@@ -25,6 +25,7 @@ model包含如下子命令：
 |recover||✅|✅|
 |remove|rm|✅|✅|
 |tag||✅|❌|
+|diff||✅|✅|
 
 ## 2. 构建模型包
 
@@ -162,3 +163,19 @@ swcli model tag [OPTIONS] MODEL [TAGS]...
 |------|--------|-------|-----------|-----|-----------|
 |`--remove`|`-r`|❌|Boolean|False|删除标签|
 |`--quiet`|`-q`|❌|Boolean|False|忽略标签操作中的错误，例如删除不存在的标签，添加不合法的标签等|
+
+## 11. 对比模型包差异
+
+```bash
+swcli model diff [OPTIONS] BASE_URI COMPARE_URI
+```
+
+`model diff` 命令提供同一个模型包中两个不同版本的对比。`BASE_URI` 为Base的Model URI，`COMPARE_URI` 为与Base对比的Model URI。
+
+`model diff` 命令参数如下：
+
+|参数|参数别名|必要性|类型|默认值|说明|
+|------|--------|-------|-----------|-----|-----------|
+|`--show-details`||❌|Boolean|False|指定该参数后会输出对比的详细信息，包括每行数据的差异，可能会输出较多内容。|
+
+![model-diff.png](../../img/model-diff.png)

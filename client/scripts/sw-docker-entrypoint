@@ -68,7 +68,7 @@ set_py_and_sw() {
 
     # default python version
     PY_VER="python3.8"
-    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] ; then
+    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] || [ "$_RUNTIME" = "python3.11" ] ; then
         PY_VER="$_RUNTIME"
     fi
     _update_python_alter "$PY_VER"
