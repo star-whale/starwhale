@@ -39,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.common.ArchiveFileConsumer;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -52,7 +53,6 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.model.bo.MetaInfo;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -75,19 +75,20 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -152,7 +153,7 @@ public class ModelServiceTest {
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
-        yamlMapper = mock(YAMLMapper.class);
+        yamlMapper = new YAMLMapper();
 
         service = new ModelService(
                 modelMapper,
@@ -438,20 +439,14 @@ public class ModelServiceTest {
                     + "  signature: 786a02f742015903c6\n"
                     + "version: kjvunxjq24iif5grsbazgae7xwbe3om7ogd65eey\n";
             mock.when(() -> TarFileUtil.getContent(any())).thenReturn(manifestContent.getBytes());
-            given(yamlMapper.readValue(anyString(), eq(MetaInfo.class)))
-                    .willReturn(MetaInfo.builder()
-                        .resources(List.of(
-                            new MetaInfo.FileDesc("src/model/empty.pt", "empty.pt", "786a02f742015903c6", true))
-                        ).build());
+
             service.uploadManifest(dsFile, request);
-            verify(yamlMapper, times(1)).readValue(anyString(), eq(MetaInfo.class));
 
             service.uploadSrc(3L, dsFile, request);
             mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
             service.uploadModel(3L, "123456", dsFile, request);
             verify(storageAccessService, times(1)).put(any(), any(InputStream.class));
-
 
             given(modelVersionMapper.find(3L))
                     .willReturn(ModelVersionEntity.builder()
@@ -467,50 +462,125 @@ public class ModelServiceTest {
     }
 
     @Test
+    public void testPullFile() {
+        HttpServletResponse response = new MockHttpServletResponse();
+        service.pullFile("mnist.pth", () -> new ByteArrayInputStream(new byte[10]), response);
+        assertThat("write to response", response.getHeader("Content-Length").equals("10"));
+    }
+
+    @Test
+    public void testPullSrcTar() throws IOException {
+        HttpServletResponse response = new MockHttpServletResponse();
+        // case1: oss error test
+        var srcPath1 = "path1/src";
+        given(storageAccessService.list(srcPath1)).willThrow(IOException.class);
+        assertThrows(SwProcessException.class, () -> service.pullSrcTar("src.tar", srcPath1, response));
+        verify(storageAccessService, times(1)).list(srcPath1);
+        verify(storageAccessService, times(0)).get(any());
+
+        // case2: empty files test
+        var srcPath = "path/src";
+        given(storageAccessService.list(srcPath)).willReturn(Stream.of());
+        assertThrows(SwValidationException.class, () -> service.pullSrcTar("src.tar", srcPath, response));
+        verify(storageAccessService, times(1)).list(srcPath);
+        verify(storageAccessService, times(0)).get(any());
+
+        // case3 : full workflow test
+        try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
+            // case 1: download file
+            given(storageAccessService.list(srcPath)).willReturn(Stream.of("path1/src/file1", "path1/src/file2"));
+
+            service.pullSrcTar("src.tar", srcPath, response);
+
+            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
+            verify(storageAccessService, times(2)).list(srcPath);
+        }
+    }
+
+    @Test
     public void testPull() throws IOException {
-        given(modelVersionMapper.find(same(1L)))
-                .willReturn(ModelVersionEntity.builder().storagePath("path1").build());
+        var manifestContent = "build:\n"
+                + "  os: Linux\n"
+                + "  sw_version: 0.0.0.dev0\n"
+                + "created_at: 2022-12-01 22:17:19 CST\n"
+                + "resources:\n"
+                + "- name: empty.pt\n"
+                + "  duplicate_check: true\n"
+                + "  path: src/model/empty.pt\n"
+                + "  desc: MODEL\n"
+                + "  signature: uuuuuuuuuu\n"
+                + "- name: dataset.yaml\n"
+                + "  duplicate_check: true\n"
+                + "  path: src/src/dataset.yaml\n"
+                + "  desc: SRC\n"
+                + "  signature: 66666666666\n"
+                + "version: m1\n";
 
-        given(modelVersionMapper.find(same(2L)))
-                .willReturn(ModelVersionEntity.builder().storagePath("path2").build());
-
-        given(modelVersionMapper.find(same(3L)))
-                .willReturn(ModelVersionEntity.builder().storagePath("path3").build());
-
-        HttpServletResponse response = mock(HttpServletResponse.class);
+        given(modelVersionMapper.find(same(1L))).willReturn(
+                ModelVersionEntity.builder().storagePath("path1").manifest(manifestContent).build());
+        given(modelVersionMapper.find(same(2L))).willReturn(
+                ModelVersionEntity.builder().storagePath("path2").manifest(manifestContent).build());
+        given(modelVersionMapper.find(same(3L))).willReturn(
+                ModelVersionEntity.builder().storagePath("path3").manifest(manifestContent).build());
+        // case 1: not exist version test
+        var responseForManifest = new MockHttpServletResponse();
         assertThrows(BundleException.class,
-                () -> service.pullSrc("fName", "1", "m1", "v4", response));
+                () -> service.pull(
+                    FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v4",
+                    responseForManifest));
+        // case 2: guess name and path error
+        assertThrows(SwValidationException.class,
+                () -> service.pull(
+                    null, "", "", "", "1", "m1", "v1",
+                    responseForManifest));
+        assertThrows(SwValidationException.class,
+                () -> service.pull(
+                    null, "empty1.pt", "src/model/empty1.pt", "", "1", "m1", "v1",
+                    responseForManifest));
 
-        // error mock
+        // case 3: validation error test
         given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/file1"));
         given(storageAccessService.list("path2/src")).willReturn(Stream.of());
         given(storageAccessService.list("path3/src")).willThrow(IOException.class);
-        assertThrows(SwValidationException.class,
-                () -> service.pullSrc("fName", "1", "m1", "v2", response));
+        service.pull(
+                FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v1",
+                responseForManifest);
+        assertThat("upload manifest to response",
+                    Objects.equals(responseForManifest.getHeader("Content-Length"),
+                    String.valueOf(manifestContent.getBytes().length)));
+
+        // case 4: pull model file
+        var responseForModel = new MockHttpServletResponse();
+        var modelPath = "sw/controller/project/1/model/iiiiii";
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("1"), eq("iiiiii"))).willReturn(modelPath);
+        given(storageAccessService.get(modelPath)).willThrow(IOException.class);
         assertThrows(SwProcessException.class,
-                () -> service.pullSrc("fName", "1", "m1", "v3", response));
-        assertThrows(SwValidationException.class,
-                () -> service.pullModelFile("mName", "qwer", "1", response));
+                () -> service.pull(
+                    FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "1", "m1", "v3",
+                    responseForModel));
 
-        // normal mock
-        try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
-                ServletOutputStream outputStream = mock(ServletOutputStream.class);
-                MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
-            // case 1: download file
-            given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/c.py"));
-            given(storageAccessService.get(anyString())).willReturn(fileInputStream);
-            given(fileInputStream.transferTo(any())).willReturn(1000L);
-            given(response.getOutputStream()).willReturn(outputStream);
+        modelPath = "sw/controller/project/1/model/uuuuuuuuuu";
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("1"), eq("uuuuuuuuuu"))).willReturn(modelPath);
+        given(storageAccessService.get(modelPath)).willReturn(
+                new LengthAbleInputStream(new ByteArrayInputStream(new byte[100]), 100));
+        service.pull(
+                    null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "1", "m1", "v1",
+                    responseForModel
+        );
+        assertThat("upload model to response", Objects.equals(responseForModel.getHeader("Content-Length"), "100"));
 
-            service.pullSrc("fName", "1", "m1", "v1", response);
+        // case 5: pull src as tar
+        var responseForNormal = new MockHttpServletResponse();
+        try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
+            given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/a.py", "path1/src/b.py"));
+
+            service.pull(
+                    FileDesc.SRC_TAR, "src.tar", "", "", "1", "m1", "v1",
+                    responseForNormal);
+
             tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
-
-            var modelPath = "model/qwer/mName";
-            var modelFile = "model/qwer/mName/file1";
-            given(storagePathCoordinator.allocateCommonModelPoolPath("1", "qwer")).willReturn(modelPath);
-            given(storageAccessService.list(same(modelPath))).willReturn(Stream.of(modelFile));
-            service.pullModelFile("mName", "qwer", "1", response);
-            verify(storageAccessService, times(1)).get(modelFile);
+            assertThat("upload src.tar to response",
+                    Objects.equals(responseForNormal.getHeader("Content-Length"), "0"));
         }
     }
 

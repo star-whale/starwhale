@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.storage;
 
 
-import ai.starwhale.mlops.api.protocol.StorageFileVo;
+import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -43,7 +43,7 @@ public class StorageService {
     @Resource
     private StorageAccessService storageAccessService;
 
-    public List<StorageFileVo> listStorageFile(String storagePath) throws IOException {
+    public List<FlattenFileVo> listStorageFile(String storagePath) throws IOException {
         if (!StringUtils.hasText(storagePath)) {
             log.error("Cannot list storage files. Storage path is empty");
             return List.of();
@@ -62,7 +62,7 @@ public class StorageService {
                 if (StrUtil.startWith(filePath, storagePath)) {
                     filePath = filePath.substring(storagePath.length() + 1);
                 }
-                return StorageFileVo.builder()
+                return FlattenFileVo.builder()
                         .name(filePath)
                         .size(FileUtil.readableFileSize(length))
                         .build();

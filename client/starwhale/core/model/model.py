@@ -622,6 +622,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         "signature": blake2b_file(self.store.src_dir / sub_path),
                         "duplicate_check": False,
                         "type": FileType.SRC.name,
+                        "size": file_stat(self.store.src_dir / sub_path).st_size,
                     }
                 )
 
@@ -695,6 +696,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "signature": blake2b_file(self.store.src_dir / _fname),
                     "duplicate_check": True,
                     "type": FileType.MODEL.name,
+                    "size": file_stat(self.store.src_dir / _fname).st_size,
                 }
             )
         logger.info("[step:copy]finish copy files")

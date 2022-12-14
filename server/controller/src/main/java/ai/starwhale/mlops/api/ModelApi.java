@@ -19,13 +19,14 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
+import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +36,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
@@ -187,6 +190,37 @@ public interface ModelApi {
             @RequestParam(value = "versionUrl", required = false)
             String versionUrl);
 
+
+    @Operation(summary = "Model Diff information",
+            description = "Return the diff information between the base version and the compare version")
+    @ApiResponses(value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ModelInfoVo.class))
+            )
+    })
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/diff")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
+            @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
+            @PathVariable("projectUrl")
+            String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("modelUrl")
+            String modelUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Model version of base. ", schema = @Schema())
+            @Valid
+            @RequestParam(value = "baseVersion")
+            String baseVersion,
+            @Parameter(in = ParameterIn.QUERY, description = "Model version of compare. ", schema = @Schema())
+            @Valid
+            @RequestParam(value = "compareVersion")
+            String compareVersion);
+
     @Operation(summary = "Get the list of model versions")
     @ApiResponses(
             value = {
@@ -278,7 +312,7 @@ public interface ModelApi {
             produces = {"application/json"})
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<Object>> upload(
-            @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileType fileType,
+            @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileDesc fileDesc,
             @RequestHeader(name = "X-SW-UPLOAD-OBJECT-HASH", required = false) String signature,
             @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) Long uploadId,
             @Parameter(
@@ -303,8 +337,9 @@ public interface ModelApi {
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
-            @RequestHeader(name = "X-SW-DOWNLOAD-TYPE", required = false) FileType fileType,
+            @RequestHeader(name = "X-SW-DOWNLOAD-TYPE", required = false) FileDesc fileDesc,
             @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-NAME", required = false) String name,
+            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-PATH", required = false) String path,
             @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-HASH", required = false) String signature,
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())

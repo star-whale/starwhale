@@ -14,24 +14,38 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol;
+package ai.starwhale.mlops.domain.storage;
 
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.validation.annotation.Validated;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@Validated
-@Schema(description = "Storage file object", title = "StorageFile")
-public class StorageFileVo implements Serializable {
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class MetaInfo {
 
-    @JsonProperty("name")
-    private String name;
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Resource {
+        String path;
+        String name;
+        long size;
+        FileDesc desc;
+        String signature;
+        @JsonProperty("duplicate_check")
+        boolean duplicateCheck;
+    }
 
-    @JsonProperty("size")
-    private String size;
+    List<Resource> resources;
+
 }

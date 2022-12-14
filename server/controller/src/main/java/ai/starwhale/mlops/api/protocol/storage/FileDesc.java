@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.model;
+package ai.starwhale.mlops.api.protocol.storage;
 
-public enum FileType {
-    MANIFEST, SRC_TAR, MODEL, DATA
+public enum FileDesc {
+    MANIFEST, SRC_TAR, SRC, MODEL, DATA
 }

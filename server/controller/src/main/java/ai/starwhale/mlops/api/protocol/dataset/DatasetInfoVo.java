@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.dataset;
 
-import ai.starwhale.mlops.api.protocol.StorageFileVo;
+import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -60,6 +60,6 @@ public class DatasetInfoVo implements Serializable {
 
     @JsonProperty("files")
     @Valid
-    private List<StorageFileVo> files;
+    private List<FlattenFileVo> files;
 
 }

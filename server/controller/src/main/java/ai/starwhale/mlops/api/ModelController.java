@@ -18,13 +18,14 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.model.FileType;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
+import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -39,6 +40,7 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
@@ -121,8 +123,8 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(String projectUrl, String modelUrl,
-            String versionUrl) {
+    public ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
+            String projectUrl, String modelUrl, String versionUrl) {
         ModelInfoVo modelInfo = modelService.getModelInfo(
                 ModelQuery.builder()
                         .projectUrl(projectUrl)
@@ -130,6 +132,14 @@ public class ModelController implements ModelApi {
                         .modelVersionUrl(versionUrl)
                         .build());
         return ResponseEntity.ok(Code.success.asResponse(modelInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
+            String projectUrl, String modelUrl, String baseVersion, String compareVersion) {
+
+        return ResponseEntity.ok(Code.success.asResponse(
+                modelService.getModelDiff(projectUrl, modelUrl, baseVersion, compareVersion)));
     }
 
     @Override
@@ -184,7 +194,7 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<Object>> upload(
-            FileType fileType, String signature, Long uploadId,
+            FileDesc fileDesc, String signature, Long uploadId,
             String projectUrl, String modelUrl, String versionUrl,
             MultipartFile file, ModelUploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
@@ -192,9 +202,9 @@ public class ModelController implements ModelApi {
         switch (uploadRequest.getPhase()) {
             case MANIFEST:
                 return ResponseEntity.ok(Code.success.asResponse(
-                    modelService.uploadManifest(file, uploadRequest)));
+                        modelService.uploadManifest(file, uploadRequest)));
             case BLOB:
-                switch (fileType) {
+                switch (fileDesc) {
                     case MODEL:
                         modelService.uploadModel(uploadId, signature, file, uploadRequest);
                         break;
@@ -203,7 +213,7 @@ public class ModelController implements ModelApi {
                         break;
                     default:
                         throw new StarwhaleApiException(
-                                new SwValidationException(ValidSubject.MODEL, "don't support fileType" + fileType),
+                                new SwValidationException(ValidSubject.MODEL, "don't support fileType" + fileDesc),
                                 HttpStatus.BAD_REQUEST);
                 }
                 break;
@@ -224,26 +234,10 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public void pull(FileType fileType, String name, String signature,
+    public void pull(FileDesc fileDesc, String name, String path, String signature,
                      String projectUrl, String modelUrl, String versionUrl,
                      HttpServletResponse httpResponse) {
-        switch (fileType) {
-            case MANIFEST:
-                modelService.pullManifest(name, projectUrl, modelUrl, versionUrl, httpResponse);
-                break;
-            case SRC_TAR:
-                modelService.pullSrc(name, projectUrl, modelUrl, versionUrl, httpResponse);
-                break;
-            case MODEL:
-                modelService.pullModelFile(name, signature, projectUrl, httpResponse);
-                break;
-            default:
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "unsupport type " + fileType),
-                        HttpStatus.BAD_REQUEST
-                );
-        }
-
+        modelService.pull(fileDesc, name, path, signature, projectUrl, modelUrl, versionUrl, httpResponse);
     }
 
     @Override
