@@ -302,15 +302,19 @@ class BundleCopy(CloudRequestMixed):
 
     def _do_ubd_bundle_prepare(
         self,
-        progress: Progress,
+        progress: t.Optional[Progress],
         workdir: Path,
         url_path: str,
     ) -> t.Any:
         manifest_path = workdir / DEFAULT_MANIFEST_NAME
-        task_id = progress.add_task(
-            f":arrow_up: {manifest_path.name}",
-            total=manifest_path.stat().st_size,
-        )
+        if progress is None:
+            task_id = TaskID(0)
+        else:
+            task_id = progress.add_task(
+                f":arrow_up: {manifest_path.name}",
+                total=manifest_path.stat().st_size,
+            )
+
         # TODO: use rich progress
         r = self.do_multipart_upload_file(
             url_path=url_path,
@@ -331,7 +335,7 @@ class BundleCopy(CloudRequestMixed):
 
     def _do_ubd_blobs(
         self,
-        progress: Progress,
+        progress: t.Optional[Progress],
         workdir: Path,
         upload_id: str,
         url_path: str,
@@ -348,7 +352,9 @@ class BundleCopy(CloudRequestMixed):
             _upload_headers["X-SW-UPLOAD-TYPE"] = fd.file_type.name
             _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = fd.signature
 
-            progress.update(_tid, visible=True)
+            if progress is not None:
+                progress.update(_tid, visible=True)
+
             self.do_multipart_upload_file(
                 url_path=url_path,
                 file_path=fd.path,
@@ -364,14 +370,18 @@ class BundleCopy(CloudRequestMixed):
             )
 
         _p_map = {}
-        for _f in self.upload_files(workdir=workdir):
+        for _id, _f in enumerate(self.upload_files(workdir=workdir)):
             if existed_files and _f.signature in existed_files:
                 continue
-            _tid = progress.add_task(
-                f":arrow_up: {_f.path.name}",
-                total=float(_f.size),
-                visible=False,
-            )
+
+            if progress is None:
+                _tid = TaskID(_id)
+            else:
+                _tid = progress.add_task(
+                    f":arrow_up: {_f.path.name}",
+                    total=float(_f.size),
+                    visible=False,
+                )
             _p_map[_tid] = _f
 
         with ThreadPoolExecutor(
@@ -382,6 +392,9 @@ class BundleCopy(CloudRequestMixed):
                 for _tid, _file_desc in _p_map.items()
             ]
             wait(futures)
+
+    def _do_ubd_datastore(self) -> None:
+        raise NotImplementedError
 
     def _do_ubd_end(self, upload_id: str, url_path: str, ok: bool) -> None:
         phase = _UploadPhase.END if ok else _UploadPhase.CANCEL
@@ -401,9 +414,10 @@ class BundleCopy(CloudRequestMixed):
 
     def _do_upload_bundle_dir(
         self,
-        progress: Progress,
+        progress: t.Optional[Progress] = None,
+        workdir: t.Optional[Path] = None,
     ) -> None:
-        workdir: Path = self._get_target_path(self.src_uri)
+        workdir = workdir or self._get_target_path(self.src_uri)
         url_path = self._get_remote_instance_rc_url()
 
         res_data = self._do_ubd_bundle_prepare(
@@ -416,6 +430,7 @@ class BundleCopy(CloudRequestMixed):
             raise Exception("upload_id is empty")
         exists_files: list = res_data.get("existed", [])
         try:
+            self._do_ubd_datastore()
             self._do_ubd_blobs(
                 progress=progress,
                 workdir=workdir,

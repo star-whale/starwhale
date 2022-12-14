@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import List, Iterator, Optional
+from typing import Iterator
 from pathlib import Path
 
 from rich.progress import Progress
@@ -20,6 +22,18 @@ from .tabular import TabularDataset
 
 
 class DatasetCopy(BundleCopy):
+    def with_disable_datastore(self) -> DatasetCopy:
+        self._disable_datastore = True
+        return self
+
+    def with_enable_datastore(self) -> DatasetCopy:
+        self._disable_datastore = False
+        return self
+
+    @property
+    def datastore_disabled(self) -> bool:
+        return getattr(self, "_disable_datastore", False)
+
     def upload_files(self, workdir: Path) -> Iterator[FileDesc]:
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         for _k in _manifest["signature"]:
@@ -79,24 +93,20 @@ class DatasetCopy(BundleCopy):
                 file_type=FileType.SRC_TAR,
             )
 
-    def _do_ubd_blobs(
-        self,
-        progress: Progress,
-        workdir: Path,
-        upload_id: str,
-        url_path: str,
-        existed_files: Optional[List] = None,
-    ) -> None:
+    def _do_ubd_datastore(self) -> None:
+        if self.datastore_disabled:
+            return
+
         with TabularDataset(
             name=self.bundle_name,
             version=self.bundle_version,
             project=self.src_uri.project,
-            instance_uri=STANDALONE_INSTANCE,
+            instance_name=STANDALONE_INSTANCE,
         ) as local, TabularDataset(
             name=self.bundle_name,
             version=self.bundle_version,
             project=self.dest_uri.project,
-            instance_uri=self.dest_uri.instance,
+            instance_name=self.dest_uri.instance,
         ) as remote:
             console.print(
                 f":bear_face: dump dataset meta from standalone to cloud({remote._ds_wrapper._meta_table_name})"
@@ -105,26 +115,24 @@ class DatasetCopy(BundleCopy):
             for row in local.scan():
                 remote.put(row)
 
-        super()._do_ubd_blobs(progress, workdir, upload_id, url_path, existed_files)
-
     def _do_download_bundle_dir(self, progress: Progress) -> None:
-
-        with TabularDataset(
-            name=self.bundle_name,
-            version=self.bundle_version,
-            project=self.dest_uri.project,
-            instance_uri=STANDALONE_INSTANCE,
-        ) as local, TabularDataset(
-            name=self.bundle_name,
-            version=self.bundle_version,
-            project=self.src_uri.project,
-            instance_uri=self.src_uri.instance,
-        ) as remote:
-            console.print(
-                f":bird: load dataset meta from cloud({remote._ds_wrapper._meta_table_name}) to standalone"
-            )
-            # TODO: add progressbar
-            for row in remote.scan():
-                local.put(row)
+        if not self.datastore_disabled:
+            with TabularDataset(
+                name=self.bundle_name,
+                version=self.bundle_version,
+                project=self.dest_uri.project,
+                instance_name=STANDALONE_INSTANCE,
+            ) as local, TabularDataset(
+                name=self.bundle_name,
+                version=self.bundle_version,
+                project=self.src_uri.project,
+                instance_name=self.src_uri.instance,
+            ) as remote:
+                console.print(
+                    f":bird: load dataset meta from cloud({remote._ds_wrapper._meta_table_name}) to standalone"
+                )
+                # TODO: add progressbar
+                for row in remote.scan():
+                    local.put(row)
 
         super()._do_download_bundle_dir(progress)

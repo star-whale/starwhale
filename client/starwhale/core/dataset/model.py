@@ -4,6 +4,7 @@ import typing as t
 import inspect
 import tarfile
 from abc import ABCMeta, abstractmethod
+from http import HTTPStatus
 from pathlib import Path
 from collections import defaultdict
 
@@ -39,6 +40,10 @@ from .tabular import TabularDataset
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
+    def __init__(self, uri: URI) -> None:
+        self.store = DatasetStorage(uri)
+        super().__init__(uri)
+
     def __str__(self) -> str:
         return f"Starwhale Dataset: {self.uri}"
 
@@ -125,7 +130,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
-        self.store = DatasetStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[
             str, t.Any
@@ -522,13 +526,23 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
 
     def summary(self) -> t.Optional[DatasetSummary]:
-        r = self.do_http_request(
+        resp = self.do_http_request(
             f"/project/{self.uri.project}/{self.uri.object.typ}/{self.uri.object.name}",
             method=HTTPMethod.GET,
             instance_uri=self.uri,
             params={"versionUrl": self.uri.object.version},
-        ).json()
-        _manifest: t.Dict[str, t.Any] = yaml.safe_load(r["data"].get("versionMeta", {}))
+            ignore_status_codes=[
+                HTTPStatus.NOT_FOUND,
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            ],
+        )
+        if resp.status_code != HTTPStatus.OK:
+            return None
+
+        content = resp.json()
+        _manifest: t.Dict[str, t.Any] = yaml.safe_load(
+            content["data"].get("versionMeta", {})
+        )
         _summary = _manifest.get("dataset_summary", {})
         return DatasetSummary(**_summary) if _summary else None
 
