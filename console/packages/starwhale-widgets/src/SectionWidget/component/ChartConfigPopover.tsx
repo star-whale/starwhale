@@ -4,8 +4,7 @@ import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
 // @FIXME move to ui
 import { ConfirmButton } from '@/components/Modal/confirm'
-import { expandMargin } from '@starwhale/ui/utils'
-import { expandPadding } from '../../../../../src/utils/index'
+import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 
 const COLUMN_OPTIONS = [
     { label: 'Edit', type: 'edit' },

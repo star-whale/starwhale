@@ -10,7 +10,6 @@ import { StyledInput, StyledInputSizer } from './styled-components'
 import { getOverrides } from 'baseui/helpers/overrides'
 import type { AutosizeInputProps, AutosizeInputState } from './types'
 import type { ComponentProps } from 'react'
-import usePrevious from '../../../../../src/hooks/usePrevious'
 
 export default class AutosizeInput extends React.Component<
     AutosizeInputProps & Omit<ComponentProps<typeof StyledInput>, keyof AutosizeInputProps>,

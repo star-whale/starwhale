@@ -1,12 +1,10 @@
-import { ColumnFilterModel, ColumnSchemaDesc, TableQueryFilterDesc } from '@starwhale/core/datastore'
+import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import { useClickAway } from 'react-use'
-import qs from 'qs'
-import { useQueryArgs } from '../../../../src/hooks/useQueryArgs'
-import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
+import { useQueryArgs, useDeepEffect } from '@starwhale/core/utils'
 
 export const useStyles = createUseStyles({
     searchBar: {
