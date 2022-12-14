@@ -6,6 +6,7 @@ from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
 from functools import wraps
+from itertools import islice
 from contextlib import ExitStack
 
 from loguru import logger
@@ -292,6 +293,17 @@ class Dataset:
                 self.__data_loaders[key] = _loader
 
         return _loader
+
+    def batch_iter(
+        self, batch_size: int = 1, drop_not_full: bool = False
+    ) -> t.Iterator[t.List[DataRow]]:
+        """Batch data into lists of length n. The last batch may be shorter."""
+        it = self.__iter__()
+        while True:
+            batch_data = list(islice(it, batch_size))
+            if not batch_data or (drop_not_full and len(batch_data) < batch_size):
+                return
+            yield batch_data
 
     def __iter__(self) -> t.Iterator[DataRow]:
         for row in self._get_data_loader():

@@ -26,12 +26,8 @@ from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.tabular import (
-    TabularDataset,
-    TabularDatasetInfo,
-    get_dataset_consumption,
-)
-from starwhale.api._impl.dataset.loader import get_data_loader
+from starwhale.api._impl.dataset import Dataset
+from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetInfo
 
 
 class _LogType:
@@ -79,10 +75,12 @@ class PPLResultIterator:
 class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
+        ppl_batch_size: int = 1,
         ignore_annotations: bool = False,
         ignore_error: bool = False,
         flush_result: bool = False,
     ) -> None:
+        self.ppl_batch_size = ppl_batch_size
         self.svc = Service()
         self.context: Context = context_holder.context
 
@@ -226,67 +224,82 @@ class PipelineHandler(metaclass=ABCMeta):
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
 
+    def _is_ppl_batch(self) -> bool:
+        return self.ppl_batch_size > 1
+
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
         result_storage = PPLResultStorage(self.context)
-
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
-
-        cnt = 0
+        join_str = "_#@#_"
         # TODO: user custom config batch size, max_retries
-        for ds_uri in self.context.dataset_uris:
-            _uri = URI(ds_uri, expected_type=URIType.DATASET)
-            consumption = get_dataset_consumption(
-                dataset_uri=_uri, session_id=self.context.version
-            )
-            loader = get_data_loader(_uri, session_consumption=consumption)
-            dataset_info = loader.tabular_dataset.info
-
-            for _idx, _data, _annotations in loader:
-                cnt += 1
+        for uri_str in self.context.dataset_uris:
+            _uri = URI(uri_str, expected_type=URIType.DATASET)
+            ds = Dataset.dataset(_uri)
+            ds.make_distributed_consumption(session_id=self.context.version)
+            dataset_info = ds.info
+            cnt = 0
+            for rows in ds.batch_iter(self.ppl_batch_size):
                 _start = time.time()
-                _result: t.Any = b""
+                _results: t.Any = b""
                 _exception = None
-                _idx_with_ds = f"{_uri.object}_#@#_{_idx}"
                 try:
-                    # TODO: inspect profiling
-                    _result = self.ppl(
-                        _data,
-                        annotations=_annotations,
-                        index=_idx,
-                        index_with_dataset=_idx_with_ds,
-                        dataset_info=dataset_info,
-                    )
+                    if self._is_ppl_batch():
+                        _results = self.ppl(
+                            [row.data for row in rows],
+                            annotations=[row.annotations for row in rows],
+                            index=[row.index for row in rows],
+                            index_with_dataset=[
+                                f"{_uri.object}{join_str}{row.index}" for row in rows
+                            ],
+                            dataset_info=dataset_info,
+                        )
+                    else:
+                        _results = [
+                            self.ppl(
+                                rows[0].data,
+                                annotations=rows[0].annotations,
+                                index=rows[0].index,
+                                index_with_dataset=f"{_uri.object}{join_str}{rows[0].index}",
+                                dataset_info=dataset_info,
+                            )
+                        ]
                 except Exception as e:
                     _exception = e
-                    self._sw_logger.exception(f"[{_idx_with_ds}] data handle -> failed")
+                    self._sw_logger.exception(
+                        f"[{[r.index for r in rows]}] data handle -> failed"
+                    )
                     if not self.ignore_error:
                         self._update_status(STATUS.FAILED)
                         raise
                 else:
                     _exception = None
 
-                self._sw_logger.debug(
-                    f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
-                )
+                for (_idx, _data, _annotations), _result in zip(rows, _results):
+                    cnt += 1
+                    _idx_with_ds = f"{_uri.object}{join_str}{_idx}"
 
-                self._timeline_writer.write(
-                    {
-                        "time": now_str(),
-                        "status": _exception is None,
-                        "exception": str(_exception),
-                        "index": _idx,
-                        "index_with_dataset": _idx_with_ds,
-                    }
-                )
+                    self._sw_logger.debug(
+                        f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
+                    )
 
-                result_storage.save(
-                    data_id=_idx_with_ds,
-                    index=_idx,
-                    result=_result,
-                    annotations={} if self.ignore_annotations else _annotations,
-                )
+                    self._timeline_writer.write(
+                        {
+                            "time": now_str(),
+                            "status": _exception is None,
+                            "exception": str(_exception),
+                            "index": _idx,
+                            "index_with_dataset": _idx_with_ds,
+                        }
+                    )
+
+                    result_storage.save(
+                        data_id=_idx_with_ds,
+                        index=_idx,
+                        result=_result,
+                        annotations={} if self.ignore_annotations else _annotations,
+                    )
 
         if self.flush_result:
             result_storage.flush()

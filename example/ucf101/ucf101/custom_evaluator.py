@@ -6,8 +6,20 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+from loguru import logger
 
-from starwhale import Video, PipelineHandler, PPLResultIterator, multi_classification
+from starwhale import (
+    URI,
+    step,
+    Video,
+    Context,
+    dataset,
+    URIType,
+    pass_context,
+    PPLResultStorage,
+    PPLResultIterator,
+    multi_classification,
+)
 
 from .model import MFNET_3D
 from .sampler import RandomSampling
@@ -16,11 +28,11 @@ from .transform import Resize, Compose, ToTensor, Normalize, RandomCrop
 root_dir = Path(__file__).parent.parent
 
 
-def ppl_post(output: torch.Tensor) -> t.List[t.Tuple[str, t.List[float]]]:
+def ppl_post(output: torch.Tensor) -> t.Tuple[t.List[str], t.List[float]]:
     output = output.squeeze()
     pred_value = output.argmax(-1).flatten().tolist()
     probability_matrix = np.exp(output.tolist()).tolist()
-    return list(zip([str(p) for p in pred_value], probability_matrix))
+    return [str(p) for p in pred_value], probability_matrix
 
 
 def load_model(device):
@@ -86,9 +98,8 @@ def ppl_pre(videos: t.List[Video], sampler, transforms) -> torch.Tensor:
     )
 
 
-class UCF101PipelineHandler(PipelineHandler):
+class UCF101CustomPipelineHandler:
     def __init__(self):
-        super().__init__(ignore_error=False, ppl_batch_size=5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = load_model(self.device)
         self.sampler = RandomSampling()
@@ -102,9 +113,37 @@ class UCF101PipelineHandler(PipelineHandler):
                 ),
             ]
         )
+        self.ppl_batch_size = 5
+
+    @step(concurrency=2, task_num=2)
+    @pass_context
+    def run_ppl(self, context: Context) -> None:
+        print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
+        ppl_result_storage = PPLResultStorage(context)
+
+        for ds_uri in context.dataset_uris:
+            _uri = URI(ds_uri, expected_type=URIType.DATASET)
+            ds = dataset(_uri)
+            for rows in ds.batch_iter(self.ppl_batch_size):
+                pred_values, probability_matrixs = self.batch_ppl([r[1] for r in rows])
+
+                for (_idx, _data, _annotations), pred_value, probability_matrix in zip(
+                    rows, pred_values, probability_matrixs
+                ):
+                    _unique_id = f"{_uri.object}_{_idx}"
+                    try:
+                        ppl_result_storage.save(
+                            data_id=_unique_id,
+                            result=pred_value,
+                            probability_matrix=probability_matrix,
+                            annotations=_annotations,
+                        )
+                    except Exception:
+                        logger.error(f"[{_unique_id}] data handle -> failed")
+                        raise
 
     @torch.no_grad()
-    def ppl(self, videos: t.List[Video], annotations, index, **kw: t.Any) -> t.Any:
+    def batch_ppl(self, videos: t.List[Video], **kw: t.Any) -> t.Any:
         _frames_tensor = ppl_pre(
             videos=videos, sampler=self.sampler, transforms=self.transforms
         )
@@ -112,23 +151,27 @@ class UCF101PipelineHandler(PipelineHandler):
 
         # recording
         probs = torch.nn.Softmax(dim=1)(output)
-        label = torch.max(probs, 1)[1].detach().cpu().numpy()[0]
-        print(
-            f"id is:{index},real label is:{annotations},predict value is:{label}, probability is:{probs[0][label]}"
-        )
+        label = torch.max(probs, 1)[1].detach().cpu().numpy()
+        print(f"predict value is:{label}, probability is:{probs}")
 
         return ppl_post(output)
 
+    @step(needs=["run_ppl"])
     @multi_classification(
         confusion_matrix_normalize="all",
         show_hamming_loss=True,
         show_cohen_kappa_score=True,
         show_roc_auc=True,
     )
-    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+    @pass_context
+    def run_cmp(
+        self, context: Context
+    ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
+        print(f"start to run cmp@{context.version}...")
+        result_loader = PPLResultIterator(context)
         result, label, pr = [], [], []
-        for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
-            result.append(_data["result"][0])
-            pr.append(_data["result"][1])
+        for data in result_loader:
+            result.append(data["result"])
+            label.append(data["annotations"]["label"])
+            pr.append(data["probability_matrix"])
         return label, result, pr

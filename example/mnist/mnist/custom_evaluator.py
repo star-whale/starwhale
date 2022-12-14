@@ -13,14 +13,13 @@ from starwhale import (
     step,
     Image,
     Context,
+    dataset,
     URIType,
     pass_context,
     GrayscaleImage,
-    get_data_loader,
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
-    get_dataset_consumption,
 )
 from starwhale.api.service import Input, Output, Request, Service, Response
 from starwhale.base.spec.openapi.components import (
@@ -107,6 +106,7 @@ class CustomPipelineHandler:
     def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
+        self.batch_size = 5
 
     @step(concurrency=2, task_num=2)
     @pass_context
@@ -114,26 +114,29 @@ class CustomPipelineHandler:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
         ppl_result_storage = PPLResultStorage(context)
 
-        for ds_uri in context.dataset_uris:
-            _uri = URI(ds_uri, expected_type=URIType.DATASET)
-            consumption = get_dataset_consumption(
-                dataset_uri=_uri, session_id=context.version
-            )
-            loader = get_data_loader(_uri, session_consumption=consumption)
-
-            for _idx, _data, _annotations in loader:
-                _unique_id = f"{_uri.object}_{_idx}"
+        for uri_str in context.dataset_uris:
+            _uri = URI(uri_str, expected_type=URIType.DATASET)
+            ds = dataset(_uri)
+            ds.make_distributed_consumption(session_id=context.version)
+            for rows in ds.batch_iter(self.batch_size):
                 try:
-                    pred_value, probability_matrix = self.ppl(_data)
-
-                    ppl_result_storage.save(
-                        data_id=_unique_id,
-                        result=pred_value,
-                        probability_matrix=probability_matrix,
-                        annotations=_annotations,
+                    pred_values, probability_matrixs = self.batch_ppl(
+                        [r[1] for r in rows]
                     )
+                    for (
+                        (_idx, _data, _annotations),
+                        pred_value,
+                        probability_matrix,
+                    ) in zip(rows, pred_values, probability_matrixs):
+                        _unique_id = f"{_uri.object}_{_idx}"
+                        ppl_result_storage.save(
+                            data_id=_unique_id,
+                            result=pred_value,
+                            probability_matrix=probability_matrix,
+                            annotations=_annotations,
+                        )
                 except Exception:
-                    logger.error(f"[{_unique_id}] data handle -> failed")
+                    logger.error(f"[{[r[0] for r in rows]}] data handle -> failed")
                     raise
 
     @step(needs=["run_ppl"])
@@ -152,9 +155,9 @@ class CustomPipelineHandler:
         result_loader = PPLResultIterator(context)
         result, label, pr = [], [], []
         for data in result_loader:
-            result.extend(data["result"])
+            result.append(data["result"])
             label.append(data["annotations"]["label"])
-            pr.extend(data["probability_matrix"])
+            pr.append(data["probability_matrix"])
         return label, result, pr
 
     def _load_model(self, device: torch.device) -> Net:
@@ -166,19 +169,28 @@ class CustomPipelineHandler:
         print("load mnist model, start to inference...")
         return model
 
-    def _pre(self, input: Image) -> torch.Tensor:
-        _tensor = torch.tensor(bytearray(input.to_bytes()), dtype=torch.uint8).reshape(
-            input.shape[0], input.shape[1]  # type: ignore
-        )
-        _image_array = PILImage.fromarray(_tensor.numpy())
-        _image = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-        )(_image_array)
-        return torch.stack([_image]).to(self.device)
+    def _pre(self, data: t.List[Image]) -> t.Any:
+        images = []
+        for i in data:
+            _tensor = torch.tensor(bytearray(i.to_bytes()), dtype=torch.uint8).reshape(
+                i.shape[0], i.shape[1]  # type: ignore
+            )
+            _image_array = PILImage.fromarray(_tensor.numpy())
+            _image = transforms.Compose(
+                [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+            )(_image_array)
+
+            images.append(_image)
+        return torch.stack(images).to(self.device)
 
     @svc.api(CustomGrayscaleImageRequest(), CustomOutput())
-    def ppl(self, data: Image) -> t.Tuple[t.List[int], t.List[float]]:
-        data_tensor = self._pre(data)
+    def ppl(self, data: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:
+        return self.batch_ppl([data])
+
+    def batch_ppl(
+        self, images: t.List[Image], **kw: t.Any
+    ) -> t.Tuple[t.List[int], t.List[float]]:
+        data_tensor = self._pre(images)
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
