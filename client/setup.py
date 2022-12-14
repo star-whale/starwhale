@@ -78,7 +78,7 @@ setup(
       sw = starwhale.cli:cli
       starwhale = starwhale.cli:cli
       """,
-    python_requires=">=3.7, <=3.11",
+    python_requires=">=3.7, <3.12",
     scripts=[
         "scripts/sw-docker-entrypoint",
     ],
