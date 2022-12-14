@@ -55,3 +55,40 @@ export function showTableName(name: string) {
     if (name.includes('/summary')) return name.split('/').slice(3).join('/')
     return name.split('/').slice(5).join('/')
 }
+
+export function unhexlify(str: string) {
+    const f = new Uint8Array(8)
+    let j = 0
+    for (let i = 0, l = str.length; i < l; i += 2) {
+        f[j] = parseInt(str.substr(i, 2), 16)
+        j++
+    }
+    return f
+}
+
+export function hexlifyString(str: string) {
+    let result = ''
+    const padding = '00'
+    for (let i = 0, l = str.length; i < l; i++) {
+        const digit = str.charCodeAt(i).toString(16)
+        const padded = (padding + digit).slice(-2)
+        result += padded
+    }
+    return result
+}
+
+export function hexlify(str: Uint8Array) {
+    let result = ''
+    const padding = '00'
+    for (let i = 0, l = str.length; i < l; i++) {
+        const digit = str[i].toString(16)
+        const padded = (padding + digit).slice(-2)
+        result += padded
+    }
+    return result
+}
+
+export const isBasicType = (v: string) =>
+    ['BOOL', 'INT8', 'INT16', 'INT32', 'INT64', 'FLOAT16', 'FLOAT32', 'FLOAT64', 'STRING'].includes(v)
+
+export const isSearchColumns = (v: string) => !v.startsWith('_')

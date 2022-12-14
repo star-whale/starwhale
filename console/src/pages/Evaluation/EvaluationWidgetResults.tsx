@@ -1,13 +1,14 @@
 import React from 'react'
 import Card from '@/components/Card'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { showTableName, tableNameOfSummary } from '@/domain/datastore/utils'
-import { useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
+import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
+import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
 import Table from '@/components/Table'
 import Editor from '@/components/Editor'
 import { Panel } from 'baseui/accordion'
 import Accordion from '@/components/Accordion'
+import { QueryTableRequest } from '@starwhale/core/datastore'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -74,7 +75,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
         [table, filter]
     )
 
-    const info = useQueryDatastore(query, true)
+    const info = useQueryDatastore(query as QueryTableRequest)
 
     const columns = React.useMemo(() => {
         return info.data?.columnTypes?.map((column) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []

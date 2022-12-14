@@ -2,9 +2,9 @@ import React from 'react'
 import LoginLayout from './LoginLayout'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 
-export default function Logout() {
+export default function Pending({ style }: { style?: React.CSSProperties }) {
     return (
-        <LoginLayout>
+        <LoginLayout style={style}>
             <div
                 style={{
                     display: 'flex',

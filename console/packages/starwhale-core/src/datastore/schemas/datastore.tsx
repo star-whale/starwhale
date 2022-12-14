@@ -82,6 +82,8 @@ export interface QueryTableRequest {
     limit?: number
 
     ignoreNonExistingTable?: boolean
+
+    rawResult?: boolean
 }
 
 export interface TableQueryFilterDesc {

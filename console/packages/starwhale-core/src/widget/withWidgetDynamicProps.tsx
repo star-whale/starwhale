@@ -67,7 +67,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             [tableName]
         )
 
-        const info = useQueryDatastore(query, false)
+        const info = useQueryDatastore(query)
 
         useEffect(() => {
             if (tableName) info.refetch()

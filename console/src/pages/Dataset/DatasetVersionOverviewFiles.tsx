@@ -1,5 +1,5 @@
 import React from 'react'
-import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
+import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
@@ -7,6 +7,7 @@ import { getMetaRow } from '@/domain/dataset/utils'
 import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
+import { useQueryArgs } from '@/hooks/useQueryArgs'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { getReadableStorageQuantityStr } from '@/utils'
@@ -164,13 +165,15 @@ export default function DatasetVersionFiles() {
     const { datasetVersion } = useDatasetVersion()
 
     const [preview, setPreview] = React.useState('')
+    const { query } = useQueryArgs()
 
     const $page = React.useMemo(() => {
         return {
             ...page,
             layout: layoutKey,
+            filter: query.filter,
         }
-    }, [page, layoutKey])
+    }, [page, layoutKey, query.filter])
 
     React.useEffect(() => {
         setLayoutKey(layoutParam ?? '0')
@@ -241,19 +244,19 @@ export default function DatasetVersionFiles() {
                     switch (row.type) {
                         case TYPES.IMAGE:
                             wrapperStyle = {
-                                minHeight: '90px',
-                                maxWidth: layoutKey === LAYOUT.GRID ? undefined : '100px',
+                                height: '90px',
+                                textAlign: 'center',
                             }
                             break
                         case TYPES.AUDIO:
-                            wrapperStyle = { minHeight: '90px' }
+                            wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
                             break
                         case TYPES.VIDEO:
                             wrapperStyle = { maxWidth: '300px' }
                             break
                         default:
                         case TYPES.TEXT:
-                            wrapperStyle = { minHeight: '60px' }
+                            wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
                             break
                     }
 
@@ -270,7 +273,7 @@ export default function DatasetVersionFiles() {
                                     history.push(
                                         `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
                                             {
-                                                ...page,
+                                                ...$page,
                                                 layout: layoutKey,
                                             }
                                         )}`
@@ -370,7 +373,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, page])
+    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page])
 
     return (
         <div className={styles.wrapper}>
@@ -383,7 +386,8 @@ export default function DatasetVersionFiles() {
                         history.push(
                             `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
                                 {
-                                    pageNum: Math.floor((page.pageSize * page.pageNum) / newSize),
+                                    ...$page,
+                                    pageNum: Math.max(Math.floor((page.pageSize * (page.pageNum - 1)) / newSize), 1),
                                     pageSize: newSize,
                                     layout: key,
                                 }

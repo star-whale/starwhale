@@ -1,3 +1,7 @@
 export * from './path'
 export * from './generators'
 export { default as useForceUpdate } from './useForceUpdate'
+export * from './useDeepEffects'
+export * from './useFirstRender'
+export * from './useEventCallback'
+export * from './useQueryArgs'

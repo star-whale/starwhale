@@ -21,8 +21,8 @@ import { BusEventType } from '../events/types'
 import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
 import WidgetFormModal from '../form/WidgetFormModal'
-import { useDeepEffect } from '../../../../src/hooks/useDeepEffects'
 import WidgetPreviewModal from '../form/WidgetPreviewModal'
+import { useDeepEffect } from '../utils/useDeepEffects'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props

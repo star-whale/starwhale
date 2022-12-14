@@ -95,7 +95,7 @@ const Routes = () => {
     }
 
     return (
-        <React.Suspense fallback={<Pending />}>
+        <React.Suspense fallback={<Pending style={{ backgroundImage: 'none' }} />}>
             <BrowserRouter>
                 <div className={styles.root}>
                     <Route>
@@ -155,10 +155,10 @@ const Routes = () => {
                                             path='/projects/:projectId/evaluations/:jobId/actions'
                                             component={JobDAG}
                                         />
-                                        <Redirect
+                                        {/* <Redirect
                                             from='/projects/:projectId/evaluations/:jobId'
                                             to='/projects/:projectId/evaluations/:jobId/results'
-                                        />
+                                        /> */}
                                     </Switch>
                                 </EvaluationOverviewLayout>
                             </Route>

@@ -16,6 +16,9 @@ import { Panel } from 'baseui/accordion'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
+import Search from '@starwhale/ui/Search'
+import { useQueryDatasetList } from '@starwhale/core/datastore'
+import { useQueryArgs } from '@/hooks/useQueryArgs'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -30,7 +33,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetInfo = useFetchDataset(projectId, datasetId)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
-    const { setDatasetVersion } = useDatasetVersion()
+    const { datasetVersion, setDatasetVersion } = useDatasetVersion()
+    const { query } = useQueryArgs()
     const [page] = usePage()
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
@@ -52,6 +56,11 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
             setDatasetVersion(datasetVersionInfo.data)
         }
     }, [datasetVersionInfo.data, setDatasetVersion])
+
+    const params = useMemo(() => {
+        return { pageNum: 1, pageSize: 1 }
+    }, [])
+    const datastore = useQueryDatasetList(datasetVersion?.indexTable, params, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -120,26 +129,36 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         [info, t]
     )
 
+    const pageParams = useMemo(() => {
+        return { ...page, ...query }
+    }, [page, query])
+
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Overview'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview`,
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview/?${qs.stringify(
+                    pageParams
+                )}`,
                 pattern: '/\\/overview\\/?',
             },
             {
                 title: t('Metadata'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta`,
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta/?${qs.stringify(
+                    pageParams
+                )}`,
                 pattern: '/\\/meta\\/?',
             },
             {
                 title: t('Files'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files`,
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
+                    pageParams
+                )}`,
                 pattern: '/\\/files\\/?',
             },
         ]
         return items
-    }, [projectId, datasetId, datasetVersionId, t])
+    }, [projectId, datasetId, datasetVersionId, t, pageParams])
 
     const location = useLocation()
     const activeItemId = useMemo(() => {
@@ -178,7 +197,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                         onChange={(v) =>
                                             history.push(
                                                 `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                    page
+                                                    pageParams
                                                 )}`
                                             )
                                         }
@@ -196,6 +215,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                 </Button>
                             )}
                         </div>
+                        {datasetVersionId && <Search fields={datastore.data?.columnTypes ?? []} />}
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}

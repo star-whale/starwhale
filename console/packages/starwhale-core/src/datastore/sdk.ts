@@ -1,63 +1,19 @@
 import base64 from 'base64-js'
 // @ts-ignore
 import struct from '@aksel/structjs'
-
-export function unhexlify(str: string) {
-    const f = new Uint8Array(8)
-    let j = 0
-    for (let i = 0, l = str.length; i < l; i += 2) {
-        f[j] = parseInt(str.substr(i, 2), 16)
-        j++
-    }
-    return f
-}
-
-export function hexlifyString(str: string) {
-    let result = ''
-    const padding = '00'
-    for (let i = 0, l = str.length; i < l; i++) {
-        const digit = str.charCodeAt(i).toString(16)
-        const padded = (padding + digit).slice(-2)
-        result += padded
-    }
-    return result
-}
-
-export function hexlify(str: Uint8Array) {
-    let result = ''
-    const padding = '00'
-    for (let i = 0, l = str.length; i < l; i++) {
-        const digit = str[i].toString(16)
-        const padded = (padding + digit).slice(-2)
-        result += padded
-    }
-    return result
-}
-
-export type IDataType =
-    | 'UNKNOWN'
-    | 'BOOL'
-    | 'INT8'
-    | 'INT16'
-    | 'INT32'
-    | 'INT64'
-    | 'FLOAT16'
-    | 'FLOAT32'
-    | 'FLOAT64'
-    | 'STRING'
-    | 'BYTES'
-export type IDataName = 'unknown' | 'int' | 'float' | 'bool' | 'string' | 'bytes'
+import { DataNameT, DataTypeT } from './types'
+import { hexlify, unhexlify } from './utils'
 
 export class Typer {
-    name: IDataName
+    name: DataNameT
 
-    rawType: IDataType
+    rawType: DataTypeT
 
     nbits: number
 
     defaultValue: any
 
-    constructor(name: IDataName, rawType: IDataType, nbits: number, defaultValue: any) {
+    constructor(name: DataNameT, rawType: DataTypeT, nbits: number, defaultValue: any) {
         this.name = name
         this.rawType = rawType
         this.nbits = nbits

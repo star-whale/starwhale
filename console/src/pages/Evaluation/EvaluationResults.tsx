@@ -3,12 +3,13 @@ import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { showTableName, tableNameOfSummary, tablesOfEvaluation } from '@/domain/datastore/utils'
+import { showTableName, tableNameOfSummary, tablesOfEvaluation } from '@starwhale/core/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { useListDatastoreTables, useQueryDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
+import { useListDatastoreTables, useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
-import { useParseConfusionMatrix, useParseRocAuc } from '@/domain/datastore/hooks/useParseDatastore'
+import { useParseConfusionMatrix, useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import Table from '@/components/Table'
+import { QueryTableRequest } from '../../../packages/starwhale-core/src/datastore/schemas/datastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -108,7 +109,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
         [table, filter]
     )
 
-    const info = useQueryDatastore(query, true)
+    const info = useQueryDatastore(query as QueryTableRequest)
 
     const columns = React.useMemo(() => {
         return info.data?.columnTypes?.map((column) => column.name)?.sort((a) => (a === 'id' ? -1 : 1)) ?? []
