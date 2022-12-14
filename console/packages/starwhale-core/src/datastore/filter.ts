@@ -75,7 +75,12 @@ export class ColumnFilterModel {
             }
         ]
      */
-    addQuery(columnName: string, value: string, operator: OPERATOR, type: DataTypes): TableQueryFilterDesc | undefined {
+    addQuery(
+        columnName: string,
+        value: string,
+        operator: OPERATOR,
+        type: DataTypes
+    ): TableQueryOperandDesc | undefined {
         let queryType
         switch (type) {
             case DataTypes.FLOAT16:
@@ -103,8 +108,10 @@ export class ColumnFilterModel {
         operands.push({ [queryType]: value } as any)
 
         return {
-            operator: operator as string,
-            operands,
+            filter: {
+                operator: operator as string,
+                operands,
+            },
         }
     }
 
@@ -116,7 +123,7 @@ export class ColumnFilterModel {
                 const field = fields.find((f) => f.name === item.property) as any
                 return this.addQuery(field?.name, item.value, item.op, field?.type as DataTypes)
             })
-        if (filters.length === 1) return filters[0]
+        if (filters.length === 1) return filters[0]?.filter
 
         return {
             operator: 'AND',
