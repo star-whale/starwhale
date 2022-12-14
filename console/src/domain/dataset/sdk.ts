@@ -95,19 +95,15 @@ export class DatasetObject {
 
         // @ts-ignore
         Object.entries(data).forEach(([key, value]: [string, any]) => {
-            if (key !== 'annotations') return
-
-            try {
-                Object.entries(value).forEach(([k, v]: [string, any]) => {
-                    if (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') {
-                        this.summary[k] = v
-                    }
-                })
-                value.annotations.forEach((item?: any) => this.setProps(item))
-                this.setProps(value.mask)
-            } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error(e)
+            if (!key.startsWith('annotation/')) return
+            if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+                this.summary[key] = value
+            }
+            if (key === 'annotation/annotations') {
+                value.forEach((item?: any) => this.setProps(item))
+            }
+            if (key === 'annotation/mask') {
+                this.setProps(value)
             }
         })
 
