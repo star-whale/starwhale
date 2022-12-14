@@ -34,13 +34,11 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -71,10 +69,8 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         }
         DatasetVersionEntity entity = datasetVersionMapper.findByNameAndDatasetId(versionUrl, datasetId, false);
         if (entity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL,
-                            String.format("Unable to find dataset version %s, %d", versionUrl, datasetId)),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    String.format("Unable to find Dataset Version %s", versionUrl));
         }
         return entity.getId();
     }
@@ -82,11 +78,11 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     public DatasetVersion getDatasetVersion(Long versionId) {
         DatasetVersionEntity versionEntity = datasetVersionMapper.find(versionId);
         if (null == versionEntity) {
-            throw new SwValidationException(ValidSubject.DATASET, "Can not find dataset version" + versionId);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Can not find dataset version" + versionId);
         }
         DatasetEntity datasetEntity = datasetMapper.find(versionEntity.getDatasetId());
         if (null == datasetEntity) {
-            throw new SwValidationException(ValidSubject.DATASET,
+            throw new SwNotFoundException(ResourceType.BUNDLE,
                     "Can not find dataset" + versionEntity.getDatasetId());
         }
         return DatasetVersion.fromEntity(datasetEntity, versionEntity);

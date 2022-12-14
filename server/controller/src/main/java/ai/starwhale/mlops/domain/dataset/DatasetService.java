@@ -52,6 +52,8 @@ import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -157,9 +159,7 @@ public class DatasetService {
         Long datasetId = bundleManager.getBundleId(bundleUrl);
         DatasetEntity ds = datasetMapper.find(datasetId);
         if (ds == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET, "Unable to find dataset " + query.getDatasetUrl()),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find dataset " + query.getDatasetUrl());
         }
 
         DatasetVersionEntity versionEntity = null;
@@ -172,10 +172,8 @@ public class DatasetService {
             versionEntity = datasetVersionMapper.findByLatest(ds.getId());
         }
         if (versionEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET,
-                            "Unable to find the latest version of dataset " + query.getDatasetUrl()),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    "Unable to find the latest version of dataset " + query.getDatasetUrl());
         }
         return toDatasetInfoVo(ds, versionEntity);
 
@@ -257,7 +255,7 @@ public class DatasetService {
             Long projectId = projectManager.getProjectId(project);
             DatasetEntity ds = datasetMapper.findByName(name, projectId, false);
             if (null == ds) {
-                throw new SwValidationException(ValidSubject.DATASET, "Unable to find the dataset with name " + name);
+                throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the dataset with name " + name);
             }
             return swDatasetInfoOfDs(ds);
         }

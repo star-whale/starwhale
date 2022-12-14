@@ -111,12 +111,12 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(String projectUrl,
-            String runtimeUrl, String runtimeVersionUrl) {
+            String runtimeUrl, String versionUrl) {
         RuntimeInfoVo runtimeInfo = runtimeService.getRuntimeInfo(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
                         .runtimeUrl(runtimeUrl)
-                        .runtimeVersionUrl(runtimeVersionUrl)
+                        .runtimeVersionUrl(versionUrl)
                         .build());
 
         return ResponseEntity.ok(Code.success.asResponse(runtimeInfo));

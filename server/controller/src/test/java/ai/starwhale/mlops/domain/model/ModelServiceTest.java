@@ -69,6 +69,7 @@ import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -285,7 +286,7 @@ public class ModelServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.listModelInfo("2", "m1"));
     }
 
@@ -297,7 +298,7 @@ public class ModelServiceTest {
         given(modelMapper.find(same(2L)))
                 .willReturn(ModelEntity.builder().id(2L).build());
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m3").build()));
 
         given(modelVersionMapper.find(same(1L)))
@@ -587,15 +588,15 @@ public class ModelServiceTest {
     @Test
     public void testQuery() {
         given(modelVersionMapper.find(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(1L).build());
+                .willReturn(ModelVersionEntity.builder().id(1L).versionName("v1").build());
 
         var res = service.query("p1", "m1", "v1");
-        assertThat(res, is(""));
+        assertThat(res, is("v1"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.query("p1", "m2", "v2"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.query("p1", "m1", "v3"));
 
     }

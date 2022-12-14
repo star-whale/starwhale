@@ -76,22 +76,22 @@ public interface RuntimeApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Runtime name prefix to search for",
                     schema = @Schema())
             @Valid
             @RequestParam(value = "runtimeName", required = false)
-                    String runtimeName,
+            String runtimeName,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
     @Operation(
             summary = "Revert Runtime version",
@@ -109,14 +109,14 @@ public interface RuntimeApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Runtime Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("runtimeUrl")
-                    String runtimeUrl,
+            String runtimeUrl,
             @Valid @RequestBody RuntimeRevertRequest revertRequest);
 
     @Operation(summary = "Delete a runtime")
@@ -130,10 +130,10 @@ public interface RuntimeApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl")
-                    String runtimeUrl);
+            String runtimeUrl);
 
     @Operation(summary = "Recover a runtime")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -162,7 +162,7 @@ public interface RuntimeApi {
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
-            @RequestParam(value = "runtimeVersionUrl", required = false) String runtimeVersionUrl);
+            @RequestParam(value = "versionUrl", required = false) String versionUrl);
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -207,34 +207,34 @@ public interface RuntimeApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Runtime Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("runtimeUrl")
-                    String runtimeUrl,
+            String runtimeUrl,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Runtime version name prefix",
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
-                    String name,
+            String name,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Runtime version tag",
                     schema = @Schema())
             @RequestParam(value = "tag", required = false)
-                    String tag,
+            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
 
     @Operation(summary = "Create a new runtime version",

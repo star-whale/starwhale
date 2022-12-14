@@ -22,16 +22,14 @@ import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -149,10 +147,8 @@ public class ProjectManager implements ProjectAccessor {
             }
         }
         if (projectEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT,
-                            String.format("Unable to find project %s", projectUrl)),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.PROJECT,
+                String.format("Unable to find project %s", projectUrl));
         }
         return projectEntity.getId();
     }

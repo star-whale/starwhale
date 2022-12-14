@@ -65,6 +65,7 @@ import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -280,7 +281,7 @@ public class RuntimeServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        assertThrows(SwValidationException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.listRuntimeInfo("2", "r1"));
     }
 
@@ -292,7 +293,7 @@ public class RuntimeServiceTest {
         given(runtimeMapper.find(same(2L)))
                 .willReturn(RuntimeEntity.builder().id(2L).build());
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("r3").build()));
 
         given(runtimeVersionMapper.find(same(1L)))
@@ -457,7 +458,7 @@ public class RuntimeServiceTest {
         var res = service.query("1", "r1", "v1");
         assertThat(res, is(""));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.query("p1", "r2", "v2"));
 
         assertThrows(StarwhaleApiException.class,
