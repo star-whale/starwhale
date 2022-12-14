@@ -620,6 +620,8 @@ class Link(ASDictMixin, SwObject):
     ) -> None:
         self._type = "link"
         self.uri = (str(uri)).strip()
+        _up = urlparse(self.uri)
+        self.scheme = _up.scheme
         self.offset = offset
         self.size = size
         self.auth = auth
@@ -678,8 +680,7 @@ class Link(ASDictMixin, SwObject):
             key_compose = self, 0, 0
             store = ObjectStore.to_signed_http_backend(dataset_uri)
         else:
-            _up = urlparse(self.uri)
-            if _up.scheme:
+            if self.scheme:
                 key_compose = (
                     Link(self.local_fs_uri) if self.local_fs_uri else self,
                     0,

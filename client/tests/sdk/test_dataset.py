@@ -351,6 +351,7 @@ class TestDatasetCopy(BaseTestCase):
                     "attributes": [
                         {"type": "STRING", "name": "_type"},
                         {"type": "STRING", "name": "uri"},
+                        {"type": "STRING", "name": "scheme"},
                         {"type": "INT64", "name": "offset"},
                         {"type": "INT64", "name": "size"},
                         {"type": "UNKNOWN", "name": "auth"},
@@ -426,6 +427,7 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "_type", "type": "STRING"},
                                 {"name": "data_type", "type": "UNKNOWN"},
                                 {"name": "uri", "type": "STRING"},
+                                {"name": "scheme", "type": "STRING"},
                             ],
                         },
                         {"type": "STRING", "name": "data_format"},
@@ -470,6 +472,7 @@ class TestDatasetCopy(BaseTestCase):
                                 "_type": "link",
                                 "data_type": None,
                                 "uri": "111",
+                                "scheme": "",
                             },
                             "data_format": "swds_bin",
                             "data_offset": "0000000000000080",

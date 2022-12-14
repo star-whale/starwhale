@@ -95,6 +95,7 @@ class SWDSBackendType:
     S3 = "s3"
     LocalFS = "local_fs"
     SignedUrl = "signed_url"
+    Http = "http"
 
 
 class EvalHandlerType:
