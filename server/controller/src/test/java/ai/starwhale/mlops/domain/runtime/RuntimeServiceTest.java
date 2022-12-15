@@ -461,7 +461,7 @@ public class RuntimeServiceTest {
         assertThrows(SwNotFoundException.class,
                 () -> service.query("p1", "r2", "v2"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.query("p1", "r1", "v3"));
 
     }
