@@ -152,7 +152,7 @@ public class FileNode {
             // parse one path
             var fork = FileNode.parse(fileDesc.getPath(), (node) -> {
                 node.setSize(FileUtil.readableFileSize(fileDesc.getSize()));
-                node.setDesc(fileDesc.getDesc().name());
+                node.setDesc(Objects.nonNull(fileDesc.getDesc()) ? fileDesc.getDesc().name() : FileDesc.UNKNOWN.name());
                 node.setSignature(fileDesc.getSignature());
             });
             // merge to main nodes
