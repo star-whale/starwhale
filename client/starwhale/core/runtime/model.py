@@ -1152,11 +1152,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         python_version = get_python_version()
 
         sw_pkg = SW_PYPI_PKG_NAME
-        _swcli_version = STARWHALE_VERSION
-        if _swcli_version and _swcli_version != SW_DEV_DUMMY_VERSION:
-            sw_pkg = f"{sw_pkg}=={_swcli_version}"
+        if STARWHALE_VERSION and STARWHALE_VERSION != SW_DEV_DUMMY_VERSION:
+            sw_pkg = f"{sw_pkg}=={STARWHALE_VERSION}"
 
-        cls.render_runtime_yaml(workdir, name, mode, python_version, [sw_pkg], force)
+        cls.render_runtime_yaml(
+            workdir,
+            name,
+            mode,
+            python_version,
+            pkgs=[sw_pkg],
+            force=True,
+            auto_inject_sw=False,
+        )
 
         if not disable_create_env:
             sw_auto_dir = workdir / SW_AUTO_DIRNAME
@@ -1362,30 +1369,48 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @staticmethod
     def render_runtime_yaml(
-        workdir: Path,
+        workdir: t.Union[Path, str],
         name: str,
         mode: str,
-        python_version: str,
-        pkgs: t.List[str],
+        python_version: str = "",
+        pkgs: t.Optional[t.List[str]] = None,
         force: bool = False,
+        auto_inject_sw: bool = True,
+        cuda_version: t.Optional[str] = None,
     ) -> None:
+        workdir = Path(workdir)
         _rm = workdir / DefaultYAMLName.RUNTIME
+
+        if python_version == "":
+            python_version = get_python_version()
 
         if _rm.exists() and not force:
             raise ExistedError(f"{_rm} was already existed")
 
         if mode == PythonRunEnv.CONDA:
-            lock_file = RuntimeLockFileType.CONDA
+            lock_fname = RuntimeLockFileType.CONDA
             lock_content = f"name: {name}"
         else:
-            lock_file = RuntimeLockFileType.VENV
+            lock_fname = RuntimeLockFileType.VENV
             lock_content = ""
 
-        if not Path(lock_file).exists():
-            ensure_file(lock_file, content=lock_content)
+        lock_fpath = workdir / lock_fname
+        if not lock_fpath.exists():
+            ensure_file(lock_fpath, content=lock_content)
+
+        pkgs = pkgs or []
+        if auto_inject_sw and not any(
+            [p.strip().startswith(SW_PYPI_PKG_NAME) for p in pkgs]
+        ):
+            sw_pkg = SW_PYPI_PKG_NAME
+            if STARWHALE_VERSION and STARWHALE_VERSION != SW_DEV_DUMMY_VERSION:
+                sw_pkg = f"{sw_pkg}=={STARWHALE_VERSION}"
+            pkgs.append(sw_pkg)
+
+        pkgs = [p.strip() for p in pkgs if p.strip()]
 
         ensure_dir(workdir)
-        config = dict(
+        config: t.Dict[str, t.Any] = dict(
             name=name,
             mode=mode,
             environment={
@@ -1394,11 +1419,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "os": SupportOS.UBUNTU,
             },
             dependencies=[
-                lock_file,
+                lock_fname,
                 {"pip": pkgs},
             ],
             api_version=RUNTIME_API_VERSION,
         )
+        if cuda_version is not None:
+            config["environment"]["cuda"] = cuda_version
+
         ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
 
     def dockerize(

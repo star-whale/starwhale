@@ -55,7 +55,7 @@ swcli runtime activate [OPTIONS]
 swcli runtime build [OPTIONS] WORKDIR
 ```
 
-`runtime build` 命令在 `WORKDIR` 目录中寻找 `runtime.yaml` 文件，并以该文件的配置为起点开始构建Runtime。`WORKDIR`参数应为一个合法的路径字符串，`runtime.yaml` 中涉及文件路径的配置，都是相对于 `WORKDIR` 目录的。**`runtime build`命令目前只能在standalone instance下执行, 且不支持 `.swignore` 特性**。
+`runtime build` 命令在 `WORKDIR` 目录中寻找 `runtime.yaml` 文件，并以该文件的配置为起点开始构建Runtime。`WORKDIR`参数应为一个合法的路径字符串，`runtime.yaml` 中涉及文件路径的配置，都是相对于 `WORKDIR` 目录的。**`runtime build`命令目前只能在standalone instance下执行, 且不支持 `.swignore` 特性**。当该命令执行时，若无法在相关目录中找到runtime.yaml，会用引导用户输入一些简单的参数，然后自动生成runtime.yaml等文件，并进行后续的Runtime的构建。
 
 `runtime build` 命令默认执行流程时：
 
