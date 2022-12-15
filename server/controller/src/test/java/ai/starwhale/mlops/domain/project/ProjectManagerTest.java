@@ -39,7 +39,6 @@ import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,7 +204,7 @@ public class ProjectManagerTest {
         assertThrows(SwNotFoundException.class,
                 () -> projectManager.getProjectId("9"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> projectManager.getProjectId("p9"));
 
     }
