@@ -42,7 +42,8 @@ class URI:
         self.instance = ""
         self.instance_type = ""
         self.instance_alias = ""
-        self.project = ""
+        self._owner = ""
+        self._project = ""
         self.object = ObjField()
 
         self._do_parse()
@@ -116,7 +117,8 @@ class URI:
         if self.expected_type == URIType.PROJECT and not raw.startswith(
             URIType.PROJECT + "/"
         ):
-            ok, reason = validate_obj_name(raw)
+            project, owner = URI.uri_to_project_and_owner(raw)
+            ok, reason = validate_obj_name(project)
             if not ok:
                 raise Exception(reason)
             return raw, ""
@@ -235,6 +237,29 @@ class URI:
     @property
     def user_role(self) -> str:
         return self.sw_instance_config.get("user_role", UserRoleType.NORMAL)
+
+    @property
+    def project(self) -> str:
+        return URI.project_and_owner_to_uri(self._project, self._owner)
+
+    @project.setter
+    def project(self, proj: str) -> None:
+        self._project, self._owner = URI.uri_to_project_and_owner(proj)
+
+    @staticmethod
+    def project_and_owner_to_uri(proj: str, owner: str) -> str:
+        if owner:
+            return f"{owner}:{proj}"
+        else:
+            return proj
+
+    @staticmethod
+    def uri_to_project_and_owner(proj: str) -> t.Tuple[str, str]:
+        _op = proj.split(":", 1)
+        if len(_op) > 1:
+            return _op[1], _op[0]
+        else:
+            return _op[0], ""
 
     @classmethod
     def capsulate_uri_str(
