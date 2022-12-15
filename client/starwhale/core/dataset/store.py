@@ -298,6 +298,8 @@ class ObjectStore:
             self.backend = S3StorageBackend(conn)
         elif backend == SWDSBackendType.SignedUrl:
             self.backend = SignedUrlBackend(dataset_uri)
+        elif backend == SWDSBackendType.Http:
+            self.backend = HttpBackend()
         else:
             self.backend = LocalFSStorageBackend()
 
@@ -315,10 +317,14 @@ class ObjectStore:
             raise FieldTypeOrValueError("data_link is empty")
 
         # TODO: support other uri type
-        if data_link.uri.startswith("s3://"):
+        if data_link.scheme in ("s3", "minio", "oss", "aliyun"):
             backend = SWDSBackendType.S3
             conn = S3Connection.from_uri(data_link.uri, auth_name)
             bucket = conn.bucket
+        elif data_link.scheme in ["http", "https"]:
+            backend = SWDSBackendType.Http
+            bucket = ""
+            conn = None
         else:
             backend = SWDSBackendType.LocalFS
             bucket = ""
@@ -455,6 +461,22 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
             use_raise=True,
         ).json()
         return r["data"].get(uri, "")  # type: ignore
+
+
+class HttpBackend(StorageBackend, CloudRequestMixed):
+    def __init__(self) -> None:
+        super().__init__(kind=SWDSBackendType.Http)
+
+    @http_retry
+    def _make_file(
+        self, auth: str, key_compose: t.Tuple[Link, int, int]
+    ) -> FileLikeObj:
+        _key, _start, _end = key_compose
+        return HttpBufferedFileLike(
+            url=_key.uri,
+            headers={"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"},
+            timeout=90,
+        )
 
 
 _BFType = t.TypeVar("_BFType", bound="BaseBufferedFileLike")

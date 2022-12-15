@@ -412,6 +412,7 @@ class TestJsonDict(TestCase):
                         {
                             "_type": data_store.STRING,
                             "uri": data_store.STRING,
+                            "scheme": data_store.STRING,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "auth": data_store.UNKNOWN,

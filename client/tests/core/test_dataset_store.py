@@ -10,6 +10,7 @@ from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import (
     BytesBuffer,
+    HttpBackend,
     S3Connection,
     S3StorageBackend,
     SignedUrlBackend,
@@ -239,3 +240,21 @@ class TestBufferedFile(TestCase):
 
         with S3BufferedFileLike(s3, "bucket", "key", 0, 10) as f:
             assert f.read(100) == content
+
+    @Mocker()
+    def test_http_backend(
+        self,
+        rm: Mocker,
+    ):
+        data_uri = "http://minio-io/path/to/signed/file"
+        raw_content = string.ascii_lowercase.encode()
+        req_file_download = rm.get(
+            data_uri,
+            content=raw_content,
+        )
+
+        obj = HttpBackend()._make_file("", (Link(data_uri), 0, -1))
+        assert obj.read(1) == b"a"
+        assert obj.read(-1) == raw_content[1:]
+        assert req_file_download.call_count == 1
+        obj.close()

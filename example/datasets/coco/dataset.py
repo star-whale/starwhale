@@ -99,3 +99,32 @@ def do_iter_item_from_remote():
             data_type=Image(display_name=img_name, shape=img_shape),
             with_local_fs_data=False,
         ), anno
+
+
+def do_iter_item_from_http():
+    import requests
+
+    response = requests.get(
+        "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/annotations/panoptic_val2017.json"
+    )
+    index = json.loads(response.text)
+    img_dict = {img["id"]: img for img in index["images"]}
+    for anno in index["annotations"]:
+        img_meta = img_dict[anno["image_id"]]
+        img_name = img_meta["file_name"]
+        img_shape = (img_meta["height"], img_meta["width"])
+        msk_f_name = anno["file_name"]
+
+        anno["mask"] = Link(
+            with_local_fs_data=False,
+            data_type=Image(
+                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+            ),
+            uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/annotations/panoptic_val2017/{msk_f_name}",
+        )
+
+        yield Link(
+            uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/val2017/{img_name}",
+            data_type=Image(display_name=img_name, shape=img_shape),
+            with_local_fs_data=False,
+        ), anno

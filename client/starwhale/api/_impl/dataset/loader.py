@@ -108,7 +108,7 @@ class DataLoader(metaclass=ABCMeta):
             load_dotenv(auth_env_fpath)
 
     def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
-        _k = f"{self.dataset_uri}.{row.auth_name}"
+        _k = f"{self.dataset_uri}.{row.data_link.scheme}.{row.auth_name}"
         _store = self._stores.get(_k)
         if _store:
             return _store

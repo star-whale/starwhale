@@ -122,19 +122,19 @@ class TestDataLoader(TestCase):
 
         assert loader.kind == DataFormatType.USER_RAW
         assert list(loader._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ]
         assert loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ].bucket == str(data_dir)
         assert (
             loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788."
+                "local/project/self/dataset/mnist/version/1122334455667788.."
             ].backend.kind
             == SWDSBackendType.LocalFS
         )
         assert not loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ].key_prefix
 
         loader = get_data_loader("mnist/version/1122334455667788")
@@ -301,13 +301,13 @@ class TestDataLoader(TestCase):
         assert len(loader._stores) == 3
         assert (
             loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+                "local/project/self/dataset/mnist/version/1122334455667788.s3.server1"
             ].backend.kind
             == SWDSBackendType.S3
         )
         assert (
             loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788.server1"
+                "local/project/self/dataset/mnist/version/1122334455667788.s3.server1"
             ].bucket
             == "starwhale"
         )
@@ -403,23 +403,23 @@ class TestDataLoader(TestCase):
         assert isinstance(_data, Image)
 
         assert list(loader._stores.keys()) == [
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
         ]
         backend = loader._stores[
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
         ].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
         assert (
             loader._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
             ].bucket
             == ""
         )
         assert (
             loader._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
             ].key_prefix
             == ""
         )
@@ -494,18 +494,18 @@ class TestDataLoader(TestCase):
         assert isinstance(_data.to_bytes(), bytes)
 
         assert list(loader._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ]
         backend = loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
         assert loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ].bucket == str(data_dir)
         assert not loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
+            "local/project/self/dataset/mnist/version/1122334455667788.."
         ].key_prefix
 
     @Mocker()
