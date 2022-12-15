@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import sys
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -8,7 +9,9 @@ from unittest.mock import MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
+import numpy
 import torch
+import pytest
 import torch.utils.data as tdata
 from PIL import Image as PILImage
 from requests_mock import Mocker
@@ -20,7 +23,17 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.dataset.type import Text, Audio, Image, Binary, DatasetSummary
+from starwhale.core.dataset.type import (
+    Text,
+    Audio,
+    Image,
+    Video,
+    Binary,
+    BoundingBox,
+    DatasetSummary,
+    GrayscaleImage,
+    COCOObjectAnnotation,
+)
 from starwhale.api._impl.dataset.loader import DataRow
 
 from .. import ROOT_DIR
@@ -56,6 +69,15 @@ class _DatasetSDKTestBase(BaseTestCase):
                 )
             ds.commit()
         return ds.uri
+
+    def _create_real_image(self, color: t.Tuple[int, int, int]) -> bytes:
+        img = PILImage.new(mode="RGB", size=(2, 2), color=color)
+        img_io = io.BytesIO()
+        img.save(img_io, format="PNG")
+        return img_io.getvalue()
+
+    def _create_real_audio(self) -> bytes:
+        return (Path(ROOT_DIR) / "data" / "simple.wav").read_bytes()
 
 
 class TestDatasetSDK(_DatasetSDKTestBase):
@@ -963,10 +985,8 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_image_transform(self) -> None:
         ds = dataset("mnist", create=True)
         for i in range(1, 10):
-            img = PILImage.new(mode="RGB", size=(2, 2), color=(i, i, i))
-            img_io = io.BytesIO()
-            img.save(img_io, format="PNG")
-            ds.append((Image(img_io.getvalue()), {"label": i}))
+            _img = self._create_real_image((i, i, i))
+            ds.append((Image(_img), {"label": i}))
 
         ds.commit()
 
@@ -985,7 +1005,8 @@ class TestPytorch(_DatasetSDKTestBase):
 
     def test_audio_transform(self) -> None:
         with dataset("mnist", create=True) as ds:
-            ds.append((Audio(Path(ROOT_DIR) / "data" / "simple.wav"), {"label": 1}))
+            _audio = self._create_real_audio()
+            ds.append((Audio(_audio), {"label": 1}))
             ds.commit()
 
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
@@ -993,3 +1014,161 @@ class TestPytorch(_DatasetSDKTestBase):
         assert isinstance(item[0], torch.Tensor)
         assert len(item[0]) != 0
         assert item[0].dtype == torch.float64
+
+
+# TODO: wait for tensorflow release for python3.11
+# https://github.com/tensorflow/tensorflow/issues/58032
+skip_py311 = pytest.mark.skipif(
+    sys.version_info > (3, 10),
+    reason="skip python3.11, because tensorflow does not release the related wheel package.",
+)
+
+
+@skip_py311
+class TestTensorflow(_DatasetSDKTestBase):
+    def test_simple_data(self) -> None:
+        import tensorflow as tf
+
+        import starwhale.integrations.tensorflow.dataset as tf_dataset
+
+        mixed_data = {
+            "int": 1,
+            "float": 1.1,
+            "bool": True,
+            "str": "test",
+            "bytes": b"test",
+            "complex": complex(1, 2),
+            "image": Image(self._create_real_image((1, 1, 1))),
+            "bbox": BoundingBox(1.1, 1.1, 2.1, 2.2),
+            "video": Video(b"123"),
+            "audio": Audio(self._create_real_audio()),
+            "text": Text("text"),
+            "binary": Binary(b"binary"),
+            "grayscale_image": GrayscaleImage(self._create_real_image((0, 0, 0))),
+        }
+        tensor_spec = tf_dataset._inspect_spec(mixed_data)
+        assert tensor_spec == {
+            "int": tf.TensorSpec(shape=(), dtype=tf.int64),
+            "float": tf.TensorSpec(shape=(), dtype=tf.float64),
+            "bool": tf.TensorSpec(shape=(), dtype=tf.bool),
+            "str": tf.TensorSpec(shape=(), dtype=tf.string),
+            "bytes": tf.TensorSpec(shape=(), dtype=tf.string),
+            "complex": tf.TensorSpec(shape=(), dtype=tf.complex128),
+            "image": tf.TensorSpec(shape=(None, None, 3), dtype=tf.uint8),
+            "video": tf.TensorSpec(shape=(None,), dtype=tf.uint8),
+            "audio": tf.TensorSpec(shape=(None,), dtype=tf.float64),
+            "text": tf.TensorSpec(shape=(), dtype=tf.string),
+            "binary": tf.TensorSpec(shape=(), dtype=tf.string),
+            "grayscale_image": tf.TensorSpec(shape=(None, None, 1), dtype=tf.uint8),
+            "bbox": tf.TensorSpec(shape=(4,), dtype=tf.float64),
+        }
+
+        td = tf_dataset._transform(mixed_data)
+        assert td["int"] == 1
+        assert td["float"] == 1.1
+        assert td["image"].shape == (2, 2, 3)
+        assert td["image"].dtype == numpy.uint8
+        assert isinstance(td["video"], numpy.ndarray)
+        assert td["video"].dtype == numpy.uint8
+        assert numpy.array_equal(
+            td["bbox"], numpy.array([1.1, 1.1, 2.1, 2.2], dtype=numpy.float64)
+        )
+        assert td["audio"].dtype == numpy.float64
+        assert td["audio"].shape == (5, 1)
+        assert numpy.array_equal(td["text"], numpy.array("text", dtype=numpy.str_))
+        assert numpy.array_equal(
+            td["binary"], numpy.array(b"binary", dtype=numpy.bytes_)
+        )
+
+    def test_compound_data(self) -> None:
+        import tensorflow as tf
+
+        import starwhale.integrations.tensorflow.dataset as tf_dataset
+
+        mixed_data = {
+            "list_int": [1, 2, 3],
+            "list_float": [1.1, 1.2],
+            "list_list": [[1, 2], [2, 3]],
+            "list_bbox": [BoundingBox(1, 2, 3, 4), BoundingBox(1, 2, 3, 5)],
+            "list_text": [[Text(), Text()], [Text(), Text()]],
+            "map_map": {"a": {"a": 1}},
+            "map_list": {"a": {"a": [[Binary(), Binary()], [Binary(), Binary()]]}},
+        }
+        tensor_spec = tf_dataset._inspect_spec(mixed_data)
+        assert tensor_spec == {
+            "list_int": tf.TensorSpec(shape=(3,), dtype=tf.int64),
+            "list_float": tf.TensorSpec(shape=(2,), dtype=tf.float64),
+            "list_list": tf.TensorSpec(shape=(2, 2), dtype=tf.int64),
+            "list_bbox": tf.TensorSpec(shape=(2, 4), dtype=tf.float64),
+            "list_text": tf.TensorSpec(shape=(2, 2), dtype=tf.string),
+            "map_map": {"a": {"a": tf.TensorSpec(shape=(), dtype=tf.int64)}},
+            "map_list": {"a": {"a": tf.TensorSpec(shape=(2, 2), dtype=tf.string)}},
+        }
+        td = tf_dataset._transform(mixed_data)
+        assert td["list_int"] == [1, 2, 3]
+        assert numpy.array_equal(
+            td["list_bbox"][0], numpy.array([1, 2, 3, 4], dtype=numpy.float64)
+        )
+        assert isinstance(td["map_list"]["a"]["a"], list)
+        assert numpy.array_equal(
+            td["map_list"]["a"]["a"][0][0], numpy.array(b"", dtype=numpy.bytes_)
+        )
+
+    @pytest.mark.filterwarnings("ignore::numpy.VisibleDeprecationWarning")
+    def test_inspect_exceptions(self) -> None:
+        import starwhale.integrations.tensorflow.dataset as tf_dataset
+
+        with self.assertRaisesRegex(
+            NoSupportError, "inspect tensor spec does not support"
+        ):
+            tf_dataset._inspect_spec(COCOObjectAnnotation())
+
+        with self.assertRaisesRegex(
+            NoSupportError, "Can't convert different types in one array to tensor"
+        ):
+            tf_dataset._inspect_spec([[1, 1], [Binary(), Binary()]])
+
+        with self.assertRaisesRegex(ValueError, "Can't ravel to one dimension array"):
+            tf_dataset._inspect_spec([[1, 1], [Binary()]])
+
+        with self.assertRaisesRegex(ValueError, "Can't ravel to one dimension array"):
+            tf_dataset._inspect_spec([[1, 1], [1]])
+
+        with self.assertRaisesRegex(NoSupportError, "Can't handle the compound type"):
+            tf_dataset._inspect_spec([{"a": 1}, {"a": 2}])
+
+    def test_tf_dataset_drop_index(self) -> None:
+        import tensorflow as tf
+
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        tf_ds = ds.to_tensorflow(drop_index=True)
+        assert isinstance(tf_ds, tf.data.Dataset)
+
+        items = list(tf_ds)
+        assert len(items[0]) == 2
+        assert isinstance(items[0][0], tf.Tensor)
+        assert tf.equal(items[0][0], tf.constant(b"data-0"))
+        assert tf.equal(items[0][1]["label"], tf.constant(0, dtype=tf.int64))
+        assert len(items) == len(ds)
+
+    def test_tf_dataset_with_index(self) -> None:
+        import tensorflow as tf
+
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        tf_ds = ds.to_tensorflow(drop_index=False)
+        assert isinstance(tf_ds, tf.data.Dataset)
+
+        items = list(tf_ds)
+        assert len(items[0]) == 3
+        assert tf.equal(items[0][0], tf.constant("0"))
+
+        batch_ds = tf_ds.batch(2, drop_remainder=True)
+        items = list(batch_ds.as_numpy_iterator())
+        assert len(items)
+        assert items[0][0].tolist() == [b"0", b"1"]
+        assert items[0][1].tolist() == [b"data-0", b"data-1"]
+        assert items[0][2]["label"].tolist() == [0, 1]

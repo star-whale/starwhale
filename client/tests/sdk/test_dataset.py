@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
+import numpy
 import torch
 import pytest
 from requests_mock import Mocker
@@ -324,6 +325,7 @@ class TestDatasetCopy(BaseTestCase):
                                     "elementType": {"type": "INT64"},
                                     "name": "shape",
                                 },
+                                {"type": "STRING", "name": "_dtype_name"},
                                 {"type": "STRING", "name": "encoding"},
                             ],
                             "pythonType": "starwhale.core.dataset.type.Image",
@@ -864,7 +866,7 @@ class TestDatasetType(TestCase):
         assert b.astype() == {
             "type": ArtifactType.Binary,
             "mime_type": MIMEType.UNDEFINED,
-            "shape": [1],
+            "shape": (),
             "encoding": "",
             "display_name": "",
         }
@@ -939,6 +941,10 @@ class TestDatasetType(TestCase):
         assert _asdict["width"] == 3
         assert _asdict["height"] == 4
         assert torch.equal(bbox.to_tensor(), torch.Tensor([1, 2, 3, 4]))
+        _bout = bbox.to_bytes()
+        assert isinstance(_bout, bytes)
+        _array = numpy.frombuffer(_bout, dtype=numpy.float64)
+        assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
 
     def test_text(self) -> None:
         text = Text("test")
@@ -1713,7 +1719,7 @@ class TestRowWriter(BaseTestCase):
 
         item = rw._queue.get(block=True)
         assert item.index == 1  # type: ignore
+        rw.flush()
+
         time.sleep(0.2)
         assert not thread.is_alive()
-
-        rw.flush()
