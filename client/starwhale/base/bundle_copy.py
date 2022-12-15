@@ -19,7 +19,7 @@ from rich.progress import (
 from starwhale.utils import console
 from starwhale.consts import (
     FileDesc,
-    FileType,
+    FileNode,
     HTTPMethod,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
@@ -251,23 +251,23 @@ class BundleCopy(CloudRequestMixed):
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()
 
-    def upload_files(self, workdir: Path) -> t.Iterator[FileDesc]:
+    def upload_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
 
-    def download_files(self, workdir: Path) -> t.Iterator[FileDesc]:
+    def download_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         _workdir = self._get_target_path(self.dest_uri)
 
-        def _download(_tid: TaskID, fd: FileDesc) -> None:
+        def _download(_tid: TaskID, fd: FileNode) -> None:
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
                 url_path=self._get_remote_instance_rc_url(),
                 dest_path=fd.path,
                 instance_uri=self.src_uri,
                 headers={
-                    "X-SW-DOWNLOAD-TYPE": fd.file_type.name,
+                    "X-SW-DOWNLOAD-TYPE": fd.file_desc.name,
                     "X-SW-DOWNLOAD-OBJECT-NAME": fd.name,
                     "X-SW-DOWNLOAD-OBJECT-HASH": fd.signature,
                 },
@@ -283,11 +283,11 @@ class BundleCopy(CloudRequestMixed):
         _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
         _download(
             _tid,
-            FileDesc(
+            FileNode(
                 path=_manifest_path,
                 name=DEFAULT_MANIFEST_NAME,
                 signature="",
-                file_type=FileType.MANIFEST,
+                file_desc=FileDesc.MANIFEST,
                 size=0,
             ),
         )
@@ -320,7 +320,7 @@ class BundleCopy(CloudRequestMixed):
             url_path=url_path,
             file_path=manifest_path,
             instance_uri=self.dest_uri,
-            headers={"X-SW-UPLOAD-TYPE": FileType.MANIFEST.name},
+            headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
             fields={
                 self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
@@ -345,11 +345,11 @@ class BundleCopy(CloudRequestMixed):
         _headers = {_UPLOAD_ID_KEY: str(upload_id)}
 
         # TODO: add retry deco
-        def _upload_blob(_tid: TaskID, fd: FileDesc) -> None:
+        def _upload_blob(_tid: TaskID, fd: FileNode) -> None:
             if not fd.path.exists():
                 raise NotFoundError(f"{fd.path} not found")
             _upload_headers = deepcopy(_headers)
-            _upload_headers["X-SW-UPLOAD-TYPE"] = fd.file_type.name
+            _upload_headers["X-SW-UPLOAD-TYPE"] = fd.file_desc.name
             _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = fd.signature
 
             if progress is not None:

@@ -9,7 +9,7 @@ from rich.progress import Progress
 from starwhale.utils import console, load_yaml, NoSupportError
 from starwhale.consts import (
     FileDesc,
-    FileType,
+    FileNode,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
     ARCHIVED_SWDS_META_FNAME,
@@ -34,17 +34,17 @@ class DatasetCopy(BundleCopy):
     def datastore_disabled(self) -> bool:
         return getattr(self, "_disable_datastore", False)
 
-    def upload_files(self, workdir: Path) -> Iterator[FileDesc]:
+    def upload_files(self, workdir: Path) -> Iterator[FileNode]:
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         for _k in _manifest["signature"]:
             _size, _, _hash = _k.split(":")
             # TODO: head object by hash name at first
             _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
-            yield FileDesc(
+            yield FileNode(
                 path=_path,
                 name=os.path.basename(_path),
                 size=_size,
-                file_type=FileType.DATA,
+                file_desc=FileDesc.DATA,
                 signature=_hash,
             )
 
@@ -53,15 +53,15 @@ class DatasetCopy(BundleCopy):
         for _n in _meta_names:
             _path = workdir / _n
 
-            yield FileDesc(
+            yield FileNode(
                 path=_path,
                 name=os.path.basename(_path),
                 size=_path.stat().st_size,
-                file_type=FileType.SRC_TAR,
+                file_desc=FileDesc.SRC_TAR,
                 signature="",
             )
 
-    def download_files(self, workdir: Path) -> Iterator[FileDesc]:
+    def download_files(self, workdir: Path) -> Iterator[FileNode]:
         ensure_dir(workdir / "data")
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         for _k in _manifest.get("signature", []):
@@ -72,12 +72,12 @@ class DatasetCopy(BundleCopy):
 
             _dest = DatasetStorage._get_object_store_path(_hash)
 
-            yield FileDesc(
+            yield FileNode(
                 path=_dest,
                 signature=_hash,
                 size=_size,
                 name=_hash[: DatasetStorage.short_sign_cnt],
-                file_type=FileType.DATA,
+                file_desc=FileDesc.DATA,
             )
 
             Path(workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]).symlink_to(
@@ -85,12 +85,12 @@ class DatasetCopy(BundleCopy):
             )
 
         for _f in (ARCHIVED_SWDS_META_FNAME,):
-            yield FileDesc(
+            yield FileNode(
                 path=workdir / _f,
                 signature="",
                 size=0,
                 name=_f,
-                file_type=FileType.SRC_TAR,
+                file_desc=FileDesc.SRC_TAR,
             )
 
     def _do_ubd_datastore(self) -> None:

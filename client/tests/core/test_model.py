@@ -26,7 +26,7 @@ from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
-from starwhale.core.model.model import StandaloneModel, resource_to_file_desc
+from starwhale.core.model.model import StandaloneModel, resource_to_file_node
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.spec.openapi.components import OpenApi
 
@@ -174,8 +174,8 @@ class StandaloneModelTestCase(TestCase):
         _file = Path("tmp/file.txt")
         ensure_dir("tmp")
         ensure_file(_file, "123456")
-        fd = resource_to_file_desc(
-            [{"path": "file.txt", "type": "SRC"}], parent_path=Path("tmp")
+        fd = resource_to_file_node(
+            [{"path": "file.txt", "desc": "SRC"}], parent_path=Path("tmp")
         )
         assert "file.txt" in fd
         assert fd.get("file.txt").size == 6
