@@ -317,7 +317,7 @@ class ObjectStore:
             raise FieldTypeOrValueError("data_link is empty")
 
         # TODO: support other uri type
-        if data_link.scheme in ["s3", "minio", "oss", "aliyun"]:
+        if data_link.scheme in ("s3", "minio", "oss", "aliyun"):
             backend = SWDSBackendType.S3
             conn = S3Connection.from_uri(data_link.uri, auth_name)
             bucket = conn.bucket
