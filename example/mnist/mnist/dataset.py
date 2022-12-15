@@ -37,6 +37,9 @@ def iter_swds_bin_item() -> _TItem:
 
 
 class DatasetProcessExecutor(SWDSBinBuildExecutor):
+    def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
+        return {"all_labels": list(range(0, 10))}
+
     def iter_item(self) -> _TItem:
         return iter_swds_bin_item()
 

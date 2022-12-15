@@ -455,6 +455,12 @@ class TestBundleCopy(TestCase):
                 "signature": [],
             },
         )
+        rm.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1:8182/api/v1/datastore/scanTable",
+            status_code=HTTPStatus.OK,
+            json={"data": {"records": []}},
+        )
 
         cloud_uri = (
             f"cloud://pre-bare/project/myproject/dataset/mnist/version/{version}"
@@ -774,6 +780,13 @@ class TestBundleCopy(TestCase):
                 ]
             },
         )
+        rm.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1:8182/api/v1/datastore/scanTable",
+            status_code=HTTPStatus.OK,
+            json={"data": {"records": []}},
+        )
+
         bc = DatasetCopy(
             src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
             dest_uri="",

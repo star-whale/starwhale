@@ -26,7 +26,11 @@ from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.tabular import get_dataset_consumption
+from starwhale.core.dataset.tabular import (
+    TabularDataset,
+    TabularDatasetInfo,
+    get_dataset_consumption,
+)
 from starwhale.api._impl.dataset.loader import get_data_loader
 
 
@@ -181,6 +185,13 @@ class PipelineHandler(metaclass=ABCMeta):
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         raise NotImplementedError
 
+    def get_datasets_info(self) -> t.Dict[str, TabularDatasetInfo]:
+        r = {}
+        for uri in self.context.dataset_uris:
+            td = TabularDataset.from_uri(URI(uri, expected_type=URIType.DATASET))
+            r[uri] = td.info
+        return r
+
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
@@ -222,6 +233,7 @@ class PipelineHandler(metaclass=ABCMeta):
         if not self.context.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
 
+        cnt = 0
         # TODO: user custom config batch size, max_retries
         for ds_uri in self.context.dataset_uris:
             _uri = URI(ds_uri, expected_type=URIType.DATASET)
@@ -229,8 +241,8 @@ class PipelineHandler(metaclass=ABCMeta):
                 dataset_uri=_uri, session_id=self.context.version
             )
             loader = get_data_loader(_uri, session_consumption=consumption)
+            dataset_info = loader.tabular_dataset.info
 
-            cnt = 0
             for _idx, _data, _annotations in loader:
                 cnt += 1
                 _start = time.time()
@@ -244,6 +256,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         annotations=_annotations,
                         index=_idx,
                         index_with_dataset=_idx_with_ds,
+                        dataset_info=dataset_info,
                     )
                 except Exception as e:
                     _exception = e
