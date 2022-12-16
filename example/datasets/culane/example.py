@@ -16,8 +16,8 @@ with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
     draw = ImageDraw.Draw(img)
     for line in annotations["lines"]:
         draw.line([float(l) for l in line.split()], width=3, fill="red")
-    a = numpy.asarray(msk) * 50  # a is readonly
-    msk = Image.fromarray(a)
+    _npy = numpy.asarray(msk) * 50
+    msk = Image.fromarray(_npy)
     msk.putalpha(127)
     img.paste(msk, (0, 0), mask=msk)
     img.show()
