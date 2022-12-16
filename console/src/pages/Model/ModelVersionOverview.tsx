@@ -1,29 +1,28 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { useDatasetVersion } from '../../domain/dataset/hooks/useDatasetVersion'
+import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 
-export default function DatasetVersionOverview() {
-    const { datasetVersion: dataset } = useDatasetVersion()
+export default function ModelVersionOverview() {
+    const { modelVerson } = useModelVersion()
 
     const [t] = useTranslation()
-
     const items = [
         {
-            label: t('sth name', [t('Dataset')]),
-            value: dataset?.name ?? '-',
+            label: t('sth name', [t('Model')]),
+            value: modelVerson?.name ?? '-',
         },
         {
             label: t('Version Name'),
-            value: dataset?.versionName ?? '-',
+            value: modelVerson?.versionName ?? '-',
         },
         {
             label: t('Aliases'),
-            value: dataset?.versionAlias ?? '-',
+            value: modelVerson?.versionAlias ?? '-',
         },
         {
             label: t('Created At'),
-            value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
+            value: modelVerson?.createdTime && formatTimestampDateTime(modelVerson.createdTime),
         },
     ]
 

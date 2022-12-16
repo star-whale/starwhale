@@ -23,11 +23,10 @@ export async function listModelVersions(
 
 export async function fetchModelVersion(projectId: string, modelId: string, modelVersionId: string): Promise<any> {
     const resp = await axios.get<IModelVersionDetailSchema>(
-        `/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}`
+        `/api/v1/project/${projectId}/model/${modelId}?versionUrl=${modelVersionId}`
     )
     return resp.data
 }
-
 export async function createModelVersion(
     projectId: string,
     modelId: string,

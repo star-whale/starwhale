@@ -10,7 +10,6 @@ import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
 import { GridLayout } from './component/GridBasicLayout'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
-import ChartConfigPopover from './component/ChartConfigPopover'
 import ChartConfigGroup from './component/ChartConfigGroup'
 
 export const CONFIG: WidgetConfig = {
@@ -99,18 +98,18 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         const subscription = new Subscription()
         subscription.add(
             eventBus.getStream(DragStartEvent).subscribe({
-                next: (evt) => setIsDragging(true),
+                next: () => setIsDragging(true),
             })
         )
         subscription.add(
             eventBus.getStream(DragEndEvent).subscribe({
-                next: (evt) => setIsDragging(false),
+                next: () => setIsDragging(false),
             })
         )
         return () => {
             subscription.unsubscribe()
         }
-    }, [])
+    }, [eventBus])
 
     return (
         <div>
@@ -141,6 +140,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
                 }}
             >
+                {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 {len === 0 && <EmptyPlaceholder />}
                 <GridLayout
                     rowHeight={300}
@@ -152,7 +152,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     margin={[20, 20]}
                 >
                     {/* @ts-ignore */}
-                    {React.Children.map(children, (child: React.ReactElement, i: number) => (
+                    {React.Children.map(children, (child: React.ReactElement) => (
                         <div key={String(child.props.id)}>
                             <div
                                 style={{
@@ -187,26 +187,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     )
 }
 
-const ChartSettingGroup = () => {
-    // onClick={() => handleEditPanel(child.props.id)}
-    //
-    return (
-        <div
-            style={{
-                position: 'absolute',
-                right: '20px',
-                top: '16px',
-            }}
-        >
-            <ChartConfigPopover onOptionSelect={() => {}} />
-        </div>
-    )
-}
-
 const EmptyPlaceholder = () => {
     return (
         <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
             <IconFont type='emptyChart' size={64} />
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             <span>Click "Add Chart" to add visualizations</span>
         </BusyPlaceholder>
     )

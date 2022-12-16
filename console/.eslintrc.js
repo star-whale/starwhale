@@ -113,6 +113,7 @@ module.exports = {
         // @FIXME check
         'import/no-extraneous-dependencies': 'off',
         'import/no-restricted-imports': 'off',
+        'no-restricted-imports': 'off',
     },
     settings: {
         'react': {
@@ -133,5 +134,5 @@ module.exports = {
             },
         },
     ],
-    ignorePatterns: ['.eslintrc.js', 'craco.config.js', '__generated__'],
+    ignorePatterns: ['.eslintrc.js', 'craco.config.js', '__generated__', 'vite.config.ts'],
 }

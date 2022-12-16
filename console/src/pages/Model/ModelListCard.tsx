@@ -30,18 +30,7 @@ export default function ModelListCard() {
     const [t] = useTranslation()
 
     return (
-        <Card
-            title={t('Models')}
-            // extra={
-            //     <Button
-            //         startEnhancer={<IconFont type='add' kind='white' />}
-            //         size={ButtonSize.compact}
-            //         onClick={() => setIsCreateModelOpen(true)}
-            //     >
-            //         {t('create')}
-            //     </Button>
-            // }
-        >
+        <Card title={t('Models')}>
             <Table
                 isLoading={modelsInfo.isLoading}
                 columns={[t('sth name', [t('Model')]), t('Owner'), t('Created'), t('Action')]}

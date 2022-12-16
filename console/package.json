@@ -123,8 +123,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p ./tsconfig.json",
-    "lint": "eslint -c .eslintrc.js './src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint --fix -c .eslintrc.js './src/**/*.{ts,tsx}'",
+    "lint": "eslint -c .eslintrc.js './{src,packages}/**/*.{ts,tsx}'",
+    "lint:fix": "eslint --fix -c .eslintrc.js './{src,packages}/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "start": "vite --host 0.0.0.0",
