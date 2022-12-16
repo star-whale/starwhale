@@ -1,6 +1,8 @@
-import requests
 import json
-from starwhale import dataset, Link, Image, MIMEType  # noqa: F401
+
+import requests
+
+from starwhale import Link, Image, dataset, MIMEType  # noqa: F401
 
 PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/culane"
 DATA_PATH = "driver_182_30frame"
@@ -25,7 +27,8 @@ def do_iter_item():
             while True:
                 try:
                     splitlines = requests.get(
-                        f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{name_no_suff}.lines.txt").text.splitlines()
+                        f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{name_no_suff}.lines.txt"
+                    ).text.splitlines()
                     break
                 except Exception:
                     print(f"timeout {name_no_suff}")
@@ -38,15 +41,20 @@ def do_iter_item():
                         display_name=f"{name_no_suff}.png", mime_type=MIMEType.PNG
                     ),
                     uri=f"{PATH_ROOT}/{SEG_LABEL_PATH}/{dir_name_}/{name_no_suff}.png",
-                ), "lines": splitlines
-            }
-            ds.append((f"{dir_name_}/{name_no_suff}", Link(
-                uri=f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{f_name_}",
-                data_type=Image(
-                    display_name=f_name_, mime_type=MIMEType.JPEG
                 ),
-                with_local_fs_data=False,
-            ), annotation))
+                "lines": splitlines,
+            }
+            ds.append(
+                (
+                    f"{dir_name_}/{name_no_suff}",
+                    Link(
+                        uri=f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{f_name_}",
+                        data_type=Image(display_name=f_name_, mime_type=MIMEType.JPEG),
+                        with_local_fs_data=False,
+                    ),
+                    annotation,
+                )
+            )
     ds.commit()
     ds.close()
 
