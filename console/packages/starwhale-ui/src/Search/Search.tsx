@@ -97,6 +97,7 @@ export default function Search({ ...props }: ISearchProps) {
                         style={{
                             flex: index === items.length - 1 ? 1 : undefined,
                         }}
+                        // @ts-ignore
                         containerRef={ref}
                         onChange={(value) => {
                             let newItems = []

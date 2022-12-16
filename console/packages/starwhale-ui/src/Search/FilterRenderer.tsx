@@ -156,6 +156,7 @@ export default function FilterRenderer({
             role='button'
             tabIndex={0}
             className={styles.filters}
+            // @ts-ignore
             onKeyDown={handleKeyDown}
             onClick={handleFocus}
             style={style}
