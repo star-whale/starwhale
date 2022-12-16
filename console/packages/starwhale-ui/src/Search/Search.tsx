@@ -1,10 +1,12 @@
 import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
-import FilterRenderer from './FilterRenderer'
-import { ValueT } from './types'
 import { useClickAway } from 'react-use'
 import { useQueryArgs, useDeepEffect } from '@starwhale/core/utils'
+// eslint-disable-next-line import/no-cycle
+import FilterRenderer from './FilterRenderer'
+// eslint-disable-next-line import/no-cycle
+import { ValueT } from './types'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -50,10 +52,10 @@ export const useStyles = createUseStyles({
 export interface ISearchProps {
     fields: ColumnSchemaDesc[]
 }
+const raw = [{}]
 
 export default function Search({ ...props }: ISearchProps) {
     const styles = useStyles()
-    const raw = [{}]
     const ref = useRef<HTMLDivElement>(null)
     const { query, updateQuery } = useQueryArgs()
 
@@ -88,7 +90,7 @@ export default function Search({ ...props }: ISearchProps) {
                     <FilterRenderer
                         key={[index, item.property].join('-')}
                         value={item}
-                        isEditing={true}
+                        isEditing
                         isDisabled={false}
                         isFocus={index === items.length - 1 && isEditing}
                         column={column}
@@ -101,7 +103,7 @@ export default function Search({ ...props }: ISearchProps) {
                             if (!value) {
                                 newItems = items.filter((_, i) => i !== index)
                             } else {
-                                newItems = items.map((item, i) => (i === index ? value : item))
+                                newItems = items.map((tmp, i) => (i === index ? value : tmp))
                             }
                             if (newItems.length === 0) {
                                 newItems = [{}]

@@ -1,25 +1,29 @@
 import { ColumnFilterModel, DataTypeT } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import AutosizeInput from '../base/select/autosize-input'
-import { FilterPropsT, ValueT } from './types'
 import { useClickAway } from 'react-use'
+import AutosizeInput from '../base/select/autosize-input'
+// eslint-disable-next-line import/no-cycle
+import { FilterPropsT, ValueT } from './types'
+// eslint-disable-next-line import/no-cycle
 import { useStyles } from './Search'
 import IconFont from '../IconFont'
-import { dataStoreToFilter } from './constants'
+// eslint-disable-next-line import/no-cycle
+import { dataStoreToFilter } from './utils'
+
+// @ts-ignore
+const containsNode = (parent, child) => {
+    return child && parent && parent.contains(child as any)
+}
 
 export default function FilterRenderer({
     value: rawValues = {},
     onChange = () => {},
-    isDisabled = false,
-    isEditing = false,
     isFocus = false,
     style = {},
     column = new ColumnFilterModel([]),
-    containerRef,
 }: FilterPropsT & {
     column: ColumnFilterModel
     style: React.CSSProperties
-    containerRef: React.RefObject<HTMLDivElement>
 }) {
     const [values, setValues] = useState<ValueT>(rawValues)
     const [value, setValue] = useState<any>(rawValues?.value)
@@ -36,25 +40,22 @@ export default function FilterRenderer({
     }, [column])
 
     const $fieldOptions = React.useMemo(() => {
-        return $columns.map((column) => {
+        return $columns.map((tmp) => {
             return {
-                id: column.path,
-                type: column.path,
-                label: column.label,
+                id: tmp.path,
+                type: tmp.path,
+                label: tmp.label,
             }
         })
     }, [$columns])
 
-    const { filter, FilterOperator, FilterField } = useMemo(() => {
-        const field = $columns.find((field) => field.name === property)
+    const { FilterOperator, FilterField } = useMemo(() => {
+        const field = $columns.find((tmp) => tmp.name === property)
         const filter = dataStoreToFilter(field?.type as DataTypeT)()
-        const FilterValue = filter.renderFieldValue
-        const FilterOperator = filter.renderOperator
-        const FilterField = filter.renderField
         return {
             filter,
-            FilterOperator,
-            FilterField,
+            FilterOperator: filter.renderOperator,
+            FilterField: filter.renderField,
         }
     }, [property, $columns])
 
@@ -91,6 +92,8 @@ export default function FilterRenderer({
                 if (!value) {
                     setRemoving(true)
                 }
+                break
+            default:
                 break
         }
     }
@@ -134,7 +137,7 @@ export default function FilterRenderer({
             setEditing(true)
             inputRef.current?.focus()
         }
-    }, [isFocus, inputRef.current])
+    }, [isFocus])
 
     // truncate values when first item is empty but with the same react key
     useEffect(() => {
@@ -148,7 +151,15 @@ export default function FilterRenderer({
 
     return (
         // @ts-ignore
-        <div ref={ref} className={styles.filters} onKeyDown={handleKeyDown} onClick={handleFocus} style={style}>
+        <div
+            ref={ref}
+            role='button'
+            tabIndex={0}
+            className={styles.filters}
+            onKeyDown={handleKeyDown}
+            onClick={handleFocus}
+            style={style}
+        >
             {FilterField && (
                 <FilterField
                     isEditing={editing && !property}
@@ -180,7 +191,6 @@ export default function FilterRenderer({
                         className='filter-remove'
                         role='button'
                         onClick={(e) => {
-                            console.log('button click')
                             e.preventDefault()
                             e.stopPropagation()
                             onChange?.(undefined)
@@ -224,8 +234,4 @@ export default function FilterRenderer({
             </div>
         </div>
     )
-}
-// @ts-ignore
-const containsNode = (parent, child) => {
-    return child && parent && parent.contains(child as any)
 }

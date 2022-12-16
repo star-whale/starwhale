@@ -4,3 +4,4 @@ node_modules/
 *.min.js
 BaseTable/
 stories/
+packages/starwhale-ui/src/base/
