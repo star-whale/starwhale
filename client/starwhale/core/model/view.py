@@ -8,7 +8,14 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.console import Group
 
-from starwhale.utils import console, load_yaml, pretty_bytes, in_production
+from starwhale.utils import (
+    docker,
+    console,
+    process,
+    load_yaml,
+    pretty_bytes,
+    in_production,
+)
 from starwhale.consts import (
     FileFlag,
     DefaultYAMLName,
@@ -20,7 +27,10 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import cmp_file_content
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.consts.env import SWEnv
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
+from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Model, StandaloneModel
@@ -121,7 +131,38 @@ class ModelTermView(BaseTermView):
         task_index: int = 0,
         task_num: int = 0,
         runtime_uri: str = "",
+        use_docker: bool = False,
+        gencmd: bool = False,
+        image: str = "",
     ) -> None:
+        if use_docker:
+            if not runtime_uri and not image:
+                raise FieldTypeOrValueError(
+                    "runtime_uri and image both are none when use_docker"
+                )
+            if runtime_uri:
+                runtime = StandaloneRuntime(
+                    URI(runtime_uri, expected_type=URIType.RUNTIME)
+                )
+                image = runtime.store.get_docker_base_image()
+            mnt_paths = (
+                [os.path.abspath(target)]
+                if in_production() or (os.path.exists(target) and os.path.isdir(target))
+                else []
+            )
+            env_vars = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
+            cmd = docker.gen_swcli_docker_cmd(
+                image,
+                env_vars=env_vars,
+                mnt_paths=mnt_paths,
+            )
+            console.rule(":elephant: docker cmd", align="left")
+            console.print(f"{cmd}\n")
+            if gencmd:
+                return
+            process.check_call(cmd, shell=True)
+            return
+
         kw = dict(
             project=project,
             version=version,
@@ -148,7 +189,7 @@ class ModelTermView(BaseTermView):
         else:
             _uri = URI(target, URIType.MODEL)
             _store = ModelStorage(_uri)
-            workdir = _store.loc
+            workdir = _store.src_dir
         return workdir
 
     @classmethod

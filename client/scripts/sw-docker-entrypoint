@@ -134,6 +134,6 @@ case "$1" in
         eval_task_prepare $1 && run
         ;;
     *)
-        exec "$@"
+        eval_task_prepare "starwhale" && exec "$@"
         ;;
 esac
