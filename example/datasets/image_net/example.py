@@ -4,7 +4,7 @@ from pprint import pprint
 from PIL import Image as PILImage
 from PIL import ImageDraw
 
-from starwhale import URI, URIType, get_data_loader
+from starwhale import dataset
 
 
 def draw_bbox(img, bbox_view_):
@@ -24,13 +24,16 @@ def draw_bbox(img, bbox_view_):
 
 
 def show():
-    uri = URI("image-net/version/latest", expected_type=URIType.DATASET)
-    for idx, data, annotations in get_data_loader(uri, 0, 1):
-        pprint(annotations)
-        with PILImage.open(io.BytesIO(data.fp)) as img:
-            for obj in annotations["annotation"]["object"]:
-                draw_bbox(img, obj["bbox_view"])
-            img.show()
+    ds_name = "image-net/version/latest"
+    ds = dataset(ds_name)
+    row = ds.fetch_one()
+    data = row.data
+    annotations = row.annotations
+    pprint(annotations)
+    with PILImage.open(io.BytesIO(data.fp)) as img:
+        for obj in annotations["object"]:
+            draw_bbox(img, obj["bbox_view"])
+        img.show()
 
 
 if __name__ == "__main__":
