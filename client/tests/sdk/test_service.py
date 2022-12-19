@@ -2,19 +2,21 @@ import os
 import json
 import uuid
 from pathlib import Path
-from unittest import TestCase
 
 from openapi_spec_validator import validate_spec, openapi_v30_spec_validator
 
-from tests import ROOT_DIR
 from starwhale import Image
 from starwhale.api.service import Output
 from starwhale.core.model.model import StandaloneModel
 
+from .. import ROOT_DIR
+from .test_base import BaseTestCase
 
-class ServiceTestCase(TestCase):
+
+class ServiceTestCase(BaseTestCase):
     def setUp(self):
         self.root = Path(os.path.join(ROOT_DIR, "data", "sdk", "service"))
+        super().setUp()
 
     def test_custom_class(self):
         svc = StandaloneModel._get_service("custom_class", self.root)

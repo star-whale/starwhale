@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import queue
 import typing as t
+import threading
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 
@@ -23,6 +25,8 @@ from starwhale.core.dataset.tabular import (
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
+
+_DEFAULT_LOADER_CACHE_SIZE = 20
 
 
 @total_ordering
@@ -75,6 +79,10 @@ class DataRow:
         )
 
 
+_TMetaQItem = t.Optional[t.Union[TabularDatasetRow, Exception]]
+_TRowQItem = t.Optional[t.Union[DataRow, Exception]]
+
+
 class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
@@ -83,6 +91,8 @@ class DataLoader(metaclass=ABCMeta):
         end: t.Optional[t.Any] = None,
         logger: t.Optional[loguru.Logger] = None,
         session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
+        cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
+        num_workers: int = 2,
     ):
         self.dataset_uri = dataset_uri
         self.logger = logger or _logger
@@ -98,6 +108,17 @@ class DataLoader(metaclass=ABCMeta):
         self._stores: t.Dict[str, ObjectStore] = {}
         self._load_dataset_auth_env()
         self.last_processed_range: t.Optional[t.Tuple[t.Any, t.Any]] = None
+        self._store_lock = threading.Lock()
+
+        if num_workers <= 0:
+            raise ValueError(
+                f"num_workers({num_workers}) must be a positive int number"
+            )
+        self._num_workers = num_workers
+
+        if cache_size <= 0:
+            raise ValueError(f"cache_size({cache_size}) must be a positive int number")
+        self._cache_size = cache_size
 
     def _load_dataset_auth_env(self) -> None:
         # TODO: support multi datasets
@@ -108,22 +129,25 @@ class DataLoader(metaclass=ABCMeta):
             load_dotenv(auth_env_fpath)
 
     def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
-        _k = f"{self.dataset_uri}.{row.data_link.scheme}.{row.auth_name}"
-        _store = self._stores.get(_k)
-        if _store:
-            return _store
+        with self._store_lock:
+            _k = f"{self.dataset_uri}.{row.data_link.scheme}.{row.auth_name}"
+            _store = self._stores.get(_k)
+            if _store:
+                return _store
 
-        if self.dataset_uri.instance_type == InstanceType.CLOUD:
-            _store = ObjectStore.to_signed_http_backend(self.dataset_uri)
-        else:
-            if row.object_store_type == ObjectStoreType.REMOTE:
-                _store = ObjectStore.from_data_link_uri(row.data_link, row.auth_name)
+            if self.dataset_uri.instance_type == InstanceType.CLOUD:
+                _store = ObjectStore.to_signed_http_backend(self.dataset_uri)
             else:
-                _store = ObjectStore.from_dataset_uri(self.dataset_uri)
+                if row.object_store_type == ObjectStoreType.REMOTE:
+                    _store = ObjectStore.from_data_link_uri(
+                        row.data_link, row.auth_name
+                    )
+                else:
+                    _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
-        self.logger.info(f"new store backend created for key {_k}")
-        self._stores[_k] = _store
-        return _store
+            self.logger.debug(f"new store backend created for key: {_k}")
+            self._stores[_k] = _store
+            return _store
 
     def _get_key_compose(
         self, row: TabularDatasetRow, store: ObjectStore
@@ -142,19 +166,20 @@ class DataLoader(metaclass=ABCMeta):
 
         return data_link, offset, offset + size - 1
 
-    def _travel_link(self, obj: t.Any) -> t.List[Link]:
+    @staticmethod
+    def _travel_link(obj: t.Any) -> t.List[Link]:
         _lks = []
         if isinstance(obj, Link):
             _lks.append(obj)
         elif isinstance(obj, dict):
             for v in obj.values():
-                _lks.extend(self._travel_link(v))
+                _lks.extend(DataLoader._travel_link(v))
         elif isinstance(obj, (list, tuple)):
             for v in obj:
-                _lks.extend(self._travel_link(v))
+                _lks.extend(DataLoader._travel_link(v))
         elif isinstance(obj, SwObject):
             for v in obj.__dict__.values():
-                _lks.extend(self._travel_link(v))
+                _lks.extend(DataLoader._travel_link(v))
         return _lks
 
     def _sign_uris(self, uris: t.List[str]) -> dict:
@@ -182,14 +207,14 @@ class DataLoader(metaclass=ABCMeta):
         )
         return r["data"]  # type: ignore
 
-    def _iter_row(self) -> t.Generator[TabularDatasetRow, None, None]:
+    def _iter_meta(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
             # TODO: refactor for batch-signed urls
             for row in self.tabular_dataset.scan():
                 yield row
         else:
             while True:
-                # TODO: multithread for get meta, get data and ppl process
+                # TODO: tune last processed range for multithread
                 pk = [self.last_processed_range] if self.last_processed_range else None
                 rt = self.session_consumption.get_scan_range(pk)
                 self.last_processed_range = rt
@@ -215,6 +240,19 @@ class DataLoader(metaclass=ABCMeta):
                     for row in self.tabular_dataset.scan(rt[0], rt[1]):
                         yield row
 
+    def _iter_meta_with_queue(self, mq: queue.Queue[_TMetaQItem]) -> None:
+        # TODO: tune last processed range
+        try:
+            for meta in self._iter_meta():
+                if meta and isinstance(meta, TabularDatasetRow):
+                    mq.put(meta)
+        except Exception as e:
+            mq.put(e)
+            raise
+
+        for _ in range(0, self._num_workers):
+            mq.put(None)
+
     def _unpack_row(
         self, row: TabularDatasetRow, skip_fetch_data: bool = False
     ) -> DataRow:
@@ -228,12 +266,72 @@ class DataLoader(metaclass=ABCMeta):
         data = BaseArtifact.reflect(data_content, row.data_type)
         return DataRow(index=row.id, data=data, annotations=row.annotations)
 
+    def _unpack_row_with_queue(
+        self,
+        in_mq: queue.Queue[_TMetaQItem],
+        out_mq: queue.Queue[_TRowQItem],
+        skip_fetch_data: bool = False,
+    ) -> None:
+        while True:
+            meta = in_mq.get(block=True, timeout=None)
+            if meta is None:
+                break
+            elif isinstance(meta, Exception):
+                out_mq.put(meta)
+                raise meta
+            else:
+                try:
+                    row = self._unpack_row(meta, skip_fetch_data)
+                    if row and isinstance(row, DataRow):
+                        out_mq.put(row)
+                except Exception as e:
+                    out_mq.put(e)
+                    raise
+
+        out_mq.put(None)
+
     def __iter__(
         self,
     ) -> t.Generator[DataRow, None, None]:
-        for row in self._iter_row():
-            # TODO: tune performance by fetch in batch
-            yield self._unpack_row(row)
+        meta_fetched_queue: queue.Queue[_TMetaQItem] = queue.Queue(4 * self._cache_size)
+        row_unpacked_queue: queue.Queue[_TRowQItem] = queue.Queue(self._cache_size)
+
+        meta_fetcher = threading.Thread(
+            name="meta-fetcher",
+            target=self._iter_meta_with_queue,
+            args=(meta_fetched_queue,),
+            daemon=True,
+        )
+        meta_fetcher.start()
+
+        rows_unpackers = []
+        for i in range(0, self._num_workers):
+            _t = threading.Thread(
+                name=f"row-unpacker-{i}",
+                target=self._unpack_row_with_queue,
+                args=(meta_fetched_queue, row_unpacked_queue),
+                daemon=True,
+            )
+            _t.start()
+            rows_unpackers.append(_t)
+
+        done_unpacker_cnt = 0
+        while True:
+            row = row_unpacked_queue.get(block=True, timeout=None)
+            if row is None:
+                done_unpacker_cnt += 1
+                if done_unpacker_cnt == self._num_workers:
+                    break
+            elif isinstance(row, Exception):
+                raise row
+            else:
+                yield row
+
+        self.logger.debug(
+            "queue details:"
+            f"meta fetcher(qsize:{meta_fetched_queue.qsize()}, alive: {meta_fetcher.is_alive()}), "
+            f"row unpackers(qsize:{row_unpacked_queue.qsize()}, alive: {[t.is_alive() for t in rows_unpackers]})"
+        )
 
     @abstractmethod
     def _read_data(
@@ -289,6 +387,8 @@ def get_data_loader(
     end: t.Optional[t.Any] = None,
     session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
     logger: t.Optional[loguru.Logger] = None,
+    cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
+    num_workers: int = 2,
 ) -> DataLoader:
     from starwhale.core.dataset import model
 
@@ -313,4 +413,6 @@ def get_data_loader(
         end=end,
         session_consumption=session_consumption,
         logger=logger or _logger,
+        cache_size=cache_size,
+        num_workers=num_workers,
     )

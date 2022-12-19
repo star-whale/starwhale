@@ -66,7 +66,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
 
         ret = []
         loader = get_data_loader(self.uri)
-        for idx, row in enumerate(loader._iter_row()):
+        for idx, row in enumerate(loader._iter_meta()):
             if idx >= rows:
                 break
             info: t.Dict[str, t.Any] = {

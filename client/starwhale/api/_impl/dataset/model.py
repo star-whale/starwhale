@@ -44,6 +44,9 @@ _ItemType = t.Union[str, int, slice]
 _HandlerType = t.Optional[t.Union[t.Callable, BaseBuildExecutor]]
 _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
 
+_DEFAULT_LOADER_WORKERS = 2
+_DEFAULT_LOADER_CACHE_SIZE = 20
+
 
 class _Tags:
     def __init__(self, core_dataset: CoreDataset) -> None:
@@ -164,6 +167,9 @@ class Dataset:
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
 
+        self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
+        self._loader_num_workers = _DEFAULT_LOADER_WORKERS
+
     def _fork_dataset(self) -> None:
         # TODO: support cloud dataset prepare in the tmp dir
         # TODO: lazy fork dataset
@@ -248,6 +254,23 @@ class Dataset:
         with self._lock:
             self.__data_loaders = {}
 
+    def with_loader_config(
+        self, num_workers: t.Optional[int] = None, cache_size: t.Optional[int] = None
+    ) -> Dataset:
+        if len(self.__data_loaders) != 0:
+            raise RuntimeError(
+                f"loaders({list(self.__data_loaders)}) have already been initialized"
+            )
+
+        with self._lock:
+            if num_workers is not None:
+                self._loader_num_workers = num_workers
+
+            if cache_size is not None:
+                self._loader_cache_size = cache_size
+
+        return self
+
     def _get_data_loader(
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
@@ -261,7 +284,12 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
-                _loader = get_data_loader(self.uri, session_consumption=consumption)
+                _loader = get_data_loader(
+                    self.uri,
+                    session_consumption=consumption,
+                    cache_size=self._loader_cache_size,
+                    num_workers=self._loader_num_workers,
+                )
                 self.__data_loaders[key] = _loader
 
         return _loader

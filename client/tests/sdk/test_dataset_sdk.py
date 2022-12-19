@@ -42,9 +42,6 @@ from .test_base import BaseTestCase
 
 
 class _DatasetSDKTestBase(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
     def _init_simple_dataset(self) -> URI:
         with dataset("mnist", create=True) as ds:
             for i in range(0, 10):
@@ -121,9 +118,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         load_ds = dataset(ds.uri)
         assert len(load_ds) == size + 1
-
-        for i, d in enumerate(ds):
-            assert d.index == i
+        ids = {d.index for d in load_ds}
+        assert ids == {i for i in range(0, len(load_ds))}
 
     def test_extend(self) -> None:
         ds = dataset("mnist", create=True)
@@ -187,7 +183,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         load_ds = dataset(ds.uri)
         assert len(load_ds) == 4
         index_names = [d.index for d in load_ds]
-        assert index_names == ["index-1", "index-2", "index-3", "index-4"]
+        assert set(index_names) == {"index-1", "index-2", "index-3", "index-4"}
 
     def test_setitem_exceptions(self) -> None:
         ds = dataset("mnist", create=True)
@@ -216,8 +212,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         load_ds = dataset(ds.uri)
         items = list(load_ds)
         assert len(items) == size
-        assert items[0].index == 0
-        assert items[-1].index == 99
+        assert 0 <= int(items[0].index) <= 99
 
     def test_setitem_same_key(self) -> None:
         ds = dataset("mnist", create=True)
@@ -278,7 +273,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         ds = dataset(ds.uri)
         items = [d.index for d in ds]
-        assert items == [1, 2, 3, 4, 5]
+        assert set(items) == {1, 2, 3, 4, 5}
 
     def test_del_not_found(self) -> None:
         ds = dataset("mnist", create=True)
@@ -324,12 +319,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
 
         reopen_ds = dataset(ds.uri)
-        assert len(reopen_ds) == 100
-        assert reopen_ds[0].index == 0  # type: ignore
-        assert reopen_ds[0].annotations == {"label": 0}  # type: ignore
         items = list(reopen_ds)
-        assert items[-1].index == 99
-        assert items[-1].annotations == {"label": 99}
+        assert len(items) == len(reopen_ds) == 100
+        assert "label" in items[-1].annotations
+        assert isinstance(items[-1].index, int)
 
     def test_build_from_handler_existed(self) -> None:
         def _handler() -> t.Generator:
@@ -351,8 +344,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert summary.increased_rows == 100
         items = list(reopen_ds)
         assert len(items) == 110
-        assert items[0].index == "0"
-        assert items[-1].index == "label-99"
+        assert isinstance(items[-1].index, str)
+        assert items[-1].index.startswith("label-")
 
     def test_build_from_handler_with_copy_src(self) -> None:
         def _handler() -> t.Generator:
@@ -465,7 +458,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         load_ds = dataset(ds.uri)
         assert load_ds[1].annotations == {"label": 101}  # type: ignore
-        assert [d.index for d in load_ds] == list(range(0, 10)) + [100, 101]
+        assert {d.index for d in load_ds} == set(list(range(0, 10)) + [100, 101])
         assert len(load_ds) == 12
         _summary = load_ds.summary()
         assert _summary is not None
@@ -517,7 +510,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds = dataset(existed_ds_uri)
         items = list(ds)
         assert len(items) == 10
-        assert items[0].index == 0
+        assert isinstance(items[0].index, int)
 
         ds = dataset(existed_ds_uri)
         cnt = 0
@@ -733,6 +726,37 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert loader.session_consumption is None
         assert consumption_loader.session_consumption is not None
 
+    def test_loader_config(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        assert ds._loader_cache_size == 20
+        assert ds._loader_num_workers == 2
+
+        ds.with_loader_config()
+        assert ds._loader_cache_size == 20
+        assert ds._loader_num_workers == 2
+
+        ds.with_loader_config(num_workers=3)
+        assert ds._loader_cache_size == 20
+        assert ds._loader_num_workers == 3
+
+        ds.with_loader_config(cache_size=30)
+        assert ds._loader_cache_size == 30
+        assert ds._loader_num_workers == 3
+
+        consumption_loader = ds._get_data_loader(disable_consumption=False)
+        assert consumption_loader._cache_size == 30
+        assert consumption_loader._num_workers == 3
+
+    def test_loader_config_exception(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        ds._get_data_loader(disable_consumption=False)
+
+        with self.assertRaisesRegex(RuntimeError, "have already been initialized"):
+            ds.with_loader_config(num_workers=1)
+
     def test_consumption_recreate_exception(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -910,7 +934,8 @@ class TestPytorch(_DatasetSDKTestBase):
         items = list(torch_loader)
         assert len(ds) == len(items)
         assert len(items[0]) == 2
-        assert items[0][1] == ds["0"].annotations  # type: ignore
+        assert isinstance(items[0][1], dict)
+        assert "label" in items[0][1]
         assert isinstance(items[0][0], Binary)
 
     def test_skip_default_transform_with_batch(self) -> None:
@@ -950,12 +975,12 @@ class TestPytorch(_DatasetSDKTestBase):
         first_item = items[0]
         assert isinstance(first_item, list)
         assert len(first_item) == 2
-        assert first_item[0] == (b"data-0", b"data-1")
+        assert len(first_item[0]) == 2
 
         assert isinstance(first_item[1], dict)
         assert list(first_item[1].keys()) == ["label"]
         assert isinstance(first_item[1]["label"], torch.Tensor)
-        assert torch.equal(torch.tensor([0, 1]), first_item[1]["label"])
+        assert list(first_item[1]["label"].size()) == [2]
 
     def test_keep_index(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -966,7 +991,8 @@ class TestPytorch(_DatasetSDKTestBase):
 
         item = next(iter(torch_loader))
         assert isinstance(item, list)
-        assert item[0] == tuple([f"{i}" for i in range(0, 5)])
+        assert "0" in item[0]
+        assert len(item[0]) == 5
 
     def test_use_custom_transform(self) -> None:
         with dataset("mnist", create=True) as ds:
@@ -986,7 +1012,7 @@ class TestPytorch(_DatasetSDKTestBase):
         )
         item = next(iter(torch_loader))
         assert isinstance(item, list) and len(item) == 2
-        assert item[0][0] == "custom-data-0"
+        assert item[0][0] in ("custom-data-0", "custom-data-1")
 
     def test_complex_transform(self) -> None:
         ds = dataset("mnist", create=True)
@@ -1005,14 +1031,27 @@ class TestPytorch(_DatasetSDKTestBase):
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
         item = next(iter(torch_loader))
 
+        assert isinstance(item, list)
+        assert len(item) == 2
+        assert isinstance(item[0], tuple)
+        assert len(item[0]) == 2
+        assert item[0][0].startswith("data-")
+
+        assert isinstance(item[1], dict)
+        assert item[1]["int"].dtype == torch.int64
+        assert list(item[1]["int"].size()) == [2]
         assert torch.equal(item[1]["int"], torch.tensor([1, 1]))
         assert torch.equal(
             item[1]["float"], torch.tensor([1.1000, 1.1000], dtype=torch.float64)
         )
         assert torch.equal(item[1]["tuple"][0], torch.tensor([1, 1]))
-        assert torch.equal(item[1]["map"]["key"], torch.tensor([0, 1]))
-        assert item[1]["str"] == ["str-0", "str-1"]
-        assert item[1]["bytes"] == [b"bytes-0", b"bytes-1"]
+        assert isinstance(item[1]["map"]["key"], torch.Tensor)
+        assert item[1]["map"]["key"].dtype == torch.int64
+        assert list(item[1]["map"]["key"].size()) == [2]
+        assert len(item[1]["str"]) == 2
+        assert item[1]["str"][0].startswith("str-")
+        assert len(item[1]["bytes"]) == 2
+        assert item[1]["bytes"][0].startswith(b"bytes-")
 
     def test_image_transform(self) -> None:
         ds = dataset("mnist", create=True)
@@ -1024,16 +1063,9 @@ class TestPytorch(_DatasetSDKTestBase):
 
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
         item = next(iter(torch_loader))
-        assert torch.equal(
-            item[0],
-            torch.tensor(
-                [
-                    [[[1, 1, 1], [1, 1, 1]], [[1, 1, 1], [1, 1, 1]]],
-                    [[[2, 2, 2], [2, 2, 2]], [[2, 2, 2], [2, 2, 2]]],
-                ],
-                dtype=torch.uint8,
-            ),
-        )
+        assert isinstance(item[0], torch.Tensor)
+        assert item[0].dtype == torch.uint8
+        assert list(item[0].size()) == [2, 2, 2, 3]
 
     def test_audio_transform(self) -> None:
         with dataset("mnist", create=True) as ds:
@@ -1183,8 +1215,9 @@ class TestTensorflow(_DatasetSDKTestBase):
         items = list(tf_ds)
         assert len(items[0]) == 2
         assert isinstance(items[0][0], tf.Tensor)
-        assert tf.equal(items[0][0], tf.constant(b"data-0"))
-        assert tf.equal(items[0][1]["label"], tf.constant(0, dtype=tf.int64))
+        assert items[0][0].dtype == tf.string
+        assert items[0][0].numpy().startswith(b"data-")
+        assert items[0][1]["label"].dtype == tf.int64
         assert len(items) == len(ds)
 
     def test_tf_dataset_with_index(self) -> None:
@@ -1198,11 +1231,12 @@ class TestTensorflow(_DatasetSDKTestBase):
 
         items = list(tf_ds)
         assert len(items[0]) == 3
-        assert tf.equal(items[0][0], tf.constant("0"))
+        assert items[0][0].dtype == tf.string
 
         batch_ds = tf_ds.batch(2, drop_remainder=True)
         items = list(batch_ds.as_numpy_iterator())
         assert len(items)
-        assert items[0][0].tolist() == [b"0", b"1"]
-        assert items[0][1].tolist() == [b"data-0", b"data-1"]
-        assert items[0][2]["label"].tolist() == [0, 1]
+        assert len(items[0][0].tolist()) == 2
+        assert len(items[0][1].tolist()) == 2
+        assert items[0][1].tolist()[0].startswith(b"data-")
+        assert len(items[0][2]["label"].tolist()) == 2
