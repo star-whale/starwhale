@@ -31,7 +31,7 @@
   "include": [
     "src",
     "types",
-    // "packages"
+    "packages"
   ],
   "exclude": [
     "src/stories",

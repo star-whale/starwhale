@@ -22,7 +22,10 @@ export default function SectionPopover({ onOptionSelect }) {
                 <StatefulMenu
                     items={COLUMN_OPTIONS}
                     onItemSelect={({ item }) => {
-                        if (item.type === 'delete') return close()
+                        if (item.type === 'delete') {
+                            close()
+                            return
+                        }
                         onOptionSelect(item)
                         close()
                     }}
@@ -58,7 +61,7 @@ export default function SectionPopover({ onOptionSelect }) {
                                                 as='link'
                                                 title='Are you sure to delete this panel?'
                                                 onClick={async (e) => {
-                                                    e.preventDefault
+                                                    e.preventDefault()
                                                     onOptionSelect(item)
                                                     close()
                                                 }}

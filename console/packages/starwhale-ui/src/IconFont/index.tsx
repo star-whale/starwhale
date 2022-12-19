@@ -8,6 +8,7 @@ import emptySvg from './empty.svg'
 import emptyChart from './empty-chart.svg'
 import searchEmptySvg from './search-empty.svg'
 import googleSvg from './google.svg'
+import invalidFile from './invalid-file.svg'
 
 const iconTypes = [
     'arrow2_down',
@@ -70,6 +71,8 @@ const iconTypes = [
     'a-Addabove',
     'a-Addbelow',
     'arrow2',
+    'file',
+    'file2',
 ]
 
 interface IIconFontProps {
@@ -86,6 +89,7 @@ const hijacked = {
     empty: emptySvg,
     emptyChart,
     searchEmpty: searchEmptySvg,
+    invalidFile,
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {

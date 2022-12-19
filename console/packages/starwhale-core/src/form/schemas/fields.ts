@@ -1,8 +1,9 @@
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { RJSFSchema } from '@rjsf/utils'
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { WidgetFactory } from '@starwhale/core/widget'
 
 export const UI_DATA_KEY = 'ui:data'
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export enum UI_DATA {
     DataTableColumns = 'DataTableColumns',
 }
@@ -24,7 +25,7 @@ export const chartTypeField = (): RJSFSchema | undefined => {
     }
 }
 
-export const tableNameField = (tables: any, schema?: RJSFSchema, uiSchema?: UiSchema): RJSFSchema | undefined => {
+export const tableNameField = (tables: any, schema?: RJSFSchema): RJSFSchema | undefined => {
     if (!tables || tables.length === 0) return undefined
     const { type } = schema?.tableName ?? {}
 
@@ -68,8 +69,7 @@ export const chartTitleField = (): RJSFSchema | undefined => ({
 export const dataTableColumnsField = (
     property: string,
     columnTypes: ColumnSchemaDesc[],
-    schema?: RJSFSchema,
-    uiSchema?: UiSchema
+    schema?: RJSFSchema
 ): RJSFSchema | undefined => {
     if (!columnTypes || columnTypes.length === 0) return undefined
 
