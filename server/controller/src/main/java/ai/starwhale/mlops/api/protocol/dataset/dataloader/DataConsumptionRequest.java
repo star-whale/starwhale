@@ -28,7 +28,7 @@ public class DataConsumptionRequest {
     /**
      * Whether serial under the same consumer
      */
-    private boolean isSerial = true;
+    private boolean isSerial = false;
 
     private int batchSize;
 

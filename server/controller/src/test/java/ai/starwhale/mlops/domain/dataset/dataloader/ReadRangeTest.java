@@ -34,8 +34,12 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Answer;
 
 public class ReadRangeTest {
@@ -133,8 +137,16 @@ public class ReadRangeTest {
         verify(dataStore, times(4)).scan(any());
     }
 
-    @Test
-    public void testNextDataRange() {
+    public static Stream<Arguments> provideMultiParams() {
+        return Stream.of(
+            Arguments.of(true, 2),
+            Arguments.of(false, 0)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideMultiParams")
+    public void testNextDataRangeWithSerial(boolean isSerial, int executeCount) {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
@@ -147,6 +159,7 @@ public class ReadRangeTest {
                     .tableName(tableName)
                     .datasetName(datasetName)
                     .datasetVersion(datasetVersion)
+                    .isSerial(isSerial)
                     .processedData(List.of())
                     .batchSize(2)
                     .start("0000-000")
@@ -265,6 +278,7 @@ public class ReadRangeTest {
 
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
+        verify(dataReadLogDao, times(executeCount)).updateUnProcessedToUnAssigned(any(), any());
         verify(dataReadLogDao, times(1))
                 .updateToProcessed(sid,  consumerId, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());
