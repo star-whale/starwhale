@@ -1,10 +1,10 @@
 import useGlobalState from '@/hooks/global'
 
 export const useModelVersion = () => {
-    const [modelVerson, setModelVersion] = useGlobalState('modelVersion')
+    const [modelVersion, setModelVersion] = useGlobalState('modelVersion')
 
     return {
-        modelVerson,
+        modelVersion,
         setModelVersion,
     }
 }

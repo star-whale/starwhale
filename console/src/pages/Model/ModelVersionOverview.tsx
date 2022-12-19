@@ -4,25 +4,25 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 
 export default function ModelVersionOverview() {
-    const { modelVerson } = useModelVersion()
+    const { modelVersion } = useModelVersion()
 
     const [t] = useTranslation()
     const items = [
         {
             label: t('sth name', [t('Model')]),
-            value: modelVerson?.name ?? '-',
+            value: modelVersion?.name ?? '-',
         },
         {
             label: t('Version Name'),
-            value: modelVerson?.versionName ?? '-',
+            value: modelVersion?.versionName ?? '-',
         },
         {
             label: t('Aliases'),
-            value: modelVerson?.versionAlias ?? '-',
+            value: modelVersion?.versionAlias ?? '-',
         },
         {
             label: t('Created At'),
-            value: modelVerson?.createdTime && formatTimestampDateTime(modelVerson.createdTime),
+            value: modelVersion?.createdTime && formatTimestampDateTime(modelVersion.createdTime),
         },
     ]
 
