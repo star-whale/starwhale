@@ -120,7 +120,7 @@ class SWDSSubFileType:
 
 
 @unique
-class FileType(Enum):
+class FileDesc(Enum):
     MANIFEST = "MANIFEST"
     SRC = "SRC"
     SRC_TAR = "SRC_TAR"
@@ -136,11 +136,11 @@ class FileFlag:
 
 
 @dataclass
-class FileDesc:
+class FileNode:
     path: pathlib.Path
     name: str
     size: int
-    file_type: FileType
+    file_desc: FileDesc
     signature: str = ""
     flag: str = ""
 

@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.api.protocol.storage;
 
 public enum FileDesc {
-    MANIFEST, SRC_TAR, SRC, MODEL, DATA
+    MANIFEST, SRC_TAR, SRC, MODEL, DATA, UNKNOWN
 }

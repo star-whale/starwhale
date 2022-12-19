@@ -1,5 +1,6 @@
 import os
 import typing as t
+import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -26,7 +27,7 @@ from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
-from starwhale.core.model.model import StandaloneModel, resource_to_file_desc
+from starwhale.core.model.model import StandaloneModel, resource_to_file_node
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.spec.openapi.components import OpenApi
 
@@ -174,8 +175,8 @@ class StandaloneModelTestCase(TestCase):
         _file = Path("tmp/file.txt")
         ensure_dir("tmp")
         ensure_file(_file, "123456")
-        fd = resource_to_file_desc(
-            [{"path": "file.txt", "type": "SRC"}], parent_path=Path("tmp")
+        fd = resource_to_file_node(
+            [{"path": "file.txt", "desc": "SRC"}], parent_path=Path("tmp")
         )
         assert "file.txt" in fd
         assert fd.get("file.txt").size == 6
@@ -368,3 +369,15 @@ class StandaloneModelTestCase(TestCase):
         )
         context_holder.context = context
         default_handler._invoke(context, "some")
+
+    @patch("starwhale.utils.process.check_call")
+    @patch("starwhale.utils.docker.gen_swcli_docker_cmd")
+    def test_use_docker(self, m_gencmd: MagicMock, m_call: MagicMock):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            m_gencmd.return_value = "hi"
+            m_call.return_value = 0
+            ModelTermView.eval("", tmpdirname, [], use_docker=True, image="img1")
+            m_gencmd.assert_called_once_with(
+                "img1", env_vars={}, mnt_paths=[tmpdirname]
+            )
+            m_call.assert_called_once_with("hi", shell=True)

@@ -2,10 +2,6 @@ import React from 'react'
 import { WidgetProps } from '@rjsf/utils'
 import Input from '../../../Input'
 
-const INPUT_STYLE = {
-    width: '100%',
-}
-
 const TextWidget = ({
     disabled,
     formContext,

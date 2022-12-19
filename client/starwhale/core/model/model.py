@@ -20,7 +20,7 @@ from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
     FileDesc,
     FileFlag,
-    FileType,
+    FileNode,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
     EvalHandlerType,
@@ -192,16 +192,16 @@ class Model(BaseBundle, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-def resource_to_file_desc(
+def resource_to_file_node(
     files: t.List[t.Dict[str, t.Any]], parent_path: Path
-) -> t.Dict[str, FileDesc]:
+) -> t.Dict[str, FileNode]:
     return {
-        _f["path"]: FileDesc(
+        _f["path"]: FileNode(
             path=parent_path / _f["path"],
             name=_f.get("name") or os.path.basename(_f["path"]),
             size=_f.get("size") or file_stat(parent_path / _f["path"]).st_size,
             signature=_f.get("signature") or blake2b_file(parent_path / _f["path"]),
-            file_type=FileType[_f["type"]],
+            file_desc=FileDesc[_f["desc"]],
         )
         for _f in files
     }
@@ -435,11 +435,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 f"only support two versions diff in one model, base model:{self.uri}, compare model:{compare_uri}"
             )
         _compare_model = StandaloneModel(compare_uri)
-        base_file_maps = resource_to_file_desc(
+        base_file_maps = resource_to_file_node(
             files=self.store.manifest["resources"],
             parent_path=self.store.snapshot_workdir,
         )
-        compare_file_maps = resource_to_file_desc(
+        compare_file_maps = resource_to_file_node(
             files=_compare_model.store.manifest["resources"],
             parent_path=_compare_model.store.snapshot_workdir,
         )
@@ -621,7 +621,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         "path": f"{self.store.src_dir_name}/{sub_path}",
                         "signature": blake2b_file(self.store.src_dir / sub_path),
                         "duplicate_check": False,
-                        "type": FileType.SRC.name,
+                        "desc": FileDesc.SRC.name,
                         "size": file_stat(self.store.src_dir / sub_path).st_size,
                     }
                 )
@@ -695,7 +695,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "path": f"{self.store.src_dir_name}/{_fname}",
                     "signature": blake2b_file(self.store.src_dir / _fname),
                     "duplicate_check": True,
-                    "type": FileType.MODEL.name,
+                    "desc": FileDesc.MODEL.name,
                     "size": file_stat(self.store.src_dir / _fname).st_size,
                 }
             )

@@ -60,7 +60,7 @@ const SelectWidget = ({
                 label: optionLabel,
             }
         })
-    }, [enumOptions, value])
+    }, [enumOptions])
 
     const $value =
         multiple && Array.isArray(value)

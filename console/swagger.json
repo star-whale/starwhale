@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://rspl.pre.intra.starwhale.ai",
+            "url": "http://localhost:8082",
             "description": "Generated server url"
         }
     ],
@@ -21,6 +21,9 @@
             "name": "Runtime"
         },
         {
+            "name": "Panel"
+        },
+        {
             "name": "Log"
         },
         {
@@ -28,6 +31,9 @@
         },
         {
             "name": "User"
+        },
+        {
+            "name": "Trash"
         },
         {
             "name": "Job"
@@ -40,9 +46,6 @@
         },
         {
             "name": "Project"
-        },
-        {
-            "name": "Object Store"
         },
         {
             "name": "Dataset"
@@ -378,6 +381,84 @@
                 }
             }
         },
+        "/api/v1/project/{projectUrl}/trash/{trashId}": {
+            "put": {
+                "tags": [
+                    "Trash"
+                ],
+                "summary": "Recover trash by id",
+                "operationId": "recoverTrash",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "trashId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Trash"
+                ],
+                "summary": "Delete trash",
+                "operationId": "deleteTrash",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "trashId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag": {
             "put": {
                 "tags": [
@@ -656,7 +737,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SwmpTagRequest"
+                                "$ref": "#/components/schemas/ModelTagRequest"
                             }
                         }
                     },
@@ -679,8 +760,8 @@
                 "tags": [
                     "Model"
                 ],
-                "summary": "head for swmp info ",
-                "description": "head for swmp info",
+                "summary": "head for model info ",
+                "description": "head for model info",
                 "operationId": "headModel",
                 "parameters": [
                     {
@@ -761,7 +842,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SwmpTagRequest"
+                                "$ref": "#/components/schemas/ModelTagRequest"
                             }
                         }
                     },
@@ -947,111 +1028,6 @@
                 }
             }
         },
-        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}": {
-            "put": {
-                "tags": [
-                    "Dataset"
-                ],
-                "summary": "Set the tag of the dataset version",
-                "operationId": "modifyDatasetVersionInfo",
-                "parameters": [
-                    {
-                        "name": "projectUrl",
-                        "in": "path",
-                        "description": "Project Url",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "datasetUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "versionUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SwdsTagRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "head": {
-                "tags": [
-                    "Dataset"
-                ],
-                "summary": "head for swds info ",
-                "description": "head for swds info",
-                "operationId": "headDataset",
-                "parameters": [
-                    {
-                        "name": "projectUrl",
-                        "in": "path",
-                        "description": "Project url",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "datasetUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "versionUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag": {
             "put": {
                 "tags": [
@@ -1091,7 +1067,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/SwdsTagRequest"
+                                "$ref": "#/components/schemas/DatasetTagRequest"
                             }
                         }
                     },
@@ -1738,7 +1714,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RevertSwmpVersionRequest"
+                                "$ref": "#/components/schemas/RevertModelVersionRequest"
                             }
                         }
                     },
@@ -1763,10 +1739,42 @@
                 "tags": [
                     "Model"
                 ],
-                "summary": "Create a new swmp version",
-                "description": "Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.",
+                "summary": "Create a new model version",
+                "description": "Create a new version of the model. The data resources can be selected by uploading the file package or entering the server path.",
                 "operationId": "upload_1",
                 "parameters": [
+                    {
+                        "name": "X-SW-UPLOAD-TYPE",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "MANIFEST",
+                                "SRC_TAR",
+                                "SRC",
+                                "MODEL",
+                                "DATA"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "X-SW-UPLOAD-OBJECT-HASH",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-SW-UPLOAD-ID",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
                     {
                         "name": "projectUrl",
                         "in": "path",
@@ -1798,17 +1806,14 @@
                         "in": "query",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/ClientSwmpRequest"
+                            "$ref": "#/components/schemas/ModelUploadRequest"
                         }
                     }
                 ],
                 "requestBody": {
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
-                                "required": [
-                                    "file"
-                                ],
                                 "type": "object",
                                 "properties": {
                                     "file": {
@@ -1827,7 +1832,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                    "$ref": "#/components/schemas/ResponseMessageObject"
                                 }
                             }
                         }
@@ -2102,6 +2107,63 @@
                 }
             }
         },
+        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume": {
+            "post": {
+                "tags": [
+                    "Dataset"
+                ],
+                "operationId": "consumeNextData",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DataConsumptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageDataIndexDesc"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/revert": {
             "post": {
                 "tags": [
@@ -2134,7 +2196,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RevertSwdsRequest"
+                                "$ref": "#/components/schemas/RevertDatasetRequest"
                             }
                         }
                     },
@@ -2209,7 +2271,7 @@
                         "in": "query",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/UploadRequest"
+                            "$ref": "#/components/schemas/DatasetUploadRequest"
                         }
                     }
                 ],
@@ -2236,6 +2298,231 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageUploadResult"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectName}/dataset/{datasetName}/version/{version}/sign-links": {
+            "post": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "Sign SWDS uris to get a batch of temporarily accessible links",
+                "description": "Sign SWDS uris to get a batch of temporarily accessible links",
+                "operationId": "signLinks",
+                "parameters": [
+                    {
+                        "name": "projectName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "expTimeMillis",
+                        "in": "query",
+                        "description": "the link will be expired after expTimeMillis",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "uniqueItems": true,
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageMapObjectObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/panel/setting/{project_id}/{key}": {
+            "get": {
+                "tags": [
+                    "Panel"
+                ],
+                "summary": "Get panel setting",
+                "description": "Get panel setting by project and key",
+                "operationId": "getPanelSetting",
+                "parameters": [
+                    {
+                        "name": "project_id",
+                        "in": "path",
+                        "description": "Project id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "Setting key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Panel"
+                ],
+                "summary": "Save panel setting",
+                "description": "Save panel setting by project and key",
+                "operationId": "setPanelSetting",
+                "parameters": [
+                    {
+                        "name": "project_id",
+                        "in": "path",
+                        "description": "Project id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "Setting key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/panel/plugin": {
+            "get": {
+                "tags": [
+                    "Panel"
+                ],
+                "summary": "List all plugins",
+                "description": "List all plugins",
+                "operationId": "pluginList",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoPanelPluginVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Panel"
+                ],
+                "summary": "Install a plugin",
+                "description": "Upload a tarball and install as panel plugin",
+                "operationId": "installPlugin",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "description": "file detail",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -2333,6 +2620,29 @@
                 }
             }
         },
+        "/api/v1/datastore/queryTable/export": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "queryAndExport",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueryTableRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/datastore/listTables": {
             "post": {
                 "tags": [
@@ -2356,6 +2666,36 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageTableNameListVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore/flush": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "flush",
+                "parameters": [
+                    {
+                        "name": "request",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/FlushRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -2412,16 +2752,26 @@
                 }
             }
         },
-        "/obj-store/{path}/{expTimeMillis}": {
-            "get": {
+        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}": {
+            "head": {
                 "tags": [
-                    "Object Store"
+                    "Dataset"
                 ],
-                "summary": "Get the content of an object or a file",
-                "operationId": "getObjectContent",
+                "summary": "head for dataset info ",
+                "description": "head for dataset info",
+                "operationId": "headDataset",
                 "parameters": [
                     {
-                        "name": "path",
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetUrl",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2429,20 +2779,11 @@
                         }
                     },
                     {
-                        "name": "Range",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "expTimeMillis",
+                        "name": "versionUrl",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "format": "int64"
+                            "type": "string"
                         }
                     }
                 ],
@@ -2452,7 +2793,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object"
                                 }
                             }
                         }
@@ -2570,7 +2911,7 @@
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListUserRoleVo"
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVo"
                                 }
                             }
                         }
@@ -2698,6 +3039,81 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageListRoleVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/trash": {
+            "get": {
+                "tags": [
+                    "Trash"
+                ],
+                "summary": "Get the list of trash",
+                "operationId": "listTrash",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "operator",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageInfo"
                                 }
                             }
                         }
@@ -3092,7 +3508,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SwModelPackageInfoVo"
+                                    "$ref": "#/components/schemas/ModelInfoVo"
                                 }
                             }
                         }
@@ -3225,9 +3641,48 @@
                     "Model"
                 ],
                 "summary": "Pull file of a model version",
-                "description": "Create a new version of the swmp. ",
+                "description": "Create a new version of the model. ",
                 "operationId": "pull_1",
                 "parameters": [
+                    {
+                        "name": "X-SW-DOWNLOAD-TYPE",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "MANIFEST",
+                                "SRC_TAR",
+                                "SRC",
+                                "MODEL",
+                                "DATA"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "X-SW-DOWNLOAD-OBJECT-NAME",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-SW-DOWNLOAD-OBJECT-PATH",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-SW-DOWNLOAD-OBJECT-HASH",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     {
                         "name": "projectUrl",
                         "in": "path",
@@ -3257,6 +3712,65 @@
                 "responses": {
                     "200": {
                         "description": "ok"
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/model/{modelUrl}/diff": {
+            "get": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "Model Diff information",
+                "description": "Return the diff information between the base version and the compare version",
+                "operationId": "getModelDiff",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project Url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "modelUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "baseVersion",
+                        "in": "query",
+                        "description": "Model version of base. ",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "compareVersion",
+                        "in": "query",
+                        "description": "Model version of compare. ",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ModelInfoVo"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3597,7 +4111,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SwDatasetInfoVo"
+                                    "$ref": "#/components/schemas/DatasetInfoVo"
                                 }
                             }
                         }
@@ -3729,8 +4243,8 @@
                 "tags": [
                     "Dataset"
                 ],
-                "summary": "Pull SWDS uri file contents",
-                "description": "Pull SWDS uri file contents ",
+                "summary": "Pull Dataset uri file contents",
+                "description": "Pull Dataset uri file contents ",
                 "operationId": "pullLinkContent",
                 "parameters": [
                     {
@@ -3767,21 +4281,13 @@
                         }
                     },
                     {
-                        "name": "authName",
-                        "in": "query",
-                        "description": "auth name the link used",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
                         "name": "offset",
                         "in": "query",
                         "description": "offset in the content",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "integer",
+                            "format": "int64"
                         }
                     },
                     {
@@ -3790,7 +4296,8 @@
                         "description": "data size",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "integer",
+                            "format": "int64"
                         }
                     }
                 ],
@@ -3806,8 +4313,8 @@
                 "tags": [
                     "Dataset"
                 ],
-                "summary": "Pull SWDS files",
-                "description": "Pull SWDS files part by part. ",
+                "summary": "Pull Dataset files",
+                "description": "Pull Dataset files part by part. ",
                 "operationId": "pullDs",
                 "parameters": [
                     {
@@ -3925,6 +4432,39 @@
                     }
                 }
             }
+        },
+        "/api/v1/panel/plugin/{id}": {
+            "delete": {
+                "tags": [
+                    "Panel"
+                ],
+                "summary": "Uninstall a plugin",
+                "description": "Uninstall plugin by id",
+                "operationId": "uninstallPlugin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Plugin id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -4016,7 +4556,7 @@
                     }
                 }
             },
-            "SwmpTagRequest": {
+            "ModelTagRequest": {
                 "required": [
                     "tag"
                 ],
@@ -4041,7 +4581,7 @@
                     }
                 }
             },
-            "SwdsTagRequest": {
+            "DatasetTagRequest": {
                 "required": [
                     "tag"
                 ],
@@ -4156,7 +4696,7 @@
                     }
                 }
             },
-            "RevertSwmpVersionRequest": {
+            "RevertModelVersionRequest": {
                 "required": [
                     "versionUrl"
                 ],
@@ -4167,20 +4707,43 @@
                     }
                 }
             },
-            "ClientSwmpRequest": {
+            "ModelUploadRequest": {
+                "required": [
+                    "phase"
+                ],
                 "type": "object",
                 "properties": {
-                    "swmp": {
+                    "phase": {
+                        "type": "string",
+                        "enum": [
+                            "MANIFEST",
+                            "BLOB",
+                            "END",
+                            "CANCEL"
+                        ]
+                    },
+                    "force": {
                         "type": "string"
                     },
                     "project": {
                         "type": "string"
                     },
-                    "force": {
+                    "swmp": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ResponseMessageObject": {
+                "type": "object",
+                "properties": {
+                    "code": {
                         "type": "string"
                     },
-                    "manifest": {
+                    "message": {
                         "type": "string"
+                    },
+                    "data": {
+                        "type": "object"
                     }
                 }
             },
@@ -4227,7 +4790,68 @@
                     }
                 }
             },
-            "RevertSwdsRequest": {
+            "DataConsumptionRequest": {
+                "type": "object",
+                "properties": {
+                    "sessionId": {
+                        "type": "string"
+                    },
+                    "consumerId": {
+                        "type": "string"
+                    },
+                    "batchSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "start": {
+                        "type": "string"
+                    },
+                    "startInclusive": {
+                        "type": "boolean"
+                    },
+                    "end": {
+                        "type": "string"
+                    },
+                    "endInclusive": {
+                        "type": "boolean"
+                    },
+                    "processedData": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DataIndexDesc"
+                        }
+                    },
+                    "serial": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "DataIndexDesc": {
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "type": "string"
+                    },
+                    "end": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ResponseMessageDataIndexDesc": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DataIndexDesc"
+                    }
+                }
+            },
+            "RevertDatasetRequest": {
                 "required": [
                     "versionUrl"
                 ],
@@ -4238,15 +4862,12 @@
                     }
                 }
             },
-            "UploadRequest": {
+            "DatasetUploadRequest": {
                 "required": [
                     "phase"
                 ],
                 "type": "object",
                 "properties": {
-                    "swds": {
-                        "type": "string"
-                    },
                     "phase": {
                         "type": "string",
                         "enum": [
@@ -4260,6 +4881,9 @@
                         "type": "string"
                     },
                     "project": {
+                        "type": "string"
+                    },
+                    "swds": {
                         "type": "string"
                     }
                 }
@@ -4286,6 +4910,23 @@
                     }
                 }
             },
+            "ResponseMessageMapObjectObject": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
             "ColumnSchemaDesc": {
                 "type": "object",
                 "properties": {
@@ -4299,6 +4940,12 @@
                         "type": "string"
                     },
                     "elementType": {
+                        "$ref": "#/components/schemas/ColumnSchemaDesc"
+                    },
+                    "keyType": {
+                        "$ref": "#/components/schemas/ColumnSchemaDesc"
+                    },
+                    "valueType": {
                         "$ref": "#/components/schemas/ColumnSchemaDesc"
                     }
                 }
@@ -4413,6 +5060,9 @@
                 "type": "object",
                 "properties": {
                     "tableName": {
+                        "type": "string"
+                    },
+                    "columnPrefix": {
                         "type": "string"
                     },
                     "columns": {
@@ -4595,6 +5245,9 @@
                     }
                 }
             },
+            "FlushRequest": {
+                "type": "object"
+            },
             "PageInfo": {
                 "type": "object",
                 "properties": {
@@ -4702,6 +5355,25 @@
                 },
                 "description": "User object"
             },
+            "ProjectRoleVo": {
+                "title": "Role",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserVo"
+                    },
+                    "project": {
+                        "$ref": "#/components/schemas/ProjectVo"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/RoleVo"
+                    }
+                },
+                "description": "Project Role object"
+            },
             "ProjectVo": {
                 "title": "Project",
                 "type": "object",
@@ -4731,7 +5403,7 @@
                 },
                 "description": "Project object"
             },
-            "ResponseMessageListUserRoleVo": {
+            "ResponseMessageListProjectRoleVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -4743,7 +5415,7 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/UserRoleVo"
+                            "$ref": "#/components/schemas/ProjectRoleVo"
                         }
                     }
                 }
@@ -4778,6 +5450,10 @@
                         "type": "integer",
                         "format": "int32"
                     },
+                    "runtimeCounts": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
                     "memberCounts": {
                         "type": "integer",
                         "format": "int32"
@@ -4787,22 +5463,6 @@
                         "format": "int32"
                     }
                 }
-            },
-            "UserRoleVo": {
-                "title": "Role",
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "project": {
-                        "$ref": "#/components/schemas/ProjectVo"
-                    },
-                    "role": {
-                        "$ref": "#/components/schemas/RoleVo"
-                    }
-                },
-                "description": "User Role object"
             },
             "SystemVersionVo": {
                 "title": "Version",
@@ -4885,6 +5545,19 @@
                     }
                 }
             },
+            "FlattenFileVo": {
+                "title": "StorageFile",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "string"
+                    }
+                },
+                "description": "Storage file object"
+            },
             "ResponseMessageRuntimeInfoVo": {
                 "type": "object",
                 "properties": {
@@ -4931,24 +5604,11 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVo"
+                            "$ref": "#/components/schemas/FlattenFileVo"
                         }
                     }
                 },
                 "description": "Runtime information object"
-            },
-            "StorageFileVo": {
-                "title": "StorageFile",
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "size": {
-                        "type": "string"
-                    }
-                },
-                "description": "Storage file object"
             },
             "PageInfoRuntimeVersionVo": {
                 "type": "object",
@@ -5074,43 +5734,49 @@
                 },
                 "description": "Runtime version object"
             },
-            "ProjectRoleVo": {
-                "title": "Role",
+            "FileNode": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "name": {
                         "type": "string"
                     },
-                    "user": {
-                        "$ref": "#/components/schemas/UserVo"
-                    },
-                    "project": {
-                        "$ref": "#/components/schemas/ProjectVo"
-                    },
-                    "role": {
-                        "$ref": "#/components/schemas/RoleVo"
-                    }
-                },
-                "description": "Project Role object"
-            },
-            "ResponseMessageListProjectRoleVo": {
-                "type": "object",
-                "properties": {
-                    "code": {
+                    "signature": {
                         "type": "string"
                     },
-                    "message": {
+                    "flag": {
+                        "type": "string",
+                        "enum": [
+                            "added",
+                            "updated",
+                            "deleted",
+                            "unchanged"
+                        ]
+                    },
+                    "mime": {
                         "type": "string"
                     },
-                    "data": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "directory",
+                            "file"
+                        ]
+                    },
+                    "desc": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "string"
+                    },
+                    "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/ProjectRoleVo"
+                            "$ref": "#/components/schemas/FileNode"
                         }
                     }
                 }
             },
-            "SwModelPackageInfoVo": {
+            "ModelInfoVo": {
                 "title": "ModelInfo",
                 "type": "object",
                 "properties": {
@@ -5142,11 +5808,11 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVo"
+                            "$ref": "#/components/schemas/FileNode"
                         }
                     }
                 },
-                "description": "SWModelPackage information object"
+                "description": "Model information object"
             },
             "JobVo": {
                 "title": "Job",
@@ -5545,7 +6211,7 @@
                     }
                 }
             },
-            "SwDatasetInfoVo": {
+            "DatasetInfoVo": {
                 "title": "DatasetInfo",
                 "type": "object",
                 "properties": {
@@ -5577,11 +6243,117 @@
                     "files": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/StorageFileVo"
+                            "$ref": "#/components/schemas/FlattenFileVo"
                         }
                     }
                 },
                 "description": "SWDataset information object"
+            },
+            "PageInfoPanelPluginVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PanelPluginVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "PanelPluginVo": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoPanelPluginVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoPanelPluginVo"
+                    }
+                }
             },
             "UserRoleDeleteRequest": {
                 "required": [

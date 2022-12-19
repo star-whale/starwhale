@@ -15,6 +15,7 @@ import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
+import { TextLink } from '@/components/Link'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -49,7 +50,12 @@ export default function ModelVersionListCard() {
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
-                            model.name,
+                            <TextLink
+                                key={modelId}
+                                to={`/projects/${projectId}/models/${modelId}/versions/${model.id}/overview`}
+                            >
+                                {model.name}
+                            </TextLink>,
                             model.alias,
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
@@ -67,6 +73,7 @@ export default function ModelVersionListCard() {
                                         </Button>
                                     </WithCurrentAuth>
                                 ) : null}
+                                &nbsp;&nbsp;
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />

@@ -1,4 +1,5 @@
 import { FilterTypeOperators, KIND } from './constants'
+// eslint-disable-next-line import/no-cycle
 import Filter from './filter'
 import { FilterT } from './types'
 

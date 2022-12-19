@@ -79,6 +79,9 @@ swcli model eval [OPTIONS] TARGET
 |`--task-index`||❌|Integer|| `--task-index` 参数用来表明 `--step` 中Step的第n个Task会执行，如果不指定 `--task-index`，则该Step中所有Tasks都会执行。Task索引从0开始，会通过 `starwhale.Context` 传入用户程序中，很多场景下Task的索引值用来指导评测数据集如何分割，实现评测的时候同一个Step的不同Task处理不同部分的评测数据集，实现并行提速。另外需要注意的是，`--task-index` 只有在同时设置 `--step` 参数时才生效。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示模型包构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
 |`--dataset`||✅||String||Dataset URI，该参数也可以通过 `SW_DATASET_URI` 环境变量来设置。|
+|`--gencmd`||❌|Boolean|False|当选用设置 `--use-docker` 参数后，只输出docker run的命令，不真正运行。该参数只能在Standalone Instance中使用。|
+|`--use-docker`||❌|Boolean|False|选用docker为载体来运行模型评测过程，该参数只能在Standalone Instance中使用。|
+|`--image`||❌|Boolean|False|当选用设置 `--use-docker` 参数后, 该参数生效。此image必须支持swcli命令，你可以先使用`--gencmd`查看具体生成的docker命令。如果`--runtime`被同时指定了，`swcli`会调用runtime的baseimage,本参数不再生效|
 
 ![model-eval.gif](../../img/model-eval.gif)
 

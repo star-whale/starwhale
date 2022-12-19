@@ -84,7 +84,7 @@ class WidgetFormModel implements WidgetFieldConfig {
         const { schema, uiSchema = {} } = this.widget?.config?.fieldConfig ?? {}
         Object.keys(uiSchema).forEach((property) => {
             if (uiSchema[property]?.[UI_DATA_KEY] === UI_DATA.DataTableColumns) {
-                this.addField(dataTableColumnsField(property, columnTypes, schema, uiSchema))
+                this.addField(dataTableColumnsField(property, columnTypes, schema))
             }
         })
         return this

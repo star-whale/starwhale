@@ -1128,10 +1128,12 @@ class TestTensorflow(_DatasetSDKTestBase):
         ):
             tf_dataset._inspect_spec([[1, 1], [Binary(), Binary()]])
 
-        with self.assertRaisesRegex(ValueError, "Can't ravel to one dimension array"):
+        ravel_err_msg = "Can't ravel to one dimension array|setting an array element with a sequence"
+
+        with self.assertRaisesRegex(ValueError, ravel_err_msg):
             tf_dataset._inspect_spec([[1, 1], [Binary()]])
 
-        with self.assertRaisesRegex(ValueError, "Can't ravel to one dimension array"):
+        with self.assertRaisesRegex(ValueError, ravel_err_msg):
             tf_dataset._inspect_spec([[1, 1], [1]])
 
         with self.assertRaisesRegex(NoSupportError, "Can't handle the compound type"):

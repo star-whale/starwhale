@@ -49,7 +49,7 @@ export default defineConfig({
     },
     resolve: { alias },
     plugins: [
-        // eslint(),
+        eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),

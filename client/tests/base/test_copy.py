@@ -21,7 +21,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.core.model.copy import ModelCopy
-from starwhale.base.bundle_copy import FileType, BundleCopy
+from starwhale.base.bundle_copy import FileDesc, BundleCopy
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 
@@ -234,7 +234,7 @@ class TestBundleCopy(TestCase):
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
             headers={
-                "X-SW-DOWNLOAD-TYPE": FileType.MANIFEST.name,
+                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
                 "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
                 "X-SW-DOWNLOAD-OBJECT-HASH": "",
             },
@@ -244,7 +244,7 @@ class TestBundleCopy(TestCase):
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
             headers={
-                "X-SW-DOWNLOAD-TYPE": FileType.SRC_TAR.name,
+                "X-SW-DOWNLOAD-TYPE": FileDesc.SRC_TAR.name,
                 "X-SW-DOWNLOAD-OBJECT-NAME": "src.tar",
                 "X-SW-DOWNLOAD-OBJECT-HASH": "",
             },
@@ -406,7 +406,7 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
-                headers={"X-SW-UPLOAD-TYPE": FileType.MANIFEST.name},
+                headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
                 json={"data": {"upload_id": "123"}},
             )
             ModelCopy(
@@ -447,7 +447,7 @@ class TestBundleCopy(TestCase):
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?part_name=",
             headers={
-                "X-SW-DOWNLOAD-TYPE": FileType.MANIFEST.name,
+                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
                 "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
                 "X-SW-DOWNLOAD-OBJECT-HASH": "",
             },

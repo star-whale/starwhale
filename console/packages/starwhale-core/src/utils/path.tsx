@@ -8,7 +8,7 @@ export function getTreePath(state: any, id: string) {
     }
 
     function walk(nodes: WidgetTreeNode[], paths: any) {
-        return nodes.map((node: WidgetTreeNode, i) => {
+        nodes.forEach((node: WidgetTreeNode, i) => {
             const currPaths = []
             if (node.id === id) {
                 rtn = {
