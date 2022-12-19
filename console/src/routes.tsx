@@ -10,13 +10,10 @@ import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
 import ProjectMembers from '@/pages/Project/ProjectMembers'
 import ProjectListCard from '@/pages/Project/ProjectListCard'
-import ModelLayout from '@/pages/Model/ModelLayout'
-import ModelOverview from '@/pages/Model/Overview'
 import ProjectModels from '@/pages/Project/Models'
 import ProjectDatasets from '@/pages/Project/Datasets'
 import ProjectJobs from '@/pages/Project/Jobs'
 import ModelVersionListCard from '@/pages/Model/ModelVersionListCard'
-import ModelVersionLayout from '@/pages/Model/ModelVersionLayout'
 import DatasetVersionListCard from '@/pages/Dataset/DatasetVersionListCard'
 import DatasetOverviewLayout from '@/pages/Dataset/DatasetOverviewLayout'
 import JobNewCard from '@/pages/Project/JobNewCard'
@@ -47,6 +44,9 @@ import RuntimeOverviewLayout from './pages/Runtime/RuntimeOverviewLayout'
 import SystemSettings from './pages/Admin/SystemSettings'
 import Panel from './components/Editor'
 import EvaluationWidgetResults from './pages/Evaluation/EvaluationWidgetResults'
+import ModelVersionOverviewFiles from './pages/Model/ModelVersionOverviewFiles'
+import ModelVersionOverview from './pages/Model/ModelVersionOverview'
+import ModelOverviewLayout from './pages/Model/ModelOverviewLayout'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -257,27 +257,30 @@ const Routes = () => {
                                 </RuntimeOverviewLayout>
                             </Route>
                             {/* model */}
-                            <Route exact path='/projects/:projectId/models/:modelId/versions'>
-                                <ModelVersionLayout>
-                                    <Switch>
-                                        <Route
-                                            exact
-                                            path='/projects/:projectId/models/:modelId/versions'
-                                            component={ModelVersionListCard}
-                                        />
-                                    </Switch>
-                                </ModelVersionLayout>
-                            </Route>
-                            <Route exact path='/projects/:projectId/models/:modelId/:path?/:path?'>
-                                <ModelLayout>
+                            <Route
+                                exact
+                                path='/projects/:projectId/models/:modelId/:path?/:modelVersionId?/:path?/:fileId?'
+                            >
+                                <ModelOverviewLayout>
                                     <Switch>
                                         <Route
                                             exact
                                             path='/projects/:projectId/models/:modelId'
-                                            component={ModelOverview}
+                                            component={ModelVersionListCard}
                                         />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/overview'
+                                            component={ModelVersionOverview}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/files'
+                                            component={ModelVersionOverviewFiles}
+                                        />
+                                        <Redirect to='/projects/:projectId/models/:modelId' />
                                     </Switch>
-                                </ModelLayout>
+                                </ModelOverviewLayout>
                             </Route>
                             {/* admin */}
                             <Route exact path='/admin/:path?'>

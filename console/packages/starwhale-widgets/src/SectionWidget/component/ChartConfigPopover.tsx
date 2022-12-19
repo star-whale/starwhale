@@ -49,7 +49,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                                                 as='link'
                                                 title='Are you sure to delete this chart?'
                                                 onClick={async (e) => {
-                                                    e.preventDefault
+                                                    e.preventDefault()
                                                     onOptionSelect(item)
                                                     close()
                                                 }}

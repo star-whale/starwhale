@@ -63,14 +63,7 @@ const ITEM_HEADER_HEIGHT = 48
 function DNDListWidget(props: WidgetRendererProps) {
     const styles = useStyles()
 
-    const { onLayoutOrderChange, onOptionChange, eventBus, children } = props
-
-    if (React.Children.count(children) === 0)
-        return (
-            <div className={styles.empty}>
-                <BusyPlaceholder type='empty' />
-            </div>
-        )
+    const { onLayoutOrderChange, eventBus, children } = props
 
     const [state, setState] = useState<any[]>([])
 
@@ -126,6 +119,13 @@ function DNDListWidget(props: WidgetRendererProps) {
         onLayoutOrderChange?.(state)
     }
 
+    if (React.Children.count(children) === 0)
+        return (
+            <div className={styles.empty}>
+                <BusyPlaceholder type='empty' />
+            </div>
+        )
+
     return (
         <div
             ref={ref}
@@ -143,8 +143,8 @@ function DNDListWidget(props: WidgetRendererProps) {
                 list={state}
                 setList={setState}
                 animation={50}
-                onChoose={(props) => {
-                    dragSelect(props.oldIndex as number)
+                onChoose={(args) => {
+                    dragSelect(args.oldIndex as number)
                 }}
                 onUnchoose={dragUnselect}
                 onStart={dragStart}

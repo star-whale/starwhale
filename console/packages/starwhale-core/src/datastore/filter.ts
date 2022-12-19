@@ -75,7 +75,7 @@ export class ColumnFilterModel {
             }
         ]
      */
-    addQuery(
+    static getQuery(
         columnName: string,
         value: string,
         operator: OPERATOR,
@@ -103,8 +103,8 @@ export class ColumnFilterModel {
             default:
                 break
         }
-        let operands = [{ columnName }]
-        if (!queryType) return
+        const operands = [{ columnName }]
+        if (!queryType) return undefined
         operands.push({ [queryType]: value } as any)
 
         return {
@@ -121,7 +121,7 @@ export class ColumnFilterModel {
             .filter((item: any) => item?.value && item?.op && item?.property)
             .map((item: any) => {
                 const field = fields.find((f) => f.name === item.property) as any
-                return this.addQuery(field?.name, item.value, item.op, field?.type as DataTypes)
+                return ColumnFilterModel.getQuery(field?.name, item.value, item.op, field?.type as DataTypes)
             })
         if (filters.length === 1) return filters[0]?.filter
 

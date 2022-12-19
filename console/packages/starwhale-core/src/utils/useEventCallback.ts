@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 
 type Fn<ARGS extends any[], R> = (...args: ARGS) => R
 
-const useEventCallback = <A extends any[], R>(fn: Fn<A, R>): Fn<A, R> => {
+export const useEventCallback = <A extends any[], R>(fn: Fn<A, R>): Fn<A, R> => {
     const ref = useRef<Fn<A, R>>(fn)
     useLayoutEffect(() => {
         ref.current = fn

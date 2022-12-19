@@ -14,8 +14,13 @@ function WidgetForm({ formData, onChange, onSubmit, form }: any, ref: any) {
             validator={validator}
             onSubmit={onSubmit}
             // @ts-ignore
-            ref={(form) => (ref.current = form)}
-            onChange={(e) => onChange?.(e.formData)}
+            ref={(f) => {
+                // eslint-disable-next-line no-param-reassign
+                ref.current = f
+            }}
+            onChange={(e) => {
+                onChange?.(e.formData)
+            }}
         />
     )
 }

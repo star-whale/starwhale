@@ -51,10 +51,9 @@ class WidgetModel implements WidgetConfig {
         if (!id) {
             this.generateId()
         }
-        // @FIXME check properties
-        for (const key in properties) {
+        Object.keys(properties).forEach((key) => {
             ;(this as any)[key] = properties[key]
-        }
+        })
     }
 
     setDynamicVars(globalDynamicVars: any) {
@@ -106,9 +105,9 @@ class WidgetModel implements WidgetConfig {
 
     getPersistProperty(): WidgetConfig {
         const properties = {} as WidgetConfig
-        for (const key in PersistProperty) {
+        Object.keys(PersistProperty).forEach((key) => {
             ;(properties as any)[key] = (this as any)[key]
-        }
+        })
         return properties
     }
 

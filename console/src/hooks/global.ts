@@ -37,6 +37,7 @@ const initialState = {
     taskLoading: false,
     drawerExpanded: false,
     role: Role.NONE as Role,
+    vscodeTheme: 'light' as string,
 }
 
 const { useGlobalState } = createGlobalState(initialState)
