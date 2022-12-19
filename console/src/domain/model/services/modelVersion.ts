@@ -27,6 +27,19 @@ export async function fetchModelVersion(projectId: string, modelId: string, mode
     )
     return resp.data
 }
+
+export async function fetchModelVersionDiff(
+    projectId: string,
+    modelId: string,
+    modelVersionId: string,
+    compareVersion: string
+): Promise<any> {
+    const resp = await axios.get<IModelVersionDetailSchema>(
+        `/api/v1/project/${projectId}/model/${modelId}/diff?baseVersion=${modelVersionId}&compareVersion=${compareVersion}`
+    )
+    return resp.data
+}
+
 export async function createModelVersion(
     projectId: string,
     modelId: string,

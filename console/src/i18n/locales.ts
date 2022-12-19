@@ -694,6 +694,15 @@ const locales0 = {
     'Update Setting Success': {
         en: 'Update Setting Success',
     },
+    'model.viewer.compare': {
+        en: 'Compare',
+    },
+    'model.viewer.source': {
+        en: 'Source',
+    },
+    'model.viewer.target': {
+        en: 'Target',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
