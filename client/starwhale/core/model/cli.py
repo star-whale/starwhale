@@ -254,26 +254,30 @@ def _eval(
 
 
 @model_cmd.command("serve")
-@click.argument("target")
+@click.argument("target", required=False, default="")
 @click.option(
     "-f",
     "--model-yaml",
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
+@click.option("-r", "--runtime", default="", help="runtime uri")
+@click.option("-m", "--model", default="", help="model uri")
+@click.option("--host", default="", help="The host to listen on")
+@click.option("--port", default=8080, help="The port of the server")
 @click.option(
     "--handlers",
     default=None,
     help="List of service handlers, use all by default",
     multiple=True,
 )
-@click.option("--host", default="", help="The host to listen on")
-@click.option("--port", default=8080, help="The port of the server")
 def _serve(
     target: str,
     model_yaml: str,
+    runtime: str,
+    model: str,
     host: str,
     port: int,
     handlers: t.Optional[t.List[str]],
 ) -> None:
-    ModelTermView.serve(target, model_yaml, host, port, handlers)
+    ModelTermView.serve(target, model_yaml, runtime, model, host, port, handlers)

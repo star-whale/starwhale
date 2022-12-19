@@ -1,4 +1,5 @@
 import os
+import sys
 import typing as t
 from pathlib import Path
 
@@ -261,12 +262,41 @@ class ModelTermView(BaseTermView):
         cls,
         target: str,
         model_yaml: str,
+        runtime_uri: str,
+        model_uri: str,
         host: str,
         port: int,
         handlers: t.Optional[t.List[str]] = None,
     ) -> None:
-        workdir = cls._get_workdir(target)
-        StandaloneModel.serve(model_yaml, workdir, host, port, handlers)
+        if target and model_uri:
+            console.print("workdir and model can not both set together")
+            sys.exit(1)
+        if not target and not model_uri:
+            console.print("workdir or model needs to be set")
+            sys.exit(1)
+
+        if target:
+            workdir = cls._get_workdir(target)
+        else:
+            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
+            workdir = _m.store.src_dir
+
+        kw = dict(
+            model_yaml=model_yaml,
+            workdir=workdir,
+            host=host,
+            port=port,
+            handlers=handlers,
+        )
+
+        if runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=StandaloneModel.serve,
+                kwargs=kw,
+            ).run()
+        else:
+            StandaloneModel.serve(**kw)  # type: ignore
 
 
 class ModelTermViewRich(ModelTermView):
