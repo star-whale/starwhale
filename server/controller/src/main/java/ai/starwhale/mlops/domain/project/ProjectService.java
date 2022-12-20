@@ -33,6 +33,8 @@ import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -180,9 +182,7 @@ public class ProjectService {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = projectMapper.find(projectId);
         if (entity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
         if (entity.getIsDefault() > 0) {
             throw new StarwhaleApiException(
@@ -205,10 +205,8 @@ public class ProjectService {
             id = idConvertor.revert(projectUrl);
             ProjectEntity entity = projectMapper.find(id);
             if (entity == null) {
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.PROJECT,
-                                "Recover project error. Project can not be found. "),
-                        HttpStatus.BAD_REQUEST);
+                throw new SwNotFoundException(ResourceType.PROJECT,
+                        "Recover project error. Project can not be found.");
             }
             projectName = entity.getProjectName().substring(0,
                     entity.getProjectName().lastIndexOf(DELETE_SUFFIX));
@@ -222,10 +220,8 @@ public class ProjectService {
                     ownerId = idConvertor.revert(arr[0]);
                 } else {
                     ownerId = Optional.of(userService.loadUserByUsername(arr[0]))
-                            .orElseThrow(() -> new StarwhaleApiException(
-                                    new SwValidationException(ValidSubject.PROJECT,
-                                            "Recover project error. User can not be found. "),
-                                    HttpStatus.BAD_REQUEST))
+                            .orElseThrow(() -> new SwNotFoundException(ResourceType.USER,
+                                    "Recover project error. User can not be found. "))
                             .getId();
                 }
             } else {

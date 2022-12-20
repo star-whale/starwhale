@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -114,6 +115,8 @@ public class CommonExceptionHandler {
             httpStatus = HttpStatus.BAD_REQUEST;
         } else if (ex instanceof SwAuthException) {
             httpStatus = HttpStatus.UNAUTHORIZED;
+        } else if (ex instanceof SwNotFoundException) {
+            httpStatus = HttpStatus.NOT_FOUND;
         } else if (ex instanceof SwProcessException) {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         } else {

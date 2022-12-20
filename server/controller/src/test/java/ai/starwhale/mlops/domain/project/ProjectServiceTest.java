@@ -44,6 +44,7 @@ import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.Collections;
 import java.util.List;
@@ -179,7 +180,7 @@ public class ProjectServiceTest {
         assertThrows(StarwhaleApiException.class,
                 () -> service.deleteProject("1"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.deleteProject("not_exist"));
     }
 

@@ -63,8 +63,8 @@ import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -231,7 +231,7 @@ public class DatasetServiceTest {
         given(datasetMapper.find(same(2L)))
                 .willReturn(DatasetEntity.builder().id(2L).build());
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
 
         given(datasetVersionMapper.find(same(1L)))
@@ -264,7 +264,7 @@ public class DatasetServiceTest {
                 hasProperty("versionAlias", is("v2"))
         ));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d2").build()));
     }
 
@@ -349,7 +349,7 @@ public class DatasetServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        assertThrows(SwValidationException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.listDs("2", "d1"));
     }
 
