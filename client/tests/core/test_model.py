@@ -381,3 +381,21 @@ class StandaloneModelTestCase(TestCase):
                 "img1", env_vars={}, mnt_paths=[tmpdirname]
             )
             m_call.assert_called_once_with("hi", shell=True)
+
+    @patch("starwhale.core.model.model.StandaloneModel")
+    @patch("starwhale.core.model.model.StandaloneModel.serve")
+    @patch("starwhale.core.runtime.process.Process.from_runtime_uri")
+    def test_serve(self, *args: t.Any):
+        host = "127.0.0.1"
+        port = 80
+        yaml = "model.yaml"
+        runtime = "pytorch/version/latest"
+        ModelTermView.serve("", yaml, runtime, "mnist/version/latest", host, port)
+        ModelTermView.serve(".", yaml, runtime, "", host, port)
+        ModelTermView.serve(".", yaml, "", "", host, port)
+
+        with self.assertRaises(SystemExit):
+            ModelTermView.serve("", yaml, runtime, "", host, port)
+
+        with self.assertRaises(SystemExit):
+            ModelTermView.serve("set", yaml, runtime, "set", host, port)
