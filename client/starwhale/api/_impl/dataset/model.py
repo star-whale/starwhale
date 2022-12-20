@@ -159,6 +159,9 @@ class Dataset:
         self._writer_lock = threading.Lock()
         self._row_writer: t.Optional[RowWriter] = None
         self.__keys_cache: t.Set[t.Union[int, str]] = set()
+        if self._create_by_append:
+            loader = get_data_loader(_origin_uri)
+            self.__keys_cache = set([row.id for row in loader.tabular_dataset.scan()])
         self._enable_copy_src = False
         self._info_lock = threading.Lock()
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
@@ -410,7 +413,6 @@ class Dataset:
     def flush(self) -> None:
         loader = self._get_data_loader(disable_consumption=True)
         loader.tabular_dataset.flush()
-        self.__keys_cache = set()
 
         if self._row_writer:
             self._row_writer.flush()
@@ -515,9 +517,7 @@ class Dataset:
 
         if key not in self.__keys_cache:
             self.__keys_cache.add(key)
-            _item = self._getitem(key, skip_fetch_data=True)
-            if _item is None or len(_item) == 0:
-                self._rows_cnt += 1
+            self._rows_cnt += 1
 
         _row_writer.update(row)
 

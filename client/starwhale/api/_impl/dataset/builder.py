@@ -648,11 +648,12 @@ class RowWriter(threading.Thread):
         self._raise_run_exception()
         self._queue.put(row_item)
 
-        with self._lock:
-            if self._builder is None:
-                _cls = create_generic_cls(self.__iter__)
-                self._builder = _cls(**self._kw)  # type: ignore
-                self.start()
+        if self._builder is None:
+            with self._lock:
+                if self._builder is None:
+                    _cls = create_generic_cls(self.__iter__)
+                    self._builder = _cls(**self._kw)  # type: ignore
+                    self.start()
 
     def __iter__(self) -> t.Generator[DataRow, None, None]:
         while True:

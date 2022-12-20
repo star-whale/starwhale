@@ -645,7 +645,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.NOT_FOUND,
         )
 
-        scan_table_req = rm.request(
+        rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/scanTable",
             json={"data": {}},
@@ -676,8 +676,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
                     index=i, data=Binary(f"data-{i}".encode()), annotations={"label": i}
                 )
             )
-
-        assert scan_table_req.call_count == cnt
 
         ds.flush()
         assert tmp_dir.exists()

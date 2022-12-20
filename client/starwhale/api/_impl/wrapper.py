@@ -37,10 +37,11 @@ class Logger:
                 raise Exception(*exceptions)
 
     def _fetch_writer(self, table_name: str) -> data_store.TableWriter:
+        writer = self._writers.get(table_name)
+        if writer is not None:
+            return writer
         with self._lock:
-            if table_name not in self._writers:
-                self._writers.setdefault(table_name, None)
-            writer = self._writers[table_name]
+            writer = self._writers.get(table_name)
             if writer is None:
                 _store = getattr(self, "_data_store", None)
                 writer = data_store.TableWriter(table_name, data_store=_store)
