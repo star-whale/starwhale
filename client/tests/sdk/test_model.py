@@ -10,6 +10,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
 from starwhale import Context, get_data_loader, PipelineHandler
+from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -79,7 +80,7 @@ class TestModelPipelineHandler(TestCase):
         self.project = DEFAULT_PROJECT
         self.eval_id = "mm3wky3dgbqt"
 
-        self.dataset_uri_raw = "mnist/version/1122334455667788"
+        self.dataset_uri_raw = f"mnist/version/{gen_uniq_version()}"
         self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
 
@@ -148,16 +149,16 @@ class TestModelPipelineHandler(TestCase):
         assert os.path.exists(os.path.join(_status_dir, "timeline"))
 
     @patch.dict(os.environ, {})
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.wrapper.data_store.LocalDataStore.scan_tables")
+    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     def test_ppl(
         self,
+        m_scan: MagicMock,
         m_summary: MagicMock,
         m_eval_log: MagicMock,
-        m_eval_get: MagicMock,
-        m_scan: MagicMock,
+        m_scan_id: MagicMock,
     ) -> None:
         _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
@@ -172,24 +173,29 @@ class TestModelPipelineHandler(TestCase):
         )
 
         fname = "data_ubyte_0.swds_bin"
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id=0,
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="",
-            ).asdict(),
+        m_scan_id.return_value = [{"id": 0}]
+        m_scan.side_effect = [
+            [{"id": 0, "value": 1}],
+            [
+                TabularDatasetRow(
+                    id=0,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_link=Link(fname),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": 0},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ).asdict(),
+            ],
+            [{"id": 0, "value": 1}],
         ]
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
         ensure_dir(data_dir)
@@ -259,24 +265,27 @@ class TestModelPipelineHandler(TestCase):
         )
 
         fname = "data_ubyte_0.swds_bin"
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id=0,
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": label_data},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="",
-            ).asdict(),
+        m_scan.side_effect = [
+            [{"id": 0, "value": 1}],
+            [
+                TabularDatasetRow(
+                    id=0,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_link=Link(fname),
+                    data_offset=32,
+                    data_size=784,
+                    _swds_bin_offset=0,
+                    _swds_bin_size=8160,
+                    annotations={"label": label_data},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.SWDS_BIN,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
+                    auth_name="",
+                ).asdict(),
+            ],
         ]
         m_scan_id.return_value = [{"id": 0}]
         data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir

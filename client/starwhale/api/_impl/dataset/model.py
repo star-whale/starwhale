@@ -26,7 +26,11 @@ from starwhale.core.dataset.type import DatasetConfig, DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
+    TabularDataset,
+    TabularDatasetInfo,
+    DatastoreWrapperDataset,
     get_dataset_consumption,
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
@@ -156,6 +160,9 @@ class Dataset:
         self._row_writer: t.Optional[RowWriter] = None
         self.__keys_cache: t.Set[t.Union[int, str]] = set()
         self._enable_copy_src = False
+        self._info_lock = threading.Lock()
+        self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
+        self.__info: t.Optional[TabularDatasetInfo] = None
 
     def _fork_dataset(self) -> None:
         # TODO: support cloud dataset prepare in the tmp dir
@@ -306,11 +313,9 @@ class Dataset:
 
         try:
             return _run()
-        except RuntimeError as e:
-            if str(e).startswith("table is empty"):
-                self._clear_data_loader()
-                return None
-            raise
+        except TableEmptyException:
+            self._clear_data_loader()
+            return None
         except StopIteration:
             return None
 
@@ -390,6 +395,17 @@ class Dataset:
     def exists(self) -> bool:
         return self._check_uri_exists(self.uri)
 
+    @property
+    def info(self) -> TabularDatasetInfo:
+        if self.__info is not None:
+            return self.__info
+
+        with self._info_lock:
+            self._info_ds_wrapper = TabularDataset.from_uri(self.uri)._info_ds_wrapper
+            self.__info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
+
+        return self.__info
+
     @_check_readonly
     def flush(self) -> None:
         loader = self._get_data_loader(disable_consumption=True)
@@ -421,7 +437,6 @@ class Dataset:
         return self.__core_dataset.history()
 
     def close(self) -> None:
-        self.__keys_cache = set()
         for _loader in self.__data_loaders.values():
             if not _loader:
                 continue  # pragma: no cover
@@ -436,7 +451,7 @@ class Dataset:
     def diff(self, cmp: Dataset) -> t.Dict:
         return self.__core_dataset.diff(cmp.uri)
 
-    def info(self) -> t.Dict[str, t.Any]:
+    def manifest(self) -> t.Dict[str, t.Any]:
         return self.__core_dataset.info()
 
     def head(self, n: int = 3, show_raw_data: bool = False) -> t.List[t.Dict]:
@@ -614,6 +629,9 @@ class Dataset:
         if self._row_writer is None:
             raise RuntimeError("row writer is none, no data was written")
 
+        if self.__info is not None and self._info_ds_wrapper is not None:
+            self.__info.save_to_datastore(self._info_ds_wrapper)
+
         self.flush()
         self._row_writer.close()
         self._summary = self._row_writer.summary
@@ -670,6 +688,9 @@ class Dataset:
         # TODO: support build dataset for cloud uri directly
         if self.project_uri.instance_type == InstanceType.CLOUD:
             raise NoSupportError("no support to build cloud dataset directly")
+
+        if self.__info is not None and self._info_ds_wrapper is not None:
+            self.__info.save_to_datastore(self._info_ds_wrapper)
 
         self._trigger_icode_build = True
         config = DatasetConfig(

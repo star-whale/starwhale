@@ -582,6 +582,10 @@ class ColumnSchema:
         )
 
 
+class TableEmptyException(Exception):
+    pass
+
+
 class TableSchemaDesc:
     def __init__(
         self, key_column: Optional[str], columns: Optional[List[ColumnSchema]]
@@ -825,7 +829,7 @@ def _read_table_schema(path: str) -> TableSchema:
 
     files = _get_table_files(path)
     if len(files) == 0:
-        raise RuntimeError(f"table is empty, path:{path}")
+        raise TableEmptyException(f"table path: {path}")
 
     schema = pq.read_schema(files[-1])
     if schema.metadata is None:

@@ -12,7 +12,7 @@ from requests_mock import Mocker
 
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
-from starwhale.api._impl.data_store import TableWriterException
+from starwhale.api._impl.data_store import TableEmptyException, TableWriterException
 
 from .test_base import BaseTestCase
 
@@ -2303,7 +2303,7 @@ class TestTableWriter(BaseTestCase):
     def test_writer(self):
         _writer = data_store.TableWriter("p/test_flush", "id")
         _writer.insert({"id": 0, "result": "data"})
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(TableEmptyException):
             list(_writer.data_store.scan_tables([data_store.TableDesc("p/test_flush")]))
         _writer.close()
 

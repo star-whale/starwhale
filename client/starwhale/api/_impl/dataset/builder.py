@@ -145,6 +145,9 @@ class BaseBuildExecutor(metaclass=ABCMeta):
     def flush(self) -> None:
         self.tabular_dataset.flush()
 
+    def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
+        return None
+
     @abstractmethod
     def iter_item(self) -> t.Generator[t.Tuple, None, None]:
         raise NotImplementedError
@@ -325,6 +328,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             print(f"data write close exception: {e}")
 
         self._copy_files(ds_copy_candidates)
+        self.tabular_dataset.info = self.get_info()  # type: ignore
 
         summary = DatasetSummary(
             rows=increased_rows,
@@ -465,6 +469,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
 
         self._copy_files(map_path_sign)
         self._copy_auth(auth_candidates)
+        self.tabular_dataset.info = self.get_info()  # type: ignore
 
         # TODO: provide fine-grained rows/increased rows by dataset pythonic api
         summary = DatasetSummary(

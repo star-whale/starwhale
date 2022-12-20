@@ -34,6 +34,7 @@ from starwhale.core.dataset.type import (
     GrayscaleImage,
     COCOObjectAnnotation,
 )
+from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
 
 from .. import ROOT_DIR
@@ -742,20 +743,51 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ):
             ds.make_distributed_consumption("2")
 
-    def test_info(self) -> None:
+    def test_info_readonly(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
 
-        info = ds.info()
-        assert isinstance(info, dict)
-        assert info["name"] == ds.name
-        assert info["version"] == ds.version
-        assert info["tags"] == ["latest", "v0"]
-        assert info["project"] == ds.project_uri.project
+        assert isinstance(ds.info, TabularDatasetInfo)
+        assert list(ds.info) == []
+        assert not bool(ds.info)
+
+        ds.info["a"] = 1
+        ds.close()
+
+        ds = dataset(existed_ds_uri)
+        assert list(ds.info) == []
+
+    def test_info_update(self) -> None:
+        ds = dataset("mnist", create=True)
+        ds.append(DataRow(1, Binary(b"123"), {"label": 1}))
+
+        assert list(ds.info) == []
+        assert not bool(ds.info)
+        ds.info["a"] = 1
+        ds.info["b"] = {"k": 1}
+        ds.info["c"] = [1, 2, 3]
+        ds.commit()
+
+        load_ds = dataset(ds.uri)
+        assert list(ds.info) == ["a", "b", "c"]
+        assert load_ds.info["a"] == 1
+        assert load_ds.info["b"] == {"k": 1}
+        assert load_ds.info["c"] == [1, 2, 3]
+
+    def test_manifest(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+
+        m = ds.manifest()
+        assert isinstance(m, dict)
+        assert m["name"] == ds.name
+        assert m["version"] == ds.version
+        assert m["tags"] == ["latest", "v0"]
+        assert m["project"] == ds.project_uri.project
 
         empty_ds = dataset("mnist", create=True)
-        info = empty_ds.info()
-        assert info == {}
+        m = empty_ds.manifest()
+        assert m == {}
 
     def test_remove_recover(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()

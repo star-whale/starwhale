@@ -1,5 +1,6 @@
 import re
 import threading
+from enum import Enum, unique
 from typing import Any, Dict, List, Union, Iterator, Optional
 
 import dill
@@ -159,9 +160,20 @@ class Evaluation(Logger):
         self._flush(table_name)
 
 
+@unique
+class DatasetTableKind(Enum):
+    META = "meta"
+    INFO = "info"
+
+
 class Dataset(Logger):
     def __init__(
-        self, dataset_id: str, project: str, instance_name: str = "", token: str = ""
+        self,
+        dataset_id: str,
+        project: str,
+        instance_name: str = "",
+        token: str = "",
+        kind: DatasetTableKind = DatasetTableKind.META,
     ) -> None:
         if not dataset_id:
             raise RuntimeError("id should not be None")
@@ -171,24 +183,27 @@ class Dataset(Logger):
 
         self.dataset_id = dataset_id
         self.project = project
-        self._meta_table_name = f"project/{self.project}/dataset/{self.dataset_id}/meta"
+        self._kind = kind
+        self._table_name = (
+            f"project/{self.project}/dataset/{self.dataset_id}/{kind.value}"
+        )
         self._data_store = data_store.get_data_store(instance_name, token)
-        self._init_writers([self._meta_table_name])
+        self._init_writers([self._table_name])
 
     def put(self, data_id: Union[str, int], **kwargs: Any) -> None:
         record = {"id": data_id}
         for k, v in kwargs.items():
             record[k.lower()] = v
-        self._log(self._meta_table_name, record)
+        self._log(self._table_name, record)
 
     def delete(self, data_id: Union[str, int]) -> None:
-        self._delete(self._meta_table_name, data_id)
+        self._delete(self._table_name, data_id)
 
     def scan(
         self, start: Any, end: Any, end_inclusive: bool = False
     ) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [data_store.TableDesc(self._meta_table_name)],
+            [data_store.TableDesc(self._table_name)],
             start=start,
             end=end,
             end_inclusive=end_inclusive,
@@ -198,18 +213,16 @@ class Dataset(Logger):
         self, start: Any, end: Any, end_inclusive: bool = False
     ) -> Iterator[Any]:
         return self._data_store.scan_tables(
-            [data_store.TableDesc(self._meta_table_name, columns=["id"])],
+            [data_store.TableDesc(self._table_name, columns=["id"])],
             start=start,
             end=end,
             end_inclusive=end_inclusive,
         )
 
     def flush(self) -> None:
-        self._flush(self._meta_table_name)
+        self._flush(self._table_name)
 
     def __str__(self) -> str:
-        return (
-            f"Dataset Wrapper, table:{self._meta_table_name}, store:{self._data_store}"
-        )
+        return f"Dataset Wrapper, table:{self._table_name}, store:{self._data_store}, kind: {self._kind}"
 
     __repr__ = __str__

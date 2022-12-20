@@ -9,7 +9,7 @@ from copy import deepcopy
 from enum import Enum, unique
 from queue import Queue
 from types import TracebackType
-from collections import defaultdict
+from collections import UserDict, defaultdict
 
 import requests
 from loguru import logger
@@ -36,10 +36,64 @@ from starwhale.utils.error import (
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.core.dataset.type import Link, JsonDict
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.api._impl.data_store import TableEmptyException
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
+
+
+class TabularDatasetInfo(UserDict):
+    _ROW_ID = 0
+
+    def __init__(self, mapping: t.Any = None, **kwargs: t.Any) -> None:
+        mapping = mapping or {}
+        if not isinstance(mapping, dict):
+            raise TypeError(f"data is not dict type: {mapping}")
+
+        if kwargs:
+            mapping.update(kwargs)
+
+        converted_mapping: t.Dict[str, t.Any] = {}
+        for k, v in mapping.items():
+            if not isinstance(k, str):
+                raise TypeError(f"key:{k} is not str type")
+
+            # TODO： add validator for value?
+            converted_mapping[k] = JsonDict.from_data(v)
+        super().__init__(converted_mapping)
+
+    def __getitem__(self, k: str) -> t.Any:
+        return JsonDict.to_data(super().__getitem__(k))
+
+    def __setitem__(self, k: str, v: t.Any) -> None:
+        if not isinstance(k, str):
+            raise TypeError(f"key:{k} is not str type")
+        super().__setitem__(k, JsonDict.from_data(v))
+
+    @classmethod
+    def load_from_datastore(
+        cls, ds_wrapper: DatastoreWrapperDataset
+    ) -> TabularDatasetInfo:
+        try:
+            rows = list(ds_wrapper.scan(cls._ROW_ID, cls._ROW_ID, end_inclusive=True))
+            rows_cnt = len(rows)
+            if rows_cnt == 1:
+                d = rows[0]
+            elif rows_cnt > 1:
+                raise RuntimeError(f"fetch multi info rows: {rows}")
+            else:
+                d = {}
+        except TableEmptyException:
+            d = {}
+
+        d.pop("id", None)
+        return cls(d)
+
+    def save_to_datastore(self, ds_wrapper: DatastoreWrapperDataset) -> None:
+        ds_wrapper.put(data_id=self._ROW_ID, **self.data)
+        ds_wrapper.flush()
 
 
 class TabularDatasetRow(ASDictMixin):
@@ -190,26 +244,38 @@ class TabularDataset:
         instance_name: str = "",
         token: str = "",
     ) -> None:
+        _ok, _reason = validate_obj_name(name)
+        if not _ok:
+            raise InvalidObjectName(f"{name}: {_reason}")
         self.name = name
+
+        if not version:
+            raise FieldTypeOrValueError("no version field")
         self.version = version
+
         self.project = project
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
         self._ds_wrapper = DatastoreWrapperDataset(
-            self.table_name, project, instance_name=instance_name, token=token
+            self.table_name,
+            project,
+            instance_name=instance_name,
+            token=token,
+            kind=DatasetTableKind.META,
         )
+
+        self._info_ds_wrapper = DatastoreWrapperDataset(
+            self.table_name,
+            project,
+            instance_name=instance_name,
+            token=token,
+            kind=DatasetTableKind.INFO,
+        )
+        self._info_changed = False
+        self._info: t.Optional[TabularDatasetInfo] = None
+        self._info_lock = threading.Lock()
 
         self.start = start
         self.end = end
-
-        self._do_validate()
-
-    def _do_validate(self) -> None:
-        _ok, _reason = validate_obj_name(self.name)
-        if not _ok:
-            raise InvalidObjectName(f"{self.name}: {_reason}")
-
-        if not self.version:
-            raise FieldTypeOrValueError("no version field")
 
     def __str__(self) -> str:
         return f"Dataset Table: {self._ds_wrapper}"
@@ -228,7 +294,11 @@ class TabularDataset:
         self._ds_wrapper.delete(row_id)
 
     def flush(self) -> None:
+        if self._info is not None and self._info_changed:
+            self._info.save_to_datastore(self._info_ds_wrapper)
+
         self._ds_wrapper.flush()
+        self._info_ds_wrapper.flush()
 
     def scan(
         self,
@@ -267,6 +337,7 @@ class TabularDataset:
     def close(self) -> None:
         self.flush()
         self._ds_wrapper.close()
+        self._info_ds_wrapper.close()
 
     def __enter__(self: _TDType) -> _TDType:
         return self
@@ -295,6 +366,9 @@ class TabularDataset:
             )
             _row.data_origin = DataOriginType.INHERIT
             self.put(_row)
+
+        # TODO: deepcopy fork_td info dict?
+        self._info = fork_td.info
         self.flush()
         return last_append_seq_id, rows_cnt
 
@@ -319,6 +393,29 @@ class TabularDataset:
             instance_name=uri.instance,
         )
 
+    @property
+    def info(self) -> TabularDatasetInfo:
+        if self._info is not None:
+            return self._info
+
+        with self._info_lock:
+            self._info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
+        return self._info
+
+    @info.setter
+    def info(self, data: t.Optional[t.Dict[str, t.Any]]) -> None:
+        if data is None:
+            return
+
+        if not isinstance(data, dict):
+            raise TypeError(
+                f"data:{type(data)} {data} is not dict type for info update"
+            )
+
+        with self._info_lock:
+            self._info_changed = True
+            self._info = TabularDatasetInfo(data)
+
 
 @unique
 class _RunEnvType(Enum):
@@ -333,7 +430,7 @@ class TabularDatasetSessionConsumption(Protocol):
     def get_scan_range(
         self, processed_keys: t.Optional[t.List[t.Tuple[t.Any, t.Any]]] = None
     ) -> t.Optional[t.Tuple[t.Any, t.Any]]:
-        ...
+        ...  # pragma: no cover
 
 
 local_standalone_tdsc: t.Dict[str, StandaloneTDSC] = {}
@@ -487,7 +584,7 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
         if self.run_env == _RunEnvType.THREAD:
             return f"thread-{id(threading.current_thread())}"
         else:
-            return f"process-{os.getpid()}"
+            return f"process-{os.getpid()}"  # pragma: no cover
 
 
 class CloudTDSC(TabularDatasetSessionConsumption):
