@@ -213,8 +213,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
 
         load_ds = dataset(ds.uri)
-        assert len(load_ds) == size
         items = list(load_ds)
+        assert len(items) == size
         assert items[0].index == 0
         assert items[-1].index == 99
 
