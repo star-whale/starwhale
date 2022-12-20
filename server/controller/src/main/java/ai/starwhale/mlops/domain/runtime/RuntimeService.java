@@ -54,6 +54,8 @@ import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -175,10 +177,8 @@ public class RuntimeService {
         Long runtimeId = bundleManager.getBundleId(bundleUrl);
         RuntimeEntity rt = runtimeMapper.find(runtimeId);
         if (rt == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME,
-                            "Unable to find runtime " + runtimeQuery.getRuntimeUrl()),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                "Unable to find runtime " + runtimeQuery.getRuntimeUrl());
         }
 
         RuntimeVersionEntity versionEntity = null;
@@ -192,10 +192,8 @@ public class RuntimeService {
             versionEntity = runtimeVersionMapper.findByLatest(rt.getId());
         }
         if (versionEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME,
-                            "Unable to find the latest version of runtime " + runtimeQuery.getRuntimeUrl()),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                "Unable to find the version of runtime " + runtimeQuery.getRuntimeUrl());
         }
 
         return toRuntimeInfoVo(rt, versionEntity);
@@ -290,7 +288,7 @@ public class RuntimeService {
             Long projectId = projectManager.getProjectId(project);
             RuntimeEntity rt = runtimeMapper.findByName(name, projectId, false);
             if (rt == null) {
-                throw new SwValidationException(ValidSubject.RUNTIME, "Unable to find the runtime with name " + name);
+                throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the runtime with name " + name);
             }
             return runtimeInfoOfRuntime(rt);
         }
@@ -419,7 +417,7 @@ public class RuntimeService {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
         if (null == runtimeVersionEntity) {
-            throw new SwValidationException(ValidSubject.RUNTIME, "Runtime version not found");
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Runtime version not found");
         }
         List<String> files;
         try {
@@ -451,7 +449,7 @@ public class RuntimeService {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
         if (null == runtimeVersionEntity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME), HttpStatus.NOT_FOUND);
+            throw new SwNotFoundException(ResourceType.BUNDLE, "Not found.");
         }
         return runtimeVersionEntity.getName();
     }

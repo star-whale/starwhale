@@ -156,11 +156,11 @@ public class DataReadManager {
                     dataReadLogDao.updateToProcessed(
                             sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
                 }
-                // Whether to process serially under the same consumer,
-                // if serial is true, unassigned the previous unprocessed data
-                if (isSerial) {
-                    dataReadLogDao.updateUnProcessedToUnAssigned(sid, consumerId);
-                }
+            }
+            // Whether to process serially under the same consumer,
+            // if serial is true, unassigned the previous unprocessed data
+            if (isSerial) {
+                dataReadLogDao.updateUnProcessedToUnAssigned(sid, consumerId);
             }
         } finally {
             lock.unlock();

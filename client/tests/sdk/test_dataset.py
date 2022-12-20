@@ -1,5 +1,6 @@
 import io
 import os
+import copy
 import json
 import math
 import time
@@ -38,6 +39,8 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.type import (
     Link,
@@ -58,12 +61,13 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
-from starwhale.api._impl.data_store import STRING, _get_type, SwObjectType
+from starwhale.api._impl.data_store import STRING, SwObject, _get_type, SwObjectType
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
     TabularDataset,
     TabularDatasetRow,
+    TabularDatasetInfo,
     local_standalone_tdsc,
     get_dataset_consumption,
 )
@@ -150,6 +154,14 @@ def iter_mnist_swds_bin_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
 
 
 class MNISTBuildExecutor(SWDSBinBuildExecutor):
+    def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
+        return {
+            "int": 1,
+            "dict": {"a": 1, "b": 2},
+            "list": [1, 2, 3],
+            "list_dict": [{"a": 1}, {"b": 2}],
+        }
+
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         return iter_mnist_swds_bin_item()
 
@@ -364,9 +376,18 @@ class TestDatasetCopy(BaseTestCase):
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
             json={"signature": []},
         )
+
         rm.request(
             HTTPMethod.POST,
             f"{instance_uri}/api/v1/datastore/scanTable",
+            additional_matcher=lambda x: "/info" in x.text,
+            json={"data": {"records": []}},
+        )
+
+        rm.request(
+            HTTPMethod.POST,
+            f"{instance_uri}/api/v1/datastore/scanTable",
+            additional_matcher=lambda x: "/meta" in x.text,
             json={
                 "data": {
                     "columnTypes": [
@@ -797,6 +818,11 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.data_type["type"] == ArtifactType.Image.value
         assert meta.data_type["mime_type"] == MIMEType.GRAYSCALE.value
         assert meta.data_type["shape"] == [28, 28, 1]
+
+        assert list(tdb.info) == ["int", "dict", "list", "list_dict"]
+        assert tdb.info["list_dict"] == [{"a": 1}, {"b": 2}]
+        assert tdb.info["list"] == [1, 2, 3]
+        assert tdb.info["dict"] == {"a": 1, "b": 2}
 
         link_data_path = (
             Path(self.workdir)
@@ -1354,13 +1380,123 @@ class TestDatasetSessionConsumption(TestCase):
         assert key_range is None
 
 
+class TestTabularDatasetInfo(BaseTestCase):
+    def test_dict_behavior(self) -> None:
+        info = TabularDatasetInfo(
+            {"int": 1, "list": [1, 2, 3], "dict": {"a": 1, "b": 2}}, kw_str="str"
+        )
+
+        assert list(info) == list(info.keys()) == ["int", "list", "dict", "kw_str"]
+        assert list(info.values()) == [1, [1, 2, 3], {"a": 1, "b": 2}, "str"]
+        assert info["int"] == 1
+        info["int"] = 2
+        assert info["int"] == 2
+        del info["int"]
+        assert list(info.keys()) == ["list", "dict", "kw_str"]
+
+        info.update(a=1, b=2)
+        assert info["a"] == 1
+        assert info["b"] == 2
+
+    def test_copy(self) -> None:
+        src_info = TabularDatasetInfo(
+            {"int": 1, "list": [1, 2, 3], "dict": {"a": 1, "b": 2}}, kw_str="str"
+        )
+
+        dest_info = copy.deepcopy(src_info)
+        assert dest_info["dict"] == {"a": 1, "b": 2}
+        assert id(dest_info["dict"]) != id(src_info["dict"])
+        assert id(dest_info.data["dict"]) != id(src_info.data["dict"])
+
+    def test_inner_json_dict(self) -> None:
+        info = TabularDatasetInfo(
+            {"int": 1, "dict": {"a": 1, "b": 2}, "list_dict": [{"a": 1}, {"a": 2}]}
+        )
+        assert info["int"] == 1
+        assert info["dict"] == {"a": 1, "b": 2}
+        assert info["list_dict"] == [{"a": 1}, {"a": 2}]
+
+        assert isinstance(info.data["dict"], SwObject)
+        assert isinstance(info.data["dict"], JsonDict)
+        assert info.data["dict"].__dict__ == {"a": 1, "b": 2}
+        assert isinstance(info.data["list_dict"], list)
+        assert isinstance(info.data["list_dict"][0], JsonDict)
+        assert info.data["list_dict"][0].__dict__ == {"a": 1}
+
+    def test_exceptions(self) -> None:
+        info = TabularDatasetInfo()
+        assert not bool(info)
+        assert list(info) == []
+
+        with self.assertRaisesRegex(TypeError, "is not str type"):
+            info[1] = "2"  # type: ignore
+
+        with self.assertRaisesRegex(TypeError, "data is not dict type"):
+            TabularDatasetInfo(1)
+
+        with self.assertRaisesRegex(TypeError, "is not str type"):
+            TabularDatasetInfo({1: "test"})
+
+    def test_datastore(self) -> None:
+        ds_wrapper = DatastoreWrapperDataset(
+            "test",
+            "self",
+            kind=DatasetTableKind.INFO,
+        )
+        info = TabularDatasetInfo(
+            {
+                "int": 1,
+                "dict": {"a": 1, "b": 2},
+                "list": ["s", "a"],
+                "list_dict": [{"a": 1}, {"a": 2}],
+                "image": Image(),
+            }
+        )
+        info.save_to_datastore(ds_wrapper)
+
+        load_info = TabularDatasetInfo.load_from_datastore(ds_wrapper)
+        assert list(load_info) == ["int", "dict", "list", "list_dict", "image"]
+        assert load_info["int"] == 1
+        assert load_info["dict"] == {"a": 1, "b": 2}
+        assert load_info["list"] == ["s", "a"]
+        assert load_info["list_dict"] == [{"a": 1}, {"a": 2}]
+        assert isinstance(load_info["image"], Image)
+
+    def test_tabular_dataset_property(self) -> None:
+        td = TabularDataset(name="test", version="123", project="self")
+        assert td._info is None
+        assert isinstance(td.info, TabularDatasetInfo)
+        assert not bool(td.info)
+        assert list(td.info) == []
+        assert td._info is not None
+        assert not td._info_changed
+
+        td.info = None
+        assert not td._info_changed
+
+        td.info = {"a": 1, "b": 2, "dict": {"k": 1}}
+        assert td._info_changed
+        assert list(td._info) == ["a", "b", "dict"]
+
+        with self.assertRaisesRegex(TypeError, "is not dict type for info update"):
+            td.info = 1  # type: ignore
+
+        td.close()
+
+        loaded_td = TabularDataset(name="test", version="123", project="self")
+        assert loaded_td.info["a"] == 1
+        assert list(loaded_td.info) == ["a", "b", "dict"]
+        assert not loaded_td._info_changed
+        loaded_td.close()
+
+
 class TestTabularDataset(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
-    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset")
-    def test_tabular_dataset(self, m_ds_wrapper: MagicMock) -> None:
-        m_ds_wrapper.return_value.scan.return_value = [
+    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
+    def test_tabular_dataset(self, m_scan: MagicMock) -> None:
+        rows = [
             TabularDatasetRow(
                 id="path/1",
                 data_link=Link("abcdef"),
@@ -1381,6 +1517,8 @@ class TestTabularDataset(TestCase):
                 _append_seq_id=2,
             ).asdict(),
         ]
+
+        m_scan.side_effect = [rows, rows, [{"id": 0, "value": 1}]]
         with TabularDataset.from_uri(
             URI("mnist/version/123456", expected_type=URIType.DATASET)
         ) as td:
@@ -1472,9 +1610,6 @@ class TestTabularDataset(TestCase):
 
 
 class TestRowWriter(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
     @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
     def test_update(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")

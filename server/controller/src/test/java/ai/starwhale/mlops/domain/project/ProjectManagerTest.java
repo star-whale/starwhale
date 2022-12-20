@@ -38,7 +38,7 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -179,7 +179,7 @@ public class ProjectManagerTest {
                 notNullValue(),
                 is(hasProperty("id", is(2L)))
         ));
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> projectManager.getProject("not_exist"));
 
     }
@@ -201,10 +201,10 @@ public class ProjectManagerTest {
         res = projectManager.getProjectId("starwhale:p2");
         assertThat(res, is(2L));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> projectManager.getProjectId("9"));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> projectManager.getProjectId("p9"));
 
     }

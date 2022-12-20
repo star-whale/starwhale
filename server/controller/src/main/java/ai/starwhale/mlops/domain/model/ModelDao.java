@@ -31,11 +31,9 @@ import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -62,9 +60,8 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
         }
         ModelVersionEntity entity = versionMapper.findByNameAndModelId(versionUrl, modelId);
         if (entity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL, String.format("Unable to find model %s", versionUrl)),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    String.format("Unable to find Model Version %s", versionUrl));
         }
         return entity.getId();
     }

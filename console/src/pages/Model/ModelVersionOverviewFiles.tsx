@@ -9,13 +9,17 @@ import { FileNode } from '@/domain/base/schemas/file'
 import { getToken } from '@/api'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useModel } from '@/domain/model/hooks/useModel'
-import Editor, { EditorProps } from '@monaco-editor/react'
+import Editor, { DiffEditor, EditorProps } from '@monaco-editor/react'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import AutoResizer from '@/components/AutoResizer/AutoResizer'
 import Select from '@starwhale/ui/Select'
 // @ts-ignore
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { useLocalStorage } from 'react-use'
+import { useQueryArgs } from '@starwhale/core'
+import { useParams } from 'react-router'
+import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
+import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -46,20 +50,43 @@ type FileNodeWithPathT = FileNode & {
 }
 
 const isText = (file?: FileNodeWithPathT) => (file ? file.desc === 'SRC' || file.mime === 'text/plain' : false)
+const FILEFLAGES = {
+    unchanged: 'rgba(2,16,43,0.20)',
+    added: '#00B368',
+    updated: '#E67F17',
+    deleted: '#CC3D3D',
+}
 
 export default function ModelVersionFiles() {
     const styles = useStyles()
-    const { modelVerson } = useModelVersion()
+    const { modelVersion } = useModelVersion()
     const { project } = useProject()
     const { model } = useModel()
     const [search, setSearch] = React.useState('')
     const [content, setContent] = React.useState('')
+    const [targetContent, setTargetContent] = React.useState('')
     const [sourceFile, setSourceFile] = React.useState<FileNodeWithPathT | undefined>()
+    const { projectId, modelId, modelVersionId } = useParams<{
+        modelId: string
+        projectId: string
+        modelVersionId: string
+    }>()
+
+    // with compare
+    const { query } = useQueryArgs()
+    const compareVersionInfo = useFetchModelVersion(projectId, modelId, query.compare)
+    const diffVersion = useFetchModelVersionDiff(projectId, modelId, modelVersionId, query.compare)
+    const files = useMemo(() => {
+        if (query.compare) {
+            return diffVersion.data?.compareVersion
+        }
+        return modelVersion?.files ?? []
+    }, [modelVersion, diffVersion, query.compare])
 
     const fileMap = useMemo(() => {
         const map = new Map<string, FileNodeWithPathT>()
-        const walk = (files: FileNode[] = [], directory: string[] = []) => {
-            files.forEach((file) => {
+        const walk = (filesTmp: FileNode[] = [], directory: string[] = []) => {
+            filesTmp.forEach((file) => {
                 map.set([...directory, file.name].join('/'), {
                     ...file,
                     path: [...directory, file.name],
@@ -67,18 +94,19 @@ export default function ModelVersionFiles() {
                 walk(file.files, [...directory, file.name])
             })
         }
-        walk(modelVerson?.files)
+        walk(files)
         return map
-    }, [modelVerson])
+    }, [files])
 
     const fileTree: TreeNodeT[] = useMemo(() => {
-        const walkWithSearch = (files: FileNode[] = [], directory: string[] = [], searchtmp = ''): TreeNodeT[] => {
-            return files
+        const walkWithSearch = (filesTmp: FileNode[] = [], directory: string[] = [], searchtmp = ''): TreeNodeT[] => {
+            return filesTmp
                 .map((file) => {
                     if (file.type === 'file' && !file.name.includes(searchtmp)) return null as any
                     const id = [...directory, file.name].join('/')
                     const isSelected = sourceFile?.path.join('/') === id
                     const fileType = file.type === 'directory' ? 'file' : 'file2'
+                    const color = file.flag && FILEFLAGES?.[file.flag] ? FILEFLAGES?.[file.flag] : FILEFLAGES.unchanged
 
                     return {
                         id,
@@ -92,17 +120,12 @@ export default function ModelVersionFiles() {
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
+                                        flexWrap: 'nowrap',
                                     }}
                                     onClick={() => setSourceFile(fileMap.get(id))}
                                 >
-                                    <p>
-                                        <IconFont
-                                            type={fileType}
-                                            style={{ color: 'rgba(2,16,43,0.20)', marginRight: '5px' }}
-                                            size={14}
-                                        />{' '}
-                                        {file.name}
-                                    </p>
+                                    <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
+                                    <p style={{ flex: 1 }}>{file.name}</p>
                                     {isSelected && <IconFont type='check' style={{ color: '#00B0FF' }} />}
                                 </div>
                             </TreeLabelInteractable>
@@ -113,8 +136,8 @@ export default function ModelVersionFiles() {
                 })
                 .filter((file) => !!file)
         }
-        return walkWithSearch(modelVerson?.files, [], search)
-    }, [modelVerson, search, fileMap, sourceFile, setSourceFile])
+        return walkWithSearch(files, [], search)
+    }, [files, search, fileMap, sourceFile, setSourceFile])
 
     // testing
     // useEffect(() => {
@@ -123,22 +146,62 @@ export default function ModelVersionFiles() {
 
     useEffect(() => {
         if (sourceFile) {
-            fetch(`/api/v1/project/${project?.name}/model/${model?.name}/version/${modelVerson?.versionName}/file`, {
-                // @ts-ignore
-                headers: {
-                    'Authorization': getToken(),
-                    'X-SW-DOWNLOAD-OBJECT-PATH': sourceFile.path.join('/'),
-                    'X-SW-DOWNLOAD-OBJECT-NAME': sourceFile.name,
-                    'X-SW-DOWNLOAD-OBJECT-HASH': sourceFile.signature,
-                },
-            }).then(async (res) => {
-                if (isText(sourceFile)) {
-                    const text = await res.text()
-                    setContent(text)
-                }
-            })
+            if (sourceFile.flag !== 'added') {
+                fetch(
+                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${modelVersion?.versionName}/file`,
+                    {
+                        // @ts-ignore
+                        headers: {
+                            'Authorization': getToken(),
+                            'X-SW-DOWNLOAD-OBJECT-PATH': sourceFile.path.join('/'),
+                            'X-SW-DOWNLOAD-OBJECT-NAME': sourceFile.name,
+                            'X-SW-DOWNLOAD-OBJECT-HASH': sourceFile.signature,
+                        },
+                    }
+                ).then(async (res) => {
+                    if (isText(sourceFile) && res.ok) {
+                        const text = await res.text()
+                        setContent(text)
+                    } else {
+                        setContent(' ')
+                    }
+                })
+            } else {
+                setContent(' ')
+            }
+            if (!query.compare) return
+            if (sourceFile.flag !== 'deleted') {
+                fetch(
+                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${compareVersionInfo.data?.versionName}/file`,
+                    {
+                        // @ts-ignore
+                        headers: {
+                            'Authorization': getToken(),
+                            'X-SW-DOWNLOAD-OBJECT-PATH': sourceFile.path.join('/'),
+                            'X-SW-DOWNLOAD-OBJECT-NAME': sourceFile.name,
+                            'X-SW-DOWNLOAD-OBJECT-HASH': sourceFile.signature,
+                        },
+                    }
+                ).then(async (res) => {
+                    if (isText(sourceFile) && res.ok) {
+                        const text = await res.text()
+                        setTargetContent(text)
+                    } else {
+                        setTargetContent(' ')
+                    }
+                })
+            } else {
+                setTargetContent(' ')
+            }
         }
-    }, [sourceFile, project?.name, model?.name, modelVerson?.versionName])
+    }, [
+        sourceFile,
+        project?.name,
+        model?.name,
+        modelVersion?.versionName,
+        compareVersionInfo.data?.versionName,
+        query.compare,
+    ])
 
     return (
         <div className={styles.wrapper}>
@@ -149,8 +212,15 @@ export default function ModelVersionFiles() {
                 }}
                 right={() => {
                     if (isText(sourceFile)) {
-                        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                        return <CodeViewer value={content} file={sourceFile} />
+                        return (
+                            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                            <CodeViewer
+                                value={content}
+                                file={sourceFile}
+                                isDiff={!!query.compare}
+                                modified={targetContent}
+                            />
+                        )
                     }
 
                     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -227,7 +297,12 @@ const THEMES = [
     },
 ]
 
-function CodeViewer({ file, value }: EditorProps & { file?: FileNodeWithPathT | null }) {
+function CodeViewer({
+    file,
+    value,
+    modified,
+    isDiff = false,
+}: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean }) {
     const styles = useStyles()
     const [theme, setTheme] = useLocalStorage<string>(THEMES[0].id)
     const [language, setLanguage] = React.useState('yaml')
@@ -312,18 +387,34 @@ function CodeViewer({ file, value }: EditorProps & { file?: FileNodeWithPathT | 
                                 width: 'fit-content',
                             }}
                         >
-                            <Editor
-                                options={{
-                                    readOnly: true,
-                                }}
-                                theme={theme as string}
-                                height={height - 58}
-                                width={width - 6}
-                                defaultLanguage='yaml'
-                                language={language}
-                                value={value}
-                                onMount={onMount}
-                            />
+                            {!isDiff && (
+                                <Editor
+                                    options={{
+                                        readOnly: true,
+                                    }}
+                                    theme={theme as string}
+                                    height={height - 58}
+                                    width={width - 6}
+                                    defaultLanguage='yaml'
+                                    language={language}
+                                    value={value}
+                                    onMount={onMount}
+                                />
+                            )}
+                            {isDiff && (
+                                <DiffEditor
+                                    options={{
+                                        readOnly: true,
+                                    }}
+                                    theme={theme as string}
+                                    height={height - 58}
+                                    width={width - 6}
+                                    language={language}
+                                    original={value}
+                                    modified={modified}
+                                    onMount={onMount}
+                                />
+                            )}
                         </div>
                     )
                 }}

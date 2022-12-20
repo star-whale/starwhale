@@ -58,13 +58,14 @@ import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwAuthException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -74,7 +75,6 @@ import com.google.common.base.Joiner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -186,9 +186,7 @@ public class ModelService {
             Long projectId = projectManager.getProjectId(project);
             ModelEntity model = modelMapper.findByName(name, projectId, false);
             if (model == null) {
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "Unable to find the model with name " + name),
-                        HttpStatus.BAD_REQUEST);
+                throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the model with name " + name);
             }
             return listModelInfoOfModel(model);
         }
@@ -243,9 +241,7 @@ public class ModelService {
         Long modelId = bundleManager.getBundleId(bundleUrl);
         ModelEntity model = modelMapper.find(modelId);
         if (model == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL, "Unable to find model " + modelUrl),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find model " + modelUrl);
         }
 
         ModelVersionEntity versionEntity = null;
@@ -260,8 +256,8 @@ public class ModelService {
             versionEntity = modelVersionMapper.findByLatest(model.getId());
         }
         if (versionEntity == null) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                    "Unable to find the version of model " + modelUrl), HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    "Unable to find the version of model " + modelUrl);
         }
 
         return toModelInfoVo(model, versionEntity);
@@ -565,7 +561,7 @@ public class ModelService {
                      HttpServletResponse httpResponse) {
         ModelVersionEntity modelVersionEntity = getModelVersion(projectUrl, modelUrl, versionUrl);
         if (null == modelVersionEntity) {
-            throw new SwValidationException(ValidSubject.MODEL, "model version not found");
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Model version not found");
         }
         if (fileDesc == null) {
             if (!StringUtils.hasText(name) && !StringUtils.hasText(path)) {
@@ -695,9 +691,9 @@ public class ModelService {
     public String query(String projectUrl, String modelUrl, String versionUrl) {
         ModelVersionEntity modelVersionEntity = getModelVersion(projectUrl, modelUrl, versionUrl);
         if (null == modelVersionEntity) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL), HttpStatus.NOT_FOUND);
+            throw new SwNotFoundException(ResourceType.BUNDLE, "Not found.");
         }
-        return "";
+        return modelVersionEntity.getName();
     }
 
     private ModelVersionEntity getModelVersion(

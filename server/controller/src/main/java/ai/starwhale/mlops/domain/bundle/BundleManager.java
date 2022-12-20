@@ -21,6 +21,8 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -58,7 +60,7 @@ public class BundleManager {
             entity = bundleAccessor.findByNameForUpdate(bundleUrl, projectId);
         }
         if (entity == null) {
-            throw new BundleException(String.format("Unable to find %s", bundleUrl));
+            throw new SwNotFoundException(ResourceType.BUNDLE, String.format("Unable to find %s", bundleUrl));
         }
         return entity.getId();
     }
@@ -84,7 +86,7 @@ public class BundleManager {
             entity = bundleVersionAccessor.findVersionByNameAndBundleId(versionUrl, bundleId);
         }
         if (entity == null) {
-            throw new BundleException(String.format("Unable to find %s", versionUrl));
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, String.format("Unable to find %s", versionUrl));
         }
         return entity.getId();
     }

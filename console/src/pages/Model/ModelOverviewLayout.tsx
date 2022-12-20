@@ -1,6 +1,6 @@
 import { useModel, useModelLoading } from '@model/hooks/useModel'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
@@ -11,15 +11,34 @@ import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { Button } from '@starwhale/ui'
 import { usePage } from '@/hooks/usePage'
 import qs from 'qs'
+import Checkbox from '@/components/Checkbox'
+import { STYLE_TYPE } from 'baseui/checkbox'
+import { createUseStyles } from 'react-jss'
+import { useQueryArgs } from '@starwhale/core'
 import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVersion'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 import ModelVersionSelector from '../../domain/model/components/ModelVersionSelector'
+
+const useStyles = createUseStyles({
+    tagWrapper: {
+        position: 'relative',
+    },
+    tag: {
+        position: 'absolute',
+        background: '#EBF1FF',
+        borderRadius: '12px',
+        padding: '3px 10px',
+        top: '5px',
+        right: '30px',
+    },
+})
 
 export interface IModelLayoutProps {
     children: React.ReactNode
 }
 
 export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
+    const styles = useStyles()
     const { projectId, modelId, modelVersionId } = useParams<{
         modelId: string
         projectId: string
@@ -31,6 +50,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const [page] = usePage()
     const history = useHistory()
     const { setModelVersion } = useModelVersion()
+    const { query } = useQueryArgs()
 
     const modelVersionInfo = useFetchModelVersion(projectId, modelId, modelVersionId)
 
@@ -47,6 +67,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
 
     useEffect(() => {
         if (modelVersionInfo.data) {
+            console.log('---', modelVersionInfo.data)
             setModelVersion(modelVersionInfo.data)
         }
     }, [modelVersionInfo.data, setModelVersion])
@@ -93,26 +114,87 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
+    const [isCompare, setIsCompare] = useState(!!query.compare ?? false)
+
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {modelVersionId && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                        <div style={{ width: '300px' }}>
-                            <ModelVersionSelector
-                                projectId={projectId}
-                                modelId={modelId}
-                                value={modelVersionId}
-                                onChange={(v) =>
-                                    history.push(
-                                        `/projects/${projectId}/models/${modelId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                            page
-                                        )}`
-                                    )
-                                }
-                            />
+                        <div style={{ display: 'grid', gridTemplateColumns: '280px 120px 280px', gap: '21px' }}>
+                            <div className={styles.tagWrapper}>
+                                <ModelVersionSelector
+                                    projectId={projectId}
+                                    modelId={modelId}
+                                    value={modelVersionId}
+                                    onChange={(v) =>
+                                        history.push(
+                                            `/projects/${projectId}/models/${modelId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                                page
+                                            )}`
+                                        )
+                                    }
+                                    overrides={{
+                                        SingleValue: {
+                                            style: {
+                                                width: isCompare ? '50%' : '100%',
+                                            },
+                                        },
+                                    }}
+                                />
+                                {isCompare && <div className={styles.tag}>{t('model.viewer.source')}</div>}
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                                <Checkbox
+                                    checked={isCompare}
+                                    onChange={(e) => {
+                                        setIsCompare(e.currentTarget.checked)
+                                        if (!e.currentTarget.checked)
+                                            history.push(
+                                                `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/${activeItemId}?${qs.stringify(
+                                                    { ...page, compare: undefined }
+                                                )}`
+                                            )
+                                    }}
+                                    checkmarkType={STYLE_TYPE.toggle_round}
+                                />
+                                {t('model.viewer.compare')}
+                            </div>
+
+                            {isCompare && (
+                                <div className={styles.tagWrapper}>
+                                    <ModelVersionSelector
+                                        projectId={projectId}
+                                        modelId={modelId}
+                                        value={query.compare}
+                                        onChange={(v) =>
+                                            history.push(
+                                                `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/${activeItemId}?${qs.stringify(
+                                                    { ...page, compare: v }
+                                                )}`
+                                            )
+                                        }
+                                        overrides={{
+                                            SingleValue: {
+                                                style: {
+                                                    width: '50%',
+                                                },
+                                            },
+                                        }}
+                                    />
+                                    <div className={styles.tag}>{t('model.viewer.target')}</div>
+                                </div>
+                            )}
                         </div>
                         <Button
+                            overrides={{
+                                Root: {
+                                    style: {
+                                        justifySelf: 'flex-end',
+                                    },
+                                },
+                            }}
                             size='compact'
                             as='withIcon'
                             startEnhancer={() => <IconFont type='runtime' />}

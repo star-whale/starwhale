@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import copy
 from typing import Iterator
 from pathlib import Path
 
@@ -109,11 +110,13 @@ class DatasetCopy(BundleCopy):
             instance_name=self.dest_uri.instance,
         ) as remote:
             console.print(
-                f":bear_face: dump dataset meta from standalone to cloud({remote._ds_wrapper._meta_table_name})"
+                f":bear_face: dump dataset meta from standalone to cloud({remote._ds_wrapper._table_name})"
             )
             # TODO: add progressbar
             for row in local.scan():
                 remote.put(row)
+
+            remote._info = copy.deepcopy(local.info)
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         if not self.datastore_disabled:
@@ -129,10 +132,12 @@ class DatasetCopy(BundleCopy):
                 instance_name=self.src_uri.instance,
             ) as remote:
                 console.print(
-                    f":bird: load dataset meta from cloud({remote._ds_wrapper._meta_table_name}) to standalone"
+                    f":bird: load dataset meta from cloud({remote._ds_wrapper._table_name}) to standalone"
                 )
                 # TODO: add progressbar
                 for row in remote.scan():
                     local.put(row)
+
+                local._info = copy.deepcopy(remote.info)
 
         super()._do_download_bundle_dir(progress)

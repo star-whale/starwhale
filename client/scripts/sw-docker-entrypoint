@@ -97,6 +97,12 @@ run() {
     swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
 }
 
+serve() {
+    echo "--> start to serve, use $(which swcli) cli ..."
+    export
+    swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
+}
+
 welcome() {
     echo "===================================="
     echo "StarWhale Docker Entrypoint"
@@ -132,6 +138,9 @@ case "$1" in
         ;;
     run)
         eval_task_prepare $1 && run
+        ;;
+    serve)
+        eval_task_prepare $1 && serve
         ;;
     *)
         eval_task_prepare "starwhale" && exec "$@"
