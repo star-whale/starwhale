@@ -661,6 +661,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         env_name: str = "",
         env_prefix_path: str = "",
         disable_auto_inject: bool = False,
+        no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
         emit_pip_options: bool = False,
@@ -672,6 +673,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             env_name,
             env_prefix_path,
             disable_auto_inject,
+            no_cache,
             stdout,
             include_editable,
             emit_pip_options,
@@ -757,6 +759,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     ) -> None:
         yaml_name = kw.get("yaml_name", DefaultYAMLName.RUNTIME)
         disable_env_lock = kw.get("disable_env_lock", False)
+        no_cache = kw.get("no_cache", False)
         env_name = kw.get("env_name", "")
         env_prefix_path = kw.get("env_prefix_path", "")
         env_use_shell = kw.get("env_use_shell", False)
@@ -772,6 +775,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
                 disable_auto_inject=False,
+                no_cache=no_cache,
                 stdout=False,
                 include_editable=include_editable,
                 env_use_shell=env_use_shell,
@@ -1218,8 +1222,16 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @classmethod
     def _ensure_isolated_python_env(
-        cls, env_dir: Path, python_version: str, mode: str, invalid_rebuild: bool = True
+        cls,
+        env_dir: Path,
+        python_version: str,
+        mode: str,
+        no_cache: bool,
+        recreate_env_if_broken: bool = True,
     ) -> None:
+        if no_cache:
+            empty_dir(env_dir)
+
         if env_dir.exists():
             is_valid_conda = mode == PythonRunEnv.CONDA and check_valid_conda_prefix(
                 env_dir
@@ -1228,11 +1240,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_dir
             )
 
-            # TODO: add rebuild option
             if is_valid_conda or is_valid_venv:
                 return
             else:
-                if invalid_rebuild:
+                if recreate_env_if_broken:
                     empty_dir(env_dir)
                     ensure_dir(env_dir)
                 else:
@@ -1250,6 +1261,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_name: str = "",
         env_prefix_path: str = "",
         disable_auto_inject: bool = False,
+        no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
         emit_pip_options: bool = False,
@@ -1262,6 +1274,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         :param env_name: conda environment name (used by conda env)
         :param env_prefix_path: python env prefix path (used by both venv and conda)
         :param disable_auto_inject: disable putting lock file info into configured runtime yaml file
+        :param no_cache: invalid all pkgs installed
         :param stdout: just print the lock info into stdout without saving lock file
         :param include_editable: include the editable pkg (only for venv)
         :param emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
@@ -1296,7 +1309,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             prefix_path = env_prefix_path
         else:
             _sw_auto_path = target_dir / SW_AUTO_DIRNAME / mode
-            cls._ensure_isolated_python_env(_sw_auto_path, expected_pyver, mode)
+            cls._ensure_isolated_python_env(
+                _sw_auto_path, expected_pyver, mode, no_cache
+            )
             prefix_path = str(_sw_auto_path)
 
         cls._install_dependencies_with_runtime_yaml(

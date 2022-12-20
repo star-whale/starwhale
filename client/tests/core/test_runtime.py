@@ -643,6 +643,34 @@ class StandaloneRuntimeTestCase(TestCase):
             {"deps": "conda-sw-lock.yaml", "kind": "conda_env_file"},
         ]
 
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.core.runtime.model.check_valid_conda_prefix")
+    def test_build_with_no_cache(self, m_check: MagicMock, *args: t.Any):
+        target_dir = "/home/starwhale/workdir"
+        ensure_dir(target_dir)
+        ensure_file(
+            f"{target_dir}/{DefaultYAMLName.RUNTIME}",
+            yaml.safe_dump(
+                {
+                    "name": "test",
+                    "mode": "conda",
+                }
+            ),
+        )
+        # make sure the dir is not deleted by "recreate_env_if_broken"
+        m_check.return_value = True
+        env_dir = f"{target_dir}/{SW_AUTO_DIRNAME}/conda"
+        ensure_dir(env_dir)
+        my_garbage = f"{env_dir}/garbage"
+        ensure_dir(my_garbage)
+
+        StandaloneRuntime.lock(target_dir)
+        assert Path(my_garbage).exists()
+
+        StandaloneRuntime.lock(target_dir, no_cache=True)
+        assert not Path(my_garbage).exists()
+
     @patch("os.environ", {})
     @patch("starwhale.core.runtime.model.get_python_version")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
