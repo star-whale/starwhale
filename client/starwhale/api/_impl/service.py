@@ -16,6 +16,11 @@ from starwhale.base.spec.openapi.components import (
 
 MIMETYPE_FIELD = "content-type"
 MIMETYPE_JSON = "application/json"
+RESERVED_URIS = ["doc", "api-spec"]
+
+
+class InvalidUriException(Exception):
+    ...
 
 
 class Request:
@@ -134,6 +139,12 @@ class Api:
         return self.output.dump(resp)
 
 
+def _check_uri_reserved(uri: str) -> None:
+    uri = uri.strip("/")
+    if uri in RESERVED_URIS:
+        raise InvalidUriException(f"{uri} is reserved, try using another URI")
+
+
 class Service:
     def __init__(self) -> None:
         self.apis: t.Dict[str, Api] = {}
@@ -151,10 +162,12 @@ class Service:
     def add_api(
         self, input_: Input, output: Output, func: t.Callable, uri: str
     ) -> None:
+        _check_uri_reserved(uri)
         _api = Api(input_, output, func, uri)
         self.apis[uri] = _api
 
     def add_api_instance(self, api_: Api) -> None:
+        _check_uri_reserved(api_.uri)
         self.apis[api_.uri] = api_
 
     def get_spec(self) -> OpenApi:
@@ -173,6 +186,38 @@ class Service:
             },
             paths=paths,
         )
+
+    def _api_spec_handler(self) -> bytes:
+        return json.dumps(self.get_spec().to_dict()).encode("utf-8")
+
+    @staticmethod
+    def _doc_handler() -> str:
+        return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="SwaggerUI"
+  />
+  <title>SwaggerUI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js" crossorigin></script>
+<script>
+  window.onload = () => {
+    window.ui = SwaggerUIBundle({
+      url: '/api-spec',
+      dom_id: '#swagger-ui',
+    });
+  };
+</script>
+</body>
+</html> """
 
     def serve(
         self, addr: str, port: int, handler_list: t.Optional[t.List[str]] = None
@@ -205,6 +250,20 @@ class Service:
                 view_func=_view_wrapper(api_.view_func),
                 methods=["POST"],
             )
+
+        # internal api
+        app.add_url_rule(
+            rule="/api-spec",
+            endpoint="api-spec",
+            view_func=self._api_spec_handler,
+            methods=["GET"],
+        )
+        app.add_url_rule(
+            rule="/doc",
+            endpoint="doc",
+            view_func=self._doc_handler,
+            methods=["GET"],
+        )
         app.run(addr, port)
 
 
