@@ -7,6 +7,7 @@ import time
 import base64
 import struct
 import typing as t
+import tempfile
 import threading
 from http import HTTPStatus
 from pathlib import Path
@@ -1715,18 +1716,22 @@ class TestRowWriter(BaseTestCase):
         assert len(items) == 1
         assert items[0].index == 1
 
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
-    def test_close(self, m_make_swds: MagicMock) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
-        rw.close()
-        assert not rw.is_alive()
-
-        with RowWriter(dataset_name="mnist", dataset_version="123456") as context_rw:
-            context_rw.update(
-                DataRow(index=1, data=Binary(b"test"), annotations={"label": 1})
+    def test_close(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            rw = RowWriter(
+                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
             )
-        assert not rw.is_alive()
+            rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+            rw.close()
+            assert not rw.is_alive()
+
+            with RowWriter(
+                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
+            ) as context_rw:
+                context_rw.update(
+                    DataRow(index=1, data=Binary(b"test"), annotations={"label": 1})
+                )
+            assert not rw.is_alive()
 
     def test_make_swds_bin(self) -> None:
         workdir = Path(self.local_storage) / ".user" / "workdir"
