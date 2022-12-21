@@ -628,6 +628,13 @@ class Dataset:
         self._row_writer.close()
         self._summary = self._row_writer.summary
 
+        # TODO: add len api for tabular_dataset to reduce overhead here
+        if self._row_writer._builder:
+            table_rows = [
+                row for row in self._row_writer._builder.tabular_dataset.scan()
+            ]
+            self._summary.rows = len(table_rows)
+
         if isinstance(self.__core_dataset, StandaloneDataset):
             local_ds = self.__core_dataset
             local_uri = self.uri
