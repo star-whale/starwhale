@@ -1,17 +1,17 @@
 import typing as t
 from copy import deepcopy
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
-from datetime import datetime, timedelta
 
-import yaml
 import requests
-from rich.progress import TaskID, Progress
+import yaml
 from requests_toolbelt.multipart.encoder import (  # type: ignore
     MultipartEncoder,
     MultipartEncoderMonitor,
 )
-
+from rich.progress import TaskID, Progress
+from starwhale.base.uri import URI
 from starwhale.consts import (
     HTTPMethod,
     FMT_DATETIME,
@@ -19,10 +19,9 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.uri import URI
+from starwhale.utils.error import NoSupportError
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
-from starwhale.utils.error import NoSupportError
 from starwhale.utils.retry import http_retry
 
 _TMP_FILE_BUFSIZE = 8192
@@ -235,14 +234,23 @@ class CloudRequestMixed:
         uri_typ: str,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        _params = {"pageNum": page, "pageSize": size}
+        if _filter:
+            _params.update(_filter)
         r = self.do_http_request(
             f"/project/{project_uri.project}/{uri_typ}",
-            params={"pageNum": page, "pageSize": size},
+            params=_params,
             instance_uri=project_uri,
         ).json()
-
         objects = {}
+
+        _page = page
+        _size = size
+        if _filter and _filter.get("latest", False):
+            _page = 1
+            _size = 1
 
         for o in r["data"]["list"]:
             _name = f"[{o['id']}] {o['name']}"
@@ -250,8 +258,8 @@ class CloudRequestMixed:
                 name=o["id"],
                 project_uri=project_uri,
                 typ=uri_typ,
-                page=page,
-                size=size,
+                page=_page,
+                size=_size,
             )[0]
 
         return objects, self.parse_pager(r)

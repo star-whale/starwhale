@@ -4,11 +4,24 @@ import typing as t
 from pathlib import Path
 
 from rich import box
-from rich.text import Text
+from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
-from rich.console import Group
-
+from rich.text import Text
+from starwhale.base.type import URIType, InstanceType
+from starwhale.base.uri import URI
+from starwhale.base.view import BaseTermView
+from starwhale.consts import (
+    FileFlag,
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+    SHORT_VERSION_CNT,
+)
+from starwhale.consts.env import SWEnv
+from starwhale.core.model.store import ModelStorage
+from starwhale.core.runtime.model import StandaloneRuntime
+from starwhale.core.runtime.process import Process as RuntimeProcess
 from starwhale.utils import (
     docker,
     console,
@@ -17,22 +30,8 @@ from starwhale.utils import (
     pretty_bytes,
     in_production,
 )
-from starwhale.consts import (
-    FileFlag,
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    SHORT_VERSION_CNT,
-)
-from starwhale.base.uri import URI
-from starwhale.utils.fs import cmp_file_content
-from starwhale.base.type import URIType, InstanceType
-from starwhale.base.view import BaseTermView
-from starwhale.consts.env import SWEnv
 from starwhale.utils.error import FieldTypeOrValueError
-from starwhale.core.model.store import ModelStorage
-from starwhale.core.runtime.model import StandaloneRuntime
-from starwhale.core.runtime.process import Process as RuntimeProcess
+from starwhale.utils.fs import cmp_file_content
 
 from .model import Model, StandaloneModel
 
@@ -201,10 +200,11 @@ class ModelTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
-        _models, _pager = Model.list(_uri, page, size)
+        _models, _pager = Model.list(_uri, page, size, _filter)
         _data = BaseTermView.list_data(_models, show_removed, fullname)
         return _data, _pager
 
@@ -310,8 +310,10 @@ class ModelTermViewRich(ModelTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _models, _pager = super().list(project_uri, fullname, show_removed,
+                                       page, size, _filter)
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
             "size": lambda x: pretty_bytes(x),
@@ -331,8 +333,10 @@ class ModelTermViewJson(ModelTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> None:
-        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _models, _pager = super().list(project_uri, fullname, show_removed,
+                                       page, size, _filter)
         cls.pretty_json(_models)
 
     def info(self, fullname: bool = False) -> None:

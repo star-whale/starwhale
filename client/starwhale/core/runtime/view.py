@@ -3,8 +3,9 @@ import typing as t
 from pathlib import Path
 
 import click
-
-from starwhale.utils import console, load_yaml, pretty_bytes, in_production
+from starwhale.base.type import URIType, InstanceType
+from starwhale.base.uri import URI
+from starwhale.base.view import BaseTermView
 from starwhale.consts import (
     PythonRunEnv,
     DefaultYAMLName,
@@ -12,14 +13,13 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
-from starwhale.base.view import BaseTermView
-from starwhale.utils.venv import get_python_version
-from starwhale.utils.error import NoSupportError
+from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.error import NoSupportError
+from starwhale.utils.venv import get_python_version
 
-from .model import Runtime, _SUPPORT_CUDA, StandaloneRuntime, _SUPPORT_PYTHON_VERSIONS
+from .model import Runtime, _SUPPORT_CUDA, StandaloneRuntime, \
+    _SUPPORT_PYTHON_VERSIONS
 
 
 class RuntimeTermView(BaseTermView):
@@ -206,10 +206,11 @@ class RuntimeTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
-        _runtimes, _pager = Runtime.list(_uri, page, size)
+        _runtimes, _pager = Runtime.list(_uri, page, size, _filter)
         _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
         return _data, _pager
 
@@ -305,8 +306,10 @@ class RuntimeTermViewRich(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _data, _pager = super().list(project_uri, fullname, show_removed, page,
+                                     size, _filter)
 
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
@@ -327,8 +330,10 @@ class RuntimeTermViewJson(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> None:
-        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _data, _pager = super().list(project_uri, fullname, show_removed, page,
+                                     size, _filter)
         cls.pretty_json(_data)
 
     def info(self, fullname: bool = False) -> None:

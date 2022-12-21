@@ -267,7 +267,7 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<DatasetVo>>> listDataset(String projectUrl, String versionId,
-            Integer pageNum, Integer pageSize) {
+            String name, String owner, Integer pageNum, Integer pageSize) {
         PageInfo<DatasetVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
             List<DatasetVo> voList = datasetService.findDatasetsByVersionIds(
@@ -278,6 +278,8 @@ public class DatasetController implements DatasetApi {
             pageInfo = datasetService.listDataset(
                     DatasetQuery.builder()
                             .projectUrl(projectUrl)
+                            .namePrefix(name)
+                            .owner(owner)
                             .build(),
                     PageParams.builder()
                             .pageNum(pageNum)

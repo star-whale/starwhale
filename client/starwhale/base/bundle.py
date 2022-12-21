@@ -1,17 +1,16 @@
 import os
-import typing as t
-import tarfile
 import platform
+import tarfile
+import typing as t
 from abc import ABCMeta, abstractmethod, abstractclassmethod
-from pathlib import Path
 from contextlib import ExitStack
+from pathlib import Path
 
 import yaml
-from loguru import logger
-from fs.walk import Walker
 from fs.tarfs import TarFS
-
-from starwhale.utils import console, now_str, gen_uniq_version
+from fs.walk import Walker
+from loguru import logger
+from starwhale.base.tag import StandaloneTag
 from starwhale.consts import (
     LATEST_TAG,
     YAML_TYPES,
@@ -21,12 +20,14 @@ from starwhale.consts import (
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.version import STARWHALE_VERSION
-from starwhale.base.tag import StandaloneTag
-from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file, extract_tar
-from starwhale.utils.venv import SUPPORTED_PIP_REQ
-from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
+from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.error import FileTypeError, NotFoundError, \
+    MissingFieldError
+from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file, \
+    extract_tar
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
+from starwhale.version import STARWHALE_VERSION
 
 from .uri import URI
 
@@ -76,9 +77,10 @@ class BaseBundle(metaclass=ABCMeta):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _cls = cls._get_cls(project_uri)
-        return _cls.list(project_uri, page, size)  # type: ignore
+        return _cls.list(project_uri, page, size, _filter)  # type: ignore
 
     @abstractclassmethod
     def _get_cls(cls, uri: URI) -> t.Any:

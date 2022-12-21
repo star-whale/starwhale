@@ -127,8 +127,9 @@ public class DatasetService {
     public PageInfo<DatasetVo> listDataset(DatasetQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long userId = userService.getUserId(query.getOwner());
         List<DatasetEntity> entities = datasetMapper.list(projectId,
-                query.getNamePrefix(), null);
+                query.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, ds -> {
             DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
@@ -261,7 +262,7 @@ public class DatasetService {
         }
         ProjectEntity projectEntity = projectManager.getProject(project);
 
-        List<DatasetEntity> swDatasetEntities = datasetMapper.list(projectEntity.getId(), null, null);
+        List<DatasetEntity> swDatasetEntities = datasetMapper.list(projectEntity.getId(), null, null, null);
         if (null == swDatasetEntities || swDatasetEntities.isEmpty()) {
             return List.of();
         }

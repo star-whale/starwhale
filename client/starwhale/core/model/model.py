@@ -1,22 +1,28 @@
 from __future__ import annotations
 
-import os
 import copy
-import typing as t
+import os
 import tarfile
+import typing as t
 from abc import ABCMeta
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import yaml
 from fs import open_fs
-from loguru import logger
 from fs.copy import copy_fs, copy_file
-from fs.walk import Walker
 from fs.tarfs import TarFS
-
+from fs.walk import Walker
+from loguru import logger
 from starwhale import PipelineHandler
-from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
+from starwhale.api._impl.job import Parser, Context, context_holder
+from starwhale.api.service import Service
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.base.mixin import ASDictMixin
+from starwhale.base.tag import StandaloneTag
+from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.uri import URI
 from starwhale.consts import (
     FileDesc,
     FileFlag,
@@ -33,8 +39,13 @@ from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_EVALUATION_SVC_META_FNAME,
 )
-from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
+from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.job.model import STATUS, Generator
+from starwhale.core.job.scheduler import Scheduler
+from starwhale.core.model.copy import ModelCopy
+from starwhale.core.model.store import ModelStorage
+from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
+from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.fs import (
     move_dir,
     file_stat,
@@ -42,21 +53,9 @@ from starwhale.utils.fs import (
     ensure_file,
     blake2b_file,
 )
-from starwhale.base.type import URIType, BundleType, InstanceType
-from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import load_module
-from starwhale.api.service import Service
-from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.api._impl.job import Parser, Context, context_holder
-from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.model.copy import ModelCopy
-from starwhale.core.model.store import ModelStorage
-from starwhale.core.job.scheduler import Scheduler
 
 
 class ModelRunConfig(ASDictMixin):
@@ -539,6 +538,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
         for _bf in ModelStorage.iter_all_bundles(
@@ -739,9 +739,11 @@ class CloudModel(CloudBundleModelMixin, Model):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.MODEL, page, size)
+        return crm._fetch_bundle_all_list(project_uri, URIType.MODEL, page,
+                                          size, _filter)
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")

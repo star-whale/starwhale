@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-import typing as t
 import inspect
 import tarfile
+import typing as t
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
-from collections import defaultdict
 
 import yaml
 from fs import open_fs
-from loguru import logger
 from fs.copy import copy_fs
-
-from starwhale.utils import console, load_yaml
+from loguru import logger
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.base.tag import StandaloneTag
+from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.uri import URI
 from starwhale.consts import (
     HTTPMethod,
     DefaultYAMLName,
@@ -23,20 +26,16 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     ARCHIVED_SWDS_META_FNAME,
 )
-from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import URIType, BundleType, InstanceType
-from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.utils.http import ignore_error
-from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import NotFoundError, NoSupportError
-from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.dataset.copy import DatasetCopy
+from starwhale.utils import console, load_yaml
+from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file
+from starwhale.utils.http import ignore_error
+from starwhale.utils.progress import run_with_progress_bar
 
-from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
 from .tabular import TabularDataset
+from .type import DatasetConfig, DatasetSummary
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -257,6 +256,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
 
@@ -521,9 +521,11 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
+        return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page,
+                                          size, _filter)
 
     def summary(self) -> t.Optional[DatasetSummary]:
         resp = self.do_http_request(

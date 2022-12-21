@@ -1,30 +1,33 @@
 from __future__ import annotations
 
 import os
-import shutil
-import typing as t
 import platform
+import shutil
 import tempfile
+import typing as t
 from abc import ABCMeta
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
-import yaml
 import jinja2
+import yaml
 from fs import open_fs
-from loguru import logger
 from fs.copy import copy_fs, copy_file
-from typing_extensions import Protocol
-
-from starwhale.utils import (
-    docker,
-    console,
-    load_yaml,
-    in_container,
-    validate_obj_name,
-    make_dir_gitignore,
-    get_downloadable_sw_version,
+from loguru import logger
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.base.mixin import ASDictMixin
+from starwhale.base.tag import StandaloneTag
+from starwhale.base.type import (
+    URIType,
+    BundleType,
+    InstanceType,
+    DependencyType,
+    RuntimeArtifactType,
+    RuntimeLockFileType,
 )
+from starwhale.base.uri import URI
 from starwhale.consts import (
     SupportOS,
     LATEST_TAG,
@@ -45,9 +48,25 @@ from starwhale.consts import (
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.version import STARWHALE_VERSION
-from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
+from starwhale.utils import (
+    docker,
+    console,
+    load_yaml,
+    in_container,
+    validate_obj_name,
+    make_dir_gitignore,
+    get_downloadable_sw_version,
+)
+from starwhale.utils.error import (
+    FormatError,
+    ExistedError,
+    NotFoundError,
+    NoSupportError,
+    ConfigFormatError,
+    MissingFieldError,
+    ExclusiveArgsError,
+    UnExpectedConfigFieldError,
+)
 from starwhale.utils.fs import (
     move_dir,
     empty_dir,
@@ -56,17 +75,8 @@ from starwhale.utils.fs import (
     is_within_dir,
     get_path_created_time,
 )
-from starwhale.base.type import (
-    URIType,
-    BundleType,
-    InstanceType,
-    DependencyType,
-    RuntimeArtifactType,
-    RuntimeLockFileType,
-)
-from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
+from starwhale.utils.progress import run_with_progress_bar
 from starwhale.utils.venv import (
     is_venv,
     is_conda,
@@ -95,19 +105,8 @@ from starwhale.utils.venv import (
     get_python_version_by_bin,
     render_python_env_activate,
 )
-from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import (
-    FormatError,
-    ExistedError,
-    NotFoundError,
-    NoSupportError,
-    ConfigFormatError,
-    MissingFieldError,
-    ExclusiveArgsError,
-    UnExpectedConfigFieldError,
-)
-from starwhale.utils.progress import run_with_progress_bar
-from starwhale.base.bundle_copy import BundleCopy
+from starwhale.version import STARWHALE_VERSION
+from typing_extensions import Protocol
 
 from .store import RuntimeStorage
 
@@ -1038,6 +1037,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
         for _bf in RuntimeStorage.iter_all_bundles(
@@ -1757,9 +1757,11 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
+        return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page,
+                                          size, _filter)
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")

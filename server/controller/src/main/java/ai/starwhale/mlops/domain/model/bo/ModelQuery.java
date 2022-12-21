@@ -35,7 +35,6 @@ public class ModelQuery {
 
     private String namePrefix;
 
-    private String ownerId;
+    private String owner;
 
-    private String ownerName;
 }

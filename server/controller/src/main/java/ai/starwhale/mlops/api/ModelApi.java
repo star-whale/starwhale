@@ -90,9 +90,8 @@ public interface ModelApi {
                     in = ParameterIn.QUERY,
                     description = "Model name prefix to search for",
                     schema = @Schema())
-            @Valid
-            @RequestParam(value = "modelName", required = false)
-            String modelName,
+            @Valid @RequestParam(value = "name", required = false) String name,
+            @Valid @RequestParam(value = "owner", required = false) String owner,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")

@@ -145,7 +145,8 @@ public class RuntimeService {
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
-        List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), null);
+        Long userId = userService.getUserId(runtimeQuery.getOwner());
+        List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, rt -> {
             RuntimeVo vo = runtimeConvertor.convert(rt);
@@ -294,7 +295,7 @@ public class RuntimeService {
         }
 
         ProjectEntity projectEntity = projectManager.getProject(project);
-        List<RuntimeEntity> runtimeEntities = runtimeMapper.list(projectEntity.getId(), null, null);
+        List<RuntimeEntity> runtimeEntities = runtimeMapper.list(projectEntity.getId(), null, null, null);
         if (runtimeEntities == null || runtimeEntities.isEmpty()) {
             return List.of();
         }

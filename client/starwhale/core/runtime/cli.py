@@ -3,7 +3,8 @@ from pathlib import Path
 
 import click
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
-
+from starwhale.base.type import URIType, RuntimeLockFileType
+from starwhale.base.uri import URI
 from starwhale.consts import (
     SupportArch,
     PythonRunEnv,
@@ -11,8 +12,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
@@ -267,14 +266,22 @@ def _restore(target: str) -> None:
 
 @runtime_cmd.command("list", aliases=["ls"], help="List runtime")
 @click.option("-p", "--project", default="", help="Project URI")
-@click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
-@click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
+@click.option("-f", "--fullname", is_flag=True,
+              help="Show fullname of runtime version")
+@click.option("-sr", "--show-removed", is_flag=True,
+              help="Show removed runtime")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX,
+    help="Page number for tasks list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE,
+    help="Page size for tasks list"
 )
+@click.option("-n", "--name", help="Prefix of runtime name")
+@click.option("-o", "--owner", help="[Cloud]Name or id of the runtime owner")
+@click.option("-l", "--latest", is_flag=True,
+              help="Only show the latest version")
 @click.pass_obj
 def _list(
     view: t.Type[RuntimeTermView],
@@ -283,8 +290,12 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
+    name: str,
+    owner: str,
+    latest: bool,
 ) -> None:
-    view.list(project, fullname, show_removed, page, size)
+    _filter = {"name": name, "owner": owner, "latest": latest}
+    view.list(project, fullname, show_removed, page, size, _filter)
 
 
 @runtime_cmd.command(

@@ -203,7 +203,7 @@ public class RuntimeServiceTest {
 
     @Test
     public void testListRuntime() {
-        given(runtimeMapper.list(same(1L), anyString(), any()))
+        given(runtimeMapper.list(same(1L), anyString(), any(), any()))
                 .willReturn(List.of(
                         RuntimeEntity.builder().id(1L).build(),
                         RuntimeEntity.builder().id(2L).build()
@@ -272,7 +272,7 @@ public class RuntimeServiceTest {
 
         given(projectManager.getProject(same("1")))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(runtimeMapper.list(same(1L), any(), any()))
+        given(runtimeMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
         res = service.listRuntimeInfo("1", "");
