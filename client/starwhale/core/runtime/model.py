@@ -1038,6 +1038,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
         for _bf in RuntimeStorage.iter_all_bundles(
@@ -1757,9 +1758,12 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
+        return crm._fetch_bundle_all_list(
+            project_uri, URIType.RUNTIME, page, size, _filter
+        )
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")
