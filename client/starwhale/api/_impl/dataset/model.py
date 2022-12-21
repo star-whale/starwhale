@@ -158,7 +158,6 @@ class Dataset:
         self._trigger_icode_build = False
         self._writer_lock = threading.Lock()
         self._row_writer: t.Optional[RowWriter] = None
-        self.__keys_cache: t.Set[t.Union[int, str]] = set()
         self._enable_copy_src = False
         self._info_lock = threading.Lock()
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
@@ -410,7 +409,6 @@ class Dataset:
     def flush(self) -> None:
         loader = self._get_data_loader(disable_consumption=True)
         loader.tabular_dataset.flush()
-        self.__keys_cache = set()
 
         if self._row_writer:
             self._row_writer.flush()
@@ -513,12 +511,8 @@ class Dataset:
         else:
             raise TypeError(f"value only supports tuple or DataRow type: {value}")
 
-        if key not in self.__keys_cache:
-            self.__keys_cache.add(key)
-            _item = self._getitem(key, skip_fetch_data=True)
-            if _item is None or len(_item) == 0:
-                self._rows_cnt += 1
-
+        # TODO improve accuracy of _rows_cnt during building
+        self._rows_cnt += 1
         _row_writer.update(row)
 
     def _get_row_writer(self) -> RowWriter:
@@ -578,8 +572,6 @@ class Dataset:
         for item in items:
             if not item or not isinstance(item, DataRow):
                 continue  # pragma: no cover
-            if item.index in self.__keys_cache:
-                self.__keys_cache.remove(item.index)
             loader.tabular_dataset.delete(item.index)
             self._rows_cnt -= 1
 
@@ -635,9 +627,6 @@ class Dataset:
         self.flush()
         self._row_writer.close()
         self._summary = self._row_writer.summary
-
-        # TODO: use the elegant method to refactor manifest update
-        self._summary.rows = len(self)
 
         if isinstance(self.__core_dataset, StandaloneDataset):
             local_ds = self.__core_dataset

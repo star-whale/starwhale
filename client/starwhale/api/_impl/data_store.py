@@ -946,16 +946,11 @@ class MemoryTable:
                 ):
                     records.append({self.schema.key_column: key, "-": True})
 
-            if start is not None and start == end:
-                _r = self.records.get(start)
-                if _r:
-                    records.append(_r)
-            else:
-                for k, v in self.records.items():
-                    if (start is None or k >= start) and (
-                        end is None or _end_check(k, end)
-                    ):
-                        records.append(v)
+            for k, v in self.records.items():
+                if (start is None or k >= start) and (
+                    end is None or _end_check(k, end)
+                ):
+                    records.append(v)
         records.sort(key=lambda x: cast(str, x[self.schema.key_column]))
         for r in records:
             if columns is None:

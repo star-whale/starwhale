@@ -641,6 +641,9 @@ class RowWriter(threading.Thread):
         self.join()
         if self._builder:
             self._builder.close()
+            # TODO: add len api for tabular_dataset to reduce overhead here
+            table_rows = [row for row in self._builder.tabular_dataset.scan()]
+            self.summary.rows = len(table_rows)
 
         self._raise_run_exception()
 
