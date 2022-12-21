@@ -37,6 +37,7 @@ public interface DatasetMapper {
     @SelectProvider(value = DatasetProvider.class, method = "listSql")
     List<DatasetEntity> list(@Param("projectId") Long projectId,
             @Param("namePrefix") String namePrefix,
+            @Param("ownerId") Long ownerId,
             @Param("order") String order);
 
     @Insert("insert into dataset_info(dataset_name, project_id, owner_id)"
@@ -64,6 +65,7 @@ public interface DatasetMapper {
 
         public String listSql(@Param("projectId") Long projectId,
                 @Param("namePrefix") String namePrefix,
+                @Param("ownerId") Long ownerId,
                 @Param("order") String order) {
             return new SQL() {
                 {
@@ -75,6 +77,9 @@ public interface DatasetMapper {
                     }
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("dataset_name like concat(#{namePrefix}, '%')");
+                    }
+                    if (Objects.nonNull(ownerId)) {
+                        WHERE("owner_id = #{ownerId}");
                     }
                     if (StrUtil.isNotEmpty(order)) {
                         ORDER_BY(order);

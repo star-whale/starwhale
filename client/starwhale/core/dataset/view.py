@@ -139,6 +139,7 @@ class DatasetTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
 
         if isinstance(project_uri, str):
@@ -147,7 +148,7 @@ class DatasetTermView(BaseTermView):
             _uri = project_uri
 
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
-        _datasets, _pager = Dataset.list(_uri, page, size)
+        _datasets, _pager = Dataset.list(_uri, page, size, _filter)
         _data = BaseTermView.list_data(_datasets, show_removed, fullname)
         return _data, _pager
 
@@ -235,9 +236,10 @@ class DatasetTermViewRich(DatasetTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _datasets, _pager = super().list(
-            project_uri, fullname, show_removed, page, size
+            project_uri, fullname, show_removed, page, size, _filter
         )
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
@@ -258,9 +260,10 @@ class DatasetTermViewJson(DatasetTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> None:
         _datasets, _pager = super().list(
-            project_uri, fullname, show_removed, page, size
+            project_uri, fullname, show_removed, page, size, _filter
         )
         cls.pretty_json(_datasets)
 

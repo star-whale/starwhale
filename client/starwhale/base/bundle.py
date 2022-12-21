@@ -76,9 +76,10 @@ class BaseBundle(metaclass=ABCMeta):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _cls = cls._get_cls(project_uri)
-        return _cls.list(project_uri, page, size)  # type: ignore
+        return _cls.list(project_uri, page, size, _filter)  # type: ignore
 
     @abstractclassmethod
     def _get_cls(cls, uri: URI) -> t.Any:

@@ -75,17 +75,20 @@ public class RuntimeMapperTest extends MySqlContainerHolder {
         runtimeMapper.insert(runtime2);
         runtimeMapper.insert(runtime3);
 
-        var list = runtimeMapper.list(1L, null, null);
+        var list = runtimeMapper.list(1L, null, null, null);
         Assertions.assertIterableEquals(List.of(runtime3, runtime1), list);
 
-        list = runtimeMapper.list(2L, null, null);
+        list = runtimeMapper.list(2L, null, null, null);
         Assertions.assertIterableEquals(List.of(runtime2), list);
 
-        list = runtimeMapper.list(null, "runtime", null);
+        list = runtimeMapper.list(null, "runtime", null, null);
         Assertions.assertIterableEquals(List.of(runtime3, runtime2, runtime1), list);
 
-        list = runtimeMapper.list(null, "runtime1", null);
+        list = runtimeMapper.list(null, "runtime1", null, null);
         Assertions.assertIterableEquals(List.of(runtime1), list);
+
+        list = runtimeMapper.list(null, null, 2L, null);
+        Assertions.assertIterableEquals(List.of(runtime3, runtime2), list);
     }
 
     @Test

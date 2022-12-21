@@ -128,6 +128,9 @@ def _diff(
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for dataset list"
 )
+@click.option("-n", "--name", help="Prefix of dataset name")
+@click.option("-o", "--owner", help="[Cloud]Name or id of the dataset owner")
+@click.option("-l", "--latest", is_flag=True, help="Only show the latest version")
 @click.pass_obj
 def _list(
     view: DatasetTermView,
@@ -136,8 +139,12 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
+    name: str,
+    owner: str,
+    latest: bool,
 ) -> None:
-    view.list(project, fullname, show_removed, page, size)
+    _filter = {"name": name, "owner": owner, "latest": latest}
+    view.list(project, fullname, show_removed, page, size, _filter)
 
 
 @dataset_cmd.command("info", help="Show dataset details")

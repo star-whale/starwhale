@@ -75,17 +75,20 @@ public class DatasetMapperTest extends MySqlContainerHolder {
         datasetMapper.insert(dataset2);
         datasetMapper.insert(dataset3);
 
-        var list = datasetMapper.list(1L, null, null);
+        var list = datasetMapper.list(1L, null, null, null);
         Assertions.assertIterableEquals(List.of(dataset3, dataset1), list);
 
-        list = datasetMapper.list(2L, null, null);
+        list = datasetMapper.list(2L, null, null, null);
         Assertions.assertIterableEquals(List.of(dataset2), list);
 
-        list = datasetMapper.list(null, "dataset", null);
+        list = datasetMapper.list(null, "dataset", null, null);
         Assertions.assertIterableEquals(List.of(dataset3, dataset2, dataset1), list);
 
-        list = datasetMapper.list(null, "dataset1", null);
+        list = datasetMapper.list(null, "dataset1", null, null);
         Assertions.assertIterableEquals(List.of(dataset1), list);
+
+        list = datasetMapper.list(null, null, 2L, null);
+        Assertions.assertIterableEquals(List.of(dataset3, dataset2), list);
     }
 
     @Test

@@ -39,6 +39,8 @@ import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwAuthException.AuthType;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -306,6 +308,21 @@ public class UserService implements UserDetailsService {
                                 .findById(entity.getProjectId()), idConvertor, user))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public Long getUserId(String user) {
+        if (StrUtil.isEmpty(user)) {
+            return null;
+        }
+        if (idConvertor.isId(user)) {
+            return idConvertor.revert(user);
+        }
+
+        UserEntity entity = userMapper.findByName(user);
+        if (entity == null) {
+            throw new SwNotFoundException(ResourceType.USER, "User is not found. " + user);
+        }
+        return entity.getId();
     }
 
 }

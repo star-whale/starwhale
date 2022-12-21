@@ -208,7 +208,7 @@ public class ModelServiceTest {
 
     @Test
     public void testListModel() {
-        given(modelMapper.list(same(1L), anyString(), any()))
+        given(modelMapper.list(same(1L), anyString(), any(), any()))
                 .willReturn(List.of(
                         ModelEntity.builder().id(1L).build(),
                         ModelEntity.builder().id(2L).build()
@@ -277,7 +277,7 @@ public class ModelServiceTest {
 
         given(projectManager.getProject(same("1")))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(modelMapper.list(same(1L), any(), any()))
+        given(modelMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(ModelEntity.builder().id(1L).build()));
 
         res = service.listModelInfo("1", "");

@@ -69,7 +69,7 @@ public class RuntimeControllerTest {
                         RuntimeVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listRuntime("", "3", 1, 5);
+        var resp = controller.listRuntime("", "3", "", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
