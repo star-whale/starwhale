@@ -206,10 +206,11 @@ class RuntimeTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
-        _runtimes, _pager = Runtime.list(_uri, page, size)
+        _runtimes, _pager = Runtime.list(_uri, page, size, _filter)
         _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
         return _data, _pager
 
@@ -305,8 +306,11 @@ class RuntimeTermViewRich(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _data, _pager = super().list(
+            project_uri, fullname, show_removed, page, size, _filter
+        )
 
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
@@ -327,8 +331,11 @@ class RuntimeTermViewJson(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> None:
-        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _data, _pager = super().list(
+            project_uri, fullname, show_removed, page, size, _filter
+        )
         cls.pretty_json(_data)
 
     def info(self, fullname: bool = False) -> None:

@@ -235,14 +235,22 @@ class CloudRequestMixed:
         uri_typ: str,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        _filter: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        _params = {"pageNum": page, "pageSize": size}
+        _params.update(_filter)
         r = self.do_http_request(
             f"/project/{project_uri.project}/{uri_typ}",
-            params={"pageNum": page, "pageSize": size},
+            params=_params,
             instance_uri=project_uri,
         ).json()
-
         objects = {}
+
+        _page = page
+        _size = size
+        if _filter.get("latest", False):
+            _page = 1
+            _size = 1
 
         for o in r["data"]["list"]:
             _name = f"[{o['id']}] {o['name']}"
@@ -250,8 +258,8 @@ class CloudRequestMixed:
                 name=o["id"],
                 project_uri=project_uri,
                 typ=uri_typ,
-                page=page,
-                size=size,
+                page=_page,
+                size=_size,
             )[0]
 
         return objects, self.parse_pager(r)

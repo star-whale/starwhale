@@ -275,6 +275,9 @@ def _restore(target: str) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
+@click.option("-n", "--name", help="Prefix of runtime name")
+@click.option("-o", "--owner", help="[Cloud]Name or id of the runtime owner")
+@click.option("-l", "--latest", is_flag=True, help="Only show the latest version")
 @click.pass_obj
 def _list(
     view: t.Type[RuntimeTermView],
@@ -283,8 +286,12 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
+    name: str,
+    owner: str,
+    latest: bool,
 ) -> None:
-    view.list(project, fullname, show_removed, page, size)
+    _filter = {"name": name, "owner": owner, "latest": latest}
+    view.list(project, fullname, show_removed, page, size, _filter)
 
 
 @runtime_cmd.command(

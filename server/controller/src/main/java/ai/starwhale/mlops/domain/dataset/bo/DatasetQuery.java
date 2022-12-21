@@ -31,4 +31,5 @@ public class DatasetQuery {
 
     private String namePrefix;
 
+    private String owner;
 }

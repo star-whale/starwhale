@@ -67,7 +67,7 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(String projectUrl, String versionId,
-            String modelName, Integer pageNum, Integer pageSize) {
+            String name, String owner, Integer pageNum, Integer pageSize) {
         PageInfo<ModelVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
             List<ModelVo> voList = modelService
@@ -78,7 +78,8 @@ public class ModelController implements ModelApi {
             pageInfo = modelService.listModel(
                     ModelQuery.builder()
                             .projectUrl(projectUrl)
-                            .namePrefix(modelName)
+                            .namePrefix(name)
+                            .owner(owner)
                             .build(),
                     PageParams.builder()
                             .pageNum(pageNum)
