@@ -20,5 +20,5 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 
 public interface DeletedBundleAccessor {
 
-    BundleEntity findDeletedBundleById(Long id);
+    BundleEntity findDeletedBundleById(Object id);
 }

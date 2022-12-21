@@ -39,10 +39,10 @@ import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
 public class EvaluationServiceTest {
 
     private EvaluationService service;
-    private JobMapper jobMapper;
+    private JobRepo jobRepo;
     private ViewConfigMapper viewConfigMapper;
     private JobConverter jobConvertor;
 
@@ -69,7 +69,7 @@ public class EvaluationServiceTest {
         service = new EvaluationService(
                 userService,
                 projectManager,
-                jobMapper = mock(JobMapper.class),
+                jobRepo = mock(JobRepo.class),
                 viewConfigMapper = mock(ViewConfigMapper.class),
                 new IdConverter(),
                 new ViewConfigConverter(),
@@ -123,15 +123,15 @@ public class EvaluationServiceTest {
 
     @Test
     public void testListEvaluationSummary() {
-        given(jobMapper.listJobs(same(1L), any()))
+        given(jobRepo.listJobs(same(1L), any()))
                 .willReturn(List.of(
                         JobEntity.builder()
-                                .id(1L)
+                                .id("1")
                                 .project(ProjectEntity.builder().id(1L).projectName("p1").build())
                                 .jobStatus(JobStatus.PAUSED)
                                 .build(),
                         JobEntity.builder()
-                                .id(2L)
+                                .id("2")
                                 .project(ProjectEntity.builder().id(1L).projectName("p1").build())
                                 .jobStatus(JobStatus.SUCCESS)
                                 .build()
@@ -140,8 +140,7 @@ public class EvaluationServiceTest {
                 .willAnswer(invocation -> {
                     JobEntity entity = invocation.getArgument(0);
                     return JobVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .uuid("uuid" + entity.getId())
+                            .id(entity.getId())
                             .modelName("model" + entity.getId())
                             .datasets(List.of("1", "2", "3"))
                             .runtime(RuntimeVo.builder().name("runtime" + entity.getId()).build())
@@ -163,7 +162,6 @@ public class EvaluationServiceTest {
                         is(iterableWithSize(2)),
                         is(hasItem(allOf(
                                         hasProperty("id", is("1")),
-                                        hasProperty("uuid", is("uuid1")),
                                         hasProperty("modelName", is("model1")),
                                         hasProperty("runtime", is("runtime1")),
                                         hasProperty("device", is("device1")),

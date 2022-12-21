@@ -14,23 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+ALTER TABLE `step` MODIFY COLUMN job_id varchar(255) NOT NULL;
+ALTER TABLE `trash` MODIFY COLUMN object_id varchar(255) NOT NULL;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrderByDesc {
 
-    private String columnName;
-    private boolean descending;
-
-    public OrderByDesc(String columnName) {
-        this.columnName = columnName;
-    }
-}

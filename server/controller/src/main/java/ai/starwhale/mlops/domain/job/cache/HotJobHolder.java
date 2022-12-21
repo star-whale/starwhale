@@ -29,7 +29,7 @@ public interface HotJobHolder {
 
     void adopt(Job job);
 
-    Collection<Job> ofIds(Collection<Long> ids);
+    Collection<Job> ofIds(Collection<String> ids);
 
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 
@@ -39,5 +39,5 @@ public interface HotJobHolder {
      * remove job in cache
      *
      */
-    void remove(Long jobId);
+    void remove(String jobId);
 }

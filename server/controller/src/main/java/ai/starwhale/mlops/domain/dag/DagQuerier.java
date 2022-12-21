@@ -23,9 +23,7 @@ import ai.starwhale.mlops.domain.dag.bo.GraphNode;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -61,7 +59,7 @@ public class DagQuerier {
     }
 
     public Graph dagOfJob(String jobUrl) {
-        return buildGraph(jobBoConverter.fromEntity(jobManager.findJob(jobManager.fromUrl(jobUrl))));
+        return buildGraph(jobBoConverter.fromEntity(jobManager.findJob(jobUrl)));
     }
 
     private Graph buildGraph(Job job) {
@@ -145,7 +143,7 @@ public class DagQuerier {
     @NoArgsConstructor
     public static class JobNodeContent extends TimeConcern {
 
-        Long id;
+        String id;
         JobType jobType;
         JobStatus status;
 

@@ -57,6 +57,10 @@ public class ProjectManager implements ProjectAccessor {
         return projectMapper.list(projectName, userId, orderParams.getOrderSql(SORT_MAP));
     }
 
+    public List<ProjectEntity> listAllProjects() {
+        return projectMapper.list(null, null, null);
+    }
+
     public ProjectEntity findById(Long projectId) {
         if (projectId == 0) {
             return ProjectEntity.builder()

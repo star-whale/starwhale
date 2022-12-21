@@ -21,12 +21,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
 import ai.starwhale.mlops.domain.job.step.trigger.SimpleStepTrigger;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
@@ -41,7 +41,7 @@ public class ObjectMockHolder {
 
     public static TaskMapper taskMapper = mock(TaskMapper.class);
 
-    public static JobMapper jobMapper = mock(JobMapper.class);
+    public static JobRepo jobRepo = mock(JobRepo.class);
 
     public static StepMapper stepMapper = mock(StepMapper.class);
 

@@ -38,7 +38,7 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
+import ai.starwhale.mlops.domain.job.storage.JobDatasetVersionMapper;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,9 +101,9 @@ public class DatasetDaoTest {
 
         ));
 
-        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same(1L)))
+        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same("1L")))
                 .willReturn(List.of(1L));
-        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same(2L)))
+        given(jobDatasetVersionMapper.listDatasetVersionIdsByJobId(same("2L")))
                 .willReturn(List.of(2L));
         given(versionMapper.find(same(2L)))
                 .willReturn(DatasetVersionEntity.builder()
@@ -111,7 +111,7 @@ public class DatasetDaoTest {
                         .datasetId(3L)
                         .build());
 
-        List<DatasetVersion> versionList = manager.listDatasetVersionsOfJob(1L);
+        List<DatasetVersion> versionList = manager.listDatasetVersions(List.of(1L));
         assertThat(versionList, iterableWithSize(1));
         Assertions.assertEquals(datasetVersion, versionList.get(0));
     }

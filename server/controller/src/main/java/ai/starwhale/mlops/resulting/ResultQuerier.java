@@ -17,9 +17,9 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -44,22 +44,22 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResultQuerier {
 
-    final JobMapper jobMapper;
+    final JobRepo jobRepo;
 
     final StorageAccessService storageAccessService;
 
     final ObjectMapper objectMapper;
 
     public ResultQuerier(
-            JobMapper jobMapper,
+            JobRepo jobRepo,
             StorageAccessService storageAccessService,
             ObjectMapper objectMapper) {
-        this.jobMapper = jobMapper;
+        this.jobRepo = jobRepo;
         this.storageAccessService = storageAccessService;
         this.objectMapper = objectMapper;
     }
 
-    public Object resultOfJob(Long jobId) {
+    public Object resultOfJob(String jobId) {
         try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))) {
             return objectMapper.readValue(inputStream, Object.class);
         } catch (IOException e) {
@@ -67,7 +67,7 @@ public class ResultQuerier {
         }
     }
 
-    public Map<String, Object> flattenResultOfJob(Long jobId) {
+    public Map<String, Object> flattenResultOfJob(String jobId) {
         try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
                 Reader reader = new InputStreamReader(inputStream)) {
             JsonFlattener jf = new JsonFlattener(reader);
@@ -95,8 +95,8 @@ public class ResultQuerier {
     //        }
     //    }
 
-    public String resultPathOfJob(Long jobId) {
-        JobEntity jobEntity = jobMapper.findJobById(jobId);
+    public String resultPathOfJob(String jobId) {
+        JobEntity jobEntity = jobRepo.findJobById(jobId);
         if (null == jobEntity) {
             throw new SwValidationException(ValidSubject.JOB, "unknown jobid");
         }

@@ -55,7 +55,7 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +70,7 @@ public class JobBoConverterTest {
     public void testJobBoConverter() throws JsonProcessingException {
 
         JobEntity jobEntity = JobEntity.builder()
-                .id(1L)
+                .id("1L")
                 .projectId(1L)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .jobStatus(JobStatus.RUNNING)
@@ -78,14 +78,14 @@ public class JobBoConverterTest {
                 .modelVersionId(1L)
                 .modelVersion(ModelVersionEntity.builder().id(1L).modelId(1L).versionName("modelvname")
                         .storagePath("model_path").evalJobs("stepspec").build())
+                .datasetIdVersionMap(Map.of(1L, "name_swds", 2L, "name_swds1"))
                 .resultOutputPath("job_result")
-                .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
                 .resourcePool("rp")
                 .owner(UserEntity.builder().userName("naf").id(1232L).build())
                 .build();
         DatasetDao datasetDao = mock(DatasetDao.class);
-        when(datasetDao.listDatasetVersionsOfJob(jobEntity.getId())).thenReturn(List.of(
+        when(datasetDao.listDatasetVersions(anyList())).thenReturn(List.of(
                 DatasetVersion.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
                         .versionName("name_swds").build(),
                 DatasetVersion.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")
@@ -121,8 +121,16 @@ public class JobBoConverterTest {
         TaskBoConverter taskBoConverter = mock(TaskBoConverter.class);
         when(taskBoConverter.fromTaskEntity(anyList(), any())).thenReturn(List.of());
         StepMapper stepMapper = mock(StepMapper.class);
-        when(stepMapper.findByJobId(jobEntity.getId())).thenReturn(List.of(StepEntity.builder().id(1L).status(
-                StepStatus.RUNNING).build(), StepEntity.builder().id(2L).lastStepId(1L).build()));
+        when(stepMapper.findByJobId(jobEntity.getId()))
+                .thenReturn(List.of(
+                    StepEntity.builder()
+                        .id(1L)
+                        .status(StepStatus.RUNNING)
+                        .build(),
+                    StepEntity.builder()
+                        .id(2L)
+                        .lastStepId(1L).build()
+                ));
         TaskMapper taskMapper = mock(TaskMapper.class);
         when(taskMapper.findByStepId(any())).thenReturn(
                 List.of(TaskEntity.builder().build(), TaskEntity.builder().build()));
@@ -140,7 +148,6 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getId(), job.getId());
         Assertions.assertEquals(jobEntity.getType(), job.getType());
         Assertions.assertEquals(jobEntity.getResultOutputPath(), job.getOutputDir());
-        Assertions.assertEquals(jobEntity.getJobUuid(), job.getUuid());
         JobRuntime swrt = job.getJobRuntime();
         Assertions.assertNotNull(swrt);
         Assertions.assertEquals(runtimeVersionEntity.getVersionName(), swrt.getVersion());

@@ -28,7 +28,7 @@ public interface StepMapper {
 
     void save(@Param("step") StepEntity stepEntity);
 
-    List<StepEntity> findByJobId(@Param("jobId") Long jobId);
+    List<StepEntity> findByJobId(@Param("jobId") String jobId);
 
     void updateLastStep(@Param("stepId") Long stepId, @Param("lastStepId") Long lastStepId);
 

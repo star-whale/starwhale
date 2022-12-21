@@ -41,9 +41,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Job extends TimeConcern {
 
-    Long id;
-
-    String uuid;
+    String id;
 
     Project project;
 
@@ -93,16 +91,16 @@ public class Job extends TimeConcern {
             return false;
         }
         Job job = (Job) o;
-        return uuid.equals(job.uuid);
+        return id.equals(job.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(uuid);
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
-        return "Job{" + "id=" + id + ", uuid='" + uuid + '\'' + '}';
+        return "Job{" + "id=" + id + "}";
     }
 }

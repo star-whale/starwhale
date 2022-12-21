@@ -56,7 +56,7 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testListTasks() {
-        long jobId = 132456L;
+        String jobId = "132456L";
         StepEntity stp1 = StepEntity.builder().jobId(jobId).name("stp1").uuid(UUID.randomUUID().toString())
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();
@@ -75,7 +75,7 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testFindByStepId() {
-        long jobId = 132453L;
+        String jobId = "132453L";
         StepEntity stp1 = StepEntity.builder().jobId(jobId).name("stp1").uuid(UUID.randomUUID().toString())
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();

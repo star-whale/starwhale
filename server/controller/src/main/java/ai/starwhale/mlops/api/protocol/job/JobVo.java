@@ -37,9 +37,6 @@ public class JobVo implements Serializable {
     @JsonProperty("id")
     private String id;
 
-    @JsonProperty("uuid")
-    private String uuid;
-
     @JsonProperty("modelName")
     private String modelName;
 

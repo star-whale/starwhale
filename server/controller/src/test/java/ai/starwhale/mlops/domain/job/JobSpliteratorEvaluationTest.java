@@ -20,13 +20,13 @@ import static org.mockito.Mockito.mock;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -53,14 +53,13 @@ public class JobSpliteratorEvaluationTest {
         );
         mockJob.setStepSpec("");
         TaskMapper taskMapper = mock(TaskMapper.class);
-        JobMapper jobMapper = mock(JobMapper.class);
+        JobRepo jobRepo = mock(JobRepo.class);
         StepMapper stepMapper = mock(StepMapper.class);
         JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
-                new StoragePathCoordinator("/test"), taskMapper, jobMapper, stepMapper,
+                new StoragePathCoordinator("/test"), taskMapper, jobRepo, stepMapper,
                 mock(JobSpecParser.class));
         JobEntity build = JobEntity.builder()
-                .id(1L)
-                .jobUuid("uuid")
+                .id("1L")
                 .jobStatus(JobStatus.CREATED)
                 .stepSpec("xxx")
                 .build();

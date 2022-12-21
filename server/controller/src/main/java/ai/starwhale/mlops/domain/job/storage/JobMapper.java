@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.mapper;
+package ai.starwhale.mlops.domain.job.storage;
 
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -22,9 +22,13 @@ import java.util.Date;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
+@Deprecated
 public interface JobMapper {
+    @Select("select * from job_info where project_id = #{projectId}")
+    List<JobEntity> listJobs(@Param("projectId") Long projectId);
 
     List<JobEntity> listJobs(@Param("projectId") Long projectId, @Param("modelId") Long modelId);
 

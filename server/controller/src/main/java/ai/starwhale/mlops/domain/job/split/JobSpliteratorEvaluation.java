@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -25,6 +24,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -62,7 +62,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     static final Integer MAX_MYSQL_INSERTION_SIZE = 500;
     private final StoragePathCoordinator storagePathCoordinator;
     private final TaskMapper taskMapper;
-    private final JobMapper jobMapper;
+    private final JobRepo jobRepo;
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
     /**
@@ -73,11 +73,11 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
-            JobMapper jobMapper,
+            JobRepo jobRepo,
             StepMapper stepMapper, JobSpecParser jobSpecParser) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
-        this.jobMapper = jobMapper;
+        this.jobRepo = jobRepo;
         this.stepMapper = stepMapper;
         this.jobSpecParser = jobSpecParser;
     }
@@ -138,7 +138,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
                         .outputPath(
-                                storagePathCoordinator.allocateTaskResultPath(job.getJobUuid(), taskUuid))
+                                storagePathCoordinator.allocateTaskResultPath(job.getId(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
                                         TaskRequest.builder()
                                                 .total(stepEntity.getTaskNum())
@@ -160,7 +160,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     MAX_MYSQL_INSERTION_SIZE);
         }
         // update job status
-        jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.READY);
+        jobRepo.updateJobStatus(job.getId(), JobStatus.READY);
         return stepEntities;
     }
 }

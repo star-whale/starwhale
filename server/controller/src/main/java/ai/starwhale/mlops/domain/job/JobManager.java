@@ -16,84 +16,46 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import cn.hutool.core.util.StrUtil;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class JobManager implements BundleAccessor, RecoverAccessor {
 
-    private final JobMapper jobMapper;
-    private final IdConverter idConvertor;
+    private final JobRepo jobRepo;
 
-    public JobManager(JobMapper jobMapper, IdConverter idConvertor) {
-        this.jobMapper = jobMapper;
-        this.idConvertor = idConvertor;
+    public JobManager(JobRepo jobRepo) {
+        this.jobRepo = jobRepo;
     }
 
-    public Long getJobId(String jobUrl) {
-        Job job = fromUrl(jobUrl);
-        if (job.getId() != null) {
-            return job.getId();
-        }
-        JobEntity jobEntity = jobMapper.findJobByUuid(job.getUuid());
-        if (jobEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
-                    HttpStatus.BAD_REQUEST);
-        }
-        return jobEntity.getId();
-    }
-
-    public JobEntity findJob(Job job) {
-        JobEntity jobEntity = null;
-        if (job.getId() != null) {
-            jobEntity = jobMapper.findJobById(job.getId());
-        } else if (!StrUtil.isEmpty(job.getUuid())) {
-            jobEntity = jobMapper.findJobByUuid(job.getUuid());
-        }
-
-        return jobEntity;
-    }
-
-    public Job fromUrl(String jobUrl) {
-        if (idConvertor.isId(jobUrl)) {
-            return Job.builder().id(idConvertor.revert(jobUrl)).build();
-        } else {
-            return Job.builder().uuid(jobUrl).build();
-        }
+    public JobEntity findJob(String id) {
+        return jobRepo.findJobById(id);
     }
 
     @Override
-    public BundleEntity findById(Long id) {
-        return jobMapper.findJobById(id);
+    public BundleEntity findById(Object id) {
+        return jobRepo.findJobById((String) id);
     }
 
     @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
-        return jobMapper.findJobByUuid(name);
+        return jobRepo.findJobById(name);
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Long id) {
-        return jobMapper.findJobById(id);
+    public BundleEntity findDeletedBundleById(Object id) {
+        return jobRepo.findJobById((String) id);
     }
 
 
     @Override
-    public Boolean recover(Long id) {
-        return jobMapper.recoverJob(id) > 0;
+    public Boolean recover(Object id) {
+        return jobRepo.recoverJob((String) id) > 0;
     }
 }

@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,7 +38,7 @@ import org.springframework.stereotype.Service;
 public class HotJobsLoader implements CommandLineRunner {
 
 
-    final JobMapper jobMapper;
+    final JobRepo jobRepo;
 
     final JobLoader jobLoader;
 
@@ -47,10 +47,10 @@ public class HotJobsLoader implements CommandLineRunner {
     final JobBoConverter jobBoConverter;
 
     public HotJobsLoader(
-            JobMapper jobMapper,
+            JobRepo jobRepo,
             JobLoader jobLoader,
             JobStatusMachine jobStatusMachine, JobBoConverter jobBoConverter) {
-        this.jobMapper = jobMapper;
+        this.jobRepo = jobRepo;
         this.jobLoader = jobLoader;
         this.jobStatusMachine = jobStatusMachine;
         this.jobBoConverter = jobBoConverter;
@@ -68,7 +68,7 @@ public class HotJobsLoader implements CommandLineRunner {
                 .parallelStream()
                 .filter(jobStatusMachine::isHot)
                 .collect(Collectors.toList());
-        return jobMapper.findJobByStatusIn(hotJobStatuses);
+        return jobRepo.findJobByStatusIn(hotJobStatuses);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class HotJobsLoader implements CommandLineRunner {
                 jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
             } catch (Exception e) {
                 log.error("loading hotting job failed {}", jobEntity.getId(), e);
-                jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+                jobRepo.updateJobStatus(jobEntity.getId(), JobStatus.FAIL);
             }
         });
         log.info("hot jobs loaded");

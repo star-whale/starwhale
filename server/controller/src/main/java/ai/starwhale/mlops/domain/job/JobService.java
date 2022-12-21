@@ -21,18 +21,18 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
@@ -57,6 +57,7 @@ import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -73,8 +74,7 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class JobService {
 
-    private final JobMapper jobMapper;
-    private final JobDatasetVersionMapper jobDatasetVersionMapper;
+    private final JobRepo jobRepo;
     private final TaskMapper taskMapper;
     private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
@@ -93,16 +93,14 @@ public class JobService {
 
     private final TrashService trashService;
 
-    public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper,
-            JobDatasetVersionMapper jobDatasetVersionMapper,
+    public JobService(JobBoConverter jobBoConverter, JobRepo jobRepo,
             TaskMapper taskMapper, JobConverter jobConvertor, RuntimeDao runtimeDao,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
             ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelDao modelDao,
             ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
             UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.jobBoConverter = jobBoConverter;
-        this.jobMapper = jobMapper;
-        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
+        this.jobRepo = jobRepo;
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.runtimeDao = runtimeDao;
@@ -123,13 +121,12 @@ public class JobService {
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, modelId);
+        List<JobEntity> jobEntities = jobRepo.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
     public JobVo findJob(String projectUrl, String jobUrl) {
-        Job job = jobManager.fromUrl(jobUrl);
-        JobEntity entity = jobManager.findJob(job);
+        JobEntity entity = jobManager.findJob(jobUrl);
         if (entity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
@@ -140,31 +137,23 @@ public class JobService {
     }
 
     public Object getJobResult(String projectUrl, String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
-        return resultQuerier.resultOfJob(jobId);
+        return resultQuerier.resultOfJob(jobUrl);
     }
 
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
-        Job job = jobManager.fromUrl(jobUrl);
-        int res;
-        if (job.getId() != null) {
-            res = jobMapper.updateJobComment(job.getId(), comment);
-        } else {
-            res = jobMapper.updateJobCommentByUuid(job.getUuid(), comment);
-        }
+        int res = jobRepo.updateJobComment(jobUrl, comment);
         return res > 0;
     }
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
         Trash trash = Trash.builder()
                 .projectId(projectManager.getProjectId(projectUrl))
-                .objectId(jobId)
+                .objectId(jobUrl)
                 .type(Type.EVALUATION)
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
 
-        int res = jobMapper.removeJob(jobId);
+        int res = jobRepo.removeJob(jobUrl);
         return res > 0;
     }
 
@@ -172,36 +161,44 @@ public class JobService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
-    public Long createJob(String projectUrl,
+    public String createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
             String stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
-        Long runtimeVersionId = runtimeDao.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = modelDao.getModelVersionId(modelVersionUrl, null);
+        var runtimeVersion = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
+        var runtime = runtimeDao.getRuntime(runtimeVersion.getRuntimeId());
+        var modelVersion = modelDao.getModelVersion(modelVersionUrl);
+        var model = modelDao.getModel(modelVersion.getModelId());
+        var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))
+                .map(datasetDao::getDatasetVersion)
+                .collect(Collectors.toMap(DatasetVersionEntity::getId, DatasetVersionEntity::getVersionName));
         JobEntity jobEntity = JobEntity.builder()
                 .ownerId(user.getId())
-                .jobUuid(jobUuid)
-                .runtimeVersionId(runtimeVersionId)
+                .id(jobUuid)
+                .runtimeVersionId(runtimeVersion.getId())
+                .runtimeVersionValue(runtimeVersion.getVersionName())
+                .runtimeName(runtime.getRuntimeName())
                 .projectId(projectId)
-                .modelVersionId(modelVersionId)
+                .modelVersionId(modelVersion.getId())
+                .modelVersionValue(modelVersion.getVersionName())
+                .modelName(model.getModelName())
+                .datasetIdVersionMap(datasetVersionIdMaps)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePool(resourcePool)
                 .stepSpec(stepSpecOverWrites)
+                .createdTime(new Date())
+                .modifiedTime(new Date())
                 .build();
 
-        jobMapper.addJob(jobEntity);
-        log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
+        jobRepo.addJob(jobEntity);
+        log.info("Job has been created. ID={}", jobEntity.getId());
 
-        List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(url -> datasetDao.getDatasetVersionId(url, null))
-                .collect(Collectors.toList());
-        jobDatasetVersionMapper.insert(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
 
@@ -210,7 +207,7 @@ public class JobService {
      */
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
     public void splitNewCreatedJobs() {
-        jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED))
+        jobRepo.findJobByStatusIn(List.of(JobStatus.CREATED))
                 .forEach(jobEntity -> {
                     //one transaction
                     try {
@@ -220,7 +217,7 @@ public class JobService {
                         jobUpdateHelper.updateJob(job);
                     } catch (Exception e) {
                         log.error("splitting job error {}", jobEntity.getId(), e);
-                        jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+                        jobRepo.updateJobStatus(jobEntity.getId(), JobStatus.FAIL);
                     }
 
                 });
@@ -232,8 +229,7 @@ public class JobService {
      */
     @Transactional
     public void cancelJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
+        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobUrl));
         if (null == jobs || jobs.isEmpty()) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "freeze job can't be canceled "),
@@ -265,8 +261,7 @@ public class JobService {
      */
     @Transactional
     public void pauseJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
+        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobUrl));
         if (null == jobs || jobs.isEmpty()) {
             throw new SwValidationException(ValidSubject.JOB, "frozen job can't be paused ");
         }
@@ -315,8 +310,7 @@ public class JobService {
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
     public void resumeJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
-        JobEntity jobEntity = jobMapper.findJobById(jobId);
+        JobEntity jobEntity = jobRepo.findJobById(jobUrl);
         if (null == jobEntity) {
             throw new SwValidationException(ValidSubject.JOB, "job not exists");
         }

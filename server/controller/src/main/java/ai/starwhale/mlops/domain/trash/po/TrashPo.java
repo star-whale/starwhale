@@ -36,7 +36,7 @@ public class TrashPo extends BaseEntity {
 
     private Long projectId;
 
-    private Long objectId;
+    private Object objectId;
 
     private Long operatorId;
 

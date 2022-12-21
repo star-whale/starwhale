@@ -65,9 +65,8 @@ public class TaskService {
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long jobId = jobManager.getJobId(jobUrl);
-        JobEntity job = jobManager.findJob(Job.builder().id(jobId).build());
-        List<TaskVo> tasks = taskMapper.listTasks(jobId).stream().map(taskConvertor::convert)
+        JobEntity job = jobManager.findJob(jobUrl);
+        List<TaskVo> tasks = taskMapper.listTasks(jobUrl).stream().map(taskConvertor::convert)
                 .peek(taskVo -> taskVo.setResourcePool(
                         systemSettingService.queryResourcePool(job.getResourcePool()).getName())).collect(
                         Collectors.toList());

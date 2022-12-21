@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
@@ -54,21 +55,34 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
-        if (idConvertor.isId(versionUrl)) {
-            return idConvertor.revert(versionUrl);
+    public RuntimeEntity getRuntime(Long id) {
+        RuntimeEntity runtime = runtimeMapper.find(id);
+
+        if (runtime == null) {
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                    String.format("Unable to find Runtime %s", id));
         }
-        RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeId);
+        return runtime;
+    }
+
+    public RuntimeVersionEntity getRuntimeVersion(String versionUrl) {
+        RuntimeVersionEntity entity;
+        if (idConvertor.isId(versionUrl)) {
+            var id = idConvertor.revert(versionUrl);
+            entity = runtimeVersionMapper.find(id);
+        } else {
+            entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, null);
+        }
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
                     String.format("Unable to find Runtime Version %s", versionUrl));
         }
-        return entity.getId();
+        return entity;
     }
 
     @Override
-    public BundleEntity findById(Long id) {
-        return runtimeMapper.find(id);
+    public BundleEntity findById(Object id) {
+        return runtimeMapper.find((Long) id);
     }
 
     @Override
@@ -108,7 +122,7 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     @Override
     public Boolean updateTag(HasTag entity) {
-        int r = runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
+        int r = runtimeVersionMapper.updateTag((Long) entity.getId(), entity.getTag());
         if (r > 0) {
             log.info("Runtime Version Tag has been modified. ID={}", entity.getId());
         }
@@ -131,13 +145,13 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Long id) {
-        return runtimeMapper.findDeleted(id);
+    public BundleEntity findDeletedBundleById(Object id) {
+        return runtimeMapper.findDeleted((Long) id);
     }
 
     @Override
-    public Boolean recover(Long id) {
-        return runtimeMapper.recover(id) > 0;
+    public Boolean recover(Object id) {
+        return runtimeMapper.recover((Long) id) > 0;
     }
 
     @Override

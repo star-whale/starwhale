@@ -20,9 +20,9 @@ import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
@@ -53,7 +53,7 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     private UserMapper userMapper;
 
     @Autowired
-    private JobMapper jobMapper;
+    private JobRepo jobRepo;
 
     @Autowired
     private DatasetMapper datasetMapper;
@@ -142,15 +142,15 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project2.getId())
                         .ownerId(user.getId()).build());
-        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobRepo.addJob(JobEntity.builder().id(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
-        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobRepo.addJob(JobEntity.builder().id(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
-        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobRepo.addJob(JobEntity.builder().id(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project2.getId()).ownerId(user.getId()).build());

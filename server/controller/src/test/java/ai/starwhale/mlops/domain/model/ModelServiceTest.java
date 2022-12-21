@@ -350,7 +350,7 @@ public class ModelServiceTest {
     @Test
     public void testListModelVersionHistory() {
         given(modelVersionMapper.list(anyLong(), anyString(), anyString()))
-                .willReturn(List.of(ModelVersionEntity.builder().id(1L).modelName("m1").build()));
+                .willReturn(List.of(ModelVersionEntity.builder().id(1L).build()));
         var res = service.listModelVersionHistory(
                 ModelVersionQuery.builder()
                         .projectUrl("1")

@@ -23,17 +23,17 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class HotJobsLoaderTest {
 
-    JobMapper jobMapper;
+    JobRepo jobRepo;
 
     JobLoader jobLoader;
 
@@ -45,23 +45,23 @@ public class HotJobsLoaderTest {
 
     @BeforeEach
     public void setup() {
-        jobMapper = mock(JobMapper.class);
+        jobRepo = mock(JobRepo.class);
         jobLoader = mock(JobLoader.class);
         jobBoConverter = mock(JobBoConverter.class);
         jobStatusMachine = new JobStatusMachine();
-        hotJobsLoader = new HotJobsLoader(jobMapper, jobLoader, jobStatusMachine, jobBoConverter);
+        hotJobsLoader = new HotJobsLoader(jobRepo, jobLoader, jobStatusMachine, jobBoConverter);
     }
 
     @Test
     public void testStartUp() throws Exception {
-        JobEntity job1 = JobEntity.builder().id(1L).build();
-        JobEntity job2 = JobEntity.builder().id(2L).build();
-        when(jobMapper.findJobByStatusIn(anyList())).thenReturn(List.of(job1, job2));
-        Job j = Job.builder().id(1L).build();
+        JobEntity job1 = JobEntity.builder().id("1L").build();
+        JobEntity job2 = JobEntity.builder().id("2L").build();
+        when(jobRepo.findJobByStatusIn(anyList())).thenReturn(List.of(job1, job2));
+        Job j = Job.builder().id("1L").build();
         when(jobBoConverter.fromEntity(job1)).thenReturn(j);
         when(jobBoConverter.fromEntity(job2)).thenThrow(new RuntimeException());
         hotJobsLoader.run();
-        verify(jobMapper).updateJobStatus(List.of(2L), JobStatus.FAIL);
+        verify(jobRepo).updateJobStatus("2L", JobStatus.FAIL);
         verify(jobLoader).load(j, false);
     }
 

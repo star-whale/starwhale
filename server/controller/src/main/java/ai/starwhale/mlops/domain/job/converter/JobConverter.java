@@ -28,6 +28,7 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
@@ -56,15 +57,19 @@ public class JobConverter {
         if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
             throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and runtime");
         }
-        List<DatasetVersion> datasetVersions = datasetDao.listDatasetVersionsOfJob(jobEntity.getId());
+
+        List<DatasetVersion> datasetVersions = List.of();
+        if (jobEntity.getDatasetIdVersionMap() != null && !jobEntity.getDatasetIdVersionMap().isEmpty()) {
+            datasetVersions = datasetDao.listDatasetVersions(
+                    new ArrayList<>(jobEntity.getDatasetIdVersionMap().keySet()));
+        }
 
         List<String> idList = datasetVersions.stream()
                 .map(DatasetVersion::getVersionName)
                 .collect(Collectors.toList());
 
         return JobVo.builder()
-                .id(idConvertor.convert(jobEntity.getId()))
-                .uuid(jobEntity.getJobUuid())
+                .id(jobEntity.getId())
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())
@@ -72,7 +77,7 @@ public class JobConverter {
                 .runtime(runtimeByVersionIds.get(0))
                 .datasets(idList)
                 .jobStatus(jobEntity.getJobStatus())
-                .stopTime(jobEntity.getFinishedTime().getTime())
+                .stopTime(jobEntity.getFinishedTime() == null ? null : jobEntity.getFinishedTime().getTime())
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .build();

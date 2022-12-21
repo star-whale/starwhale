@@ -46,6 +46,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -107,9 +108,12 @@ public class JobBoConverter {
     }
 
     public Job fromEntity(JobEntity jobEntity) {
-        List<DataSet> dataSets = datasetDao.listDatasetVersionsOfJob(jobEntity.getId())
+        List<DataSet> dataSets = List.of();
+        if (jobEntity.getDatasetIdVersionMap() != null && !jobEntity.getDatasetIdVersionMap().isEmpty()) {
+            dataSets = datasetDao.listDatasetVersions(new ArrayList<>(jobEntity.getDatasetIdVersionMap().keySet()))
                 .stream().map(datasetBoConverter::fromVersion)
                 .collect(Collectors.toList());
+        }
         ModelEntity modelEntity = modelMapper.find(
                 jobEntity.getModelVersion().getModelId());
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(
@@ -151,7 +155,6 @@ public class JobBoConverter {
                     .stepSpec(jobEntity.getStepSpec())
                     .dataSets(dataSets)
                     .outputDir(jobEntity.getResultOutputPath())
-                    .uuid(jobEntity.getJobUuid())
                     .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
                     .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName())
                             .build())

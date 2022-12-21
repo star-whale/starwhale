@@ -29,9 +29,9 @@ import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.core.io.FileUtil;
@@ -53,21 +53,21 @@ public class EvaluationService {
 
     private final UserService userService;
     private final ProjectManager projectManager;
-    private final JobMapper jobMapper;
+    private final JobRepo jobRepo;
     private final ViewConfigMapper viewConfigMapper;
     private final IdConverter idConvertor;
     private final ViewConfigConverter viewConfigConvertor;
     private final JobConverter jobConvertor;
     private final JobStatusMachine jobStatusMachine;
 
-    private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
+    private static final Map<String, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
-    public EvaluationService(UserService userService, ProjectManager projectManager, JobMapper jobMapper,
+    public EvaluationService(UserService userService, ProjectManager projectManager, JobRepo jobRepo,
             ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
             JobConverter jobConvertor, JobStatusMachine jobStatusMachine) {
         this.userService = userService;
         this.projectManager = projectManager;
-        this.jobMapper = jobMapper;
+        this.jobRepo = jobRepo;
         this.viewConfigMapper = viewConfigMapper;
         this.idConvertor = idConvertor;
         this.viewConfigConvertor = viewConfigConvertor;
@@ -115,7 +115,7 @@ public class EvaluationService {
             SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, null);
+        List<JobEntity> jobEntities = jobRepo.listJobs(projectId, null);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
 
@@ -128,7 +128,6 @@ public class EvaluationService {
         JobVo jobVo = jobConvertor.convert(entity);
         SummaryVo summaryVo = SummaryVo.builder()
                 .id(jobVo.getId())
-                .uuid(jobVo.getUuid())
                 .projectId(idConvertor.convert(entity.getProject().getId()))
                 .projectName(entity.getProject().getProjectName())
                 .modelName(jobVo.getModelName())

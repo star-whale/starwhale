@@ -19,9 +19,9 @@ package ai.starwhale.mlops.resulting;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
@@ -29,7 +29,6 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -90,12 +89,12 @@ public class ResultQuerierTest {
 
     @Test
     public void testResultOfJob() throws IOException {
-        JobMapper jobMapper = mockJobMapper();
+        JobRepo jobRepo = mockJobRepo();
         StorageAccessService storageAccessService = mockStorageAccessService();
-        ResultQuerier resultQuerier = new ResultQuerier(jobMapper, storageAccessService, new ObjectMapper());
-        Object o = resultQuerier.resultOfJob(1L);
+        ResultQuerier resultQuerier = new ResultQuerier(jobRepo, storageAccessService, new ObjectMapper());
+        Object o = resultQuerier.resultOfJob("1L");
         Assertions.assertEquals(OBJECT, objectMapper.writeValueAsString(o));
-        Map<String, Object> result = resultQuerier.flattenResultOfJob(6L);
+        Map<String, Object> result = resultQuerier.flattenResultOfJob("6L");
         Assertions.assertEquals(52, result.size());
         Assertions.assertEquals("multi_classification", result.get("kind"));
         Assertions.assertNotNull(result.get("labels/9/support"));
@@ -104,13 +103,14 @@ public class ResultQuerierTest {
 
     @Test
     public void testResultOfJobException() throws IOException {
-        JobMapper jobMapper = mockJobMapper();
+        JobRepo jobRepo = mockJobRepo();
         StorageAccessService storageAccessService = mockStorageAccessService();
-        ResultQuerier resultQuerier = new ResultQuerier(jobMapper, storageAccessService, new ObjectMapper());
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(2L));
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(3L));
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(4L));
-        Assertions.assertThrowsExactly(SwProcessException.class, () -> resultQuerier.resultOfJob(5L));
+        ResultQuerier resultQuerier = new ResultQuerier(jobRepo, storageAccessService, new ObjectMapper());
+        // TODO why
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("2L"));
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("3L"));
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("4L"));
+        Assertions.assertThrowsExactly(SwProcessException.class, () -> resultQuerier.resultOfJob("5L"));
     }
 
     private StorageAccessService mockStorageAccessService() throws IOException {
@@ -132,18 +132,18 @@ public class ResultQuerierTest {
                 new ByteArrayInputStream(MOCK_RESULT.getBytes()), MOCK_RESULT.getBytes().length);
     }
 
-    JobMapper mockJobMapper() {
-        JobMapper jobMapper = mock(JobMapper.class);
-        when(jobMapper.findJobById(1L)).thenReturn(mockJobEntity(1L, JobStatus.SUCCESS, resultOutputPath));
-        when(jobMapper.findJobById(3L)).thenReturn(mockJobEntity(3L, JobStatus.RUNNING, resultOutputPath));
-        when(jobMapper.findJobById(4L)).thenReturn(mockJobEntity(4L, JobStatus.SUCCESS, "resultOutputPath"));
-        when(jobMapper.findJobById(5L)).thenReturn(mockJobEntity(5L, JobStatus.SUCCESS,
+    JobRepo mockJobRepo() {
+        JobRepo jobRepo = mock(JobRepo.class);
+        when(jobRepo.findJobById("1L")).thenReturn(mockJobEntity("1L", JobStatus.SUCCESS, resultOutputPath));
+        when(jobRepo.findJobById("3L")).thenReturn(mockJobEntity("3L", JobStatus.RUNNING, resultOutputPath));
+        when(jobRepo.findJobById("4L")).thenReturn(mockJobEntity("4L", JobStatus.SUCCESS, "resultOutputPath"));
+        when(jobRepo.findJobById("5L")).thenReturn(mockJobEntity("5L", JobStatus.SUCCESS,
                 exceptionPath));
-        when(jobMapper.findJobById(6L)).thenReturn(mockJobEntity(6L, JobStatus.SUCCESS, mockResultOutputPath));
-        return jobMapper;
+        when(jobRepo.findJobById("6L")).thenReturn(mockJobEntity("6L", JobStatus.SUCCESS, mockResultOutputPath));
+        return jobRepo;
     }
 
-    private JobEntity mockJobEntity(Long jobId, JobStatus jobStatus, String resultPath) {
+    private JobEntity mockJobEntity(String jobId, JobStatus jobStatus, String resultPath) {
         return JobEntity.builder().id(jobId).jobStatus(jobStatus).resultOutputPath(
                 resultPath).build();
     }

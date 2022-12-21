@@ -24,16 +24,10 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.exception.SwValidationException;
-import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

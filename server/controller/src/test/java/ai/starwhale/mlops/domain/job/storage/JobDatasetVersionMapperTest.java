@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.mapper;
+package ai.starwhale.mlops.domain.job.storage;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 
+@Deprecated
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
@@ -59,14 +60,14 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
                 .storagePath("stp2").ownerId(1L).build();
         datasetVersionMapper.insert(datasetVersionEntity);
         datasetVersionMapper.insert(datasetVersionEntity2);
-        jobDatasetVersionMapper.insert(13L,
+        jobDatasetVersionMapper.insert("13L",
                 List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()));
     }
 
     @Test
     public void testListSwdsVersionsByJobId() {
         List<Long> ids = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(
-                13L);
+                "13L");
         Assertions.assertEquals(2, ids.size());
         Assertions.assertIterableEquals(
                 List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()),

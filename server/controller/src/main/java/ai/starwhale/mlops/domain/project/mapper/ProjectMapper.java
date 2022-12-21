@@ -106,6 +106,7 @@ public interface ProjectMapper {
             + " where project_id in (${projectIds}) group by project_id")
     List<ObjectCountEntity> countRuntime(@Param("projectIds") String projectIds);
 
+    //TODO replace with jobRepo
     @Select("select count(*) as count, project_id from job_info"
             + " where project_id in (${projectIds}) group by project_id")
     List<ObjectCountEntity> countJob(@Param("projectIds") String projectIds);

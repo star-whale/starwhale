@@ -16,16 +16,39 @@
 
 package ai.starwhale.mlops.domain.job.po;
 
-import ai.starwhale.mlops.common.BaseEntity;
+import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.IsDeletedColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.OwnerIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
+
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
+import java.util.Map;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -36,49 +59,83 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobEntity extends BaseEntity implements BundleEntity {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class JobEntity implements BundleEntity {
 
-    private Long id;
+    private String id;
 
-    private String jobUuid;
-
-    private String modelName;
-
+    @JsonProperty(ProjectIdColumn)
     private Long projectId;
 
     private ProjectEntity project;
 
+    @JsonProperty(ModelVersionIdColumn)
     private Long modelVersionId;
+
+    @JsonProperty(ModelNameColumn)
+    private String modelName;
+
+    @JsonProperty(ModelVersionColumn)
+    private String modelVersionValue;
 
     private ModelVersionEntity modelVersion;
 
+    @JsonProperty(OwnerIdColumn)
     private Long ownerId;
+
+    @JsonProperty(OwnerNameColumn)
+    private String ownerName;
 
     private UserEntity owner;
 
-    @Builder.Default
-    private Date finishedTime = defaultDate;
+    // TODO
+    @JsonProperty(CreatedTimeColumn)
+    private Date createdTime;
 
+    @JsonProperty(ModifiedTimeColumn)
+    private Date modifiedTime;
+
+    @JsonProperty(FinishTimeColumn)
+    private Date finishedTime;
+
+    @JsonProperty(DurationColumn)
     private Long durationMs;
 
+    @JsonProperty(JobStatusColumn)
     private JobStatus jobStatus;
 
+    @JsonProperty(RuntimeVersionIdColumn)
     private Long runtimeVersionId;
 
+    @JsonProperty(RuntimeNameColumn)
+    private String runtimeName;
+
+    @JsonProperty(RuntimeVersionColumn)
+    private String runtimeVersionValue;
+
+    @JsonProperty(DataSetIdVersionMapColumn)
+    private Map<Long, String> datasetIdVersionMap;
+
+    @JsonProperty(ResultOutputPathColumn)
     private String resultOutputPath;
 
+    @JsonProperty(CommentColumn)
     private String comment;
 
-    private Integer isDeleted;
-
+    @JsonProperty(JobTypeColumn)
     private JobType type;
 
+    @JsonProperty(ResourcePoolColumn)
     private String resourcePool;
 
+    @JsonProperty(StepSpecColumn)
     private String stepSpec;
+
+    @JsonProperty(IsDeletedColumn)
+    private Integer isDeleted;
 
     @Override
     public String getName() {
-        return jobUuid;
+        return id;
     }
 }

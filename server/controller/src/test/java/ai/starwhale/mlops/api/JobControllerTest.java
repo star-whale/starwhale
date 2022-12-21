@@ -133,7 +133,7 @@ public class JobControllerTest {
     public void testCreatJob() {
         given(jobService.createJob(anyString(), anyString(),
                 anyString(), anyString(), anyString(), anyString(), any()))
-                .willReturn(1L);
+                .willReturn("1L");
         JobRequest jobRequest = new JobRequest();
         jobRequest.setComment("");
         jobRequest.setModelVersionUrl("");
@@ -144,7 +144,7 @@ public class JobControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
-                is("1")
+                is("1L")
         ));
 
     }

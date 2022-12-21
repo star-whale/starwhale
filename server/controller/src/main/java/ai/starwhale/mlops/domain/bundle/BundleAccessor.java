@@ -20,7 +20,7 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 
 public interface BundleAccessor {
 
-    BundleEntity findById(Long id);
+    BundleEntity findById(Object id);
 
     BundleEntity findByNameForUpdate(String name, Long projectId);
 }

@@ -62,7 +62,7 @@ public class BundleManager {
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE, String.format("Unable to find %s", bundleUrl));
         }
-        return entity.getId();
+        return (Long) entity.getId();
     }
 
     public Long getBundleVersionId(BundleVersionUrl bundleVersionUrl) {
@@ -88,6 +88,6 @@ public class BundleManager {
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, String.format("Unable to find %s", versionUrl));
         }
-        return entity.getId();
+        return (Long) entity.getId();
     }
 }
