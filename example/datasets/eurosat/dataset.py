@@ -7,6 +7,7 @@ from starwhale.utils.retry import http_retry
 
 PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/eurosat"
 
+
 @http_retry
 def request_link_text(anno_link):
     return requests.get(anno_link, timeout=10).text
