@@ -1,5 +1,6 @@
 import os
 import shutil
+import typing as t
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
@@ -19,7 +20,7 @@ from starwhale.core.dataset.store import (
     SignedUrlBackend,
     LocalFSStorageBackend,
 )
-from starwhale.api._impl.data_store import RemoteDataStore
+from starwhale.api._impl.data_store import SwObject, RemoteDataStore
 from starwhale.core.dataset.tabular import (
     StandaloneTDSC,
     TabularDatasetRow,
@@ -27,6 +28,7 @@ from starwhale.core.dataset.tabular import (
 )
 from starwhale.api._impl.dataset.loader import (
     DataRow,
+    DataLoader,
     SWDSBinDataLoader,
     UserRawDataLoader,
 )
@@ -669,3 +671,106 @@ class TestDataLoader(TestCase):
 
         with self.assertRaises(TypeError):
             DataRow(index=1, data=Image(), annotations=1)  # type: ignore
+
+    def test_travel_link(self) -> None:
+        class _SW(SwObject):
+            def __init__(self) -> None:
+                self.link = Link()
+
+        objs = {
+            "link": Link(),
+            "dict": {
+                "link": Link(),
+            },
+            "list": [Link(), Link()],
+            "tuple": (Link(),),
+            "list_complex": [[Link()], (Link()), {"link": Link()}],
+            "sw_object": _SW(),
+        }
+
+        links = DataLoader._travel_link(objs)
+        assert len(links) == 9
+
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    def test_loader_with_cache(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
+        rows_cnt = 100
+        m_summary.return_value = DatasetSummary(
+            rows=rows_cnt,
+            increased_rows=rows_cnt,
+        )
+        fname = "data_ubyte_0.swds_bin"
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id=i,
+                data_link=Link(fname),
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                annotations={"label": i},
+            )
+            for i in range(0, rows_cnt)
+        ]
+        data_dir = DatasetStorage(self.dataset_uri).data_dir
+        ensure_dir(data_dir)
+        shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
+
+        loader = get_data_loader(self.dataset_uri, cache_size=50, num_workers=4)
+        assert len(list(loader)) == rows_cnt
+
+        loader = get_data_loader(self.dataset_uri, cache_size=100, num_workers=10)
+        assert len(list(loader)) == rows_cnt
+
+        loader = get_data_loader(self.dataset_uri, cache_size=1, num_workers=1)
+        assert len(list(loader)) == rows_cnt
+
+        with self.assertRaisesRegex(ValueError, "must be a positive int number"):
+            get_data_loader(self.dataset_uri, cache_size=0)
+
+        with self.assertRaisesRegex(ValueError, "must be a positive int number"):
+            get_data_loader(self.dataset_uri, num_workers=0)
+
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    def test_loader_with_scan_exception(
+        self, m_scan: MagicMock, m_summary: MagicMock
+    ) -> None:
+        m_summary.return_value = DatasetSummary(
+            rows=1,
+            increased_rows=1,
+        )
+
+        def _scan_exception(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            raise RuntimeError("scan error")
+
+        m_scan.side_effect = _scan_exception
+
+        with self.assertRaisesRegex(RuntimeError, "scan error"):
+            loader = get_data_loader(self.dataset_uri)
+            [d.index for d in loader]
+
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    def test_loader_with_makefile_exception(
+        self, m_scan: MagicMock, m_summary: MagicMock
+    ) -> None:
+        m_summary.return_value = DatasetSummary(
+            rows=1,
+            increased_rows=1,
+        )
+
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id=0,
+                data_link=Link("not-found"),
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                annotations={"label": 0},
+            )
+        ]
+        loader = get_data_loader(self.dataset_uri)
+        with self.assertRaises(FileNotFoundError):
+            [d.index for d in loader]
