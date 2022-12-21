@@ -28,6 +28,7 @@ import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -54,6 +55,7 @@ public class K8sClientTest {
     ApiClient client;
     CoreV1Api coreV1Api;
     BatchV1Api batchV1Api;
+    AppsV1Api appsV1Api;
     SharedInformerFactory informerFactory;
     String nameSpace = "nameSpace";
 
@@ -62,14 +64,15 @@ public class K8sClientTest {
         client = mock(ApiClient.class);
         coreV1Api = mock(CoreV1Api.class);
         batchV1Api = mock(BatchV1Api.class);
+        appsV1Api = mock(AppsV1Api.class);
         informerFactory = mock(SharedInformerFactory.class);
-        k8sClient = new K8sClient(client, coreV1Api, batchV1Api, nameSpace, informerFactory);
+        k8sClient = new K8sClient(client, coreV1Api, batchV1Api, appsV1Api, nameSpace, informerFactory);
     }
 
     @Test
     public void testDeploy() throws ApiException {
         V1Job job = new V1Job();
-        k8sClient.deploy(job);
+        k8sClient.deployJob(job);
         verify(batchV1Api).createNamespacedJob(eq(nameSpace), eq(job), any(), eq(null), any(), any());
     }
 
@@ -85,7 +88,7 @@ public class K8sClientTest {
         when(batchV1Api.listNamespacedJob(nameSpace, null, null, null, null, "ls", null, null, null, 30,
                 null)).thenReturn(
                 t);
-        Assertions.assertEquals(t, k8sClient.get("ls"));
+        Assertions.assertEquals(t, k8sClient.getJobs("ls"));
     }
 
     @Test

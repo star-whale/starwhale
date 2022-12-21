@@ -33,11 +33,13 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.Page;
@@ -55,16 +57,20 @@ public class JobControllerTest {
 
     private TaskService taskService;
 
+    private ModelServingService modelServingService;
+
     private DagQuerier dagQuerier;
 
     @BeforeEach
     public void setUp() {
         jobService = mock(JobService.class);
         taskService = mock(TaskService.class);
+        modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
         controller = new JobController(
                 jobService,
                 taskService,
+                modelServingService,
                 new IdConverter(),
                 dagQuerier
         );
@@ -214,5 +220,18 @@ public class JobControllerTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> controller.recoverJob("p1", "j2"));
+    }
+
+    @Test
+    public void testCreateModelServing() {
+        given(modelServingService.create("foo", "bar", "baz", "default", 7L)).willReturn(8L);
+        var req = new ModelServingRequest();
+        req.setModelVersionUrl("bar");
+        req.setRuntimeVersionUrl("baz");
+        req.setResourcePool("default");
+        req.setTtlInSeconds(7L);
+        var resp = controller.createModelServing("foo", req);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData(), is("8"));
     }
 }

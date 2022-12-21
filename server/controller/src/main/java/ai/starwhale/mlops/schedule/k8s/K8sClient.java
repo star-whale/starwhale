@@ -21,6 +21,7 @@ import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -30,6 +31,8 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
@@ -52,6 +55,7 @@ public class K8sClient {
     private final ApiClient client;
     private final CoreV1Api coreV1Api;
     private final BatchV1Api batchV1Api;
+    private final AppsV1Api appsV1Api;
 
     private final String ns;
 
@@ -60,11 +64,18 @@ public class K8sClient {
     /**
      * Basic constructor for Kubernetes
      */
-    public K8sClient(ApiClient client, CoreV1Api coreV1Api, BatchV1Api batchV1Api,
-            @Value("${sw.infra.k8s.name-space}") String ns, SharedInformerFactory informerFactory) {
+    public K8sClient(
+            ApiClient client,
+            CoreV1Api coreV1Api,
+            BatchV1Api batchV1Api,
+            AppsV1Api appsV1Api,
+            @Value("${sw.infra.k8s.name-space}") String ns,
+            SharedInformerFactory informerFactory
+    ) {
         this.client = client;
         this.coreV1Api = coreV1Api;
         this.batchV1Api = batchV1Api;
+        this.appsV1Api = appsV1Api;
         this.ns = ns;
         this.informerFactory = informerFactory;
     }
@@ -75,8 +86,16 @@ public class K8sClient {
      * @param job to apply
      * @return submitted job
      */
-    public V1Job deploy(V1Job job) throws ApiException {
+    public V1Job deployJob(V1Job job) throws ApiException {
         return batchV1Api.createNamespacedJob(ns, job, null, null, null, null);
+    }
+
+    public V1StatefulSet deployStatefulSet(V1StatefulSet ss) throws ApiException {
+        return appsV1Api.createNamespacedStatefulSet(ns, ss, null, null, null, null);
+    }
+
+    public V1Service deployService(V1Service svc) throws ApiException {
+        return coreV1Api.createNamespacedService(ns, svc, null, null, null, null);
     }
 
     public void deleteJob(String id) throws ApiException {
@@ -88,7 +107,7 @@ public class K8sClient {
      *
      * @return job list
      */
-    public V1JobList get(String labelSelector) throws ApiException {
+    public V1JobList getJobs(String labelSelector) throws ApiException {
         return batchV1Api.listNamespacedJob(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 

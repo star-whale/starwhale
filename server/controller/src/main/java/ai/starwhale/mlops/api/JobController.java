@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -35,6 +37,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.kubernetes.client.openapi.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,14 +51,21 @@ public class JobController implements JobApi {
 
     private final JobService jobService;
     private final TaskService taskService;
+    private final ModelServingService modelServingService;
     private final IdConverter idConvertor;
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
 
-    public JobController(JobService jobService, TaskService taskService, IdConverter idConvertor,
-            DagQuerier dagQuerier) {
+    public JobController(
+            JobService jobService,
+            TaskService taskService,
+            ModelServingService modelServingService,
+            IdConverter idConvertor,
+            DagQuerier dagQuerier
+    ) {
         this.jobService = jobService;
         this.taskService = taskService;
+        this.modelServingService = modelServingService;
         this.idConvertor = idConvertor;
         this.dagQuerier = dagQuerier;
         this.jobActions = InvokerManager.<String, String>create()
@@ -66,8 +76,12 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(String projectUrl, String modelId,
-            Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(
+            String projectUrl,
+            String modelId,
+            Integer pageNum,
+            Integer pageSize
+    ) {
 
         PageInfo<JobVo> jobVos = jobService.listJobs(projectUrl, idConvertor.revert(modelId),
                 PageParams.builder()
@@ -84,8 +98,12 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(String projectUrl,
-            String jobUrl, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(
+            String projectUrl,
+            String jobUrl,
+            Integer pageNum,
+            Integer pageSize
+    ) {
 
         PageInfo<TaskVo> pageInfo = taskService.listTasks(jobUrl,
                 PageParams.builder()
@@ -96,8 +114,10 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createJob(String projectUrl,
-            JobRequest jobRequest) {
+    public ResponseEntity<ResponseMessage<String>> createJob(
+            String projectUrl,
+            JobRequest jobRequest
+    ) {
         Long jobId = jobService.createJob(projectUrl,
                 jobRequest.getModelVersionUrl(),
                 jobRequest.getDatasetVersionUrls(),
@@ -110,8 +130,11 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> action(String projectUrl, String jobUrl,
-            String action) {
+    public ResponseEntity<ResponseMessage<String>> action(
+            String projectUrl,
+            String jobUrl,
+            String action
+    ) {
         try {
             jobActions.invoke(action, jobUrl);
         } catch (UnsupportedOperationException e) {
@@ -129,8 +152,11 @@ public class JobController implements JobApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> modifyJobComment(String projectUrl, String jobUrl,
-            JobModifyRequest jobModifyRequest) {
+    public ResponseEntity<ResponseMessage<String>> modifyJobComment(
+            String projectUrl,
+            String jobUrl,
+            JobModifyRequest jobModifyRequest
+    ) {
         Boolean res = jobService.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
 
         if (!res) {
@@ -163,5 +189,21 @@ public class JobController implements JobApi {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> createModelServing(
+            String projectUrl,
+            ModelServingRequest request
+    ) {
+        Long jobId = modelServingService.create(
+                projectUrl,
+                request.getModelVersionUrl(),
+                request.getRuntimeVersionUrl(),
+                request.getResourcePool(),
+                request.getTtlInSeconds()
+        );
+
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 }

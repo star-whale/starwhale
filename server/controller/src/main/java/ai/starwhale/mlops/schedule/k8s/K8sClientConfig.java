@@ -18,6 +18,7 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.Config;
@@ -43,6 +44,11 @@ public class K8sClientConfig {
     @Bean
     public BatchV1Api batchV1Api(ApiClient apiClient) {
         return new BatchV1Api();
+    }
+
+    @Bean
+    public AppsV1Api appsV1Api(ApiClient apiClient) {
+        return new AppsV1Api();
     }
 
     @Bean

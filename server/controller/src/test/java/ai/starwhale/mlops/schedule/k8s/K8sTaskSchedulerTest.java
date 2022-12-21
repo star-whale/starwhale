@@ -63,7 +63,7 @@ public class K8sTaskSchedulerTest {
         K8sClient k8sClient = mock(K8sClient.class);
         K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
         scheduler.schedule(Set.of(mockTask()));
-        verify(k8sClient).deploy(any());
+        verify(k8sClient).deployJob(any());
     }
 
     @NotNull
@@ -91,7 +91,7 @@ public class K8sTaskSchedulerTest {
     @Test
     public void testException() throws ApiException, IOException {
         K8sClient k8sClient = mock(K8sClient.class);
-        when(k8sClient.deploy(any())).thenThrow(new ApiException());
+        when(k8sClient.deployJob(any())).thenThrow(new ApiException());
         K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
         Task task = mockTask();
         scheduler.schedule(Set.of(task));
@@ -103,7 +103,7 @@ public class K8sTaskSchedulerTest {
         var client = mock(K8sClient.class);
 
         var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
-        var k8sJobTemplate = new K8sJobTemplate("", "");
+        var k8sJobTemplate = new K8sJobTemplate("", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
@@ -124,7 +124,7 @@ public class K8sTaskSchedulerTest {
                 .setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
         scheduler.schedule(Set.of(task));
 
-        verify(client, times(2)).deploy(jobArgumentCaptor.capture());
+        verify(client, times(2)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
         var expectedEnv = new V1EnvVar().name("NVIDIA_VISIBLE_DEVICES").value("");
         Assertions.assertTrue(jobs.get(0).getSpec().getTemplate().getSpec()
@@ -169,7 +169,7 @@ public class K8sTaskSchedulerTest {
     public static class K8sJobTemplateMock extends K8sJobTemplate {
 
         public K8sJobTemplateMock(String templatePath) throws IOException {
-            super("", "/path");
+            super("", "", "/path");
         }
 
         @Override
