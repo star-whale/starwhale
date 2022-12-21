@@ -156,6 +156,13 @@ def _quickstart(
     is_flag=True,
     help="Disable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
 )
+@click.option(
+    "-nc",
+    "--no-cache",
+    is_flag=True,
+    help="Invalid the cached(installed) packages in the isolate env when env-lock is enabled, \
+    only for auto-generated environments",
+)
 @optgroup.group(  # type: ignore
     "Python environment selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -180,6 +187,7 @@ def _build(
     gen_all_bundles: bool,
     include_editable: bool,
     disable_env_lock: bool,
+    no_cache: bool,
     env_prefix_path: str,
     env_name: str,
     env_use_shell: bool,
@@ -191,6 +199,7 @@ def _build(
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
         disable_env_lock=disable_env_lock,
+        no_cache=no_cache,
         env_prefix_path=env_prefix_path,
         env_name=env_name,
         env_use_shell=env_use_shell,
