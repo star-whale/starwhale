@@ -7,7 +7,7 @@ import ModelForm from '@model/components/ModelForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
+import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
@@ -42,9 +42,15 @@ export default function ModelListCard() {
                             </TextLink>,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
-                                {t('Version History')}
-                            </TextLink>,
+                            <>
+                                <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
+                                    {t('Version History')}
+                                </TextLink>
+                                &nbsp;&nbsp;
+                                <TextLink key={model.id} to={`/projects/${projectId}/online_eval/${model.id}`}>
+                                    {t('online eval')}
+                                </TextLink>
+                            </>,
                         ]
                     }) ?? []
                 }

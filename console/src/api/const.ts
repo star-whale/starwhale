@@ -9,6 +9,7 @@ export const Privileges = {
     'evaluation.create': true,
     'runtime.version.revert': true,
     'model.version.revert': true,
+    'model.version.serve': true,
     'dataset.version.revert': true,
     'evaluation.panel.save': true,
 }

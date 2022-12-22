@@ -1,6 +1,7 @@
 export interface ILocaleItem {
     en: string
 }
+
 const dataset = {
     'dataset.remove.confirm': {
         en: 'Confirm Remove Dataset?',
@@ -43,6 +44,9 @@ const model = {
     },
     'model.viewer.target': {
         en: 'Target',
+    },
+    'online eval': {
+        en: 'Online Evaluation',
     },
 }
 
