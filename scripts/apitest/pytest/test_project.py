@@ -1,7 +1,9 @@
-import requests
-import pytest
-import time
 import os
+import time
+
+import pytest
+import requests
+
 from common import httputil as hu
 
 
@@ -105,9 +107,6 @@ class TestProject:
 
         assert res.status_code == 200
         assert response['code'] == 'success'
-
-        res = get_project(host, port, project_name_modified)
-        assert res.status_code == 404 or res.status_code == 400
 
         print('Test Project Remove ok.')
 
