@@ -89,12 +89,9 @@ public class ProjectService {
      * @return Optional of a ProjectVo object.
      */
     public ProjectVo findProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity projectEntity = projectMapper.find(projectId);
+        ProjectEntity projectEntity = projectManager.getProject(projectUrl);
         if (projectEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
         return ProjectVo.fromEntity(projectEntity, idConvertor,
                 userService.findUserById(projectEntity.getOwnerId()));
@@ -179,8 +176,7 @@ public class ProjectService {
      */
     @Transactional
     public Boolean deleteProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity entity = projectMapper.find(projectId);
+        ProjectEntity entity = projectManager.getProject(projectUrl);
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
@@ -265,11 +261,15 @@ public class ProjectService {
     }
 
     @Transactional
-    public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId,
+    public Boolean modifyProject(String projectUrl, String projectName, String description, Long ownerId,
             String privacy) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        ProjectEntity project = projectManager.getProject(projectUrl);
+        Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
-            ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, userId);
+            if (ownerId == null) {
+                ownerId = project.getOwnerId();
+            }
+            ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, ownerId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.PROJECT,
@@ -281,7 +281,7 @@ public class ProjectService {
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
-                .ownerId(userId)
+                .ownerId(ownerId)
                 .privacy(privacy == null ? null : Privacy.fromName(privacy).getValue())
                 .build();
         int res = projectMapper.update(entity);

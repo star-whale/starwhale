@@ -103,6 +103,13 @@ public class ProjectManagerTest {
         ));
         res = projectManager.findById(3L);
         assertThat(res, nullValue());
+
+        res = projectManager.findById(0L);
+        assertThat(res, allOf(
+                notNullValue(),
+                is(hasProperty("id", is(0L))),
+                is(hasProperty("projectName", is("SYSTEM")))
+        ));
     }
 
     @Test
