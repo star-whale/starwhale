@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
@@ -52,6 +54,23 @@ public class DsFileGetterTest {
         byte[] bytes = fileGetter.dataOf(1L, "bdcsd", 1L, 1L);
         Assertions.assertEquals("abc", new String(bytes));
 
+    }
+
+    @Test
+    public void testDataOfHttp() {
+        DsFileGetter fileGetter = new DsFileGetter(null, null);
+        byte[] bytes = fileGetter.dataOf(1L,
+                "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpg",
+                -1L, -1L);
+        Assertions.assertEquals(4253, bytes.length);
+
+        Assertions.assertThrows(SwProcessException.class, () -> fileGetter.dataOf(1L,
+                "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpgasfa",
+                -1L, -1L));
+
+        Assertions.assertThrows(SwValidationException.class, () -> fileGetter.dataOf(1L,
+                "https://abcd:adg",
+                -1L, -1L));
     }
 
     @Test
