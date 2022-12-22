@@ -55,6 +55,15 @@ public class DsFileGetterTest {
     }
 
     @Test
+    public void testDataOfHttp() {
+        DsFileGetter fileGetter = new DsFileGetter(null, null);
+        byte[] bytes = fileGetter.dataOf(1L,
+                "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpg",
+                -1L, -1L);
+        Assertions.assertEquals(4253, bytes.length);
+    }
+
+    @Test
     public void testLinkOf() throws IOException {
         StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
         StorageAccessService storageAccessService = mock(

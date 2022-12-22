@@ -27,7 +27,9 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.StorageUri;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -69,6 +71,18 @@ public class DsFileGetter {
 
     public byte[] dataOf(Long datasetId, String uri, Long offset,
             Long size) {
+        StorageUri storageUri = getStorageUri(uri);
+        if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
+            try (InputStream is = new URL(uri).openStream()) {
+                return is.readAllBytes();
+            } catch (MalformedURLException e) {
+                log.error("malformated url {}", uri, e);
+                throw new SwValidationException(ValidSubject.DATASET, "malformated url", e);
+            } catch (IOException e) {
+                log.error("connection to uri failed {}", uri, e);
+                throw new SwProcessException(ErrorType.NETWORK, "connection to uri failed", e);
+            }
+        }
         StorageAccessService storageAccessService =
                 storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
         String path = checkPath(datasetId, uri, storageAccessService);
