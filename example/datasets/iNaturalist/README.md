@@ -6,7 +6,7 @@ title: The `iNaturalist-val` Dataset
 
 - [Homepage](https://github.com/visipedia/inat_comp/tree/master/2021)
 
-## The `iNaturalist-val` dataset `str`ucture
+## The `iNaturalist-val` dataset structure
 
 ### Data Fields
 
