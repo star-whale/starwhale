@@ -115,21 +115,10 @@ public class ProjectManager implements ProjectAccessor {
 
     @Override
     public ProjectEntity getProject(@NotNull String projectUrl) {
-        return findById(getProjectId(projectUrl));
-    }
-
-    public String[] splitProjectUrl(String projectUrl) {
-        return projectUrl.split(PROJECT_SEPARATOR);
-    }
-
-    public Long getProjectId(@NotNull String projectUrl) {
         ProjectEntity projectEntity = null;
         if (idConvertor.isId(projectUrl)) {
             Long id = idConvertor.revert(projectUrl);
-            if (id == 0) {
-                return id;
-            }
-            projectEntity = projectMapper.find(id);
+            projectEntity = findById(id);
         } else {
             String[] arr = splitProjectUrl(projectUrl);
             if (arr.length > 1) {
@@ -148,9 +137,18 @@ public class ProjectManager implements ProjectAccessor {
         }
         if (projectEntity == null) {
             throw new SwNotFoundException(ResourceType.PROJECT,
-                String.format("Unable to find project %s", projectUrl));
+                    String.format("Unable to find project %s", projectUrl));
         }
-        return projectEntity.getId();
+
+        return projectEntity;
+    }
+
+    public String[] splitProjectUrl(String projectUrl) {
+        return projectUrl.split(PROJECT_SEPARATOR);
+    }
+
+    public Long getProjectId(@NotNull String projectUrl) {
+        return getProject(projectUrl).getId();
     }
 
 }

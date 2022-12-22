@@ -78,6 +78,10 @@ public class ProjectServiceTest {
         given(projectManager.getProjectId(same("p1"))).willReturn(1L);
         given(projectManager.getProjectId(same("p2"))).willReturn(2L);
         given(projectManager.getProjectId(same("3"))).willReturn(3L);
+        given(projectManager.getProject(same("1"))).willReturn(project1);
+        given(projectManager.getProject(same("2"))).willReturn(project2);
+        given(projectManager.getProject(same("p1"))).willReturn(project1);
+        given(projectManager.getProject(same("p2"))).willReturn(project2);
         given(projectManager.listProjects(anyString(), any(), any())).willReturn(List.of(project1, project2));
         given(projectManager.existProject(same("exist_project"), any())).willReturn(true);
         given(projectManager.splitProjectUrl(anyString()))

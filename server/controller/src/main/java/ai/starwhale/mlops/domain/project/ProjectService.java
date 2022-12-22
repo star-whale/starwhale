@@ -89,8 +89,7 @@ public class ProjectService {
      * @return Optional of a ProjectVo object.
      */
     public ProjectVo findProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity projectEntity = projectMapper.find(projectId);
+        ProjectEntity projectEntity = projectManager.getProject(projectUrl);
         if (projectEntity == null) {
             throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
@@ -177,8 +176,7 @@ public class ProjectService {
      */
     @Transactional
     public Boolean deleteProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        ProjectEntity entity = projectMapper.find(projectId);
+        ProjectEntity entity = projectManager.getProject(projectUrl);
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
@@ -265,10 +263,11 @@ public class ProjectService {
     @Transactional
     public Boolean modifyProject(String projectUrl, String projectName, String description, Long ownerId,
             String privacy) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        ProjectEntity project = projectManager.getProject(projectUrl);
+        Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
             if (ownerId == null) {
-                ownerId = projectManager.findById(projectId).getOwnerId();
+                ownerId = project.getOwnerId();
             }
             ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, ownerId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
