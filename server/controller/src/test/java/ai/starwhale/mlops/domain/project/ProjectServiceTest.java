@@ -77,6 +77,7 @@ public class ProjectServiceTest {
         given(projectManager.getProjectId(same("2"))).willReturn(2L);
         given(projectManager.getProjectId(same("p1"))).willReturn(1L);
         given(projectManager.getProjectId(same("p2"))).willReturn(2L);
+        given(projectManager.getProjectId(same("3"))).willReturn(3L);
         given(projectManager.listProjects(anyString(), any(), any())).willReturn(List.of(project1, project2));
         given(projectManager.existProject(same("exist_project"), any())).willReturn(true);
         given(projectManager.splitProjectUrl(anyString()))
@@ -128,6 +129,8 @@ public class ProjectServiceTest {
                 hasProperty("privacy", is("PRIVATE")),
                 hasProperty("description", is("project2"))
         ));
+
+        assertThrows(SwNotFoundException.class, () -> service.findProject("3"));
     }
 
     @Test

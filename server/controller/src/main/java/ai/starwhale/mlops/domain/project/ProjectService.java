@@ -92,9 +92,7 @@ public class ProjectService {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity projectEntity = projectMapper.find(projectId);
         if (projectEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT, "Unable to find project"),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwNotFoundException(ResourceType.PROJECT, "Unable to find project");
         }
         return ProjectVo.fromEntity(projectEntity, idConvertor,
                 userService.findUserById(projectEntity.getOwnerId()));
@@ -265,11 +263,14 @@ public class ProjectService {
     }
 
     @Transactional
-    public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId,
+    public Boolean modifyProject(String projectUrl, String projectName, String description, Long ownerId,
             String privacy) {
         Long projectId = projectManager.getProjectId(projectUrl);
         if (StrUtil.isNotEmpty(projectName)) {
-            ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, userId);
+            if (ownerId == null) {
+                ownerId = projectManager.findById(projectId).getOwnerId();
+            }
+            ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, ownerId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.PROJECT,
@@ -281,7 +282,7 @@ public class ProjectService {
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
-                .ownerId(userId)
+                .ownerId(ownerId)
                 .privacy(privacy == null ? null : Privacy.fromName(privacy).getValue())
                 .build();
         int res = projectMapper.update(entity);

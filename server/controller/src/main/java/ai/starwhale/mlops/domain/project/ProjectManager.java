@@ -141,7 +141,7 @@ public class ProjectManager implements ProjectAccessor {
                 }
             } else {
                 List<ProjectEntity> byName = projectMapper.findByName(projectUrl);
-                if (byName.size() > 0) {
+                if (byName != null && byName.size() > 0) {
                     projectEntity = byName.get(0);
                 }
             }
