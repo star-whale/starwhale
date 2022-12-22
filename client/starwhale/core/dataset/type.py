@@ -139,6 +139,7 @@ class MIMEType(Enum):
     GIF = "image/gif"
     APNG = "image/apng"
     AVIF = "image/avif"
+    PPM = "image/x-portable-pixmap"
     MP4 = "video/mp4"
     AVI = "video/avi"
     WEBM = "video/webm"
@@ -169,13 +170,14 @@ class MIMEType(Enum):
             ".mp3": cls.MP3,
             ".mp4": cls.MP4,
             ".avif": cls.AVIF,
+            ".ppm": cls.PPM,
             ".avi": cls.AVI,
             ".webm": cls.WEBM,
             ".wav": cls.WAV,
             ".csv": cls.CSV,
             ".txt": cls.PLAIN,
         }
-        return _map.get(Path(name).suffix, MIMEType.UNDEFINED)
+        return _map.get(Path(name).suffix.lower(), MIMEType.UNDEFINED)
 
 
 LocalFSLinkAuth = partial(LinkAuth, ltype=LinkType.LocalFS)
@@ -389,6 +391,7 @@ class Image(BaseArtifact, SwObject):
             MIMEType.SVG,
             MIMEType.GIF,
             MIMEType.APNG,
+            MIMEType.PPM,
             MIMEType.GRAYSCALE,
             MIMEType.UNDEFINED,
         ):
