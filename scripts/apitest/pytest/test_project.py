@@ -108,6 +108,9 @@ class TestProject:
         assert res.status_code == 200
         assert response['code'] == 'success'
 
+        res = get_project(host, port, project_name_modified)
+        assert res.status_code == 404 or res.status_code == 400
+
         print('Test Project Remove ok.')
 
     def test_recover(self, host, port):

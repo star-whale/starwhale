@@ -23,8 +23,8 @@ import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
 import java.util.List;
@@ -102,7 +102,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user,
                     (Set<String>) httpServletRequest.getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT));
             roles.addAll(rolesOfUser);
-        } catch (StarwhaleApiException e) {
+        } catch (StarwhaleException e) {
             logger.error(e.getMessage());
         }
         user.setRoles(roles);
