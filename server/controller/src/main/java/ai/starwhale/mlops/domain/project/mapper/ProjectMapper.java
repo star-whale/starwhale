@@ -60,7 +60,8 @@ public interface ProjectMapper {
     ProjectEntity find(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from project_info"
-            + " where project_name = #{projectName}")
+            + " where project_name = #{projectName}"
+            + " and is_deleted = 0")
     List<ProjectEntity> findByName(@Param("projectName") String projectName);
 
     @Select("select " + COLUMNS + " from project_info"
