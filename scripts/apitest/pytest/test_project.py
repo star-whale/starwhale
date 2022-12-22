@@ -1,7 +1,9 @@
-import requests
-import pytest
-import time
 import os
+import time
+
+import pytest
+import requests
+
 from common import httputil as hu
 
 
