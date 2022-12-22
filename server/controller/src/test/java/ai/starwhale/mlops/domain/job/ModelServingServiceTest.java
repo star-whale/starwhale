@@ -22,8 +22,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
+import ai.starwhale.mlops.domain.job.converter.ModelServingConverter;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.model.ModelDao;
@@ -43,7 +47,9 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import io.kubernetes.client.openapi.ApiException;
+import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -51,6 +57,7 @@ import org.mockito.Mockito;
 public class ModelServingServiceTest {
     private ModelServingService svc;
     private final ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
+    private final ModelServingConverter modelServingConverter = mock(ModelServingConverter.class);
     private final RuntimeDao runtimeDao = mock(RuntimeDao.class);
     private final ProjectManager projectManager = mock(ProjectManager.class);
     private final ModelDao modelDao = mock(ModelDao.class);
@@ -69,6 +76,7 @@ public class ModelServingServiceTest {
     public void setUp() {
         svc = new ModelServingService(
                 modelServingMapper,
+                modelServingConverter,
                 runtimeDao,
                 projectManager,
                 modelDao,
@@ -136,5 +144,26 @@ public class ModelServingServiceTest {
                 ), "img", "model-serving-7");
 
         verify(k8sClient).deployService(any());
+    }
+
+    @Test
+    public void testListServing() {
+        var project = 7L;
+        var entity = ModelServingEntity.builder()
+                .modelVersionId(1L)
+                .runtimeVersionId(2L)
+                .resourcePool("default")
+                .build();
+        when(modelServingMapper.list(project)).thenReturn(List.of(entity));
+        when(projectManager.getProjectId("7")).thenReturn(7L);
+
+        var vo = ModelServingVo.builder()
+                .modelVersion("1")
+                .runtimeVersion("2")
+                .resourcePool("default")
+                .build();
+        var expected = PageUtil.toPageInfo(List.of(vo), i -> i);
+        var resp = svc.listServing(String.valueOf(project), new PageParams(1, 10));
+        Assertions.assertEquals(expected.getList(), resp.getList());
     }
 }

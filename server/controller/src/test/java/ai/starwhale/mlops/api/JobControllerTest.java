@@ -25,24 +25,29 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.Page;
+import io.kubernetes.client.openapi.ApiException;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
@@ -233,5 +238,27 @@ public class JobControllerTest {
         var resp = controller.createModelServing("foo", req);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody().getData(), is("8"));
+    }
+
+    @Test
+    public void testListModelServing() {
+        var serving = ModelServingVo.builder()
+                .modelVersion("foo")
+                .runtimeVersion("bar")
+                .resourcePool("default")
+                .build();
+        var ret = PageUtil.toPageInfo(List.of(serving), i -> i);
+        given(modelServingService.listServing(eq("foo"), any(PageParams.class))).willReturn(ret);
+
+        var resp = controller.listServing("foo", 1, 10);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData(), is(ret));
+    }
+
+    @Test
+    public void testRemoveModelServing() throws ApiException {
+        var resp = controller.removeServing("foo", "bar");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(modelServingService).remove("foo", "bar");
     }
 }

@@ -35,9 +35,10 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testGetAndSet() {
+        var project = 2L;
         var entity = ModelServingEntity.builder()
                 .modelVersionId(1L)
-                .projectId(2L)
+                .projectId(project)
                 .runtimeVersionId(3L)
                 .ownerId(4L)
                 .createUser("foo")
@@ -48,5 +49,14 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
         modelServingMapper.add(entity);
         var result = modelServingMapper.find(entity.getId());
         Assertions.assertEquals(entity, result);
+
+        var entities = modelServingMapper.list(project);
+        Assertions.assertEquals(1, entities.size());
+        Assertions.assertEquals(entity, entities.get(0));
+
+        Assertions.assertEquals(0, modelServingMapper.list(project + 1).size());
+
+        modelServingMapper.delete(entity.getId());
+        Assertions.assertEquals(0, modelServingMapper.list(project).size());
     }
 }

@@ -102,6 +102,10 @@ public class K8sClient {
         batchV1Api.deleteNamespacedJob(id, ns, null, null, 1, false, null, null);
     }
 
+    public void deleteStatefulSet(String name) throws ApiException {
+        appsV1Api.deleteNamespacedStatefulSet(name, ns, null, null, null, null, null, null);
+    }
+
     /**
      * get all jobs with in this.ns
      *

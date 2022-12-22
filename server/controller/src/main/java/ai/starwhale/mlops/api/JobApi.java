@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
@@ -281,4 +282,37 @@ public interface JobApi {
             @PathVariable("projectUrl")
                     String projectUrl,
             @Valid @RequestBody ModelServingRequest request);
+
+    @Operation(summary = "Get the list of model serving jobs")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "ok",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageInfo.class)))})
+    @GetMapping(value = "/project/{projectUrl}/serving")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<ModelServingVo>>> listServing(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+            String projectUrl,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
+
+    @Operation(summary = "Remove model serving")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)))
+    })
+    @DeleteMapping(value = "/project/{projectUrl}/serving/{id}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> removeServing(
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @PathVariable("id") String modelServingId);
 }

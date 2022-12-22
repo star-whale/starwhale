@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
@@ -205,5 +206,30 @@ public class JobController implements JobApi {
         );
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<PageInfo<ModelServingVo>>> listServing(
+            String projectUrl,
+            Integer pageNum,
+            Integer pageSize
+    ) {
+        var resp = modelServingService.listServing(projectUrl,
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
+        return ResponseEntity.ok(Code.success.asResponse(resp));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> removeServing(String projectUrl, String modelServingId) {
+        try {
+            modelServingService.remove(projectUrl, modelServingId);
+        } catch (ApiException e) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.SYSTEM, "Remove model serving failed.", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 }

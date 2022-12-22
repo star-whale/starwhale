@@ -18,11 +18,13 @@ package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.text.CaseUtils;
 import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
@@ -43,8 +45,15 @@ public interface ModelServingMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(ModelServingEntity entity);
 
-    @Select("select * from " + TABLE + " where id=#{id}")
+    @Select("select * from " + TABLE + " where id=#{id} and is_deleted=0")
     ModelServingEntity find(long id);
+
+    // TODO expand fields instead of using *
+    @Select("select * from " + TABLE + " where project_id=#{project} and is_deleted=0")
+    List<ModelServingEntity> list(long project);
+
+    @Update("update " + TABLE + " set is_deleted=1 where id=#{id}")
+    void delete(long id);
 
     class SqlProviderAdapter {
         public String insert() {

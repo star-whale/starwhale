@@ -16,9 +16,13 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.DockerImage;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
+import ai.starwhale.mlops.domain.job.converter.ModelServingConverter;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -37,6 +41,8 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -54,6 +60,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ModelServingService {
     private final ModelServingMapper modelServingMapper;
+    private final ModelServingConverter modelServingConverter;
     private final UserService userService;
     private final ProjectManager projectManager;
     private final ModelDao modelDao;
@@ -74,6 +81,7 @@ public class ModelServingService {
 
     public ModelServingService(
             ModelServingMapper modelServingMapper,
+            ModelServingConverter modelServingConverter,
             RuntimeDao runtimeDao,
             ProjectManager projectManager,
             ModelDao modelDao,
@@ -90,6 +98,7 @@ public class ModelServingService {
             ModelServingTokenValidator modelServingTokenValidator
     ) {
         this.modelServingMapper = modelServingMapper;
+        this.modelServingConverter = modelServingConverter;
         this.runtimeDao = runtimeDao;
         this.projectManager = projectManager;
         this.modelDao = modelDao;
@@ -193,6 +202,20 @@ public class ModelServingService {
         k8sClient.deployService(svc);
         // TODO add owner reference for svc
         // TODO garbage collection when svc fails
+    }
+
+    public PageInfo<ModelServingVo> listServing(String projectUrl, PageParams pageParams) {
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        Long projectId = projectManager.getProjectId(projectUrl);
+        var entities = modelServingMapper.list(projectId);
+        return PageUtil.toPageInfo(entities, modelServingConverter::convert);
+    }
+
+    public void remove(String projectUrl, String modelServingId) throws ApiException {
+        long id = Long.parseLong(modelServingId);
+        var name = getServiceName(id);
+        k8sClient.deleteStatefulSet(name);
+        modelServingMapper.delete(id);
     }
 
     public static String getServiceName(long id) {
