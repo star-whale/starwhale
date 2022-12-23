@@ -25,7 +25,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -35,6 +34,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class ProxyServlet extends HttpServlet {
@@ -53,6 +53,7 @@ public class ProxyServlet extends HttpServlet {
 
     @Override
     public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        // https://stackoverflow.com/questions/4931323/whats-the-difference-between-getrequesturi-and-getpathinfo-methods-in-httpservl
         var target = getTarget(req.getPathInfo());
 
         URI uri;
@@ -63,7 +64,11 @@ public class ProxyServlet extends HttpServlet {
         }
 
         var host = new HttpHost(URIUtils.extractHost(uri));
-        var request = generateRequest(req, uri.getPath());
+        var path = uri.getPath();
+        if (StringUtils.hasText(req.getQueryString())) {
+            path = path + "?" + req.getQueryString();
+        }
+        var request = generateRequest(req, path);
         var response = httpClient.execute(host, request);
         generateResponse(response, res);
     }
@@ -107,7 +112,7 @@ public class ProxyServlet extends HttpServlet {
      * @return target url
      */
     public String getTarget(String uri) {
-        uri = StringUtils.stripStart(uri, "/");
+        uri = StringUtils.trimLeadingCharacter(uri, '/');
         var parts = uri.split("/", 3);
         if (parts.length < 3) {
             throw new IllegalArgumentException("can not parse uri " + uri);
