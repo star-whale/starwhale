@@ -155,7 +155,7 @@ public class ModelServingService {
                     .resolve(systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
         }
 
-        var name = String.format("model-serving-%d", id);
+        var name = getServiceName(id);
 
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());
@@ -190,5 +190,9 @@ public class ModelServingService {
         k8sClient.deployService(svc);
         // TODO add owner reference for svc
         // TODO garbage collection when svc fails
+    }
+
+    public static String getServiceName(long id) {
+        return String.format("model-serving-%d", id);
     }
 }
