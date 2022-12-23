@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
+import { useIsInViewport } from '@starwhale/core'
 import ZoomWrapper from './ZoomWrapper'
 import { drawGrayscale } from './utils'
 import { IArtifactImage } from '../../domain/dataset/sdk'
-import { useIsInViewport } from '@starwhale/core'
 
 type IImageViewerProps = {
     isZoom?: boolean
@@ -11,7 +11,7 @@ type IImageViewerProps = {
 export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageViewerProps) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
 
-    const isInView = useIsInViewport(canvasRef as HTMLElement)
+    const isInView = useIsInViewport(canvasRef as any)
 
     useEffect(() => {
         if (canvasRef.current && data.src && isInView) {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { DatasetObject, IArtifactVideo } from '@/domain/dataset/sdk'
+import { IArtifactVideo } from '@/domain/dataset/sdk'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
 import Plyr from 'plyr-react'
@@ -44,7 +44,7 @@ const options = {
 export default function VideoViewer({ isZoom = false, data }: IVideoViewerProps) {
     const playerRef = React.useRef<any>(null)
     const styles = useStyles()
-    const { src, _mime_type: mimeType, display_name } = data
+    const { src, _mime_type: mimeType, display_name: displayName } = data
 
     const source = React.useMemo(() => {
         return {
@@ -103,7 +103,7 @@ export default function VideoViewer({ isZoom = false, data }: IVideoViewerProps)
                         width: '640px',
                     }}
                 />
-                <p className={styles.name}>{display_name ?? ''}</p>
+                <p className={styles.name}>{displayName ?? ''}</p>
             </div>
         </div>
     )

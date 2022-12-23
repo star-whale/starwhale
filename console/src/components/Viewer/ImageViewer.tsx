@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
 import { clearCanvas, drawBox, drawSegmentWithCOCOMask, IImageData, loadImage } from './utils'
 import ZoomWrapper from './ZoomWrapper'
-import { IArtifactImage, IBBox, ITypeBoundingBox, ITypeCOCOObjectAnnotation } from '../../domain/dataset/sdk'
+import { IArtifactImage, ITypeBoundingBox, ITypeCOCOObjectAnnotation } from '../../domain/dataset/sdk'
 
 const useStyles = createUseStyles({
     canvas: {
@@ -102,8 +102,8 @@ export function SegmentOverlay({ masks = [] }: { masks: IArtifactImage[] }) {
 
 export function BBoxOverlay({
     bboxes = [],
-    width,
-    height,
+    width: canvasWidth,
+    height: canvasHeight,
 }: {
     bboxes: IImageViewerProps['bboxes']
     width: number
@@ -117,11 +117,11 @@ export function BBoxOverlay({
         if (bboxes.length === 0) return
         const canvas = canvasRef.current
         clearCanvas(canvas)
-        canvas.width = width
-        canvas.height = height
+        canvas.width = canvasWidth
+        canvas.height = canvasHeight
 
         bboxes.map(({ x, y, width, height }, index) => drawBox(canvas, [x, y, width, height], index))
-    }, [canvasRef, bboxes])
+    }, [canvasRef, bboxes, canvasWidth, canvasHeight])
 
     if (bboxes.length === 0) {
         return <></>

@@ -79,6 +79,7 @@ export default function Search({ ...props }: ISearchProps) {
     return (
         <div
             role='button'
+            tabIndex={0}
             className={styles.searchBar}
             ref={ref}
             style={{ borderColor: isEditing ? '#799EE8' : '#CFD7E6' }}

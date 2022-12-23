@@ -7,19 +7,17 @@ import {
     IArtifactImage,
     IArtifactVideo,
     MIMES,
-    TYPES,
+    IArtifactText,
 } from '@/domain/dataset/sdk'
 import ImageViewer from '@/components/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
-import { IArtifactText } from '../../domain/dataset/sdk'
 
 export type IDatasetViewerProps = {
     dataset?: DatasetObject
     isZoom?: boolean
-    // coco
     hiddenLabels?: Set<number>
 }
 
@@ -44,16 +42,15 @@ export function Placeholder() {
 
 export default function DatasetViewer({ dataset, isZoom = false, hiddenLabels = new Set() }: IDatasetViewerProps) {
     const { data } = dataset || {}
-    if (!data) return <Placeholder />
-
-    const { _type, _mime_type, src = '' } = data
 
     const Viewer = React.useMemo(() => {
         if (!dataset || !data?.src) return <Placeholder />
 
+        const { _type, _mime_type: mimeType } = data
+
         switch (_type) {
             case ArtifactType.Image:
-                if (_mime_type === MIMES.GRAYSCALE) {
+                if (mimeType === MIMES.GRAYSCALE) {
                     return <ImageGrayscaleViewer data={data as IArtifactImage} isZoom={isZoom} />
                 }
                 return (
@@ -75,7 +72,9 @@ export default function DatasetViewer({ dataset, isZoom = false, hiddenLabels = 
             default:
                 return <Placeholder />
         }
-    }, [data, src, _type, _mime_type, hiddenLabels, isZoom])
+    }, [data, hiddenLabels, isZoom, dataset])
+
+    if (!data) return <Placeholder />
 
     return Viewer
 }

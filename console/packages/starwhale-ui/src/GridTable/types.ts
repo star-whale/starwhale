@@ -1,5 +1,5 @@
 import { Types } from '../base/data-table'
-import { IStore, ITableState } from '../base/data-table/store'
+import { ITableState } from '../base/data-table/store'
 import { RowT } from '../base/data-table/types'
 
 export interface ITableProps {

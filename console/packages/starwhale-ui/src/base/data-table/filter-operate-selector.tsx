@@ -176,7 +176,7 @@ export default function FilterOperateSelector({
             },
         },
     }
-    
+
     const $operators = React.useMemo(() => {
         const kind = columns.find((column) => column.key === key)?.filterType
         if (kind && kind in FilterTypeOperators) {
@@ -193,6 +193,7 @@ export default function FilterOperateSelector({
             <Select
                 size='compact'
                 disabled={disabled}
+                // @ts-ignore
                 overrides={overrides}
                 options={$keys}
                 placeholder='-'
@@ -208,6 +209,7 @@ export default function FilterOperateSelector({
             <Select
                 size='compact'
                 disabled={disabled}
+                // @ts-ignore
                 overrides={overrides}
                 placeholder='='
                 clearable={false}
@@ -227,6 +229,7 @@ export default function FilterOperateSelector({
                 <Input
                     size='compact'
                     disabled={disabled}
+                    // @ts-ignore
                     overrides={overrides}
                     placeholder=''
                     clearable={false}

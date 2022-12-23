@@ -5,7 +5,7 @@ import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
 import IconFont from '../../components/IconFont/index'
-import { DatasetObject, IArtifact } from '../../domain/dataset/sdk'
+import { DatasetObject } from '../../domain/dataset/sdk'
 import { RAW_COLORS } from '../../components/Viewer/utils'
 
 const useStyles = createUseStyles({
@@ -111,20 +111,18 @@ export default function DatasetVersionFilePreview({
     isFullscreen?: boolean
     setIsFullscreen?: any
 }) {
-    const data: DatasetObject = React.useMemo(() => {
+    const data: DatasetObject | undefined = React.useMemo(() => {
         const row = datasets?.find((v) => v.id === fileId)
         if (!row) return undefined
         return row
     }, [datasets, fileId])
-
-    console.log(data)
 
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
     const Panel = React.useMemo(() => {
-        if (data?.cocos.length > 0) {
+        if (data && data?.cocos?.length > 0) {
             return (
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 <TabControl

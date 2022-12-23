@@ -14,12 +14,12 @@ export function normalizeStaticColumns(columns: any) {
         }
 
         // @ts-ignore
-        let item = data?.[0]?.[index]
+        const item = data?.[0]?.[index]
         if (typeof raw === 'string') {
             column = { type: 'string', title: raw, index, sortable: true }
         }
         if (React.isValidElement(item)) {
-            column = { type: 'custom', title: raw, index, renderCell: (props: any) => <>{props.value}</> }
+            column = { type: 'custom', title: raw, index, renderCell: (props: any) => props.value }
         }
 
         const initColumns = {
@@ -30,10 +30,10 @@ export function normalizeStaticColumns(columns: any) {
             index: column.index,
             // @ts-ignore
             sortable: !React.isValidElement(data?.[0]?.[index]),
-            sortFn: function (a: any, b: any) {
+            sortFn: function sortFn(a: any, b: any) {
                 return a.localeCompare(b)
             },
-            mapDataToValue: (item: any) => item[index],
+            mapDataToValue: (data: any) => data[index],
             minWidth: 100,
         }
 
@@ -53,8 +53,8 @@ export function normalizeStaticColumns(columns: any) {
                 return CustomColumn({
                     ...initColumns,
                     filterable: true,
-                    buildFilter: function (params: any) {
-                        return function (data: any) {
+                    buildFilter: function buildFilter(params: any) {
+                        return function filterHas(data: any) {
                             return params.selection.has(data)
                         }
                     },

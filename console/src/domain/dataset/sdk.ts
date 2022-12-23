@@ -114,27 +114,35 @@ export interface ITypeBoundingBox extends ITypeBase {
     height: number
 }
 
-export function parseData(data: any, curryParseLinkFn: any): any {
-    // for root
-    if (!data._type && data.data_type && data.data_link) return parseRootData(data)
+export function linkToData(data: ITypeLink, curryParseLinkFn: any): IArtifact {
+    let artifact = null
 
-    if (_.isArray(data)) return data.map((item) => parseData(item, curryParseLinkFn))
-    else if (_.isObject(data)) {
-        if ('_type' in data) {
-            if (data?._type === TYPES.LINK) {
-                return linkToData(data as ITypeLink, curryParseLinkFn)
-            } else if (data?._type) {
-                return data
+    if (typeof data.data_type === 'string') {
+        try {
+            const json = JSON.parse(data?.data_type, undefined)
+            if (json.type === TYPES.LINK) {
+                artifact = json.data_type
+            } else {
+                artifact = json
             }
+        } catch (e) {
+            // @ts-ignore
         }
-
-        const arr = {}
-        Object.entries(data).forEach(([key, value]) => {
-            ;(arr as any)[key] = parseData(value, curryParseLinkFn)
-        })
-        return arr
+    } else if (typeof data.data_type === 'object') {
+        artifact = data.data_type as IArtifact
     }
-    return data
+
+    if (data._type === TYPES.LINK) {
+        artifact.link = { ...data, data_type: null }
+    }
+
+    if (artifact.link) {
+        artifact.src = String(artifact.link.uri).startsWith('http')
+            ? artifact.link.uri
+            : curryParseLinkFn(artifact.link)
+    }
+
+    return (artifact as IArtifact) ?? {}
 }
 
 // @FIXME none standard data_type of root object
@@ -162,39 +170,42 @@ export function parseRootData(data: ITypeLink & { data_link?: ITypeLink }): IArt
                 // @ts-ignore
                 if (data.data_size) artifact.link.size = data.data_size
             }
-        } catch (e) {}
+        } catch (e) {
+            // @ts-ignore
+        }
     }
 
     return artifact
 }
+export function parseData(data: any, curryParseLinkFn: any): any {
+    // for root
+    if (!data._type && data.data_type && data.data_link) {
+        return parseRootData(data)
+    }
 
-export function linkToData(data: ITypeLink, curryParseLinkFn: any): IArtifact {
-    let artifact = null
+    if (_.isArray(data)) {
+        return data.map((item) => parseData(item, curryParseLinkFn))
+    }
 
-    if (typeof data.data_type === 'string') {
-        try {
-            const json = JSON.parse(data?.data_type, undefined)
-            if (json.type === TYPES.LINK) {
-                artifact = json.data_type
-            } else {
-                artifact = json
+    if (_.isObject(data)) {
+        if ('_type' in data) {
+            // @ts-ignore
+            if (data?._type === TYPES.LINK) {
+                return linkToData(data as ITypeLink, curryParseLinkFn)
             }
-        } catch (e) {}
-    } else if (typeof data.data_type === 'object') {
-        artifact = data.data_type as IArtifact
-    }
+            // @ts-ignore
+            if (data?._type) {
+                return data
+            }
+        }
 
-    if (data._type === TYPES.LINK) {
-        artifact.link = { ...data, data_type: null }
+        const arr = {}
+        Object.entries(data).forEach(([key, value]) => {
+            ;(arr as any)[key] = parseData(value, curryParseLinkFn)
+        })
+        return arr
     }
-
-    if (artifact.link) {
-        artifact.src = String(artifact.link.uri).startsWith('http')
-            ? artifact.link.uri
-            : curryParseLinkFn(artifact.link)
-    }
-
-    return (artifact as IArtifact) ?? {}
+    return data
 }
 
 export const parseDataSrc = _.curry(
@@ -218,6 +229,7 @@ export const parseDataSrc = _.curry(
 
 export class DatasetObject {
     public size: string
+
     public id: string
 
     public data: IArtifact
@@ -269,6 +281,7 @@ export class DatasetObject {
                 anno.forEach((item: any, index: number) => find(item, [...path, index]))
             } else if (_.isObject(anno)) {
                 // @ts-ignore
+                // eslint-disable-next-line
                 anno._path = [...path].join('.')
 
                 if ((anno as ITypeCOCOObjectAnnotation)._type === TYPES.COCO) {
@@ -279,8 +292,8 @@ export class DatasetObject {
                     masks?.push(anno as any)
                 }
 
-                Object.entries(anno).forEach(([key, anno]: any) => {
-                    find(anno, [...path, key])
+                Object.entries(anno).forEach(([key, tmp]: any) => {
+                    find(tmp, [...path, key])
                 })
             }
         }
