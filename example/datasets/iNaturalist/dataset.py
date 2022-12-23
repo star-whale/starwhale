@@ -17,13 +17,13 @@ def array_to_dict(arry):
 
 
 @http_retry
-def request_link_text(anno_link):
-    return requests.get(anno_link, timeout=10).text
+def request_link_json(anno_link):
+    return requests.get(anno_link, timeout=10).json
 
 
 def build_ds():
     ds = dataset("iNaturalist-val", create=True)
-    index = json.loads(request_link_text(f"{PATH_ROOT}/{INDEX_PATH}"))
+    index = request_link_json(f"{PATH_ROOT}/{INDEX_PATH}")
     img_dict = array_to_dict(index["images"])
     cat_dict = array_to_dict(index["categories"])
     for anno in index["annotations"]:
