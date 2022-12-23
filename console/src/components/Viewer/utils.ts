@@ -35,6 +35,7 @@ export const loadImage = (label: any, url: string) => {
                 })
             }
         }
+        img.crossOrigin = 'anonymous'
         img.onerror = () => reject(new Error('Failed to load image'))
         img.src = src
     })
@@ -97,7 +98,7 @@ export const drawSegmentWithCOCOMask = (canvas: HTMLCanvasElement, imgDatas: IIm
             newImageData.data[i] = 0
             newImageData.data[i + 1] = 0
             newImageData.data[i + 2] = 0
-            newImageData.data[i + 3] = 200
+            newImageData.data[i + 3] = 0
         } else {
             const label = imgDatas[rawIndex].img.data[i + 0]
             const [r, g, b] = COLORS[label % COLORS.length]
@@ -203,13 +204,10 @@ export function drawBox(canvas: HTMLCanvasElement, bbox: IBBox, id: number) {
     if (!ctx) return
     const [x, y, w, h] = bbox
     const color = COLORS[id % COLORS.length]
-    const lineWidth = 3
+    const lineWidth = 2
     ctx.lineWidth = lineWidth
     ctx.strokeStyle = `rgba(${[...color, 1].join(',')})`
     ctx.strokeRect(x, y, w, h)
-    ctx.fillStyle = `rgba(${[...color, 0.5].join(',')})`
+    ctx.fillStyle = `rgba(${[...color, 0.1].join(',')})`
     ctx.fillRect(x, y, w, h)
-
-    // ctx.fillStyle = 'white'
-    // ctx.fillText(text, x + labelPad + labelShift, y - labelPad)
 }

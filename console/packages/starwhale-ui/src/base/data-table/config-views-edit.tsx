@@ -1,13 +1,13 @@
 import React from 'react'
 import { useStyletron } from 'baseui'
 import { LabelSmall } from 'baseui/typography'
-import { SORT_DIRECTIONS } from '@/components/data-table/constants'
+import { SORT_DIRECTIONS } from '@starwhale/ui/base/data-table/constants'
 import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
 import { ColumnT, ConfigT } from './types'
 import ConfigManageColumns from './config-manage-columns'
-import Input from '../Input'
+import Input from '../../../../../src/components/Input'
 import { CategoricalFilter } from './filter-operate-menu'
-import Select from '../Select'
+import Select from '../../../../../src/components/Select'
 
 type ViewListPropsT = {
     view: ConfigT

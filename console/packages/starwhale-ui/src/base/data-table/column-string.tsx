@@ -7,7 +7,7 @@ import { useStyletron } from 'baseui'
 import Column from './column'
 import { COLUMNS } from './constants'
 import { HighlightCellText } from './text-search'
-import type { ColumnT, SharedColumnOptionsT } from './types'
+import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
 import { Value } from 'baseui/select'
 
 type OptionsT = {
@@ -64,6 +64,7 @@ function StringColumn(options: OptionsT): StringColumnT {
         title: options.title,
         key: options.key,
         pin: options.pin,
+        filterType: options.filterType ?? FilterTypes.string,
     })
 }
 

@@ -5,7 +5,7 @@ import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
 import IconFont from '../../components/IconFont/index'
-import { DatasetObject } from '../../domain/dataset/sdk'
+import { DatasetObject, IArtifact } from '../../domain/dataset/sdk'
 import { RAW_COLORS } from '../../components/Viewer/utils'
 
 const useStyles = createUseStyles({
@@ -111,11 +111,13 @@ export default function DatasetVersionFilePreview({
     isFullscreen?: boolean
     setIsFullscreen?: any
 }) {
-    const data: any = React.useMemo(() => {
+    const data: DatasetObject = React.useMemo(() => {
         const row = datasets?.find((v) => v.id === fileId)
         if (!row) return undefined
         return row
     }, [datasets, fileId])
+
+    console.log(data)
 
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
@@ -180,7 +182,7 @@ export default function DatasetVersionFilePreview({
                             </div>
                         )}
 
-                        <DatasetViewer data={data} isZoom hiddenLabels={hiddenLabels} />
+                        <DatasetViewer dataset={data} isZoom hiddenLabels={hiddenLabels} />
                     </div>
                 </div>
             </ModalBody>

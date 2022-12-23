@@ -1,16 +1,49 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
 import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
+// @ts-ignore
+import { Resizable } from 'react-resizable'
+import 'react-resizable/css/styles.css'
+import { createUseStyles } from 'react-jss'
 import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
-import { GridLayout } from './component/GridBasicLayout'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
+
+const useStyles = createUseStyles({
+    panelWrapper: {
+        '&  .panel-operator': {
+            visibility: 'hidden',
+        },
+        '&:hover > .panel-operator': {
+            visibility: 'visible',
+        },
+        '& .react-resizable-handle': {
+            visibility: 'hidden',
+        },
+        '&:hover > .react-resizable-handle': {
+            visibility: 'visible',
+        },
+    },
+    contentWrapper: {
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        padding: '40px 20px 20px',
+        backgroundColor: '#fff',
+        border: '1px solid #CFD7E6',
+        borderRadius: '4px',
+        position: 'relative',
+    },
+    chartGroup: {
+        position: 'absolute',
+    },
+})
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -21,25 +54,16 @@ export const CONFIG: WidgetConfig = {
         title: 'Panel',
         isExpaned: true,
         layoutConfig: {
-            gutter: 10,
+            padding: 20,
             columnsPerPage: 3,
             rowsPerPage: 3,
             boxWidth: 430,
-            heightWidth: 274,
+            boxHeight: 274,
         },
-        gridLayoutConfig: {
-            item: {
-                w: 1,
-                h: 2,
-                minW: 1,
-                maxW: 3,
-                minH: 1,
-                maxH: 3,
-                isBounded: true,
-            },
-            cols: 3,
+        layout: {
+            width: 430,
+            height: 274,
         },
-        gridLayout: [],
     },
 }
 
@@ -47,23 +71,16 @@ type Option = typeof CONFIG['optionConfig']
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {
+    const styles = useStyles()
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { title = '', isExpaned = false, gridLayoutConfig, gridLayout } = optionConfig as Option
+    const { title = '', isExpaned = false, layoutConfig, layout } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = React.Children.count(children)
-    const { cols } = gridLayoutConfig
-    const layout = useMemo(() => {
-        if (gridLayout.length !== 0) return gridLayout
-        return new Array(len).fill(0).map((_, i) => ({
-            i: String(i),
-            x: i,
-            y: 0,
-            ...gridLayoutConfig.item,
-        }))
-    }, [gridLayout, gridLayoutConfig, len])
+    const { boxWidth, boxHeight, padding } = layoutConfig
+    const { width, height } = layout
 
     const [isModelOpen, setIsModelOpen] = useState(false)
 
@@ -89,7 +106,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     }
     const handleLayoutChange = (args: any) => {
         props.onOptionChange?.({
-            gridLayout: args,
+            layout: args,
         })
     }
 
@@ -110,6 +127,21 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
             subscription.unsubscribe()
         }
     }, [eventBus])
+
+    const [rect, setRect] = useState({ width, height })
+    const [resizeRect, setResizeRect] = useState({
+        start: false,
+        width,
+        height,
+        left: 0,
+        top: 0,
+        clientX: 0,
+        clientY: 0,
+        offsetClientX: 0,
+        offsetClientY: 0,
+    })
+    const previeRef = React.useRef<HTMLDivElement>(null)
+    const wrapperRef = React.useRef<HTMLDivElement>(null)
 
     return (
         <div>
@@ -142,40 +174,90 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
             >
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 {len === 0 && <EmptyPlaceholder />}
-                <GridLayout
-                    rowHeight={300}
-                    className='layout'
-                    cols={cols}
-                    layout={layout}
-                    onLayoutChange={handleLayoutChange}
-                    containerPadding={[20, 0]}
-                    margin={[20, 20]}
+                <div
+                    ref={previeRef}
+                    style={{
+                        position: 'absolute',
+                        width: `${resizeRect.width + resizeRect.offsetClientX}px`,
+                        height: `${resizeRect.height + resizeRect.offsetClientY}px`,
+                        transform: `translate(${resizeRect.left}px, ${resizeRect.top}px)`,
+                        background: '#ddedfc',
+                        border: '1px dashed #338dd8',
+                        opacity: '0.5',
+                        zIndex: 99,
+                        display: resizeRect.start ? 'block' : 'none',
+                    }}
+                />
+                <div
+                    ref={wrapperRef}
+                    style={{
+                        display: 'grid',
+                        gap: '10px',
+                        gridTemplateColumns: `repeat(auto-fit, minmax(${rect.width}px, 1fr))`,
+                        gridAutoRows: `${rect.height}px`,
+                        transition: 'all 0.3s',
+                        position: 'relative',
+                        padding: `${padding}px`,
+                    }}
                 >
-                    {/* @ts-ignore */}
-                    {React.Children.map(children, (child: React.ReactElement) => (
-                        <div key={String(child.props.id)}>
-                            <div
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    overflow: 'auto',
-                                    padding: '40px 20px 20px',
-                                    backgroundColor: '#fff',
-                                    border: '1px solid #CFD7E6',
-                                    borderRadius: '4px',
-                                    position: 'relative',
-                                }}
-                            >
-                                {child}
+                    {React.Children.map(children as any, (child: React.ReactElement) => (
+                        <Resizable
+                            width={rect.width}
+                            height={rect.height}
+                            axis='both'
+                            onResizeStart={(e: any) => {
+                                const parent = e.target.parentNode
+                                const parentRect = parent.getBoundingClientRect()
+                                setResizeRect({
+                                    start: true,
+                                    clientX: e.clientX,
+                                    clientY: e.clientY,
+                                    width: parentRect.width,
+                                    height: parentRect.height,
+                                    top: e.target.parentNode.offsetTop,
+                                    left: e.target.parentNode.offsetLeft,
+                                    offsetClientX: 0,
+                                    offsetClientY: 0,
+                                })
+                                previeRef.current?.focus()
+                            }}
+                            onResize={(e: any) => {
+                                // @ts-ignore
+                                const wrapperWidth = wrapperRef.current?.getBoundingClientRect()?.width - padding * 2
+                                if (resizeRect.width + e.clientX - resizeRect.clientX < boxWidth) return
+                                if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
+                                if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
+
+                                setResizeRect({
+                                    ...resizeRect,
+                                    offsetClientX: e.clientX - resizeRect.clientX,
+                                    offsetClientY: e.clientY - resizeRect.clientY,
+                                })
+                            }}
+                            onResizeStop={() => {
+                                const rectTmp = {
+                                    width: resizeRect.width + resizeRect.offsetClientX,
+                                    height: resizeRect.height + resizeRect.offsetClientY,
+                                }
+                                handleLayoutChange(rectTmp)
+                                setRect(rectTmp)
+                                setResizeRect({
+                                    ...resizeRect,
+                                    start: false,
+                                })
+                            }}
+                        >
+                            <div className={styles.panelWrapper} id={child.props.id}>
+                                <div className={styles.contentWrapper}>{child}</div>
                                 <ChartConfigGroup
                                     onEdit={() => handleEditPanel(child.props.id)}
                                     onDelete={() => handleDeletePanel(child.props?.id)}
                                     onPreview={() => handlePreviewPanel(child.props?.id)}
                                 />
                             </div>
-                        </div>
+                        </Resizable>
                     ))}
-                </GridLayout>
+                </div>
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
                 <ModalHeader>Panel</ModalHeader>

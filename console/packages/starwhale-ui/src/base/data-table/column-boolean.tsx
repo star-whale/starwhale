@@ -7,7 +7,7 @@ import { useStyletron } from 'baseui'
 import { CategoricalFilter } from './column-categorical'
 import Column from './column'
 import { COLUMNS } from './constants'
-import type { ColumnT, SharedColumnOptionsT } from './types'
+import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
 import { LocaleContext } from './locales'
 
 type OptionsT = SharedColumnOptionsT<boolean>
@@ -104,6 +104,7 @@ function BooleanColumn(options: OptionsT): BooleanColumnT {
         title: options.title,
         key: options.key,
         pin: options.pin,
+        filterType: options.filterType ?? FilterTypes.enum,
     })
 }
 

@@ -5,6 +5,7 @@ import { DatasetObject } from '@/domain/dataset/sdk'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
 import { drawAudioWaveform } from './utils'
+import { IArtifactAudio } from '../../domain/dataset/sdk'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -34,11 +35,11 @@ const useStyles = createUseStyles({
     },
 })
 
-type IImageViewerProps = {
+type IAudioViewerProps = {
     isZoom?: boolean
-    data: DatasetObject
+    data: IArtifactAudio
 }
-export default function AudioViewer({ isZoom = false, data }: IImageViewerProps) {
+export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
     const styles = useStyles()
 
@@ -81,7 +82,7 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
             >
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls style={{ width: '100%' }}>
-                    <source src={data.src} type={data.mimeType as string} />
+                    <source src={data.src} type={data._mime_type as string} />
                     Your browser does not support the audio element.
                 </audio>
             </div>
@@ -101,10 +102,10 @@ export default function AudioViewer({ isZoom = false, data }: IImageViewerProps)
                 />
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls>
-                    <source src={data.src} type={data.mimeType as string} />
+                    <source src={data.src} type={data._mime_type as string} />
                     Your browser does not support the audio element.
                 </audio>
-                <p className={styles.name}>{data?.data?.display_name ?? ''}</p>
+                <p className={styles.name}>{data.display_name ?? ''}</p>
             </div>
         </div>
     )

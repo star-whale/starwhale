@@ -1,7 +1,7 @@
 import { SelectProps } from 'baseui/select'
 import React from 'react'
-import Input from '../Input'
-import Select from '../Select'
+import Input from '../../../../../src/components/Input'
+import Select from '../../../../../src/components/Select'
 // eslint-disable-next-line
 import { ColumnT, FilterTypes } from './types'
 
@@ -176,7 +176,7 @@ export default function FilterOperateSelector({
             },
         },
     }
-
+    
     const $operators = React.useMemo(() => {
         const kind = columns.find((column) => column.key === key)?.filterType
         if (kind && kind in FilterTypeOperators) {

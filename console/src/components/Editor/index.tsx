@@ -1,20 +1,16 @@
-/* eslint-disable */
-
 import React, { useMemo } from 'react'
-import log from 'loglevel'
 import EditorContextProvider from '@starwhale/core/context/EditorContextProvider'
 import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
-import WidgetFactory from '@starwhale/core/widget/WidgetFactory'
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { tablesOfEvaluation, WidgetTreeNode } from '@starwhale/core'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { tablesOfEvaluation } from '@starwhale/core'
 import { useParams } from 'react-router'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { tranformState } from './utils'
 
-// log.enableAll()
 registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
@@ -28,11 +24,12 @@ export function withEditorRegister(EditorApp: React.FC) {
         // if (!registred) {
         //     return <BusyPlaceholder type='spinner' />
         // }
-        log.debug('WidgetFactory', WidgetFactory.widgetMap)
+        // log.debug('WidgetFactory', WidgetFactory.widgetMap)
         // @FIXME
-        const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
+        const { projectId } = useParams<{ projectId: string }>()
         const { project } = useProject()
         const { job } = useJob()
+        // eslint-disable-next-line prefer-template
         const prefix = project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined
         const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : undefined
         if (!prefix || !storeKey || !projectId) {
@@ -47,7 +44,6 @@ export function withEditorRegister(EditorApp: React.FC) {
 
 export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
     return function EditorContexted(props: any) {
-        // @eslint-disable-next-line typescript-eslint/no-use-before-define
         const state = useMemo(() => tranformState(rawState), [])
         // @NOTICE must only init once
         const value = useMemo(() => {
@@ -88,35 +84,6 @@ const initialState = {
     widgets: {},
     defaults: {},
 }
-const tranformState = (state: typeof initialState) => {
-    const defaults = {} as any
-    const widgets = {} as any
-
-    function walk(nodes: WidgetTreeNode[]) {
-        return nodes.map((node: WidgetTreeNode) => {
-            // @ts-ignore
-            if (node.children) node.children = walk(node.children)
-            const widgetConfig = WidgetFactory.newWidget(node.type)
-            if (widgetConfig) {
-                defaults[node.type] = widgetConfig.defaults
-                widgets[widgetConfig.overrides.id] = widgetConfig.overrides
-                return { ...node, ...widgetConfig.node }
-            }
-            console.log('Init state missing widget', node.type)
-            return
-        })
-    }
-    const newTree = walk(Object.assign([], state.tree) as WidgetTreeNode[])
-    console.log('tree init', newTree)
-    // console.log('INIT TREE', newTree, defaults, widgets)
-    return {
-        key: state.key,
-        tree: newTree,
-        defaults,
-        widgets,
-    }
-}
-
 const Editor = withEditorRegister(witEditorContext(WidgetRenderTree, initialState))
 
 export default Editor

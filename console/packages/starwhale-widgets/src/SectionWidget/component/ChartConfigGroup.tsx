@@ -1,6 +1,7 @@
 import React from 'react'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
+import classnames from 'classnames'
 import ChartConfigPopover from './ChartConfigPopover'
 
 const useStyles = createUseStyles({
@@ -10,6 +11,7 @@ const useStyles = createUseStyles({
         top: '16px',
         display: 'flex',
         gap: '6px',
+        zIndex: 10,
     },
     icon: {
         alignItems: 'center',
@@ -39,7 +41,7 @@ export default function ChartConfigGroup({
     }
 
     return (
-        <div className={styles.chartGroup}>
+        <div className={classnames('panel-operator', styles.chartGroup)}>
             <ChartConfigPopover
                 onOptionSelect={(item: any) => {
                     // @ts-ignore

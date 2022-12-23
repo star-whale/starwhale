@@ -42,7 +42,6 @@ export const useStyles = createUseStyles({
         borderRadius: '4px',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis',
-        maxWidth: '100px',
         overflow: ' hidden',
         display: 'flex',
         alignItems: 'center',
@@ -63,7 +62,9 @@ export default function Search({ ...props }: ISearchProps) {
 
     const [items, setItems] = useState<ValueT[]>(query.filter ? query.filter.filter((v: any) => v.value) : (raw as any))
 
-    useClickAway(ref, () => setIsEditing(false))
+    useClickAway(ref, () => {
+        setIsEditing(false)
+    })
 
     const column = React.useMemo(() => new ColumnFilterModel(props.fields), [props.fields])
 
@@ -77,10 +78,12 @@ export default function Search({ ...props }: ISearchProps) {
 
     return (
         <div
+            role='button'
             className={styles.searchBar}
             ref={ref}
             style={{ borderColor: isEditing ? '#799EE8' : '#CFD7E6' }}
-            onFocus={(e) => {
+            onKeyDown={(e) => {
+                // @ts-ignore
                 if (e.target.classList.contains('filter-remove')) return
                 setIsEditing(true)
             }}
@@ -90,7 +93,7 @@ export default function Search({ ...props }: ISearchProps) {
                     <FilterRenderer
                         key={[index, item.property].join('-')}
                         value={item}
-                        isEditing
+                        isEditing={isEditing}
                         isDisabled={false}
                         isFocus={index === items.length - 1 && isEditing}
                         column={column}

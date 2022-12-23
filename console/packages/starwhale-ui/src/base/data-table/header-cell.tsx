@@ -9,9 +9,9 @@ import IconFont from '@/components/IconFont'
 import cn from 'classnames'
 import { SortDirectionsT } from './types'
 import { SORT_DIRECTIONS } from './constants'
-import Button from '../Button'
+import Button from '../../../../../src/components/Button'
 import { LocaleContext } from './locales'
-import Checkbox from '../Checkbox'
+import Checkbox from '../../../../../src/components/Checkbox'
 
 type HeaderCellPropsT = {
     index: number

@@ -5,7 +5,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
 import { useStyletron } from 'baseui'
 import { ConfigT } from './types'
-import Toggle from '../Select/Toggle'
+import Toggle from '../../../../../src/components/Select/Toggle'
 
 type ViewListPropsT = {
     views: ConfigT[]

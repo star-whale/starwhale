@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import useSelector, { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType } from '../types'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
+import { useIsInViewport } from '../utils'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -16,7 +17,7 @@ function getChildrenPath(paths: any[]) {
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
     function WrapedPropsWidget(props: any) {
-        const { id, type, path } = props
+        const { id, path } = props
         const { store, eventBus } = useEditorContext()
         const api = store()
         const overrides = useSelector(getWidget(id)) ?? {}
@@ -67,37 +68,44 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             [tableName]
         )
 
-        const info = useQueryDatastore(query)
+        const myRef = useRef<HTMLElement>()
+        const inViewport = useIsInViewport(myRef as any)
+        const info = useQueryDatastore(query, false)
+        const [loaded, setLoaded] = useState(false)
 
         useEffect(() => {
-            if (tableName) info.refetch()
+            if (tableName && inViewport && !loaded) {
+                info.refetch()
+                setLoaded(true)
+            }
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [tableName, type])
+        }, [tableName, inViewport, loaded])
 
         return (
-            <WrappedWidgetRender
-                {...props}
-                name={overrides.name}
-                data={info?.data}
-                optionConfig={overrides.optionConfig}
-                onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
-                // onOptionChange={(config) => {
-                //     model.current.updateOptionConfig(config)
-                //     model.current.saveToStore(api)
-                // }}
-                fieldConfig={overrides.fieldConfig}
-                onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
-                // onFieldChange={(config) => {
-                //     model.current.updateFieldConfig(config)
-                //     model.current.saveToStore(api)
-                // }}
-                // for layout
-                onLayoutOrderChange={handleLayoutOrderChange}
-                onLayoutChildrenChange={handleLayoutChildrenChange}
-                onLayoutCurrentChange={handleLayoutCurrentChange}
-                eventBus={eventBus}
-                // for
-            />
+            <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
+                <WrappedWidgetRender
+                    {...props}
+                    name={overrides.name}
+                    data={info?.data}
+                    optionConfig={overrides.optionConfig}
+                    onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
+                    // onOptionChange={(config) => {
+                    //     model.current.updateOptionConfig(config)
+                    //     model.current.saveToStore(api)
+                    // }}
+                    fieldConfig={overrides.fieldConfig}
+                    onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
+                    // onFieldChange={(config) => {
+                    //     model.current.updateFieldConfig(config)
+                    //     model.current.saveToStore(api)
+                    // }}
+                    // for layout
+                    onLayoutOrderChange={handleLayoutOrderChange}
+                    onLayoutChildrenChange={handleLayoutChildrenChange}
+                    onLayoutCurrentChange={handleLayoutCurrentChange}
+                    eventBus={eventBus}
+                />
+            </div>
         )
     }
     return WrapedPropsWidget

@@ -6,12 +6,12 @@ import { useStyletron } from 'baseui'
 import { Tag } from 'baseui/tag'
 import { expandBorder } from '@/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
-import useEventCallback from '../../hooks/useEventCallback'
+import useEventCallback from '../../../../../src/hooks/useEventCallback'
 import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
-import Checkbox from '../Checkbox'
-import IconFont from '../IconFont'
+import Checkbox from '../../../../../src/components/Checkbox'
+import IconFont from '../../../../../src/components/IconFont'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Unsubscribable, Observable, Subscriber } from 'rxjs'
+import { Unsubscribable, Observable, Subscriber, connectable, Subject } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import EventEmitter from 'eventemitter3'
 import { EventBus, BusEventHandler, BusEventType, BusEvent, EventFilterOptions } from './types'

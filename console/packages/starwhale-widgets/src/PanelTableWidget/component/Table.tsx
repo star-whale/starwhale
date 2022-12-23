@@ -1,33 +1,8 @@
-import Table from '@/components/Table'
 import React from 'react'
+import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 
 // @ts-ignore
-export default function PanelTable({ columns, data }) {
-    return (
-        <Table
-            overrides={{
-                Root: {
-                    style: {
-                        width: '100%',
-                        height: '100%',
-                    },
-                },
-                TableHeadCell: {
-                    style: {
-                        backgroundColor: '#F3F5F9',
-                    },
-                },
-            }}
-            columns={columns}
-            data={data}
-            // paginationProps={{
-            //     start: modelsInfo.data?.pageNum,
-            //     count: modelsInfo.data?.pageSize,
-            //     total: modelsInfo.data?.total,
-            //     afterPageChange: () => {
-            //         info.refetch()
-            //     },
-            // }}
-        />
-    )
+export default function PanelTable({ columnTypes, data, storeKey }) {
+    const $columns = useDatastoreColumns(columnTypes)
+    return <GridTable columns={$columns} data={data} storeKey={storeKey} filterable />
 }
