@@ -114,15 +114,15 @@ export interface ITypeBoundingBox extends ITypeBase {
     height: number
 }
 
-export function parseData(data: any): any {
+export function parseData(data: any, curryParseLinkFn: any): any {
     // for root
     if (!data._type && data.data_type && data.data_link) return parseRootData(data)
 
-    if (_.isArray(data)) return data.map((item) => parseData(item))
+    if (_.isArray(data)) return data.map((item) => parseData(item, curryParseLinkFn))
     else if (_.isObject(data)) {
         if ('_type' in data) {
             if (data?._type === TYPES.LINK) {
-                return linkToData(data as ITypeLink)
+                return linkToData(data as ITypeLink, curryParseLinkFn)
             } else if (data?._type) {
                 return data
             }
@@ -130,7 +130,7 @@ export function parseData(data: any): any {
 
         const arr = {}
         Object.entries(data).forEach(([key, value]) => {
-            ;(arr as any)[key] = parseData(value)
+            ;(arr as any)[key] = parseData(value, curryParseLinkFn)
         })
         return arr
     }
@@ -168,7 +168,7 @@ export function parseRootData(data: ITypeLink & { data_link?: ITypeLink }): IArt
     return artifact
 }
 
-export function linkToData(data: ITypeLink & { data_link?: ITypeLink }): IArtifact {
+export function linkToData(data: ITypeLink, curryParseLinkFn: any): IArtifact {
     let artifact = null
 
     if (typeof data.data_type === 'string') {
@@ -189,7 +189,9 @@ export function linkToData(data: ITypeLink & { data_link?: ITypeLink }): IArtifa
     }
 
     if (artifact.link) {
-        artifact.src = String(artifact.link.uri).startsWith('http') ? artifact.link.uri : null
+        artifact.src = String(artifact.link.uri).startsWith('http')
+            ? artifact.link.uri
+            : curryParseLinkFn(artifact.link)
     }
 
     return (artifact as IArtifact) ?? {}
@@ -248,12 +250,12 @@ export class DatasetObject {
             }
 
             if (typeof value === 'object') {
-                this.annotations[key] = parseData(value)
+                this.annotations[key] = parseData(value, curryParseLinkFn)
                 this.parseAnnotations()
             }
         })
 
-        this.data = parseData(data)
+        this.data = parseData(data, curryParseLinkFn)
         if (this.data.link && !this.data.src) this.data.src = curryParseLinkFn(this.data.link)
     }
 
