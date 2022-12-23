@@ -1,3 +1,4 @@
+import os
 import json
 import typing as t
 import functools
@@ -145,6 +146,11 @@ def _check_uri_reserved(uri: str) -> None:
         raise InvalidUriException(f"{uri} is reserved, try using another URI")
 
 
+def _with_base_uri(uri: str) -> str:
+    base = os.environ.get("SW_MODEL_SERVING_BASE_URI", "").strip("/")
+    return "/" + "/".join(filter(bool, [base, uri.lstrip("/")]))
+
+
 class Service:
     def __init__(self) -> None:
         self.apis: t.Dict[str, Api] = {}
@@ -176,7 +182,8 @@ class Service:
             spec = i.input.spec()
             resp = i.output.spec().responses
             spec.responses = resp
-            paths[i.uri if i.uri.startswith("/") else "/" + i.uri] = {"post": spec}
+            uri = i.uri if i.uri.startswith("/") else "/" + i.uri
+            paths[_with_base_uri(uri)] = {"post": spec}
         return OpenApi(
             openapi="3.0.0",
             info={
@@ -192,7 +199,7 @@ class Service:
 
     @staticmethod
     def _doc_handler() -> str:
-        return """
+        return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,12 +216,12 @@ class Service:
 <div id="swagger-ui"></div>
 <script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js" crossorigin></script>
 <script>
-  window.onload = () => {
-    window.ui = SwaggerUIBundle({
-      url: '/api-spec',
+  window.onload = () => {{
+    window.ui = SwaggerUIBundle({{
+      url: '{_with_base_uri('/api-spec')}',
       dom_id: '#swagger-ui',
-    });
-  };
+    }});
+  }};
 </script>
 </body>
 </html> """

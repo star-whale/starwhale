@@ -50,20 +50,20 @@ import org.mockito.Mockito;
 
 public class ModelServingServiceTest {
     private ModelServingService svc;
-    private ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
-    private RuntimeDao runtimeDao = mock(RuntimeDao.class);
-    private ProjectManager projectManager = mock(ProjectManager.class);
-    private ModelDao modelDao = mock(ModelDao.class);
-    private UserService userService = mock(UserService.class);
-    private K8sClient k8sClient = mock(K8sClient.class);
-    private K8sJobTemplate k8sJobTemplate = mock(K8sJobTemplate.class);
-    private RuntimeMapper runtimeMapper = mock(RuntimeMapper.class);
-    private RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
-    private ModelMapper modelMapper = mock(ModelMapper.class);
-    private ModelVersionMapper modelVersionMapper = mock(ModelVersionMapper.class);
-    private SystemSettingService systemSettingService = mock(SystemSettingService.class);
-    private RunTimeProperties runTimeProperties = mock(RunTimeProperties.class);
-    private ModelServingTokenValidator modelServingTokenValidator = mock(ModelServingTokenValidator.class);
+    private final ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
+    private final RuntimeDao runtimeDao = mock(RuntimeDao.class);
+    private final ProjectManager projectManager = mock(ProjectManager.class);
+    private final ModelDao modelDao = mock(ModelDao.class);
+    private final UserService userService = mock(UserService.class);
+    private final K8sClient k8sClient = mock(K8sClient.class);
+    private final K8sJobTemplate k8sJobTemplate = mock(K8sJobTemplate.class);
+    private final RuntimeMapper runtimeMapper = mock(RuntimeMapper.class);
+    private final RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
+    private final ModelMapper modelMapper = mock(ModelMapper.class);
+    private final ModelVersionMapper modelVersionMapper = mock(ModelVersionMapper.class);
+    private final SystemSettingService systemSettingService = mock(SystemSettingService.class);
+    private final RunTimeProperties runTimeProperties = mock(RunTimeProperties.class);
+    private final ModelServingTokenValidator modelServingTokenValidator = mock(ModelServingTokenValidator.class);
 
     @BeforeEach
     public void setUp() {
@@ -131,7 +131,8 @@ public class ModelServingServiceTest {
                         "SW_TOKEN", "token",
                         "SW_INSTANCE_URI", "inst",
                         "SW_MODEL_VERSION", "md/version/9",
-                        "SW_RUNTIME_VERSION", "rt/version/8"
+                        "SW_RUNTIME_VERSION", "rt/version/8",
+                        "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7"
                 ), "img", "model-serving-7");
 
         verify(k8sClient).deployService(any());

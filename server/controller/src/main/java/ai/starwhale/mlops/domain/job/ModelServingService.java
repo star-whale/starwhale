@@ -70,6 +70,8 @@ public class ModelServingService {
     private final ModelServingTokenValidator modelServingTokenValidator;
 
 
+    public static final String MODEL_SERVICE_PREFIX = "model-serving";
+
     public ModelServingService(
             ModelServingMapper modelServingMapper,
             RuntimeDao runtimeDao,
@@ -168,7 +170,8 @@ public class ModelServingService {
                 "SW_PROJECT", project,
                 "SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl(),
                 "SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl(),
-                "SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost()
+                "SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost(),
+                "SW_MODEL_SERVING_BASE_URI", String.format("/gateway/%s/%d", MODEL_SERVICE_PREFIX, id)
         );
         var ss = k8sJobTemplate.renderModelServingOrch(envs, image, name);
         k8sClient.deployStatefulSet(ss);
@@ -193,6 +196,6 @@ public class ModelServingService {
     }
 
     public static String getServiceName(long id) {
-        return String.format("model-serving-%d", id);
+        return String.format("%s-%d", MODEL_SERVICE_PREFIX, id);
     }
 }
