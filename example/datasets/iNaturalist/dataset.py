@@ -1,5 +1,3 @@
-import json
-
 import requests
 
 from starwhale import Link, Image, dataset, MIMEType  # noqa: F401
