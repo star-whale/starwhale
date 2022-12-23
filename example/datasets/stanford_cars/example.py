@@ -30,6 +30,8 @@ with PILImage.open(io.BytesIO(data.fp)) as img:
     draw = ImageDraw.Draw(img)
     draw_bbox(draw, annotations["bbox"])
     draw.text(
-        (annotations["bbox"].x, annotations["bbox"].y), annotations["label"], fill="red"
+        (annotations["bbox"].x, annotations["bbox"].y),
+        str(annotations["label"]),
+        fill="red",
     )
     img.show()
