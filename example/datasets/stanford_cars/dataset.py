@@ -4,17 +4,11 @@ import requests
 import scipy.io
 
 from starwhale import Link, Image, dataset, MIMEType, BoundingBox  # noqa: F401
-from starwhale.utils.retry import http_retry
 
 PATH_ROOT = (
     "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/stanford_cars"
 )
 MAT_FILE = "cars_annos.mat"
-
-
-@http_retry
-def request_link_text(anno_link):
-    return requests.get(anno_link, timeout=10).text
 
 
 def build_ds():
