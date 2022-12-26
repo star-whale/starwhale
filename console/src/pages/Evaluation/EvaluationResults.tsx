@@ -9,7 +9,7 @@ import { useListDatastoreTables, useQueryDatastore } from '@starwhale/core/datas
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useParseConfusionMatrix, useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import Table from '@/components/Table'
-import { QueryTableRequest } from '../../../packages/starwhale-core/src/datastore/schemas/datastore'
+import { QueryTableRequest } from '@starwhale/core/datastore/schemas/datastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
