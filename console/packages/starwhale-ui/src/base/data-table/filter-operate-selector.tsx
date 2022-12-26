@@ -1,7 +1,7 @@
 import { SelectProps } from 'baseui/select'
 import React from 'react'
-import Input from '../../../../../src/components/Input'
-import Select from '../../../../../src/components/Select'
+import Input from '../../Input'
+import Select from '../../Select'
 // eslint-disable-next-line
 import { ColumnT, FilterTypes } from './types'
 

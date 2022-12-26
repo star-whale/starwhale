@@ -6,7 +6,7 @@ import { Checkbox, STYLE_TYPE } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { KIND, SIZE } from 'baseui/button'
 import { LocaleContext } from './locales'
-import Button from '../../../../../src/components/Button'
+import Button from '../../Button'
 
 export type ExcludeKind = 'value' | 'range'
 

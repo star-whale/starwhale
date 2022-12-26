@@ -81,6 +81,14 @@ export interface CreateProjectRequest {
   description: string;
 }
 
+export interface ModelServingRequest {
+  modelVersionUrl: string;
+  runtimeVersionUrl: string;
+  resourcePool?: string;
+  /** @format int64 */
+  ttlInSeconds?: number;
+}
+
 export interface RuntimeRevertRequest {
   versionUrl: string;
 }
@@ -862,7 +870,10 @@ export class HttpClient<SecurityDataType = unknown> {
   private format?: ResponseType;
 
   constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
-    this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "http://localhost:8082" });
+    this.instance = axios.create({
+      ...axiosConfig,
+      baseURL: axiosConfig.baseURL || "http://e2e-20221226.pre.intra.starwhale.ai",
+    });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -947,7 +958,7 @@ export class HttpClient<SecurityDataType = unknown> {
 /**
  * @title Starwhale Rest Api
  * @version {sw.version:1.0}
- * @baseUrl http://localhost:8082
+ * @baseUrl http://e2e-20221226.pre.intra.starwhale.ai
  *
  * Rest Api for Starwhale controller
  */
@@ -1696,6 +1707,26 @@ export class Api<SecurityDataType extends unknown> {
     createProject: (data: CreateProjectRequest, params: RequestParams = {}) =>
       this.http.request<ResponseMessageString, any>({
         path: `/api/v1/project`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Job
+     * @name CreateModelServing
+     * @summary Create a new model serving job
+     * @request POST:/api/v1/project/{projectUrl}/serving
+     * @secure
+     * @response `200` `ResponseMessageString` ok
+     */
+    createModelServing: (projectUrl: string, data: ModelServingRequest, params: RequestParams = {}) =>
+      this.http.request<ResponseMessageString, any>({
+        path: `/api/v1/project/${projectUrl}/serving`,
         method: "POST",
         body: data,
         secure: true,
@@ -2648,7 +2679,7 @@ export class Api<SecurityDataType extends unknown> {
       projectUrl: string,
       runtimeUrl: string,
       query?: {
-        runtimeVersionUrl?: string;
+        versionUrl?: string;
       },
       params: RequestParams = {},
     ) =>
