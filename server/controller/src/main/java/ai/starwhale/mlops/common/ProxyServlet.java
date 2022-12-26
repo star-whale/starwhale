@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.common;
 
+import static ai.starwhale.mlops.domain.job.ModelServingService.MODEL_SERVICE_PREFIX;
+
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import java.io.IOException;
@@ -40,7 +42,6 @@ import org.springframework.util.StringUtils;
 public class ProxyServlet extends HttpServlet {
     protected ModelServingMapper modelServingMapper;
     protected HttpClient httpClient;
-    public static final String MODEL_SERVICE_PREFIX = "model-serving";
 
     public ProxyServlet(ModelServingMapper modelServingMapper) {
         this.modelServingMapper = modelServingMapper;
@@ -98,6 +99,10 @@ public class ProxyServlet extends HttpServlet {
     protected void generateResponse(HttpResponse origin, HttpServletResponse resp) throws IOException {
         var code = origin.getStatusLine().getStatusCode();
         resp.setStatus(code);
+        var headers = origin.getAllHeaders();
+        for (var header : headers) {
+            resp.addHeader(header.getName(), header.getValue());
+        }
         var entity = origin.getEntity();
         if (entity == null) {
             return;

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.common;
 
+import static ai.starwhale.mlops.domain.job.ModelServingService.MODEL_SERVICE_PREFIX;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.intThat;
@@ -55,17 +56,17 @@ public class ProxyServletTest {
         long id = 1L;
         when(modelServingMapper.find(id)).thenReturn(ModelServingEntity.builder().build());
 
-        var uri = String.format("/%s/%d/ppl", ProxyServlet.MODEL_SERVICE_PREFIX, id);
+        var uri = String.format("/%s/%d/ppl", MODEL_SERVICE_PREFIX, id);
         var rt = proxyServlet.getTarget(uri);
         Assertions.assertEquals("http://model-serving-1/ppl", rt);
 
-        var tooShort = ProxyServlet.MODEL_SERVICE_PREFIX + "/1";
+        var tooShort = MODEL_SERVICE_PREFIX + "/1";
         Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(tooShort));
 
         var wrongStartsWith = "/foo/1/ppl";
         Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(wrongStartsWith));
 
-        var notFound = String.format("/%s/%d/ppl", ProxyServlet.MODEL_SERVICE_PREFIX, id + 1);
+        var notFound = String.format("/%s/%d/ppl", MODEL_SERVICE_PREFIX, id + 1);
         Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(notFound));
     }
 
@@ -74,7 +75,7 @@ public class ProxyServletTest {
         proxyServlet.init();
 
         var req = mock(HttpServletRequest.class);
-        var uri = String.format("/%s/1/ppl", ProxyServlet.MODEL_SERVICE_PREFIX);
+        var uri = String.format("/%s/1/ppl", MODEL_SERVICE_PREFIX);
         when(req.getPathInfo()).thenReturn(uri);
         when(req.getMethod()).thenReturn("GET");
         var inputStream = mock(ServletInputStream.class);
