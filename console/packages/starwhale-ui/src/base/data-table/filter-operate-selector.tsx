@@ -1,7 +1,7 @@
 import { SelectProps } from 'baseui/select'
 import React from 'react'
-import Input from '../Input'
-import Select from '../Select'
+import Input from '../../../../../src/components/Input'
+import Select from '../../../../../src/components/Select'
 // eslint-disable-next-line
 import { ColumnT, FilterTypes } from './types'
 
@@ -193,6 +193,7 @@ export default function FilterOperateSelector({
             <Select
                 size='compact'
                 disabled={disabled}
+                // @ts-ignore
                 overrides={overrides}
                 options={$keys}
                 placeholder='-'
@@ -208,6 +209,7 @@ export default function FilterOperateSelector({
             <Select
                 size='compact'
                 disabled={disabled}
+                // @ts-ignore
                 overrides={overrides}
                 placeholder='='
                 clearable={false}
@@ -227,6 +229,7 @@ export default function FilterOperateSelector({
                 <Input
                     size='compact'
                     disabled={disabled}
+                    // @ts-ignore
                     overrides={overrides}
                     placeholder=''
                     clearable={false}

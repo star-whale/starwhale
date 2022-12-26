@@ -14,7 +14,7 @@ import { getReadableStorageQuantityStr } from '@/utils'
 import IconFont from '@/components/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import { DatasetObject, TYPES } from '@/domain/dataset/sdk'
+import { DatasetObject, parseDataSrc, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
@@ -32,9 +32,6 @@ const useCardStyles = createUseStyles({
         right: 0,
     },
     card: {
-        // 'flexBasis': '161px',
-        // 'width': '161px',
-        // 'height': '137px',
         'width': '100%',
         'height': '100%',
         'border': '1px solid #E2E7F0',
@@ -200,12 +197,14 @@ export default function DatasetVersionFiles() {
     const datasets = React.useMemo(
         () =>
             tables?.data?.records?.map((record) => {
-                const dObj = new DatasetObject(record)
-                dObj.setDataSrc(
-                    projectId,
-                    datasetVersion?.name as string,
-                    datasetVersion?.versionName as string,
-                    token as string
+                const dObj = new DatasetObject(
+                    record,
+                    parseDataSrc(
+                        projectId,
+                        datasetVersion?.name as string,
+                        datasetVersion?.versionName as string,
+                        token as string
+                    )
                 )
                 return dObj ?? []
             }) ?? [],
@@ -234,16 +233,16 @@ export default function DatasetVersionFiles() {
                             paddingTop: '4px',
                             paddingBottom: '4px',
                             position: 'relative',
-                            // height: '60px',
                         },
                     },
                 },
                 renderItem: (row: any) => {
                     let wrapperStyle = {}
 
-                    switch (row.type) {
+                    switch (row.data._type) {
                         case TYPES.IMAGE:
                             wrapperStyle = {
+                                minWidth: '90px',
                                 height: '90px',
                                 textAlign: 'center',
                             }
@@ -262,7 +261,7 @@ export default function DatasetVersionFiles() {
 
                     return (
                         <div className={styles.tableCell} style={wrapperStyle}>
-                            <DatasetViewer data={row} />
+                            <DatasetViewer dataset={row} />
                             <div
                                 className={styles.cardFullscreen}
                                 role='button'

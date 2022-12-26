@@ -8,8 +8,8 @@ export function tableDataLink(
     datasetVersionName: string,
     query: {
         uri: string
-        offset: number
-        size: number
+        offset: string
+        size: string
         Authorization?: string
     }
 ) {

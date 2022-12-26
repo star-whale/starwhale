@@ -7,6 +7,8 @@ import { useStyles } from './Search'
 // eslint-disable-next-line import/no-cycle
 import { Operators } from './utils'
 
+const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
+
 function PopoverContainer(props: {
     onItemSelect?: (props: { item: { label: string; type: string } }) => void
     options: any[]
@@ -14,6 +16,7 @@ function PopoverContainer(props: {
     mountNode?: HTMLElement
     children: React.ReactNode
     innerRef?: React.RefObject<HTMLElement>
+    value?: any
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const styles = useStyles()
@@ -51,7 +54,7 @@ function PopoverContainer(props: {
         >
             <p
                 className={props.children ? styles.label : ''}
-                title={typeof props.children === 'string' ? props.children : ''}
+                title={typeof props.value === 'string' ? props.value : ''}
             >
                 {props.children}
             </p>
@@ -80,7 +83,7 @@ function Filter(options: FilterT): FilterT {
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
-                    {rest.value}
+                    {typeof rest.value === 'string' ? normalize(rest.value) : rest.value}
                 </PopoverContainer>
             )
         },

@@ -1,4 +1,5 @@
 import { tableDataLink } from '@starwhale/core/datastore'
+import _ from 'lodash'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
 export type IShape = [height: number, width: number, channels: number]
@@ -7,6 +8,28 @@ export enum MIMES {
     GRAYSCALE = 'x/grayscale',
     AUDIOWAV = 'audio/wav',
     TEXTPLAIN = 'text/plain',
+    JPEG = 'image/jpeg',
+    SVG = 'image/svg+xml',
+    GIF = 'image/gif',
+    APNG = 'image/apng',
+    AVIF = 'image/avif',
+    MP4 = 'video/mp4',
+    AVI = 'video/avi',
+    WEBM = 'video/webm',
+    WAV = 'audio/wav',
+    MP3 = 'audio/mp3',
+    PLAIN = 'text/plain',
+    CSV = 'text/csv',
+    HTML = 'text/html',
+    UNDEFINED = 'x/undefined',
+}
+export enum ArtifactType {
+    Binary = 'binary',
+    Image = 'image',
+    Video = 'video',
+    Audio = 'audio',
+    Text = 'text',
+    Link = 'link',
 }
 export enum TYPES {
     COCO = 'coco_object_annotation',
@@ -15,148 +38,272 @@ export enum TYPES {
     TEXT = 'text',
     LINK = 'link',
     VIDEO = 'video',
+    BOUNDINGBOX = 'bounding_box',
 }
 
-export type IDatasetImage = {
-    id?: number
-    width: number
-    height: number
-    name: string
-    channels: number
-}
-
-export type IObjectImage = {
+// artifacts
+export type IArtifact = {
+    fp: string
     display_name: string
-    mime_type: MIMES[keyof MIMES]
-    _raw_base64_data: string
     shape: IShape
     encoding: string
-    type: TYPES[keyof TYPES]
+    _mime_type: MIMES
+    _type: ArtifactType
+    _dtype_name: string
+    // extends
+    link: ITypeLink
+    src?: string
+    _path?: string
+}
+
+export interface IArtifactImage extends IArtifact {
+    _type: ArtifactType.Image
+    _mime_type: MIMES.PNG | MIMES.JPEG | MIMES.SVG | MIMES.GIF | MIMES.APNG
     as_mask: boolean
-    data_type: any
+    mask_uri: string
+}
+export interface IArtifactVideo extends IArtifact {
+    _type: ArtifactType.Video
+    _mime_type: MIMES.MP4 | MIMES.AVI | MIMES.WEBM
+}
+export interface IArtifactAudio extends IArtifact {
+    _type: ArtifactType.Audio
+    _mime_type: MIMES.MP3 | MIMES.WAV
+}
+export interface IArtifactBinary extends IArtifact {
+    _type: ArtifactType.Binary
+    _mime_type: MIMES.UNDEFINED
+}
+export interface IArtifactText extends IArtifact {
+    _type: ArtifactType.Text
+    _mime_type: MIMES.PLAIN
 }
 
-export type IAnnotation = {
-    type: 'coco_object_annotation' | 'image'
+// annotation types
+export type ITypeBase = {
+    _path?: string
+}
+export interface ITypeLink extends ITypeBase {
+    _type: TYPES.LINK
+    uri: string
+    offset: string
+    size: string
+    auth: string
+    data_type: IArtifact | null
+    scheme: string
+    with_local_fs_data: boolean
 }
 
-export type IAnnotationCOCOObject = {
+export interface ITypeCOCOObjectAnnotation extends ITypeBase {
+    _type: TYPES.COCO
     id: number
     image_id: number
     category_id: number
-    // RLE or [polygon],
-    _segmentation_rle_size?: [height: number, width: number]
-    type: 'coco_object_annotation'
     bbox: IBBox
     iscrowd: 0 | 1
     area: number
+    _segmentation_rle_size: IShape
+    _segmentation_rle_counts: string
 }
 
-export class DatasetObject {
-    // raw data
-    public size: number
+export interface ITypeBoundingBox extends ITypeBase {
+    _type: TYPES.BOUNDINGBOX
+    x: number
+    y: number
+    width: number
+    height: number
+}
 
-    public offset: number
+export function linkToData(data: ITypeLink, curryParseLinkFn: any): IArtifact {
+    let artifact = null
+
+    if (typeof data.data_type === 'string') {
+        try {
+            const json = JSON.parse(data?.data_type, undefined)
+            if (json.type === TYPES.LINK) {
+                artifact = json.data_type
+            } else {
+                artifact = json
+            }
+        } catch (e) {
+            // @ts-ignore
+        }
+    } else if (typeof data.data_type === 'object') {
+        artifact = data.data_type as IArtifact
+    }
+
+    if (data._type === TYPES.LINK) {
+        artifact.link = { ...data, data_type: null }
+    }
+
+    if (artifact.link) {
+        artifact.src = String(artifact.link.uri).startsWith('http')
+            ? artifact.link.uri
+            : curryParseLinkFn(artifact.link)
+    }
+
+    return (artifact as IArtifact) ?? {}
+}
+
+// @FIXME none standard data_type of root object
+export function parseRootData(data: ITypeLink & { data_link?: ITypeLink }): IArtifact {
+    let artifact = null
+
+    if (typeof data.data_type === 'string') {
+        try {
+            const json = JSON.parse(data?.data_type, undefined)
+            if (json.type === TYPES.LINK) {
+                artifact = json.data_type
+            } else {
+                artifact = json
+            }
+            artifact = {
+                _type: artifact.type,
+                _mime_type: artifact.mime_type,
+                ...artifact,
+            }
+            if (data.data_link) {
+                artifact.link = data.data_link
+
+                // @ts-ignore
+                if (data.data_offset) artifact.link.offset = data.data_offset
+                // @ts-ignore
+                if (data.data_size) artifact.link.size = data.data_size
+            }
+        } catch (e) {
+            // @ts-ignore
+        }
+    }
+
+    return artifact
+}
+export function parseData(data: any, curryParseLinkFn: any): any {
+    // for root
+    if (!data._type && data.data_type && data.data_link) {
+        return parseRootData(data)
+    }
+
+    if (_.isArray(data)) {
+        return data.map((item) => parseData(item, curryParseLinkFn))
+    }
+
+    if (_.isObject(data)) {
+        if ('_type' in data) {
+            // @ts-ignore
+            if (data?._type === TYPES.LINK) {
+                return linkToData(data as ITypeLink, curryParseLinkFn)
+            }
+            // @ts-ignore
+            if (data?._type) {
+                return data
+            }
+        }
+
+        const arr = {}
+        Object.entries(data).forEach(([key, value]) => {
+            ;(arr as any)[key] = parseData(value, curryParseLinkFn)
+        })
+        return arr
+    }
+    return data
+}
+
+export const parseDataSrc = _.curry(
+    (
+        projectId: string,
+        datasetVersionName: string,
+        datasetVersionVersionName: string,
+        token: string,
+        link: ITypeLink
+    ) => {
+        const { uri, offset, size } = link ?? {}
+        const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
+            uri,
+            offset,
+            size,
+            Authorization: token as string,
+        })
+        return src
+    }
+)
+
+export class DatasetObject {
+    public size: string
 
     public id: string
 
-    public uri: string
-
-    public src: string
-
-    public mimeType: MIMES[keyof MIMES] | string
-
-    public type: TYPES[keyof TYPES] | string
-
-    public data: IObjectImage
-
-    // annotations
-    public cocos: IAnnotationCOCOObject[]
-
-    public masks: IObjectImage[]
+    public data: IArtifact
 
     public summary: Record<string, any>
 
-    public objects: any[]
+    public annotations: Record<string, any> = {}
 
-    constructor(data: any) {
-        this.src = data?.src ?? 0
-        this.size = Number(data?.data_size ?? 0)
-        this.offset = Number(data?.data_offset ?? 0)
-        this.uri = data?.data_link?.uri ?? ''
-        this.id = data?.id ?? ''
-        this.mimeType = ''
-        this.type = ''
+    //
+
+    public cocos: ITypeCOCOObjectAnnotation[] = []
+
+    public masks: IArtifactImage[] = []
+
+    public bboxes: ITypeBoundingBox[] = []
+
+    constructor(data: any, curryParseLinkFn: any) {
+        this.size = data.data_size
+        this.id = data.id
+
         this.data = {} as any
         this.summary = {}
-        this.cocos = []
-        this.masks = []
-        this.objects = []
 
         // @ts-ignore
         Object.entries(data).forEach(([key, value]: [string, any]) => {
             if (!key.startsWith('annotation/')) return
             if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
                 this.summary[key] = value
+                return
             }
-            if (key === 'annotation/annotations') {
-                value.forEach((item?: any) => this.setProps(item))
-            }
-            if (key === 'annotation/mask') {
-                this.setProps(value)
+
+            if (typeof value === 'object') {
+                this.annotations[key] = parseData(value, curryParseLinkFn)
+                this.parseAnnotations()
             }
         })
 
-        try {
-            const json = JSON.parse(data?.data_type, undefined)
-            if (json.type === TYPES.LINK) {
-                this.data = json.data_type
-            } else {
-                this.data = json
-            }
-            this.mimeType = (this.data?.mime_type ?? '') as MIMES
-            this.type = (this.data?.type ?? '') as MIMES
-        } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error(e)
-        }
+        this.data = parseData(data, curryParseLinkFn)
+        if (this.data.link && !this.data.src) this.data.src = curryParseLinkFn(this.data.link)
     }
 
-    setProps(anno: any) {
-        if (anno?._type === TYPES.COCO) {
-            this.cocos?.push(anno)
-        } else if ((anno?._type === TYPES.IMAGE || anno?._type === TYPES.LINK) && anno?.data_type?.as_mask) {
-            this.masks?.push(anno)
-        } else if (!anno?._type) {
-            this.objects?.push(anno)
+    parseAnnotations() {
+        const cocos: ITypeCOCOObjectAnnotation[] = []
+        const masks: IArtifactImage[] = []
+        const bboxes: ITypeBoundingBox[] = []
+
+        function find(anno: any, path: any[] = []) {
+            if (_.isArray(anno)) {
+                anno.forEach((item: any, index: number) => find(item, [...path, index]))
+            } else if (_.isObject(anno)) {
+                // @ts-ignore
+                // eslint-disable-next-line
+                anno._path = [...path].join('.')
+
+                if ((anno as ITypeCOCOObjectAnnotation)._type === TYPES.COCO) {
+                    cocos?.push(anno as any)
+                } else if ((anno as ITypeBoundingBox)._type === TYPES.BOUNDINGBOX) {
+                    bboxes?.push(anno as any)
+                } else if ((anno as IArtifactImage)._type === ArtifactType.Image && (anno as IArtifactImage)?.as_mask) {
+                    masks?.push(anno as any)
+                }
+
+                Object.entries(anno).forEach(([key, tmp]: any) => {
+                    find(tmp, [...path, key])
+                })
+            }
         }
+        find(this.annotations)
+        this.cocos = cocos
+        this.masks = masks
+        this.bboxes = bboxes
     }
 
     getCOCOCategories(): number[] {
-        return Array.from(new Set(this.cocos?.map((v: IAnnotationCOCOObject) => v.category_id)))
-    }
-
-    setDataSrc(projectId: string, datasetVersionName: string, datasetVersionVersionName: string, token: string) {
-        const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
-            uri: this.uri,
-            offset: this.offset,
-            size: this.size,
-            Authorization: token as string,
-        })
-        this.src = src
-        this.masks.forEach((msk: any) => {
-            let mskUri = msk.uri
-            if (msk.with_local_fs_data === 'true') {
-                mskUri = msk._local_fs_uri
-            }
-            // eslint-disable-next-line no-param-reassign
-            msk._raw_base64_data = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
-                uri: mskUri,
-                offset: msk.offset,
-                size: msk.size,
-                Authorization: token as string,
-            })
-        })
-        return src
+        return Array.from(new Set(this.cocos?.map((v: ITypeCOCOObjectAnnotation) => v.category_id)))
     }
 }

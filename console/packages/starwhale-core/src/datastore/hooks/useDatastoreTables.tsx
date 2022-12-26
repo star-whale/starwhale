@@ -13,10 +13,12 @@ export function useDatastoreTablesByPrefix(prefix: string) {
     }, [prefix])
 
     const tables = React.useMemo(() => {
-        return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)).filter((v) => !v.includes('results')) ?? []
+        return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)) ?? []
     }, [allTables])
 
     return {
+        isSuccess: allTables.isSuccess,
+        isLoading: allTables.isLoading,
         names: tables,
         tables: tables.map((table) => {
             return {

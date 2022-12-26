@@ -111,7 +111,7 @@ export default function DatasetVersionFilePreview({
     isFullscreen?: boolean
     setIsFullscreen?: any
 }) {
-    const data: any = React.useMemo(() => {
+    const data: DatasetObject | undefined = React.useMemo(() => {
         const row = datasets?.find((v) => v.id === fileId)
         if (!row) return undefined
         return row
@@ -122,7 +122,7 @@ export default function DatasetVersionFilePreview({
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
     const Panel = React.useMemo(() => {
-        if (data?.cocos.length > 0) {
+        if (data && data?.cocos?.length > 0) {
             return (
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 <TabControl
@@ -180,7 +180,7 @@ export default function DatasetVersionFilePreview({
                             </div>
                         )}
 
-                        <DatasetViewer data={data} isZoom hiddenLabels={hiddenLabels} />
+                        <DatasetViewer dataset={data} isZoom hiddenLabels={hiddenLabels} />
                     </div>
                 </div>
             </ModalBody>

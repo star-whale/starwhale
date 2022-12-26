@@ -67,7 +67,6 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
 
     useEffect(() => {
         if (modelVersionInfo.data) {
-            console.log('---', modelVersionInfo.data)
             setModelVersion(modelVersionInfo.data)
         }
     }, [modelVersionInfo.data, setModelVersion])

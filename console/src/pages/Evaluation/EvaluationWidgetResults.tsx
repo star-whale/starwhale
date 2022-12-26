@@ -5,10 +5,10 @@ import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/uti
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
 import Table from '@/components/Table'
-import Editor from '@/components/Editor'
 import { Panel } from 'baseui/accordion'
 import Accordion from '@/components/Accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
+import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -133,7 +133,7 @@ function EvaluationWidgetResults() {
                     return <EvaluationViewer table={name} key={name} />
                 })}
             </div>
-            <Editor />
+            <FullTablesEditor />
         </div>
     )
 }

@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react'
-import ResizeObserver from 'resize-observer-polyfill'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
 import { Search } from 'baseui/icon'
@@ -15,22 +14,7 @@ import ConfigManageColumns from './config-manage-columns'
 import FilterOperateMenu from './filter-operate-menu'
 import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
-
-// @ts-ignore
-function useResizeObserver(
-    ref: { current: HTMLElement | null },
-    callback: (entires: ResizeObserverEntry[], obs: ResizeObserver) => any
-) {
-    React.useLayoutEffect(() => {
-        if (ref.current) {
-            const observer = new ResizeObserver(callback)
-            observer.observe(ref.current)
-            return () => observer.disconnect()
-        }
-        // @eslint-disable-next-line consistent-return
-        return () => {}
-    }, [ref, callback])
-}
+import { useResizeObserver } from '../../utils/useResizeObserver'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -89,7 +73,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const { pinnedIds = [], selectedIds = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
-        if (!columnable) return columns
+        // if (!columnable) return columns
 
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
@@ -236,56 +220,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
                             </div>
-
-                            {false && Boolean($rowSelectedIds.size) && props.batchActions && (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        paddingTop: theme.sizing.scale400,
-                                        paddingBottom: theme.sizing.scale400,
-                                    }}
-                                >
-                                    {props.batchActions?.map((action) => {
-                                        const onClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
-                                            action.onClick({
-                                                clearSelection: onSelectNone,
-                                                event,
-                                                selection: props.rows.filter((r) => $rowSelectedIds.has(r.id)),
-                                            })
-                                        }
-
-                                        if (action.renderIcon) {
-                                            const Icon = action.renderIcon
-                                            return (
-                                                <Button
-                                                    key={action.label}
-                                                    overrides={{
-                                                        BaseButton: { props: { 'aria-label': action.label } },
-                                                    }}
-                                                    onClick={onClick}
-                                                    kind={BUTTON_KINDS.tertiary}
-                                                    shape={BUTTON_SHAPES.round}
-                                                >
-                                                    {/* @ts-ignore */}
-                                                    <Icon size={16} />
-                                                </Button>
-                                            )
-                                        }
-
-                                        return (
-                                            <Button
-                                                key={action.label}
-                                                onClick={onClick}
-                                                kind={BUTTON_KINDS.secondary}
-                                                size={BUTTON_SIZES.compact}
-                                            >
-                                                {action.label}
-                                            </Button>
-                                        )
-                                    })}
-                                </div>
-                            )}
 
                             {columnable && !$rowSelectedIds.size && (
                                 <div className='flex-row-center mb-20'>

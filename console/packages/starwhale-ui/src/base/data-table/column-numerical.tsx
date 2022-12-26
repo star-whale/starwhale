@@ -10,7 +10,7 @@ import { useStyletron } from 'baseui'
 import Column from './column'
 import { COLUMNS, NUMERICAL_FORMATS, MAX_BIN_COUNT, HISTOGRAM_SIZE } from './constants'
 import FilterShell, { type ExcludeKind } from './filter-shell'
-import type { ColumnT, SharedColumnOptionsT } from './types'
+import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
 import { LocaleContext } from './locales'
 // @ts-ignore
 import { bin, max as maxFunc, extent, scaleLinear, median, bisector } from 'd3'
@@ -434,9 +434,9 @@ function NumericalCell(props) {
     return (
         <div
             className={css({
-                ...theme.typography.MonoParagraphXSmall,
+                // ...theme.typography.MonoParagraphXSmall,
                 display: 'flex',
-                justifyContent: theme.direction !== 'rtl' ? 'flex-end' : 'flex-start',
+                justifyContent: theme.direction !== 'rtl' ? 'flex-start' : 'flex-end',
                 // @ts-ignore
                 color: props.highlight(props.value) ? theme.colors.contentNegative : null,
                 width: '100%',
@@ -514,6 +514,7 @@ function NumericalColumn(options: OptionsT): NumericalColumnT {
         sortFn: function (a, b) {
             return a - b
         },
+        filterType: options.filterType ??  FilterTypes.number,
         title: normalizedOptions.title,
         key: options.key,
         pin: options.pin,

@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
 import { StatefulTooltip } from 'baseui/tooltip'
+import { IArtifactText } from '@/domain/dataset/sdk'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -14,16 +15,14 @@ const useStyles = createUseStyles({
     },
 })
 
-type IImageViewerProps = {
+type ITextViewerProps = {
     isZoom?: boolean
-    data: {
-        src: string
-    }
+    data: IArtifactText
 }
 
 const utf8Decoder = new TextDecoder('utf-8')
 
-export default function TextViewer({ isZoom = false, data }: IImageViewerProps) {
+export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
     const [text, setText] = React.useState('')
     const styles = useStyles()
 

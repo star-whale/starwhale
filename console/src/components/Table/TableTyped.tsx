@@ -13,15 +13,13 @@ import {
     StringColumn,
     CustomColumn,
     Types,
-} from '@/components/data-table'
-import _, { uniqueId } from 'lodash'
+} from '@starwhale/ui/base/data-table'
+import _ from 'lodash'
 // import useResizeObserver from '@/hooks/window/useResizeObserver'
-import CategoricalTagsColumn from '../data-table/column-categorical-tags'
-import { useCallback } from 'react'
-import { useTableConfig, useTableViewConfig } from '@/hooks/useTableConfig'
+import CategoricalTagsColumn from '@starwhale/ui/base/data-table/column-categorical-tags'
 import { areEqual } from 'react-window'
-import type { ColumnT, ConfigT, RowT } from '../data-table/types'
-import { IStore } from '../data-table/store'
+import type { RowT } from '@starwhale/ui/base/data-table/types'
+import { IStore } from '@starwhale/ui/base/data-table/store'
 import { useEffect } from 'react'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'

@@ -10,14 +10,13 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/TableTyped'
 import { useHistory, useParams } from 'react-router-dom'
 import IconFont from '@/components/IconFont'
-import { CustomColumn, StringColumn } from '@/components/data-table'
+import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
-import { ColumnT } from '@/components/data-table/types'
+import { ColumnT } from '@starwhale/ui/base/data-table/types'
 import _ from 'lodash'
 import { useStyletron } from 'baseui'
-import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
-import { StoreProvider } from '@/components/data-table/storeContext'
+import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
@@ -390,19 +389,17 @@ export default function EvaluationListCard() {
                         flex: 1,
                     }}
                 >
-                    <StoreProvider initState={{}}>
-                        <Table
-                            useStore={useEvaluationStore}
-                            searchable
-                            filterable
-                            columnable
-                            viewable
-                            batchActions={batchAction}
-                            isLoading={evaluationsInfo.isLoading}
-                            columns={$columnsWithAttrs}
-                            data={$data}
-                        />
-                    </StoreProvider>
+                    <Table
+                        useStore={useEvaluationStore}
+                        searchable
+                        filterable
+                        columnable
+                        viewable
+                        batchActions={batchAction}
+                        isLoading={evaluationsInfo.isLoading}
+                        columns={$columnsWithAttrs}
+                        data={$data}
+                    />
                 </div>
                 {compareRows.length > 0 && (
                     <>
