@@ -39,7 +39,6 @@ with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
     _npy = numpy.asarray(msk) * 50
     msk = PILImage.fromarray(_npy)
     msk.putalpha(127)
-    msk.putalpha(127)
     img.paste(msk, (0, 0), mask=msk)
     annotations.pop("mask")
     draw.text((28, 36), json.dumps(annotations, indent=2), fill="red")
