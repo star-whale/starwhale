@@ -194,7 +194,6 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     },
                                 },
                             }}
-                            size='compact'
                             as='withIcon'
                             startEnhancer={() => <IconFont type='runtime' />}
                             onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}

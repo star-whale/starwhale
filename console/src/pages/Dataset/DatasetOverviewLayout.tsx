@@ -10,7 +10,6 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
 import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
-import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
 import { Panel } from 'baseui/accordion'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
@@ -19,6 +18,7 @@ import { usePage } from '@/hooks/usePage'
 import Search from '@starwhale/ui/Search'
 import { useQueryDatasetList } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
+import { Button } from '@starwhale/ui'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -170,8 +170,12 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
+    const extra = useMemo(() => {
+        return <Button>Remove</Button>
+    }, [])
+
     return (
-        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems}>
+        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} extra={extra}>
             <Accordion
                 accordion
                 overrides={{
@@ -206,8 +210,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                             )}
                             {datasetVersionId && (
                                 <Button
-                                    size='compact'
-                                    as='withIcon'
+                                    // as='withIcon'
+                                    kind='primary'
                                     startEnhancer={() => <IconFont type='runtime' />}
                                     onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
                                 >

@@ -197,7 +197,6 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                             )}
                             {runtimeVersionId && (
                                 <Button
-                                    size='compact'
                                     as='withIcon'
                                     startEnhancer={() => <IconFont type='runtime' />}
                                     onClick={() =>

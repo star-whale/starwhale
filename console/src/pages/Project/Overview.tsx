@@ -89,7 +89,6 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     <WithAuth role={role} id='project.update'>
                         <Button
                             onClick={() => onEdit?.()}
-                            size='compact'
                             as='withIcon'
                             startEnhancer={() => <IconFont type='edit' size={13} />}
                         >
@@ -127,7 +126,6 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     <WithAuth role={role} id='member.update'>
                         <Button
                             onClick={() => history.push(`/projects/${project.id}/members`)}
-                            size='compact'
                             as='withIcon'
                             startEnhancer={() => <IconFont type='a-managemember' size={13} />}
                         >
