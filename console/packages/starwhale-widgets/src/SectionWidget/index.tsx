@@ -3,7 +3,14 @@ import React, { useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
-import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
+import {
+    PanelAddEvent,
+    PanelEditEvent,
+    PanelDeleteEvent,
+    PanelPreviewEvent,
+    PanelDownloadEvent,
+    PanelReloadEvent,
+} from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
 // @ts-ignore
@@ -98,6 +105,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     }
     const handlePreviewPanel = (id: string) => {
         eventBus.publish(new PanelPreviewEvent({ id }))
+    }
+    const handleDownloadPanel = (id: string) => {
+        eventBus.publish(new PanelDownloadEvent({ id }))
+    }
+    const handleReloadPanel = (id: string) => {
+        eventBus.publish(new PanelReloadEvent({ id }))
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -253,6 +266,8 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                                     onEdit={() => handleEditPanel(child.props.id)}
                                     onDelete={() => handleDeletePanel(child.props?.id)}
                                     onPreview={() => handlePreviewPanel(child.props?.id)}
+                                    onDownload={() => handleDownloadPanel(child.props?.id)}
+                                    onReload={() => handleReloadPanel(child.props?.id)}
                                 />
                             </div>
                         </Resizable>

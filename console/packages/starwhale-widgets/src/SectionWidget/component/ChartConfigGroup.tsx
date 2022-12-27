@@ -29,10 +29,14 @@ export default function ChartConfigGroup({
     onEdit = () => {},
     onDelete = () => {},
     onPreview = () => {},
+    onDownload = () => {},
+    onReload = () => {},
 }: {
     onEdit?: () => void
     onDelete?: () => void
     onPreview?: () => void
+    onDownload?: () => void
+    onReload?: () => void
 }) {
     const styles = useStyles()
     const actions = {
@@ -48,6 +52,12 @@ export default function ChartConfigGroup({
                     actions?.[item?.type]()
                 }}
             />
+            <div className={styles.icon} role='button' onClick={() => onReload()} tabIndex={0}>
+                <IconFont type='reset' size={12} />
+            </div>
+            <div className={styles.icon} role='button' onClick={() => onDownload()} tabIndex={0}>
+                <IconFont type='download' size={12} />
+            </div>
             <div className={styles.icon} role='button' onClick={() => onPreview()} tabIndex={0}>
                 <IconFont type='fullscreen' size={12} />
             </div>

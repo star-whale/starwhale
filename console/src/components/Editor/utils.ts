@@ -19,6 +19,7 @@ export const tranformState = (state: {
             if (widgetConfig) {
                 defaults[type] = widgetConfig.defaults
                 widgets[widgetConfig.overrides.id] = {
+                    type,
                     ...widgetConfig.overrides,
                     ...rest,
                 }

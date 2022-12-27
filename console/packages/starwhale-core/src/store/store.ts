@@ -48,8 +48,6 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                     const { current } = getTreePath(state, id)
                                     const node = _.get(state, current)
 
-                                    console.log('---', id, node, type, currType, current)
-
                                     // udpate tree ndoe
                                     _.set(state, current, {
                                         ...node,
@@ -69,10 +67,9 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                     onWidgetDelete: (id: string) =>
                         set(
                             produce((state) => {
-                                const { type } = state.widgets?.[id] ?? {}
+                                const { type } = _.get(get(), ['widgets', id], {})
                                 if (!id || !type) return
                                 const { current, parent } = getTreePath(state, id)
-                                console.log(id, type, current)
                                 const currentIndex = getCurrentIndex(current)
                                 const currentParent = _.get(state, parent) ?? []
                                 const darr = currentParent.slice()
