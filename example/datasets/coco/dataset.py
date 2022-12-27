@@ -23,11 +23,17 @@ def do_iter_item():
             img_shape = (img_meta["height"], img_meta["width"])
             msk_f_name = anno["file_name"]
             msk_f_pth = DATA_DIR / "annotations" / "panoptic_val2017" / msk_f_name
+            for sg in anno["segments_info"]:
+                x, y, w, h = sg["bbox"]
+                sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
             anno["mask"] = Link(
                 auth=None,
                 with_local_fs_data=True,
                 data_type=Image(
-                    display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                    display_name=msk_f_name,
+                    shape=img_shape,
+                    mime_type=MIMEType.PNG,
+                    as_mask=True,
                 ),
                 uri=str(msk_f_pth.absolute()),
             )
@@ -84,11 +90,18 @@ def do_iter_item_from_remote():
         img_shape = (img_meta["height"], img_meta["width"])
         msk_f_name = anno["file_name"]
 
+        for sg in anno["segments_info"]:
+            x, y, w, h = sg["bbox"]
+            sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
+
         anno["mask"] = Link(
             auth=_auth,
             with_local_fs_data=False,
             data_type=Image(
-                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                display_name=msk_f_name,
+                shape=img_shape,
+                mime_type=MIMEType.PNG,
+                as_mask=True,
             ),
             uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
         )
@@ -115,10 +128,17 @@ def do_iter_item_from_http():
         img_shape = (img_meta["height"], img_meta["width"])
         msk_f_name = anno["file_name"]
 
+        for sg in anno["segments_info"]:
+            x, y, w, h = sg["bbox"]
+            sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
+
         anno["mask"] = Link(
             with_local_fs_data=False,
             data_type=Image(
-                display_name=msk_f_name, shape=img_shape, mime_type=MIMEType.PNG
+                display_name=msk_f_name,
+                shape=img_shape,
+                mime_type=MIMEType.PNG,
+                as_mask=True,
             ),
             uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/annotations/panoptic_val2017/{msk_f_name}",
         )
