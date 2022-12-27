@@ -1,20 +1,21 @@
 ---
-title: The `caltech-101` Dataset
+title: The `sbd` Dataset
 ---
 
-## The Caltech 101 Dataset Description
+## The Semantic Boundaries Dataset Description
 
-- [Homepage](https://data.caltech.edu/records/mzrjq-6wc02)
+- [Homepage](http://home.bharathh.info/pubs/codes/SBD/download.html)
 
-## The `caltech-101` dataset Structure
+## The `sbd` dataset Structure
 
 ### Data Fields
 
 - `data`: `starwhale.Image` loaded as bytes array
 - `annotations` of type dict:
-    - `label`: the label for the image
+    - `boundaries`: the boundaries for the objects of type `bytes`
+    - `shape`: the shape for the image of type `tuple`
 
-## Build `caltech-101` Dataset locally
+## Build `sbd` Dataset locally
 
 ```shell
 python3 dataset.py
@@ -22,7 +23,7 @@ python3 dataset.py
 
 ## Example
 
-Output the first 1 record of the `caltech-101` dataset.
+Output the `2008_000202` record of the `sbd` dataset.
 
 ```shell
 python3 example.py

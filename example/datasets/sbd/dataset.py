@@ -26,7 +26,7 @@ def build_ds():
         with requests.get(f"{PATH_ROOT}/{CLS_PATH}/{item}.mat", timeout=10) as rsp:
             mat = scipy.io.loadmat(io.BytesIO(rsp.content))
             cls = mat["GTcls"]
-            boundries = cls[0][0][1]
+            boundaries = cls[0][0][1]
             ds.append(
                 (
                     item,
@@ -35,7 +35,7 @@ def build_ds():
                         data_type=Image(display_name=item, mime_type=MIMEType.JPEG),
                         with_local_fs_data=False,
                     ),
-                    {"boundries": boundries.tobytes(), "shape": boundries.shape},
+                    {"boundaries": boundaries.tobytes(), "shape": boundaries.shape},
                 )
             )
 

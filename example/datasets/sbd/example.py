@@ -15,7 +15,7 @@ with PILImage.open(io.BytesIO(data.fp)) as img:
     draw = ImageDraw.Draw(img)
 
     msk = PILImage.fromarray(
-        numpy.frombuffer(annotations["boundries"], dtype=numpy.uint8).reshape(
+        numpy.frombuffer(annotations["boundaries"], dtype=numpy.uint8).reshape(
             annotations["shape"]
         )
         * 50
