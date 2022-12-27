@@ -4,7 +4,7 @@ import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useHistory, useParams, useLocation } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
-import { fetchRuntime } from '@/domain/runtime/services/runtime'
+import { fetchRuntime, removeRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Accordion from '@/components/Accordion'
@@ -16,6 +16,8 @@ import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
+import { ConfirmButton } from '@/components/Modal/confirm'
+import { toaster } from 'baseui/toast'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -161,8 +163,23 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
+    const extra = useMemo(() => {
+        return (
+            <ConfirmButton
+                title={t('runtime.remove.confirm')}
+                onClick={async () => {
+                    await removeRuntime(projectId, runtimeId)
+                    toaster.positive(t('runtime.remove.success'), { autoHideDuration: 1000 })
+                    history.push(`/projects/${projectId}/runtimes`)
+                }}
+            >
+                {t('runtime.remove.button')}
+            </ConfirmButton>
+        )
+    }, [projectId, runtimeId, history, t])
+
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header}>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header} extra={extra}>
             <Accordion
                 accordion
                 overrides={{

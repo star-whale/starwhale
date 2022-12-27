@@ -28,3 +28,8 @@ export async function createModel(projectId: string, data: ICreateModelSchema): 
     })
     return resp.data
 }
+
+export async function removeModel(projectId: string, modelId: string): Promise<any> {
+    const resp = await axios.delete(`/api/v1/project/${projectId}/model/${modelId}`)
+    return resp.data
+}

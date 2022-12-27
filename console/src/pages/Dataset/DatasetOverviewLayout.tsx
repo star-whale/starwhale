@@ -19,6 +19,9 @@ import Search from '@starwhale/ui/Search'
 import { useQueryDatasetList } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { Button } from '@starwhale/ui'
+import { ConfirmButton } from '@/components/Modal/confirm'
+import { removeDataset } from '@/domain/dataset/services/dataset'
+import { toaster } from 'baseui/toast'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -171,8 +174,19 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     }, [location.pathname, navItems])
 
     const extra = useMemo(() => {
-        return <Button>Remove</Button>
-    }, [])
+        return (
+            <ConfirmButton
+                title={t('dataset.remove.confirm')}
+                onClick={async () => {
+                    await removeDataset(projectId, datasetId)
+                    toaster.positive(t('dataset.remove.success'), { autoHideDuration: 1000 })
+                    history.push(`/projects/${projectId}/datasets`)
+                }}
+            >
+                {t('dataset.remove.button')}
+            </ConfirmButton>
+        )
+    }, [projectId, datasetId, history, t])
 
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} extra={extra}>
