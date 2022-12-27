@@ -232,10 +232,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         d = self.store.src_dir
         svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
-        ensure_file(
-            _f, yaml.safe_dump(svc.get_spec().to_dict(), default_flow_style=False)
-        )
-
+        ensure_file(_f, yaml.safe_dump(svc.get_spec()))
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
@@ -720,11 +717,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         workdir: Path,
         host: str,
         port: int,
-        handlers: t.Optional[t.List[str]] = None,
     ) -> None:
         _model_config = cls.load_model_config(workdir / model_yaml)
         svc = cls._get_service(_model_config.run.handler, workdir)
-        svc.serve(host, port, handlers)
+        svc.serve(host, port)
 
 
 class CloudModel(CloudBundleModelMixin, Model):

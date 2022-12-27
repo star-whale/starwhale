@@ -266,7 +266,6 @@ class ModelTermView(BaseTermView):
         model_uri: str,
         host: str,
         port: int,
-        handlers: t.Optional[t.List[str]] = None,
     ) -> None:
         if target and model_uri:
             console.print("workdir and model can not both set together")
@@ -286,7 +285,6 @@ class ModelTermView(BaseTermView):
             workdir=workdir,
             host=host,
             port=port,
-            handlers=handlers,
         )
 
         if runtime_uri:

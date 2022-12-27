@@ -31,7 +31,7 @@ install_requires = [
     "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1",
-    "flask~=2.2.2",
+    "gradio~=3.15.0",
 ]
 
 extras_require = {
