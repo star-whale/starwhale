@@ -29,6 +29,7 @@ from starwhale.base.type import (
     ObjectStoreType,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.core.dataset.type import (
     Line,
@@ -521,3 +522,39 @@ class TestPolygon(TestCase):
             ),
             data_store._get_type(p),
         ),
+
+
+class CloudDatasetTest(TestCase):
+    def setUp(self) -> None:
+        sw_config._config = {}
+
+    def test_cli_list(self) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            list_cli,
+            ["--name", "mnist", "--owner", "starwhale", "--latest"],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] == "mnist"
+        assert call_args[5]["owner"] == "starwhale"
+        assert call_args[5]["latest"]
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            list_cli,
+            [],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] is None
+        assert call_args[5]["owner"] is None
+        assert not call_args[5]["latest"]

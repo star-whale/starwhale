@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
@@ -25,6 +26,7 @@ from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
+from starwhale.core.model.cli import _list as list_cli
 from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel, resource_to_file_node
@@ -396,3 +398,39 @@ class StandaloneModelTestCase(TestCase):
 
         with self.assertRaises(SystemExit):
             ModelTermView.serve("set", yaml, runtime, "set", host, port)
+
+
+class CloudModelTest(TestCase):
+    def setUp(self) -> None:
+        sw_config._config = {}
+
+    def test_cli_list(self) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            list_cli,
+            ["--name", "mask_rcnn", "--owner", "sw", "--latest"],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] == "mask_rcnn"
+        assert call_args[5]["owner"] == "sw"
+        assert call_args[5]["latest"]
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            list_cli,
+            [],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] is None
+        assert call_args[5]["owner"] is None
+        assert not call_args[5]["latest"]

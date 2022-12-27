@@ -34,6 +34,7 @@ from starwhale.utils.error import (
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.runtime.cli import _list as runtime_list_cli
 from starwhale.core.runtime.cli import _build as runtime_build_cli
 from starwhale.core.runtime.view import (
     get_term_view,
@@ -1978,3 +1979,39 @@ class DependenciesTestCase(TestCase):
 
         with self.assertRaises(FormatError):
             WheelDependency(["d.d"])
+
+
+class CloudRuntimeTest(TestCase):
+    def setUp(self) -> None:
+        sw_config._config = {}
+
+    def test_cli_list(self) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_list_cli,
+            ["--name", "pytorch", "--owner", "test", "--latest"],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] == "pytorch"
+        assert call_args[5]["owner"] == "test"
+        assert call_args[5]["latest"]
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_list_cli,
+            [],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] is None
+        assert call_args[5]["owner"] is None
+        assert not call_args[5]["latest"]
