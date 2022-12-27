@@ -24,10 +24,12 @@ public interface JobSchema {
     String STRING = "STRING";
     String LIST = "LIST";
     String MAP = "MAP";
+    String INT32 = "INT32";
     String INT64 = "INT64";
     String BOOL = "BOOL";
 
     String KeyColumn = "id";
+    String LongIdColumn = "sys/id";
     String ProjectIdColumn = "sys/project_id";
     String ModelVersionIdColumn = "sys/model_version_id";
     String ModelNameColumn = "sys/model_name";
@@ -51,6 +53,7 @@ public interface JobSchema {
     String IsDeletedColumn = "sys/_is_deleted";
     TableSchemaDesc tableSchemaDesc = new TableSchemaDesc(KeyColumn, List.of(
             ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(LongIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ProjectIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
@@ -74,6 +77,6 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(StepSpecColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(ResourcePoolColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(CommentColumn).type(STRING).build(),
-            ColumnSchemaDesc.builder().name(IsDeletedColumn).type(BOOL).build()
+            ColumnSchemaDesc.builder().name(IsDeletedColumn).type(INT32).build()
     ));
 }

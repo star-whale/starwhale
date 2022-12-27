@@ -59,7 +59,7 @@ public class ResultQuerier {
         this.objectMapper = objectMapper;
     }
 
-    public Object resultOfJob(String jobId) {
+    public Object resultOfJob(Long jobId) {
         try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))) {
             return objectMapper.readValue(inputStream, Object.class);
         } catch (IOException e) {
@@ -67,7 +67,7 @@ public class ResultQuerier {
         }
     }
 
-    public Map<String, Object> flattenResultOfJob(String jobId) {
+    public Map<String, Object> flattenResultOfJob(Long jobId) {
         try (InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
                 Reader reader = new InputStreamReader(inputStream)) {
             JsonFlattener jf = new JsonFlattener(reader);
@@ -95,7 +95,7 @@ public class ResultQuerier {
     //        }
     //    }
 
-    public String resultPathOfJob(String jobId) {
+    public String resultPathOfJob(Long jobId) {
         JobEntity jobEntity = jobRepo.findJobById(jobId);
         if (null == jobEntity) {
             throw new SwValidationException(ValidSubject.JOB, "unknown jobid");

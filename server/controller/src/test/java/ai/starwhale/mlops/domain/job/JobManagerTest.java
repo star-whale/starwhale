@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,23 +40,35 @@ public class JobManagerTest {
     public void setUp() {
         JobRepo jobRepo = mock(JobRepo.class);
         JobEntity job1 = JobEntity.builder()
-                .id("job-uuid-1")
+                .id(1L)
+                .jobUuid("job-uuid-1")
                 .build();
-        given(jobRepo.findJobById(same("job-uuid-1")))
+        JobEntity job2 = JobEntity.builder()
+                .id(2L)
+                .jobUuid("job-uuid-2")
+                .build();
+        given(jobRepo.findJobById(same(1L)))
                 .willReturn(job1);
-        manager = new JobManager(jobRepo);
+        given(jobRepo.findJobByUuid(same("job-uuid-2")))
+                .willReturn(job2);
+        manager = new JobManager(jobRepo, new IdConverter());
     }
 
     @Test
     public void testFindJob() {
-        var res = manager.findJob("job-uuid-1");
+        var res = manager.findJob("1");
         assertThat(res, allOf(
                 notNullValue(),
-                hasProperty("id", is("job-uuid-1"))
+                hasProperty("id", is(1L)),
+                hasProperty("jobUuid", is("job-uuid-1"))
         ));
 
-        res = manager.findJob("");
-        assertThat(res, nullValue());
+        res = manager.findJob("job-uuid-2");
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("id", is(2L)),
+                hasProperty("jobUuid", is("job-uuid-2"))
+        ));
 
         res = manager.findJob("job-uuid-x");
         assertThat(res, nullValue());

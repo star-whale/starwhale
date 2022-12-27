@@ -24,6 +24,8 @@ import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.IsDeletedColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
@@ -62,7 +64,11 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JobEntity implements BundleEntity {
 
-    private String id;
+    @JsonProperty(LongIdColumn)
+    private Long id;
+
+    @JsonProperty(KeyColumn)
+    private String jobUuid;
 
     @JsonProperty(ProjectIdColumn)
     private Long projectId;
@@ -88,7 +94,6 @@ public class JobEntity implements BundleEntity {
 
     private UserEntity owner;
 
-    // TODO
     @JsonProperty(CreatedTimeColumn)
     private Date createdTime;
 
@@ -136,6 +141,6 @@ public class JobEntity implements BundleEntity {
 
     @Override
     public String getName() {
-        return id;
+        return jobUuid;
     }
 }

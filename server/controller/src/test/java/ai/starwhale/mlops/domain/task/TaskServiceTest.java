@@ -69,16 +69,16 @@ public class TaskServiceTest {
 
     @Test
     public void testListTaskWithResourcePool() {
-        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().id("1L").resourcePool("a").build());
+        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().id(1L).resourcePool("a").build());
         var startedTime = new Date();
-        when(taskMapper.listTasks("1L")).thenReturn(
+        when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
                                 .taskStatus(
                                         TaskStatus.RUNNING).build(),
                         TaskEntity.builder().id(2L).startedTime(startedTime).taskUuid("uuid2")
                                 .taskStatus(
                                         TaskStatus.SUCCESS).build()));
-        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1L",
+        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1",
                 PageParams.builder().pageNum(0).pageSize(3).build());
         Assertions.assertEquals(1, taskVoPageInfo.getPages());
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
@@ -94,16 +94,16 @@ public class TaskServiceTest {
 
     @Test
     public void testListTaskWithoutResourcePool() {
-        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().id("1L").resourcePool("rp").build());
+        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().id(1L).resourcePool("rp").build());
         var startedTime = new Date();
-        when(taskMapper.listTasks("1L")).thenReturn(
+        when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
                                 .taskStatus(
                                         TaskStatus.RUNNING).build(),
                         TaskEntity.builder().id(2L).startedTime(startedTime).taskUuid("uuid2")
                                 .taskStatus(
                                         TaskStatus.SUCCESS).build()));
-        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1L",
+        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1",
                 PageParams.builder().pageNum(0).pageSize(3).build());
         Assertions.assertEquals(1, taskVoPageInfo.getPages());
         Assertions.assertEquals(2, taskVoPageInfo.getSize());

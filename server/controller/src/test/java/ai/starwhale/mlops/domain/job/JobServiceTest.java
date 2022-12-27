@@ -110,9 +110,12 @@ public class JobServiceTest {
         given(projectManager.getProjectId(same("1")))
                 .willReturn(1L);
         jobManager = mock(JobManager.class);
-        given(jobManager.findJob(any()))
-                .willReturn(JobEntity.builder().id("1L").build());
-
+        given(jobManager.findJob("1"))
+                .willReturn(JobEntity.builder().id(1L).build());
+        given(jobManager.getJobId("1"))
+                .willReturn(1L);
+        given(jobManager.getJobId("2"))
+                .willReturn(2L);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
         runtimeDao = mock(RuntimeDao.class);
@@ -143,21 +146,29 @@ public class JobServiceTest {
     public void testFindJob() {
         var res = service.findJob("", "1");
         assertThat(res, hasProperty("id", is("1")));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> service.findJob("", "22"));
     }
 
     @Test
     public void testGetJobResult() {
-        given(resultQuerier.resultOfJob(same("1L")))
+        given(resultQuerier.resultOfJob(same(1L)))
                 .willReturn("result1");
-        var res = service.getJobResult("", "1L");
+        var res = service.getJobResult("", "1");
         assertThat(res, is("result1"));
     }
 
     @Test
     public void testUpdateJobComment() {
-        given(jobRepo.updateJobComment(same("uuid1"), anyString()))
-                .willReturn(1);
-        var res = service.updateJobComment("", "uuid1", "comment");
+        given(jobManager.updateJobComment(same("1"), anyString()))
+                .willReturn(true);
+        given(jobManager.updateJobComment(same("uuid1"), anyString()))
+                .willReturn(true);
+        var res = service.updateJobComment("", "1", "comment");
+        assertThat(res, is(true));
+
+        res = service.updateJobComment("", "uuid1", "comment");
         assertThat(res, is(true));
 
         res = service.updateJobComment("", "2", "comment");
@@ -166,9 +177,14 @@ public class JobServiceTest {
 
     @Test
     public void testRemoveJob() {
-        given(jobRepo.removeJob(same("uuid1"))).willReturn(1);
+        given(jobRepo.removeJob(same(1L))).willReturn(1);
+        given(jobRepo.removeJobByUuid(same("uuid1"))).willReturn(1);
+        given(jobManager.getJobId(same("uuid1"))).willReturn(1L);
 
-        var res = service.removeJob("", "uuid1");
+        var res = service.removeJob("", "1");
+        assertThat(res, is(true));
+
+        res = service.removeJob("", "uuid1");
         assertThat(res, is(true));
 
         res = service.removeJob("", "2");
@@ -192,7 +208,7 @@ public class JobServiceTest {
         given(jobRepo.addJob(any(JobEntity.class)))
                 .willAnswer(invocation -> {
                     JobEntity entity = invocation.getArgument(0);
-                    entity.setId("1L");
+                    entity.setId(1L);
                     return 1;
                 });
         given(datasetDao.getDatasetVersion(anyString()))
@@ -200,11 +216,11 @@ public class JobServiceTest {
 
         var res = service.createJob("1", "3", "1", "2",
                  "", "1", "stepSpec1");
-        assertThat(res, is("1L"));
+        assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
                 "", "1", "stepSpec2");
-        assertThat(res, is("1L"));
+        assertThat(res, is(1L));
     }
 
     @Test
@@ -212,9 +228,9 @@ public class JobServiceTest {
         given(jobRepo.findJobByStatusIn(any()))
                 .willReturn(List.of(JobEntity.builder().build()));
         given(jobBoConverter.fromEntity(any(JobEntity.class)))
-                .willReturn(Job.builder().id("1L").build());
-        given(jobRepo.findJobById(same("1L")))
-                .willReturn(JobEntity.builder().id("1L").build());
+                .willReturn(Job.builder().id(1L).build());
+        given(jobRepo.findJobById(same(1L)))
+                .willReturn(JobEntity.builder().id(1L).build());
         final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
             jobs.add(invocation.getArgument(0));
@@ -224,13 +240,13 @@ public class JobServiceTest {
         service.splitNewCreatedJobs();
         assertThat(jobs, allOf(
                 is(iterableWithSize(1)),
-                is(hasItem(hasProperty("id", is("1L"))))
+                is(hasItem(hasProperty("id", is(1L))))
         ));
     }
 
     @Test
     public void testCancelJob() {
-        given(hotJobHolder.ofIds(argThat(argument -> argument.contains("1L"))))
+        given(hotJobHolder.ofIds(argThat(argument -> argument.contains(1L))))
                 .willReturn(List.of(Job.builder()
                         .steps(List.of(
                                 Step.builder()
@@ -243,7 +259,7 @@ public class JobServiceTest {
         final List<Long> ids = new ArrayList<>();
         doAnswer(invocation -> ids.addAll(invocation.getArgument(0)))
                 .when(taskMapper).updateTaskStatus(anyList(), any());
-        service.cancelJob("1L");
+        service.cancelJob("1");
         assertThat(ids, allOf(
                 iterableWithSize(2),
                 hasItem(1L),
@@ -251,12 +267,12 @@ public class JobServiceTest {
         ));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.cancelJob("2L"));
+                () -> service.cancelJob("2"));
     }
 
     @Test
     public void testPauseJob() {
-        given(hotJobHolder.ofIds(argThat(argument -> argument.contains("1L"))))
+        given(hotJobHolder.ofIds(argThat(argument -> argument.contains(1L))))
                 .willReturn(List.of(Job.builder()
                         .steps(List.of(
                                 Step.builder()
@@ -269,7 +285,7 @@ public class JobServiceTest {
         final List<Long> ids = new ArrayList<>();
         doAnswer(invocation -> ids.addAll(invocation.getArgument(0)))
                 .when(taskMapper).updateTaskStatus(anyList(), any());
-        service.pauseJob("1L");
+        service.pauseJob("1");
         assertThat(ids, allOf(
                 iterableWithSize(2),
                 hasItem(1L),
@@ -282,20 +298,20 @@ public class JobServiceTest {
 
     @Test
     public void testResumeJob() {
-        given(jobRepo.findJobById(same("1L")))
+        given(jobRepo.findJobById(same(1L)))
                 .willReturn(JobEntity.builder().jobStatus(JobStatus.FAIL).build());
-        given(jobRepo.findJobById(same("2L")))
+        given(jobRepo.findJobById(same(2L)))
                 .willReturn(JobEntity.builder().jobStatus(JobStatus.SUCCESS).build());
         final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
             jobs.add(invocation.getArgument(0));
             return invocation.getArgument(0);
         }).when(jobLoader).load(any(), any());
-        service.resumeJob("1L");
+        service.resumeJob("1");
         assertThat(jobs, iterableWithSize(1));
 
         assertThrows(SwValidationException.class,
-                () -> service.resumeJob("2L"));
+                () -> service.resumeJob("2"));
     }
 
 }

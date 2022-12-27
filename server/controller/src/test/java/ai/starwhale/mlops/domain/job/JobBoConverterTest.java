@@ -70,7 +70,7 @@ public class JobBoConverterTest {
     public void testJobBoConverter() throws JsonProcessingException {
 
         JobEntity jobEntity = JobEntity.builder()
-                .id("1L")
+                .id(1L)
                 .projectId(1L)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .jobStatus(JobStatus.RUNNING)

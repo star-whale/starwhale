@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -55,8 +56,6 @@ public class JobConverterTest {
         given(runtimeService.findRuntimeByVersionIds(anyList()))
                 .willReturn(List.of(RuntimeVo.builder().id("1").build()));
         DatasetDao datasetDao = mock(DatasetDao.class);
-        given(datasetDao.listDatasetVersionsOfJob(anyString()))
-                .willReturn(List.of(DatasetVersion.builder().id(1L).versionName("v1").build()));
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
@@ -71,7 +70,8 @@ public class JobConverterTest {
     @Test
     public void testConvert() {
         JobEntity entity = JobEntity.builder()
-                .id("1L")
+                .id(1L)
+                .jobUuid("job-uuid")
                 .owner(UserEntity.builder().build())
                 .modelName("model")
                 .modelVersion(ModelVersionEntity.builder().versionName("v1").build())
@@ -86,7 +86,8 @@ public class JobConverterTest {
         var res = jobConvertor.convert(entity);
         assertThat(res, allOf(
                 notNullValue(),
-                hasProperty("id", is("1L")),
+                hasProperty("id", is("1")),
+                hasProperty("uuid", is("job-uuid")),
                 hasProperty("owner", isA(UserVo.class)),
                 hasProperty("modelName", is("model")),
                 hasProperty("modelVersion", is("v1")),

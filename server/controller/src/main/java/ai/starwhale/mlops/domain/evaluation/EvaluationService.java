@@ -60,7 +60,7 @@ public class EvaluationService {
     private final JobConverter jobConvertor;
     private final JobStatusMachine jobStatusMachine;
 
-    private static final Map<String, SummaryVo> summaryCache = new ConcurrentHashMap<>();
+    private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
     public EvaluationService(UserService userService, ProjectManager projectManager, JobRepo jobRepo,
             ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
@@ -128,6 +128,7 @@ public class EvaluationService {
         JobVo jobVo = jobConvertor.convert(entity);
         SummaryVo summaryVo = SummaryVo.builder()
                 .id(jobVo.getId())
+                .uuid(jobVo.getUuid())
                 .projectId(idConvertor.convert(entity.getProject().getId()))
                 .projectName(entity.getProject().getProjectName())
                 .modelName(jobVo.getModelName())

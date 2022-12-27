@@ -33,6 +33,9 @@ public class SummaryVo {
     @JsonProperty("id")
     private String id;
 
+    @JsonProperty("uuid")
+    private String uuid;
+
     @JsonProperty("projectId")
     private String projectId;
 

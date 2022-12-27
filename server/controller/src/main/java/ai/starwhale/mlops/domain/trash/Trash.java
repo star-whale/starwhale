@@ -25,7 +25,7 @@ public class Trash {
 
     private Type type;
 
-    private Object objectId;
+    private Long objectId;
 
     private Long projectId;
 

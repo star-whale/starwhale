@@ -126,12 +126,12 @@ public class EvaluationServiceTest {
         given(jobRepo.listJobs(same(1L), any()))
                 .willReturn(List.of(
                         JobEntity.builder()
-                                .id("1")
+                                .id(1L)
                                 .project(ProjectEntity.builder().id(1L).projectName("p1").build())
                                 .jobStatus(JobStatus.PAUSED)
                                 .build(),
                         JobEntity.builder()
-                                .id("2")
+                                .id(2L)
                                 .project(ProjectEntity.builder().id(1L).projectName("p1").build())
                                 .jobStatus(JobStatus.SUCCESS)
                                 .build()
@@ -140,7 +140,8 @@ public class EvaluationServiceTest {
                 .willAnswer(invocation -> {
                     JobEntity entity = invocation.getArgument(0);
                     return JobVo.builder()
-                            .id(entity.getId())
+                            .id(String.valueOf(entity.getId()))
+                            .uuid("uuid" + entity.getId())
                             .modelName("model" + entity.getId())
                             .datasets(List.of("1", "2", "3"))
                             .runtime(RuntimeVo.builder().name("runtime" + entity.getId()).build())
@@ -162,6 +163,7 @@ public class EvaluationServiceTest {
                         is(iterableWithSize(2)),
                         is(hasItem(allOf(
                                         hasProperty("id", is("1")),
+                                        hasProperty("uuid", is("uuid1")),
                                         hasProperty("modelName", is("model1")),
                                         hasProperty("runtime", is("runtime1")),
                                         hasProperty("device", is("device1")),

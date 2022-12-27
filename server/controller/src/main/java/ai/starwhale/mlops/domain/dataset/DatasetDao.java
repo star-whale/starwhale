@@ -33,7 +33,6 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.job.storage.JobDatasetVersionMapper;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import java.util.List;
@@ -48,17 +47,13 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     private final DatasetMapper datasetMapper;
     private final DatasetVersionMapper datasetVersionMapper;
-
-    private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
 
     public DatasetDao(DatasetMapper datasetMapper, DatasetVersionMapper datasetVersionMapper,
-            JobDatasetVersionMapper jobDatasetVersionMapper,
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
-        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
@@ -102,19 +97,13 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return DatasetVersion.fromEntity(datasetEntity, versionEntity);
     }
 
-    @Deprecated
-    public List<DatasetVersion> listDatasetVersionsOfJob(String jobId) {
-        List<Long> versionIds = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(jobId);
-        return this.listDatasetVersions(versionIds);
-    }
-
     public List<DatasetVersion> listDatasetVersions(List<Long> versionIds) {
         return versionIds.stream().map(this::getDatasetVersion).collect(Collectors.toList());
     }
 
     @Override
-    public BundleEntity findById(Object id) {
-        return datasetMapper.find((Long) id);
+    public BundleEntity findById(Long id) {
+        return datasetMapper.find(id);
     }
 
     @Override
@@ -154,7 +143,7 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     @Override
     public Boolean updateTag(HasTag entity) {
-        int r = datasetVersionMapper.updateTag((Long) entity.getId(), entity.getTag());
+        int r = datasetVersionMapper.updateTag(entity.getId(), entity.getTag());
         if (r > 0) {
             log.info("Dataset Version Tag has been modified. ID={}", entity.getId());
         }
@@ -177,13 +166,13 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Object id) {
-        return datasetMapper.findDeleted((Long) id);
+    public BundleEntity findDeletedBundleById(Long id) {
+        return datasetMapper.findDeleted(id);
     }
 
     @Override
-    public Boolean recover(Object id) {
-        return datasetMapper.recover((Long) id) > 0;
+    public Boolean recover(Long id) {
+        return datasetMapper.recover(id) > 0;
     }
 
     @Override

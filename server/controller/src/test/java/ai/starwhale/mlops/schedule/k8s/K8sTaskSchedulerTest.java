@@ -135,10 +135,11 @@ public class K8sTaskSchedulerTest {
 
     private Task mockTask() {
         Job job = Job.builder()
-                .id("juuid")
+                .id(1L)
                 .model(Model.builder().path("path_swmp").build())
                 .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
                 .type(JobType.EVALUATION)
+                .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).build()))

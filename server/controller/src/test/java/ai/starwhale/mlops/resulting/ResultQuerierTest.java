@@ -92,9 +92,9 @@ public class ResultQuerierTest {
         JobRepo jobRepo = mockJobRepo();
         StorageAccessService storageAccessService = mockStorageAccessService();
         ResultQuerier resultQuerier = new ResultQuerier(jobRepo, storageAccessService, new ObjectMapper());
-        Object o = resultQuerier.resultOfJob("1L");
+        Object o = resultQuerier.resultOfJob(1L);
         Assertions.assertEquals(OBJECT, objectMapper.writeValueAsString(o));
-        Map<String, Object> result = resultQuerier.flattenResultOfJob("6L");
+        Map<String, Object> result = resultQuerier.flattenResultOfJob(6L);
         Assertions.assertEquals(52, result.size());
         Assertions.assertEquals("multi_classification", result.get("kind"));
         Assertions.assertNotNull(result.get("labels/9/support"));
@@ -106,11 +106,10 @@ public class ResultQuerierTest {
         JobRepo jobRepo = mockJobRepo();
         StorageAccessService storageAccessService = mockStorageAccessService();
         ResultQuerier resultQuerier = new ResultQuerier(jobRepo, storageAccessService, new ObjectMapper());
-        // TODO why
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("2L"));
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("3L"));
-        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob("4L"));
-        Assertions.assertThrowsExactly(SwProcessException.class, () -> resultQuerier.resultOfJob("5L"));
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(2L));
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(3L));
+        Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(4L));
+        Assertions.assertThrowsExactly(SwProcessException.class, () -> resultQuerier.resultOfJob(5L));
     }
 
     private StorageAccessService mockStorageAccessService() throws IOException {
@@ -134,16 +133,16 @@ public class ResultQuerierTest {
 
     JobRepo mockJobRepo() {
         JobRepo jobRepo = mock(JobRepo.class);
-        when(jobRepo.findJobById("1L")).thenReturn(mockJobEntity("1L", JobStatus.SUCCESS, resultOutputPath));
-        when(jobRepo.findJobById("3L")).thenReturn(mockJobEntity("3L", JobStatus.RUNNING, resultOutputPath));
-        when(jobRepo.findJobById("4L")).thenReturn(mockJobEntity("4L", JobStatus.SUCCESS, "resultOutputPath"));
-        when(jobRepo.findJobById("5L")).thenReturn(mockJobEntity("5L", JobStatus.SUCCESS,
+        when(jobRepo.findJobById(1L)).thenReturn(mockJobEntity(1L, JobStatus.SUCCESS, resultOutputPath));
+        when(jobRepo.findJobById(3L)).thenReturn(mockJobEntity(3L, JobStatus.RUNNING, resultOutputPath));
+        when(jobRepo.findJobById(4L)).thenReturn(mockJobEntity(4L, JobStatus.SUCCESS, "resultOutputPath"));
+        when(jobRepo.findJobById(5L)).thenReturn(mockJobEntity(5L, JobStatus.SUCCESS,
                 exceptionPath));
-        when(jobRepo.findJobById("6L")).thenReturn(mockJobEntity("6L", JobStatus.SUCCESS, mockResultOutputPath));
+        when(jobRepo.findJobById(6L)).thenReturn(mockJobEntity(6L, JobStatus.SUCCESS, mockResultOutputPath));
         return jobRepo;
     }
 
-    private JobEntity mockJobEntity(String jobId, JobStatus jobStatus, String resultPath) {
+    private JobEntity mockJobEntity(Long jobId, JobStatus jobStatus, String resultPath) {
         return JobEntity.builder().id(jobId).jobStatus(jobStatus).resultOutputPath(
                 resultPath).build();
     }

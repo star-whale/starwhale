@@ -39,7 +39,7 @@ public class StepEntity extends BaseEntity {
 
     Long lastStepId;
 
-    String jobId;
+    Long jobId;
 
     StepStatus status;
 

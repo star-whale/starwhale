@@ -18,10 +18,13 @@ package ai.starwhale.mlops.domain.job.storage;
 
 import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +42,7 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.exception.SwProcessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
@@ -59,12 +63,15 @@ public class JobRepoTest {
 
     private ModelVersionMapper modelVersionMapper;
 
+    private UserMapper userMapper;
+
     @BeforeEach
     public void initData() {
         this.projectMapper = mock(ProjectMapper.class);
         this.modelVersionMapper = mock(ModelVersionMapper.class);
+        this.userMapper = mock(UserMapper.class);
         this.dataStore = mock(DataStore.class);
-        jobRepo = new JobRepo(dataStore, projectMapper, modelVersionMapper, new ObjectMapper());
+        jobRepo = new JobRepo(dataStore, projectMapper, modelVersionMapper, userMapper, new ObjectMapper());
     }
 
     @Test
@@ -73,7 +80,8 @@ public class JobRepoTest {
                 .thenReturn(ProjectEntity.builder().projectName("test-project").build());
 
         JobEntity jobEntity = JobEntity.builder()
-                .id("1q2w3e4r5t6y")
+                .id(1L)
+                .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
                 .runtimeVersionId(1L)
                 .runtimeVersionValue("1a2s3d4f5g6h")
@@ -96,6 +104,11 @@ public class JobRepoTest {
 
         verify(dataStore, times(1))
                 .update(eq("project/test-project/eval/summary"), any(), anyList());
+
+        assertThat("convert",
+                jobRepo.convert(jobEntity.getDatasetIdVersionMap()),
+                is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
+        );
     }
 
     @Test
@@ -109,6 +122,7 @@ public class JobRepoTest {
                 .thenReturn(new RecordList(Map.of(), List.of(
                     Map.of(
                         KeyColumn, "1q2w3e4r5t6y",
+                        LongIdColumn, "1",
                         ProjectIdColumn, "0000000000000001",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -117,6 +131,7 @@ public class JobRepoTest {
                     ),
                     Map.of(
                         KeyColumn, "1a2s3d4f5g6h",
+                        LongIdColumn, "2",
                         ProjectIdColumn, "0000000000000002",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -141,6 +156,7 @@ public class JobRepoTest {
                 .thenReturn(new RecordList(Map.of(), List.of(
                     Map.of(
                         KeyColumn, "1q2w3e4r5t6y",
+                        LongIdColumn, "1",
                         ProjectIdColumn, "0000000000000001",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -149,6 +165,7 @@ public class JobRepoTest {
                     ),
                     Map.of(
                         KeyColumn, "1a2s3d4f5g6h",
+                        LongIdColumn, "2",
                         ProjectIdColumn, "0000000000000002",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -156,13 +173,14 @@ public class JobRepoTest {
                         JobStatusColumn, "RUNNING"
                     )
                 ), null));
-        Assertions.assertThrows(SwProcessException.class, () -> jobRepo.findJobById("123456"));
+        Assertions.assertThrows(SwProcessException.class, () -> jobRepo.findJobById(123456L));
 
         // normal test
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(
                     Map.of(
                         KeyColumn, "1q2w3e4r5t6y",
+                        LongIdColumn, "1",
                         ProjectIdColumn, "0000000000000001",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -170,7 +188,7 @@ public class JobRepoTest {
                         JobStatusColumn, "SUCCESS"
                     )
                 ), null));
-        var job = jobRepo.findJobById("123456");
+        var job = jobRepo.findJobById(123456L);
         Assertions.assertNotNull(job);
         verify(modelVersionMapper, times(1)).findByNameAndModelId(any(), any());
         Assertions.assertEquals(job.getJobStatus(), JobStatus.SUCCESS);
@@ -187,6 +205,7 @@ public class JobRepoTest {
                 .thenReturn(new RecordList(Map.of(), List.of(
                     Map.of(
                         KeyColumn, "1q2w3e4r5t6y",
+                        LongIdColumn, "1",
                         ProjectIdColumn, "0000000000000001",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -195,6 +214,7 @@ public class JobRepoTest {
                     ),
                     Map.of(
                         KeyColumn, "1a2s3d4f5g6h",
+                        LongIdColumn, "2",
                         ProjectIdColumn, "0000000000000002",
                         ModelVersionIdColumn, "0000000000000001",
                         ModelVersionColumn, "1z2x3c4v5b6n",
@@ -213,11 +233,13 @@ public class JobRepoTest {
     @Test
     public void testUpdateStatus() {
         Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().projectName("test-project").build()));
+                .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
+        Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
+                .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(Map.of(KeyColumn, "1q2w3e4r5t6y")), null));
 
-        jobRepo.updateJobStatus("123456", JobStatus.SUCCESS);
+        jobRepo.updateJobStatus(123456L, JobStatus.SUCCESS);
         verify(dataStore, times(1)).update(eq("project/test-project/eval/summary"), any(), anyList());
     }
 }

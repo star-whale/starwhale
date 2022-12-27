@@ -47,6 +47,6 @@ public class GraphNode {
 
     String group;
 
-    Object entityId;
+    Long entityId;
 
 }

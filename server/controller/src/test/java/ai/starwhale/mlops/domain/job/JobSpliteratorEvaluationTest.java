@@ -59,7 +59,7 @@ public class JobSpliteratorEvaluationTest {
                 new StoragePathCoordinator("/test"), taskMapper, jobRepo, stepMapper,
                 mock(JobSpecParser.class));
         JobEntity build = JobEntity.builder()
-                .id("1L")
+                .id(1L)
                 .jobStatus(JobStatus.CREATED)
                 .stepSpec("xxx")
                 .build();

@@ -69,7 +69,8 @@ public class JobConverter {
                 .collect(Collectors.toList());
 
         return JobVo.builder()
-                .id(jobEntity.getId())
+                .id(idConvertor.convert(jobEntity.getId()))
+                .uuid(jobEntity.getJobUuid())
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())

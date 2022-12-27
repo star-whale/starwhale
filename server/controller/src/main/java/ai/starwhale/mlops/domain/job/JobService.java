@@ -137,23 +137,24 @@ public class JobService {
     }
 
     public Object getJobResult(String projectUrl, String jobUrl) {
-        return resultQuerier.resultOfJob(jobUrl);
+        Long jobId = jobManager.getJobId(jobUrl);
+        return resultQuerier.resultOfJob(jobId);
     }
 
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
-        int res = jobRepo.updateJobComment(jobUrl, comment);
-        return res > 0;
+        return jobManager.updateJobComment(jobUrl, comment);
     }
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
+        Long jobId = jobManager.getJobId(jobUrl);
         Trash trash = Trash.builder()
                 .projectId(projectManager.getProjectId(projectUrl))
-                .objectId(jobUrl)
+                .objectId(jobId)
                 .type(Type.EVALUATION)
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
 
-        int res = jobRepo.removeJob(jobUrl);
+        int res = jobRepo.removeJob(jobId);
         return res > 0;
     }
 
@@ -161,7 +162,7 @@ public class JobService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
-    public String createJob(String projectUrl,
+    public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
             String stepSpecOverWrites) {
@@ -176,8 +177,10 @@ public class JobService {
                 .map(datasetDao::getDatasetVersion)
                 .collect(Collectors.toMap(DatasetVersionEntity::getId, DatasetVersionEntity::getVersionName));
         JobEntity jobEntity = JobEntity.builder()
+                .id(IdUtil.getSnowflakeNextId())
+                .jobUuid(jobUuid)
                 .ownerId(user.getId())
-                .id(jobUuid)
+                .ownerName(user.getName())
                 .runtimeVersionId(runtimeVersion.getId())
                 .runtimeVersionValue(runtimeVersion.getVersionName())
                 .runtimeName(runtime.getRuntimeName())
@@ -229,7 +232,8 @@ public class JobService {
      */
     @Transactional
     public void cancelJob(String jobUrl) {
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobUrl));
+        Long jobId = jobManager.getJobId(jobUrl);
+        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "freeze job can't be canceled "),
@@ -261,7 +265,8 @@ public class JobService {
      */
     @Transactional
     public void pauseJob(String jobUrl) {
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobUrl));
+        Long jobId = jobManager.getJobId(jobUrl);
+        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
             throw new SwValidationException(ValidSubject.JOB, "frozen job can't be paused ");
         }
@@ -310,7 +315,8 @@ public class JobService {
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
     public void resumeJob(String jobUrl) {
-        JobEntity jobEntity = jobRepo.findJobById(jobUrl);
+        Long jobId = jobManager.getJobId(jobUrl);
+        JobEntity jobEntity = jobRepo.findJobById(jobId);
         if (null == jobEntity) {
             throw new SwValidationException(ValidSubject.JOB, "job not exists");
         }

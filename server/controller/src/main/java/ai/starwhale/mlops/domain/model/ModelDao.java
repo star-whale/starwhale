@@ -81,8 +81,8 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
     }
 
     @Override
-    public BundleEntity findById(Object id) {
-        return modelMapper.find((Long) id);
+    public BundleEntity findById(Long id) {
+        return modelMapper.find(id);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
 
     @Override
     public Boolean updateTag(HasTag entity) {
-        int r = versionMapper.updateTag((Long) entity.getId(), entity.getTag());
+        int r = versionMapper.updateTag(entity.getId(), entity.getTag());
         if (r > 0) {
             log.info("Model Version Tag has been modified. ID={}", entity.getId());
         }
@@ -146,13 +146,13 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Object id) {
-        return modelMapper.findDeleted((Long) id);
+    public BundleEntity findDeletedBundleById(Long id) {
+        return modelMapper.findDeleted(id);
     }
 
     @Override
-    public Boolean recover(Object id) {
-        return modelMapper.recover((Long) id) > 0;
+    public Boolean recover(Long id) {
+        return modelMapper.recover(id) > 0;
     }
 
     @Override

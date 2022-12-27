@@ -21,5 +21,5 @@ import ai.starwhale.mlops.domain.bundle.DeletedBundleAccessor;
 
 public interface RecoverAccessor extends BundleAccessor, DeletedBundleAccessor {
 
-    Boolean recover(Object id);
+    Boolean recover(Long id);
 }

@@ -81,8 +81,8 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public BundleEntity findById(Object id) {
-        return runtimeMapper.find((Long) id);
+    public BundleEntity findById(Long id) {
+        return runtimeMapper.find(id);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     @Override
     public Boolean updateTag(HasTag entity) {
-        int r = runtimeVersionMapper.updateTag((Long) entity.getId(), entity.getTag());
+        int r = runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
         if (r > 0) {
             log.info("Runtime Version Tag has been modified. ID={}", entity.getId());
         }
@@ -145,13 +145,13 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Object id) {
-        return runtimeMapper.findDeleted((Long) id);
+    public BundleEntity findDeletedBundleById(Long id) {
+        return runtimeMapper.findDeleted(id);
     }
 
     @Override
-    public Boolean recover(Object id) {
-        return runtimeMapper.recover((Long) id) > 0;
+    public Boolean recover(Long id) {
+        return runtimeMapper.recover(id) > 0;
     }
 
     @Override

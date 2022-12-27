@@ -33,7 +33,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class HotJobHolderImpl implements HotJobHolder {
 
-    ConcurrentHashMap<String, Job> jobMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Long, Job> jobMap = new ConcurrentHashMap<>();
 
     ConcurrentHashMap<Long, Task> taskMap = new ConcurrentHashMap<>();
 
@@ -44,7 +44,7 @@ public class HotJobHolderImpl implements HotJobHolder {
                 .forEach(task -> taskMap.put(task.getId(), task));
     }
 
-    public Collection<Job> ofIds(Collection<String> ids) {
+    public Collection<Job> ofIds(Collection<Long> ids) {
         return ids.parallelStream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -64,7 +64,7 @@ public class HotJobHolderImpl implements HotJobHolder {
     /**
      * remove job in cache
      */
-    public void remove(String jobId) {
+    public void remove(Long jobId) {
         Job job = jobMap.get(jobId);
         if (null == job) {
             return;

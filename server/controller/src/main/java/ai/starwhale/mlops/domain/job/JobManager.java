@@ -16,12 +16,17 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.storage.JobRepo;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -29,33 +34,63 @@ import org.springframework.stereotype.Service;
 public class JobManager implements BundleAccessor, RecoverAccessor {
 
     private final JobRepo jobRepo;
+    private final IdConverter idConvertor;
 
-    public JobManager(JobRepo jobRepo) {
+    public JobManager(JobRepo jobRepo, IdConverter idConvertor) {
         this.jobRepo = jobRepo;
+        this.idConvertor = idConvertor;
     }
 
-    public JobEntity findJob(String id) {
+    public Long getJobId(String jobUrl) {
+        if (idConvertor.isId(jobUrl)) {
+            return idConvertor.revert(jobUrl);
+        }
+        JobEntity jobEntity = jobRepo.findJobByUuid(jobUrl);
+        if (jobEntity == null) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(SwValidationException.ValidSubject.JOB,
+                        String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
+        }
+        return jobEntity.getId();
+    }
+
+    public Boolean updateJobComment(String jobUrl, String comment) {
+        int res;
+        if (idConvertor.isId(jobUrl)) {
+            res = jobRepo.updateJobComment(idConvertor.revert(jobUrl), comment);
+        } else {
+            res = jobRepo.updateJobCommentByUuid(jobUrl, comment);
+        }
+        return res > 0;
+    }
+
+    public JobEntity findJob(String jobUrl) {
+        if (idConvertor.isId(jobUrl)) {
+            return jobRepo.findJobById(idConvertor.revert(jobUrl));
+        } else {
+            return jobRepo.findJobByUuid(jobUrl);
+        }
+    }
+
+    @Override
+    public BundleEntity findById(Long id) {
         return jobRepo.findJobById(id);
     }
 
     @Override
-    public BundleEntity findById(Object id) {
-        return jobRepo.findJobById((String) id);
-    }
-
-    @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
-        return jobRepo.findJobById(name);
+        return jobRepo.findJobByUuid(name);
     }
 
     @Override
-    public BundleEntity findDeletedBundleById(Object id) {
-        return jobRepo.findJobById((String) id);
+    public BundleEntity findDeletedBundleById(Long id) {
+        return jobRepo.findJobById(id);
     }
 
 
     @Override
-    public Boolean recover(Object id) {
-        return jobRepo.recoverJob((String) id) > 0;
+    public Boolean recover(Long id) {
+        return jobRepo.recoverJob(id) > 0;
     }
 }

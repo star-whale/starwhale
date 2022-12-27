@@ -208,7 +208,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                         runtime.getName(), runtime.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getId());
+        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));

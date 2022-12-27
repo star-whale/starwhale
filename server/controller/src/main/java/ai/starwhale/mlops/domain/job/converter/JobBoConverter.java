@@ -131,6 +131,7 @@ public class JobBoConverter {
         try {
             job = Job.builder()
                     .id(jobEntity.getId())
+                    .uuid(jobEntity.getJobUuid())
                     .project(Project.builder()
                             .id(jobEntity.getProjectId())
                             .name(jobEntity.getProject().getProjectName())

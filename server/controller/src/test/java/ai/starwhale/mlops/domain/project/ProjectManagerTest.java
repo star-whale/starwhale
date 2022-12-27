@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
@@ -35,6 +36,7 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -48,6 +50,8 @@ public class ProjectManagerTest {
     private ProjectManager projectManager;
 
     private ProjectMapper projectMapper;
+
+    private JobRepo jobRepo;
 
     @BeforeEach
     public void setUp() {
@@ -75,7 +79,8 @@ public class ProjectManagerTest {
         given(projectMapper.list(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
 
-        projectManager = new ProjectManager(projectMapper, new IdConverter());
+        jobRepo = mock(JobRepo.class);
+        projectManager = new ProjectManager(projectMapper, jobRepo, new IdConverter());
     }
 
     @Test
@@ -136,7 +141,7 @@ public class ProjectManagerTest {
                 .willReturn(List.of(
                         ObjectCountEntity.builder().projectId(2L).count(5).build()
                 ));
-        given(projectMapper.countJob(anyString()))
+        given(jobRepo.countJob(anyList()))
                 .willReturn(List.of(
                         ObjectCountEntity.builder().projectId(1L).count(6).build(),
                         ObjectCountEntity.builder().projectId(2L).count(7).build(),

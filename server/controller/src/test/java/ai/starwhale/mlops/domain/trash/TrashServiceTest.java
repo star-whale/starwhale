@@ -143,11 +143,11 @@ public class TrashServiceTest {
         given(runtimeDao.findById(same(1L)))
                 .willReturn(RuntimeEntity.builder().id(3L).runtimeName("runtime1").modifiedTime(new Date()).build());
         given(jobManager.findById(same(1L)))
-                .willReturn(JobEntity.builder().id("job1").modifiedTime(new Date()).build());
+                .willReturn(JobEntity.builder().id(4L).jobUuid("job1").modifiedTime(new Date()).build());
         given(trashMapper.insert(any(TrashPo.class)))
                 .willAnswer(invocation -> {
                     TrashPo po = invocation.getArgument(0);
-                    po.setId(po.getObjectId() instanceof Long ? (Long) po.getObjectId() : 0L);
+                    po.setId(po.getObjectId());
                     return null;
                 });
 
@@ -176,10 +176,10 @@ public class TrashServiceTest {
         res = service.moveToRecycleBin(
                 Trash.builder()
                         .type(Type.EVALUATION)
-                        .objectId("job1")
+                        .objectId(1L)
                         .projectId(1L)
                         .build(), user);
-        assertThat(res, is(0L));
+        assertThat(res, is(4L));
     }
 
     @Test
@@ -242,12 +242,12 @@ public class TrashServiceTest {
         given(datasetDao.findDeletedBundleById(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).datasetName("dataset1").modifiedTime(new Date()).build());
         given(jobManager.findDeletedBundleById(same(1L)))
-                .willReturn(JobEntity.builder().id("job1").modifiedTime(new Date()).build());
+                .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
         given(runtimeDao.findByNameForUpdate(same("runtime1"), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).runtimeName("runtime1").modifiedTime(new Date()).build());
         given(jobManager.findByNameForUpdate(same("job1"), any()))
-                .willReturn(JobEntity.builder().id("job1").modifiedTime(new Date()).build());
+                .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
         given(modelDao.recover(any())).willReturn(true);
         given(datasetDao.recover(any())).willReturn(true);

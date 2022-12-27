@@ -119,7 +119,7 @@ public class JobController implements JobApi {
             String projectUrl,
             JobRequest jobRequest
     ) {
-        String jobId = jobService.createJob(projectUrl,
+        Long jobId = jobService.createJob(projectUrl,
                 jobRequest.getModelVersionUrl(),
                 jobRequest.getDatasetVersionUrls(),
                 jobRequest.getRuntimeVersionUrl(),
@@ -127,7 +127,7 @@ public class JobController implements JobApi {
                 jobRequest.getResourcePool(),
                 jobRequest.getStepSpecOverWrites());
 
-        return ResponseEntity.ok(Code.success.asResponse(jobId));
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 
     @Override

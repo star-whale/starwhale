@@ -150,7 +150,7 @@ public class TrashService {
         trashMapper.delete(trashId);
     }
 
-    private BundleAccessor getBundleAccessor(Trash.Type type) {
+    public BundleAccessor getBundleAccessor(Trash.Type type) {
         return (BundleAccessor) getAccessor(type);
     }
 

@@ -26,7 +26,7 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface TaskMapper {
 
-    List<TaskEntity> listTasks(@Param("jobId") String jobId);
+    List<TaskEntity> listTasks(@Param("jobId") Long jobId);
 
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 

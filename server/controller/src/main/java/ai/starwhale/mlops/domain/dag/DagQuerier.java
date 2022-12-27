@@ -143,7 +143,7 @@ public class DagQuerier {
     @NoArgsConstructor
     public static class JobNodeContent extends TimeConcern {
 
-        String id;
+        Long id;
         JobType jobType;
         JobStatus status;
 

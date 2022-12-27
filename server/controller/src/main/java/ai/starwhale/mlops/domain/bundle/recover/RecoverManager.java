@@ -32,7 +32,7 @@ public class RecoverManager {
         return new RecoverManager(recoverAccessor);
     }
 
-    public Boolean recoverBundle(Long projectId, Object bundleId) throws RecoverException {
+    public Boolean recoverBundle(Long projectId, Long bundleId) throws RecoverException {
         BundleEntity entity = recoverAccessor.findDeletedBundleById(bundleId);
         if (entity == null) {
             throw new RecoverException(String.format("Recover error. Bundle can not be found by id [%s]. ", bundleId));
