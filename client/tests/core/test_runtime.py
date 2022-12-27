@@ -35,6 +35,7 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.cli import _build as runtime_build_cli
+from starwhale.core.runtime.cli import _list as runtime_list_cli
 from starwhale.core.runtime.view import (
     get_term_view,
     RuntimeTermView,
@@ -1979,3 +1980,19 @@ class DependenciesTestCase(TestCase):
 
         with self.assertRaises(FormatError):
             WheelDependency(["d.d"])
+
+
+class CloudDatasetTest(TestCase):
+
+    def setUp(self) -> None:
+        sw_config._config = {}
+
+    @patch("starwhale.core.runtime.cli.import_object")
+    def test_cli_list(self, m_import: MagicMock) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_list_cli,
+            [],
+            obj=mock_obj,
+        )
