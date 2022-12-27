@@ -52,6 +52,8 @@ public class DataStore {
 
     private static final String PATH_SEPARATOR = "_._";
 
+    private static final Integer QUERY_LIMIT = 1000;
+
     private final WalManager walManager;
     private final StorageAccessService storageAccessService;
 
@@ -161,8 +163,12 @@ public class DataStore {
                 skipCount = 0;
             }
             int limitCount = req.getLimit();
+            if (limitCount > QUERY_LIMIT) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "limit must be less or equal to " + QUERY_LIMIT + ". request=" + req);
+            }
             if (limitCount < 0) {
-                limitCount = Integer.MAX_VALUE;
+                limitCount = QUERY_LIMIT;
             }
             var schema = table.getSchema();
             var columns = this.getColumnAliases(schema, req.getColumns());
@@ -201,12 +207,12 @@ public class DataStore {
 
     public RecordList scan(DataStoreScanRequest req) {
         var limit = req.getLimit();
-        if (limit > 1000) {
+        if (limit > QUERY_LIMIT) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "limit must be less or equal to 1000. request=" + req);
+                    "limit must be less or equal to " + QUERY_LIMIT + ". request=" + req);
         }
         if (limit < 0) {
-            limit = 1000;
+            limit = QUERY_LIMIT;
         }
 
         var tablesToLock =
