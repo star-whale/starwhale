@@ -23,8 +23,6 @@ export async function listTables(query: ListTablesRequest): Promise<TableNameLis
 }
 
 export async function exportTable(query: QueryTableRequest): Promise<void> {
-    // const resp = await axios.post<RecordListVO>('/api/v1/datastore/queryTable/export', query)
-
     const url = '/api/v1/datastore/queryTable/export'
 
     await axios({
