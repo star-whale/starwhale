@@ -3,7 +3,7 @@ import requests
 from starwhale import Link, Image, Point, dataset, Polygon, MIMEType  # noqa: F401
 from starwhale.utils.retry import http_retry
 
-PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/citycapes"
+PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/cityscapes"
 ANNO_PATH = "gtFine/train"
 DATA_PATH = "leftImg8bit/train"
 SUFFIX_COLOR_MASK = "_gtFine_color.png"
