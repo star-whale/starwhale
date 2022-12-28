@@ -17,7 +17,11 @@ with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
     for line in annotations["lines"]:
-        draw.line([float(ln) for ln in line.split()], width=3, fill="red")
+        draw.line(
+            [item for sublist in line.to_list() for item in sublist],
+            width=3,
+            fill="red",
+        )
     _npy = numpy.asarray(msk) * 50
     msk = Image.fromarray(_npy)
     msk.putalpha(127)

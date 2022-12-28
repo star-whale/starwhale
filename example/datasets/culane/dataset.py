@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from starwhale import Link, Image, dataset, MIMEType  # noqa: F401
+from starwhale import Line, Link, Image, Point, dataset, MIMEType  # noqa: F401
 from starwhale.utils.retry import http_retry
 
 PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/culane"
@@ -10,9 +10,16 @@ DATA_PATH = "driver_182_30frame"
 SEG_LABEL_PATH = f"laneseg_label_w16/{DATA_PATH}"
 
 
-@http_retry
+@http_retry(attempts=10)
 def request_link_text(anno_link):
     return requests.get(anno_link, timeout=10).text
+
+
+def to_sw_line(_array):
+    points = []
+    for i in range(0, len(_array), 2):
+        points.append(Point(float(_array[i]), float(_array[i + 1])))
+    return Line(points)
 
 
 def do_iter_item():
@@ -31,6 +38,9 @@ def do_iter_item():
             splitlines = request_link_text(
                 f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{name_no_suff}.lines.txt"
             ).splitlines()
+            sw_lines = [to_sw_line(line.split()) for line in splitlines]
+            if not sw_lines:
+                continue
             annotation = {
                 "mask": Link(
                     with_local_fs_data=False,
@@ -39,7 +49,7 @@ def do_iter_item():
                     ),
                     uri=f"{PATH_ROOT}/{SEG_LABEL_PATH}/{dir_name_}/{name_no_suff}.png",
                 ),
-                "lines": splitlines,
+                "lines": sw_lines,
             }
             ds.append(
                 (

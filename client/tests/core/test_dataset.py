@@ -31,6 +31,7 @@ from starwhale.base.type import (
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.core.dataset.type import (
+    Line,
     Link,
     Point,
     JsonDict,
@@ -447,6 +448,33 @@ class TestJsonDict(TestCase):
         sw_j_o = JsonDict.from_data(self.JSON_DICT)
         self.assertEqual(self.JSON_DICT, sw_j_o.asdict())
         self.assertEqual({}, JsonDict().asdict())
+
+
+class TestLine(TestCase):
+    def test_to_list(self):
+        p = Line([Point(3.9, 4.5), Point(5.9, 6.5), Point(7.9, 9.5)])
+        self.assertEqual([[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]], p.to_list())
+        self.assertEqual("Line: [[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]]", str(p))
+        self.assertEqual(numpy.float64, p.dtype)
+        self.assertEqual(
+            data_store.SwObjectType(
+                Line,
+                {
+                    "_type": data_store.STRING,
+                    "points": data_store.SwListType(
+                        data_store.SwObjectType(
+                            Point,
+                            {
+                                "_type": data_store.STRING,
+                                "x": data_store.FLOAT64,
+                                "y": data_store.FLOAT64,
+                            },
+                        )
+                    ),
+                },
+            ),
+            data_store._get_type(p),
+        )
 
 
 class TestPoint(TestCase):

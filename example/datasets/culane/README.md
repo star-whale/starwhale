@@ -13,7 +13,7 @@ title: The `culane` Dataset
 - `data`: `starwhale.Image` loaded as bytes array
 - `annotations` of type dict:
     - `mask`: `starwhale.Link` the mask file of the lines
-    - `lines`:  array of lines which contain line points
+    - `lines`:  `list` of `starwhale.Line`
 
 ## Build `culane` Dataset locally
 
