@@ -636,7 +636,7 @@ class Polygon(ASDictMixin, SwObject):
     def dtype(self) -> numpy.dtype:
         return numpy.dtype(numpy.float64)
 
-    def to_list(self) -> t.List[float]:
+    def to_list(self) -> t.List[t.List[float]]:
         return [p.to_list() for p in self.points]
 
     def to_numpy(self) -> numpy.ndarray:
