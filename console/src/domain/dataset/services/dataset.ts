@@ -28,3 +28,8 @@ export async function createDataset(projectId: string, data: ICreateDatasetSchem
     })
     return resp.data
 }
+
+export async function removeDataset(projectId: string, datasetId: string): Promise<any> {
+    const resp = await axios.delete(`/api/v1/project/${projectId}/dataset/${datasetId}`)
+    return resp.data
+}

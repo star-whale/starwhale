@@ -11,10 +11,10 @@ import useSelection from '@/hooks/useSelection'
 import { useDrawer } from '@/hooks/useDrawer'
 import IconFont from '@/components/IconFont'
 import { expandBorderRadius } from '@/utils'
-import { DnDContainer } from '../../../../../src/components/DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
-import Checkbox from '../../../../../src/components/Checkbox'
+import Checkbox from '../../Checkbox'
+import { DnDContainer } from '../../DnD'
 
 type PropsT = {
     isInline?: boolean

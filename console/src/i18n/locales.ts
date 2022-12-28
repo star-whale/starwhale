@@ -1,6 +1,95 @@
 export interface ILocaleItem {
     en: string
 }
+const dataset = {
+    'dataset.remove.confirm': {
+        en: 'Confirm Remove Dataset?',
+    },
+    'dataset.remove.success': {
+        en: 'Remove Dataset Success',
+    },
+    'dataset.remove.button': {
+        en: 'Remove',
+    },
+}
+
+const runtime = {
+    'runtime.remove.confirm': {
+        en: 'Confirm Remove Runtime?',
+    },
+    'runtime.remove.success': {
+        en: 'Remove Runtime Success',
+    },
+    'runtime.remove.button': {
+        en: 'Remove',
+    },
+}
+
+const model = {
+    'model.remove.confirm': {
+        en: 'Confirm Remove Model?',
+    },
+    'model.remove.success': {
+        en: 'Remove Model Success',
+    },
+    'model.remove.button': {
+        en: 'Remove',
+    },
+    'model.viewer.compare': {
+        en: 'Compare',
+    },
+    'model.viewer.source': {
+        en: 'Source',
+    },
+    'model.viewer.target': {
+        en: 'Target',
+    },
+}
+
+const trash = {
+    'trash.title': {
+        en: 'Trash',
+    },
+    'trash.name': {
+        en: 'Name',
+    },
+    'trash.type': {
+        en: 'Type',
+    },
+    'trash.size': {
+        en: 'Size',
+    },
+    'trash.trashedTime': {
+        en: 'Trash Date',
+    },
+    'trash.updatedTime': {
+        en: 'Modified Date',
+    },
+    'trash.retentionTime': {
+        en: 'Retention Date',
+    },
+    'trash.trashedBy': {
+        en: 'Trashed By',
+    },
+    'trash.remove.confirm': {
+        en: 'Confirm Remove Trash?',
+    },
+    'trash.remove.success': {
+        en: 'Remove Trash Success',
+    },
+    'trash.remove.button': {
+        en: 'Delete',
+    },
+    'trash.restore.confirm': {
+        en: 'Confirm Restore Trash?',
+    },
+    'trash.restore.success': {
+        en: 'Restore Trash Success',
+    },
+    'trash.restore.button': {
+        en: 'Restore',
+    },
+}
 
 const locales0 = {
     'create sth': {
@@ -694,15 +783,10 @@ const locales0 = {
     'Update Setting Success': {
         en: 'Update Setting Success',
     },
-    'model.viewer.compare': {
-        en: 'Compare',
-    },
-    'model.viewer.source': {
-        en: 'Source',
-    },
-    'model.viewer.target': {
-        en: 'Target',
-    },
+    ...dataset,
+    ...model,
+    ...runtime,
+    ...trash,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

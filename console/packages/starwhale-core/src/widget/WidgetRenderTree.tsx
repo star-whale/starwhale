@@ -186,7 +186,8 @@ export function WidgetRenderTree() {
 
     const form = new WidgetFormModel().initPanelSchema()
 
-    // console.log('tree', tree)
+    // console.log('tree', api)
+
     return (
         <div>
             {Nodes}

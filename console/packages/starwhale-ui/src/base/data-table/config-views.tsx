@@ -7,10 +7,10 @@ import useTranslation from '@/hooks/useTranslation'
 import _ from 'lodash'
 import { toaster } from 'baseui/toast'
 import type { ColumnT, ConfigT } from './types'
-import Button from '../../../../../src/components/Button'
 import ViewList from './config-views-list'
 import ViewsEdit from './config-views-edit'
 import { ITableState, IStore } from './store'
+import Button from '../../Button'
 
 type PropsT = {
     columns: ColumnT[]

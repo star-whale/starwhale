@@ -10,7 +10,6 @@ export interface IButtonProps extends ButtonProps {
     className?: string
 }
 
-/* eslint-disable react/jsx-props-no-spreading */
 export default function Button({
     isFull = false,
     size = 'compact',
@@ -19,22 +18,24 @@ export default function Button({
     children,
     ...props
 }: IButtonProps) {
-    // const styles = useStyles()
     const [, theme] = useStyletron()
+    const defaultStyles: React.CSSProperties = {
+        borderTopLeftRadius: theme.borders.radius200,
+        borderTopRightRadius: theme.borders.radius200,
+        borderBottomLeftRadius: theme.borders.radius200,
+        borderBottomRightRadius: theme.borders.radius200,
+        lineHeight: '14px',
+        paddingTop: '9px',
+        paddingBottom: '9px',
+        paddingLeft: '9px',
+        paddingRight: '9px',
+    }
 
     let overrides = mergeOverrides(
         {
             BaseButton: {
                 style: {
-                    borderTopLeftRadius: theme.borders.radius200,
-                    borderTopRightRadius: theme.borders.radius200,
-                    borderBottomLeftRadius: theme.borders.radius200,
-                    borderBottomRightRadius: theme.borders.radius200,
-                    lineHeight: '14px',
-                    paddingTop: '9px',
-                    paddingBottom: '9px',
-                    paddingLeft: '9px',
-                    paddingRight: '9px',
+                    ...defaultStyles,
                     width: isFull ? '100%' : 'auto',
                 },
             },
@@ -47,14 +48,8 @@ export default function Button({
             {
                 BaseButton: {
                     style: {
-                        'borderTopLeftRadius': theme.borders.radius200,
-                        'borderTopRightRadius': theme.borders.radius200,
-                        'borderBottomLeftRadius': theme.borders.radius200,
-                        'borderBottomRightRadius': theme.borders.radius200,
+                        ...defaultStyles,
                         'lineHeight': '14px',
-                        'width': isFull ? '100%' : 'auto',
-                        // 'paddingBottom': '0',
-                        // 'paddingTop': '0',
                         'paddingLeft': '0',
                         'paddingRight': '0',
                         'paddingBottom': '0',
@@ -78,11 +73,7 @@ export default function Button({
             {
                 BaseButton: {
                     style: {
-                        'borderTopLeftRadius': theme.borders.radius200,
-                        'borderTopRightRadius': theme.borders.radius200,
-                        'borderBottomLeftRadius': theme.borders.radius200,
-                        'borderBottomRightRadius': theme.borders.radius200,
-                        'width': isFull ? '100%' : 'auto',
+                        ...defaultStyles,
                         'backgroundColor': 'transparent',
                         'color': 'rgba(2,16,43,0.20)',
                         ':hover': {
@@ -103,11 +94,7 @@ export default function Button({
             {
                 BaseButton: {
                     style: {
-                        'borderTopLeftRadius': theme.borders.radius200,
-                        'borderTopRightRadius': theme.borders.radius200,
-                        'borderBottomLeftRadius': theme.borders.radius200,
-                        'borderBottomRightRadius': theme.borders.radius200,
-                        'width': isFull ? '100%' : 'auto',
+                        ...defaultStyles,
                         'backgroundColor': '#F4F5F7',
                         'color': 'rgba(2,16,43,0.60)',
                         ':hover': {

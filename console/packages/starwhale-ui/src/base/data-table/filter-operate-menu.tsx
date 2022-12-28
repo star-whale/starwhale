@@ -5,13 +5,13 @@ import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { Tag } from 'baseui/tag'
 import { expandBorder } from '@/utils'
+import { useEventCallback } from '@starwhale/core/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
-import useEventCallback from '../../../../../src/hooks/useEventCallback'
 import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
-import Checkbox from '../../../../../src/components/Checkbox'
-import IconFont from '../../../../../src/components/IconFont'
+import Checkbox from '../../Checkbox'
+import IconFont from '../../IconFont'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 

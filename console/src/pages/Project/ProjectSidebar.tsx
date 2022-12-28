@@ -48,6 +48,12 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
                 icon: <IconFont type='runtime' size={16} />,
             },
+            {
+                title: t('trash.title'),
+                path: `/projects/${projectId}/trashes`,
+                activePathPattern: /\/(trashes)\/?/,
+                icon: <IconFont type='delete' size={16} />,
+            },
         ]
     }, [project, projectId, t])
     return (

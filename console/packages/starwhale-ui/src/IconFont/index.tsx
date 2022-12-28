@@ -73,6 +73,8 @@ const iconTypes = [
     'arrow2',
     'file',
     'file2',
+    'download',
+    'upload',
 ]
 
 interface IIconFontProps {

@@ -21,6 +21,16 @@ export class PanelPreviewEvent extends BusEventWithPayload<PanelPreviewPayload> 
     static type = 'preview-panel'
 }
 
+type PanelDownloadPayload = { id: string }
+export class PanelDownloadEvent extends BusEventWithPayload<PanelDownloadPayload> {
+    static type = 'download-panel'
+}
+
+type PanelReloadPayload = { id: string }
+export class PanelReloadEvent extends BusEventWithPayload<PanelReloadPayload> {
+    static type = 'reload-panel'
+}
+
 type SectionAddPayload = { path: any[]; type: string }
 export class SectionAddEvent extends BusEventWithPayload<SectionAddPayload> {
     static type = 'add-section'
