@@ -119,8 +119,7 @@ class TestCloudRequestMixed(TestCase):
 
         cbm = CloudBundleModelMixin()
         _uri = URI("http://1.1.1.1/project/sw", expected_type=URIType.PROJECT)
-        _models, _pager = cbm._fetch_bundle_all_list(_uri,
-                                                     uri_typ=URIType.MODEL)
+        _models, _pager = cbm._fetch_bundle_all_list(_uri, uri_typ=URIType.MODEL)
 
         assert len(_models.items()) == 2
         assert len(_models["[2] mnist"]) == 3
@@ -142,8 +141,7 @@ class TestCloudRequestMixed(TestCase):
         cbm = CloudBundleModelMixin()
         _uri = URI("http://1.1.1.1/project/sw", expected_type=URIType.PROJECT)
         _models, _pager = cbm._fetch_bundle_all_list(
-            _uri, uri_typ=URIType.MODEL,
-            _filter={"name": "mnist", "latest": True}
+            _uri, uri_typ=URIType.MODEL, _filter={"name": "mnist", "latest": True}
         )
 
         assert len(_models.items()) == 1

@@ -7,8 +7,7 @@ from unittest.mock import call, patch, MagicMock
 import yaml
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
-from starwhale.base.type import URIType, BundleType, DependencyType, \
-    RuntimeLockFileType
+from starwhale.base.type import URIType, BundleType, DependencyType, RuntimeLockFileType
 from starwhale.base.uri import URI
 from starwhale.consts import (
     ENV_VENV,

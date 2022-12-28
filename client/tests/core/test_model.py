@@ -391,8 +391,7 @@ class StandaloneModelTestCase(TestCase):
         port = 80
         yaml = "model.yaml"
         runtime = "pytorch/version/latest"
-        ModelTermView.serve("", yaml, runtime, "mnist/version/latest", host,
-                            port)
+        ModelTermView.serve("", yaml, runtime, "mnist/version/latest", host, port)
         ModelTermView.serve(".", yaml, runtime, "", host, port)
         ModelTermView.serve(".", yaml, "", "", host, port)
 
