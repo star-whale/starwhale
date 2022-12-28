@@ -68,7 +68,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const info = useQueryDatastore(query, false)
         const [loaded, setLoaded] = useState(false)
 
-        //console.log(inViewport, loaded, info, tableName)
+        console.log(inViewport, loaded, info, tableName)
 
         useEffect(() => {
             if (tableName && inViewport && !loaded) {

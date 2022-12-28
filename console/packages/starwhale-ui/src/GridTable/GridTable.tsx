@@ -79,7 +79,7 @@ function GridTable({
     }, [store])
 
     useEffect(() => {
-        if (!store.isInit) {
+        if (!store.isInit && columns.length > 0) {
             api.setState({
                 isInit: true,
                 currentView: {
