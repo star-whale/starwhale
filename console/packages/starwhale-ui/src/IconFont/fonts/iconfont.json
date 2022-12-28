@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "33548920",
+      "name": "download",
+      "font_class": "download",
+      "unicode": "e659",
+      "unicode_decimal": 58969
+    },
+    {
+      "icon_id": "33548921",
+      "name": "upload",
+      "font_class": "upload",
+      "unicode": "e65a",
+      "unicode_decimal": 58970
+    },
+    {
+      "icon_id": "33442844",
+      "name": "calendar",
+      "font_class": "calendar",
+      "unicode": "e658",
+      "unicode_decimal": 58968
+    },
+    {
       "icon_id": "33295022",
       "name": "file2",
       "font_class": "file2",

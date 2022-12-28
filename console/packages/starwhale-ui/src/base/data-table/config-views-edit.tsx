@@ -5,9 +5,9 @@ import { SORT_DIRECTIONS } from '@starwhale/ui/base/data-table/constants'
 import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
 import { ColumnT, ConfigT } from './types'
 import ConfigManageColumns from './config-manage-columns'
-import Input from '../../../../../src/components/Input'
+import Input from '../../Input'
 import { CategoricalFilter } from './filter-operate-menu'
-import Select from '../../../../../src/components/Select'
+import Select from '../../Select'
 
 type ViewListPropsT = {
     view: ConfigT

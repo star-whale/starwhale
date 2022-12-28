@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Subscription } from 'rxjs'
 import useSelector, { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType } from '../types'
 import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { useIsInViewport } from '../utils'
+import { exportTable } from '../datastore'
+import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -21,14 +24,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const { store, eventBus } = useEditorContext()
         const api = store()
         const overrides = useSelector(getWidget(id)) ?? {}
-
-        // const model = useRef(new WidgetModel({ id, type }))
-        // useEffect(() => {
-        //     model.current.setDynamicVars(dynamicVars)
-        //     model.current.setOverrides(overrides)
-        // }, [overrides, dynamicVars])
-
-        // console.log('【model】', model.current.type, model.current.id, model)
 
         const handleLayoutOrderChange = useCallback(
             (newList) => {
@@ -61,7 +56,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             () => ({
                 tableName,
                 start: 0,
-                limit: 99999,
+                limit: 1000,
                 rawResult: true,
                 ignoreNonExistingTable: true,
             }),
@@ -83,6 +78,30 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [tableName, inViewport, loaded])
 
+        useEffect(() => {
+            // @FIXME better use scoped eventBus
+            const subscription = new Subscription()
+            subscription.add(
+                eventBus.getStream(PanelDownloadEvent).subscribe({
+                    next: (evt) => {
+                        if (evt.payload?.id === id) {
+                            exportTable(query)
+                        }
+                    },
+                })
+            )
+            subscription.add(
+                eventBus.getStream(PanelReloadEvent).subscribe({
+                    next: async (evt) => {
+                        if (evt.payload?.id === id) {
+                            info.refetch()
+                        }
+                    },
+                })
+            )
+            return () => subscription.unsubscribe()
+        }, [eventBus, id, info, query])
+
         return (
             <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
                 <WrappedWidgetRender
@@ -91,20 +110,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                     data={info?.data}
                     optionConfig={overrides.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
-                    // onOptionChange={(config) => {
-                    //     model.current.updateOptionConfig(config)
-                    //     model.current.saveToStore(api)
-                    // }}
                     fieldConfig={overrides.fieldConfig}
                     onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
-                    // onFieldChange={(config) => {
-                    //     model.current.updateFieldConfig(config)
-                    //     model.current.saveToStore(api)
-                    // }}
-                    // for layout
                     onLayoutOrderChange={handleLayoutOrderChange}
                     onLayoutChildrenChange={handleLayoutChildrenChange}
                     onLayoutCurrentChange={handleLayoutCurrentChange}
+                    onDataReload={() => info.refetch()}
+                    onDataDownload={() => exportTable(query)}
                     eventBus={eventBus}
                 />
             </div>

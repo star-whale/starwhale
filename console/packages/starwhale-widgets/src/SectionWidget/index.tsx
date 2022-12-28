@@ -3,7 +3,14 @@ import React, { useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
-import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
+import {
+    PanelAddEvent,
+    PanelEditEvent,
+    PanelDeleteEvent,
+    PanelPreviewEvent,
+    PanelDownloadEvent,
+    PanelReloadEvent,
+} from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
 // @ts-ignore
@@ -98,6 +105,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     }
     const handlePreviewPanel = (id: string) => {
         eventBus.publish(new PanelPreviewEvent({ id }))
+    }
+    const handleDownloadPanel = (id: string) => {
+        eventBus.publish(new PanelDownloadEvent({ id }))
+    }
+    const handleReloadPanel = (id: string) => {
+        eventBus.publish(new PanelReloadEvent({ id }))
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -232,36 +245,37 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                                     if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
                                     if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
 
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        offsetClientX: e.clientX - resizeRect.clientX,
-                                        offsetClientY: e.clientY - resizeRect.clientY,
-                                    })
-                                }}
-                                onResizeStop={() => {
-                                    const rectTmp = {
-                                        width: resizeRect.width + resizeRect.offsetClientX,
-                                        height: resizeRect.height + resizeRect.offsetClientY,
-                                    }
-                                    handleLayoutChange(rectTmp)
-                                    setRect(rectTmp)
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        start: false,
-                                    })
-                                }}
-                            >
-                                <div className={styles.panelWrapper} id={child.props?.id}>
-                                    <div className={styles.contentWrapper}>{child}</div>
-                                    <ChartConfigGroup
-                                        onEdit={() => handleEditPanel(child.props?.id)}
-                                        onDelete={() => handleDeletePanel(child.props?.id)}
-                                        onPreview={() => handlePreviewPanel(child.props?.id)}
-                                    />
-                                </div>
-                            </Resizable>
-                        )
-                    })}
+                                setResizeRect({
+                                    ...resizeRect,
+                                    offsetClientX: e.clientX - resizeRect.clientX,
+                                    offsetClientY: e.clientY - resizeRect.clientY,
+                                })
+                            }}
+                            onResizeStop={() => {
+                                const rectTmp = {
+                                    width: resizeRect.width + resizeRect.offsetClientX,
+                                    height: resizeRect.height + resizeRect.offsetClientY,
+                                }
+                                handleLayoutChange(rectTmp)
+                                setRect(rectTmp)
+                                setResizeRect({
+                                    ...resizeRect,
+                                    start: false,
+                                })
+                            }}
+                        >
+                            <div className={styles.panelWrapper} id={child.props.id}>
+                                <div className={styles.contentWrapper}>{child}</div>
+                                <ChartConfigGroup
+                                    onEdit={() => handleEditPanel(child.props.id)}
+                                    onDelete={() => handleDeletePanel(child.props?.id)}
+                                    onPreview={() => handlePreviewPanel(child.props?.id)}
+                                    onDownload={() => handleDownloadPanel(child.props?.id)}
+                                    onReload={() => handleReloadPanel(child.props?.id)}
+                                />
+                            </div>
+                        </Resizable>
+                    ))}
                 </div>
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>

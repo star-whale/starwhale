@@ -47,6 +47,9 @@ import EvaluationWidgetResults from './pages/Evaluation/EvaluationWidgetResults'
 import ModelVersionOverviewFiles from './pages/Model/ModelVersionOverviewFiles'
 import ModelVersionOverview from './pages/Model/ModelVersionOverview'
 import ModelOverviewLayout from './pages/Model/ModelOverviewLayout'
+import ProjectTrashes from './pages/Project/Trashes'
+import TrashLayout from './pages/Trash/TrashLayout'
+import TrashListCard from './pages/Trash/TrashListCard'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -121,6 +124,7 @@ const Routes = () => {
                                 <ProjectLayout>
                                     <Switch>
                                         <Route exact path='/projects/:projectId/models' component={ProjectModels} />
+                                        <Route exact path='/projects/:projectId/trashes' component={ProjectTrashes} />
                                         <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                         <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
                                         <Route
@@ -281,6 +285,16 @@ const Routes = () => {
                                         <Redirect to='/projects/:projectId/models/:modelId' />
                                     </Switch>
                                 </ModelOverviewLayout>
+                            </Route>
+
+                            {/* trash */}
+                            <Route exact path='/projects/:projectId/trashes'>
+                                <TrashLayout>
+                                    <Switch>
+                                        <Route exact path='/projects/:projectId/trashes' component={TrashListCard} />
+                                        <Redirect to='/projects/:projectId/trashes' />
+                                    </Switch>
+                                </TrashLayout>
                             </Route>
                             {/* admin */}
                             <Route exact path='/admin/:path?'>

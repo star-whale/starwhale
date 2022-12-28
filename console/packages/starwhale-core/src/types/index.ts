@@ -6,7 +6,6 @@ export type WidgetMeta = Record<string, unknown>
 export type WidgetType = string
 
 // -----------store---------------
-
 export type WidgetTreeNode = {
     id?: string
     type: string
@@ -26,7 +25,6 @@ export type WidgetStoreState = {
 }
 
 // -----------the config of options/field---------------
-
 export interface WidgetBaseConfig {
     type: WidgetType
     name: string
@@ -65,10 +63,6 @@ export interface WidgetTreeProps {
     childWidgets?: WidgetTreeNode[]
 }
 
-// export interface WidgetActions {
-//     onOrderChange?: () => any
-// }
-
 export interface WidgetProps<O extends object = any, F extends object = any>
     extends WidgetRendererProps<O, F>,
         WidgetTreeProps {}
@@ -76,15 +70,6 @@ export interface WidgetProps<O extends object = any, F extends object = any>
 export type WidgetComponent<O extends object = any, F extends object = any> = React.ComponentType<WidgetProps<O, F>>
 
 // -----------widget renderer---------------
-
-/**
- * Describes the properties that can be passed to the WidgetRenderer.
- *
- * @typeParam O - Config type for the widget being rendered.
- * @typeParam F - Field options type for the widget being rendered.
- *
- * @internal
- */
 export interface WidgetRendererProps<O extends object = any, F extends object = any> {
     id: string
     type: string
@@ -108,8 +93,6 @@ export interface WidgetRendererProps<O extends object = any, F extends object = 
 export type WidgetRendererType<O extends object = any, F extends object = any> = React.ComponentType<
     WidgetRendererProps<O, F>
 >
-
-// -----------WidgetGroup---------------
 
 export enum WidgetGroupType {
     PANEL = 'PANEL',

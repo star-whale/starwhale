@@ -1,7 +1,8 @@
 import React from 'react'
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 
-import { Button } from '@/components/Button'
+import { Button } from '@starwhale/ui'
+import { IconFont } from '@starwhale/ui'
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {
@@ -19,23 +20,32 @@ const Template: ComponentStory<typeof Button> = (args) => <Button {...args} />
 export const Primary = Template.bind({})
 // More on args: https://storybook.js.org/docs/react/writing-stories/args
 Primary.args = {
-    primary: true,
+    kind: 'primary',
     children: 'Button',
 }
 
 export const Secondary = Template.bind({})
 Secondary.args = {
+    kind: 'secondary',
     children: 'Button',
 }
 
-export const Large = Template.bind({})
-Large.args = {
-    size: 'large',
+export const ButtonWithIcon = Template.bind({})
+ButtonWithIcon.args = {
+    size: 'compact',
+    as: 'withIcon',
+    startEnhancer: () => <IconFont type='runtime' />,
     children: 'Button',
 }
 
-export const Small = Template.bind({})
-Small.args = {
-    size: 'small',
+export const ButtonIcon = Template.bind({})
+ButtonIcon.args = {
+    kind: 'primary',
+    children: <IconFont type='runtime' />,
+}
+
+export const ButtonAsLink = Template.bind({})
+ButtonAsLink.args = {
+    as: 'link',
     children: 'Button',
 }

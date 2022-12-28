@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
 import { IListQuerySchema } from '../../server/schemas/list'
-import { scanTable, queryTable, listTables } from '../services/datastore'
+import { scanTable, queryTable, listTables, exportTable } from '../services/datastore'
 import { QueryTableRequest } from '../schemas/datastore'
 import { ColumnFilterModel } from '../filter'
 
@@ -26,6 +26,14 @@ export function useListDatastoreTables(query: any, enabled = false) {
     const info = useQuery(`listTables:${qs.stringify(query)}`, () => listTables(query), {
         refetchOnWindowFocus: false,
         enabled,
+    })
+    return info
+}
+
+export function useExportDatastore(query?: QueryTableRequest, enable = true) {
+    const info = useQuery(`exportDatastore:${qs.stringify(query)}`, () => exportTable(query as QueryTableRequest), {
+        refetchOnWindowFocus: false,
+        enabled: !!query?.tableName && enable,
     })
     return info
 }

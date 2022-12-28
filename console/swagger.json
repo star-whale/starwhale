@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8082",
+            "url": "http://e2e-20221226.pre.intra.starwhale.ai",
             "description": "Generated server url"
         }
     ],
@@ -1477,6 +1477,48 @@
                 }
             }
         },
+        "/api/v1/project/{projectUrl}/serving": {
+            "post": {
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Create a new model serving job",
+                "operationId": "createModelServing",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project Url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ModelServingRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/revert": {
             "post": {
                 "tags": [
@@ -1754,7 +1796,8 @@
                                 "SRC_TAR",
                                 "SRC",
                                 "MODEL",
-                                "DATA"
+                                "DATA",
+                                "UNKNOWN"
                             ]
                         }
                     },
@@ -3211,7 +3254,7 @@
                         }
                     },
                     {
-                        "name": "runtimeVersionUrl",
+                        "name": "versionUrl",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -3655,7 +3698,8 @@
                                 "SRC_TAR",
                                 "SRC",
                                 "MODEL",
-                                "DATA"
+                                "DATA",
+                                "UNKNOWN"
                             ]
                         }
                     },
@@ -4665,6 +4709,28 @@
                     },
                     "description": {
                         "type": "string"
+                    }
+                }
+            },
+            "ModelServingRequest": {
+                "required": [
+                    "modelVersionUrl",
+                    "runtimeVersionUrl"
+                ],
+                "type": "object",
+                "properties": {
+                    "modelVersionUrl": {
+                        "type": "string"
+                    },
+                    "runtimeVersionUrl": {
+                        "type": "string"
+                    },
+                    "resourcePool": {
+                        "type": "string"
+                    },
+                    "ttlInSeconds": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },

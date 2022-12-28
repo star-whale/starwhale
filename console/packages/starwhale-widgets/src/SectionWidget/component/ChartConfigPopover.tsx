@@ -15,15 +15,18 @@ const COLUMN_OPTIONS = [
 export default function ChartConfigPopover({ onOptionSelect }) {
     return (
         <StatefulPopover
-            focusLock
+            dismissOnClickOutside
+            dismissOnEsc
             placement={PLACEMENT.bottom}
             content={({ close }) => (
                 <StatefulMenu
                     items={COLUMN_OPTIONS}
                     onItemSelect={({ item }) => {
-                        if (item.type === 'delete') return
-                        onOptionSelect(item)
                         close()
+                        if (item.type === 'delete') {
+                            return
+                        }
+                        onOptionSelect(item)
                     }}
                     overrides={{
                         List: { style: { height: 'auto', width: '150px' } },
@@ -82,8 +85,6 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 style={{
                     alignItems: 'center',
                     marginLeft: 'auto',
-                    // right: 0,
-                    // top: -6,
                     display: 'flex',
                     backgroundColor: '#F4F5F7',
                     borderRadius: '4px',

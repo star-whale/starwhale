@@ -14,3 +14,8 @@ export async function fetchRuntime(projectId: string, runtimeId: string, runtime
     const resp = await axios.get<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`, config)
     return resp.data
 }
+
+export async function removeRuntime(projectId: string, runtimeId: string): Promise<any> {
+    const resp = await axios.delete<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`)
+    return resp.data
+}

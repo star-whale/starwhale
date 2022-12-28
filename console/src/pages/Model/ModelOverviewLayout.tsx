@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
-import { fetchModel } from '@model/services/model'
+import { fetchModel, removeModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import IconFont from '@starwhale/ui/IconFont'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
@@ -15,6 +15,8 @@ import Checkbox from '@/components/Checkbox'
 import { STYLE_TYPE } from 'baseui/checkbox'
 import { createUseStyles } from 'react-jss'
 import { useQueryArgs } from '@starwhale/core'
+import { ConfirmButton } from '@/components/Modal/confirm'
+import { toaster } from 'baseui/toast'
 import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVersion'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 import ModelVersionSelector from '../../domain/model/components/ModelVersionSelector'
@@ -113,10 +115,25 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
         return paths[paths.length - 1] ?? 'files'
     }, [location.pathname, navItems])
 
+    const extra = useMemo(() => {
+        return (
+            <ConfirmButton
+                title={t('model.remove.confirm')}
+                onClick={async () => {
+                    await removeModel(projectId, modelId)
+                    toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
+                    history.push(`/projects/${projectId}/models`)
+                }}
+            >
+                {t('model.remove.button')}
+            </ConfirmButton>
+        )
+    }, [projectId, modelId, history, t])
+
     const [isCompare, setIsCompare] = useState(!!query.compare ?? false)
 
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems}>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {modelVersionId && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -194,7 +211,6 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     },
                                 },
                             }}
-                            size='compact'
                             as='withIcon'
                             startEnhancer={() => <IconFont type='runtime' />}
                             onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}
