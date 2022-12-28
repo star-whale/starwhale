@@ -3,7 +3,7 @@ import requests
 from starwhale import Link, Image, dataset, MIMEType, BoundingBox  # noqa: F401
 from starwhale.utils.retry import http_retry
 
-PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/citycapes"
+PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/cityscapes"
 ANNO_PATH = "gtBboxCityPersons/train"
 DATA_PATH = "leftImg8bit/train"
 SUFFIX_ANNO = "_gtBboxCityPersons.json"
