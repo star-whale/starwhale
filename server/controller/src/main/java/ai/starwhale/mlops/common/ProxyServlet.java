@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URIUtils;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
@@ -70,8 +72,13 @@ public class ProxyServlet extends HttpServlet {
             path = path + "?" + req.getQueryString();
         }
         var request = generateRequest(req, path);
-        var response = httpClient.execute(host, request);
-        generateResponse(response, res);
+        try {
+            var response = httpClient.execute(host, request);
+            generateResponse(response, res);
+        } catch (UnknownHostException | HttpHostConnectException e) {
+            // return 502 if host or port is unavailable
+            res.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
+        }
     }
 
     protected HttpRequest generateRequest(HttpServletRequest req, String uri) throws IOException {
