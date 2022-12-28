@@ -56,7 +56,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             () => ({
                 tableName,
                 start: 0,
-                limit: 99999,
+                limit: 1000,
                 rawResult: true,
                 ignoreNonExistingTable: true,
             }),
