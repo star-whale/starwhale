@@ -12,7 +12,7 @@ class SimplePipeline(PipelineHandler):
     def ppl(self, text: Text, **kw):
         return (
             text.content,
-            numpy.exp([[random.uniform(-10, 1) for i in range(0, 100)]]).tolist(),
+            numpy.exp([random.uniform(-10, 1) for i in range(0, 100)]).tolist(),
         )
 
     @multi_classification(
@@ -27,5 +27,5 @@ class SimplePipeline(PipelineHandler):
         for _data in ppl_result:
             label.append(_data["annotations"]["label"])
             result.append(_data["result"][0])
-            pr.extend(_data["result"][1])
+            pr.append(_data["result"][1])
         return label, result, pr

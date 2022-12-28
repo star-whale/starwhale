@@ -980,6 +980,14 @@ class TestPytorch(_DatasetSDKTestBase):
         assert isinstance(first_item[1]["label"], torch.Tensor)
         assert list(first_item[1]["label"].size()) == [2]
 
+    def test_binary_type_with_batch_fetch(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        for rows in ds.batch_iter(2):
+            assert len(rows) == 2
+            assert type(rows) == list
+            assert type(rows[0]) == DataRow
+
     def test_keep_index(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)

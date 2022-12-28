@@ -21,7 +21,7 @@ class MNISTInference(PipelineHandler):
         self.model = self._load_model(self.device)
 
     @api(Image(shape=(28, 28, 3)), JsonOutput())
-    def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:  # type: ignore
+    def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[float, t.List[float]]:  # type: ignore
         data_tensor = self._pre(img)
         output = self.model(data_tensor)
         return self._post(output)
@@ -39,8 +39,8 @@ class MNISTInference(PipelineHandler):
         result, label, pr = [], [], []
         for _data in ppl_result:
             label.append(_data["annotations"]["label"])
-            result.extend(_data["result"][0])
-            pr.extend(_data["result"][1])
+            result.append(_data["result"][0])
+            pr.append(_data["result"][1])
         return label, result, pr
 
     def _pre(self, input: Image) -> torch.Tensor:
@@ -53,10 +53,10 @@ class MNISTInference(PipelineHandler):
         )(_image_array)
         return torch.stack([_image]).to(self.device)
 
-    def _post(self, input: torch.Tensor) -> t.Tuple[t.List[int], t.List[float]]:
-        pred_value = input.argmax(1).flatten().tolist()
+    def _post(self, input: torch.Tensor) -> t.Tuple[float, t.List[float]]:
+        pred_value = input.argmax(1).item()
         probability_matrix = np.exp(input.tolist()).tolist()
-        return pred_value, probability_matrix
+        return pred_value, probability_matrix[0]
 
     def _load_model(self, device: torch.device) -> Net:
         model = Net().to(device)

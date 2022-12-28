@@ -81,7 +81,7 @@ class M5Inference(PipelineHandler):
         for _data in ppl_result:
             label.append(ALL_LABELS_MAP[_data["annotations"]["label"]])
             pr.append(_data["result"][1])
-            result.append(_data["result"][0][0])
+            result.append(_data["result"][0])
         return label, result, pr
 
     def _pre(self, input: Audio) -> torch.Tensor:
@@ -95,9 +95,9 @@ class M5Inference(PipelineHandler):
 
     def _post(self, input: torch.Tensor) -> t.Tuple[t.List[int], t.List[float]]:
         input = input.squeeze()
-        pred_value = input.argmax(-1).flatten().tolist()
+        pred_value = input.argmax(1).item()
         probability_matrix = np.exp(input.tolist()).tolist()
-        return pred_value, probability_matrix
+        return pred_value, probability_matrix[0]
 
     def _load_model(self, device):
         model = M5(n_input=1, n_output=len(ALL_LABELS))

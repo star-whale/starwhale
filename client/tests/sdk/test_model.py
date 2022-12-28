@@ -13,7 +13,7 @@ from starwhale import Context, get_data_loader, PipelineHandler
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import (
     URIType,
     RunSubDirType,
@@ -25,8 +25,8 @@ from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.dataset.type import Link, MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.core.dataset.tabular import TabularDatasetRow
-from starwhale.api._impl.dataset.loader import UserRawDataLoader
+from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
+from starwhale.api._impl.dataset.loader import DataRow, UserRawDataLoader
 
 
 class SimpleHandler(PipelineHandler):
@@ -150,14 +150,16 @@ class TestModelPipelineHandler(TestCase):
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
+    @patch("starwhale.api._impl.dataset.Dataset.info")
+    @patch("starwhale.api._impl.dataset.Dataset.batch_iter")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     def test_ppl(
         self,
-        m_scan: MagicMock,
         m_summary: MagicMock,
         m_eval_log: MagicMock,
+        m_ds: MagicMock,
+        m_ds_info: MagicMock,
         m_scan_id: MagicMock,
     ) -> None:
         _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
@@ -174,32 +176,16 @@ class TestModelPipelineHandler(TestCase):
 
         fname = "data_ubyte_0.swds_bin"
         m_scan_id.return_value = [{"id": 0}]
-        m_scan.side_effect = [
-            [{"id": 0, "value": 1}],
-            [
-                TabularDatasetRow(
-                    id=0,
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link(fname),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": 0},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
-                    },
-                    auth_name="",
-                ).asdict(),
-            ],
-            [{"id": 0, "value": 1}],
-        ]
-        data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
+        m_ds.return_value = [[DataRow(0, Link(fname), {"label": 0})]]
+        m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
+
+        datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
+        data_dir = datastore_dir.data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
+        ensure_dir(datastore_dir.loc)
+        ensure_file(datastore_dir.manifest_path, "")
+
         context = Context(
             workdir=Path(),
             project=self.project,
@@ -288,9 +274,13 @@ class TestModelPipelineHandler(TestCase):
             ],
         ]
         m_scan_id.return_value = [{"id": 0}]
-        data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
+
+        datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
+        data_dir = datastore_dir.data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
+        ensure_dir(datastore_dir.loc)
+        ensure_file(datastore_dir.manifest_path, "")
 
         context = Context(
             workdir=Path(),

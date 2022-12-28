@@ -28,7 +28,7 @@ class TextClassificationHandler(PipelineHandler):
         output = self.model(tensor, torch.tensor([0]).to(self.device))
         pred_value = output.argmax(1).item()
         pr_matrix = np.exp(output.tolist()).tolist()
-        return pred_value, pr_matrix
+        return pred_value, pr_matrix[0]
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -42,7 +42,7 @@ class TextClassificationHandler(PipelineHandler):
         for _data in ppl_result:
             label.append(_data["annotations"]["label"])
             result.append(_data["result"][0])
-            pr.extend(_data["result"][1])
+            pr.append(_data["result"][1])
 
         return label, result, pr
 
