@@ -404,7 +404,6 @@ class StandaloneModelTestCase(TestCase):
 
 
 class CloudModelTest(TestCase):
-
     def setUp(self) -> None:
         sw_config._config = {}
 

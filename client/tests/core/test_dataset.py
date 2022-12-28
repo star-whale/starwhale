@@ -468,7 +468,6 @@ class TestPoint(TestCase):
 
 
 class CloudDatasetTest(TestCase):
-
     def setUp(self) -> None:
         sw_config._config = {}
 

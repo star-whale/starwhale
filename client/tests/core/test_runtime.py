@@ -1983,7 +1983,6 @@ class DependenciesTestCase(TestCase):
 
 
 class CloudRuntimeTest(TestCase):
-
     def setUp(self) -> None:
         sw_config._config = {}
 
