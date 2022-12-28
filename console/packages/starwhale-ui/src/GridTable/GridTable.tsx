@@ -91,7 +91,7 @@ function GridTable({
                 },
             })
         }
-    }, [columns, api])
+    }, [store.isInit, columns, api])
 
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
