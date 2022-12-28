@@ -472,8 +472,22 @@ class CloudDatasetTest(TestCase):
     def setUp(self) -> None:
         sw_config._config = {}
 
-    @patch("starwhale.core.dataset.cli.import_object")
-    def test_cli_list(self, m_import: MagicMock) -> None:
+    def test_cli_list(self) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            list_cli,
+            ["--name", "mnist", "--owner", "starwhale", "--latest"],
+            obj=mock_obj,
+        )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] == "mnist"
+        assert call_args[5]["owner"] == "starwhale"
+        assert call_args[5]["latest"]
+
         mock_obj = MagicMock()
         runner = CliRunner()
         result = runner.invoke(
@@ -481,3 +495,10 @@ class CloudDatasetTest(TestCase):
             [],
             obj=mock_obj,
         )
+
+        assert result.exit_code == 0
+        assert mock_obj.list.call_count == 1
+        call_args = mock_obj.list.call_args[0]
+        assert call_args[5]["name"] is None
+        assert call_args[5]["owner"] is None
+        assert not call_args[5]["latest"]
