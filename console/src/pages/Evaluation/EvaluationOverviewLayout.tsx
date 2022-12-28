@@ -6,14 +6,10 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { doJobAction, fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import Accordion from '@/components/Accordion'
-import { Panel } from 'baseui/accordion'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { StatefulTooltip } from 'baseui/tooltip'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -69,103 +65,6 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         return items
     }, [projectId, jobId, t])
 
-    const info = React.useMemo(() => {
-        const items = [
-            {
-                label: t('Owner'),
-                value: job?.owner?.name ?? '-',
-            },
-            {
-                label: t('Status'),
-                value: job?.jobStatus ?? '-',
-            },
-            {
-                label: t('Elapsed Time'),
-                value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
-            },
-            {
-                label: t('Created'),
-                value: job?.createdTime && formatTimestampDateTime(job.createdTime),
-            },
-            {
-                label: t('End Time'),
-                value: job?.stopTime && formatTimestampDateTime(job.stopTime),
-            },
-            {
-                label: t('Model'),
-                style: {
-                    gridColumnStart: 'span 2',
-                },
-                value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
-            },
-            {
-                label: t('Datasets'),
-                style: {
-                    gridColumnStart: 'span 2',
-                },
-                value: job?.datasets?.join(', '),
-            },
-            {
-                label: t('Runtime'),
-                style: {
-                    gridColumnStart: 'span 2',
-                },
-                value: (
-                    <StatefulTooltip content={() => <pre>{job?.runtime?.version?.meta}</pre>} placement='bottomRight'>
-                        {[
-                            job?.runtime?.name ?? '-',
-                            job?.runtime?.version?.alias,
-                            job?.runtime?.version?.name ?? '-',
-                        ].join(' : ')}
-                    </StatefulTooltip>
-                ),
-            },
-            {
-                label: t('Image'),
-                style: {
-                    gridColumnStart: 'span 2',
-                },
-                value: job?.runtime?.version?.image ?? '-',
-            },
-        ]
-
-        return (
-            <div
-                style={{
-                    fontSize: '14px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-                    gap: '12px',
-                }}
-            >
-                {items.map((v) => (
-                    <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
-                        <div
-                            style={{
-                                lineHeight: '24px',
-                                borderRadius: '4px',
-                                color: 'rgba(2,16,43,0.60)',
-                            }}
-                        >
-                            {v?.label}:
-                        </div>
-                        <div> {v?.value}</div>
-                    </div>
-                ))}
-            </div>
-        )
-    }, [job, t])
-
-    const header = useMemo(
-        () => (
-            <div className='mb-20'>
-                <Accordion accordion>
-                    <Panel title={`${t('Evaluation ID')}: ${job?.id ?? ''}`}>{info}</Panel>
-                </Accordion>
-            </div>
-        ),
-        [job, info, t]
-    )
     const handleAction = React.useCallback(
         async (jobIdArg, type: JobActionType) => {
             await doJobAction(projectId, jobIdArg, type)
@@ -211,7 +110,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     }, [job, t, handleAction])
 
     return (
-        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
             <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
         </BaseSubLayout>
     )

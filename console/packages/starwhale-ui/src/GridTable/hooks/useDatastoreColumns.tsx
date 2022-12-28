@@ -3,11 +3,15 @@ import { ColumnSchemaDesc, DataTypes } from '@starwhale/core/datastore'
 import { BooleanColumn, NumericalColumn, StringColumn } from '../../base/data-table'
 import { ColumnT, FilterTypes } from '../../base/data-table/types'
 
+const isPrivateSys = (str: string) => str.startsWith('sys/_')
+
 export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[]): ColumnT[] {
     const columns = React.useMemo(() => {
         const columnsWithAttrs: ColumnT[] = []
 
         columnTypes?.forEach((column) => {
+            if (isPrivateSys(column.name)) return
+
             switch (column.type) {
                 default:
                     break

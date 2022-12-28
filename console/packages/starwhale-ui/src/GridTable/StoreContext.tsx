@@ -3,6 +3,7 @@ import { useStore } from 'zustand'
 import { createCustomStore, ITableState, IStore } from '../base/data-table/store'
 
 type IStoreProviderProps = {
+    store?: IStore
     storeKey?: string
     initState: Partial<ITableState>
     children: React.ReactNode
@@ -10,10 +11,10 @@ type IStoreProviderProps = {
 
 const TableContext = createContext<IStore | null>(null)
 
-export function StoreProvider({ storeKey = 'store', initState, children }: IStoreProviderProps) {
+export function StoreProvider({ storeKey = 'store', initState, store, children }: IStoreProviderProps) {
     const storeRef = React.useRef<IStore>()
     if (!storeRef.current) {
-        storeRef.current = createCustomStore(storeKey, initState)
+        storeRef.current = store ?? createCustomStore(storeKey, initState)
     }
     return <TableContext.Provider value={storeRef.current}>{children}</TableContext.Provider>
 }

@@ -17,9 +17,16 @@ export type GridResizerPropsT = {
     right: () => React.ReactNode
     gridLayout?: string[]
     threshold?: number
+    isResizeable?: boolean
 }
 
-function GridResizer({ left, right, gridLayout = gridDefaultLayout, threshold = 200 }: GridResizerPropsT) {
+function GridResizer({
+    left,
+    right,
+    gridLayout = gridDefaultLayout,
+    threshold = 200,
+    isResizeable = true,
+}: GridResizerPropsT) {
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<any>(null)
     const gridRef = React.useRef<HTMLDivElement>(null)
@@ -87,7 +94,7 @@ function GridResizer({ left, right, gridLayout = gridDefaultLayout, threshold = 
             ref={gridRef}
             style={{
                 display: 'grid',
-                gridTemplateColumns: gridLayout[gridMode],
+                gridTemplateColumns: isResizeable ? gridLayout[gridMode] : '1fr',
                 overflow: 'hidden',
                 width: '100%',
                 flex: 1,
@@ -104,9 +111,16 @@ function GridResizer({ left, right, gridLayout = gridDefaultLayout, threshold = 
             >
                 {left()}
             </div>
-            {/* eslint-disable-next-line  @typescript-eslint/no-use-before-define */}
-            <ResizeBar mode={gridMode} resizeRef={resizeRef} onResizeStart={resizeStart} onModeChange={handleResize} />
-            {right()}
+            {isResizeable && (
+                // eslint-disable-next-line  @typescript-eslint/no-use-before-define
+                <ResizeBar
+                    mode={gridMode}
+                    resizeRef={resizeRef}
+                    onResizeStart={resizeStart}
+                    onModeChange={handleResize}
+                />
+            )}
+            {isResizeable && right()}
         </div>
     )
 }

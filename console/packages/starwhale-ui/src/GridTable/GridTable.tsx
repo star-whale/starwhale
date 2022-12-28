@@ -79,7 +79,7 @@ function GridTable({
     }, [store])
 
     useEffect(() => {
-        if (columns.length > 0) {
+        if (!store.isInit) {
             api.setState({
                 isInit: true,
                 currentView: {
@@ -146,9 +146,14 @@ function GridTable({
 
 export const MemoGridTable = React.memo(GridTable, areEqual)
 
-export default function ContextGridTable({ storeKey = 'table', initState = {}, ...rest }: IContextGridTable) {
+export default function ContextGridTable({
+    storeKey = 'table',
+    initState = {},
+    store = undefined,
+    ...rest
+}: IContextGridTable) {
     return (
-        <StoreProvider initState={initState} storeKey={storeKey}>
+        <StoreProvider initState={initState} storeKey={storeKey} store={store}>
             <MemoGridTable {...rest} />
         </StoreProvider>
     )
