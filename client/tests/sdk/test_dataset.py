@@ -1863,6 +1863,3 @@ class TestRowWriter(BaseTestCase):
         item = rw._queue.get(block=True)
         assert item.index == 1  # type: ignore
         rw.flush()
-
-        time.sleep(0.2)
-        assert not thread.is_alive()

@@ -1,15 +1,10 @@
 [report]
-omit =
-  */site-packages/*
-  */dist/*
-  */build/*
-  starwhale/cli/*
-  starwhale/core/*/cli.py
 show_missing = true
 exclude_lines =
   pragma: no cover
   def __repr__
   def __str__
+  @abstractmethod
   raise NotImplementedError
   raise
   if __name__ == .__main__.:
@@ -17,3 +12,11 @@ exclude_lines =
 
 [run]
 relative_files = True
+source =
+  starwhale/
+omit =
+  */site-packages/*
+  */dist/*
+  */build/*
+  starwhale/cli/*
+  starwhale/core/*/cli.py
