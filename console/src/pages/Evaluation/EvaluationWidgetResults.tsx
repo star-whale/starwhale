@@ -35,26 +35,29 @@ function Summary({ fetch }: any) {
                                 if (a === 'id') return -1
                                 return a > b ? 1 : -1
                             })
-                            .map((label) => (
-                                <React.Fragment key={label}>
-                                    <div
-                                        style={{
-                                            color: 'rgba(2,16,43,0.60)',
-                                            borderBottom: '1px solid #EEF1F6',
-                                        }}
-                                    >
-                                        {label}
-                                    </div>
-                                    <div
-                                        style={{
-                                            borderBottom: '1px solid #EEF1F6',
-                                            paddingLeft: '20px',
-                                        }}
-                                    >
-                                        {record[label]}
-                                    </div>
-                                </React.Fragment>
-                            ))}
+                            .filter((label) => typeof record[label] !== 'object')
+                            .map((label) => {
+                                return (
+                                    <React.Fragment key={label}>
+                                        <div
+                                            style={{
+                                                color: 'rgba(2,16,43,0.60)',
+                                                borderBottom: '1px solid #EEF1F6',
+                                            }}
+                                        >
+                                            {label}
+                                        </div>
+                                        <div
+                                            style={{
+                                                borderBottom: '1px solid #EEF1F6',
+                                                paddingLeft: '20px',
+                                            }}
+                                        >
+                                            {record[label]}
+                                        </div>
+                                    </React.Fragment>
+                                )
+                            })}
                     </div>
                 </Panel>
             </Accordion>

@@ -1,5 +1,5 @@
 import { Types } from '../base/data-table'
-import { ITableState } from '../base/data-table/store'
+import { IStore, ITableState } from '../base/data-table/store'
 import { RowT } from '../base/data-table/types'
 
 export interface ITableProps {
@@ -28,6 +28,7 @@ export interface IPaginationProps {
 }
 
 export type IContextGridTable = {
+    store?: IStore
     storeKey?: string
     initState?: Partial<ITableState>
 } & ITableProps

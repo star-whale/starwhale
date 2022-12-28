@@ -1,10 +1,5 @@
 import React, { useMemo } from 'react'
-import { usePage } from '@/hooks/usePage'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import useTranslation from '@/hooks/useTranslation'
-import Table from '@/components/Table/TableTyped'
-import { useParams } from 'react-router-dom'
-import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
 import IconFont from '@/components/IconFont'
@@ -15,8 +10,16 @@ import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@/components/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
+import { DataTypes } from '@starwhale/core'
+import { GridTable } from '@starwhale/ui/GridTable'
 
 const useStyles = createUseStyles({
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        height: '36px',
+        gap: 20,
+    },
     cellCompare: {
         position: 'absolute',
         left: 0,
@@ -29,6 +32,18 @@ const useStyles = createUseStyles({
     },
     cellPinned: { borderLeft: '1px dashed blue', borderRight: '1px dashed blue' },
     cellNotEqual: { backgroundColor: '#FFFAF5' },
+    compareCount: {
+        display: 'inline-block',
+        borderRadius: '12px',
+        background: '#F0F5FF',
+        width: '26px',
+        height: '18px',
+        lineHeight: '18px',
+        textAlign: 'center',
+        color: 'rgba(2,16,43,0.60)',
+        fontSize: '12px',
+        marginLeft: '8px',
+    },
 })
 
 type RowT = {
@@ -105,10 +120,6 @@ export default function EvaluationListCompare({
     rows: any[]
     attrs: RecordListVO['columnTypes']
 }) {
-    const [t] = useTranslation()
-    const [page] = usePage()
-    const { projectId } = useParams<{ projectId: string }>()
-    const evaluationsInfo = useFetchJobs(projectId, page)
     const store = useEvaluationCompareStore()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
     const styles = useStyles()
@@ -139,83 +150,72 @@ export default function EvaluationListCompare({
     }, [rows])
 
     const conmparePinnedRow: any = useMemo(() => {
-        const row = rows.find((r) => r.id === comparePinnedKey) ?? {}
-        return {
-            ...row,
-            ...row.attributes,
-        }
+        return rows.find((r) => r.id === comparePinnedKey) ?? {}
     }, [rows, comparePinnedKey])
 
     const comparePinnedRowIndex = useMemo(() => {
         return rows.findIndex((r) => r.id === comparePinnedKey)
     }, [rows, comparePinnedKey])
 
-    const $rows = useMemo(
-        () =>
-            [
-                {
-                    key: 'uuid',
-                    title: t('Evaluation ID'),
-                    values: rows.map((data: any) => data.uuid),
-                    renderCompare: StringCompareCell,
-                },
-                {
-                    key: 'modelName',
-                    title: t('sth name', [t('Model')]),
-                    values: rows.map((data: any) => data.modelName),
-                    renderCompare: StringCompareCell,
-                },
-                {
-                    key: 'modelVersion',
-                    title: t('Version'),
-                    values: rows.map((data: any) => data.modelVersion),
-                    renderCompare: StringCompareCell,
-                },
-                {
-                    key: 'owner',
-                    title: t('Owner'),
-                    values: rows.map((data: any) => data.owner),
-                    renderCompare: StringCompareCell,
-                },
-                {
-                    key: 'createdTime',
-                    title: t('Created'),
-                    values: rows.map((data: any) => data.createdTime),
-                    renderValue: (v: any) => formatTimestampDateTime(v),
-                    renderCompare: NoneCompareCell,
-                },
-                {
-                    key: 'duration',
-                    title: t('Elapsed Time'),
-                    values: rows.map((data: any) => data.duration),
-                    renderValue: (v: any) => (_.isNumber(v) ? durationToStr(v) : '-'),
-                    renderCompare: NumberCompareCell,
-                },
-                {
-                    key: 'stopTime',
-                    title: t('End Time'),
-                    values: rows.map((data: any) => data.stopTime),
-                    renderValue: (v: any) => (v > 0 ? formatTimestampDateTime(v) : '-'),
-                    renderCompare: NoneCompareCell,
-                },
-            ] as RowT[],
-        [t, rows]
-    )
-
     const $rowWithAttrs = useMemo(() => {
-        const rowWithAttrs = [...$rows]
+        const rowWithAttrs: RowT[] = []
 
         attrs?.forEach((attr) => {
-            rowWithAttrs.push({
-                key: attr.name,
-                title: attr.name,
-                values: rows.map((data: any) => data.attributes?.[attr.name] ?? '-'),
-                renderCompare: NumberCompareCell,
-            })
+            if (attr.name.endsWith('time')) {
+                rowWithAttrs.push({
+                    key: attr.name,
+                    title: attr.name,
+                    values: rows.map((data: any) => data?.[attr.name]),
+                    renderValue: (v: any) => (v > 0 ? formatTimestampDateTime(v) : '-'),
+                    renderCompare: NoneCompareCell,
+                })
+                return
+            }
+            if (attr.name.includes('duration')) {
+                rowWithAttrs.push({
+                    key: attr.name,
+                    title: attr.name,
+                    values: rows.map((data: any) => data?.[attr.name]),
+                    renderValue: (v: any) => (_.isNumber(v) ? durationToStr(v) : '-'),
+                    renderCompare: NumberCompareCell,
+                })
+                return
+            }
+
+            switch (attr.type) {
+                case DataTypes.BOOL:
+                case DataTypes.STRING:
+                    rowWithAttrs.push({
+                        key: attr.name,
+                        title: attr.name,
+                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
+                        renderCompare: NumberCompareCell,
+                    })
+                    break
+                case DataTypes.INT8:
+                case DataTypes.INT16:
+                case DataTypes.INT32:
+                case DataTypes.INT64:
+                case DataTypes.FLOAT16:
+                case DataTypes.FLOAT32:
+                case DataTypes.FLOAT64:
+                    rowWithAttrs.push({
+                        key: attr.name,
+                        title: attr.name,
+                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
+                        renderCompare: StringCompareCell,
+                    })
+                    break
+                default:
+                    break
+            }
         })
 
-        return rowWithAttrs
-    }, [$rows, attrs, rows])
+        return rowWithAttrs.sort((a: RowT, b: RowT) => {
+            if (a.key > b.key) return -1
+            return 1
+        })
+    }, [attrs, rows])
 
     const $rowsWithDiffOnly = useMemo(() => {
         if (!compareShowDiffOnly) return $rowWithAttrs
@@ -236,7 +236,7 @@ export default function EvaluationListCompare({
                 CustomColumn({
                     minWidth: 200,
                     key: String(row.id),
-                    title: `${row.modelName}-${row.id}`,
+                    title: row.id,
                     // @ts-ignore
                     renderCell: (props: any) => {
                         const rowLength = $rowsWithDiffOnly.length
@@ -255,7 +255,9 @@ export default function EvaluationListCompare({
                             return (
                                 <div
                                     className={cn('cell--pinned', styles.cellCompare, styles.cellPinned)}
-                                    style={{ borderBottom: props.y === rowLength - 1 ? '1px dashed blue' : undefined }}
+                                    style={{
+                                        borderBottom: props.y === rowLength - 1 ? '1px dashed blue' : undefined,
+                                    }}
                                 >
                                     {NoneCompareCell(newProps)}
                                 </div>
@@ -297,25 +299,9 @@ export default function EvaluationListCompare({
 
     return (
         <>
-            <div style={{ display: 'flex', alignItems: 'center', height: '36px', gap: 20 }}>
+            <div className={styles.header}>
                 <LabelSmall $style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                    {title}{' '}
-                    <span
-                        style={{
-                            display: 'inline-block',
-                            borderRadius: '12px',
-                            background: '#F0F5FF',
-                            width: '26px',
-                            height: '18px',
-                            lineHeight: '18px',
-                            textAlign: 'center',
-                            color: 'rgba(2,16,43,0.60)',
-                            fontSize: '12px',
-                            marginLeft: '8px',
-                        }}
-                    >
-                        {$columns.length}
-                    </span>
+                    {title} <span className={styles.compareCount}>{$columns.length}</span>
                 </LabelSmall>
                 <Checkbox
                     checked={store.compare?.compareShowCellChanges}
@@ -340,14 +326,7 @@ export default function EvaluationListCompare({
                     Rows with diff only
                 </Checkbox>
             </div>
-            <Table
-                useStore={useEvaluationCompareStore}
-                isLoading={evaluationsInfo.isLoading}
-                columns={$columns}
-                compareable
-                // @ts-ignore
-                data={$rowsWithDiffOnly}
-            />
+            <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
         </>
     )
 }

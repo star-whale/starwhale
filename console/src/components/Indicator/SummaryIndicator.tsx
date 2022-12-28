@@ -74,7 +74,7 @@ export default function SummaryIndicator({ data, isTreeView = false }: ISummaryI
     //     )
     // }, [])
 
-    if (!_.isObject) {
+    if (!_.isObject(data)) {
         return (
             <LabelMedium
                 $style={{
