@@ -16,7 +16,7 @@ def array_to_dict(arry):
 
 @http_retry
 def request_link_json(anno_link):
-    return requests.get(anno_link, timeout=10).json
+    return requests.get(anno_link, timeout=10).json()
 
 
 def build_ds():
