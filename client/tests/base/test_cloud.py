@@ -1,12 +1,13 @@
 from http import HTTPStatus
 
 import yaml
-from pyfakefs.fake_filesystem_unittest import TestCase
 from requests_mock import Mocker
-from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.base.type import URIType
-from starwhale.base.uri import URI
+from pyfakefs.fake_filesystem_unittest import TestCase
+
 from starwhale.consts import HTTPMethod
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.config import SWCliConfigMixed
 
 

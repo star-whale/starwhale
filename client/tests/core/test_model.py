@@ -1,18 +1,16 @@
 import os
-import tempfile
 import typing as t
+import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from click.testing import CliRunner
-from pyfakefs.fake_filesystem_unittest import TestCase
 from requests_mock import Mocker
-from starwhale.api._impl.job import Context, context_holder
-from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
-from starwhale.api.service import Service
-from starwhale.base.spec.openapi.components import OpenApi
-from starwhale.base.type import URIType, BundleType
-from starwhale.base.uri import URI
+from pyfakefs.fake_filesystem_unittest import TestCase
+
+from tests import ROOT_DIR
+from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     FileFlag,
     HTTPMethod,
@@ -21,16 +19,19 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_EVALUATION_JOBS_FNAME,
 )
-from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.uri import URI
+from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType, BundleType
+from starwhale.api.service import Service
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.core.model.cli import _list as list_cli
-from starwhale.core.model.model import StandaloneModel, resource_to_file_node
+from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
-from starwhale.utils import config as sw_config
-from starwhale.utils import load_yaml
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.fs import ensure_dir, ensure_file
-from tests import ROOT_DIR
+from starwhale.core.model.model import StandaloneModel, resource_to_file_node
+from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.spec.openapi.components import OpenApi
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()

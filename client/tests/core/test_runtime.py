@@ -1,14 +1,15 @@
 import os
-import tempfile
 import typing as t
+import tempfile
 from pathlib import Path
 from unittest.mock import call, patch, MagicMock
 
 import yaml
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
-from starwhale.base.type import URIType, BundleType, DependencyType, RuntimeLockFileType
-from starwhale.base.uri import URI
+
+from starwhale.utils import config as sw_config
+from starwhale.utils import is_linux, load_yaml
 from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
@@ -20,26 +21,10 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.core.runtime.cli import _build as runtime_build_cli
-from starwhale.core.runtime.cli import _list as runtime_list_cli
-from starwhale.core.runtime.model import (
-    Runtime,
-    Dependencies,
-    _TEMPLATE_DIR,
-    RuntimeConfig,
-    WheelDependency,
-    StandaloneRuntime,
-)
-from starwhale.core.runtime.process import Process
-from starwhale.core.runtime.store import RuntimeStorage
-from starwhale.core.runtime.view import (
-    get_term_view,
-    RuntimeTermView,
-    RuntimeTermViewRich,
-)
-from starwhale.utils import config as sw_config
-from starwhale.utils import is_linux, load_yaml
-from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri import URI
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.base.type import URIType, BundleType, DependencyType, RuntimeLockFileType
+from starwhale.utils.venv import EnvTarType, get_python_version
 from starwhale.utils.error import (
     FormatError,
     NotFoundError,
@@ -48,8 +33,24 @@ from starwhale.utils.error import (
     ExclusiveArgsError,
     UnExpectedConfigFieldError,
 )
-from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
-from starwhale.utils.venv import EnvTarType, get_python_version
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.runtime.cli import _list as runtime_list_cli
+from starwhale.core.runtime.cli import _build as runtime_build_cli
+from starwhale.core.runtime.view import (
+    get_term_view,
+    RuntimeTermView,
+    RuntimeTermViewRich,
+)
+from starwhale.core.runtime.model import (
+    Runtime,
+    Dependencies,
+    _TEMPLATE_DIR,
+    RuntimeConfig,
+    WheelDependency,
+    StandaloneRuntime,
+)
+from starwhale.core.runtime.store import RuntimeStorage
+from starwhale.core.runtime.process import Process
 
 
 class StandaloneRuntimeTestCase(TestCase):

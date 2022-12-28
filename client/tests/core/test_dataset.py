@@ -4,12 +4,23 @@ import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import numpy
 import yaml
+import numpy
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
+
+from tests import ROOT_DIR
+from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
+from starwhale.consts import (
+    DefaultYAMLName,
+    SW_TMP_DIR_NAME,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+)
+from starwhale.base.uri import URI
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 from starwhale.base.type import (
     URIType,
     BundleType,
@@ -17,17 +28,9 @@ from starwhale.base.type import (
     DataOriginType,
     ObjectStoreType,
 )
-from starwhale.base.uri import URI
-from starwhale.consts import (
-    DefaultYAMLName,
-    SW_TMP_DIR_NAME,
-    VERSION_PREFIX_CNT,
-    DEFAULT_MANIFEST_NAME,
-)
-from starwhale.core.dataset.cli import _build as build_cli
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _list as list_cli
-from starwhale.core.dataset.model import Dataset, StandaloneDataset
-from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.core.dataset.type import (
     Link,
     Point,
@@ -39,11 +42,9 @@ from starwhale.core.dataset.type import (
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
-from starwhale.utils import config as sw_config
-from starwhale.utils import load_yaml
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.fs import ensure_dir, ensure_file
-from tests import ROOT_DIR
+from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
