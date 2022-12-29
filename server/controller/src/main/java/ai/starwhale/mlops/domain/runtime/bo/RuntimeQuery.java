@@ -30,4 +30,6 @@ public class RuntimeQuery {
     private String runtimeVersionUrl;
 
     private String namePrefix;
+
+    private String owner;
 }

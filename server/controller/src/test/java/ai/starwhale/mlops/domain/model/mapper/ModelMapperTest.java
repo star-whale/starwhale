@@ -75,17 +75,20 @@ public class ModelMapperTest extends MySqlContainerHolder {
         modelMapper.insert(model2);
         modelMapper.insert(model3);
 
-        var list = modelMapper.list(1L, null, null);
+        var list = modelMapper.list(1L, null, null, null);
         Assertions.assertIterableEquals(List.of(model3, model1), list);
 
-        list = modelMapper.list(2L, null, null);
+        list = modelMapper.list(2L, null, null, null);
         Assertions.assertIterableEquals(List.of(model2), list);
 
-        list = modelMapper.list(null, "model", null);
+        list = modelMapper.list(null, "model", null, null);
         Assertions.assertIterableEquals(List.of(model3, model2, model1), list);
 
-        list = modelMapper.list(null, "model1", null);
+        list = modelMapper.list(null, "model1", null, null);
         Assertions.assertIterableEquals(List.of(model1), list);
+
+        list = modelMapper.list(null, null, 2L, null);
+        Assertions.assertIterableEquals(List.of(model3, model2), list);
     }
 
     @Test

@@ -190,7 +190,7 @@ public class DatasetServiceTest {
 
     @Test
     public void testList() {
-        given(datasetMapper.list(same(1L), anyString(), any()))
+        given(datasetMapper.list(same(1L), anyString(), any(), any()))
                 .willReturn(List.of(
                         DatasetEntity.builder().id(1L).build(),
                         DatasetEntity.builder().id(2L).build()
@@ -340,7 +340,7 @@ public class DatasetServiceTest {
 
         given(projectManager.getProject(same("1")))
                 .willReturn(ProjectEntity.builder().id(1L).build());
-        given(datasetMapper.list(same(1L), any(), any()))
+        given(datasetMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
 
         res = service.listDs("1", "");
