@@ -997,7 +997,7 @@ class TestPytorch(_DatasetSDKTestBase):
 
         item = next(iter(torch_loader))
         assert isinstance(item, list)
-        assert "0" in item[0]
+        assert len(set(item[0]) - set([d.index for d in ds])) == 0
         assert len(item[0]) == 5
 
     def test_use_custom_transform(self) -> None:
