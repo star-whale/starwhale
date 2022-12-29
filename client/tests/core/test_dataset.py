@@ -34,6 +34,7 @@ from starwhale.core.dataset.type import (
     Line,
     Link,
     Point,
+    Polygon,
     JsonDict,
     MIMEType,
     ArtifactType,
@@ -489,6 +490,33 @@ class TestPoint(TestCase):
                     "_type": data_store.STRING,
                     "x": data_store.FLOAT64,
                     "y": data_store.FLOAT64,
+                },
+            ),
+            data_store._get_type(p),
+        ),
+
+
+class TestPolygon(TestCase):
+    def test_to_list(self):
+        p = Polygon([Point(3.9, 4.5), Point(5.9, 6.5), Point(7.9, 9.5)])
+        self.assertEqual([[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]], p.to_list())
+        self.assertEqual("Polygon: [[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]]", str(p))
+        self.assertEqual(numpy.float64, p.dtype)
+        self.assertEqual(
+            data_store.SwObjectType(
+                Polygon,
+                {
+                    "_type": data_store.STRING,
+                    "points": data_store.SwListType(
+                        data_store.SwObjectType(
+                            Point,
+                            {
+                                "_type": data_store.STRING,
+                                "x": data_store.FLOAT64,
+                                "y": data_store.FLOAT64,
+                            },
+                        )
+                    ),
                 },
             ),
             data_store._get_type(p),

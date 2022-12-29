@@ -591,6 +591,35 @@ class Point(ASDictMixin, SwObject):
     __repr__ = __str__
 
 
+class Polygon(ASDictMixin, SwObject):
+    def __init__(self, points: t.List[Point]) -> None:
+        self._type = "polygon"
+        self.points = points
+
+    @property
+    def dtype(self) -> numpy.dtype:
+        return numpy.dtype(numpy.float64)
+
+    def to_list(self) -> t.List[t.List[float]]:
+        return [p.to_list() for p in self.points]
+
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_list(), self.dtype)
+
+    def to_bytes(self) -> bytes:
+        return self.to_numpy().tobytes()
+
+    def to_tensor(self) -> t.Any:
+        from starwhale.integrations.pytorch import convert_list_to_tensor
+
+        return convert_list_to_tensor(self.to_list())
+
+    def __str__(self) -> str:
+        return f"Polygon: {self.to_list()}"
+
+    __repr__ = __str__
+
+
 class Text(BaseArtifact, SwObject):
     DEFAULT_ENCODING = "utf-8"
 
