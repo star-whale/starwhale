@@ -326,6 +326,12 @@ public interface DatasetApi {
             @Valid
             @RequestParam(value = "versionId", required = false)
             String versionId,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    description = "Dataset name prefix to search for",
+                    schema = @Schema())
+            @Valid @RequestParam(value = "name", required = false) String name,
+            @Valid @RequestParam(value = "owner", required = false) String owner,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")

@@ -155,7 +155,8 @@ public class ModelService {
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
-        List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), null);
+        Long userId = userService.getUserId(query.getOwner());
+        List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVo vo = modelVoConverter.convert(entity);
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
@@ -192,7 +193,7 @@ public class ModelService {
         }
 
         ProjectEntity projectEntity = projectManager.getProject(project);
-        List<ModelEntity> entities = modelMapper.list(projectEntity.getId(), null, null);
+        List<ModelEntity> entities = modelMapper.list(projectEntity.getId(), null, null, null);
         if (entities == null || entities.isEmpty()) {
             return List.of();
         }

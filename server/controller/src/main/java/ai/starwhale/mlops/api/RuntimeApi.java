@@ -81,9 +81,8 @@ public interface RuntimeApi {
                     in = ParameterIn.QUERY,
                     description = "Runtime name prefix to search for",
                     schema = @Schema())
-            @Valid
-            @RequestParam(value = "runtimeName", required = false)
-            String runtimeName,
+            @Valid @RequestParam(value = "name", required = false) String name,
+            @Valid @RequestParam(value = "owner", required = false) String owner,
             @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")

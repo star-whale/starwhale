@@ -57,11 +57,12 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(String projectUrl,
-            String runtimeName, Integer pageNum, Integer pageSize) {
+            String name, String owner, Integer pageNum, Integer pageSize) {
         PageInfo<RuntimeVo> pageInfo = runtimeService.listRuntime(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
-                        .namePrefix(runtimeName)
+                        .namePrefix(name)
+                        .owner(owner)
                         .build(),
                 PageParams.builder()
                         .pageNum(pageNum)

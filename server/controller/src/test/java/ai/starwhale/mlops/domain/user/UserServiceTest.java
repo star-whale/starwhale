@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
@@ -44,6 +45,7 @@ import ai.starwhale.mlops.domain.user.mapper.RoleMapper;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import java.util.Set;
@@ -392,5 +394,19 @@ public class UserServiceTest {
                 is(iterableWithSize(1))
         ));
 
+    }
+
+    @Test
+    public void testGetUserId() {
+        var res = service.getUserId("user1");
+        assertThat(res, is(1L));
+
+        res = service.getUserId("2");
+        assertThat(res, is(2L));
+
+        res = service.getUserId("");
+        assertThat(res, nullValue());
+
+        assertThrows(SwNotFoundException.class, () -> service.getUserId("not_exist"));
     }
 }

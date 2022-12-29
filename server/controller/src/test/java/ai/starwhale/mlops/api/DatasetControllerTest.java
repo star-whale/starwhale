@@ -315,14 +315,14 @@ public class DatasetControllerTest {
                         DatasetVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listDataset("", "3", 1, 5);
+        var resp = controller.listDataset("", "3", "", "", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
                 hasProperty("list", iterableWithSize(1))
         ));
 
-        resp = controller.listDataset("project1", "", 1, 5);
+        resp = controller.listDataset("project1", "", "", "", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
