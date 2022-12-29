@@ -684,7 +684,6 @@ class Link(ASDictMixin, SwObject):
     def __init__(
         self,
         uri: t.Union[str, Path] = "",
-        auth: t.Optional[LinkAuth] = None,
         offset: int = FilePosition.START.value,
         size: int = -1,
         data_type: t.Optional[BaseArtifact] = None,
@@ -696,7 +695,6 @@ class Link(ASDictMixin, SwObject):
         self.scheme = _up.scheme
         self.offset = offset
         self.size = size
-        self.auth = auth
         self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
@@ -747,7 +745,6 @@ class Link(ASDictMixin, SwObject):
         if isinstance(dataset_uri, str):
             dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
 
-        auth_name = self.auth.name if self.auth else ""
         if dataset_uri.instance_type == InstanceType.CLOUD:
             key_compose = self, 0, 0
             store = ObjectStore.to_signed_http_backend(dataset_uri)
@@ -758,7 +755,7 @@ class Link(ASDictMixin, SwObject):
                     0,
                     0,
                 )
-                store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
+                store = ObjectStore.from_data_link_uri(key_compose[0])
             else:
                 key_compose = (
                     Link(self.local_fs_uri) if self.local_fs_uri else self,
@@ -767,7 +764,9 @@ class Link(ASDictMixin, SwObject):
                 )
                 store = ObjectStore.from_dataset_uri(dataset_uri)
 
-        with store.backend._make_file(store.bucket, key_compose) as f:
+        with store.backend._make_file(
+            key_compose=key_compose, bucket=store.bucket
+        ) as f:
             return f.read(-1)  # type: ignore
 
 

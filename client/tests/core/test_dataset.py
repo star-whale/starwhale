@@ -334,7 +334,6 @@ class StandaloneDatasetTestCase(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             ),
             TabularDatasetRow(
                 id="label-1",
@@ -351,7 +350,6 @@ class StandaloneDatasetTestCase(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             ),
         ]
 
@@ -417,7 +415,6 @@ class TestJsonDict(TestCase):
                             "scheme": data_store.STRING,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
-                            "auth": data_store.UNKNOWN,
                             "data_type": data_store.UNKNOWN,
                             "with_local_fs_data": data_store.BOOL,
                             "_local_fs_uri": data_store.STRING,

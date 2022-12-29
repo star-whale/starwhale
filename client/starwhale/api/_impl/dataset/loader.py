@@ -6,18 +6,18 @@ import typing as t
 import threading
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
+from urllib.parse import urlparse
 
 import loguru
 from loguru import logger as _logger
 
-from starwhale.utils import load_dotenv
-from starwhale.consts import HTTPMethod, AUTH_ENV_FNAME
+from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Link, BaseArtifact
-from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
+from starwhale.core.dataset.store import FileLikeObj, ObjectStore
 from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     TabularDataset,
@@ -106,7 +106,6 @@ class DataLoader(metaclass=ABCMeta):
         )
         self.session_consumption = session_consumption
         self._stores: t.Dict[str, ObjectStore] = {}
-        self._load_dataset_auth_env()
         self.last_processed_range: t.Optional[t.Tuple[t.Any, t.Any]] = None
         self._store_lock = threading.Lock()
 
@@ -120,17 +119,12 @@ class DataLoader(metaclass=ABCMeta):
             raise ValueError(f"cache_size({cache_size}) must be a positive int number")
         self._cache_size = cache_size
 
-    def _load_dataset_auth_env(self) -> None:
-        # TODO: support multi datasets
-        if self.dataset_uri.instance_type == InstanceType.STANDALONE:
-            auth_env_fpath = (
-                DatasetStorage(self.dataset_uri).snapshot_workdir / AUTH_ENV_FNAME
-            )
-            load_dotenv(auth_env_fpath)
-
     def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
         with self._store_lock:
-            _k = f"{self.dataset_uri}.{row.data_link.scheme}.{row.auth_name}"
+            _up = urlparse(row.data_link.uri)
+            parts = _up.path.lstrip("/").split("/", 1)
+            c_k = row.data_link.uri.replace(parts[-1], "")
+            _k = f"{self.dataset_uri}.{c_k}"
             _store = self._stores.get(_k)
             if _store:
                 return _store
@@ -139,9 +133,7 @@ class DataLoader(metaclass=ABCMeta):
                 _store = ObjectStore.to_signed_http_backend(self.dataset_uri)
             else:
                 if row.object_store_type == ObjectStoreType.REMOTE:
-                    _store = ObjectStore.from_data_link_uri(
-                        row.data_link, row.auth_name
-                    )
+                    _store = ObjectStore.from_data_link_uri(row.data_link)
                 else:
                     _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
@@ -261,7 +253,7 @@ class DataLoader(metaclass=ABCMeta):
 
         store = self._get_store(row)
         key_compose = self._get_key_compose(row, store)
-        file = store.backend._make_file(store.bucket, key_compose)
+        file = store.backend._make_file(key_compose=key_compose, bucket=store.bucket)
         data_content, _ = self._read_data(file, row)
         data = BaseArtifact.reflect(data_content, row.data_type)
         return DataRow(index=row.id, data=data, annotations=row.annotations)

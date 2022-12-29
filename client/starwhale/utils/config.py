@@ -146,6 +146,11 @@ class SWCliConfigMixed:
     def current_instance(self) -> str:
         return str(self._config["current_instance"])
 
+    @property
+    def link_auths(self) -> t.Any:
+        # TODO: add config cmd for link_auths
+        return self._config.get("link_auths")
+
     def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
         instance = self._get_instance_alias(instance)
         return self._config["instances"].get(instance) or {}

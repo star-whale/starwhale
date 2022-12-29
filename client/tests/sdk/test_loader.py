@@ -1,21 +1,24 @@
 import os
 import shutil
 import typing as t
+import tempfile
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale import MIMEType, S3LinkAuth, get_data_loader
-from starwhale.consts import HTTPMethod, AUTH_ENV_FNAME, SWDSBackendType
+from starwhale import MIMEType, get_data_loader
+from starwhale.utils import config
+from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Link, Image, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import (
+    S3Connection,
     DatasetStorage,
     SignedUrlBackend,
     LocalFSStorageBackend,
@@ -100,7 +103,6 @@ class TestDataLoader(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             )
         ]
 
@@ -124,19 +126,19 @@ class TestDataLoader(TestCase):
 
         assert loader.kind == DataFormatType.USER_RAW
         assert list(loader._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ]
         assert loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ].bucket == str(data_dir)
         assert (
             loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788.."
+                "local/project/self/dataset/mnist/version/1122334455667788."
             ].backend.kind
             == SWDSBackendType.LocalFS
         )
         assert not loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
         loader = get_data_loader("mnist/version/1122334455667788")
@@ -161,163 +163,171 @@ class TestDataLoader(TestCase):
         m_summary: MagicMock,
         m_boto3: MagicMock,
     ) -> None:
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=True,
-            include_link=True,
-        )
-        m_scan_id.return_value = [{"id": i} for i in range(0, 4)]
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            config._config = {}
+            os.environ["SW_CLI_CONFIG"] = tmpdirname + "/config.yaml"
+            m_summary.return_value = DatasetSummary(
+                include_user_raw=True,
+                include_link=True,
+            )
+            m_scan_id.return_value = [{"id": i} for i in range(0, 4)]
 
-        snapshot_workdir = DatasetStorage(self.dataset_uri).snapshot_workdir
-        ensure_dir(snapshot_workdir)
-        envs = {
-            "USER.S3.SERVER1.SECRET": "11",
-            "USER.S3.SERVER1.ACCESS_KEY": "11",
-            "USER.S3.SERVER2.SECRET": "11",
-            "USER.S3.SERVER2.ACCESS_KEY": "11",
-            "USER.S3.SERVER2.ENDPOINT": "127.0.0.1:19000",
-        }
-        os.environ.update(envs)
-        auth_env = S3LinkAuth.from_env(name="server1").dump_env()
-        auth_env.extend(S3LinkAuth.from_env(name="server2").dump_env())
-        ensure_file(
-            snapshot_workdir / AUTH_ENV_FNAME,
-            content="\n".join(auth_env),
-        )
+            snapshot_workdir = DatasetStorage(self.dataset_uri).snapshot_workdir
+            ensure_dir(snapshot_workdir)
+            config.update_swcli_config(
+                **{
+                    "link_auths": [
+                        {
+                            "type": "s3",
+                            "ak": "11",
+                            "sk": "11",
+                            "bucket": "starwhale",
+                            "endpoint": "http://127.0.0.1:9000",
+                        },
+                        {
+                            "type": "s3",
+                            "ak": "11",
+                            "sk": "11",
+                            "endpoint": "http://127.0.0.1:19000",
+                            "bucket": "starwhale",
+                        },
+                        {
+                            "type": "s3",
+                            "ak": "11",
+                            "sk": "11",
+                            "endpoint": "http://127.0.0.1",
+                            "bucket": "starwhale",
+                        },
+                    ]
+                }
+            )
+            S3Connection.connections_config = []
 
-        for k in envs:
-            os.environ.pop(k)
+            consumption = get_dataset_consumption(self.dataset_uri, session_id="2")
+            loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
+            assert isinstance(loader, UserRawDataLoader)
+            assert isinstance(loader.session_consumption, StandaloneTDSC)
+            assert loader.session_consumption._todo_queue.qsize() == 1
+            assert loader.kind == DataFormatType.USER_RAW
 
-        consumption = get_dataset_consumption(self.dataset_uri, session_id="2")
-        loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
-        assert isinstance(loader, UserRawDataLoader)
-        assert isinstance(loader.session_consumption, StandaloneTDSC)
-        assert loader.session_consumption._todo_queue.qsize() == 1
-        assert loader.kind == DataFormatType.USER_RAW
-        for k in envs:
-            assert k in os.environ
+            version = "1122334455667788"
 
-        version = "1122334455667788"
-
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id=0,
-                object_store_type=ObjectStoreType.REMOTE,
-                data_link=Link(
-                    f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}"
+            m_scan.return_value = [
+                TabularDatasetRow(
+                    id=0,
+                    object_store_type=ObjectStoreType.REMOTE,
+                    data_link=Link(
+                        f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}"
+                    ),
+                    data_offset=16,
+                    data_size=784,
+                    annotations={"label": 0},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.USER_RAW,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
                 ),
-                data_offset=16,
-                data_size=784,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.USER_RAW,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="server1",
-            ),
-            TabularDatasetRow(
-                id=1,
-                object_store_type=ObjectStoreType.REMOTE,
-                data_link=Link(
-                    f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}"
+                TabularDatasetRow(
+                    id=1,
+                    object_store_type=ObjectStoreType.REMOTE,
+                    data_link=Link(
+                        f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}"
+                    ),
+                    data_offset=16,
+                    data_size=784,
+                    annotations={"label": 1},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.USER_RAW,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
                 ),
-                data_offset=16,
-                data_size=784,
-                annotations={"label": 1},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.USER_RAW,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="server2",
-            ),
-            TabularDatasetRow(
-                id=2,
-                object_store_type=ObjectStoreType.REMOTE,
-                data_link=Link(
-                    f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}"
+                TabularDatasetRow(
+                    id=2,
+                    object_store_type=ObjectStoreType.REMOTE,
+                    data_link=Link(
+                        f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}"
+                    ),
+                    data_offset=16,
+                    data_size=784,
+                    annotations={"label": 1},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.USER_RAW,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
                 ),
-                data_offset=16,
-                data_size=784,
-                annotations={"label": 1},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.USER_RAW,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="server2",
-            ),
-            TabularDatasetRow(
-                id=3,
-                object_store_type=ObjectStoreType.REMOTE,
-                data_link=Link(
-                    f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}"
+                TabularDatasetRow(
+                    id=3,
+                    object_store_type=ObjectStoreType.REMOTE,
+                    data_link=Link(
+                        f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}"
+                    ),
+                    data_offset=16,
+                    data_size=784,
+                    annotations={"label": 1},
+                    data_origin=DataOriginType.NEW,
+                    data_format=DataFormatType.USER_RAW,
+                    data_type={
+                        "type": ArtifactType.Image.value,
+                        "mime_type": MIMEType.GRAYSCALE.value,
+                    },
                 ),
-                data_offset=16,
-                data_size=784,
-                annotations={"label": 1},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.USER_RAW,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
-                },
-                auth_name="server3",
-            ),
-        ]
+            ]
 
-        raw_data_fpath = os.path.join(ROOT_DIR, "data", "dataset", "mnist", "data")
-        self.fs.add_real_file(raw_data_fpath)
-        with open(raw_data_fpath, "rb") as f:
-            raw_content = f.read(-1)
+            raw_data_fpath = os.path.join(ROOT_DIR, "data", "dataset", "mnist", "data")
+            self.fs.add_real_file(raw_data_fpath)
+            with open(raw_data_fpath, "rb") as f:
+                raw_content = f.read(-1)
 
-        m_boto3.return_value = MagicMock(
-            **{
-                "Object.return_value": MagicMock(
-                    **{
-                        "get.return_value": {
-                            "Body": MagicMock(**{"read.return_value": raw_content}),
-                            "ContentLength": len(raw_content),
+            m_boto3.return_value = MagicMock(
+                **{
+                    "Object.return_value": MagicMock(
+                        **{
+                            "get.return_value": {
+                                "Body": MagicMock(**{"read.return_value": raw_content}),
+                                "ContentLength": len(raw_content),
+                            }
                         }
-                    }
-                )
-            }
-        )
+                    )
+                }
+            )
 
-        assert loader.kind == DataFormatType.USER_RAW
-        assert loader._stores == {}
+            assert loader.kind == DataFormatType.USER_RAW
+            assert loader._stores == {}
 
-        rows = list(loader)
-        assert len(rows) == 4
+            rows = list(loader)
+            assert len(rows) == 4
 
-        _idx, _data, _annotations = rows[0]
-        assert _idx == 0
-        assert _annotations["label"] == 0
-        assert isinstance(_data, Image)
+            _idx, _data, _annotations = rows[0]
+            assert _idx == 0
+            assert _annotations["label"] == 0
+            assert isinstance(_data, Image)
 
-        assert len(_data.to_bytes()) == 28 * 28
-        assert isinstance(_data.to_bytes(), bytes)
-        assert len(loader._stores) == 3
-        assert (
-            loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788.s3.server1"
-            ].backend.kind
-            == SWDSBackendType.S3
-        )
-        assert (
-            loader._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788.s3.server1"
-            ].bucket
-            == "starwhale"
-        )
+            assert len(_data.to_bytes()) == 28 * 28
+            assert isinstance(_data.to_bytes(), bytes)
+            assert len(loader._stores) == 4
+            assert (
+                loader._stores[
+                    "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1/starwhale/"
+                ].backend.kind
+                == SWDSBackendType.S3
+            )
+            assert (
+                loader._stores[
+                    "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1:9000/starwhale/"
+                ].bucket
+                == "starwhale"
+            )
 
-        loader = get_data_loader(self.dataset_uri)
-        assert isinstance(loader, UserRawDataLoader)
-        assert loader.session_consumption is None
-        assert len(list(loader)) == 4
+            loader = get_data_loader(self.dataset_uri)
+            assert isinstance(loader, UserRawDataLoader)
+            assert loader.session_consumption is None
+            assert len(list(loader)) == 4
 
     @Mocker()
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
@@ -368,7 +378,6 @@ class TestDataLoader(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             )
         ]
         os.environ.update(
@@ -405,23 +414,23 @@ class TestDataLoader(TestCase):
         assert isinstance(_data, Image)
 
         assert list(loader._stores.keys()) == [
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
         ]
         backend = loader._stores[
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
+            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
         ].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
         assert (
             loader._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
             ].bucket
             == ""
         )
         assert (
             loader._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788.."
+                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
             ].key_prefix
             == ""
         )
@@ -457,7 +466,6 @@ class TestDataLoader(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             ),
             TabularDatasetRow(
                 id=1,
@@ -474,7 +482,6 @@ class TestDataLoader(TestCase):
                     "type": ArtifactType.Image.value,
                     "mime_type": MIMEType.GRAYSCALE.value,
                 },
-                auth_name="",
             ),
         ]
 
@@ -496,18 +503,18 @@ class TestDataLoader(TestCase):
         assert isinstance(_data.to_bytes(), bytes)
 
         assert list(loader._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ]
         backend = loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
         assert loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ].bucket == str(data_dir)
         assert not loader._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788.."
+            "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
     @Mocker()
@@ -552,7 +559,6 @@ class TestDataLoader(TestCase):
                         "type": ArtifactType.Image.value,
                         "mime_type": MIMEType.GRAYSCALE.value,
                     },
-                    auth_name="",
                 ),
                 TabularDatasetRow(
                     id="b",
@@ -569,7 +575,6 @@ class TestDataLoader(TestCase):
                         "type": ArtifactType.Image.value,
                         "mime_type": MIMEType.GRAYSCALE.value,
                     },
-                    auth_name="",
                 ),
             ],
             [
@@ -588,7 +593,6 @@ class TestDataLoader(TestCase):
                         "type": ArtifactType.Image.value,
                         "mime_type": MIMEType.GRAYSCALE.value,
                     },
-                    auth_name="",
                 ),
                 TabularDatasetRow(
                     id="d",
@@ -605,7 +609,6 @@ class TestDataLoader(TestCase):
                         "type": ArtifactType.Image.value,
                         "mime_type": MIMEType.GRAYSCALE.value,
                     },
-                    auth_name="",
                 ),
             ],
         ]

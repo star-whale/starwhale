@@ -57,7 +57,6 @@ from starwhale.core.dataset.type import (
     ArtifactType,
     BaseArtifact,
     GrayscaleImage,
-    DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
 from starwhale.core.dataset.store import DatasetStorage
@@ -324,7 +323,6 @@ class TestDatasetCopy(BaseTestCase):
                         {"type": "STRING", "name": "scheme"},
                         {"type": "INT64", "name": "offset"},
                         {"type": "INT64", "name": "size"},
-                        {"type": "UNKNOWN", "name": "auth"},
                         {
                             "type": "OBJECT",
                             "attributes": [
@@ -402,7 +400,6 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "_signed_uri", "type": "STRING"},
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
-                                {"name": "auth", "type": "UNKNOWN"},
                                 {"name": "with_local_fs_data", "type": "BOOL"},
                                 {"name": "_type", "type": "STRING"},
                                 {"name": "data_type", "type": "UNKNOWN"},
@@ -415,7 +412,6 @@ class TestDatasetCopy(BaseTestCase):
                         {"type": "INT64", "name": "data_size"},
                         {"type": "STRING", "name": "data_origin"},
                         {"type": "STRING", "name": "object_store_type"},
-                        {"type": "STRING", "name": "auth_name"},
                         {"type": "INT64", "name": "_swds_bin_offset"},
                         {"type": "INT64", "name": "_append_seq_id"},
                         {
@@ -440,7 +436,6 @@ class TestDatasetCopy(BaseTestCase):
                                 "_signed_uri": "",
                                 "offset": "0",
                                 "size": "1",
-                                "auth": None,
                                 "with_local_fs_data": "false",
                                 "_type": "link",
                                 "data_type": None,
@@ -452,7 +447,6 @@ class TestDatasetCopy(BaseTestCase):
                             "data_size": "0000000000000006",
                             "data_origin": "+",
                             "object_store_type": "local",
-                            "auth_name": "",
                             "_swds_bin_offset": "0000000000000030",
                             "_append_seq_id": "0000000000000002",
                             "annotation/bbox": {
@@ -1573,7 +1567,6 @@ class TestTabularDataset(TestCase):
             "data_size": 0,
             "data_origin": "+",
             "object_store_type": "local",
-            "auth_name": "",
             "data_type": "{}",
             "annotation/a": 1,
         }
@@ -1809,7 +1802,7 @@ class TestRowWriter(BaseTestCase):
             rw.update(
                 DataRow(
                     index=i,
-                    data=Link(uri="minio://1/1/1/", auth=DefaultS3LinkAuth),
+                    data=Link(uri="minio://1/1/1/"),
                     annotations={"label": i, "label2": 2},
                 )
             )

@@ -79,7 +79,6 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
             idx = f"{command}/{path.name}"
             data = Link(
                 uri,
-                self._auth,
                 size=obj.size,
                 data_type=Audio(
                     mime_type=MIMEType.WAV,
