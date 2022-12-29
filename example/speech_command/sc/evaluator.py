@@ -97,7 +97,7 @@ class M5Inference(PipelineHandler):
         input = input.squeeze()
         pred_value = input.argmax(-1).item()
         probability_matrix = np.exp(input.tolist()).tolist()
-        return pred_value, probability_matrix[0]
+        return pred_value, probability_matrix
 
     def _load_model(self, device):
         model = M5(n_input=1, n_output=len(ALL_LABELS))
