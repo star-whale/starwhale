@@ -6,7 +6,7 @@ import gradio
 from gradio.components import Component
 
 Input = t.Union[Component, t.List[Component]]
-Output = t.Union[Component]
+Output = t.Union[Component, t.List[Component]]
 
 
 @dataclass
