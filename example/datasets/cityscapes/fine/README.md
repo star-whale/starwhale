@@ -16,9 +16,11 @@ title: The `cityscapes_fine` Dataset
     - `instance_mask`: of type `starwhale.Link`
     - `label_mask`: of type `starwhale.Link`
     - `polygons`: of type `starwhale.Link`
-      - `objects`: `starwhale.Polygon` starwhale viewable representation for `polygon` in annotation file
-      - `imgHeight`: `imgHeight` in annotation file
-      - `imgWidth`: `imgWidth` in annotation file
+      - `objects`: `list`
+        - `label`: the `label` in annotation file
+        - `polygon` `starwhale.Polygon` starwhale viewable representation for `polygon` in annotation file
+      - `imgHeight`: the `imgHeight` in annotation file
+      - `imgWidth`: the `imgWidth` in annotation file
 
 ## Build `cityscapes_fine` Dataset locally
 
