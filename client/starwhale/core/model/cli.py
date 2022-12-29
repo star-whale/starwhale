@@ -265,12 +265,6 @@ def _eval(
 @click.option("-m", "--model", default="", help="model uri")
 @click.option("--host", default="", help="The host to listen on")
 @click.option("--port", default=8080, help="The port of the server")
-@click.option(
-    "--handlers",
-    default=None,
-    help="List of service handlers, use all by default",
-    multiple=True,
-)
 def _serve(
     target: str,
     model_yaml: str,
@@ -278,6 +272,5 @@ def _serve(
     model: str,
     host: str,
     port: int,
-    handlers: t.Optional[t.List[str]],
 ) -> None:
-    ModelTermView.serve(target, model_yaml, runtime, model, host, port, handlers)
+    ModelTermView.serve(target, model_yaml, runtime, model, host, port)

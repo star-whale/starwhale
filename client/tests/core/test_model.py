@@ -29,7 +29,6 @@ from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel, resource_to_file_node
 from starwhale.core.instance.view import InstanceTermView
-from starwhale.base.spec.openapi.components import OpenApi
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -75,10 +74,8 @@ class StandaloneModelTestCase(TestCase):
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
 
-        open_api = MagicMock(spec=OpenApi)
-        open_api.to_dict.return_value = {}
         svc = MagicMock(spec=Service)
-        svc.get_spec.return_value = open_api
+        svc.get_spec.return_value = {}
         m_get_service.return_value = svc
 
         model_uri = URI(self.name, expected_type=URIType.MODEL)

@@ -23,7 +23,6 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
-from starwhale.api.service import Input, Request
 from starwhale.utils.error import (
     NoSupportError,
     FieldTypeOrValueError,
@@ -31,12 +30,6 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
-from starwhale.base.spec.openapi.components import (
-    Schema,
-    MediaType,
-    RequestBody,
-    SpecComponent,
-)
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
@@ -202,7 +195,7 @@ class ArtifactType(Enum):
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
 
 
-class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
+class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -317,35 +310,6 @@ class BaseArtifact(ASDictMixin, Input, metaclass=ABCMeta):
         return f"{self.type}, display:{self.display_name}, mime_type:{self.mime_type}, shape:{self.shape}, encoding: {self.encoding}"
 
     __repr__ = __str__
-
-    def load(self, req: Request) -> BaseArtifact:
-        if req.is_json:
-            import json
-
-            data = json.loads(req.body)
-            raw = base64.b64decode(data["data"])
-            del data["data"]
-            return self.reflect(raw, **data)
-
-        self.fp = req.body
-        return self
-
-    def spec(self) -> SpecComponent:
-        req = RequestBody(
-            description=f"starwhale builtin model serving specification for type {self._type}",
-            content={
-                "multipart/form-data": MediaType(
-                    schema=Schema(
-                        type="object",
-                        required=["data"],
-                        properties={
-                            "data": Schema(type="string", format="binary"),
-                        },
-                    ),
-                )
-            },
-        )
-        return SpecComponent(requestBody=req)
 
 
 class Binary(BaseArtifact, SwObject):

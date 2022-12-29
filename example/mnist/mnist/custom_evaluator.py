@@ -1,9 +1,9 @@
-import json
 import typing as t
 from pathlib import Path
 
 import numpy as np
 import torch
+import gradio
 from PIL import Image as PILImage
 from loguru import logger
 from torchvision import transforms
@@ -16,90 +16,15 @@ from starwhale import (
     dataset,
     URIType,
     pass_context,
-    GrayscaleImage,
     PPLResultStorage,
     PPLResultIterator,
     multi_classification,
 )
-from starwhale.api.service import Input, Output, Request, Service, Response
-from starwhale.base.spec.openapi.components import (
-    Schema,
-    MediaType,
-    RequestBody,
-    SpecComponent,
-    OpenApiResponse,
-)
+from starwhale.api.service import api
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
-
-
-class CustomService(Service):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def serve(
-        self, addr: str, port: int, handler_list: t.Optional[t.List[str]] = None
-    ) -> None:
-        print(f"My CustomService running {self.apis}")
-        super().serve(addr, port, handler_list)
-
-
-svc = CustomService()
-
-
-class CustomGrayscaleImageRequest(Input):
-    def load(self, req: Request) -> GrayscaleImage:
-        raw = req.body
-        return GrayscaleImage(raw, shape=[28, 28, 3])
-
-    def spec(self) -> SpecComponent:
-        req = RequestBody(
-            description="starwhale mnist custom grayscale image request",
-            content={
-                "multipart/form-data": MediaType(
-                    schema=Schema(
-                        type="object",
-                        required=["data"],
-                        properties={"data": Schema(type="string", format="binary")},
-                    ),
-                )
-            },
-        )
-        return SpecComponent(requestBody=req)
-
-
-class CustomOutput(Output):
-    def dump(self, *args: t.Any) -> Response:
-        return Response(
-            json.dumps(
-                {
-                    "result": args[0][0][0],
-                    "probabilities": args[0][1][0],
-                }
-            ).encode("utf-8"),
-            {"content-type": "application/json"},
-        )
-
-    def spec(self) -> SpecComponent:
-        resp = OpenApiResponse(
-            description="OK",
-            content={
-                "application/json": MediaType(
-                    schema=Schema(
-                        type="object",
-                        properties={
-                            "result": Schema(type="integer"),
-                            "probabilities": Schema(
-                                type="array", items=Schema(type="number")
-                            ),
-                        },
-                    ),
-                )
-            },
-        )
-        return SpecComponent(responses={"200": resp})
 
 
 class CustomPipelineHandler:
@@ -183,21 +108,30 @@ class CustomPipelineHandler:
             images.append(_image)
         return torch.stack(images).to(self.device)
 
-    @svc.api(CustomGrayscaleImageRequest(), CustomOutput())
-    def ppl(self, data: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:
+    def ppl(
+        self, data: Image, **kw: t.Any
+    ) -> t.Tuple[t.List[int], t.List[t.List[float]]]:
         return self.batch_ppl([data])
 
     def batch_ppl(
         self, images: t.List[Image], **kw: t.Any
-    ) -> t.Tuple[t.List[int], t.List[float]]:
+    ) -> t.Tuple[t.List[int], t.List[t.List[float]]]:
         data_tensor = self._pre(images)
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
-    @svc.api(
-        CustomGrayscaleImageRequest(),
-        CustomOutput(),
-        uri="custom_handler",
-    )
-    def custom_svc_handler(self, data: t.Any) -> t.Any:
-        return self.ppl(data)
+    @api(gradio.Sketchpad(shape=(28, 28), image_mode="L"), gradio.Label())
+    def draw(self, data: np.ndarray) -> t.Any:
+        _image_array = PILImage.fromarray(data.astype("int8"), mode="L")
+        _image = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        )(_image_array)
+        output = self.model(torch.stack([_image]).to(self.device))
+        return {i: p for i, p in enumerate(np.exp(output.tolist()).tolist()[0])}
+
+    @api(gradio.File(), gradio.Label())
+    def upload_bin_file(self, file: t.Any) -> t.Any:
+        with open(file.name, "rb") as f:
+            data = Image(f.read(), shape=(28, 28, 1))
+        _, prob = self.ppl(data)
+        return {i: p for i, p in enumerate(prob[0])}

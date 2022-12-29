@@ -3,11 +3,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
-from starwhale.api.service import api, JsonOutput
+from starwhale.api.service import api
 
 from .model import Net
 
@@ -20,11 +21,17 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    @api(Image(shape=(28, 28, 3)), JsonOutput())
     def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[float, t.List[float]]:  # type: ignore
         data_tensor = self._pre(img)
         output = self.model(data_tensor)
         return self._post(output)
+
+    @api(gradio.File(), gradio.Label())
+    def upload_bin_file(self, file: t.Any) -> t.Any:
+        with open(file.name, "rb") as f:
+            data = Image(f.read(), shape=(28, 28, 1))
+        _, prob = self.ppl(data)
+        return {i: p for i, p in enumerate(prob)}
 
     @multi_classification(
         confusion_matrix_normalize="all",
