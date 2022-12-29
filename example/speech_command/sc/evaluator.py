@@ -95,7 +95,7 @@ class M5Inference(PipelineHandler):
 
     def _post(self, input: torch.Tensor) -> t.Tuple[t.List[int], t.List[float]]:
         input = input.squeeze()
-        pred_value = input.argmax(1).item()
+        pred_value = input.argmax(-1).item()
         probability_matrix = np.exp(input.tolist()).tolist()
         return pred_value, probability_matrix[0]
 
