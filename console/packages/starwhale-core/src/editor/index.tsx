@@ -9,17 +9,40 @@ import WidgetRenderTree from '../widget/WidgetRenderTree'
 import { EventBusSrv } from '../events/events'
 import { WidgetTreeNode } from '../types'
 
+// export const registerRemoteWidgets = async () => {
+//     // @FIXME store module meta from backend
+//     // meta was defined by system not user
+//     const start = performance.now()
+
+//     // must be remote component that packaged
+//     const modules = [
+//         { type: 'ui:dndList', url: '../widgets/DNDListWidget/index.tsx' },
+//         { type: 'ui:section', url: '../widgets/SectionWidget/index.tsx' },
+//         { type: 'ui:panel:table', url: '../widgets/PanelTableWidget/index.tsx' },
+//         { type: 'ui:panel:rocauc', url: '../widgets/PanelRocAucWidget/index.tsx' },
+//         { type: 'ui:panel:heatmap', url: '../widgets/PanelHeatmapWidget/index.tsx' },
+//     ].filter((v) => !(v.type in WidgetFactory.widgetTypes))
+
+//     /* @vite-ignore */
+//     for await (const module of modules.map(async (m) => import(m.url))) {
+//         const widget = module.default as WidgetPlugin
+//         registerWidget(widget, widget.defaults)
+//     }
+
+//     console.log('Widget registration took: ', performance.now() - start, 'ms')
+// }
 // log.enableAll()
 registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
     return function EditorLoader(props: any) {
         // const [registred, setRegistred] = React.useState(false)
-        // useEffect(() => {
-        //     // registerRemoteWidgets().then((module) => {
-        //     //     setRegistred(true)
-        //     // })
-        // }, [])
+        useEffect(() => {
+            import('http://127.0.0.1:8080/widget.js').then((module) => {
+                // setRegistred(true)
+                console.log(module)
+            })
+        }, [])
         // if (!registred) {
         //     return <BusyPlaceholder type='spinner' />
         // }
