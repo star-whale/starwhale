@@ -1,4 +1,5 @@
 from ._impl.dataset import (
+    Line,
     Link,
     Text,
     Audio,
@@ -44,6 +45,7 @@ __all__ = [
     "UserRawDataLoader",
     "Binary",
     "Text",
+    "Line",
     "Point",
     "Audio",
     "Video",

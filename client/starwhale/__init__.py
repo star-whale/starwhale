@@ -4,6 +4,7 @@ from starwhale.base.uri import URI, URIType
 from starwhale.api.model import PipelineHandler, PPLResultStorage, PPLResultIterator
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (
+    Line,
     Link,
     Text,
     Audio,
@@ -57,6 +58,7 @@ __all__ = [
     "SWDSBinBuildExecutor",
     "Binary",
     "Text",
+    "Line",
     "Point",
     "Audio",
     "Video",

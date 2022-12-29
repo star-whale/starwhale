@@ -1,4 +1,5 @@
 from starwhale.core.dataset.type import (
+    Line,
     Link,
     Text,
     Audio,
@@ -38,6 +39,7 @@ __all__ = [
     "UserRawDataLoader",
     "Binary",
     "Text",
+    "Line",
     "Point",
     "Audio",
     "Video",
