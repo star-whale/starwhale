@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import copy
+import json
 import typing as t
 import tarfile
 from abc import ABCMeta
@@ -232,7 +233,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         d = self.store.src_dir
         svc = self._get_service(ppl, workdir)
         _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
-        ensure_file(_f, yaml.safe_dump(svc.get_spec()))
+        ensure_file(_f, json.dumps(svc.get_spec(), indent=4))
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
