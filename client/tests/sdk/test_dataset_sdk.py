@@ -49,7 +49,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                     DataRow(
                         index=i,
                         data=Binary(f"data-{i}".encode()),
-                        annotations={"label": i},
+                        content={"label": i},
                     )
                 )
             ds.commit()
@@ -62,7 +62,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                     DataRow(
                         index=f"{i}",
                         data=Binary(f"data-{i}".encode()),
-                        annotations={"label": i},
+                        content={"label": i},
                     )
                 )
             ds.commit()
@@ -99,7 +99,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 11
         ds = dataset("mnist", create=True)
         assert len(ds) == 0
-        ds.append(DataRow(index=0, data=Binary(b""), annotations={"label": 1}))
+        ds.append(DataRow(index=0, data=Binary(b""), content={"label": 1}))
         assert len(ds) == 1
         for i in range(1, size):
             ds.append((i, Binary(), {"label": i}))
@@ -127,7 +127,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 10
         ds.extend(
             [
-                DataRow(index=i, data=Binary(), annotations={"label": i})
+                DataRow(index=i, data=Binary(), content={"label": i})
                 for i in range(0, size)
             ]
         )
@@ -155,10 +155,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._row_writer is None
 
         ds["index-2"] = DataRow(
-            index="index-2", data=Binary(), annotations={"label": 2}
+            index="index-2", data=Binary(), content={"label": 2}
         )
         ds["index-1"] = DataRow(
-            index="index-1", data=Binary(), annotations={"label": 1}
+            index="index-1", data=Binary(), content={"label": 1}
         )
 
         assert len(ds) == 2
@@ -200,7 +200,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         def _do_task(_start: int) -> None:
             for i in range(_start, size):
-                ds.append(DataRow(index=i, data=Binary(), annotations={"label": i}))
+                ds.append(DataRow(index=i, data=Binary(), content={"label": i}))
 
         pool = ThreadPoolExecutor(max_workers=10)
         tasks = [pool.submit(_do_task, i * 10) for i in range(0, 9)]
@@ -448,11 +448,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 10
         ds.flush()
 
-        ds.append(DataRow(index=1, data=Binary(b""), annotations={"label": 101}))
+        ds.append(DataRow(index=1, data=Binary(b""), content={"label": 101}))
         # assert len(ds) == 10 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=100, data=Binary(b""), annotations={"label": 100}))
+        ds.append(DataRow(index=100, data=Binary(b""), content={"label": 100}))
         # assert len(ds) == 11 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=101, data=Binary(b""), annotations={"label": 101}))
+        ds.append(DataRow(index=101, data=Binary(b""), content={"label": 101}))
         ds.commit()
         ds.close()
 
@@ -666,7 +666,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         for i in range(0, cnt):
             ds.append(
                 DataRow(
-                    index=i, data=Binary(f"data-{i}".encode()), annotations={"label": i}
+                    index=i, data=Binary(f"data-{i}".encode()), content={"label": i}
                 )
             )
 

@@ -1621,18 +1621,18 @@ class TestRowWriter(BaseTestCase):
 
         rw._builder = MagicMock()
 
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
         first_builder = rw._builder
         assert rw._builder is not None
         assert rw._queue.qsize() == 1
 
-        rw.update(DataRow(index=2, data=Binary(b"test"), annotations={"label": 2}))
+        rw.update(DataRow(index=2, data=Binary(b"test"), content={"label": 2}))
         second_builder = rw._builder
         assert first_builder == second_builder
         assert rw._queue.qsize() == 2
 
         rw._builder = None
-        rw.update(DataRow(index=3, data=Binary(b"test"), annotations={"label": 3}))
+        rw.update(DataRow(index=3, data=Binary(b"test"), content={"label": 3}))
         assert rw._builder is not None
         assert rw.daemon
         assert isinstance(rw._builder, SWDSBinBuildExecutor)
@@ -1645,27 +1645,27 @@ class TestRowWriter(BaseTestCase):
 
         assert rw._raise_run_exception() is None
         rw._builder = MagicMock()
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
         assert rw._run_exception is None
 
         rw._run_exception = ValueError("test")
         with self.assertRaises(threading.ThreadError):
-            rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+            rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
 
         rw._run_exception = None
         rw._builder = None
         m_make_swds.side_effect = TypeError("thread test")
         with self.assertRaises(threading.ThreadError):
-            rw.update(DataRow(index=2, data=Binary(b"test"), annotations={"label": 2}))
+            rw.update(DataRow(index=2, data=Binary(b"test"), content={"label": 2}))
             rw.join()
-            rw.update(DataRow(index=3, data=Binary(b"test"), annotations={"label": 3}))
+            rw.update(DataRow(index=3, data=Binary(b"test"), content={"label": 3}))
 
     def test_iter(self) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
         rw._builder = MagicMock()
         size = 10
         for i in range(0, size):
-            rw.update(DataRow(index=i, data=Binary(b"test"), annotations={"label": i}))
+            rw.update(DataRow(index=i, data=Binary(b"test"), content={"label": i}))
 
         rw.update(None)  # type: ignore
         assert not rw.is_alive()
@@ -1679,7 +1679,7 @@ class TestRowWriter(BaseTestCase):
     def test_iter_block(self) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
         rw._builder = MagicMock()
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
 
         thread = threading.Thread(target=lambda: list(rw), daemon=True)
         thread.start()
@@ -1708,7 +1708,7 @@ class TestRowWriter(BaseTestCase):
         for _ in range(0, size):
             rw.update(None)  # type: ignore
 
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
         rw.update(None)  # type: ignore
 
         assert rw._queue.qsize() == size + 2
@@ -1721,7 +1721,7 @@ class TestRowWriter(BaseTestCase):
             rw = RowWriter(
                 dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
             )
-            rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+            rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
             rw.close()
             assert not rw.is_alive()
 
@@ -1729,7 +1729,7 @@ class TestRowWriter(BaseTestCase):
                 dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
             ) as context_rw:
                 context_rw.update(
-                    DataRow(index=1, data=Binary(b"test"), annotations={"label": 1})
+                    DataRow(index=1, data=Binary(b"test"), content={"label": 1})
                 )
             assert not rw.is_alive()
 
@@ -1741,7 +1741,7 @@ class TestRowWriter(BaseTestCase):
         assert rw._builder is None
         size = 100
         for i in range(0, size):
-            rw.update(DataRow(index=i, data=Binary(b"test"), annotations={"label": i}))
+            rw.update(DataRow(index=i, data=Binary(b"test"), content={"label": i}))
         rw.close()
 
         assert isinstance(rw._builder, SWDSBinBuildExecutor)
@@ -1773,7 +1773,7 @@ class TestRowWriter(BaseTestCase):
                 DataRow(
                     index=i,
                     data=Link(uri=raw_data_file, with_local_fs_data=True),
-                    annotations={"label": i, "label2": 2},
+                    content={"label": i, "label2": 2},
                 )
             )
         rw.close()
@@ -1810,7 +1810,7 @@ class TestRowWriter(BaseTestCase):
                 DataRow(
                     index=i,
                     data=Link(uri="minio://1/1/1/", auth=DefaultS3LinkAuth),
-                    annotations={"label": i, "label2": 2},
+                    content={"label": i, "label2": 2},
                 )
             )
         rw.close()
@@ -1854,7 +1854,7 @@ class TestRowWriter(BaseTestCase):
         rw._builder = MagicMock()
         rw.flush()
 
-        rw.update(DataRow(index=1, data=Binary(b"test"), annotations={"label": 1}))
+        rw.update(DataRow(index=1, data=Binary(b"test"), content={"label": 1}))
         thread = threading.Thread(target=rw.flush, daemon=True)
         thread.start()
         time.sleep(0.2)

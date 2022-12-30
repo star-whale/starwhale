@@ -34,12 +34,10 @@ class DataRow:
     def __init__(
         self,
         index: t.Union[str, int],
-        data: t.Optional[t.Union[BaseArtifact, Link]],
-        annotations: t.Dict,
+        content: t.Dict,
     ) -> None:
         self.index = index
-        self.data = data
-        self.annotations = annotations
+        self.content = content
 
         self._do_validate()
 
@@ -47,13 +45,13 @@ class DataRow:
         return f"{self.index}"
 
     def __repr__(self) -> str:
-        return f"index:{self.index}, data:{self.data}, annotations:{self.annotations}"
+        return f"index:{self.index}, content:{self.content}"
 
     def __iter__(self) -> t.Iterator:
-        return iter((self.index, self.data, self.annotations))
+        return iter((self.index, self.content))
 
     def __getitem__(self, i: int) -> t.Any:
-        return (self.index, self.data, self.annotations)[i]
+        return (self.index, self.content)[i]
 
     def __len__(self) -> int:
         return len(self.__dict__)
@@ -62,11 +60,8 @@ class DataRow:
         if not isinstance(self.index, (str, int)):
             raise TypeError(f"index({self.index}) is not int or str type")
 
-        if self.data is not None and not isinstance(self.data, (BaseArtifact, Link)):
-            raise TypeError(f"data({self.data}) is not BaseArtifact or Link type")
-
-        if not isinstance(self.annotations, dict):
-            raise TypeError(f"annotations({self.annotations}) is not dict type")
+        if not isinstance(self.content, dict):
+            raise TypeError(f"content({self.content}) is not dict type")
 
     def __lt__(self, obj: DataRow) -> bool:
         return str(self.index) < str(obj.index)
@@ -74,8 +69,7 @@ class DataRow:
     def __eq__(self, obj: t.Any) -> bool:
         return bool(
             self.index == obj.index
-            and self.data == obj.data
-            and self.annotations == obj.annotations
+            and self.content == obj.content
         )
 
 
@@ -257,14 +251,14 @@ class DataLoader(metaclass=ABCMeta):
         self, row: TabularDatasetRow, skip_fetch_data: bool = False
     ) -> DataRow:
         if skip_fetch_data:
-            return DataRow(index=row.id, data=None, annotations=row.annotations)
+            return DataRow(index=row.id, data=None, content=row.annotations)
 
         store = self._get_store(row)
         key_compose = self._get_key_compose(row, store)
         file = store.backend._make_file(store.bucket, key_compose)
         data_content, _ = self._read_data(file, row)
         data = BaseArtifact.reflect(data_content, row.data_type)
-        return DataRow(index=row.id, data=data, annotations=row.annotations)
+        return DataRow(index=row.id, data=data, content=row.annotations)
 
     def _unpack_row_with_queue(
         self,

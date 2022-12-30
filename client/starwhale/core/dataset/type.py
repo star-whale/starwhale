@@ -205,6 +205,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Any = numpy.int8,
         encoding: str = "",
+        link: t.Optional[Link] = None,
     ) -> None:
         self.fp = str(fp) if isinstance(fp, Path) else fp
         self._type = ArtifactType(type).value
@@ -215,7 +216,9 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         self.shape = list(shape) if shape else shape
         self._dtype_name: str = numpy.dtype(dtype).name
         self.encoding = encoding
+        self.link = link
         self._do_validate()
+        self.owner: t.Optional[t.Union[str, URI]] = None
 
     def _do_validate(self) -> None:
         ...
@@ -276,6 +279,9 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             _content = self.fp.read()
             self.fp.seek(_pos)
             return _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+        elif self.owner and self.link:
+            self.fp = self.link.to_bytes(self.owner)
+            return self.fp
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
@@ -709,8 +715,8 @@ class Link(ASDictMixin, SwObject):
         auth: t.Optional[LinkAuth] = None,
         offset: int = FilePosition.START.value,
         size: int = -1,
-        data_type: t.Optional[BaseArtifact] = None,
         with_local_fs_data: bool = False,
+        **kwargs,
     ) -> None:
         self._type = "link"
         self.uri = (str(uri)).strip()
@@ -719,12 +725,12 @@ class Link(ASDictMixin, SwObject):
         self.offset = offset
         self.size = size
         self.auth = auth
-        self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
         self._signed_uri = ""
 
         self.do_validate()
+        self.extra_info = kwargs
 
     @property
     def local_fs_uri(self) -> str:

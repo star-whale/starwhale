@@ -547,7 +547,7 @@ class Dataset:
             else:
                 raise ValueError(f"{value} cannot unpack")
 
-            row = DataRow(index=key, data=data, annotations=annotations)
+            row = DataRow(index=key, data=data, content=annotations)
         else:
             raise TypeError(f"value only supports tuple or DataRow type: {value}")
 

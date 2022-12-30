@@ -176,13 +176,13 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         self, row_content: t.Union[t.Tuple, DataRow], append_seq_id: int
     ) -> t.Tuple[t.Union[str, int], BaseArtifact, t.Dict]:
         if isinstance(row_content, DataRow):
-            idx, row_data, row_annotations = row_content
+            idx, row = row_content
         elif isinstance(row_content, tuple):
-            if len(row_content) == 2:
+            if len(row_content) == 1:
                 idx = append_seq_id
-                row_data, row_annotations = row_content
-            elif len(row_content) == 3:
-                idx, row_data, row_annotations = row_content
+                row = row_content
+            elif len(row_content) == 2:
+                idx, row = row_content
             else:
                 raise FormatError(
                     f"iter_item must return (data, annotations) or (id, data, annotations): {row_content}"
@@ -192,10 +192,10 @@ class BaseBuildExecutor(metaclass=ABCMeta):
                 f"row content not return tuple or DataRow type: {row_content}"
             )
 
-        if not isinstance(row_annotations, dict):
-            raise FormatError(f"annotations({row_annotations}) must be dict type")
+        if not isinstance(row, dict):
+            raise FormatError(f"content({row}) must be dict type")
 
-        return idx, row_data, row_annotations
+        return idx, row
 
 
 class SWDSBinBuildExecutor(BaseBuildExecutor):
@@ -223,24 +223,105 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
         size: int
         raw_data_offset: int
         raw_data_size: int
+        fno: str
 
-    def _write(self, writer: t.Any, data: bytes) -> _BinSection:
-        size = len(data)
-        crc = crc32(data)  # TODO: crc is right?
-        start = writer.tell()
-        padding_size = self._get_padding_size(size + _header_size)
+    class _BinWriter:
 
-        _header = _header_struct.pack(
-            _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
-        )
-        _padding = b"\0" * padding_size
-        writer.write(_header + data + _padding)
-        return self._BinSection(
-            offset=start,
-            size=_header_size + size + padding_size,
-            raw_data_offset=start + _header_size,
-            raw_data_size=size,
-        )
+        def __int__(self, work_dir: str, data_output_dir: str) -> None:
+            self.work_dir = work_dir
+            self.ds_copy_candidates: t.Dict[str, Path] = {}
+            self.fno = 0
+            self.wrote_size = 0
+            dwriter_path = self.work_dir / str(self.fno)
+            self.dwriter = dwriter_path.open("wb")
+            self.ds_copy_candidates[str(self.fno)] = dwriter_path
+            self.total_data_size = 0
+            self.map_fno_sign: t.Dict[str, str] = {}
+
+        def write(self, content: bytes) -> SWDSBinBuildExecutor._BinSection:
+            _bin_section = self._write(self.dwriter, content)
+            self.total_data_size += _bin_section.size
+            self.wrote_size += _bin_section.size
+            if self.wrote_size > self.volume_bytes_size:
+                self.wrote_size = 0
+                self.fno += 1
+                self.dwriter.close()
+                dwriter_path = self.work_dir / str(self.fno)
+                self.dwriter = (dwriter_path).open("wb")
+                self.ds_copy_candidates[str(self.fno)] = dwriter_path
+            return _bin_section
+
+        def _write(self, writer: t.Any, data: bytes) -> SWDSBinBuildExecutor._BinSection:
+            size = len(data)
+            crc = crc32(data)  # TODO: crc is right?
+            start = writer.tell()
+            padding_size = self._get_padding_size(size + _header_size)
+
+            _header = _header_struct.pack(
+                _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
+            )
+            _padding = b"\0" * padding_size
+            writer.write(_header + data + _padding)
+            return self._BinSection(
+                offset=start,
+                size=_header_size + size + padding_size,
+                raw_data_offset=start + _header_size,
+                raw_data_size=size,
+                fno=str(self.fno),
+
+            )
+
+        def _copy_files(
+            self,
+            ds_copy_candidates: t.Dict[str, Path],
+        ) -> None:
+
+            for _fno, _src_path in ds_copy_candidates.items():
+                _sign_name, _obj_path = DatasetStorage.save_data_file(
+                    _src_path, remove_src=True
+                )
+                self.map_fno_sign[_fno] = _sign_name
+
+                _dest_path = (
+                    self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
+                )
+                _obj_path = _obj_path.resolve().absolute()
+
+                if _dest_path.exists():
+                    if _dest_path.resolve() == _obj_path:
+                        continue
+                    else:
+                        _dest_path.unlink()
+
+                _dest_path.symlink_to(_obj_path)
+
+        def close(self):
+            try:
+                empty = self.dwriter.tell() == 0
+                self.dwriter.close()
+                if empty:
+                    # last file is empty
+                    f = self.ds_copy_candidates[str(self.fno)]
+                    del self.ds_copy_candidates[str(self.fno)]
+                    os.unlink(f)
+            except Exception as e:
+                print(f"data write close exception: {e}")
+
+            self._copy_files(self.ds_copy_candidates)
+
+        def __enter__(self) -> SWDSBinBuildExecutor._BinWriter:
+            return self
+
+        def __exit__(
+            self,
+            type: t.Optional[t.Type[BaseException]],
+            value: t.Optional[BaseException],
+            trace: TracebackType,
+        ) -> None:
+            if value:  # pragma: no cover
+                logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+
+            self.close()
 
     def _get_padding_size(self, size: int) -> int:
         remain = (size + _header_size) % self.alignment_bytes_size
@@ -250,128 +331,67 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
     def data_format_type(self) -> DataFormatType:
         return DataFormatType.SWDS_BIN
 
+    def binary_to_link(self, row_content: t.Dict, bwriter) -> None:
+        for _, v in row_content.items:
+            if isinstance(v, dict):
+                self.binary_to_link(v)
+            if not isinstance(v, BaseArtifact):
+                continue
+            if not v.link and len(v.to_bytes()) > 1024 * 4:
+                _bin_section = bwriter.write(v.to_bytes())
+                v.link = Link(_bin_section.fno, offset=_bin_section.raw_data_offset, size=_bin_section.raw_data_size,
+                              bin_offset=_bin_section.offset, bin_size=_bin_section.size)
+
+    def update_link(self, row_content: t.Dict, link_map: t.Dict) -> None:
+        for _, v in row_content.items:
+            if isinstance(v, dict):
+                self.update_link(v)
+            if not isinstance(v, BaseArtifact):
+                continue
+            if not v.link:
+                continue
+            if not v.link.uri in link_map:
+                continue
+            v.link.uri = link_map[v.link.uri]
+
     def make_swds(self) -> DatasetSummary:
         # TODO: add lock
-        ds_copy_candidates: t.Dict[str, Path] = {}
-        fno, wrote_size = 0, 0
-
-        dwriter_path = self.data_tmpdir / str(fno)
-        dwriter = dwriter_path.open("wb")
-        ds_copy_candidates[str(fno)] = dwriter_path
+        with self._BinWriter(self.data_tmpdir, self.data_output_dir) as bwriter:
+            for append_seq_id, item_content in enumerate(
+                self.iter_item(), start=self._forked_last_seq_id + 1
+            ):
+                _, row_content = self._unpack_row_content(
+                    item_content, append_seq_id
+                )
+                self.binary_to_link(row_content, bwriter)
 
         increased_rows = 0
-        total_data_size = 0
-        dataset_annotations: t.Dict[str, t.Any] = {}
-
         for append_seq_id, item_content in enumerate(
             self.iter_item(), start=self._forked_last_seq_id + 1
         ):
-            idx, row_data, row_annotations = self._unpack_row_content(
+            idx, row_content = self._unpack_row_content(
                 item_content, append_seq_id
             )
-
-            _artifact: BaseArtifact
-            if isinstance(row_data, bytes):
-                _artifact = Binary(row_data, self.default_data_mime_type)
-            elif isinstance(row_data, BaseArtifact):
-                _artifact = row_data
-            else:
-                raise NoSupportError(f"data type {type(row_data)}")
-
-            if not dataset_annotations:
-                # TODO: check annotations type and name
-                dataset_annotations = row_annotations
-
-            _bin_section = self._write(dwriter, _artifact.to_bytes())
+            self.update_link(row_content, bwriter.map_fno_sign)
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_link=Link(str(fno)),
-                    data_format=self.data_format_type,
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_offset=_bin_section.raw_data_offset,
-                    data_size=_bin_section.raw_data_size,
-                    _swds_bin_offset=_bin_section.offset,
-                    _swds_bin_size=_bin_section.size,
                     data_origin=DataOriginType.NEW,
-                    data_type=_artifact.astype(),
-                    annotations=row_annotations,
+                    content=row_content,
                     _append_seq_id=append_seq_id,
                 )
             )
-
-            total_data_size += _bin_section.size
-
-            wrote_size += _bin_section.size
-            if wrote_size > self.volume_bytes_size:
-                wrote_size = 0
-                fno += 1
-
-                dwriter.close()
-                dwriter_path = self.data_tmpdir / str(fno)
-                dwriter = (dwriter_path).open("wb")
-                ds_copy_candidates[str(fno)] = dwriter_path
-
             increased_rows += 1
 
         self.flush()
-
-        try:
-            empty = dwriter.tell() == 0
-            dwriter.close()
-            if empty:
-                # last file is empty
-                f = ds_copy_candidates[str(fno)]
-                del ds_copy_candidates[str(fno)]
-                os.unlink(f)
-        except Exception as e:
-            print(f"data write close exception: {e}")
-
-        self._copy_files(ds_copy_candidates)
         self.tabular_dataset.info = self.get_info()  # type: ignore
 
         summary = DatasetSummary(
             rows=increased_rows,
             increased_rows=increased_rows,
-            data_byte_size=total_data_size,
-            include_user_raw=False,
-            include_link=False,
-            annotations=list(dataset_annotations.keys()),
+            data_byte_size=bwriter.total_data_size,
         )
         return self._merge_forked_summary(summary)
-
-    def _copy_files(
-        self,
-        ds_copy_candidates: t.Dict[str, Path],
-    ) -> None:
-        map_fno_sign: t.Dict[str, str] = {}
-        for _fno, _src_path in ds_copy_candidates.items():
-            _sign_name, _obj_path = DatasetStorage.save_data_file(
-                _src_path, remove_src=True
-            )
-            map_fno_sign[_fno] = _sign_name
-
-            _dest_path = (
-                self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
-            )
-            _obj_path = _obj_path.resolve().absolute()
-
-            if _dest_path.exists():
-                if _dest_path.resolve() == _obj_path:
-                    continue
-                else:
-                    _dest_path.unlink()
-
-            _dest_path.symlink_to(_obj_path)
-
-        # TODO: tune performance scan after put in a second
-        for row in self.tabular_dataset.scan():
-            if row.data_link.uri not in map_fno_sign:
-                continue
-
-            self.tabular_dataset.update(
-                row_id=row.id, data_link=Link(map_fno_sign[row.data_link.uri])
-            )
 
 
 BuildExecutor = SWDSBinBuildExecutor
