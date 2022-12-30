@@ -66,7 +66,7 @@ version: '2.0'
 swcli config edit
 ```
 
-## 2. Standalone Instance的文件存储结构
+## 3. Standalone Instance的文件存储结构
 
 ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户数据，包括Project、Runtime、Model、Dataset、Evaluation等用户直接感知的数据，也包括ObjectStore、DataStore等Starwhale后台实现的存储。具体说明如下：
 
