@@ -60,6 +60,12 @@ version: '2.0'
 |storage.root|Standalone Instance本地存储的根目录。通常情况下，当home目录空间不足，手工把数据文件移动到其他位置时，可以修改该字段|String|`~/.starwhale`|是|
 |version|config.yaml的版本，目前仅支持2.0|String|2.0|是|
 
+你可以通过`swci config edit`来修改配置
+
+```shell
+swcli config edit
+```
+
 ## 2. Standalone Instance的文件存储结构
 
 ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户数据，包括Project、Runtime、Model、Dataset、Evaluation等用户直接感知的数据，也包括ObjectStore、DataStore等Starwhale后台实现的存储。具体说明如下：
@@ -88,3 +94,21 @@ ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户�
 |  |   |   +-- model    --> swmp解压后的目录
 |  |   |   +-- runtime  --> swrt解压后的目录，若进行runtime restore操作，生成的venv或conda隔离环境，也会存放在该目录中
 ```
+
+## 2. link_auths
+
+有时候你可能需要用到`starwhale.Link`来存储一些信息。理论上，`Link`里面的URI可以是任意的合法URI（星鲸目前只支持S3协议族和HTTP），比如`s3://10.131.0.1:9000/users/path`。然而，有些`Link`是需要鉴权才能访问的。`link_auths`就是用来存放这些鉴权信息的。
+
+```yaml
+link_auths:
+  - type: s3
+    ak: starwhale
+    bucket: users
+    region: local
+    connect_timeout: 10.0
+    endpoint: http://10.131.0.1:9000
+    read_timeout: 100.0
+    sk: starwhale
+```
+
+`link_auths` 里面的每一条都会自动匹配你的URI。 目前`S3`类型的鉴权信息通过`bucket` 和 `endpoint`来匹配URI。
