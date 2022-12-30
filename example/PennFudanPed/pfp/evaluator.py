@@ -1,12 +1,17 @@
 import io
+import random
 import typing as t
 
 import torch
+import gradio
 from PIL import Image as PILImage
+from PIL import ImageDraw
 from pycocotools.coco import COCO
 from torchvision.transforms import functional
 
 from starwhale import Image, PipelineHandler
+from starwhale.api.service import api
+from starwhale.core.dataset.type import MIMEType
 
 from .model import pretrained_model
 from .utils import get_model_path
@@ -31,6 +36,26 @@ class MaskRCnn(PipelineHandler):
         _tensor = functional.to_tensor(_img).to(self.device)
         output = self.model(torch.stack([_tensor]))
         return index, self._post(index, output[0])
+
+    @api(gradio.Image(type="filepath"), [gradio.Image(type="pil"), gradio.Json()])
+    def handler(self, file: str):
+        with open(file, "rb") as f:
+            data = f.read()
+        img = Image(data, mime_type=MIMEType.PNG)
+        _, res = self.ppl(img, 0)
+
+        bbox = res["bbox"]
+        _img = PILImage.open(file)
+        draw = ImageDraw.ImageDraw(_img)
+        for box in bbox:
+            x, y, w, h = box["bbox"]
+            color = (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
+            draw.rectangle((x, y, x + w, y + h), outline=color)
+        return _img, bbox
 
     def _post(
         self, index: t.Union[int, str], pred: t.Dict[str, torch.Tensor]
