@@ -1834,7 +1834,6 @@ class TestRowWriter(BaseTestCase):
             dataset_version="123456",
             append=True,
             append_from_version="abcdefg",
-            append_with_swds_bin=True,
         )
         assert isinstance(rw._builder, SWDSBinBuildExecutor)
 
@@ -1845,7 +1844,6 @@ class TestRowWriter(BaseTestCase):
             dataset_version="123456",
             append=True,
             append_from_version="abcdefg",
-            append_with_swds_bin=False,
         )
         assert isinstance(rw._builder, UserRawBuildExecutor)
 

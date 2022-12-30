@@ -765,35 +765,42 @@ class Link(ASDictMixin, SwObject):
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
 
     @http_retry
-    def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+    def to_bytes(self, owner: t.Optional[t.Union[str, URI]]) -> bytes:
         from .store import ObjectStore
 
         if self.signed_uri:
             r = requests.get(self.signed_uri, timeout=10)
             return r.content
         # TODO: auto inject dataset_uri in the loader process
-        if isinstance(dataset_uri, str):
-            dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
-
         auth_name = self.auth.name if self.auth else ""
-        if dataset_uri.instance_type == InstanceType.CLOUD:
-            key_compose = self, 0, 0
-            store = ObjectStore.to_signed_http_backend(dataset_uri)
+        if not owner:
+            key_compose = (
+                Link(self.local_fs_uri) if self.local_fs_uri else self,
+                0,
+                0,
+            )
+            store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
         else:
-            if self.scheme:
-                key_compose = (
-                    Link(self.local_fs_uri) if self.local_fs_uri else self,
-                    0,
-                    0,
-                )
-                store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
+            if isinstance(owner, str):
+                owner = URI(owner, expected_type=URIType.DATASET)
+            if owner.instance_type == InstanceType.CLOUD:
+                key_compose = self, 0, 0
+                store = ObjectStore.to_signed_http_backend(owner)
             else:
-                key_compose = (
-                    Link(self.local_fs_uri) if self.local_fs_uri else self,
-                    0,
-                    -2,
-                )
-                store = ObjectStore.from_dataset_uri(dataset_uri)
+                if self.scheme and self.scheme != "fs":
+                    key_compose = (
+                        Link(self.local_fs_uri) if self.local_fs_uri else self,
+                        0,
+                        0,
+                    )
+                    store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
+                else:
+                    key_compose = (
+                        Link(self.local_fs_uri) if self.local_fs_uri else self,
+                        0,
+                        -2,
+                    )
+                    store = ObjectStore.from_dataset_uri(owner)
 
         with store.backend._make_file(store.bucket, key_compose) as f:
             return f.read(-1)  # type: ignore

@@ -115,7 +115,6 @@ class Dataset:
         if create:
             setattr(self.__core_dataset, "_version", self.version)
 
-        self._append_use_swds_bin = False
         _summary = None
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
@@ -130,10 +129,6 @@ class Dataset:
                 self._create_by_append = True
                 self._fork_dataset()
                 _summary = CoreDataset.get_dataset(_origin_uri).summary()
-                if _summary:
-                    self._append_use_swds_bin = not (
-                        _summary.include_link or _summary.include_user_raw
-                    )
             else:
                 self._append_from_version = ""
                 self._create_by_append = False
@@ -586,7 +581,6 @@ class Dataset:
                     append=self._create_by_append,
                     append_from_version=append_from_version,
                     append_from_uri=append_from_uri,
-                    append_with_swds_bin=self._append_use_swds_bin,
                     instance_name=self.project_uri.instance,
                 )
         return self._row_writer

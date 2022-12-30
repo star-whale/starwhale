@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import time
 import queue
@@ -238,7 +239,13 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             self.total_data_size = 0
             self.map_fno_sign: t.Dict[str, str] = {}
 
-        def write(self, content: bytes) -> SWDSBinBuildExecutor._BinSection:
+        def write(self, content: t.Union[bytes,str,Path]) -> SWDSBinBuildExecutor._BinSection:
+            if isinstance(content, str):
+                self.ds_copy_candidates[content] = Path(content)
+                return None
+            if isinstance(content, Path):
+                self.ds_copy_candidates[str(content)] = content
+                return None
             _bin_section = self._write(self.dwriter, content)
             self.total_data_size += _bin_section.size
             self.wrote_size += _bin_section.size
@@ -337,10 +344,14 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 self.binary_to_link(v)
             if not isinstance(v, BaseArtifact):
                 continue
-            if not v.link and len(v.to_bytes()) > 1024 * 4:
+            if not v.link and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase)) and len(v.to_bytes()) > 1024 * 4:
                 _bin_section = bwriter.write(v.to_bytes())
                 v.link = Link(_bin_section.fno, offset=_bin_section.raw_data_offset, size=_bin_section.raw_data_size,
                               bin_offset=_bin_section.offset, bin_size=_bin_section.size)
+            if not v.link and isinstance(v.fp, str):
+                v.link = Link(v.fp, with_local_fs_data=True)
+            if v.link and v.link.with_local_fs_data:
+                bwriter.write(v.link.uri)
 
     def update_link(self, row_content: t.Dict, link_map: t.Dict) -> None:
         for _, v in row_content.items:
@@ -397,131 +408,6 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 BuildExecutor = SWDSBinBuildExecutor
 
 
-class UserRawBuildExecutor(BaseBuildExecutor):
-    def make_swds(self) -> DatasetSummary:
-        increased_rows = 0
-        total_data_size = 0
-        auth_candidates: t.Dict[str, LinkAuth] = {}
-        include_link = False
-
-        map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
-        dataset_annotations: t.Dict[str, t.Any] = {}
-
-        for append_seq_id, item_content in enumerate(
-            self.iter_item(),
-            start=self._forked_last_seq_id + 1,
-        ):
-            idx, row_data, row_annotations = self._unpack_row_content(
-                item_content, append_seq_id
-            )
-
-            if not dataset_annotations:
-                # TODO: check annotations type and name
-                dataset_annotations = row_annotations
-
-            if not isinstance(row_data, Link):
-                raise FormatError(f"data({row_data}) must be Link type")
-
-            if row_data.with_local_fs_data:
-                _local_link = row_data
-                _data_fpath = _local_link.uri
-                if _data_fpath not in map_path_sign:
-                    map_path_sign[_data_fpath] = DatasetStorage.save_data_file(
-                        _data_fpath
-                    )
-                data_uri, _ = map_path_sign[_data_fpath]
-                auth = ""
-                object_store_type = ObjectStoreType.LOCAL
-
-                def _travel_link(obj: t.Any) -> None:
-                    if isinstance(obj, Link):
-                        if not obj.with_local_fs_data:
-                            raise NoSupportError(
-                                f"Local Link only supports local link annotations: {obj}"
-                            )
-                        if obj.uri not in map_path_sign:
-                            map_path_sign[obj.uri] = DatasetStorage.save_data_file(
-                                obj.uri
-                            )
-                        obj.local_fs_uri, _ = map_path_sign[obj.uri]
-                    elif isinstance(obj, dict):
-                        for v in obj.values():
-                            _travel_link(v)
-                    elif isinstance(obj, (list, tuple)):
-                        for v in obj:
-                            _travel_link(v)
-                    elif isinstance(obj, SwObject):
-                        for v in obj.__dict__.values():
-                            _travel_link(v)
-
-                _travel_link(row_annotations)
-            else:
-                _remote_link = row_data
-                data_uri = _remote_link.uri
-                if _remote_link.auth:
-                    auth = _remote_link.auth.name
-                    auth_candidates[
-                        f"{_remote_link.auth.ltype}.{_remote_link.auth.name}"
-                    ] = _remote_link.auth
-                else:
-                    auth = ""
-                object_store_type = ObjectStoreType.REMOTE
-                include_link = True
-
-            self.tabular_dataset.put(
-                TabularDatasetRow(
-                    id=idx,
-                    data_link=Link(data_uri),
-                    data_format=self.data_format_type,
-                    object_store_type=object_store_type,
-                    data_offset=row_data.offset,
-                    data_size=row_data.size,
-                    data_origin=DataOriginType.NEW,
-                    auth_name=auth,
-                    data_type=row_data.astype(),
-                    annotations=row_annotations,
-                    _append_seq_id=append_seq_id,
-                )
-            )
-
-            total_data_size += row_data.size
-            increased_rows += 1
-
-        self._copy_files(map_path_sign)
-        self._copy_auth(auth_candidates)
-        self.tabular_dataset.info = self.get_info()  # type: ignore
-
-        # TODO: provide fine-grained rows/increased rows by dataset pythonic api
-        summary = DatasetSummary(
-            rows=increased_rows,
-            increased_rows=increased_rows,
-            data_byte_size=total_data_size,
-            include_link=include_link,
-            include_user_raw=True,
-            annotations=list(dataset_annotations.keys()),
-        )
-        return self._merge_forked_summary(summary)
-
-    def _copy_files(self, map_path_sign: t.Dict[str, t.Tuple[str, Path]]) -> None:
-        for sign, obj_path in map_path_sign.values():
-            # TODO: use relative symlink or fix link command for datastore dir moving
-            (self.data_output_dir / sign[: DatasetStorage.short_sign_cnt]).symlink_to(
-                obj_path.absolute()
-            )
-
-    def _copy_auth(self, auth_candidates: t.Dict[str, LinkAuth]) -> None:
-        if not auth_candidates:
-            return
-
-        with (self.workdir / AUTH_ENV_FNAME).open("w") as f:
-            for auth in auth_candidates.values():
-                f.write("\n".join(auth.dump_env()))
-
-    @property
-    def data_format_type(self) -> DataFormatType:
-        return DataFormatType.USER_RAW
-
-
 def create_generic_cls(
     handler: t.Callable,
 ) -> t.Type[BaseBuildExecutor]:
@@ -543,39 +429,17 @@ def create_generic_cls(
         for _item in items_iter:
             yield _item
 
-    if isinstance(item, DataRow):
-        data = item.data
-    elif isinstance(item, (tuple, list)):
-        if len(item) == 2:
-            data = item[0]
-        elif len(item) == 3:
-            data = item[1]
-        else:
-            raise FormatError(f"wrong item format: {item}")
-    else:
-        raise TypeError(f"item only supports tuple, list or DataRow type: {item}")
-
-    use_swds_bin = not isinstance(data, Link)
-    return create_generic_cls_by_mode(use_swds_bin, _do_iter_item)
+    return create_generic_cls_by_mode(_do_iter_item)
 
 
 def create_generic_cls_by_mode(
-    use_swds_bin: bool, iter_func: t.Callable
+    iter_func: t.Callable
 ) -> t.Type[BaseBuildExecutor]:
-    attrs = {"iter_item": iter_func}
-    if use_swds_bin:
-        _cls = type(
-            "GenericSWDSBinHandler",
-            (SWDSBinBuildExecutor,),
-            attrs,
-        )
-    else:
-        _cls = type(
-            "GenericUserRawHandler",
-            (UserRawBuildExecutor,),
-            attrs,
-        )
-    return _cls
+    return type(
+        "GenericSWDSBinHandler",
+        (BuildExecutor,),
+        {"iter_item": iter_func},
+    )
 
 
 class RowWriter(threading.Thread):
@@ -590,7 +454,6 @@ class RowWriter(threading.Thread):
         append: bool = False,
         append_from_version: str = "",
         append_from_uri: t.Optional[URI] = None,
-        append_with_swds_bin: bool = True,
         instance_name: str = STANDALONE_INSTANCE,
     ) -> None:
         super().__init__(
@@ -619,7 +482,7 @@ class RowWriter(threading.Thread):
         self.daemon = True
         self._builder: t.Optional[BaseBuildExecutor] = None
         if append and append_from_version:
-            _cls = create_generic_cls_by_mode(append_with_swds_bin, self.__iter__)
+            _cls = create_generic_cls_by_mode(self.__iter__)
             self._builder = _cls(**self._kw)  # type: ignore
             self.start()
 
