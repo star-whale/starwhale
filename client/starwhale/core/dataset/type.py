@@ -270,18 +270,24 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             raise NoSupportError(f"Artifact reflect error: {data_type}")
 
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
+        self.fetch_data()
+        return self.fp
+
+    def fetch_data(self) -> None:
         if isinstance(self.fp, bytes):
-            return self.fp
+            return
         elif isinstance(self.fp, (str, Path)):
-            return Path(self.fp).read_bytes()
+            self.fp = Path(self.fp).read_bytes()
+            return
         elif isinstance(self.fp, io.IOBase):
             _pos = self.fp.tell()
             _content = self.fp.read()
             self.fp.seek(_pos)
-            return _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+            self.fp = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+            return
         elif self.owner and self.link:
             self.fp = self.link.to_bytes(self.owner)
-            return self.fp
+            return
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 

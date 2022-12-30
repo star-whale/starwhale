@@ -321,12 +321,13 @@ class Dataset:
     def _getitem(
         self,
         item: _ItemType,
+        skip_fetch_data: bool = False,
     ) -> _GItemType:
         def _run() -> _GItemType:
             loader = self._get_data_loader(disable_consumption=True)
             if isinstance(item, (int, str)):
                 row = next(loader.tabular_dataset.scan(item, item, end_inclusive=True))
-                return loader._unpack_row(row)
+                return loader._unpack_row(row, skip_fetch_data)
             elif isinstance(item, slice):
                 step = item.step or 1
                 if step <= 0:
@@ -338,7 +339,7 @@ class Dataset:
                 rows = []
                 for row in loader.tabular_dataset.scan(item.start, item.stop):
                     if cnt % step == 0:
-                        rows.append(loader._unpack_row(row))
+                        rows.append(loader._unpack_row(row, skip_fetch_data))
                     cnt += 1
                 return rows
             else:
@@ -490,10 +491,10 @@ class Dataset:
         # TODO: render artifact in JupyterNotebook
         return self.__core_dataset.head(n, show_raw_data)
 
-    def fetch_one(self) -> DataRow:
+    def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
         loader = self._get_data_loader(disable_consumption=True)
         row = next(loader.tabular_dataset.scan())
-        return loader._unpack_row(row)
+        return loader._unpack_row(row, skip_fetch_data)
 
     def to_pytorch(
         self,
@@ -594,9 +595,9 @@ class Dataset:
 
         items: t.List
         if isinstance(key, (str, int)):
-            items = [self._getitem(key)]
+            items = [self._getitem(key, skip_fetch_data=True)]
         elif isinstance(key, slice):
-            items = self._getitem(key)  # type: ignore
+            items = self._getitem(key, skip_fetch_data=True)  # type: ignore
         else:
             raise TypeError(f"key({key}) is not str, int or slice type")
 

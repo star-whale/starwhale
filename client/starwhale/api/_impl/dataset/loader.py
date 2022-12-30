@@ -205,8 +205,6 @@ class DataLoader(metaclass=ABCMeta):
         if not self.session_consumption:
             # TODO: refactor for batch-signed urls
             for row in self.tabular_dataset.scan():
-                for at in row.artifacts():
-                    at.owner = self.dataset_uri
                 yield row
         else:
             while True:
@@ -235,8 +233,6 @@ class DataLoader(metaclass=ABCMeta):
                             yield row
                 else:
                     for row in self.tabular_dataset.scan(rt[0], rt[1]):
-                        for at in row.artifacts():
-                            at.owner = self.dataset_uri
                         yield row
 
     def _iter_meta_with_queue(self, mq: queue.Queue[_TMetaQItem]) -> None:
@@ -253,8 +249,13 @@ class DataLoader(metaclass=ABCMeta):
             mq.put(None)
 
     def _unpack_row(
-        self, row: TabularDatasetRow
+        self, row: TabularDatasetRow, skip_fetch_data: bool = False
     ) -> DataRow:
+        for at in row.artifacts():
+            at.owner = self.dataset_uri
+            if skip_fetch_data:
+                continue
+            at.fetch_data()
         return DataRow(index=row.id, content=row.content)
 
     def _unpack_row_with_queue(
