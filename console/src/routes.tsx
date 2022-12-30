@@ -50,6 +50,7 @@ import ModelOverviewLayout from './pages/Model/ModelOverviewLayout'
 import ProjectTrashes from './pages/Project/Trashes'
 import TrashLayout from './pages/Trash/TrashLayout'
 import TrashListCard from './pages/Trash/TrashListCard'
+import OnlineEval from './pages/Project/OnlineEval'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -119,26 +120,6 @@ const Routes = () => {
                                 <CenterLayout>
                                     <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
                                 </CenterLayout>
-                            </Route>
-                            <Route exact path='/projects/:projectId/:path?'>
-                                <ProjectLayout>
-                                    <Switch>
-                                        <Route exact path='/projects/:projectId/models' component={ProjectModels} />
-                                        <Route exact path='/projects/:projectId/trashes' component={ProjectTrashes} />
-                                        <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
-                                        <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
-                                        <Route
-                                            exact
-                                            path='/projects/:projectId/evaluations'
-                                            component={ProjectEvaluations}
-                                        />
-                                        <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
-                                        <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
-                                        <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
-                                        <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
-                                        <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
-                                    </Switch>
-                                </ProjectLayout>
                             </Route>
                             {/* evaluation */}
                             <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
@@ -306,6 +287,31 @@ const Routes = () => {
                                         <Redirect exact from='/admin' to='/admin/users' />
                                     </Switch>
                                 </AdminLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/:path*'>
+                                <ProjectLayout>
+                                    <Switch>
+                                        <Route exact path='/projects/:projectId/models' component={ProjectModels} />
+                                        <Route exact path='/projects/:projectId/trashes' component={ProjectTrashes} />
+                                        <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
+                                        <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations'
+                                            component={ProjectEvaluations}
+                                        />
+                                        <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
+                                        <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/online_eval/:modelId/:modelVersionId?'
+                                            component={OnlineEval}
+                                        />
+                                        <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
+                                        <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
+                                        <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
+                                    </Switch>
+                                </ProjectLayout>
                             </Route>
                             {/* default */}
                             <Route>

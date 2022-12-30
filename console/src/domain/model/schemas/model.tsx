@@ -31,3 +31,10 @@ export interface ICreateModelSchema {
     zipFile?: FileList
     importPath?: string
 }
+
+export interface ICreateOnlineEvalSchema {
+    modelVersionUrl: string
+    runtimeVersionUrl: string
+    resourcePool: string
+    ttlInSeconds: number
+}

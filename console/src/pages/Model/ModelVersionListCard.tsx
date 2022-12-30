@@ -77,6 +77,13 @@ export default function ModelVersionListCard() {
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
+                                &nbsp;&nbsp;
+                                <TextLink
+                                    key={model.id}
+                                    to={`/projects/${projectId}/online_eval/${modelId}/${model.id}`}
+                                >
+                                    {t('online eval')}
+                                </TextLink>
                             </>,
                         ]
                     }) ?? []

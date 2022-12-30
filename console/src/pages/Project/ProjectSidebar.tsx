@@ -34,7 +34,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
                 icon: <IconFont type='Model' size={16} />,
-                activePathPattern: /\/(models)\/?/,
+                activePathPattern: /\/(models|online_eval)\/?/,
             },
             {
                 title: t('Datasets'),
