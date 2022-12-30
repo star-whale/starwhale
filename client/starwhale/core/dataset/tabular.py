@@ -37,7 +37,7 @@ from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
-from starwhale.core.dataset.type import Link, JsonDict
+from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 
@@ -98,32 +98,18 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
 
-    ANNOTATION_PREFIX = "annotation/"
+    CONTENT_PREFIX = "content/"
 
     def __init__(
         self,
         id: t.Union[str, int],
-        data_link: Link,
-        data_format: DataFormatType = DataFormatType.SWDS_BIN,
-        object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
-        data_offset: int = 0,
-        data_size: int = 0,
         data_origin: DataOriginType = DataOriginType.NEW,
-        data_type: t.Optional[t.Dict[str, t.Any]] = None,
-        auth_name: str = "",
-        annotations: t.Optional[t.Dict[str, t.Any]] = None,
+        content: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.data_link = data_link
-        self.data_format = data_format
-        self.data_offset = data_offset
-        self.data_size = data_size
         self.data_origin = data_origin
-        self.object_store_type = object_store_type
-        self.auth_name = auth_name
-        self.data_type = data_type or {}
-        self.annotations = annotations or {}
+        self.content = content or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
@@ -133,36 +119,22 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        data_link: Link,
-        data_format: str = DataFormatType.SWDS_BIN.value,
-        object_store_type: str = ObjectStoreType.LOCAL.value,
-        data_offset: int = 0,
-        data_size: int = 0,
         data_origin: str = DataOriginType.NEW.value,
-        data_type: str = "",
-        auth_name: str = "",
         **kw: t.Any,
     ) -> TabularDatasetRow:
-        _annotations = {}
+        _content = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if k.startswith(cls.ANNOTATION_PREFIX):
-                _, name = k.split(cls.ANNOTATION_PREFIX, 1)
-                _annotations[name] = JsonDict.to_data(v)
+            if k.startswith(cls.CONTENT_PREFIX):
+                _, name = k.split(cls.CONTENT_PREFIX, 1)
+                _content[name] = JsonDict.to_data(v)
             else:
                 _extra_kw[k] = v
 
         return cls(
             id=id,
-            data_link=data_link,
-            data_format=DataFormatType(data_format),
-            object_store_type=ObjectStoreType(object_store_type),
-            data_offset=data_offset,
-            data_size=data_size,
             data_origin=DataOriginType(data_origin),
-            auth_name=auth_name,
-            data_type=json.loads(data_type),
-            annotations=_annotations,
+            content=_content,
             **_extra_kw,
         )
 
@@ -215,13 +187,27 @@ class TabularDatasetRow(ASDictMixin):
         )
         d.update(_do_asdict_convert(self.extra_kw))
         for k, v in self.annotations.items():
-            d[f"{self.ANNOTATION_PREFIX}{k}"] = JsonDict.from_data(v)
+            d[f"{self.CONTENT_PREFIX}{k}"] = JsonDict.from_data(v)
         # TODO: use data_store SwObject to store data_type
         d["data_type"] = json.dumps(
             _do_asdict_convert(self.data_type), separators=(",", ":")
         )
         d["data_link"] = self.data_link
         return d
+
+    def _artifacts(self, content: t.Dict) -> t.List[BaseArtifact]:
+        artifacts = []
+        for _, v in content.items():
+            if isinstance(v, dict):
+                artifacts.extend(self._artifacts(v))
+            if not isinstance(v, BaseArtifact):
+                continue
+            artifacts.append(v.link)
+        return artifacts
+
+    def artifacts(self) -> t.List[BaseArtifact]:
+        return self._artifacts(self.content)
+
 
 
 _TDType = t.TypeVar("_TDType", bound="TabularDataset")

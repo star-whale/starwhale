@@ -205,6 +205,8 @@ class DataLoader(metaclass=ABCMeta):
         if not self.session_consumption:
             # TODO: refactor for batch-signed urls
             for row in self.tabular_dataset.scan():
+                for at in row.artifacts():
+                    at.owner = self.dataset_uri
                 yield row
         else:
             while True:
@@ -221,9 +223,10 @@ class DataLoader(metaclass=ABCMeta):
                     ):
                         _links = []
                         for row in rows:
-                            _links.extend(
-                                [row.data_link] + self._travel_link(row.annotations)
-                            )
+                            for at in row.artifacts():
+                                at.owner = self.dataset_uri
+                                if at.link:
+                                    _links.append(at.link)
                         uri_dict = self._sign_uris([lk.uri for lk in _links])
                         for lk in _links:
                             lk.signed_uri = uri_dict.get(lk.uri, "")
@@ -232,6 +235,8 @@ class DataLoader(metaclass=ABCMeta):
                             yield row
                 else:
                     for row in self.tabular_dataset.scan(rt[0], rt[1]):
+                        for at in row.artifacts():
+                            at.owner = self.dataset_uri
                         yield row
 
     def _iter_meta_with_queue(self, mq: queue.Queue[_TMetaQItem]) -> None:
@@ -248,23 +253,14 @@ class DataLoader(metaclass=ABCMeta):
             mq.put(None)
 
     def _unpack_row(
-        self, row: TabularDatasetRow, skip_fetch_data: bool = False
+        self, row: TabularDatasetRow
     ) -> DataRow:
-        if skip_fetch_data:
-            return DataRow(index=row.id, data=None, content=row.annotations)
-
-        store = self._get_store(row)
-        key_compose = self._get_key_compose(row, store)
-        file = store.backend._make_file(store.bucket, key_compose)
-        data_content, _ = self._read_data(file, row)
-        data = BaseArtifact.reflect(data_content, row.data_type)
-        return DataRow(index=row.id, data=data, content=row.annotations)
+        return DataRow(index=row.id, content=row.content)
 
     def _unpack_row_with_queue(
         self,
         in_mq: queue.Queue[_TMetaQItem],
         out_mq: queue.Queue[_TRowQItem],
-        skip_fetch_data: bool = False,
     ) -> None:
         while True:
             meta = in_mq.get(block=True, timeout=None)
@@ -275,7 +271,7 @@ class DataLoader(metaclass=ABCMeta):
                 raise meta
             else:
                 try:
-                    row = self._unpack_row(meta, skip_fetch_data)
+                    row = self._unpack_row(meta)
                     if row and isinstance(row, DataRow):
                         out_mq.put(row)
                 except Exception as e:
