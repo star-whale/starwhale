@@ -46,7 +46,6 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -108,12 +107,9 @@ public class JobBoConverter {
     }
 
     public Job fromEntity(JobEntity jobEntity) {
-        List<DataSet> dataSets = List.of();
-        if (jobEntity.getDatasetIdVersionMap() != null && !jobEntity.getDatasetIdVersionMap().isEmpty()) {
-            dataSets = datasetDao.listDatasetVersions(new ArrayList<>(jobEntity.getDatasetIdVersionMap().keySet()))
+        List<DataSet> dataSets = datasetDao.listDatasetVersionsOfJob(jobEntity.getId())
                 .stream().map(datasetBoConverter::fromVersion)
                 .collect(Collectors.toList());
-        }
         ModelEntity modelEntity = modelMapper.find(
                 jobEntity.getModelVersion().getModelId());
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(
@@ -137,6 +133,7 @@ public class JobBoConverter {
                             .name(jobEntity.getProject().getProjectName())
                             .build())
                     .jobRuntime(JobRuntime.builder()
+                            .id(runtimeVersionEntity.getId())
                             .name(runtimeEntity.getRuntimeName())
                             .version(runtimeVersionEntity.getVersionName())
                             .storagePath(runtimeVersionEntity.getStoragePath())
@@ -157,8 +154,14 @@ public class JobBoConverter {
                     .dataSets(dataSets)
                     .outputDir(jobEntity.getResultOutputPath())
                     .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
-                    .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName())
+                    .owner(User.builder()
+                            .id(jobEntity.getOwner().getId())
+                            .name(jobEntity.getOwner().getUserName())
+                            .createdTime(jobEntity.getOwner().getCreatedTime())
                             .build())
+                    .createdTime(jobEntity.getCreatedTime())
+                    .finishedTime(jobEntity.getFinishedTime())
+                    .comment(jobEntity.getComment())
                     .build();
         } catch (JsonProcessingException e) {
             throw new SwValidationException(ValidSubject.JOB, e.getMessage());
@@ -166,7 +169,7 @@ public class JobBoConverter {
         return fillStepsAndTasks(job);
     }
 
-    private Job fillStepsAndTasks(Job job) {
+    public Job fillStepsAndTasks(Job job) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
                 .peek(step -> {

@@ -16,15 +16,13 @@
 
 package ai.starwhale.mlops.domain.project.mapper;
 
-import static org.mockito.Mockito.mock;
-
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
@@ -54,7 +52,8 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     @Autowired
     private UserMapper userMapper;
 
-    private JobRepo jobRepo = mock(JobRepo.class);
+    @Autowired
+    private JobMapper jobMapper;
 
     @Autowired
     private DatasetMapper datasetMapper;
@@ -143,15 +142,15 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project2.getId())
                         .ownerId(user.getId()).build());
-        jobRepo.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
-        jobRepo.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project.getId()).ownerId(user.getId()).build());
-        jobRepo.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
+        jobMapper.addJob(JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(1L)
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .projectId(project2.getId()).ownerId(user.getId()).build());
@@ -173,6 +172,11 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(1, counts.size());
         Assertions.assertEquals(project.getId(), counts.get(0).getProjectId());
         Assertions.assertEquals(3, counts.get(0).getCount());
+
+        counts = projectMapper.countJob(String.valueOf(project.getId()));
+        Assertions.assertEquals(1, counts.size());
+        Assertions.assertEquals(project.getId(), counts.get(0).getProjectId());
+        Assertions.assertEquals(2, counts.get(0).getCount());
 
         counts = projectMapper.countMember(String.valueOf(project.getId()));
         Assertions.assertEquals(0, counts.size());

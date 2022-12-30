@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
@@ -41,19 +41,19 @@ public class JobUpdateHelper {
 
     final HotJobHolder jobHolder;
     final JobStatusCalculator jobStatusCalculator;
-    final JobRepo jobRepo;
+    final JobDao jobDao;
     final JobStatusMachine jobStatusMachine;
     final SwTaskScheduler swTaskScheduler;
     final TaskStatusMachine taskStatusMachine;
 
     public JobUpdateHelper(HotJobHolder jobHolder,
                            JobStatusCalculator jobStatusCalculator,
-                           JobRepo jobRepo, JobStatusMachine jobStatusMachine,
+                           JobDao jobDao, JobStatusMachine jobStatusMachine,
                            SwTaskScheduler swTaskScheduler,
                            TaskStatusMachine taskStatusMachine) {
         this.jobHolder = jobHolder;
         this.jobStatusCalculator = jobStatusCalculator;
-        this.jobRepo = jobRepo;
+        this.jobDao = jobDao;
         this.jobStatusMachine = jobStatusMachine;
         this.swTaskScheduler = swTaskScheduler;
         this.taskStatusMachine = taskStatusMachine;
@@ -75,10 +75,10 @@ public class JobUpdateHelper {
         log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus,
                 job.getId());
         job.setStatus(desiredJobStatus);
-        jobRepo.updateJobStatus(job.getId(), desiredJobStatus);
+        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
 
         if (jobStatusMachine.isFinal(desiredJobStatus)) {
-            jobRepo.updateJobFinishedTime(job.getId(), new Date());
+            jobDao.updateJobFinishedTime(job.getId(), new Date());
             if (desiredJobStatus == JobStatus.FAIL) {
                 CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));

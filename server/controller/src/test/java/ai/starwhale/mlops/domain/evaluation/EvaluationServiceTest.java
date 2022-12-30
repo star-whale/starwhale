@@ -38,13 +38,13 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Date;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
 public class EvaluationServiceTest {
 
     private EvaluationService service;
-    private JobRepo jobRepo;
+    private JobDao jobDao;
     private ViewConfigMapper viewConfigMapper;
     private JobConverter jobConvertor;
 
@@ -69,7 +69,7 @@ public class EvaluationServiceTest {
         service = new EvaluationService(
                 userService,
                 projectManager,
-                jobRepo = mock(JobRepo.class),
+                jobDao = mock(JobDao.class),
                 viewConfigMapper = mock(ViewConfigMapper.class),
                 new IdConverter(),
                 new ViewConfigConverter(),
@@ -123,22 +123,22 @@ public class EvaluationServiceTest {
 
     @Test
     public void testListEvaluationSummary() {
-        given(jobRepo.listJobs(same(1L), any()))
+        given(jobDao.listJobs(same(1L), any()))
                 .willReturn(List.of(
-                        JobEntity.builder()
+                        Job.builder()
                                 .id(1L)
-                                .project(ProjectEntity.builder().id(1L).projectName("p1").build())
-                                .jobStatus(JobStatus.PAUSED)
+                                .project(Project.builder().id(1L).name("p1").build())
+                                .status(JobStatus.PAUSED)
                                 .build(),
-                        JobEntity.builder()
+                        Job.builder()
                                 .id(2L)
-                                .project(ProjectEntity.builder().id(1L).projectName("p1").build())
-                                .jobStatus(JobStatus.SUCCESS)
+                                .project(Project.builder().id(1L).name("p1").build())
+                                .status(JobStatus.SUCCESS)
                                 .build()
                 ));
-        given(jobConvertor.convert(any(JobEntity.class)))
+        given(jobConvertor.convert(any(Job.class)))
                 .willAnswer(invocation -> {
-                    JobEntity entity = invocation.getArgument(0);
+                    Job entity = invocation.getArgument(0);
                     return JobVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .uuid("uuid" + entity.getId())

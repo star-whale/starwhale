@@ -17,9 +17,10 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -44,17 +45,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResultQuerier {
 
-    final JobRepo jobRepo;
+    final JobDao jobDao;
 
     final StorageAccessService storageAccessService;
 
     final ObjectMapper objectMapper;
 
     public ResultQuerier(
-            JobRepo jobRepo,
+            JobDao jobDao,
             StorageAccessService storageAccessService,
             ObjectMapper objectMapper) {
-        this.jobRepo = jobRepo;
+        this.jobDao = jobDao;
         this.storageAccessService = storageAccessService;
         this.objectMapper = objectMapper;
     }
@@ -96,18 +97,18 @@ public class ResultQuerier {
     //    }
 
     public String resultPathOfJob(Long jobId) {
-        JobEntity jobEntity = jobRepo.findJobById(jobId);
-        if (null == jobEntity) {
+        Job job = jobDao.findJobById(jobId);
+        if (null == job) {
             throw new SwValidationException(ValidSubject.JOB, "unknown jobid");
         }
-        if (jobEntity.getJobStatus() != JobStatus.SUCCESS) {
+        if (job.getStatus() != JobStatus.SUCCESS) {
             throw new SwValidationException(ValidSubject.JOB, "job is not finished yet");
         }
         try {
             List<String> results = storageAccessService.list(
-                    new ResultPath(jobEntity.getResultOutputPath()).resultDir()).collect(
+                    new ResultPath(job.getOutputDir()).resultDir()).collect(
                     Collectors.toList());
-            if (null == results || results.isEmpty()) {
+            if (results.isEmpty()) {
                 throw new SwValidationException(ValidSubject.JOB, "no result found of job");
             }
             return results.get(0);

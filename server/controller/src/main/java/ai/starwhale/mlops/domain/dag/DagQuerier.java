@@ -20,10 +20,9 @@ import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
 import ai.starwhale.mlops.domain.dag.bo.GraphNode;
-import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -44,22 +43,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class DagQuerier {
 
-    final JobManager jobManager;
+    final JobDao jobDao;
 
     final StepHelper stepHelper;
 
-    final JobBoConverter jobBoConverter;
-
-    public DagQuerier(JobManager jobManager,
-            StepHelper stepHelper,
-            JobBoConverter jobBoConverter) {
-        this.jobManager = jobManager;
+    public DagQuerier(JobDao jobDao,
+                      StepHelper stepHelper) {
+        this.jobDao = jobDao;
         this.stepHelper = stepHelper;
-        this.jobBoConverter = jobBoConverter;
     }
 
     public Graph dagOfJob(String jobUrl) {
-        return buildGraph(jobBoConverter.fromEntity(jobManager.findJob(jobUrl)));
+        return buildGraph(jobDao.findJob(jobUrl));
     }
 
     private Graph buildGraph(Job job) {

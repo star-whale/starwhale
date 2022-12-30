@@ -40,6 +40,8 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
 
     private Long versionOrder;
 
+    private String modelName;
+
     private Long ownerId;
 
     private String versionName;

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ starwhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with starwhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobMapper">
+
+  <sql id="select_jobs">
+    select * from (select j.id as job_id,
+    j.job_uuid,
+    j.project_id,
+    j.model_version_id,
+    j.owner_id,
+    j.created_time as job_created_time,
+    j.finished_time as job_finished_time,
+    j.duration_ms as job_duration_ms,
+    j.job_status,
+    j.job_type,
+    j.runtime_version_id as runtime_version_id,
+    j.result_output_path as job_result_output_path,
+    j.step_spec,
+    j.job_comment,
+    j.resource_pool,
+    j.is_deleted as job_is_deleted,
+    p.project_name,
+    p.is_deleted as project_is_deleted,
+    p.is_default as project_is_default,
+    p.privacy as project_privacy,
+    p.project_description,
+    u.id as user_id,
+    u.user_name,
+    u.user_enabled,
+    u.created_time as user_created_time,
+    u.modified_time as user_modified_time,
+    mv.id as mv_id,
+    mv.model_id,
+    mv.version_name as mv_version_name,
+    mv.eval_jobs as mv_eval_jobs,
+    mv.version_tag as mv_version_tag,
+    mv.version_meta as mv_version_meta,
+    mv.created_time as mv_created_time,
+    mv.modified_time as mv_modified_time,
+    mv.storage_path as mv_storage_path,
+    mv.manifest as mv_manifest,
+    mv.version_order as mv_version_order,
+    m.model_name as model_name
+    from job_info as j,
+    user_info as u,
+    project_info as p,
+    model_version as mv,
+    model_info as m
+    where u.id = j.owner_id
+    and p.id = j.project_id
+    and mv.id = j.model_version_id
+    and m.id = mv.model_id) as j2
+  </sql>
+
+  <select id="listJobs" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and project_id = #{projectId}
+    </where>
+    <if test="modelId != null and modelId != ''">
+      and model_version_id = #{modelId}
+    </if>
+    order by job_id desc
+  </select>
+
+  <select id="findJobById" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_id = #{jobId}
+    </where>
+  </select>
+
+  <select id="findJobByUuid" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and job_uuid = #{uuid}
+    </where>
+  </select>
+
+  <select id="findJobByStatusIn" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and job_status in
+    </where>
+    <foreach item="item" index="index" collection="jobStatuses"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
+
+  <update id="updateJobStatus">
+    update job_info set job_status = #{jobStatus} WHERE id in
+    <foreach item="item" index="index" collection="jobIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </update>
+
+  <update id="updateJobFinishedTime">
+    update job_info set finished_time = #{finishedTime} WHERE id in
+    <foreach item="item" index="index" collection="jobIds"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </update>
+
+  <update id="updateJobComment">
+    update job_info set job_comment = #{comment}
+    where id = #{id}
+  </update>
+
+  <update id="updateJobCommentByUuid">
+    update job_info set job_comment = #{comment}
+    where job_uuid = #{uuid}
+  </update>
+
+  <update id="removeJob">
+    update job_info set is_deleted = 1
+    where id = #{id}
+  </update>
+
+  <update id="removeJobByUuid">
+    update job_info set is_deleted = 1
+    where job_uuid = #{uuid}
+  </update>
+
+  <update id="recoverJob">
+    update job_info set is_deleted = 0
+    where id = #{id}
+  </update>
+
+  <update id="recoverJobByUuid">
+    update job_info set is_deleted = 0
+    where job_uuid = #{uuid}
+  </update>
+
+  <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity"
+    useGeneratedKeys="true" keyProperty="id">
+    insert into job_info(job_uuid,
+    project_id,
+    model_version_id,
+    owner_id,
+    finished_time,
+    job_status,
+    job_type,
+    runtime_version_id,
+    result_output_path,
+    step_spec,
+    resource_pool)
+    values (#{job.jobUuid},
+    #{job.projectId},
+    #{job.modelVersionId},
+    #{job.ownerId},
+    #{job.finishedTime},
+    #{job.jobStatus},
+    #{job.type},
+    #{job.runtimeVersionId},
+    #{job.resultOutputPath},
+    #{job.stepSpec},
+    #{job.resourcePool}
+    )
+  </insert>
+
+  <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.po.JobEntity">
+    <id property="id" column="job_id"/>
+    <result property="jobUuid" column="job_uuid"/>
+    <result property="projectId" column="project_id"/>
+    <result property="modelName" column="model_name"/>
+    <result property="modelVersionId" column="model_version_id"/>
+    <result property="ownerId" column="owner_id"/>
+    <result property="createdTime" column="job_created_time"/>
+    <result property="finishedTime" column="job_finished_time"/>
+    <result property="durationMs" column="job_duration_ms"/>
+    <result property="jobStatus" column="job_status"/>
+    <result property="type" column="job_type"/>
+    <result property="resultOutputPath" column="job_result_output_path"/>
+    <result property="stepSpec" column="step_spec"/>
+    <result property="comment" column="job_comment"/>
+    <result property="isDeleted" column="job_is_deleted"/>
+    <result property="runtimeVersionId" column="runtime_version_id"/>
+    <result property="resourcePool" column="resource_pool"/>
+    <association property="project" resultMap="projectResultMap"/>
+    <association property="modelVersion" resultMap="modelVersionResultMap"/>
+    <association property="owner" resultMap="userResultMap"/>
+  </resultMap>
+  <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
+    <id property="id" column="project_id"/>
+    <result property="projectName" column="project_name"/>
+    <result property="privacy" column="project_privacy"/>
+    <result property="projectDescription" column="project_description"/>
+    <result property="isDeleted" column="project_is_deleted"/>
+    <result property="isDefault" column="project_is_default"/>
+    <result property="createdTime" column="project_created_time"/>
+    <result property="modifiedTime" column="project_modified_time"/>
+    <result property="ownerId" column="owner_id"/>
+  </resultMap>
+  <resultMap id="modelVersionResultMap"
+    type="ai.starwhale.mlops.domain.model.po.ModelVersionEntity">
+    <id column="mv_id" property="id"/>
+    <result column="model_id" property="modelId"/>
+    <result column="model_name" property="modelName"/>
+    <result column="mv_version_order" property="versionOrder"/>
+    <result column="mv_version_name" property="versionName"/>
+    <result column="mv_version_tag" property="versionTag"/>
+    <result column="mv_version_meta" property="versionMeta"/>
+    <result column="mv_storage_path" property="storagePath"/>
+    <result column="mv_manifest" property="manifest"/>
+    <result column="mv_eval_jobs" property="evalJobs"/>
+    <result column="mv_created_time" property="createdTime"/>
+    <result column="mv_modified_time" property="modifiedTime"/>
+    <result column="owner_id" property="ownerId"/>
+  </resultMap>
+  <resultMap id="userResultMap" type="ai.starwhale.mlops.domain.user.po.UserEntity">
+    <id property="id" column="user_id"/>
+    <result property="userName" column="user_name"/>
+    <result property="userPwd" column="user_pwd"/>
+    <result property="userPwdSalt" column="user_pwd_salt"/>
+    <result property="userEnabled" column="user_enabled"/>
+    <result property="createdTime" column="user_created_time"/>
+    <result property="modifiedTime" column="user_modified_time"/>
+  </resultMap>
+</mapper>

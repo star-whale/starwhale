@@ -126,9 +126,12 @@ public class ModelServingServiceTest {
                 .runtimeVersionId(8L)
                 .resourcePool(resourcePool)
                 .build();
-        when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
-        when(runtimeDao.getRuntimeVersionId("8", null)).thenReturn(8L);
-        when(modelDao.getModelVersionId("9", null)).thenReturn(9L);
+        when(modelServingMapper.list(2L, 9L, 8L, resourcePool))
+                .thenReturn(List.of(entity));
+        when(runtimeDao.getRuntimeVersion("8"))
+                .thenReturn(RuntimeVersionEntity.builder().id(8L).image("img").build());
+        when(modelDao.getModelVersion("9"))
+                .thenReturn(ModelVersionEntity.builder().id(9L).build());
         svc.create("2", "9", "8", resourcePool);
 
         verify(k8sJobTemplate).renderModelServingOrch(

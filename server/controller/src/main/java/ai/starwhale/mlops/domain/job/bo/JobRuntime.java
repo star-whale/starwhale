@@ -30,6 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class JobRuntime {
 
+    Long id;
     /**
      * the name for the runtime
      */

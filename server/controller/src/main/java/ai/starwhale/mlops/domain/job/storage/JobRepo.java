@@ -51,14 +51,14 @@ import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
-import ai.starwhale.mlops.exception.SwProcessException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -78,19 +78,19 @@ public class JobRepo {
     private final DataStore store;
     private final ProjectMapper projectMapper;
     private final ModelVersionMapper modelMapper;
-
     private final UserMapper userMapper;
-
+    private final JobMapper mainStore;
     private final ObjectMapper objectMapper;
 
     public JobRepo(DataStore store,
                    ProjectMapper projectMapper,
                    ModelVersionMapper modelMapper,
-                   UserMapper userMapper, ObjectMapper objectMapper) {
+                   UserMapper userMapper, JobMapper mainStore, ObjectMapper objectMapper) {
         this.store = store;
         this.projectMapper = projectMapper;
         this.modelMapper = modelMapper;
         this.userMapper = userMapper;
+        this.mainStore = mainStore;
         this.objectMapper = objectMapper;
     }
 
@@ -110,107 +110,66 @@ public class JobRepo {
         return String.format(tableNameFormat, projectName);
     }
 
-    private String getTableNameByProject(Long projectId) {
-        var project = projectMapper.find(projectId);
-        return tableName(project.getProjectName());
-    }
-
-    private String getTableNameByUuid(String uuid) {
-        var andConditions = List.of(
-                (Object) TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(KeyColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.STRING, uuid)))
-                    .build());
-
-        return this.getTableNameByCondition(andConditions);
-    }
-
-    private String getTableName(Long jobId) {
-        var andConditions = List.of(
-                (Object) TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(LongIdColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.INT64, jobId)))
-                    .build());
-        return this.getTableNameByCondition(andConditions);
-    }
-
-    private String getTableNameByCondition(List<Object> conditions) {
-        for (String table : tableNames()) {
-            var tmp = store.query(
-                    DataStoreQueryRequest.builder()
-                        .tableName(table)
-                        .filter(TableQueryFilter.builder()
-                            .operator(TableQueryFilter.Operator.AND)
-                            .operands(conditions)
-                            .build())
-                        .build()
-            ).getRecords();
-            if (tmp != null && !tmp.isEmpty()) {
-                return table;
-            }
-        }
-        return null;
-    }
-
-    public void createSchema(String projectName) {
-        store.update(this.tableName(projectName), tableSchemaDesc, List.of());
-    }
-
-    public int addJob(JobEntity jobEntity) {
-        Map<String, Object> records = new HashMap<>();
-        records.put(LongIdColumn, ColumnTypeScalar.INT64.encode(jobEntity.getId(), false));
-        records.put(KeyColumn, jobEntity.getJobUuid());
-        if (Objects.nonNull(jobEntity.getComment())) {
-            records.put(CommentColumn, jobEntity.getComment());
-        }
-        if (Objects.nonNull(jobEntity.getCreatedTime())) {
-            records.put(CreatedTimeColumn,
-                    ColumnTypeScalar.INT64.encode(jobEntity.getCreatedTime().getTime(), false));
-        }
-        if (Objects.nonNull(jobEntity.getModifiedTime())) {
-            records.put(ModifiedTimeColumn,
-                    ColumnTypeScalar.INT64.encode(jobEntity.getModifiedTime().getTime(), false));
-        }
-        if (Objects.nonNull(jobEntity.getFinishedTime())) {
-            records.put(FinishTimeColumn,
-                    ColumnTypeScalar.INT64.encode(jobEntity.getFinishedTime().getTime(), false));
-        }
-        if (Objects.nonNull(jobEntity.getDurationMs())) {
-            records.put(DurationColumn,
-                    ColumnTypeScalar.INT64.encode(jobEntity.getDurationMs(), false));
-        }
-        if (Objects.nonNull(jobEntity.getStepSpec())) {
-            records.put(StepSpecColumn, jobEntity.getStepSpec());
-        }
-        records.put(IsDeletedColumn, "0");
-        records.put(ProjectIdColumn,
-                ColumnTypeScalar.INT64.encode(jobEntity.getProjectId(), false));
-        records.put(ModelVersionIdColumn,
-                ColumnTypeScalar.INT64.encode(jobEntity.getModelVersionId(), false));
-        records.put(ModelNameColumn, jobEntity.getModelName());
-        records.put(ModelVersionColumn, jobEntity.getModelVersionValue());
-        records.put(RuntimeVersionIdColumn,
-                ColumnTypeScalar.INT64.encode(jobEntity.getRuntimeVersionId(), false));
-        records.put(RuntimeNameColumn, jobEntity.getRuntimeName());
-        records.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
-        records.put(DataSetIdVersionMapColumn, convert(jobEntity.getDatasetIdVersionMap()));
-        records.put(OwnerIdColumn,
-                ColumnTypeScalar.INT64.encode(jobEntity.getOwnerId(), false));
-        records.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
-        records.put(JobStatusColumn, jobEntity.getJobStatus().name());
-        records.put(JobTypeColumn, jobEntity.getType().name());
-        records.put(ResultOutputPathColumn, jobEntity.getResultOutputPath());
-        records.put(ResourcePoolColumn, jobEntity.getResourcePool());
-
-        store.update(this.getTableNameByProject(jobEntity.getProjectId()), tableSchemaDesc, List.of(records));
+    public int addJob(JobFlattenEntity jobEntity) {
+        store.update(
+                this.tableName(jobEntity.getProject().getProjectName()),
+                tableSchemaDesc,
+                List.of(convertToRecord(jobEntity))
+        );
+        store.flush();
         return 1;
     }
 
-    public Map<String, String> convert(Map<Long, String> origin) {
+    @NotNull
+    private Map<String, Object> convertToRecord(JobFlattenEntity jobEntity) {
+        Map<String, Object> record = new HashMap<>();
+        record.put(LongIdColumn, ColumnTypeScalar.INT64.encode(jobEntity.getId(), false));
+        record.put(KeyColumn, jobEntity.getJobUuid());
+        if (Objects.nonNull(jobEntity.getComment())) {
+            record.put(CommentColumn, jobEntity.getComment());
+        }
+        if (Objects.nonNull(jobEntity.getCreatedTime())) {
+            record.put(CreatedTimeColumn,
+                    ColumnTypeScalar.INT64.encode(jobEntity.getCreatedTime().getTime(), false));
+        }
+        if (Objects.nonNull(jobEntity.getModifiedTime())) {
+            record.put(ModifiedTimeColumn,
+                    ColumnTypeScalar.INT64.encode(jobEntity.getModifiedTime().getTime(), false));
+        }
+        if (Objects.nonNull(jobEntity.getFinishedTime())) {
+            record.put(FinishTimeColumn,
+                    ColumnTypeScalar.INT64.encode(jobEntity.getFinishedTime().getTime(), false));
+        }
+        if (Objects.nonNull(jobEntity.getDurationMs())) {
+            record.put(DurationColumn,
+                    ColumnTypeScalar.INT64.encode(jobEntity.getDurationMs(), false));
+        }
+        if (Objects.nonNull(jobEntity.getStepSpec())) {
+            record.put(StepSpecColumn, jobEntity.getStepSpec());
+        }
+        record.put(IsDeletedColumn, "0");
+        record.put(ProjectIdColumn,
+                ColumnTypeScalar.INT64.encode(jobEntity.getProjectId(), false));
+        record.put(ModelVersionIdColumn,
+                ColumnTypeScalar.INT64.encode(jobEntity.getModelVersionId(), false));
+        record.put(ModelNameColumn, jobEntity.getModelName());
+        record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
+        record.put(RuntimeVersionIdColumn,
+                ColumnTypeScalar.INT64.encode(jobEntity.getRuntimeVersionId(), false));
+        record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
+        record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
+        record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
+        record.put(OwnerIdColumn,
+                ColumnTypeScalar.INT64.encode(jobEntity.getOwnerId(), false));
+        record.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
+        record.put(JobStatusColumn, jobEntity.getJobStatus().name());
+        record.put(JobTypeColumn, jobEntity.getType().name());
+        record.put(ResultOutputPathColumn, jobEntity.getResultOutputPath());
+        record.put(ResourcePoolColumn, jobEntity.getResourcePool());
+        return record;
+    }
+
+    public Map<String, String> convertToDatastoreValue(Map<Long, String> origin) {
         if (CollectionUtils.isEmpty(origin)) {
             return Map.of();
         }
@@ -220,7 +179,7 @@ public class JobRepo {
                 origin::get));
     }
 
-    public List<JobEntity> listJobs(Long projectId, Long modelId) {
+    public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
         var andConditions = new ArrayList<>();
         andConditions.add(TableQueryFilter.builder()
                 .operator(TableQueryFilter.Operator.EQUAL)
@@ -247,7 +206,7 @@ public class JobRepo {
         return getJobEntities(project, filter);
     }
 
-    public List<JobEntity> findJobByStatusIn(List<JobStatus> jobStatuses) {
+    public List<JobFlattenEntity> findJobByStatusIn(List<JobStatus> jobStatuses) {
         var filter = TableQueryFilter.builder()
                 .operator(TableQueryFilter.Operator.AND)
                 .operands(
@@ -272,7 +231,7 @@ public class JobRepo {
                     ))
                 .build();
 
-        List<JobEntity> results = new ArrayList<>();
+        List<JobFlattenEntity> results = new ArrayList<>();
         // find all projects
         var projects = projectMapper.list(null, null, null);
         for (ProjectEntity project : projects) {
@@ -303,11 +262,11 @@ public class JobRepo {
     }
 
     @NotNull
-    private List<JobEntity> getJobEntities(ProjectEntity project, TableQueryFilter filter) {
-        var results = new ArrayList<JobEntity>();
+    private List<JobFlattenEntity> getJobEntities(ProjectEntity project, TableQueryFilter filter) {
+        var results = new ArrayList<JobFlattenEntity>();
 
         var table = this.tableName(project.getProjectName());
-        var it = new Iterator<List<JobEntity>>() {
+        var it = new Iterator<List<JobFlattenEntity>>() {
             boolean finished = false;
             final DataStoreQueryRequest request = DataStoreQueryRequest.builder()
                     .tableName(table)
@@ -322,7 +281,7 @@ public class JobRepo {
             }
 
             @Override
-            public List<JobEntity> next() {
+            public List<JobFlattenEntity> next() {
                 var records = store.query(request).getRecords();
                 if (records.isEmpty()) {
                     finished = true;
@@ -331,10 +290,10 @@ public class JobRepo {
                 // update for next request
                 request.setStart(request.getStart() + records.size());
 
-                var entities = objectMapper.convertValue(records, new TypeReference<List<JobEntity>>() {
+                var entities = objectMapper.convertValue(records, new TypeReference<List<JobFlattenEntity>>() {
                 });
                 // populate bean
-                for (JobEntity job : entities) {
+                for (JobFlattenEntity job : entities) {
                     job.setProject(project);
                     job.setModelVersion(modelMapper.findByNameAndModelId(job.getModelVersionValue(), null));
                     job.setOwner(userMapper.find(job.getOwnerId()));
@@ -349,72 +308,9 @@ public class JobRepo {
 
     }
 
-    public JobEntity findJobByUuid(String uuid) {
-        var andConditions = List.of(
-                (Object) TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(IsDeletedColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.INT32, 0)))
-                    .build(),
-                TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(KeyColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.STRING, uuid)))
-                    .build());
-        return this.findJobByCondition(andConditions);
-    }
-
-    public JobEntity findJobById(Long jobId) {
-        var andConditions = List.of(
-                (Object) TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(IsDeletedColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.INT32, 0)))
-                    .build(),
-                TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                        new TableQueryFilter.Column(LongIdColumn),
-                        new TableQueryFilter.Constant(ColumnTypeScalar.INT64, jobId)))
-                    .build());
-        return this.findJobByCondition(andConditions);
-    }
-
-    private JobEntity findJobByCondition(List<Object> conditions) {
-
-        var projects = projectMapper.list(null, null, null);
-
-        for (ProjectEntity project : projects) {
-            var records = store.query(
-                    DataStoreQueryRequest.builder()
-                        .tableName(this.tableName(project.getProjectName()))
-                        .filter(TableQueryFilter.builder()
-                            .operator(TableQueryFilter.Operator.AND)
-                            .operands(conditions)
-                            .build())
-                        .limit(2) // no need to get more
-                        .rawResult(true)
-                        .build()).getRecords();
-            if (records != null && !records.isEmpty()) {
-                if (records.size() != 1) {
-                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "find multi eval jobs");
-                }
-                var job = objectMapper.convertValue(records.get(0), JobEntity.class);
-                // populate bean
-                job.setProject(project);
-                job.setModelVersion(modelMapper.findByNameAndModelId(job.getModelVersionValue(), null));
-                job.setOwner(userMapper.find(job.getOwnerId()));
-                return job;
-            }
-        }
-        return null;
-    }
 
     public void updateJobStatus(Long jobId, JobStatus jobStatus) {
-        var job = this.findJobById(jobId);
+        var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return;
         }
@@ -423,7 +319,7 @@ public class JobRepo {
     }
 
     public void updateJobFinishedTime(Long jobId, Date finishedTime) {
-        var job = this.findJobById(jobId);
+        var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return;
         }
@@ -433,7 +329,7 @@ public class JobRepo {
     }
 
     public int updateJobComment(Long jobId, String comment) {
-        var job = this.findJobById(jobId);
+        var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return 0;
         }
@@ -442,11 +338,16 @@ public class JobRepo {
     }
 
     public int updateJobCommentByUuid(String uuid, String comment) {
-        return this.updateByUuid(this.getTableNameByUuid(uuid), uuid, CommentColumn, STRING, comment);
+        var job = mainStore.findJobByUuid(uuid);
+        if (Objects.isNull(job)) {
+            return 0;
+        }
+        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+                uuid, CommentColumn, STRING, comment);
     }
 
     public int removeJob(Long jobId) {
-        var job = this.findJobById(jobId);
+        var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return 0;
         }
@@ -455,11 +356,16 @@ public class JobRepo {
     }
 
     public int removeJobByUuid(String uuid) {
-        return this.updateByUuid(this.getTableNameByUuid(uuid), uuid, IsDeletedColumn, INT32, "1");
+        var job = mainStore.findJobByUuid(uuid);
+        if (Objects.isNull(job)) {
+            return 0;
+        }
+        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+                uuid, IsDeletedColumn, INT32, "1");
     }
 
     public int recoverJob(Long jobId) {
-        var job = this.findJobById(jobId);
+        var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return 0;
         }
@@ -468,7 +374,12 @@ public class JobRepo {
     }
 
     public int recoverJobByUuid(String uuid) {
-        return this.updateByUuid(this.getTableNameByUuid(uuid), uuid, IsDeletedColumn, INT32, "0");
+        var job = mainStore.findJobByUuid(uuid);
+        if (Objects.isNull(job)) {
+            return 0;
+        }
+        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+                uuid, IsDeletedColumn, INT32, "0");
     }
 
     private int updateByUuid(String table, String uuid, String property, String type, String value) {
@@ -486,6 +397,7 @@ public class JobRepo {
                     ModifiedTimeColumn, ColumnTypeScalar.INT64.encode(new Date().getTime(), false),
                     property, value))
         );
+        store.flush();
         return 1;
     }
 

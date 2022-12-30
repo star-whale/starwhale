@@ -17,14 +17,14 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -62,7 +62,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     static final Integer MAX_MYSQL_INSERTION_SIZE = 500;
     private final StoragePathCoordinator storagePathCoordinator;
     private final TaskMapper taskMapper;
-    private final JobRepo jobRepo;
+    private final JobDao jobDao;
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
     /**
@@ -73,11 +73,11 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
-            JobRepo jobRepo,
+            JobDao jobDao,
             StepMapper stepMapper, JobSpecParser jobSpecParser) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
-        this.jobRepo = jobRepo;
+        this.jobDao = jobDao;
         this.stepMapper = stepMapper;
         this.jobSpecParser = jobSpecParser;
     }
@@ -88,14 +88,14 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
      */
     @Override
     @Transactional
-    public List<StepEntity> split(JobEntity job) {
-        if (JobStatus.CREATED != job.getJobStatus()) {
+    public List<StepEntity> split(Job job) {
+        if (JobStatus.CREATED != job.getStatus()) {
             throw new SwValidationException(ValidSubject.JOB, "job has been split already!");
         }
         List<StepSpec> stepSpecs;
         try {
             if (!StringUtils.hasText(job.getStepSpec())) {
-                stepSpecs = jobSpecParser.parseStepFromYaml(job.getModelVersion().getEvalJobs());
+                stepSpecs = job.getModel().getStepSpecs();
             } else {
                 stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
             }
@@ -138,7 +138,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
                         .outputPath(
-                                storagePathCoordinator.allocateTaskResultPath(job.getJobUuid(), taskUuid))
+                                storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
                                         TaskRequest.builder()
                                                 .total(stepEntity.getTaskNum())
@@ -160,7 +160,8 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     MAX_MYSQL_INSERTION_SIZE);
         }
         // update job status
-        jobRepo.updateJobStatus(job.getId(), JobStatus.READY);
+        job.setStatus(JobStatus.READY);
+        jobDao.updateJobStatus(job.getId(), JobStatus.READY);
         return stepEntities;
     }
 }

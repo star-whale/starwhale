@@ -55,7 +55,7 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -78,14 +78,14 @@ public class JobBoConverterTest {
                 .modelVersionId(1L)
                 .modelVersion(ModelVersionEntity.builder().id(1L).modelId(1L).versionName("modelvname")
                         .storagePath("model_path").evalJobs("stepspec").build())
-                .datasetIdVersionMap(Map.of(1L, "name_swds", 2L, "name_swds1"))
                 .resultOutputPath("job_result")
+                .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
                 .resourcePool("rp")
                 .owner(UserEntity.builder().userName("naf").id(1232L).build())
                 .build();
         DatasetDao datasetDao = mock(DatasetDao.class);
-        when(datasetDao.listDatasetVersions(anyList())).thenReturn(List.of(
+        when(datasetDao.listDatasetVersionsOfJob(jobEntity.getId())).thenReturn(List.of(
                 DatasetVersion.builder().id(1L).storagePath("path_swds").versionMeta("version_swds")
                         .versionName("name_swds").build(),
                 DatasetVersion.builder().id(2L).storagePath("path_swds1").versionMeta("version_swds1")

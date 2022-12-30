@@ -33,6 +33,7 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import java.util.List;
@@ -47,13 +48,17 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
 
     private final DatasetMapper datasetMapper;
     private final DatasetVersionMapper datasetVersionMapper;
+
+    private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
 
     public DatasetDao(DatasetMapper datasetMapper, DatasetVersionMapper datasetVersionMapper,
+            JobDatasetVersionMapper jobDatasetVersionMapper,
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
@@ -70,7 +75,7 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return entity.getId();
     }
 
-    public DatasetVersionEntity getDatasetVersion(String versionUrl) {
+    public DatasetVersion getDatasetVersion(String versionUrl) {
         DatasetVersionEntity entity;
         if (idConvertor.isId(versionUrl)) {
             entity = datasetVersionMapper.find(idConvertor.revert(versionUrl));
@@ -81,7 +86,12 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
                     String.format("Unable to find Dataset Version %s", versionUrl));
         }
-        return entity;
+        DatasetEntity datasetEntity = datasetMapper.find(entity.getDatasetId());
+        if (null == datasetEntity) {
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                "Can not find dataset" + entity.getDatasetId());
+        }
+        return DatasetVersion.fromEntity(datasetEntity, entity);
     }
 
     public DatasetVersion getDatasetVersion(Long versionId) {
@@ -97,7 +107,8 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return DatasetVersion.fromEntity(datasetEntity, versionEntity);
     }
 
-    public List<DatasetVersion> listDatasetVersions(List<Long> versionIds) {
+    public List<DatasetVersion> listDatasetVersionsOfJob(Long jobId) {
+        List<Long> versionIds = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(jobId);
         return versionIds.stream().map(this::getDatasetVersion).collect(Collectors.toList());
     }
 

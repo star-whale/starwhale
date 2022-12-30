@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
@@ -52,9 +51,9 @@ public class JobUpdateHelperTest {
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
         JobStatusMachine jobStatusMachine = new JobStatusMachine();
-        JobRepo jobRepo = mock(JobRepo.class);
+        JobDao jobDao = mock(JobDao.class);
         SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobRepo,
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
         mockJob.getSteps().parallelStream().forEach(step -> {
@@ -67,9 +66,9 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobRepo).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
-        verify(jobRepo).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                 argThat(d -> d.getTime() > 0));
     }
 
@@ -79,9 +78,9 @@ public class JobUpdateHelperTest {
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
         JobStatusMachine jobStatusMachine = new JobStatusMachine();
-        JobRepo jobRepo = mock(JobRepo.class);
+        JobDao jobDao = mock(JobDao.class);
         SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobRepo,
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
@@ -91,9 +90,9 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobRepo, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
-        verify(jobRepo).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                 argThat(d -> d.getTime() > 0));
         Thread.sleep(100); // wait for async status update
         Assertions.assertEquals(TaskStatus.CANCELED, luckTask.getStatus());
@@ -107,9 +106,9 @@ public class JobUpdateHelperTest {
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
         JobStatusMachine jobStatusMachine = new JobStatusMachine();
-        JobRepo jobRepo = mock(JobRepo.class);
+        JobDao jobDao = mock(JobDao.class);
         SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobRepo,
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
@@ -118,8 +117,8 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobRepo).updateJobStatus(mockJob.getId(), desiredStatus);
-        verify(jobRepo).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                 argThat(d -> d.getTime() > 0));
 
     }
@@ -130,10 +129,10 @@ public class JobUpdateHelperTest {
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
         JobStatusMachine jobStatusMachine = new JobStatusMachine();
-        JobRepo jobRepo = mock(JobRepo.class);
+        JobDao jobDao = mock(JobDao.class);
         SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
 
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobRepo,
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
@@ -142,6 +141,6 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(JobStatus.RUNNING, mockJob.getStatus());
-        verify(jobRepo, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
     }
 }

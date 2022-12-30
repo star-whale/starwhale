@@ -33,7 +33,7 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
-import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -63,7 +63,7 @@ public class TrashServiceTest {
     private ModelDao modelDao;
     private DatasetDao datasetDao;
     private RuntimeDao runtimeDao;
-    private JobManager jobManager;
+    private JobDao jobDao;
 
     @BeforeEach
     public void setUp() {
@@ -73,7 +73,7 @@ public class TrashServiceTest {
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
         runtimeDao = mock(RuntimeDao.class);
-        jobManager = mock(JobManager.class);
+        jobDao = mock(JobDao.class);
 
         service = new TrashService(trashMapper,
                 userMapper,
@@ -81,7 +81,7 @@ public class TrashServiceTest {
                 modelDao,
                 datasetDao,
                 runtimeDao,
-                jobManager,
+            jobDao,
                 new IdConverter());
     }
 
@@ -142,7 +142,7 @@ public class TrashServiceTest {
                 .willReturn(DatasetEntity.builder().id(2L).datasetName("dataset1").modifiedTime(new Date()).build());
         given(runtimeDao.findById(same(1L)))
                 .willReturn(RuntimeEntity.builder().id(3L).runtimeName("runtime1").modifiedTime(new Date()).build());
-        given(jobManager.findById(same(1L)))
+        given(jobDao.findById(same(1L)))
                 .willReturn(JobEntity.builder().id(4L).jobUuid("job1").modifiedTime(new Date()).build());
         given(trashMapper.insert(any(TrashPo.class)))
                 .willAnswer(invocation -> {
@@ -241,18 +241,18 @@ public class TrashServiceTest {
                 .willReturn(ModelEntity.builder().id(1L).modelName("model1").modifiedTime(new Date()).build());
         given(datasetDao.findDeletedBundleById(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).datasetName("dataset1").modifiedTime(new Date()).build());
-        given(jobManager.findDeletedBundleById(same(1L)))
+        given(jobDao.findDeletedBundleById(same(1L)))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
         given(runtimeDao.findByNameForUpdate(same("runtime1"), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).runtimeName("runtime1").modifiedTime(new Date()).build());
-        given(jobManager.findByNameForUpdate(same("job1"), any()))
+        given(jobDao.findByNameForUpdate(same("job1"), any()))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
 
         given(modelDao.recover(any())).willReturn(true);
         given(datasetDao.recover(any())).willReturn(true);
         given(runtimeDao.recover(any())).willReturn(true);
-        given(jobManager.recover(any())).willReturn(true);
+        given(jobDao.recover(any())).willReturn(true);
 
         var res = service.recover("1", 1L);
         assertThat(res, is(true));

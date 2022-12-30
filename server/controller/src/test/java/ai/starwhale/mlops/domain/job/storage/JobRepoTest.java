@@ -35,7 +35,9 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -43,7 +45,6 @@ import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
-import ai.starwhale.mlops.exception.SwProcessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
 import java.util.List;
@@ -65,13 +66,16 @@ public class JobRepoTest {
 
     private UserMapper userMapper;
 
+    private JobMapper jobMapper;
+
     @BeforeEach
     public void initData() {
         this.projectMapper = mock(ProjectMapper.class);
         this.modelVersionMapper = mock(ModelVersionMapper.class);
         this.userMapper = mock(UserMapper.class);
         this.dataStore = mock(DataStore.class);
-        jobRepo = new JobRepo(dataStore, projectMapper, modelVersionMapper, userMapper, new ObjectMapper());
+        this.jobMapper = mock(JobMapper.class);
+        jobRepo = new JobRepo(dataStore, projectMapper, modelVersionMapper, userMapper, jobMapper, new ObjectMapper());
     }
 
     @Test
@@ -79,7 +83,7 @@ public class JobRepoTest {
         Mockito.when(projectMapper.find(1L))
                 .thenReturn(ProjectEntity.builder().projectName("test-project").build());
 
-        JobEntity jobEntity = JobEntity.builder()
+        JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .id(1L)
                 .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
@@ -87,6 +91,7 @@ public class JobRepoTest {
                 .runtimeVersionValue("1a2s3d4f5g6h")
                 .runtimeName("test-rt")
                 .projectId(1L)
+                .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .modelVersionId(1L)
                 .modelVersionValue("1z2x3c4v5b6n")
                 .modelName("test-model")
@@ -106,7 +111,7 @@ public class JobRepoTest {
                 .update(eq("project/test-project/eval/summary"), any(), anyList());
 
         assertThat("convert",
-                jobRepo.convert(jobEntity.getDatasetIdVersionMap()),
+                jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
     }
@@ -141,57 +146,10 @@ public class JobRepoTest {
                 ), null))
                 .thenReturn(new RecordList(Map.of(), List.of(), null));
 
-        List<JobEntity> jobEntities = jobRepo.listJobs(1L, null);
+        List<JobFlattenEntity> jobEntities = jobRepo.listJobs(1L, null);
         Assertions.assertEquals(2, jobEntities.size());
         Mockito.verify(dataStore, times(2)).query(any());
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
-    }
-
-    @Test
-    public void testFindById() {
-        Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().projectName("test-project").build()));
-        // mock find multi rows, so there would have an exception
-        Mockito.when(dataStore.query(any()))
-                .thenReturn(new RecordList(Map.of(), List.of(
-                    Map.of(
-                        KeyColumn, "1q2w3e4r5t6y",
-                        LongIdColumn, "1",
-                        ProjectIdColumn, "0000000000000001",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000001",
-                        JobStatusColumn, "RUNNING"
-                    ),
-                    Map.of(
-                        KeyColumn, "1a2s3d4f5g6h",
-                        LongIdColumn, "2",
-                        ProjectIdColumn, "0000000000000002",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000002",
-                        JobStatusColumn, "RUNNING"
-                    )
-                ), null));
-        Assertions.assertThrows(SwProcessException.class, () -> jobRepo.findJobById(123456L));
-
-        // normal test
-        Mockito.when(dataStore.query(any()))
-                .thenReturn(new RecordList(Map.of(), List.of(
-                    Map.of(
-                        KeyColumn, "1q2w3e4r5t6y",
-                        LongIdColumn, "1",
-                        ProjectIdColumn, "0000000000000001",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000001",
-                        JobStatusColumn, "SUCCESS"
-                    )
-                ), null));
-        var job = jobRepo.findJobById(123456L);
-        Assertions.assertNotNull(job);
-        verify(modelVersionMapper, times(1)).findByNameAndModelId(any(), any());
-        Assertions.assertEquals(job.getJobStatus(), JobStatus.SUCCESS);
     }
 
     @Test
@@ -224,7 +182,7 @@ public class JobRepoTest {
                 ), null))
                 .thenReturn(new RecordList(Map.of(), List.of(), null));;
 
-        List<JobEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));
+        List<JobFlattenEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));
         Assertions.assertEquals(2, jobEntities.size());
         Mockito.verify(dataStore, times(2)).query(any());
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
@@ -232,14 +190,20 @@ public class JobRepoTest {
 
     @Test
     public void testUpdateStatus() {
+        var jobId = 123456L;
         Mockito.when(projectMapper.list(null, null, null))
                 .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
         Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
                 .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
-        Mockito.when(dataStore.query(any()))
-                .thenReturn(new RecordList(Map.of(), List.of(Map.of(KeyColumn, "1q2w3e4r5t6y")), null));
+        Mockito.when(jobMapper.findJobById(jobId)).thenReturn(JobEntity.builder()
+                .id(jobId)
+                .jobUuid("1q2w3e4r5t6y")
+                .project(ProjectEntity.builder().projectName("test-project").build())
+                .build()
+        );
 
-        jobRepo.updateJobStatus(123456L, JobStatus.SUCCESS);
-        verify(dataStore, times(1)).update(eq("project/test-project/eval/summary"), any(), anyList());
+        jobRepo.updateJobStatus(jobId, JobStatus.SUCCESS);
+        verify(dataStore, times(1))
+                .update(eq("project/test-project/eval/summary"), any(), anyList());
     }
 }

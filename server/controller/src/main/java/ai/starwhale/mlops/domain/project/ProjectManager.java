@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -41,8 +40,6 @@ public class ProjectManager implements ProjectAccessor {
 
     private final ProjectMapper projectMapper;
 
-    private final JobRepo jobRepo;
-
     private final IdConverter idConvertor;
 
     private static final Map<String, String> SORT_MAP = Map.of(
@@ -51,18 +48,13 @@ public class ProjectManager implements ProjectAccessor {
             "time", "project_created_time",
             "createdTime", "project_created_time");
 
-    public ProjectManager(ProjectMapper projectMapper, JobRepo jobRepo, IdConverter idConvertor) {
+    public ProjectManager(ProjectMapper projectMapper, IdConverter idConvertor) {
         this.projectMapper = projectMapper;
-        this.jobRepo = jobRepo;
         this.idConvertor = idConvertor;
     }
 
     public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
         return projectMapper.list(projectName, userId, orderParams.getOrderSql(SORT_MAP));
-    }
-
-    public List<ProjectEntity> listAllProjects() {
-        return projectMapper.list(null, null, null);
     }
 
     public ProjectEntity findById(Long projectId) {
@@ -99,7 +91,7 @@ public class ProjectManager implements ProjectAccessor {
         List<ObjectCountEntity> runtimeCounts = projectMapper.countRuntime(ids);
         setCounts(runtimeCounts, map, ProjectObjectCounts::setCountRuntime);
 
-        List<ObjectCountEntity> jobCounts = jobRepo.countJob(projectIds);
+        List<ObjectCountEntity> jobCounts = projectMapper.countJob(ids);
         setCounts(jobCounts, map, ProjectObjectCounts::setCountJob);
 
         List<ObjectCountEntity> memberCounts = projectMapper.countMember(ids);

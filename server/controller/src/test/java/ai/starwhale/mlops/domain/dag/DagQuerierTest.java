@@ -22,9 +22,8 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
-import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -40,9 +39,9 @@ public class DagQuerierTest {
     @Test
     public void testDagQuerier() {
         Job mockedJob = new JobMockHolder().mockJob();
-        JobBoConverter jobBoConverter = mock(JobBoConverter.class);
-        when(jobBoConverter.fromEntity(any())).thenReturn(mockedJob);
-        DagQuerier dagQuerier = new DagQuerier(mock(JobManager.class), new StepHelper(), jobBoConverter);
+        JobDao jobDao = mock(JobDao.class);
+        when(jobDao.findJob(any())).thenReturn(mockedJob);
+        DagQuerier dagQuerier = new DagQuerier(jobDao, new StepHelper());
         Graph graph = dagQuerier.dagOfJob("1");
         Assertions.assertEquals(3, graph.getGroupingNodes().keySet().size());
         Assertions.assertEquals(4, graph.getGroupingNodes().get("Task").size());

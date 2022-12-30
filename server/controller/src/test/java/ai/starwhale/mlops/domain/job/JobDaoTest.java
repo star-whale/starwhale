@@ -27,18 +27,22 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class JobManagerTest {
+public class JobDaoTest {
 
-    private JobManager manager;
+    private JobDao jobDao;
 
     @BeforeEach
     public void setUp() {
-        JobRepo jobRepo = mock(JobRepo.class);
+        JobMapper jobMapper = mock(JobMapper.class);
         JobEntity job1 = JobEntity.builder()
                 .id(1L)
                 .jobUuid("job-uuid-1")
@@ -47,30 +51,39 @@ public class JobManagerTest {
                 .id(2L)
                 .jobUuid("job-uuid-2")
                 .build();
-        given(jobRepo.findJobById(same(1L)))
+        given(jobMapper.findJobById(same(1L)))
                 .willReturn(job1);
-        given(jobRepo.findJobByUuid(same("job-uuid-2")))
+        given(jobMapper.findJobByUuid(same("job-uuid-2")))
                 .willReturn(job2);
-        manager = new JobManager(jobRepo, new IdConverter());
+
+        JobDatasetVersionMapper datasetVersionMapper = mock(JobDatasetVersionMapper.class);
+        JobBoConverter jobBoConverter = mock(JobBoConverter.class);
+
+        given(jobBoConverter.fromEntity(job1))
+                .willReturn(Job.builder().id(1L).uuid("job-uuid-1").build());
+        given(jobBoConverter.fromEntity(job2))
+                .willReturn(Job.builder().id(2L).uuid("job-uuid-2").build());
+
+        jobDao = new JobDao(mock(JobRepo.class), jobMapper, datasetVersionMapper, new IdConverter(), jobBoConverter);
     }
 
     @Test
     public void testFindJob() {
-        var res = manager.findJob("1");
+        var res = jobDao.findJob("1");
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("id", is(1L)),
-                hasProperty("jobUuid", is("job-uuid-1"))
+                hasProperty("uuid", is("job-uuid-1"))
         ));
 
-        res = manager.findJob("job-uuid-2");
+        res = jobDao.findJob("job-uuid-2");
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("id", is(2L)),
-                hasProperty("jobUuid", is("job-uuid-2"))
+                hasProperty("uuid", is("job-uuid-2"))
         ));
 
-        res = manager.findJob("job-uuid-x");
+        res = jobDao.findJob("job-uuid-x");
         assertThat(res, nullValue());
     }
 }
