@@ -6,7 +6,7 @@ import click
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
-from starwhale.utils.config import load_swcli_config
+from starwhale.utils.config import config_cmd, load_swcli_config
 from starwhale.core.eval.cli import eval_job_cmd
 from starwhale.core.model.cli import model_cmd
 from starwhale.cli.board.board import open_board
@@ -46,6 +46,7 @@ def create_sw_cli() -> click.core.Group:
     cli.add_command(dataset_cmd, aliases=["ds"])  # type: ignore
     cli.add_command(open_board)
     cli.add_command(completion_cmd)
+    cli.add_command(config_cmd)
     add_mngt_command(cli)
 
     return cli

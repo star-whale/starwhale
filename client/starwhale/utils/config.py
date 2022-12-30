@@ -1,9 +1,13 @@
 import os
 import typing as t
 import getpass
+import tempfile
+import subprocess
+from sys import platform
 from pathlib import Path
 
 import yaml
+import click
 
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -19,8 +23,9 @@ from starwhale.consts import (
     OBJECT_STORE_DIRNAME,
     DEFAULT_SW_LOCAL_STORAGE,
 )
+from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
-from starwhale.utils.error import NotFoundError
+from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
 
 from . import console, now_str, fmt_http_server
 from .fs import ensure_dir, ensure_file
@@ -148,7 +153,6 @@ class SWCliConfigMixed:
 
     @property
     def link_auths(self) -> t.Any:
-        # TODO: add config cmd for link_auths
         return self._config.get("link_auths")
 
     def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
@@ -253,3 +257,42 @@ class SWCliConfigMixed:
         )
 
         update_swcli_config(**self._config)
+
+
+@click.group(
+    "config",
+    cls=AliasedGroup,
+    help="Configuration management, edit is supported now",
+)
+def config_cmd() -> None:
+    pass
+
+
+@config_cmd.command("edit", aliases=["e"], help="edit the configuration of swlci")
+def __edit() -> None:
+    _edit()
+
+
+def _edit() -> None:
+    _editor = ""
+    if platform == "linux" or platform == "linux2":
+        _editor = os.environ.get(SWEnv.sw_editor, "")
+        if not _editor:
+            _editor = os.environ.get("EDITOR", "vi")
+    elif platform == "darwin" or platform == "win32":
+        _editor = os.environ.get(SWEnv.sw_editor, "")
+        if not _editor:
+            raise NoSupportError(f"No {SWEnv.sw_editor} is configured")
+    else:
+        raise NoSupportError(f"Current platform is not supported by: {platform}")
+    path_config = get_swcli_config_path()
+    fd, fname = tempfile.mkstemp()
+    with open(path_config) as config_f, os.fdopen(fd, "w") as tmpf:
+        for line in config_f:
+            tmpf.write(line)
+        tmpf.close()
+        cmd = _editor + " " + fname
+        _c = subprocess.call(cmd, shell=True)
+        if _c:
+            raise ExistedError("editing file with unexpected failure")
+        os.rename(fname, path_config)
