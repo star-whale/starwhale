@@ -66,7 +66,7 @@ version: '2.0'
 swcli config edit
 ```
 
-## 3. Standalone Instance的文件存储结构
+## 2. Standalone Instance的文件存储结构
 
 ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户数据，包括Project、Runtime、Model、Dataset、Evaluation等用户直接感知的数据，也包括ObjectStore、DataStore等Starwhale后台实现的存储。具体说明如下：
 
@@ -95,7 +95,7 @@ ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户�
 |  |   |   +-- runtime  --> swrt解压后的目录，若进行runtime restore操作，生成的venv或conda隔离环境，也会存放在该目录中
 ```
 
-## 2. link_auths
+## 3. link_auths
 
 有时候你可能需要用到`starwhale.Link`来存储一些信息。理论上，`Link`里面的URI可以是任意的合法URI（星鲸目前只支持S3协议族和HTTP），比如`s3://10.131.0.1:9000/users/path`。然而，有些`Link`是需要鉴权才能访问的。`link_auths`就是用来存放这些鉴权信息的。
 
