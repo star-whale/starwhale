@@ -76,10 +76,29 @@ class BaseBundle(metaclass=ABCMeta):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        _filter: t.Dict[str, t.Any] = {},
+        filters: t.Union[t.Dict[str, t.Any], t.List[str]] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _cls = cls._get_cls(project_uri)
+        _filter = cls.get_filter_dict(filters, cls.get_filter_fields())
         return _cls.list(project_uri, page, size, _filter)  # type: ignore
+
+    @classmethod
+    def get_filter_dict(
+        cls, filters: t.Union[t.Dict[str, t.Any], t.List[str]], fields: t.List[str] = []
+    ) -> t.Dict[str, t.Any]:
+        if isinstance(filters, t.Dict):
+            return {k: v for k, v in filters.items() if k in fields}
+
+        _filter_dict = {}
+        for _f in filters:
+            _item = _f.split("=", 1)
+            if _item[0] in fields:
+                _filter_dict[_item[0]] = _item[1] if len(_item) > 1 else True
+        return _filter_dict
+
+    @classmethod
+    def get_filter_fields(cls) -> t.List[str]:
+        return ["name", "owner", "latest"]
 
     @abstractclassmethod
     def _get_cls(cls, uri: URI) -> t.Any:

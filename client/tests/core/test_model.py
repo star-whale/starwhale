@@ -409,16 +409,17 @@ class CloudModelTest(TestCase):
         runner = CliRunner()
         result = runner.invoke(
             list_cli,
-            ["--name", "mask_rcnn", "--owner", "sw", "--latest"],
+            ["--filter", "name=mn", "--filter", "owner=sw", "--filter", "latest"],
             obj=mock_obj,
         )
 
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] == "mask_rcnn"
-        assert call_args[5]["owner"] == "sw"
-        assert call_args[5]["latest"]
+        assert len(call_args[5]) == 3
+        assert "name=mn" in call_args[5]
+        assert "owner=sw" in call_args[5]
+        assert "latest" in call_args[5]
 
         mock_obj = MagicMock()
         runner = CliRunner()
@@ -431,6 +432,4 @@ class CloudModelTest(TestCase):
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] is None
-        assert call_args[5]["owner"] is None
-        assert not call_args[5]["latest"]
+        assert len(call_args[5]) == 0

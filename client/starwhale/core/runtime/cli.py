@@ -265,7 +265,7 @@ def _restore(target: str) -> None:
     RuntimeTermView.restore(target)
 
 
-@runtime_cmd.command("list", aliases=["ls"], help="List runtime")
+@runtime_cmd.command("list", aliases=["ls"])
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
@@ -275,9 +275,13 @@ def _restore(target: str) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
-@click.option("-n", "--name", help="Prefix of runtime name")
-@click.option("-o", "--owner", help="[Cloud]Name or id of the runtime owner")
-@click.option("-l", "--latest", is_flag=True, help="Only show the latest version")
+@click.option(
+    "filters",
+    "-fl",
+    "--filter",
+    multiple=True,
+    help="Filter output based on conditions provided.",
+)
 @click.pass_obj
 def _list(
     view: t.Type[RuntimeTermView],
@@ -286,12 +290,22 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
-    name: str,
-    owner: str,
-    latest: bool,
+    filters: list,
 ) -> None:
-    _filter = {"name": name, "owner": owner, "latest": latest}
-    view.list(project, fullname, show_removed, page, size, _filter)
+    """
+    List Runtime
+
+    The filtering flag (-fl or --filter) format is a key=value pair.
+    If there is more than one filter, then pass multiple flags.\n
+    (e.g. --filter name=pytorch --filter latest)
+
+    \b
+    The currently supported filters are:
+      name\tThe prefix of the runtime name
+      owner\tThe name or id of the runtime owner
+      latest\t(flag) Only show the latest version
+    """
+    view.list(project, fullname, show_removed, page, size, filters)
 
 
 @runtime_cmd.command(

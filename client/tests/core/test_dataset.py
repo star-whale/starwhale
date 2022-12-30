@@ -533,16 +533,24 @@ class CloudDatasetTest(TestCase):
         runner = CliRunner()
         result = runner.invoke(
             list_cli,
-            ["--name", "mnist", "--owner", "starwhale", "--latest"],
+            [
+                "--filter",
+                "name=mnist",
+                "--filter",
+                "owner=starwhale",
+                "--filter",
+                "latest",
+            ],
             obj=mock_obj,
         )
 
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] == "mnist"
-        assert call_args[5]["owner"] == "starwhale"
-        assert call_args[5]["latest"]
+        assert len(call_args[5]) == 3
+        assert "name=mnist" in call_args[5]
+        assert "owner=starwhale" in call_args[5]
+        assert "latest" in call_args[5]
 
         mock_obj = MagicMock()
         runner = CliRunner()
@@ -555,6 +563,4 @@ class CloudDatasetTest(TestCase):
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] is None
-        assert call_args[5]["owner"] is None
-        assert not call_args[5]["latest"]
+        assert len(call_args[5]) == 0

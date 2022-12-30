@@ -1990,16 +1990,24 @@ class CloudRuntimeTest(TestCase):
         runner = CliRunner()
         result = runner.invoke(
             runtime_list_cli,
-            ["--name", "pytorch", "--owner", "test", "--latest"],
+            [
+                "--filter",
+                "name=pytorch",
+                "--filter",
+                "owner=test",
+                "--filter",
+                "latest",
+            ],
             obj=mock_obj,
         )
 
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] == "pytorch"
-        assert call_args[5]["owner"] == "test"
-        assert call_args[5]["latest"]
+        assert len(call_args[5]) == 3
+        assert "name=pytorch" in call_args[5]
+        assert "owner=test" in call_args[5]
+        assert "latest" in call_args[5]
 
         mock_obj = MagicMock()
         runner = CliRunner()
@@ -2012,6 +2020,4 @@ class CloudRuntimeTest(TestCase):
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
-        assert call_args[5]["name"] is None
-        assert call_args[5]["owner"] is None
-        assert not call_args[5]["latest"]
+        assert len(call_args[5]) == 0

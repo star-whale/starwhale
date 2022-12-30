@@ -120,7 +120,7 @@ def _diff(
     view(base_uri).diff(URI(compare_uri, expected_type=URIType.MODEL), show_details)
 
 
-@model_cmd.command("list", aliases=["ls"], help="List Model")
+@model_cmd.command("list", aliases=["ls"])
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of model version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed model")
@@ -130,9 +130,13 @@ def _diff(
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for model list"
 )
-@click.option("-n", "--name", help="Prefix of model name")
-@click.option("-o", "--owner", help="[Cloud]Name or id of the model owner")
-@click.option("-l", "--latest", is_flag=True, help="Only show the latest version")
+@click.option(
+    "filters",
+    "-fl",
+    "--filter",
+    multiple=True,
+    help="Filter output based on conditions provided.",
+)
 @click.pass_obj
 def _list(
     view: t.Type[ModelTermView],
@@ -141,12 +145,22 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
-    name: str,
-    owner: str,
-    latest: bool,
+    filters: list,
 ) -> None:
-    _filter = {"name": name, "owner": owner, "latest": latest}
-    view.list(project, fullname, show_removed, page, size, _filter)
+    """
+    List Model
+
+    The filtering flag (-fl or --filter) format is a key=value pair.
+    If there is more than one filter, then pass multiple flags.\n
+    (e.g. --filter name=mnist --filter latest)
+
+    \b
+    The currently supported filters are:
+      name\tThe prefix of the model name
+      owner\tThe name or id of the model owner
+      latest\t(flag) Only show the latest version
+    """
+    view.list(project, fullname, show_removed, page, size, filters)
 
 
 @model_cmd.command("history", help="Show model history")

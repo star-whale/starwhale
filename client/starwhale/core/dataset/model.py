@@ -257,7 +257,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        _filter: t.Dict[str, t.Any] = {},
+        filters: t.Union[t.Dict[str, t.Any], t.List[str]] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
 
@@ -522,11 +522,11 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        _filter: t.Dict[str, t.Any] = {},
+        filter_dict: t.Dict[str, t.Any] = {},
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(
-            project_uri, URIType.DATASET, page, size, _filter
+            project_uri, URIType.DATASET, page, size, filter_dict
         )
 
     def summary(self) -> t.Optional[DatasetSummary]:
