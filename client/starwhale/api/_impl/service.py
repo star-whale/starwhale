@@ -47,6 +47,9 @@ class Service:
         self.apis[api_.uri] = api_
 
     def get_spec(self) -> t.Any:
+        # fast path
+        if not self.apis:
+            return {}
         server = self._gen_gradio_server()
         return server.get_config_file()
 
