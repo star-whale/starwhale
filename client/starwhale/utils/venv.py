@@ -787,9 +787,7 @@ def install_starwhale(
             req=req, prefix_path=prefix_path, use_pip_install=True, configs=configs
         )
     elif mode == PythonRunEnv.VENV:
-        venv_install_req(
-            venvdir=prefix_path, req=req, enable_pre=True, pip_config=configs.get("pip")
-        )
+        venv_install_req(venvdir=prefix_path, req=req, pip_config=configs.get("pip"))
     else:
         raise NoSupportError(f"mode({mode}) install {SW_PYPI_PKG_NAME}")
 

@@ -1008,7 +1008,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [f"{workdir}/wheels/dummy.whl"],
             ["c"],
             ["d"],
-            ["--pre", "starwhale"],
+            ["starwhale"],
         ]
 
         assert m_venv.call_args[0][0] == [
@@ -1030,7 +1030,6 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--pre",
             "starwhale",
         ]
         assert (Path(workdir) / "export/venv/bin/prepare.sh").exists()
