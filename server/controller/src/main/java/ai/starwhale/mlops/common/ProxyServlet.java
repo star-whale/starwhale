@@ -126,7 +126,7 @@ public class ProxyServlet extends HttpServlet {
     public String getTarget(String uri) {
         uri = StringUtils.trimLeadingCharacter(uri, '/');
         var parts = uri.split("/", 3);
-        if (parts.length < 3) {
+        if (parts.length < 2) {
             throw new IllegalArgumentException("can not parse uri " + uri);
         }
         if (!parts[0].equals(MODEL_SERVICE_PREFIX)) {
@@ -140,6 +140,10 @@ public class ProxyServlet extends HttpServlet {
         }
 
         var svc = ModelServingService.getServiceName(id);
-        return String.format("http://%s/%s", svc, parts[2]);
+        var handler = "";
+        if (parts.length == 3) {
+            handler = parts[2];
+        }
+        return String.format("http://%s/%s", svc, handler);
     }
 }

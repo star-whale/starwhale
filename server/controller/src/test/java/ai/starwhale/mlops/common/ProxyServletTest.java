@@ -60,8 +60,9 @@ public class ProxyServletTest {
         var rt = proxyServlet.getTarget(uri);
         Assertions.assertEquals("http://model-serving-1/ppl", rt);
 
-        var tooShort = MODEL_SERVICE_PREFIX + "/1";
-        Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(tooShort));
+        var shortUri = MODEL_SERVICE_PREFIX + "/1";
+        rt = proxyServlet.getTarget(shortUri);
+        Assertions.assertEquals("http://model-serving-1/", rt);
 
         var wrongStartsWith = "/foo/1/ppl";
         Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(wrongStartsWith));

@@ -34,6 +34,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -224,14 +225,14 @@ public class JobControllerTest {
 
     @Test
     public void testCreateModelServing() {
-        given(modelServingService.create("foo", "bar", "baz", "default", 7L)).willReturn(8L);
+        var vo = ModelServingVo.builder().id("8").baseUri("/gateway/model-serving/8").build();
+        given(modelServingService.create("foo", "bar", "baz", "default")).willReturn(vo);
         var req = new ModelServingRequest();
         req.setModelVersionUrl("bar");
         req.setRuntimeVersionUrl("baz");
         req.setResourcePool("default");
-        req.setTtlInSeconds(7L);
         var resp = controller.createModelServing("foo", req);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(resp.getBody().getData(), is("8"));
+        assertThat(resp.getBody().getData(), is(vo));
     }
 }

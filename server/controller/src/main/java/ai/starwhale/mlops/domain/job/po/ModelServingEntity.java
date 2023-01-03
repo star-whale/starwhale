@@ -35,6 +35,7 @@ public class ModelServingEntity extends BaseEntity {
     private Long projectId;
     private Long modelVersionId;
     private Long ownerId;
+    @Deprecated
     private Date finishedTime;
     private JobStatus jobStatus;
     private Long runtimeVersionId;

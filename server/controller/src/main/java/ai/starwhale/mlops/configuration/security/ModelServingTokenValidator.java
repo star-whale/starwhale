@@ -58,9 +58,6 @@ public class ModelServingTokenValidator implements JwtClaimValidator {
         if (m == null) {
             throw new SwValidationException(ValidSubject.USER, "can not find model serving by id");
         }
-        if (m.getFinishedTime() != null && m.getFinishedTime().before(new Date())) {
-            throw new SwValidationException(ValidSubject.USER, "token is expired");
-        }
         if (m.getIsDeleted() != null && m.getIsDeleted() != 0) {
             throw new SwValidationException(ValidSubject.USER, "model serving task is deleted");
         }

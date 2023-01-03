@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.DockerImage;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
@@ -43,7 +45,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +69,7 @@ public class ModelServingService {
     private final String instanceUri;
     private final RunTimeProperties runTimeProperties;
     private final ModelServingTokenValidator modelServingTokenValidator;
+    private final IdConverter idConverter;
 
 
     public static final String MODEL_SERVICE_PREFIX = "model-serving";
@@ -87,7 +89,8 @@ public class ModelServingService {
             SystemSettingService systemSettingService,
             RunTimeProperties runTimeProperties,
             @Value("${sw.instance-uri}") String instanceUri,
-            ModelServingTokenValidator modelServingTokenValidator
+            ModelServingTokenValidator modelServingTokenValidator,
+            IdConverter idConverter
     ) {
         this.modelServingMapper = modelServingMapper;
         this.runtimeDao = runtimeDao;
@@ -104,14 +107,14 @@ public class ModelServingService {
         this.runTimeProperties = runTimeProperties;
         this.instanceUri = instanceUri;
         this.modelServingTokenValidator = modelServingTokenValidator;
+        this.idConverter = idConverter;
     }
 
-    public Long create(
+    public ModelServingVo create(
             String projectUrl,
             String modelVersionUrl,
             String runtimeVersionUrl,
-            String resourcePool,
-            long ttlInSeconds
+            String resourcePool
     ) {
         User user = userService.currentUserDetail();
         Long projectId = projectManager.getProjectId(projectUrl);
@@ -127,7 +130,6 @@ public class ModelServingService {
                 .runtimeVersionId(runtimeVersionId)
                 .projectId(projectId)
                 .modelVersionId(modelVersionId)
-                .finishedTime(new Date(System.currentTimeMillis() + ttlInSeconds * 1000))
                 .jobStatus(JobStatus.CREATED)
                 .resourcePool(resourcePool)
                 .build();
@@ -142,7 +144,9 @@ public class ModelServingService {
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
         }
 
-        return entity.getId();
+        var id = idConverter.convert(entity.getId());
+        var uri = getServiceBaseUri(entity.getId());
+        return ModelServingVo.builder().id(id).baseUri(uri).build();
     }
 
     private void deploy(RuntimeVersionEntity runtime, ModelVersionEntity model, String project, User owner, long id)
@@ -171,7 +175,7 @@ public class ModelServingService {
                 "SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl(),
                 "SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl(),
                 "SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost(),
-                "SW_MODEL_SERVING_BASE_URI", String.format("/gateway/%s/%d", MODEL_SERVICE_PREFIX, id),
+                "SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id),
                 // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
                 "SW_PRODUCTION", "1"
         );
@@ -199,5 +203,9 @@ public class ModelServingService {
 
     public static String getServiceName(long id) {
         return String.format("%s-%d", MODEL_SERVICE_PREFIX, id);
+    }
+
+    public static String getServiceBaseUri(long id) {
+        return String.format("/gateway/%s/%d", MODEL_SERVICE_PREFIX, id);
     }
 }
