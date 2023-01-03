@@ -21,7 +21,6 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale import UserRawBuildExecutor
 from starwhale.utils import config
 from starwhale.consts import (
     HTTPMethod,
@@ -209,16 +208,6 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
                 "dict_link": {"key": _local_link},
             }
             offset += image_size
-
-
-class UserRawMNIST(UserRawBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        return iter_mnist_user_raw_item()
-
-
-class UserRawWithIDMNIST(UserRawBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
-        return iter_mnist_user_raw_item_with_id()
 
 
 class TestDatasetCopy(BaseTestCase):
@@ -527,38 +516,6 @@ class TestDatasetBuildExecutor(BaseTestCase):
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
         self.data_file_sign = blake2b_file(_mnist_data_path)
         self.label_file_sign = blake2b_file(_mnist_label_path)
-
-    def test_user_raw_with_id_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_user_raw_item_with_id)
-        assert issubclass(_cls, UserRawBuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="332211",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 10
-        assert summary.include_user_raw
-
-    def test_user_raw_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_user_raw_item)
-        assert issubclass(_cls, UserRawBuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="332211",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 10
-        assert summary.include_user_raw
 
     def test_swds_bin_with_id_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_swds_bin_item_with_id)
@@ -1756,43 +1713,6 @@ class TestRowWriter(BaseTestCase):
         assert len(files) == 1
         assert files[0].is_symlink()
 
-    def test_make_user_raw(self) -> None:
-        user_dir = Path(self.local_storage) / ".user"
-        raw_data_file = user_dir / "data_file"
-        raw_content = "123"
-        ensure_dir(user_dir)
-        ensure_file(raw_data_file, content=raw_content)
-
-        workdir = user_dir / "workdir"
-        assert not workdir.exists()
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
-        assert rw._builder is None
-        size = 100
-        for i in range(0, size):
-            rw.update(
-                DataRow(
-                    index=i,
-                    data=Link(uri=raw_data_file, with_local_fs_data=True),
-                    content={"label": i, "label2": 2},
-                )
-            )
-        rw.close()
-
-        assert isinstance(rw._builder, UserRawBuildExecutor)
-        assert rw._queue.qsize() == 0
-        assert rw.summary.rows == size
-        assert not rw.summary.include_link
-        assert rw.summary.include_user_raw
-        assert rw.summary.annotations == ["label", "label2"]
-
-        data_dir = workdir / "data"
-        assert data_dir.exists()
-        files = list(data_dir.iterdir())
-
-        assert len(files) == 1
-        assert files[0].is_symlink()
-        assert files[0].read_text() == raw_content
-
     def test_make_link(self) -> None:
         user_dir = Path(self.local_storage) / ".user"
         raw_data_file = user_dir / "data_file"
@@ -1815,7 +1735,6 @@ class TestRowWriter(BaseTestCase):
             )
         rw.close()
 
-        assert isinstance(rw._builder, UserRawBuildExecutor)
         assert rw._queue.qsize() == 0
         assert rw.summary.rows == size
         assert rw.summary.include_link
@@ -1836,16 +1755,6 @@ class TestRowWriter(BaseTestCase):
             append_from_version="abcdefg",
         )
         assert isinstance(rw._builder, SWDSBinBuildExecutor)
-
-    @patch("starwhale.api._impl.dataset.builder.UserRawBuildExecutor.make_swds")
-    def test_append_user_raw(self, m_make_swds: MagicMock) -> None:
-        rw = RowWriter(
-            dataset_name="mnist",
-            dataset_version="123456",
-            append=True,
-            append_from_version="abcdefg",
-        )
-        assert isinstance(rw._builder, UserRawBuildExecutor)
 
     def test_flush(self) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")

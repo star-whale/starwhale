@@ -34,24 +34,23 @@ class DataRow:
     def __init__(
         self,
         index: t.Union[str, int],
-        content: t.Dict,
+        data: t.Dict,
     ) -> None:
         self.index = index
-        self.content = content
-
+        self.data = data
         self._do_validate()
 
     def __str__(self) -> str:
         return f"{self.index}"
 
     def __repr__(self) -> str:
-        return f"index:{self.index}, content:{self.content}"
+        return f"index:{self.index}, content:{self.data}"
 
     def __iter__(self) -> t.Iterator:
-        return iter((self.index, self.content))
+        return iter((self.index, self.data))
 
     def __getitem__(self, i: int) -> t.Any:
-        return (self.index, self.content)[i]
+        return (self.index, self.data)[i]
 
     def __len__(self) -> int:
         return len(self.__dict__)
@@ -60,8 +59,8 @@ class DataRow:
         if not isinstance(self.index, (str, int)):
             raise TypeError(f"index({self.index}) is not int or str type")
 
-        if not isinstance(self.content, dict):
-            raise TypeError(f"content({self.content}) is not dict type")
+        if not isinstance(self.data, dict):
+            raise TypeError(f"content({self.data}) is not dict type")
 
     def __lt__(self, obj: DataRow) -> bool:
         return str(self.index) < str(obj.index)
@@ -69,7 +68,7 @@ class DataRow:
     def __eq__(self, obj: t.Any) -> bool:
         return bool(
             self.index == obj.index
-            and self.content == obj.content
+            and self.data == obj.data
         )
 
 
@@ -256,7 +255,7 @@ class DataLoader(metaclass=ABCMeta):
             if skip_fetch_data:
                 continue
             at.fetch_data()
-        return DataRow(index=row.id, content=row.content)
+        return DataRow(index=row.id, data=row.data)
 
     def _unpack_row_with_queue(
         self,

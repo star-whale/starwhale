@@ -98,18 +98,18 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
 
-    CONTENT_PREFIX = "content/"
+    DATA_PREFIX = "data/"
 
     def __init__(
         self,
         id: t.Union[str, int],
         data_origin: DataOriginType = DataOriginType.NEW,
-        content: t.Optional[t.Dict[str, t.Any]] = None,
+        data: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
         self.data_origin = data_origin
-        self.content = content or {}
+        self.data = data or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
@@ -125,8 +125,8 @@ class TabularDatasetRow(ASDictMixin):
         _content = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if k.startswith(cls.CONTENT_PREFIX):
-                _, name = k.split(cls.CONTENT_PREFIX, 1)
+            if k.startswith(cls.DATA_PREFIX):
+                _, name = k.split(cls.DATA_PREFIX, 1)
                 _content[name] = JsonDict.to_data(v)
             else:
                 _extra_kw[k] = v
@@ -134,7 +134,7 @@ class TabularDatasetRow(ASDictMixin):
         return cls(
             id=id,
             data_origin=DataOriginType(data_origin),
-            content=_content,
+            data=_content,
             **_extra_kw,
         )
 
@@ -153,46 +153,29 @@ class TabularDatasetRow(ASDictMixin):
         if self.id == "":
             raise FieldTypeOrValueError("id is empty")
 
-        if not isinstance(self.annotations, dict) or not self.annotations:
-            raise FieldTypeOrValueError("no annotations field")
-
-        # TODO: add annotation items type check
-
-        if not self.data_link:
-            raise FieldTypeOrValueError("no raw_data_link field")
-
-        if not isinstance(self.data_format, DataFormatType):
-            raise NoSupportError(f"data format: {self.data_format}")
+        if not isinstance(self.data, dict) or not self.data:
+            raise FieldTypeOrValueError("no data field")
 
         if not isinstance(self.data_origin, DataOriginType):
             raise NoSupportError(f"data origin: {self.data_origin}")
 
-        if not isinstance(self.object_store_type, ObjectStoreType):
-            raise NoSupportError(f"object store {self.object_store_type}")
-
     def __str__(self) -> str:
-        return f"row-{self.id}, data-{self.data_link}, origin-[{self.data_origin}]"
+        return f"row-{self.id}"
 
     def __repr__(self) -> str:
         return (
-            f"row-{self.id}, data-{self.data_link}(offset:{self.data_offset}, size:{self.data_size},"
-            f"format:{self.data_format}, meta type:{self.data_type}), "
-            f"origin-[{self.data_origin}], object store-{self.object_store_type}"
+            f"row-{self.id}"
+            f"{self.data} "
         )
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         d = super().asdict(
             ignore_keys=ignore_keys
-            or ["annotations", "extra_kw", "data_type", "data_link"]
+            or ["data", "extra_kw"]
         )
         d.update(_do_asdict_convert(self.extra_kw))
-        for k, v in self.annotations.items():
-            d[f"{self.CONTENT_PREFIX}{k}"] = JsonDict.from_data(v)
-        # TODO: use data_store SwObject to store data_type
-        d["data_type"] = json.dumps(
-            _do_asdict_convert(self.data_type), separators=(",", ":")
-        )
-        d["data_link"] = self.data_link
+        for k, v in self.data.items():
+            d[f"{self.DATA_PREFIX}{k}"] = JsonDict.from_data(v)
         return d
 
     def _artifacts(self, content: t.Dict) -> t.List[BaseArtifact]:
@@ -202,11 +185,11 @@ class TabularDatasetRow(ASDictMixin):
                 artifacts.extend(self._artifacts(v))
             if not isinstance(v, BaseArtifact):
                 continue
-            artifacts.append(v.link)
+            artifacts.append(v)
         return artifacts
 
     def artifacts(self) -> t.List[BaseArtifact]:
-        return self._artifacts(self.content)
+        return self._artifacts(self.data)
 
 
 

@@ -24,7 +24,6 @@ from ._impl.dataset import (
     UserRawDataLoader,
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
-    UserRawBuildExecutor,
 )
 
 # TODO: add dataset build/push/list/info api
@@ -40,7 +39,6 @@ __all__ = [
     "MIMEType",
     "LinkType",
     "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
     "SWDSBinDataLoader",
     "UserRawDataLoader",

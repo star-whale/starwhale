@@ -27,7 +27,6 @@ from starwhale.api.dataset import (
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
     SWDSBinBuildExecutor,
-    UserRawBuildExecutor,
 )
 from starwhale.api.evaluation import Evaluation
 from starwhale.core.dataset.tabular import get_dataset_consumption
@@ -55,7 +54,6 @@ __all__ = [
     "MIMEType",
     "LinkType",
     "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
     "Binary",
     "Text",

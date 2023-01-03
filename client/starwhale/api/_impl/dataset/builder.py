@@ -10,18 +10,18 @@ import inspect
 import tempfile
 import threading
 from abc import ABCMeta, abstractmethod
+from collections import namedtuple
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
 
 import jsonlines
 from loguru import logger
+from typing_extensions import Protocol
 
 from starwhale.consts import (
-    AUTH_ENV_FNAME,
     DEFAULT_PROJECT,
     STANDALONE_INSTANCE,
-    SWDS_DATA_FNAME_FMT,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
@@ -29,22 +29,20 @@ from starwhale.base.type import (
     InstanceType,
     DataFormatType,
     DataOriginType,
-    ObjectStoreType,
 )
 from starwhale.utils.error import FormatError, NoSupportError
 from starwhale.core.dataset import model
 from starwhale.core.dataset.type import (
     Link,
     Binary,
-    LinkAuth,
     MIMEType,
     BaseArtifact,
     DatasetSummary,
     D_ALIGNMENT_SIZE,
     D_FILE_VOLUME_SIZE,
+    D_BIN_TO_LINK_THRESHOLD,
 )
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 from starwhale.api._impl.dataset.loader import DataRow
 
@@ -57,6 +55,18 @@ _header_version = 0
 
 
 _BDType = t.TypeVar("_BDType", bound="BaseBuildExecutor")
+
+
+class BinWriter(Protocol):
+    def binary_to_link(
+        self,
+        row_contents: t.List[t.Dict[str, t.Any]],
+    ) -> int:
+        """
+            Find large bytes or local fs file in row_contents. Convert them to accessible link
+            return the total bytes the method processes
+        """
+        ...
 
 
 class BaseBuildExecutor(metaclass=ABCMeta):
@@ -73,6 +83,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         append_from_uri: t.Optional[URI] = None,
         data_mime_type: MIMEType = MIMEType.UNDEFINED,
         instance_name: str = STANDALONE_INSTANCE,
+        bin_writer: t.Optional[BinWriter] = None,
     ) -> None:
         # TODO: add more docstring for args
         # TODO: validate group upper and lower?
@@ -86,6 +97,10 @@ class BaseBuildExecutor(metaclass=ABCMeta):
 
         self.alignment_bytes_size = alignment_bytes_size
         self.volume_bytes_size = volume_bytes_size
+        if bin_writer:
+            self.bin_writer = bin_writer
+        else:
+            self.bin_writer = SWDSBinBuildExecutor._BinWriter(self.data_tmpdir,self.data_output_dir,self.alignment_bytes_size,self.volume_bytes_size)
         self.default_data_mime_type = data_mime_type
 
         self.project_name = project_name
@@ -174,23 +189,25 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         raise NotImplementedError
 
     def _unpack_row_content(
-        self, row_content: t.Union[t.Tuple, DataRow], append_seq_id: int
+        self, row_data: t.Union[t.Tuple, DataRow], append_seq_id: int
     ) -> t.Tuple[t.Union[str, int], BaseArtifact, t.Dict]:
-        if isinstance(row_content, DataRow):
-            idx, row = row_content
-        elif isinstance(row_content, tuple):
-            if len(row_content) == 1:
+        if isinstance(row_data, DataRow):
+            idx, row = row_data.index, row_data.data
+        elif isinstance(row_data, dict):
+            idx, row = append_seq_id, row_data
+        elif isinstance(row_data, tuple):
+            if len(row_data) == 1:
                 idx = append_seq_id
-                row = row_content
-            elif len(row_content) == 2:
-                idx, row = row_content
+                row = row_data
+            elif len(row_data) == 2:
+                idx, row = row_data
             else:
                 raise FormatError(
-                    f"iter_item must return (data, annotations) or (id, data, annotations): {row_content}"
+                    f"iter_item must return (data, annotations) or (id, data, annotations): {row_data}"
                 )
         else:
             raise FormatError(
-                f"row content not return tuple or DataRow type: {row_content}"
+                f"row content not return tuple or DataRow type: {row_data}"
             )
 
         if not isinstance(row, dict):
@@ -217,8 +234,6 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     # TODO: add more docstring for class
 
-    _DATA_FMT = SWDS_DATA_FNAME_FMT
-
     class _BinSection(t.NamedTuple):
         offset: int
         size: int
@@ -228,23 +243,29 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     class _BinWriter:
 
-        def __int__(self, work_dir: str, data_output_dir: str) -> None:
+        def __init__(self, work_dir: str, data_output_dir: str, alignment_bytes_size: int = D_ALIGNMENT_SIZE,
+                    volume_bytes_size: int = D_FILE_VOLUME_SIZE, bin2link_threshold: int = D_BIN_TO_LINK_THRESHOLD) -> None:
+            self._src_path_spec = namedtuple("_src_path_spec", ["src_path", "remove_src"])
             self.work_dir = work_dir
+            self.data_output_dir = data_output_dir
+            self.volume_bytes_size = volume_bytes_size
+            self.bin2link_threshold = bin2link_threshold
+            self.alignment_bytes_size = alignment_bytes_size
             self.ds_copy_candidates: t.Dict[str, Path] = {}
             self.fno = 0
             self.wrote_size = 0
             dwriter_path = self.work_dir / str(self.fno)
             self.dwriter = dwriter_path.open("wb")
-            self.ds_copy_candidates[str(self.fno)] = dwriter_path
+            self.ds_copy_candidates[str(self.fno)] = self._src_path_spec(dwriter_path, True)
             self.total_data_size = 0
             self.map_fno_sign: t.Dict[str, str] = {}
 
         def write(self, content: t.Union[bytes,str,Path]) -> SWDSBinBuildExecutor._BinSection:
             if isinstance(content, str):
-                self.ds_copy_candidates[content] = Path(content)
+                self.ds_copy_candidates[content] = self._src_path_spec(Path(content), False)
                 return None
             if isinstance(content, Path):
-                self.ds_copy_candidates[str(content)] = content
+                self.ds_copy_candidates[str(content)] = self._src_path_spec(content, False)
                 return None
             _bin_section = self._write(self.dwriter, content)
             self.total_data_size += _bin_section.size
@@ -255,7 +276,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 self.dwriter.close()
                 dwriter_path = self.work_dir / str(self.fno)
                 self.dwriter = (dwriter_path).open("wb")
-                self.ds_copy_candidates[str(self.fno)] = dwriter_path
+                self.ds_copy_candidates[str(self.fno)] = self._src_path_spec(dwriter_path, True)
             return _bin_section
 
         def _write(self, writer: t.Any, data: bytes) -> SWDSBinBuildExecutor._BinSection:
@@ -269,7 +290,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             )
             _padding = b"\0" * padding_size
             writer.write(_header + data + _padding)
-            return self._BinSection(
+            return SWDSBinBuildExecutor._BinSection(
                 offset=start,
                 size=_header_size + size + padding_size,
                 raw_data_offset=start + _header_size,
@@ -283,9 +304,9 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             ds_copy_candidates: t.Dict[str, Path],
         ) -> None:
 
-            for _fno, _src_path in ds_copy_candidates.items():
+            for _fno, _src_path_spec in ds_copy_candidates.items():
                 _sign_name, _obj_path = DatasetStorage.save_data_file(
-                    _src_path, remove_src=True
+                    _src_path_spec.src_path, remove_src=_src_path_spec.remove_src
                 )
                 self.map_fno_sign[_fno] = _sign_name
 
@@ -308,7 +329,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 self.dwriter.close()
                 if empty:
                     # last file is empty
-                    f = self.ds_copy_candidates[str(self.fno)]
+                    f = self.ds_copy_candidates[str(self.fno)].src_path
                     del self.ds_copy_candidates[str(self.fno)]
                     os.unlink(f)
             except Exception as e:
@@ -316,79 +337,63 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
             self._copy_files(self.ds_copy_candidates)
 
-        def __enter__(self) -> SWDSBinBuildExecutor._BinWriter:
-            return self
+        def _get_padding_size(self, size: int) -> int:
+            remain = (size + _header_size) % self.alignment_bytes_size
+            return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
-        def __exit__(
-            self,
-            type: t.Optional[t.Type[BaseException]],
-            value: t.Optional[BaseException],
-            trace: TracebackType,
-        ) -> None:
-            if value:  # pragma: no cover
-                logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
-
+        def binary_to_link(self, row_contents: t.List[t.Dict[str, t.Any]]) -> int:
+            for row_content in row_contents:
+                self._store_binary(row_content)
             self.close()
+            for row_content in row_contents:
+                self._update_link(row_content)
+            return self.total_data_size
 
-    def _get_padding_size(self, size: int) -> int:
-        remain = (size + _header_size) % self.alignment_bytes_size
-        return 0 if remain == 0 else (self.alignment_bytes_size - remain)
+        def _store_binary(self, row_content: t.Dict) -> None:
+            for _, v in row_content.items():
+                if isinstance(v, dict):
+                    self._store_binary(v)
+                if not isinstance(v, BaseArtifact):
+                    continue
+                if not v.link and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase)) and len(v.to_bytes()) > self.bin2link_threshold:
+                    _bin_section = self.write(v.to_bytes())
+                    v.link = Link(_bin_section.fno, offset=_bin_section.raw_data_offset,
+                                  size=_bin_section.raw_data_size,
+                                  bin_offset=_bin_section.offset, bin_size=_bin_section.size)
+                if not v.link and isinstance(v.fp, str):
+                    v.link = Link(v.fp, with_local_fs_data=True)
+                if v.link and v.link.with_local_fs_data:
+                    self.write(v.link.uri)
 
-    @property
-    def data_format_type(self) -> DataFormatType:
-        return DataFormatType.SWDS_BIN
-
-    def binary_to_link(self, row_content: t.Dict, bwriter) -> None:
-        for _, v in row_content.items:
-            if isinstance(v, dict):
-                self.binary_to_link(v)
-            if not isinstance(v, BaseArtifact):
-                continue
-            if not v.link and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase)) and len(v.to_bytes()) > 1024 * 4:
-                _bin_section = bwriter.write(v.to_bytes())
-                v.link = Link(_bin_section.fno, offset=_bin_section.raw_data_offset, size=_bin_section.raw_data_size,
-                              bin_offset=_bin_section.offset, bin_size=_bin_section.size)
-            if not v.link and isinstance(v.fp, str):
-                v.link = Link(v.fp, with_local_fs_data=True)
-            if v.link and v.link.with_local_fs_data:
-                bwriter.write(v.link.uri)
-
-    def update_link(self, row_content: t.Dict, link_map: t.Dict) -> None:
-        for _, v in row_content.items:
-            if isinstance(v, dict):
-                self.update_link(v)
-            if not isinstance(v, BaseArtifact):
-                continue
-            if not v.link:
-                continue
-            if not v.link.uri in link_map:
-                continue
-            v.link.uri = link_map[v.link.uri]
+        def _update_link(self, row_content: t.Dict) -> None:
+            for _, v in row_content.items():
+                if isinstance(v, dict):
+                    self._update_link(v)
+                if not isinstance(v, BaseArtifact):
+                    continue
+                if not v.link:
+                    continue
+                if not v.link.uri in self.map_fno_sign:
+                    continue
+                v.link.uri = self.map_fno_sign[v.link.uri]
+                v.fp = None
 
     def make_swds(self) -> DatasetSummary:
         # TODO: add lock
-        with self._BinWriter(self.data_tmpdir, self.data_output_dir) as bwriter:
-            for append_seq_id, item_content in enumerate(
-                self.iter_item(), start=self._forked_last_seq_id + 1
-            ):
-                _, row_content = self._unpack_row_content(
-                    item_content, append_seq_id
-                )
-                self.binary_to_link(row_content, bwriter)
-
-        increased_rows = 0
-        for append_seq_id, item_content in enumerate(
+        row_contents = [(append_seq_id, item_content) for append_seq_id, item_content in enumerate(
             self.iter_item(), start=self._forked_last_seq_id + 1
-        ):
+        )]
+        total_bin_size = self.bin_writer.binary_to_link([row_content[1] for row_content in row_contents])
+        increased_rows = 0
+        for append_seq_id, item_content in row_contents:
             idx, row_content = self._unpack_row_content(
                 item_content, append_seq_id
             )
-            self.update_link(row_content, bwriter.map_fno_sign)
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
                     data_origin=DataOriginType.NEW,
-                    content=row_content,
+                    data=row_content,
                     _append_seq_id=append_seq_id,
                 )
             )
@@ -400,7 +405,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
         summary = DatasetSummary(
             rows=increased_rows,
             increased_rows=increased_rows,
-            data_byte_size=bwriter.total_data_size,
+            data_byte_size=total_bin_size,
         )
         return self._merge_forked_summary(summary)
 

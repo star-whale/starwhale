@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import base64
+import sys
 import typing as t
 from abc import ABCMeta
 from enum import Enum, unique
@@ -33,6 +34,7 @@ from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
+D_BIN_TO_LINK_THRESHOLD = 512  # 4k for page cache
 
 
 @unique
@@ -276,7 +278,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def fetch_data(self) -> None:
         if isinstance(self.fp, bytes):
             return
-        elif isinstance(self.fp, (str, Path)):
+        elif self.fp and isinstance(self.fp, (str, Path)):
             self.fp = Path(self.fp).read_bytes()
             return
         elif isinstance(self.fp, io.IOBase):
@@ -347,6 +349,7 @@ class Image(BaseArtifact, SwObject):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
+        **kwargs,
     ) -> None:
         self.as_mask = as_mask
         self.mask_uri = mask_uri
@@ -357,6 +360,7 @@ class Image(BaseArtifact, SwObject):
             shape=shape or (None, None, 3),
             mime_type=mime_type,
             dtype=dtype,
+            **kwargs,
         )
 
     def _do_validate(self) -> None:
@@ -401,6 +405,7 @@ class GrayscaleImage(Image):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
+        **kwargs,
     ) -> None:
         shape = shape or (None, None)
         super().__init__(
@@ -411,6 +416,7 @@ class GrayscaleImage(Image):
             as_mask=as_mask,
             mask_uri=mask_uri,
             dtype=dtype,
+            **kwargs,
         )
 
 
@@ -779,33 +785,23 @@ class Link(ASDictMixin, SwObject):
             return r.content
         # TODO: auto inject dataset_uri in the loader process
         auth_name = self.auth.name if self.auth else ""
+        key_compose = (
+            Link(self.local_fs_uri) if self.local_fs_uri else self,
+            self.offset or 0,
+            self.size + self.offset - 1 if self.size else sys.maxsize,
+        )
         if not owner:
-            key_compose = (
-                Link(self.local_fs_uri) if self.local_fs_uri else self,
-                0,
-                0,
-            )
             store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
         else:
             if isinstance(owner, str):
                 owner = URI(owner, expected_type=URIType.DATASET)
             if owner.instance_type == InstanceType.CLOUD:
-                key_compose = self, 0, 0
                 store = ObjectStore.to_signed_http_backend(owner)
             else:
                 if self.scheme and self.scheme != "fs":
-                    key_compose = (
-                        Link(self.local_fs_uri) if self.local_fs_uri else self,
-                        0,
-                        0,
-                    )
                     store = ObjectStore.from_data_link_uri(key_compose[0], auth_name)
                 else:
-                    key_compose = (
-                        Link(self.local_fs_uri) if self.local_fs_uri else self,
-                        0,
-                        -2,
-                    )
+
                     store = ObjectStore.from_dataset_uri(owner)
 
         with store.backend._make_file(store.bucket, key_compose) as f:
