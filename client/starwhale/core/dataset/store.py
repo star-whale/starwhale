@@ -189,7 +189,7 @@ class FileLikeObj(Protocol[_TFLType]):
 class S3Connection:
     connections_config: t.List[S3Connection] = []
     init_config_lock = threading.Lock()
-    supported_schemes = set(["s3", "minio", "aliyun", "oss"])
+    supported_schemes = {"s3", "minio", "aliyun", "oss"}
     DEFAULT_CONNECT_TIMEOUT = 10.0
     DEFAULT_READ_TIMEOUT = 50.0
     DEFAULT_MAX_ATTEMPTS = 6
@@ -243,7 +243,7 @@ class S3Connection:
             - s3://127.0.0.1:8000/bucket/key
         """
         r = urlparse(uri.strip())
-        if not r.scheme or r.scheme not in cls.supported_schemes:
+        if r.scheme not in cls.supported_schemes:
             raise NoSupportError(
                 f"s3 connection only support {cls.supported_schemes} prefix, the actual uri is {uri}"
             )
@@ -280,7 +280,7 @@ class S3Connection:
             for la in link_auths:
                 if not la.get("type") or type(la.get("type")) != str:
                     continue
-                if not la.get("type") in cls.supported_schemes:
+                if la.get("type") not in cls.supported_schemes:
                     continue
                 if (
                     not la.get("endpoint")

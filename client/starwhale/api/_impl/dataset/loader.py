@@ -122,9 +122,9 @@ class DataLoader(metaclass=ABCMeta):
     def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
         with self._store_lock:
             _up = urlparse(row.data_link.uri)
-            parts = _up.path.lstrip("/").split("/", 1)
-            c_k = row.data_link.uri.replace(parts[-1], "")
-            _k = f"{self.dataset_uri}.{c_k}"
+            _parts = _up.path.lstrip("/").split("/", 1)
+            _cache_key = row.data_link.uri.replace(_parts[-1], "")
+            _k = f"{self.dataset_uri}.{_cache_key}"
             _store = self._stores.get(_k)
             if _store:
                 return _store

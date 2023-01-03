@@ -6,7 +6,7 @@ import click
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
-from starwhale.utils.config import config_cmd, load_swcli_config
+from starwhale.utils.config import load_swcli_config
 from starwhale.core.eval.cli import eval_job_cmd
 from starwhale.core.model.cli import model_cmd
 from starwhale.cli.board.board import open_board
@@ -15,6 +15,7 @@ from starwhale.core.project.cli import project_cmd
 from starwhale.core.runtime.cli import runtime_cmd
 from starwhale.core.instance.cli import instance_cmd
 
+from .cli import config_cmd
 from .mngt import add_mngt_command
 from .completion import completion_cmd
 

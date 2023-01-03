@@ -11,4 +11,3 @@ class SWEnv:
     dataset_row_start = "SW_DATASET_ROW_START"
     dataset_row_end = "SW_DATASET_ROW_END"
     instance_token = "SW_TOKEN"
-    sw_editor = "SW_EDITOR"
