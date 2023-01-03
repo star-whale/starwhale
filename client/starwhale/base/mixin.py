@@ -1,3 +1,4 @@
+import base64
 import json
 import typing as t
 from copy import deepcopy
@@ -37,6 +38,8 @@ def _do_asdict_convert(obj: t.Any) -> t.Any:
         return obj.value
     elif hasattr(obj, "asdict"):
         return obj.asdict()
+    elif isinstance(obj, bytes):
+        return base64.b64encode(obj).decode()
     else:
         # TODO: add more type parse
         return obj

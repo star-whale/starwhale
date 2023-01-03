@@ -522,7 +522,7 @@ class Dataset:
     @_check_readonly
     @_forbid_handler_build
     def __setitem__(
-        self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple]
+        self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple, t.Dict]
     ) -> None:
         # TODO: tune the performance of getitem by cache
         self._trigger_icode_build = True
@@ -534,17 +534,19 @@ class Dataset:
         if isinstance(value, DataRow):
             value.index = key
             row = value
+        elif isinstance(value, dict):
+            row = DataRow(index=key, data=value)
         elif isinstance(value, (tuple, list)):
-            if len(value) == 2:
-                data, annotations = value
-            elif len(value) == 3:
-                _, data, annotations = value
+            if len(value) == 1:
+                data = value
+            elif len(value) == 2:
+                _, data = value
             else:
                 raise ValueError(f"{value} cannot unpack")
 
-            row = DataRow(index=key, data=data, content=annotations)
+            row = DataRow(index=key, data=data)
         else:
-            raise TypeError(f"value only supports tuple or DataRow type: {value}")
+            raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
         # TODO improve accuracy of _rows_cnt during building
         self._rows_cnt += 1
@@ -614,14 +616,16 @@ class Dataset:
     def append(self, item: t.Any) -> None:
         if isinstance(item, DataRow):
             self.__setitem__(item.index, item)
+        elif isinstance(item, dict):
+            self.__setitem__(item.index, item)
         elif isinstance(item, (list, tuple)):
-            if len(item) == 2:
-                row = DataRow(self._rows_cnt, item[0], item[1])
-            elif len(item) == 3:
-                row = DataRow(item[0], item[1], item[2])
+            if len(item) == 1:
+                row = DataRow(self._rows_cnt, item[0])
+            elif len(item) == 2:
+                row = DataRow(item[0], item[1])
             else:
                 raise ValueError(
-                    f"cannot unpack value({item}), expected sequence is (index, data, annotations) or (data, annotations)"
+                    f"cannot unpack value({item}), expected sequence is (index, data) or data"
                 )
 
             self.__setitem__(row.index, row)

@@ -178,9 +178,6 @@ class BaseBuildExecutor(metaclass=ABCMeta):
             s.rows += _fs.rows
             s.unchanged_rows += _fs.rows
             s.data_byte_size += _fs.data_byte_size
-            s.annotations = list(set(s.annotations) | set(_fs.annotations))
-            s.include_link |= _fs.include_link
-            s.include_user_raw |= _fs.include_user_raw
 
         return s
 
@@ -203,7 +200,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
                 idx, row = row_data
             else:
                 raise FormatError(
-                    f"iter_item must return (data, annotations) or (id, data, annotations): {row_data}"
+                    f"iter_item must return data, (data) or (id, data): {row_data}"
                 )
         else:
             raise FormatError(

@@ -69,22 +69,12 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         for idx, row in enumerate(loader._iter_meta()):
             if idx >= rows:
                 break
+            if show_raw_data:
+                row = loader._unpack_row(row)
             info: t.Dict[str, t.Any] = {
                 "index": idx,
-                "annotations": row.annotations,
-                "data": {
-                    "id": row.id,
-                    "type": row.data_type,
-                    "link": row.data_link,
-                    "size": row.data_size,
-                },
+                "data": row.data,
             }
-            if show_raw_data:
-                _un_row = loader._unpack_row(row)
-                info["data"]["raw"] = (
-                    _un_row.data.to_bytes() if _un_row and _un_row.data else b""
-                )
-                info["data"]["size"] = len(info["data"]["raw"])
             ret.append(info)
 
         return ret

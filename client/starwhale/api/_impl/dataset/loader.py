@@ -16,7 +16,7 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import Link, BaseArtifact
+from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (

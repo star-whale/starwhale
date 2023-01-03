@@ -204,22 +204,13 @@ class DatasetTermView(BaseTermView):
 
         for row in self.dataset.head(rows, show_raw_data):
             console.rule(f"row [{row['index']}]", align="left")
-            size = pretty_bytes(row["data"]["size"])
             output = (
-                f":deciduous_tree: id: {row['data']['id']} \n"
+                f":deciduous_tree: id: {row['index']} \n"
                 ":cyclone: data:\n"
-                f"\t :dim_button: type: {row['data']['type']['type']} \n"
-                f"\t :duck: mime: {row['data']['type']['mime_type']} \n"
-                f"\t :palm_tree: display name: {row['data']['type'].get('display_name', '')} \n"
-                f"\t :diving_mask: size: {size} \n"
-                f"\t :dizzy: uri: {row['data']['link'].uri} \n"
-                f":dna: annotations({len(row['annotations'])}): \n"
+                f"\t :dim_button: type: {row['data']} \n"
             )
-            for _k, _v in row["annotations"].items():
+            for _k, _v in row["data"].items():
                 output += f"\t :droplet: {_k}: value[{_v}], type[{_get_type(_v)} | {type(_v)}] \n"
-
-            if show_raw_data:
-                output += f":parrot: raw data({size}): \n \t {row['data']['raw']}"
 
             console.print(output)
 
@@ -271,9 +262,6 @@ class DatasetTermViewJson(DatasetTermView):
         from starwhale.base.mixin import _do_asdict_convert
 
         info = self.dataset.head(rows, show_raw_data)
-        if show_raw_data:
-            for i in info:
-                i["data"]["raw"] = base64.b64encode(i["data"].get("raw", b"")).decode()
         self.pretty_json(_do_asdict_convert(info))
 
     def diff(self, compare_uri: URI, show_details: bool = False) -> None:

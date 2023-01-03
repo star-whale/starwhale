@@ -816,7 +816,6 @@ class DatasetSummary(ASDictMixin):
         data_byte_size: int = 0,
         include_link: bool = False,
         include_user_raw: bool = False,
-        annotations: t.Optional[t.List[str]] = None,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
@@ -825,7 +824,6 @@ class DatasetSummary(ASDictMixin):
         self.data_byte_size = data_byte_size
         self.include_link = include_link
         self.include_user_raw = include_user_raw
-        self.annotations = annotations or []
 
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows}), include user-raw({self.include_user_raw}), include link({self.include_link})"
@@ -834,7 +832,7 @@ class DatasetSummary(ASDictMixin):
         return (
             f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
             f"include user-raw({self.include_user_raw}), include link({self.include_link}),"
-            f"size(data:{self.data_byte_size}, annotations: {self.annotations})"
+            f"size(data:{self.data_byte_size})"
         )
 
 

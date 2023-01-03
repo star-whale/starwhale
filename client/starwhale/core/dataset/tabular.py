@@ -178,18 +178,19 @@ class TabularDatasetRow(ASDictMixin):
             d[f"{self.DATA_PREFIX}{k}"] = JsonDict.from_data(v)
         return d
 
-    def _artifacts(self, content: t.Dict) -> t.List[BaseArtifact]:
+    @classmethod
+    def artifacts_of_content(cls, content: t.Dict) -> t.List[BaseArtifact]:
         artifacts = []
         for _, v in content.items():
             if isinstance(v, dict):
-                artifacts.extend(self._artifacts(v))
+                artifacts.extend(cls.artifacts_of_content(v))
             if not isinstance(v, BaseArtifact):
                 continue
             artifacts.append(v)
         return artifacts
 
     def artifacts(self) -> t.List[BaseArtifact]:
-        return self._artifacts(self.data)
+        return TabularDatasetRow.artifacts_of_content(self.data)
 
 
 
