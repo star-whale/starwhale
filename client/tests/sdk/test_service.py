@@ -18,14 +18,13 @@ class ServiceTestCase(BaseTestCase):
         assert list(svc.apis.keys()) == ["foo", "bar"]
 
         for i in svc.apis.values():
-            assert i.input.__class__.__name__ == "CustomInput"
-            assert i.output.__class__.__name__ == "CustomOutput"
+            assert i.input.__class__.__name__ == "list"
+            assert i.input[0].__class__.__name__ == "CustomInput"
+            assert i.output.__class__.__name__ == "list"
+            assert i.output[0].__class__.__name__ == "CustomOutput"
 
         spec = svc.get_spec()
-        assert list(filter(bool, [i["api_name"] for i in spec["dependencies"]])) == [
-            "predict",
-            "predict_1",
-        ]
+        assert len(spec["dependencies"]) == 2
 
     def test_default_class(self):
         svc = StandaloneModel._get_service("default_class:MyDefaultClass", self.root)
