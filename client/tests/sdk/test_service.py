@@ -31,6 +31,10 @@ class ServiceTestCase(BaseTestCase):
         svc = StandaloneModel._get_service("default_class:MyDefaultClass", self.root)
         assert list(svc.apis.keys()) == ["ppl", "handler_foo", "cmp"]
 
+    def test_class_without_api(self):
+        svc = StandaloneModel._get_service("no_api:NoApi", self.root)
+        assert svc.get_spec() == {}
+
     def test_custom_service(self):
         svc = StandaloneModel._get_service("custom_service", self.root)
         assert list(svc.apis.keys()) == ["baz"]
