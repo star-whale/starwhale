@@ -249,7 +249,7 @@ class CloudRequestMixed:
 
         _page = page
         _size = size
-        if filter_dict.get("latest", False):
+        if filter_dict.get("latest") is not None:
             _page = 1
             _size = 1
 

@@ -96,16 +96,14 @@ class BaseBundle(metaclass=ABCMeta):
 
         _filter_dict: t.Dict[str, t.Any] = {}
         for _f in filters:
-            _idx = _f.find("=")
-            if _idx < 0 and _f in fields:
-                _filter_dict[_f] = True
-            elif 0 < _idx < len(_f) and _f[: _idx + 1] in fields:
-                _filter_dict[_f[:_idx]] = _f[_idx + 1 :]
+            _item = _f.split("=", 1)
+            if _item[0] in fields:
+                _filter_dict[_item[0]] = _item[1] if len(_item) > 1 else ""
         return _filter_dict
 
     @classmethod
     def get_filter_fields(cls) -> t.List[str]:
-        return ["name=", "owner=", "latest"]
+        return ["name", "owner", "latest"]
 
     @classmethod
     def do_bundle_filter(
@@ -114,11 +112,11 @@ class BaseBundle(metaclass=ABCMeta):
         filters: t.Union[t.Dict[str, t.Any], t.List[str]],
     ) -> bool:
         filter_dict = cls.get_filter_dict(filters, cls.get_filter_fields())
-        _name = filter_dict.get("name", "")
+        _name = filter_dict.get("name")
         if _name and not bundle_field.name.startswith(_name):
             return False
-        _tag = filter_dict.get("latest", False)
-        if _tag and "latest" not in bundle_field.tags:
+        _latest = filter_dict.get("latest") is not None
+        if _latest and "latest" not in bundle_field.tags:
             return False
 
         return True
