@@ -23,12 +23,13 @@ class FilePosition(IntEnum):
 
 def ensure_file(
     path: t.Union[str, Path],
-    content: str,
+    content: t.Union[str, bytes],
     mode: int = 0o644,
 ) -> None:
     p = Path(path)
+    bin_mode = isinstance(content, bytes)
     try:
-        with p.open("r") as f:
+        with p.open("rb" if bin_mode else "r") as f:
             _saved = f.read()
     except IOError as e:
         if e.errno == errno.ENOENT:
@@ -36,10 +37,18 @@ def ensure_file(
             _saved = ""
         else:
             raise
+
     if _saved != content or not p.exists():
         # TODO: add timestamp for tmp file
         _tmp_f = p.parent / f".{p.name}.tmp"
-        _tmp_f.write_text(content)
+        if isinstance(content, bytes):
+            _tmp_f.write_bytes(content)
+        elif isinstance(content, str):
+            _tmp_f.write_text(content)
+        else:
+            raise TypeError(
+                f"content({type(content)}-{content}) only accepts bytes or str type"
+            )
         # TODO: check whether rename atomic
         _tmp_f.rename(path)
 
@@ -119,6 +128,12 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
             _hash.update(_chunk)
             _chunk = f.read(_chunk_size)
 
+    return _hash.hexdigest()
+
+
+def blake2b_content(content: bytes) -> str:
+    _hash = hashlib.blake2b(digest_size=64)
+    _hash.update(content)
     return _hash.hexdigest()
 
 
