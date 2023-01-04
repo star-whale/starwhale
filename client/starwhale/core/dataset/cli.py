@@ -148,15 +148,16 @@ def _list(
     """
     List Dataset
 
-    The filtering flag (-fl or --filter) format is a key=value pair.
+    The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n
     (e.g. --filter name=mnist --filter latest)
 
     \b
     The currently supported filters are:
-      name\tThe prefix of the dataset name
-      owner\tThe name or id of the dataset owner
-      latest\t(flag) Only show the latest version
+      name\tTEXT\tThe prefix of the dataset name
+      owner\tTEXT\tThe name or id of the dataset owner
+      latest\tFLAG\t[Cloud] Only show the latest version
+            \t \t[Standalone] Only show the version with "latest" tag
     """
     view.list(project, fullname, show_removed, page, size, filters)
 

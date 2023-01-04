@@ -295,15 +295,16 @@ def _list(
     """
     List Runtime
 
-    The filtering flag (-fl or --filter) format is a key=value pair.
+    The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n
-    (e.g. --filter name=pytorch --filter latest)
+    (e.g. --filter name=mnist --filter latest)
 
     \b
     The currently supported filters are:
-      name\tThe prefix of the runtime name
-      owner\tThe name or id of the runtime owner
-      latest\t(flag) Only show the latest version
+      name\tTEXT\tThe prefix of the runtime name
+      owner\tTEXT\tThe name or id of the runtime owner
+      latest\tFLAG\t[Cloud] Only show the latest version
+            \t \t[Standalone] Only show the version with "latest" tag
     """
     view.list(project, fullname, show_removed, page, size, filters)
 
