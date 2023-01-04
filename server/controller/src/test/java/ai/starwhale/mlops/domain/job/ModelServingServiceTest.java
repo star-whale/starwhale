@@ -16,9 +16,13 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,10 +48,17 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 public class ModelServingServiceTest {
@@ -78,12 +89,16 @@ public class ModelServingServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeMapper,
+                runtimeVersionMapper,
                 modelMapper,
+                modelVersionMapper,
                 systemSettingService,
                 runTimeProperties,
                 "inst",
                 modelServingTokenValidator,
-                new IdConverter()
+                new IdConverter(),
+                3600,
+                1
         );
 
         var user = User.builder().id(1L).name("starwhale").build();
@@ -99,12 +114,12 @@ public class ModelServingServiceTest {
         var runtime = RuntimeEntity.builder().runtimeName("rt").build();
         when(runtimeMapper.find(any())).thenReturn(runtime);
         var runtimeVer = RuntimeVersionEntity.builder().id(8L).image("img").build();
-        when(runtimeDao.getRuntimeVersion(any())).thenReturn(runtimeVer);
+        when(runtimeVersionMapper.find(any())).thenReturn(runtimeVer);
 
         var model = ModelEntity.builder().modelName("md").build();
         when(modelMapper.find(any())).thenReturn(model);
         var modelVer = ModelVersionEntity.builder().id(9L).build();
-        when(modelDao.getModelVersion(any())).thenReturn(modelVer);
+        when(modelVersionMapper.find(any())).thenReturn(modelVer);
 
         var pypi = mock(RunTimeProperties.Pypi.class);
         when(runTimeProperties.getPypi()).thenReturn(pypi);
@@ -126,12 +141,13 @@ public class ModelServingServiceTest {
                 .runtimeVersionId(8L)
                 .resourcePool(resourcePool)
                 .build();
-        when(modelServingMapper.list(2L, 9L, 8L, resourcePool))
-                .thenReturn(List.of(entity));
-        when(runtimeDao.getRuntimeVersion("8"))
-                .thenReturn(RuntimeVersionEntity.builder().id(8L).image("img").build());
-        when(modelDao.getModelVersion("9"))
-                .thenReturn(ModelVersionEntity.builder().id(9L).build());
+        when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
+        when(runtimeDao.getRuntimeVersionId("8", null)).thenReturn(8L);
+        when(modelDao.getModelVersionId("9", null)).thenReturn(9L);
+
+        var ss = new V1StatefulSet();
+        ss.metadata(new V1ObjectMeta());
+        when(k8sClient.deployStatefulSet(any())).thenReturn(ss);
         svc.create("2", "9", "8", resourcePool);
 
         verify(k8sJobTemplate).renderModelServingOrch(
@@ -149,5 +165,68 @@ public class ModelServingServiceTest {
                 ), "img", "model-serving-7");
 
         verify(k8sClient).deployService(any());
+    }
+
+
+    @Test
+    public void testGarbageCollection() throws ApiException {
+        final String oldestName = "model-serving-7";
+        final String noEntityName = "model-serving-9";
+        final String maxTtlName = "model-serving-10";
+
+        var now = System.currentTimeMillis();
+
+        final var noStatus = new V1StatefulSet().metadata(new V1ObjectMeta().name("model-serving-1"));
+        when(modelServingMapper.find(1L)).thenReturn(
+                ModelServingEntity.builder().lastVisitTime(new Date(now - 5 * 1000)).build());
+        final var noMeta = new V1StatefulSet().status(new V1StatefulSetStatus());
+
+        var oldEntity = ModelServingEntity.builder().lastVisitTime(new Date(now - 30 * 1000)).build();  // oldest time
+        var newEntity = ModelServingEntity.builder().lastVisitTime(new Date(now - 10 * 1000)).build();
+        when(modelServingMapper.find(7L)).thenReturn(oldEntity); // the oldest
+        when(modelServingMapper.find(8L)).thenReturn(newEntity);
+        final var runningStatus = new V1StatefulSetStatus().readyReplicas(1);
+        final var oldest = new V1StatefulSet()
+                .metadata(new V1ObjectMeta().name(oldestName))
+                .status(runningStatus);
+        final var shouldNotBeGc = new V1StatefulSet()
+                .metadata(new V1ObjectMeta().name("model-serving-8"))
+                .status(runningStatus);
+
+        final var noEntity = new V1StatefulSet().metadata(new V1ObjectMeta().name(noEntityName));
+        when(modelServingMapper.find(9L)).thenReturn(null);
+
+        final var reachesTheMaxTtl = new V1StatefulSet().metadata(new V1ObjectMeta().name(maxTtlName));
+        when(modelServingMapper.find(10L)).thenReturn(
+                ModelServingEntity.builder().lastVisitTime(new Date(now - 3601 * 1000)).build());
+
+        final var pending = new V1StatefulSet()
+                .status(new V1StatefulSetStatus().readyReplicas(0))
+                .metadata(new V1ObjectMeta().name("model-serving-11"));
+        when(modelServingMapper.find(11L)).thenReturn(
+                ModelServingEntity.builder().lastVisitTime(new Date(now - 2 * 1000)).build());
+
+
+        var list = new V1StatefulSetList();
+        list.setItems(List.of(noStatus, noMeta, oldest, shouldNotBeGc, pending, noEntity, reachesTheMaxTtl));
+        when(k8sClient.getStatefulSetList(any())).thenReturn(list);
+
+        var capture = ArgumentCaptor.forClass(String.class);
+        svc.gc();
+        verify(k8sClient, times(3)).deleteStatefulSet(capture.capture());
+        var names = capture.getAllValues();
+        assertThat(names, containsInAnyOrder(oldestName, noEntityName, maxTtlName));
+
+
+        final var theOnlyRunningAndInMinTtl = new V1StatefulSet()
+                .metadata(new V1ObjectMeta().name("model-serving-1"))
+                .status(runningStatus);
+        when(modelServingMapper.find(1L)).thenReturn(
+                ModelServingEntity.builder().lastVisitTime(new Date(now - 500)).build());
+        list.setItems(List.of(pending, theOnlyRunningAndInMinTtl));
+        reset(k8sClient);
+        when(k8sClient.getStatefulSetList(any())).thenReturn(list);
+        svc.gc();
+        verify(k8sClient, times(0)).deleteStatefulSet(any());
     }
 }

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Probe;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,6 +39,8 @@ public class ContainerOverwriteSpec {
     ResourceOverwriteSpec resourceOverwriteSpec;
 
     List<V1EnvVar> envs;
+
+    V1Probe readinessProbe;
 
     public ContainerOverwriteSpec(String name) {
         this.name = name;

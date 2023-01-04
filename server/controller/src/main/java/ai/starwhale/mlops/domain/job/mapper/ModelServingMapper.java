@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import org.apache.commons.text.CaseUtils;
 import org.apache.ibatis.annotations.InsertProvider;
@@ -26,6 +27,7 @@ import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.SelectProvider;
+import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
@@ -39,6 +41,7 @@ public interface ModelServingMapper {
             "job_status",
             "runtime_version_id",
             "resource_pool",
+            "last_visit_time",
     };
     String TABLE = "model_serving_info";
 
@@ -48,6 +51,9 @@ public interface ModelServingMapper {
 
     @Select("select * from " + TABLE + " where id=#{id}")
     ModelServingEntity find(long id);
+
+    @Update("update " + TABLE + " set last_visit_time=#{date} where id=#{id}")
+    void updateLastVisitTime(long id, Date date);
 
     @SelectProvider(value = SqlProviderAdapter.class, method = "listByConditions")
     List<ModelServingEntity> list(

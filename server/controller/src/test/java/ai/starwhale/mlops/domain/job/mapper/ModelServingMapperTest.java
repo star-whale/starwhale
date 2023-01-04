@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.mapper;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import java.util.Date;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -44,6 +45,7 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
                 .isDeleted(0)
                 .resourcePool("bar")
                 .jobStatus(JobStatus.RUNNING)
+                .lastVisitTime(new Date(System.currentTimeMillis() / 1000 * 1000))
                 .build();
         modelServingMapper.add(entity);
         var id = entity.getId();
@@ -54,7 +56,8 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
         // insert if not exists (ignore)
         modelServingMapper.add(entity);
         // no insertion
-        Assertions.assertEquals(null, entity.getId());
+        Assertions.assertNull(entity.getId());
+        entity.setId(id);
 
 
         var list = modelServingMapper.list(null, null, null, null);
@@ -65,5 +68,13 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(0, list.size());
         list = modelServingMapper.list(2L, 1L, 3L, "bar");
         Assertions.assertEquals(1, list.size());
+
+        // test updating last visit time
+        var visit = new Date(1000);
+        modelServingMapper.updateLastVisitTime(id, visit);
+        result = modelServingMapper.find(id);
+        Assertions.assertEquals(visit, result.getLastVisitTime());
+        entity.setLastVisitTime(visit);
+        Assertions.assertEquals(entity, result);
     }
 }

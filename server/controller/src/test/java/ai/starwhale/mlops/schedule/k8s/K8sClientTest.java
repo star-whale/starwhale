@@ -38,6 +38,8 @@ import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -70,7 +72,7 @@ public class K8sClientTest {
     }
 
     @Test
-    public void testDeploy() throws ApiException {
+    public void testDeployJob() throws ApiException {
         V1Job job = new V1Job();
         k8sClient.deployJob(job);
         verify(batchV1Api).createNamespacedJob(eq(nameSpace), eq(job), any(), eq(null), any(), any());
@@ -83,7 +85,7 @@ public class K8sClientTest {
     }
 
     @Test
-    public void testGet() throws ApiException {
+    public void testGetJob() throws ApiException {
         V1JobList t = new V1JobList();
         when(batchV1Api.listNamespacedJob(nameSpace, null, null, null, null, "ls", null, null, null, 30,
                 null)).thenReturn(
@@ -157,5 +159,26 @@ public class K8sClientTest {
         when(coreV1Api.listNamespacedPod(nameSpace, null, null, null, null, label,
                 null, null, null, 30, null)).thenReturn(pods);
         Assertions.assertEquals(k8sClient.getPodsByJobName("foo"), pods);
+    }
+
+    @Test
+    public void testDeployStatefulSet() throws ApiException {
+        var ss = new V1StatefulSet();
+        k8sClient.deployStatefulSet(ss);
+        verify(appsV1Api).createNamespacedStatefulSet(eq(nameSpace), eq(ss), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testDeleteStatefulSet() throws ApiException {
+        var n = "foo";
+        k8sClient.deleteStatefulSet(n);
+        verify(appsV1Api).deleteNamespacedStatefulSet(eq(n), eq(nameSpace), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testDeployService() throws ApiException {
+        var svc = new V1Service();
+        k8sClient.deployService(svc);
+        verify(coreV1Api).createNamespacedService(eq(nameSpace), eq(svc), any(), any(), any(), any());
     }
 }

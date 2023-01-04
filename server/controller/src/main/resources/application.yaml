@@ -27,6 +27,9 @@ sw:
   task:
     size: ${SW_TASK_SPLIT_SIZE:1}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
+  online-eval:
+    max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
+    min-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MIN_TTL_SECS:1800} # 30min
   instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   infra:
     k8s:
