@@ -183,11 +183,11 @@ swcli runtime list [OPTIONS]
 |`--size`| |❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 |`--filter`|`-fl`|❌| String  | | 过滤器，使用key=value格式或者flag，可使用多个filter，具体支持的filter如下： |
 
-| Filter | 类型       | 说明                                                    | 示例|
-|----|----------|-------------------------------------------------------|----|
-|`name`|Key-Value | Runtime名称前缀 |--filter name=mnist|
-|`owner`| Key-Value | 拥有者名称 |--filter owner=starwhale|
-|`latest`|Flag| Cloud Instance: 仅展示最新版本 <br/> Standalone Instance: 仅展示带有latest标签的版本 |--filter latest|
+|Filter|类型|说明|示例|
+|----|--------|----------|----------|
+|`name`|Key-Value|Runtime名称前缀|--filter name=pytorch|
+|`owner`| Key-Value|拥有者名称|--filter owner=starwhale|
+|`latest`|Flag|Cloud Instance: 仅展示最新版本 <br/> Standalone Instance: 仅展示带有latest标签的版本|--filter latest|
 
 ## 10. 锁定Python依赖信息
 
