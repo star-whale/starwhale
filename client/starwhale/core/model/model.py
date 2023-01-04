@@ -721,7 +721,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         _model_config = cls.load_model_config(workdir / model_yaml)
         svc = cls._get_service(_model_config.run.handler, workdir)
-        svc.serve(host, port)
+        svc.serve(host, port, _model_config.name)
 
 
 class CloudModel(CloudBundleModelMixin, Model):

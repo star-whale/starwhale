@@ -132,7 +132,8 @@ public class ModelServingServiceTest {
                         "SW_INSTANCE_URI", "inst",
                         "SW_MODEL_VERSION", "md/version/9",
                         "SW_RUNTIME_VERSION", "rt/version/8",
-                        "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7"
+                        "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
+                        "SW_PRODUCTION", "1"
                 ), "img", "model-serving-7");
 
         verify(k8sClient).deployService(any());
