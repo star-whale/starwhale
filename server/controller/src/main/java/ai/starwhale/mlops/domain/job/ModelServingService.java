@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import com.google.protobuf.Api;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -47,6 +48,9 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -135,22 +139,37 @@ public class ModelServingService {
                 .build();
 
         modelServingMapper.add(entity);
-        log.info("Model serving job has been created. ID={}", entity.getId());
+
+        var services = modelServingMapper.list(projectId, modelVersionId, runtimeVersionId, resourcePool);
+        if (services.size() != 1) {
+            // this can not happen
+            throw new SwProcessException(SwProcessException.ErrorType.DB, "duplicate entries, size " + services.size());
+        }
+        var id = services.get(0).getId();
+
+        log.info("Model serving job has been created. ID={}", id);
 
         try {
-            deploy(runtime, model, projectId.toString(), user, entity.getId());
+            deploy(runtime, model, projectId.toString(), user, id);
         } catch (ApiException e) {
             log.error(e.getResponseBody(), e);
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
         }
 
-        var id = idConverter.convert(entity.getId());
-        var uri = getServiceBaseUri(entity.getId());
-        return ModelServingVo.builder().id(id).baseUri(uri).build();
+        var idStr = idConverter.convert(id);
+        var uri = getServiceBaseUri(id);
+        return ModelServingVo.builder().id(idStr).baseUri(uri).build();
     }
 
-    private void deploy(RuntimeVersionEntity runtime, ModelVersionEntity model, String project, User owner, long id)
-            throws ApiException {
+    private void deploy(
+            RuntimeVersionEntity runtime,
+            ModelVersionEntity model,
+            String project,
+            User owner,
+            long id
+    ) throws ApiException {
+        var name = getServiceName(id);
+
         // TODO: refactor image generation
         var image = runtime.getImage();
         if (systemSettingService.getSystemSetting() != null
@@ -161,7 +180,6 @@ public class ModelServingService {
                     .resolve(systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
         }
 
-        var name = getServiceName(id);
 
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());
@@ -180,7 +198,15 @@ public class ModelServingService {
                 "SW_PRODUCTION", "1"
         );
         var ss = k8sJobTemplate.renderModelServingOrch(envs, image, name);
-        k8sClient.deployStatefulSet(ss);
+        try {
+            k8sClient.deployStatefulSet(ss);
+        } catch (ApiException e) {
+            if (e.getCode() != HttpServletResponse.SC_CONFLICT) {
+                throw e;
+            }
+            // exists, ignore exception
+            return;
+        }
 
         var svc = new V1Service();
         var meta = new V1ObjectMeta();

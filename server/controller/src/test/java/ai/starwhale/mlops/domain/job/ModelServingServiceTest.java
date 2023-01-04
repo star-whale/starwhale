@@ -44,6 +44,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import io.kubernetes.client.openapi.ApiException;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,11 +119,19 @@ public class ModelServingServiceTest {
 
     @Test
     public void testCreate() throws ApiException {
-        var project = "3";
-        var model = "4";
-        var runtime = "5";
         var resourcePool = "default";
-        svc.create(project, model, runtime, resourcePool);
+
+        var entity = ModelServingEntity.builder()
+                .id(7L)
+                .projectId(2L)
+                .modelVersionId(9L)
+                .runtimeVersionId(8L)
+                .resourcePool(resourcePool)
+                .build();
+        when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
+        when(runtimeDao.getRuntimeVersionId("8", null)).thenReturn(8L);
+        when(modelDao.getModelVersionId("9", null)).thenReturn(9L);
+        svc.create("2", "9", "8", resourcePool);
 
         verify(k8sJobTemplate).renderModelServingOrch(
                 Map.of(

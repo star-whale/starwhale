@@ -18,11 +18,14 @@ package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.text.CaseUtils;
 import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
 import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
@@ -46,16 +49,46 @@ public interface ModelServingMapper {
     @Select("select * from " + TABLE + " where id=#{id}")
     ModelServingEntity find(long id);
 
+    @SelectProvider(value = SqlProviderAdapter.class, method = "listByConditions")
+    List<ModelServingEntity> list(
+            @Param("projectId") Long projectId,
+            @Param("modelVersionId") Long modelVersionId,
+            @Param("runtimeVersionId") Long runtimeVersionId,
+            @Param("resourcePool") String resourcePool
+    );
+
     class SqlProviderAdapter {
         public String insert() {
             var values = Arrays.stream(COLUMNS)
                     .map(i -> "#{" + CaseUtils.toCamelCase(i, false, '_') + "}")
                     .toArray(String[]::new);
+            return String.format("insert ignore into %s(%s) values (%s)",
+                    TABLE, String.join(", ", COLUMNS), String.join(", ", values));
+        }
+
+        public String listByConditions(
+                @Param("projectId") Long projectId,
+                @Param("modelVersionId") Long modelVersionId,
+                @Param("runtimeVersionId") Long runtimeVersionId,
+                @Param("resourcePool") String resourcePool
+        ) {
             return new SQL() {
                 {
-                    INSERT_INTO(TABLE);
-                    INTO_COLUMNS(COLUMNS);
-                    INTO_VALUES(values);
+                    SELECT("id");
+                    SELECT(COLUMNS);
+                    FROM(TABLE);
+                    if (projectId != null) {
+                        WHERE("project_id=#{projectId}");
+                    }
+                    if (modelVersionId != null) {
+                        WHERE("model_version_id=#{modelVersionId}");
+                    }
+                    if (runtimeVersionId != null) {
+                        WHERE("runtime_version_id=#{runtimeVersionId}");
+                    }
+                    if (resourcePool != null) {
+                        WHERE("resource_pool=#{resourcePool}");
+                    }
                 }
             }.toString();
         }
