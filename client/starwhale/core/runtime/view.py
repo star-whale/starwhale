@@ -206,8 +206,9 @@ class RuntimeTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        filters = filters or []
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _runtimes, _pager = Runtime.list(_uri, page, size, filters)
@@ -306,8 +307,9 @@ class RuntimeTermViewRich(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        filters = filters or []
         _data, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )
@@ -331,8 +333,9 @@ class RuntimeTermViewJson(RuntimeTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> None:
+        filters = filters or []
         _data, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )

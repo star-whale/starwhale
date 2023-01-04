@@ -235,10 +235,11 @@ class CloudRequestMixed:
         uri_typ: str,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        _filter: t.Dict[str, t.Any] = {},
+        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filter_dict = filter_dict or {}
         _params = {"pageNum": page, "pageSize": size}
-        _params.update(_filter)
+        _params.update(filter_dict)
         r = self.do_http_request(
             f"/project/{project_uri.project}/{uri_typ}",
             params=_params,
@@ -248,7 +249,7 @@ class CloudRequestMixed:
 
         _page = page
         _size = size
-        if _filter.get("latest", False):
+        if filter_dict.get("latest", False):
             _page = 1
             _size = 1
 

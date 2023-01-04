@@ -139,9 +139,9 @@ class DatasetTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-
+        filters = filters or []
         if isinstance(project_uri, str):
             _uri = URI(project_uri, expected_type=URIType.PROJECT)
         else:
@@ -236,8 +236,9 @@ class DatasetTermViewRich(DatasetTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        filters = filters or []
         _datasets, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )
@@ -260,8 +261,9 @@ class DatasetTermViewJson(DatasetTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.List[str] = [],
+        filters: t.Optional[t.List[str]] = None,
     ) -> None:
+        filters = filters or []
         _datasets, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )
