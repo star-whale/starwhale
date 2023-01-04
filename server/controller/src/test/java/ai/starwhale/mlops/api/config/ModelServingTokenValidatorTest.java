@@ -61,7 +61,6 @@ public class ModelServingTokenValidatorTest {
 
         var entity = ModelServingEntity.builder()
                 .id(1L)
-                .finishedTime(new Date(System.currentTimeMillis() + 1000))
                 .isDeleted(0)
                 .build();
 
@@ -76,12 +75,5 @@ public class ModelServingTokenValidatorTest {
                 () -> modelServingTokenValidator.validClaims(parsed));
         Assertions.assertTrue(e.getMessage().contains("deleted"));
         entity.setIsDeleted(0);
-
-        // expired
-        entity.setFinishedTime(new Date(1));
-        when(modelServingMapper.find(eq(1L))).thenReturn(entity);
-        e = Assertions.assertThrowsExactly(SwValidationException.class,
-                () -> modelServingTokenValidator.validClaims(parsed));
-        Assertions.assertTrue(e.getMessage().contains("expired"));
     }
 }

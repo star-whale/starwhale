@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
@@ -273,7 +274,7 @@ public interface JobApi {
             @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/serving")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<String>> createModelServing(
+    ResponseEntity<ResponseMessage<ModelServingVo>> createModelServing(
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project Url",

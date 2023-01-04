@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
@@ -82,7 +83,9 @@ public class ModelServingServiceTest {
                 systemSettingService,
                 runTimeProperties,
                 "inst",
-                modelServingTokenValidator);
+                modelServingTokenValidator,
+                new IdConverter()
+        );
 
         var user = User.builder().id(1L).name("starwhale").build();
         when(userService.currentUserDetail()).thenReturn(user);
@@ -119,8 +122,7 @@ public class ModelServingServiceTest {
         var model = "4";
         var runtime = "5";
         var resourcePool = "default";
-        var ttl = 1000;
-        svc.create(project, model, runtime, resourcePool, ttl);
+        svc.create(project, model, runtime, resourcePool);
 
         verify(k8sJobTemplate).renderModelServingOrch(
                 Map.of(
