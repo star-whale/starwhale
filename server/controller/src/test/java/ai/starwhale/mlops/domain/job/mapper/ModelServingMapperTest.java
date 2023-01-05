@@ -46,7 +46,24 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
                 .jobStatus(JobStatus.RUNNING)
                 .build();
         modelServingMapper.add(entity);
-        var result = modelServingMapper.find(entity.getId());
+        var id = entity.getId();
+        var result = modelServingMapper.find(id);
         Assertions.assertEquals(entity, result);
+
+        entity.setId(null);
+        // insert if not exists (ignore)
+        modelServingMapper.add(entity);
+        // no insertion
+        Assertions.assertEquals(null, entity.getId());
+
+
+        var list = modelServingMapper.list(null, null, null, null);
+        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(id, list.get(0).getId());
+
+        list = modelServingMapper.list(null, 7L, null, null);
+        Assertions.assertEquals(0, list.size());
+        list = modelServingMapper.list(2L, 1L, 3L, "bar");
+        Assertions.assertEquals(1, list.size());
     }
 }
