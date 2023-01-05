@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
@@ -54,16 +55,29 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public Long getModelVersionId(String versionUrl, Long modelId) {
-        if (idConvertor.isId(versionUrl)) {
-            return idConvertor.revert(versionUrl);
+    public ModelEntity getModel(Long id) {
+        var model =  modelMapper.find(id);
+        if (model == null) {
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                String.format("Unable to find Model id %s", id));
         }
-        ModelVersionEntity entity = versionMapper.findByNameAndModelId(versionUrl, modelId);
+        return model;
+    }
+
+    public ModelVersionEntity getModelVersion(String versionUrl) {
+        ModelVersionEntity entity;
+        if (idConvertor.isId(versionUrl)) {
+            var id = idConvertor.revert(versionUrl);
+            entity = versionMapper.find(id);
+        } else {
+            entity = versionMapper.findByNameAndModelId(versionUrl, null);
+        }
+
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
                     String.format("Unable to find Model Version %s", versionUrl));
         }
-        return entity.getId();
+        return entity;
     }
 
     @Override

@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -48,6 +49,34 @@ public class JobConverter {
         this.runtimeService = runtimeService;
         this.datasetDao = datasetDao;
         this.systemSettingService = systemSettingService;
+    }
+
+    public JobVo convert(Job job) throws ConvertException {
+        List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
+                List.of(job.getJobRuntime().getId()));
+        if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
+            throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and runtime");
+        }
+        List<DatasetVersion> datasetVersions = datasetDao.listDatasetVersionsOfJob(job.getId());
+
+        List<String> idList = datasetVersions.stream()
+                .map(DatasetVersion::getVersionName)
+                .collect(Collectors.toList());
+
+        return JobVo.builder()
+                .id(idConvertor.convert(job.getId()))
+                .uuid(job.getUuid())
+                .owner(UserVo.from(job.getOwner(), idConvertor))
+                .modelName(job.getModel().getName())
+                .modelVersion(job.getModel().getVersion())
+                .createdTime(job.getCreatedTime().getTime())
+                .runtime(runtimeByVersionIds.get(0))
+                .datasets(idList)
+                .jobStatus(job.getStatus())
+                .stopTime(job.getFinishedTime().getTime())
+                .comment(job.getComment())
+                .resourcePool(job.getResourcePool().getName())
+                .build();
     }
 
     public JobVo convert(JobEntity jobEntity) throws ConvertException {

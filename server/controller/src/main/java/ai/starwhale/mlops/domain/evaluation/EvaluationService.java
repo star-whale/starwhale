@@ -28,9 +28,9 @@ import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -53,7 +53,7 @@ public class EvaluationService {
 
     private final UserService userService;
     private final ProjectManager projectManager;
-    private final JobMapper jobMapper;
+    private final JobDao jobDao;
     private final ViewConfigMapper viewConfigMapper;
     private final IdConverter idConvertor;
     private final ViewConfigConverter viewConfigConvertor;
@@ -62,12 +62,12 @@ public class EvaluationService {
 
     private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
-    public EvaluationService(UserService userService, ProjectManager projectManager, JobMapper jobMapper,
+    public EvaluationService(UserService userService, ProjectManager projectManager, JobDao jobDao,
             ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
             JobConverter jobConvertor, JobStatusMachine jobStatusMachine) {
         this.userService = userService;
         this.projectManager = projectManager;
-        this.jobMapper = jobMapper;
+        this.jobDao = jobDao;
         this.viewConfigMapper = viewConfigMapper;
         this.idConvertor = idConvertor;
         this.viewConfigConvertor = viewConfigConvertor;
@@ -115,22 +115,22 @@ public class EvaluationService {
             SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, null);
-        return PageUtil.toPageInfo(jobEntities, this::toSummary);
+        List<Job> jobs = jobDao.listJobs(projectId, null);
+        return PageUtil.toPageInfo(jobs, this::toSummary);
     }
 
 
-    private SummaryVo toSummary(JobEntity entity) {
-        if (summaryCache.containsKey(entity.getId())) {
-            return summaryCache.get(entity.getId());
+    private SummaryVo toSummary(Job job) {
+        if (summaryCache.containsKey(job.getId())) {
+            return summaryCache.get(job.getId());
         }
 
-        JobVo jobVo = jobConvertor.convert(entity);
+        JobVo jobVo = jobConvertor.convert(job);
         SummaryVo summaryVo = SummaryVo.builder()
                 .id(jobVo.getId())
                 .uuid(jobVo.getUuid())
-                .projectId(idConvertor.convert(entity.getProject().getId()))
-                .projectName(entity.getProject().getProjectName())
+                .projectId(idConvertor.convert(job.getProject().getId()))
+                .projectName(job.getProject().getName())
                 .modelName(jobVo.getModelName())
                 .modelVersion(jobVo.getModelVersion())
                 .datasets(StrUtil.join(",", jobVo.getDatasets()))
@@ -146,8 +146,8 @@ public class EvaluationService {
                 .build();
 
         // only cache the jobs which have the final status
-        if (jobStatusMachine.isFinal(entity.getJobStatus())) {
-            summaryCache.put(entity.getId(), summaryVo);
+        if (jobStatusMachine.isFinal(job.getStatus())) {
+            summaryCache.put(job.getId(), summaryVo);
         }
         return summaryVo;
     }

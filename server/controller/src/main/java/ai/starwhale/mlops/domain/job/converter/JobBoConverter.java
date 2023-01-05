@@ -127,11 +127,13 @@ public class JobBoConverter {
         try {
             job = Job.builder()
                     .id(jobEntity.getId())
+                    .uuid(jobEntity.getJobUuid())
                     .project(Project.builder()
                             .id(jobEntity.getProjectId())
                             .name(jobEntity.getProject().getProjectName())
                             .build())
                     .jobRuntime(JobRuntime.builder()
+                            .id(runtimeVersionEntity.getId())
                             .name(runtimeEntity.getRuntimeName())
                             .version(runtimeVersionEntity.getVersionName())
                             .storagePath(runtimeVersionEntity.getStoragePath())
@@ -151,10 +153,15 @@ public class JobBoConverter {
                     .stepSpec(jobEntity.getStepSpec())
                     .dataSets(dataSets)
                     .outputDir(jobEntity.getResultOutputPath())
-                    .uuid(jobEntity.getJobUuid())
                     .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
-                    .owner(User.builder().id(jobEntity.getOwner().getId()).name(jobEntity.getOwner().getUserName())
+                    .owner(User.builder()
+                            .id(jobEntity.getOwner().getId())
+                            .name(jobEntity.getOwner().getUserName())
+                            .createdTime(jobEntity.getOwner().getCreatedTime())
                             .build())
+                    .createdTime(jobEntity.getCreatedTime())
+                    .finishedTime(jobEntity.getFinishedTime())
+                    .comment(jobEntity.getComment())
                     .build();
         } catch (JsonProcessingException e) {
             throw new SwValidationException(ValidSubject.JOB, e.getMessage());
@@ -162,7 +169,7 @@ public class JobBoConverter {
         return fillStepsAndTasks(job);
     }
 
-    private Job fillStepsAndTasks(Job job) {
+    public Job fillStepsAndTasks(Job job) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
                 .peek(step -> {

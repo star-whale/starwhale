@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.job.JobManager;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
@@ -51,7 +51,7 @@ public class TaskServiceTest {
 
     StorageAccessService storageAccessService;
 
-    JobManager jobManager;
+    JobDao jobDao;
 
     SystemSettingService systemSettingService;
 
@@ -60,17 +60,17 @@ public class TaskServiceTest {
         taskConvertor = new TaskConverter(new IdConverter());
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
-        jobManager = mock(JobManager.class);
+        jobDao = mock(JobDao.class);
         systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
-        taskService = new TaskService(taskConvertor, taskMapper, storageAccessService, jobManager,
+        taskService = new TaskService(taskConvertor, taskMapper, storageAccessService, jobDao,
                 systemSettingService);
     }
 
     @Test
     public void testListTaskWithResourcePool() {
-        when(jobManager.getJobId(anyString())).thenReturn(1L);
-        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().resourcePool("a").build());
+        when(jobDao.findJob(any())).thenReturn(
+                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("a").build()).build());
         var startedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
@@ -79,24 +79,24 @@ public class TaskServiceTest {
                         TaskEntity.builder().id(2L).startedTime(startedTime).taskUuid("uuid2")
                                 .taskStatus(
                                         TaskStatus.SUCCESS).build()));
-        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("",
+        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1",
                 PageParams.builder().pageNum(0).pageSize(3).build());
         Assertions.assertEquals(1, taskVoPageInfo.getPages());
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").createdTime(startedTime.getTime()).uuid("uuid1")
-                        .taskStatus(TaskStatus.RUNNING).resourcePool(ResourcePool.DEFAULT_NAME).build(),
+                        .taskStatus(TaskStatus.RUNNING).resourcePool("a").build(),
                 TaskVo.builder().id("2").createdTime(startedTime.getTime()).uuid("uuid2")
-                        .taskStatus(TaskStatus.SUCCESS).resourcePool(ResourcePool.DEFAULT_NAME).build()));
+                        .taskStatus(TaskStatus.SUCCESS).resourcePool("a").build()));
 
 
     }
 
     @Test
     public void testListTaskWithoutResourcePool() {
-        when(jobManager.getJobId(anyString())).thenReturn(1L);
-        when(jobManager.findJob(any())).thenReturn(JobEntity.builder().resourcePool("rp").build());
+        when(jobDao.findJob(any())).thenReturn(
+                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("rp").build()).build());
         var startedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
                 List.of(TaskEntity.builder().id(1L).startedTime(startedTime).taskUuid("uuid1")
@@ -105,16 +105,16 @@ public class TaskServiceTest {
                         TaskEntity.builder().id(2L).startedTime(startedTime).taskUuid("uuid2")
                                 .taskStatus(
                                         TaskStatus.SUCCESS).build()));
-        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("",
+        PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1",
                 PageParams.builder().pageNum(0).pageSize(3).build());
         Assertions.assertEquals(1, taskVoPageInfo.getPages());
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").createdTime(startedTime.getTime()).uuid("uuid1")
-                        .taskStatus(TaskStatus.RUNNING).resourcePool(ResourcePool.DEFAULT_NAME).build(),
+                        .taskStatus(TaskStatus.RUNNING).resourcePool("rp").build(),
                 TaskVo.builder().id("2").createdTime(startedTime.getTime()).uuid("uuid2")
-                        .taskStatus(TaskStatus.SUCCESS).resourcePool(ResourcePool.DEFAULT_NAME).build()));
+                        .taskStatus(TaskStatus.SUCCESS).resourcePool("rp").build()));
 
 
     }

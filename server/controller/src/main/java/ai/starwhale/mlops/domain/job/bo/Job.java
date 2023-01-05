@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -83,6 +84,10 @@ public class Job extends TimeConcern {
     ResourcePool resourcePool;
 
     User owner;
+
+    Date createdTime;
+    Date finishedTime;
+    String comment;
 
     @Override
     public boolean equals(Object o) {

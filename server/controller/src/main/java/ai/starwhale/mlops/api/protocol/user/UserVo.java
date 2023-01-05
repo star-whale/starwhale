@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api.protocol.user;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
@@ -55,6 +56,18 @@ public class UserVo {
                 .name(entity.getUserName())
                 .createdTime(entity.getCreatedTime().getTime())
                 .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled() == 1)
+                .build();
+    }
+
+    public static UserVo from(User user, IdConverter idConvertor) {
+        if (user == null) {
+            return UserVo.empty();
+        }
+        return UserVo.builder()
+                .id(idConvertor.convert(user.getId()))
+                .name(user.getName())
+                .createdTime(user.getCreatedTime() == null ? null : user.getCreatedTime().getTime())
+                .isEnabled(user.isEnabled())
                 .build();
     }
 }

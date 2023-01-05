@@ -75,6 +75,25 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return entity.getId();
     }
 
+    public DatasetVersion getDatasetVersion(String versionUrl) {
+        DatasetVersionEntity entity;
+        if (idConvertor.isId(versionUrl)) {
+            entity = datasetVersionMapper.find(idConvertor.revert(versionUrl));
+        } else {
+            entity = datasetVersionMapper.findByNameAndDatasetId(versionUrl, null, false);
+        }
+        if (entity == null) {
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    String.format("Unable to find Dataset Version %s", versionUrl));
+        }
+        DatasetEntity datasetEntity = datasetMapper.find(entity.getDatasetId());
+        if (null == datasetEntity) {
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                "Can not find dataset" + entity.getDatasetId());
+        }
+        return DatasetVersion.fromEntity(datasetEntity, entity);
+    }
+
     public DatasetVersion getDatasetVersion(Long versionId) {
         DatasetVersionEntity versionEntity = datasetVersionMapper.find(versionId);
         if (null == versionEntity) {

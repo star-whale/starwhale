@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
@@ -54,16 +55,29 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
-        if (idConvertor.isId(versionUrl)) {
-            return idConvertor.revert(versionUrl);
+    public RuntimeEntity getRuntime(Long id) {
+        RuntimeEntity runtime = runtimeMapper.find(id);
+
+        if (runtime == null) {
+            throw new SwNotFoundException(ResourceType.BUNDLE,
+                    String.format("Unable to find Runtime %s", id));
         }
-        RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeId);
+        return runtime;
+    }
+
+    public RuntimeVersionEntity getRuntimeVersion(String versionUrl) {
+        RuntimeVersionEntity entity;
+        if (idConvertor.isId(versionUrl)) {
+            var id = idConvertor.revert(versionUrl);
+            entity = runtimeVersionMapper.find(id);
+        } else {
+            entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, null);
+        }
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
                     String.format("Unable to find Runtime Version %s", versionUrl));
         }
-        return entity.getId();
+        return entity;
     }
 
     @Override

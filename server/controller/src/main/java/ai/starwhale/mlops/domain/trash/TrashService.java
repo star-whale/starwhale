@@ -27,7 +27,7 @@ import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
-import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
@@ -62,19 +62,19 @@ public class TrashService {
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
-    private final JobManager jobManager;
+    private final JobDao jobDao;
     private final IdConverter idConvertor;
 
     public TrashService(TrashMapper trashMapper, UserMapper userMapper, ProjectManager projectManager,
-            ModelDao modelDao, DatasetDao datasetDao,
-            RuntimeDao runtimeDao, JobManager jobManager, IdConverter idConvertor) {
+                        ModelDao modelDao, DatasetDao datasetDao,
+                        RuntimeDao runtimeDao, JobDao jobDao, IdConverter idConvertor) {
         this.trashMapper = trashMapper;
         this.userMapper = userMapper;
         this.projectManager = projectManager;
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
-        this.jobManager = jobManager;
+        this.jobDao = jobDao;
         this.idConvertor = idConvertor;
     }
 
@@ -150,7 +150,7 @@ public class TrashService {
         trashMapper.delete(trashId);
     }
 
-    private BundleAccessor getBundleAccessor(Trash.Type type) {
+    public BundleAccessor getBundleAccessor(Trash.Type type) {
         return (BundleAccessor) getAccessor(type);
     }
 
@@ -168,7 +168,7 @@ public class TrashService {
             case RUNTIME:
                 return runtimeDao;
             case EVALUATION:
-                return jobManager;
+                return jobDao;
             default:
                 throw new SwValidationException(ValidSubject.TRASH, "Unknown trash type" + type);
         }

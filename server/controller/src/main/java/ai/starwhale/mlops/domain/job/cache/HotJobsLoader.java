@@ -16,9 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import java.util.Arrays;
@@ -37,23 +36,19 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class HotJobsLoader implements CommandLineRunner {
 
-
-    final JobMapper jobMapper;
+    final JobDao jobDao;
 
     final JobLoader jobLoader;
 
     final JobStatusMachine jobStatusMachine;
 
-    final JobBoConverter jobBoConverter;
-
     public HotJobsLoader(
-            JobMapper jobMapper,
+            JobDao jobDao,
             JobLoader jobLoader,
-            JobStatusMachine jobStatusMachine, JobBoConverter jobBoConverter) {
-        this.jobMapper = jobMapper;
+            JobStatusMachine jobStatusMachine) {
+        this.jobDao = jobDao;
         this.jobLoader = jobLoader;
         this.jobStatusMachine = jobStatusMachine;
-        this.jobBoConverter = jobBoConverter;
     }
 
 
@@ -63,22 +58,22 @@ public class HotJobsLoader implements CommandLineRunner {
      *
      * @return tasks of jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED
      */
-    private List<JobEntity> hotJobsFromDb() {
+    private List<Job> hotJobsFromDb() {
         List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
                 .parallelStream()
                 .filter(jobStatusMachine::isHot)
                 .collect(Collectors.toList());
-        return jobMapper.findJobByStatusIn(hotJobStatuses);
+        return jobDao.findJobByStatusIn(hotJobStatuses);
     }
 
     @Override
     public void run(String... args) throws Exception {
-        hotJobsFromDb().forEach(jobEntity -> {
+        hotJobsFromDb().forEach(job -> {
             try {
-                jobLoader.load(jobBoConverter.fromEntity(jobEntity), false);
+                jobLoader.load(job, false);
             } catch (Exception e) {
-                log.error("loading hotting job failed {}", jobEntity.getId(), e);
-                jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+                log.error("loading hotting job failed {}", job.getId(), e);
+                jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
             }
         });
         log.info("hot jobs loaded");

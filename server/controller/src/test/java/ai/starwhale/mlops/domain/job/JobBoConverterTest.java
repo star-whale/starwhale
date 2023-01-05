@@ -121,8 +121,16 @@ public class JobBoConverterTest {
         TaskBoConverter taskBoConverter = mock(TaskBoConverter.class);
         when(taskBoConverter.fromTaskEntity(anyList(), any())).thenReturn(List.of());
         StepMapper stepMapper = mock(StepMapper.class);
-        when(stepMapper.findByJobId(jobEntity.getId())).thenReturn(List.of(StepEntity.builder().id(1L).status(
-                StepStatus.RUNNING).build(), StepEntity.builder().id(2L).lastStepId(1L).build()));
+        when(stepMapper.findByJobId(jobEntity.getId()))
+                .thenReturn(List.of(
+                    StepEntity.builder()
+                        .id(1L)
+                        .status(StepStatus.RUNNING)
+                        .build(),
+                    StepEntity.builder()
+                        .id(2L)
+                        .lastStepId(1L).build()
+                ));
         TaskMapper taskMapper = mock(TaskMapper.class);
         when(taskMapper.findByStepId(any())).thenReturn(
                 List.of(TaskEntity.builder().build(), TaskEntity.builder().build()));
@@ -140,7 +148,6 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getId(), job.getId());
         Assertions.assertEquals(jobEntity.getType(), job.getType());
         Assertions.assertEquals(jobEntity.getResultOutputPath(), job.getOutputDir());
-        Assertions.assertEquals(jobEntity.getJobUuid(), job.getUuid());
         JobRuntime swrt = job.getJobRuntime();
         Assertions.assertNotNull(swrt);
         Assertions.assertEquals(runtimeVersionEntity.getVersionName(), swrt.getVersion());

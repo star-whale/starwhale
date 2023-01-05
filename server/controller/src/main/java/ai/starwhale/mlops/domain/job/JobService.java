@@ -21,14 +21,13 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
@@ -57,6 +56,7 @@ import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -72,9 +72,6 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 @Service
 public class JobService {
-
-    private final JobMapper jobMapper;
-    private final JobDatasetVersionMapper jobDatasetVersionMapper;
     private final TaskMapper taskMapper;
     private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
@@ -85,7 +82,7 @@ public class JobService {
     private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
     private final ProjectManager projectManager;
-    private final JobManager jobManager;
+    private final JobDao jobDao;
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
@@ -93,23 +90,20 @@ public class JobService {
 
     private final TrashService trashService;
 
-    public JobService(JobBoConverter jobBoConverter, JobMapper jobMapper,
-            JobDatasetVersionMapper jobDatasetVersionMapper,
-            TaskMapper taskMapper, JobConverter jobConvertor, RuntimeDao runtimeDao,
-            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-            ProjectManager projectManager, JobManager jobManager, JobLoader jobLoader, ModelDao modelDao,
-            ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
-            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
-        this.jobBoConverter = jobBoConverter;
-        this.jobMapper = jobMapper;
-        this.jobDatasetVersionMapper = jobDatasetVersionMapper;
+    public JobService(TaskMapper taskMapper, JobConverter jobConvertor,
+                      JobBoConverter jobBoConverter, RuntimeDao runtimeDao,
+                      JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
+                      ProjectManager projectManager, JobDao jobDao, JobLoader jobLoader, ModelDao modelDao,
+                      ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
+                      UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
+        this.jobBoConverter = jobBoConverter;
         this.runtimeDao = runtimeDao;
         this.jobSpliterator = jobSpliterator;
         this.hotJobHolder = hotJobHolder;
         this.projectManager = projectManager;
-        this.jobManager = jobManager;
+        this.jobDao = jobDao;
         this.jobLoader = jobLoader;
         this.modelDao = modelDao;
         this.resultQuerier = resultQuerier;
@@ -123,13 +117,12 @@ public class JobService {
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, modelId);
+        List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
     public JobVo findJob(String projectUrl, String jobUrl) {
-        Job job = jobManager.fromUrl(jobUrl);
-        JobEntity entity = jobManager.findJob(job);
+        Job entity = jobDao.findJob(jobUrl);
         if (entity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
@@ -140,23 +133,16 @@ public class JobService {
     }
 
     public Object getJobResult(String projectUrl, String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
+        Long jobId = jobDao.getJobId(jobUrl);
         return resultQuerier.resultOfJob(jobId);
     }
 
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
-        Job job = jobManager.fromUrl(jobUrl);
-        int res;
-        if (job.getId() != null) {
-            res = jobMapper.updateJobComment(job.getId(), comment);
-        } else {
-            res = jobMapper.updateJobCommentByUuid(job.getUuid(), comment);
-        }
-        return res > 0;
+        return jobDao.updateJobComment(jobUrl, comment);
     }
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
+        Long jobId = jobDao.getJobId(jobUrl);
         Trash trash = Trash.builder()
                 .projectId(projectManager.getProjectId(projectUrl))
                 .objectId(jobId)
@@ -164,8 +150,7 @@ public class JobService {
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
 
-        int res = jobMapper.removeJob(jobId);
-        return res > 0;
+        return jobDao.removeJob(jobId);
     }
 
     public Boolean recoverJob(String projectUrl, String jobUrl) {
@@ -178,30 +163,40 @@ public class JobService {
             String stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
-        Long projectId = projectManager.getProjectId(projectUrl);
-        Long runtimeVersionId = runtimeDao.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = modelDao.getModelVersionId(modelVersionUrl, null);
-        JobEntity jobEntity = JobEntity.builder()
-                .ownerId(user.getId())
+        var project = projectManager.getProject(projectUrl);
+        var runtimeVersion = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
+        var runtime = runtimeDao.getRuntime(runtimeVersion.getRuntimeId());
+        var modelVersion = modelDao.getModelVersion(modelVersionUrl);
+        var model = modelDao.getModel(modelVersion.getModelId());
+        var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))
+                .map(datasetDao::getDatasetVersion)
+                .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+        JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
-                .runtimeVersionId(runtimeVersionId)
-                .projectId(projectId)
-                .modelVersionId(modelVersionId)
+                .ownerId(user.getId())
+                .ownerName(user.getName())
+                .runtimeVersionId(runtimeVersion.getId())
+                .runtimeVersionValue(runtimeVersion.getVersionName())
+                .runtimeName(runtime.getRuntimeName())
+                .projectId(project.getId())
+                .project(project)
+                .modelVersionId(modelVersion.getId())
+                .modelVersionValue(modelVersion.getVersionName())
+                .modelName(model.getModelName())
+                .datasetIdVersionMap(datasetVersionIdMaps)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
                 .type(JobType.EVALUATION)
                 .resourcePool(resourcePool)
                 .stepSpec(stepSpecOverWrites)
+                .createdTime(new Date())
+                .modifiedTime(new Date())
                 .build();
 
-        jobMapper.addJob(jobEntity);
-        log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
+        jobDao.addJob(jobEntity);
+        log.info("Job has been created. ID={}", jobEntity.getId());
 
-        List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(url -> datasetDao.getDatasetVersionId(url, null))
-                .collect(Collectors.toList());
-        jobDatasetVersionMapper.insert(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
 
@@ -210,17 +205,17 @@ public class JobService {
      */
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
     public void splitNewCreatedJobs() {
-        jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED))
-                .forEach(jobEntity -> {
+        jobDao.findJobByStatusIn(List.of(JobStatus.CREATED))
+                .forEach(job -> {
                     //one transaction
                     try {
-                        jobSpliterator.split(jobEntity);
-                        Job job = jobBoConverter.fromEntity(jobEntity);
+                        jobSpliterator.split(job);
+                        jobBoConverter.fillStepsAndTasks(job);
                         jobLoader.load(job, false);
                         jobUpdateHelper.updateJob(job);
                     } catch (Exception e) {
-                        log.error("splitting job error {}", jobEntity.getId(), e);
-                        jobMapper.updateJobStatus(List.of(jobEntity.getId()), JobStatus.FAIL);
+                        log.error("splitting job error {}", job.getId(), e);
+                        jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
                     }
 
                 });
@@ -232,7 +227,7 @@ public class JobService {
      */
     @Transactional
     public void cancelJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
+        Long jobId = jobDao.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
             throw new StarwhaleApiException(
@@ -265,7 +260,7 @@ public class JobService {
      */
     @Transactional
     public void pauseJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
+        Long jobId = jobDao.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if (null == jobs || jobs.isEmpty()) {
             throw new SwValidationException(ValidSubject.JOB, "frozen job can't be paused ");
@@ -315,17 +310,16 @@ public class JobService {
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
     public void resumeJob(String jobUrl) {
-        Long jobId = jobManager.getJobId(jobUrl);
-        JobEntity jobEntity = jobMapper.findJobById(jobId);
-        if (null == jobEntity) {
+        Long jobId = jobDao.getJobId(jobUrl);
+        Job job = jobDao.findJobById(jobId);
+        if (null == job) {
             throw new SwValidationException(ValidSubject.JOB, "job not exists");
         }
-        if (jobEntity.getJobStatus() != JobStatus.PAUSED
-                && jobEntity.getJobStatus() != JobStatus.FAIL
-                && jobEntity.getJobStatus() != JobStatus.CANCELED) {
+        if (job.getStatus() != JobStatus.PAUSED
+                && job.getStatus() != JobStatus.FAIL
+                && job.getStatus() != JobStatus.CANCELED) {
             throw new SwValidationException(ValidSubject.JOB, "only failed/paused/canceled job can be resumed ");
         }
-        Job job = jobBoConverter.fromEntity(jobEntity);
         job = jobLoader.load(job, true);
         jobUpdateHelper.updateJob(job);
     }

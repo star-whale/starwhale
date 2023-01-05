@@ -19,8 +19,8 @@ package ai.starwhale.mlops.resulting;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -29,7 +29,6 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -90,9 +89,9 @@ public class ResultQuerierTest {
 
     @Test
     public void testResultOfJob() throws IOException {
-        JobMapper jobMapper = mockJobMapper();
+        JobDao jobDao = mockJobDao();
         StorageAccessService storageAccessService = mockStorageAccessService();
-        ResultQuerier resultQuerier = new ResultQuerier(jobMapper, storageAccessService, new ObjectMapper());
+        ResultQuerier resultQuerier = new ResultQuerier(jobDao, storageAccessService, new ObjectMapper());
         Object o = resultQuerier.resultOfJob(1L);
         Assertions.assertEquals(OBJECT, objectMapper.writeValueAsString(o));
         Map<String, Object> result = resultQuerier.flattenResultOfJob(6L);
@@ -104,9 +103,9 @@ public class ResultQuerierTest {
 
     @Test
     public void testResultOfJobException() throws IOException {
-        JobMapper jobMapper = mockJobMapper();
+        JobDao jobDao = mockJobDao();
         StorageAccessService storageAccessService = mockStorageAccessService();
-        ResultQuerier resultQuerier = new ResultQuerier(jobMapper, storageAccessService, new ObjectMapper());
+        ResultQuerier resultQuerier = new ResultQuerier(jobDao, storageAccessService, new ObjectMapper());
         Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(2L));
         Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(3L));
         Assertions.assertThrowsExactly(SwValidationException.class, () -> resultQuerier.resultOfJob(4L));
@@ -132,19 +131,18 @@ public class ResultQuerierTest {
                 new ByteArrayInputStream(MOCK_RESULT.getBytes()), MOCK_RESULT.getBytes().length);
     }
 
-    JobMapper mockJobMapper() {
-        JobMapper jobMapper = mock(JobMapper.class);
-        when(jobMapper.findJobById(1L)).thenReturn(mockJobEntity(1L, JobStatus.SUCCESS, resultOutputPath));
-        when(jobMapper.findJobById(3L)).thenReturn(mockJobEntity(3L, JobStatus.RUNNING, resultOutputPath));
-        when(jobMapper.findJobById(4L)).thenReturn(mockJobEntity(4L, JobStatus.SUCCESS, "resultOutputPath"));
-        when(jobMapper.findJobById(5L)).thenReturn(mockJobEntity(5L, JobStatus.SUCCESS,
+    JobDao mockJobDao() {
+        JobDao jobDao = mock(JobDao.class);
+        when(jobDao.findJobById(1L)).thenReturn(mockJob(1L, JobStatus.SUCCESS, resultOutputPath));
+        when(jobDao.findJobById(3L)).thenReturn(mockJob(3L, JobStatus.RUNNING, resultOutputPath));
+        when(jobDao.findJobById(4L)).thenReturn(mockJob(4L, JobStatus.SUCCESS, "resultOutputPath"));
+        when(jobDao.findJobById(5L)).thenReturn(mockJob(5L, JobStatus.SUCCESS,
                 exceptionPath));
-        when(jobMapper.findJobById(6L)).thenReturn(mockJobEntity(6L, JobStatus.SUCCESS, mockResultOutputPath));
-        return jobMapper;
+        when(jobDao.findJobById(6L)).thenReturn(mockJob(6L, JobStatus.SUCCESS, mockResultOutputPath));
+        return jobDao;
     }
 
-    private JobEntity mockJobEntity(Long jobId, JobStatus jobStatus, String resultPath) {
-        return JobEntity.builder().id(jobId).jobStatus(jobStatus).resultOutputPath(
-                resultPath).build();
+    private Job mockJob(Long jobId, JobStatus jobStatus, String resultPath) {
+        return Job.builder().id(jobId).status(jobStatus).outputDir(resultPath).build();
     }
 }

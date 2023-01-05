@@ -56,8 +56,6 @@ public class JobConverterTest {
         given(runtimeService.findRuntimeByVersionIds(anyList()))
                 .willReturn(List.of(RuntimeVo.builder().id("1").build()));
         DatasetDao datasetDao = mock(DatasetDao.class);
-        given(datasetDao.listDatasetVersionsOfJob(anyLong()))
-                .willReturn(List.of(DatasetVersion.builder().id(1L).versionName("v1").build()));
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());

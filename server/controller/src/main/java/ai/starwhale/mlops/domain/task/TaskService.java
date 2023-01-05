@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -49,27 +49,25 @@ public class TaskService {
 
     private final StorageAccessService storageAccessService;
 
-    private final JobManager jobManager;
+    private final JobDao jobDao;
 
     private final SystemSettingService systemSettingService;
 
     public TaskService(TaskConverter taskConvertor, TaskMapper taskMapper,
-            StorageAccessService storageAccessService, JobManager jobManager,
+            StorageAccessService storageAccessService, JobDao jobDao,
             SystemSettingService systemSettingService) {
         this.taskConvertor = taskConvertor;
         this.taskMapper = taskMapper;
         this.storageAccessService = storageAccessService;
-        this.jobManager = jobManager;
+        this.jobDao = jobDao;
         this.systemSettingService = systemSettingService;
     }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long jobId = jobManager.getJobId(jobUrl);
-        JobEntity job = jobManager.findJob(Job.builder().id(jobId).build());
-        List<TaskVo> tasks = taskMapper.listTasks(jobId).stream().map(taskConvertor::convert)
-                .peek(taskVo -> taskVo.setResourcePool(
-                        systemSettingService.queryResourcePool(job.getResourcePool()).getName())).collect(
+        Job job = jobDao.findJob(jobUrl);
+        List<TaskVo> tasks = taskMapper.listTasks(job.getId()).stream().map(taskConvertor::convert)
+                .peek(taskVo -> taskVo.setResourcePool(job.getResourcePool().getName())).collect(
                         Collectors.toList());
         return PageInfo.of(tasks);
 

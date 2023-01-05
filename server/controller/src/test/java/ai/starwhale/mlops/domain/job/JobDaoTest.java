@@ -22,22 +22,23 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class JobManagerTest {
+public class JobDaoTest {
 
-    private JobManager manager;
+    private JobDao jobDao;
 
     @BeforeEach
     public void setUp() {
@@ -54,50 +55,35 @@ public class JobManagerTest {
                 .willReturn(job1);
         given(jobMapper.findJobByUuid(same("job-uuid-2")))
                 .willReturn(job2);
-        manager = new JobManager(jobMapper, new IdConverter());
-    }
 
-    @Test
-    public void testFromUrl() {
-        var res = manager.fromUrl("1");
-        assertThat(res, hasProperty("id", is(1L)));
+        JobDatasetVersionMapper datasetVersionMapper = mock(JobDatasetVersionMapper.class);
+        JobBoConverter jobBoConverter = mock(JobBoConverter.class);
 
-        res = manager.fromUrl("uuid1");
-        assertThat(res, hasProperty("uuid", is("uuid1")));
-    }
+        given(jobBoConverter.fromEntity(job1))
+                .willReturn(Job.builder().id(1L).uuid("job-uuid-1").build());
+        given(jobBoConverter.fromEntity(job2))
+                .willReturn(Job.builder().id(2L).uuid("job-uuid-2").build());
 
-    @Test
-    public void testGetJobId() {
-        var res = manager.getJobId("1");
-        assertThat(res, is(1L));
-
-        res = manager.getJobId("job-uuid-2");
-        assertThat(res, is(2L));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> manager.getJobId("job3"));
+        jobDao = new JobDao(mock(JobRepo.class), jobMapper, datasetVersionMapper, new IdConverter(), jobBoConverter);
     }
 
     @Test
     public void testFindJob() {
-        var res = manager.findJob(Job.builder().id(1L).build());
+        var res = jobDao.findJob("1");
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("id", is(1L)),
-                hasProperty("jobUuid", is("job-uuid-1"))
+                hasProperty("uuid", is("job-uuid-1"))
         ));
 
-        res = manager.findJob(Job.builder().uuid("job-uuid-2").build());
+        res = jobDao.findJob("job-uuid-2");
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("id", is(2L)),
-                hasProperty("jobUuid", is("job-uuid-2"))
+                hasProperty("uuid", is("job-uuid-2"))
         ));
 
-        res = manager.findJob(Job.builder().build());
-        assertThat(res, nullValue());
-
-        res = manager.findJob(Job.builder().id(3L).build());
+        res = jobDao.findJob("job-uuid-x");
         assertThat(res, nullValue());
     }
 }

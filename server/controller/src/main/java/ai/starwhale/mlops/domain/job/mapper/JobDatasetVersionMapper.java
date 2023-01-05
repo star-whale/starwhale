@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.mapper;
 
 import java.util.List;
+import java.util.Set;
 import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -30,11 +31,11 @@ public interface JobDatasetVersionMapper {
     List<Long> listDatasetVersionIdsByJobId(@Param("jobId") Long jobId);
 
     @InsertProvider(value = JobDatasetVersionProvider.class, method = "insertSql")
-    int insert(@Param("jobId") Long jodId, @Param("datasetVersionIds") List<Long> datasetVersionIds);
+    int insert(@Param("jobId") Long jodId, @Param("datasetVersionIds") Set<Long> datasetVersionIds);
 
     class JobDatasetVersionProvider {
 
-        public String insertSql(@Param("jobId") Long jobId, @Param("datasetVersionIds") List<Long> datasetVersionIds) {
+        public String insertSql(@Param("jobId") Long jobId, @Param("datasetVersionIds") Set<Long> datasetVersionIds) {
             return new SQL() {
                 {
                     INSERT_INTO("job_dataset_version_rel");

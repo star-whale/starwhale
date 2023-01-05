@@ -37,21 +37,25 @@ import static org.mockito.Mockito.doAnswer;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -70,10 +74,8 @@ import org.junit.jupiter.api.Test;
 public class JobServiceTest {
 
     private JobService service;
-    private JobMapper jobMapper;
-    private JobDatasetVersionMapper jobDatasetVersionMapper;
     private TaskMapper taskMapper;
-    private JobConverter jobConvertor;
+    private JobConverter jobConverter;
     private JobBoConverter jobBoConverter;
     private JobSpliterator jobSpliterator;
     private HotJobHolder hotJobHolder;
@@ -82,7 +84,7 @@ public class JobServiceTest {
     private StoragePathCoordinator storagePathCoordinator;
     private UserService userService;
     private ProjectManager projectManager;
-    private JobManager jobManager;
+    private JobDao jobDao;
     private ModelDao modelDao;
     private DatasetDao datasetDao;
     private RuntimeDao runtimeDao;
@@ -90,14 +92,10 @@ public class JobServiceTest {
 
     @BeforeEach
     public void setUp() {
-        jobMapper = mock(JobMapper.class);
-        jobDatasetVersionMapper = mock(JobDatasetVersionMapper.class);
         taskMapper = mock(TaskMapper.class);
-        jobConvertor = mock(JobConverter.class);
-        given(jobConvertor.convert(any(JobEntity.class)))
-                .willReturn(JobVo.builder().id("1").build());
+        jobConverter = mock(JobConverter.class);
         jobBoConverter = mock(JobBoConverter.class);
-
+        given(jobConverter.convert(any(Job.class))).willReturn(JobVo.builder().id("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);
@@ -107,18 +105,12 @@ public class JobServiceTest {
         projectManager = mock(ProjectManager.class);
         given(projectManager.getProjectId(same("1")))
                 .willReturn(1L);
-        jobManager = mock(JobManager.class);
-        given(jobManager.fromUrl("1"))
+        jobDao = mock(JobDao.class);
+        given(jobDao.findJob("1"))
                 .willReturn(Job.builder().id(1L).build());
-        given(jobManager.fromUrl("2"))
-                .willReturn(Job.builder().id(2L).build());
-        given(jobManager.fromUrl("uuid1"))
-                .willReturn(Job.builder().uuid("uuid1").build());
-        given(jobManager.findJob(any(Job.class)))
-                .willReturn(JobEntity.builder().id(1L).build());
-        given(jobManager.getJobId("1"))
+        given(jobDao.getJobId("1"))
                 .willReturn(1L);
-        given(jobManager.getJobId("2"))
+        given(jobDao.getJobId("2"))
                 .willReturn(2L);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
@@ -126,17 +118,16 @@ public class JobServiceTest {
         trashService = mock(TrashService.class);
 
         service = new JobService(
-                jobBoConverter, jobMapper, jobDatasetVersionMapper, taskMapper,
-                jobConvertor, runtimeDao, jobSpliterator,
-                hotJobHolder, projectManager, jobManager, jobLoader, modelDao,
+                taskMapper, jobConverter, jobBoConverter, runtimeDao, jobSpliterator,
+                hotJobHolder, projectManager, jobDao, jobLoader, modelDao,
                 resultQuerier, datasetDao, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
                 trashService);
     }
 
     @Test
     public void testListJobs() {
-        given(jobMapper.listJobs(same(1L), same(1L)))
-                .willReturn(List.of(JobEntity.builder().build(), JobEntity.builder().build()));
+        given(jobDao.listJobs(same(1L), same(1L)))
+                .willReturn(List.of(Job.builder().build(), Job.builder().build()));
         var res = service.listJobs("1", 1L, new PageParams(1, 10));
         assertThat(res, allOf(
                 notNullValue(),
@@ -165,10 +156,10 @@ public class JobServiceTest {
 
     @Test
     public void testUpdateJobComment() {
-        given(jobMapper.updateJobComment(same(1L), anyString()))
-                .willReturn(1);
-        given(jobMapper.updateJobCommentByUuid(same("uuid1"), anyString()))
-                .willReturn(1);
+        given(jobDao.updateJobComment(same("1"), anyString()))
+                .willReturn(true);
+        given(jobDao.updateJobComment(same("uuid1"), anyString()))
+                .willReturn(true);
         var res = service.updateJobComment("", "1", "comment");
         assertThat(res, is(true));
 
@@ -181,9 +172,9 @@ public class JobServiceTest {
 
     @Test
     public void testRemoveJob() {
-        given(jobMapper.removeJob(same(1L))).willReturn(1);
-        given(jobMapper.removeJobByUuid(same("uuid1"))).willReturn(1);
-        given(jobManager.getJobId(same("uuid1"))).willReturn(1L);
+        given(jobDao.removeJob(same(1L))).willReturn(true);
+        given(jobDao.removeJobByUuid(same("uuid1"))).willReturn(true);
+        given(jobDao.getJobId(same("uuid1"))).willReturn(1L);
 
         var res = service.removeJob("", "1");
         assertThat(res, is(true));
@@ -199,20 +190,26 @@ public class JobServiceTest {
     public void testCreateJob() {
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());
-        given(runtimeDao.getRuntimeVersionId(same("2"), any()))
-                .willReturn(2L);
-        given(modelDao.getModelVersionId(same("3"), any()))
-                .willReturn(3L);
+        given(projectManager.getProject(anyString()))
+                .willReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
+        given(runtimeDao.getRuntimeVersion(same("2")))
+                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
+        given(runtimeDao.getRuntime(same(2L)))
+                .willReturn(RuntimeEntity.builder().id(2L).runtimeName("test-runtime").build());
+        given(modelDao.getModelVersion(same("3")))
+                .willReturn(ModelVersionEntity.builder().id(3L).modelId(3L).versionName("q1w2e3r4t5y6").build());
+        given(modelDao.getModel(same(3L)))
+                .willReturn(ModelEntity.builder().id(3L).modelName("test-model").build());
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
-        given(jobMapper.addJob(any(JobEntity.class)))
+        given(jobDao.addJob(any(JobFlattenEntity.class)))
                 .willAnswer(invocation -> {
-                    JobEntity entity = invocation.getArgument(0);
+                    JobFlattenEntity entity = invocation.getArgument(0);
                     entity.setId(1L);
-                    return 1;
+                    return true;
                 });
-        given(datasetDao.getDatasetVersionId(anyString(), any()))
-                .willReturn(1L);
+        given(datasetDao.getDatasetVersion(anyString()))
+                .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         var res = service.createJob("1", "3", "1", "2",
                  "", "1", "stepSpec1");
@@ -225,12 +222,10 @@ public class JobServiceTest {
 
     @Test
     public void testSplitNewCreatedJobs() {
-        given(jobMapper.findJobByStatusIn(any()))
-                .willReturn(List.of(JobEntity.builder().build()));
-        given(jobBoConverter.fromEntity(any(JobEntity.class)))
+        given(jobDao.findJobByStatusIn(any()))
+                .willReturn(List.of(Job.builder().id(1L).build()));
+        given(jobDao.findJobById(same(1L)))
                 .willReturn(Job.builder().id(1L).build());
-        given(jobMapper.findJobById(same(1L)))
-                .willReturn(JobEntity.builder().id(1L).build());
         final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
             jobs.add(invocation.getArgument(0));
@@ -298,10 +293,10 @@ public class JobServiceTest {
 
     @Test
     public void testResumeJob() {
-        given(jobMapper.findJobById(same(1L)))
-                .willReturn(JobEntity.builder().jobStatus(JobStatus.FAIL).build());
-        given(jobMapper.findJobById(same(2L)))
-                .willReturn(JobEntity.builder().jobStatus(JobStatus.SUCCESS).build());
+        given(jobDao.findJobById(same(1L)))
+                .willReturn(Job.builder().status(JobStatus.FAIL).build());
+        given(jobDao.findJobById(same(2L)))
+                .willReturn(Job.builder().status(JobStatus.SUCCESS).build());
         final List<Job> jobs = new ArrayList<>();
         doAnswer(invocation -> {
             jobs.add(invocation.getArgument(0));

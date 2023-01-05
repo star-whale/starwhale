@@ -21,6 +21,7 @@ import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,7 @@ public class User implements UserDetails, Serializable {
     private String name;
     private String password;
     private String salt;
+    private Date createdTime;
     private boolean active;
     private Set<? extends GrantedAuthority> roles;
 
@@ -90,6 +92,7 @@ public class User implements UserDetails, Serializable {
         setSalt(entity.getUserPwdSalt());
         setActive(entity.getUserEnabled() == 1);
         setIdTableKey(entity.getId());
+        setCreatedTime(entity.getCreatedTime());
         return this;
     }
 
