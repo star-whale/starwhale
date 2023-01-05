@@ -13,7 +13,7 @@ import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
 import { Spinner } from 'baseui/spinner'
 import css from '@/assets/GradioWidget/es/style.css'
-import '@/assets/GradioWidget/es2/app.es.js'
+import '@/assets/GradioWidget/es/app.es.js'
 
 declare global {
     interface Window {
