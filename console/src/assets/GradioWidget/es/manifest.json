@@ -1,0 +1,541 @@
+{
+  "src/main.ts": {
+    "file": "app.es.js",
+    "src": "src/main.ts",
+    "isEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "_main.js": {
+    "file": "main.js",
+    "dynamicImports": [
+      "../app/src/components/Accordion/index.ts",
+      "../app/src/components/Audio/index.ts",
+      "../app/src/components/Box/index.ts",
+      "../app/src/components/Button/index.ts",
+      "../app/src/components/Carousel/index.ts",
+      "../app/src/components/CarouselItem/index.ts",
+      "../app/src/components/Chatbot/index.ts",
+      "../app/src/components/Checkbox/index.ts",
+      "../app/src/components/CheckboxGroup/index.ts",
+      "../app/src/components/ColorPicker/index.ts",
+      "../app/src/components/Column/index.ts",
+      "../app/src/components/DataFrame/index.ts",
+      "../app/src/components/Dataset/index.ts",
+      "../app/src/components/Dropdown/index.ts",
+      "../app/src/components/File/index.ts",
+      "../app/src/components/Form/index.ts",
+      "../app/src/components/Gallery/index.ts",
+      "../app/src/components/Group/index.ts",
+      "../app/src/components/HighlightedText/index.ts",
+      "../app/src/components/HTML/index.ts",
+      "../app/src/components/Image/index.ts",
+      "../app/src/components/Interpretation/index.ts",
+      "../app/src/components/Json/index.ts",
+      "../app/src/components/Label/index.ts",
+      "../app/src/components/Markdown/index.ts",
+      "../app/src/components/Model3D/index.ts",
+      "../app/src/components/Number/index.ts",
+      "../app/src/components/Plot/index.ts",
+      "../app/src/components/Radio/index.ts",
+      "../app/src/components/Row/index.ts",
+      "../app/src/components/Slider/index.ts",
+      "../app/src/components/State/index.ts",
+      "../app/src/components/StatusTracker/index.ts",
+      "../app/src/components/Tabs/index.ts",
+      "../app/src/components/TabItem/index.ts",
+      "../app/src/components/Textbox/index.ts",
+      "../app/src/components/TimeSeries/index.ts",
+      "../app/src/components/UploadButton/index.ts",
+      "../app/src/components/Video/index.ts"
+    ]
+  },
+  "../app/src/components/Accordion/index.ts": {
+    "file": "index.js",
+    "src": "../app/src/components/Accordion/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Column.js"
+    ]
+  },
+  "_Column.js": {
+    "file": "Column.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Audio/index.ts": {
+    "file": "index2.js",
+    "src": "../app/src/components/Audio/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Upload.js",
+      "_ModifyUpload.js",
+      "_BlockLabel.js",
+      "_utils.js"
+    ],
+    "dynamicImports": [
+      "../../node_modules/.pnpm/extendable-media-recorder@7.0.2/node_modules/extendable-media-recorder/build/es2019/module.js",
+      "../../node_modules/.pnpm/extendable-media-recorder-wav-encoder@7.0.76/node_modules/extendable-media-recorder-wav-encoder/build/es2019/module.js"
+    ]
+  },
+  "_utils.js": {
+    "file": "utils.js"
+  },
+  "_Upload.js": {
+    "file": "Upload.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "_ModifyUpload.js": {
+    "file": "ModifyUpload.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "_BlockLabel.js": {
+    "file": "BlockLabel.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Box/index.ts": {
+    "file": "index3.js",
+    "src": "../app/src/components/Box/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Button/index.ts": {
+    "file": "index4.js",
+    "src": "../app/src/components/Button/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Carousel/index.ts": {
+    "file": "index5.js",
+    "src": "../app/src/components/Carousel/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_CarouselItem.svelte_svelte_type_style_lang.js"
+    ]
+  },
+  "_CarouselItem.svelte_svelte_type_style_lang.js": {
+    "file": "CarouselItem.svelte_svelte_type_style_lang.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/CarouselItem/index.ts": {
+    "file": "index6.js",
+    "src": "../app/src/components/CarouselItem/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_CarouselItem.svelte_svelte_type_style_lang.js"
+    ]
+  },
+  "../app/src/components/Chatbot/index.ts": {
+    "file": "index7.js",
+    "src": "../app/src/components/Chatbot/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js"
+    ]
+  },
+  "../app/src/components/Checkbox/index.ts": {
+    "file": "index8.js",
+    "src": "../app/src/components/Checkbox/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/CheckboxGroup/index.ts": {
+    "file": "index9.js",
+    "src": "../app/src/components/CheckboxGroup/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/ColorPicker/index.ts": {
+    "file": "index10.js",
+    "src": "../app/src/components/ColorPicker/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Column/index.ts": {
+    "file": "index11.js",
+    "src": "../app/src/components/Column/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Column.js",
+      "_main.js"
+    ]
+  },
+  "../app/src/components/DataFrame/index.ts": {
+    "file": "index12.js",
+    "src": "../app/src/components/DataFrame/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Upload.js",
+      "_dsv.js"
+    ]
+  },
+  "_dsv.js": {
+    "file": "dsv.js"
+  },
+  "../app/src/components/Dataset/index.ts": {
+    "file": "index13.js",
+    "src": "../app/src/components/Dataset/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Image.js",
+      "_csv.js",
+      "_dsv.js",
+      "_Model3D.js"
+    ]
+  },
+  "_Image.js": {
+    "file": "Image.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "_Model3D.js": {
+    "file": "Model3D.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "_csv.js": {
+    "file": "csv.js",
+    "imports": [
+      "_dsv.js"
+    ]
+  },
+  "../app/src/components/Dropdown/index.ts": {
+    "file": "index14.js",
+    "src": "../app/src/components/Dropdown/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/File/index.ts": {
+    "file": "index15.js",
+    "src": "../app/src/components/File/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js",
+      "_File.js",
+      "_Upload.js",
+      "_ModifyUpload.js",
+      "_utils.js"
+    ]
+  },
+  "_File.js": {
+    "file": "File.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Form/index.ts": {
+    "file": "index16.js",
+    "src": "../app/src/components/Form/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Gallery/index.ts": {
+    "file": "index17.js",
+    "src": "../app/src/components/Gallery/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js",
+      "_ModifyUpload.js",
+      "_utils.js",
+      "_Image2.js"
+    ]
+  },
+  "_Image2.js": {
+    "file": "Image2.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Group/index.ts": {
+    "file": "index18.js",
+    "src": "../app/src/components/Group/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/HighlightedText/index.ts": {
+    "file": "index19.js",
+    "src": "../app/src/components/HighlightedText/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_color.js",
+      "_BlockLabel.js"
+    ]
+  },
+  "_color.js": {
+    "file": "color.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/HTML/index.ts": {
+    "file": "index20.js",
+    "src": "../app/src/components/HTML/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Image/index.ts": {
+    "file": "index21.js",
+    "src": "../app/src/components/Image/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js",
+      "_Image2.js",
+      "_Webcam.js",
+      "_ModifyUpload.js",
+      "_Upload.js",
+      "_Image.js"
+    ]
+  },
+  "_Webcam.js": {
+    "file": "Webcam.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Interpretation/index.ts": {
+    "file": "index22.js",
+    "src": "../app/src/components/Interpretation/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Json/index.ts": {
+    "file": "index23.js",
+    "src": "../app/src/components/Json/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js"
+    ]
+  },
+  "../app/src/components/Label/index.ts": {
+    "file": "index24.js",
+    "src": "../app/src/components/Label/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_BlockLabel.js"
+    ]
+  },
+  "../app/src/components/Markdown/index.ts": {
+    "file": "index25.js",
+    "src": "../app/src/components/Markdown/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Model3D/index.ts": {
+    "file": "index26.js",
+    "src": "../app/src/components/Model3D/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_utils.js",
+      "_BlockLabel.js",
+      "_File.js",
+      "__commonjsHelpers.js",
+      "_Upload.js",
+      "_ModifyUpload.js",
+      "_Model3D.js"
+    ]
+  },
+  "__commonjsHelpers.js": {
+    "file": "_commonjsHelpers.js"
+  },
+  "../app/src/components/Number/index.ts": {
+    "file": "index27.js",
+    "src": "../app/src/components/Number/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Plot/index.ts": {
+    "file": "index28.js",
+    "src": "../app/src/components/Plot/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "__commonjsHelpers.js",
+      "_color.js",
+      "_linear.js",
+      "_dsv.js",
+      "_BlockLabel.js"
+    ]
+  },
+  "_linear.js": {
+    "file": "linear.js"
+  },
+  "../app/src/components/Radio/index.ts": {
+    "file": "index29.js",
+    "src": "../app/src/components/Radio/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Row/index.ts": {
+    "file": "index30.js",
+    "src": "../app/src/components/Row/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Slider/index.ts": {
+    "file": "index31.js",
+    "src": "../app/src/components/Slider/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/State/index.ts": {
+    "file": "index32.js",
+    "src": "../app/src/components/State/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/StatusTracker/index.ts": {
+    "file": "index33.js",
+    "src": "../app/src/components/StatusTracker/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Tabs/index.ts": {
+    "file": "index34.js",
+    "src": "../app/src/components/Tabs/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Tabs.js",
+      "_Column.js"
+    ]
+  },
+  "_Tabs.js": {
+    "file": "Tabs.js",
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/TabItem/index.ts": {
+    "file": "index35.js",
+    "src": "../app/src/components/TabItem/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Tabs.js",
+      "_Column.js"
+    ]
+  },
+  "../app/src/components/Textbox/index.ts": {
+    "file": "index36.js",
+    "src": "../app/src/components/Textbox/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/TimeSeries/index.ts": {
+    "file": "index37.js",
+    "src": "../app/src/components/TimeSeries/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_Upload.js",
+      "_ModifyUpload.js",
+      "_BlockLabel.js",
+      "_color.js",
+      "_linear.js",
+      "_csv.js",
+      "_dsv.js"
+    ]
+  },
+  "../app/src/components/UploadButton/index.ts": {
+    "file": "index38.js",
+    "src": "../app/src/components/UploadButton/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js"
+    ]
+  },
+  "../app/src/components/Video/index.ts": {
+    "file": "index39.js",
+    "src": "../app/src/components/Video/index.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_main.js",
+      "_utils.js",
+      "_Upload.js",
+      "_ModifyUpload.js",
+      "_BlockLabel.js",
+      "_Webcam.js"
+    ]
+  },
+  "../../node_modules/.pnpm/extendable-media-recorder@7.0.2/node_modules/extendable-media-recorder/build/es2019/module.js": {
+    "file": "module.js",
+    "src": "../../node_modules/.pnpm/extendable-media-recorder@7.0.2/node_modules/extendable-media-recorder/build/es2019/module.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_module2.js"
+    ]
+  },
+  "_module2.js": {
+    "file": "module2.js"
+  },
+  "../../node_modules/.pnpm/extendable-media-recorder-wav-encoder@7.0.76/node_modules/extendable-media-recorder-wav-encoder/build/es2019/module.js": {
+    "file": "module3.js",
+    "src": "../../node_modules/.pnpm/extendable-media-recorder-wav-encoder@7.0.76/node_modules/extendable-media-recorder-wav-encoder/build/es2019/module.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_module2.js"
+    ]
+  }
+}

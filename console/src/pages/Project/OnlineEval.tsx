@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useLayoutEffect } from 'react'
 import CreateOnlineEvalForm from '@model/components/CreateOnlineEvalForm'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
@@ -12,6 +12,8 @@ import axios from 'axios'
 import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
 import { Spinner } from 'baseui/spinner'
+import css from '@/assets/GradioWidget/es/style.css'
+import '@/assets/GradioWidget/es2/app.es.js'
 
 declare global {
     interface Window {
@@ -20,9 +22,13 @@ declare global {
     }
 }
 
-// import('http://127.0.0.1:8080/index.js')
+// production mode
 // @ts-ignore
-import('http://localhost:3000/src/main.ts')
+// import('http://127.0.0.1:8080/app.es.js')
+
+// debug mode
+// @ts-ignore
+// import('http://localhost:3000/src/main.ts')
 
 export default function OnlineEval() {
     const { project } = useProject()
@@ -65,7 +71,6 @@ export default function OnlineEval() {
                 if (!resp.data?.baseUri) return
 
                 window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}/run/`
-                // window.gradio_config.root = `http://${location.host}/gateway/model-serving/23/run/`
 
                 async function checkStatus(baseUri: string) {
                     return await axios.get(baseUri)
@@ -105,8 +110,9 @@ export default function OnlineEval() {
             })
                 .then((res) => res.json())
                 .then((data) => {
-                    setConfig(data)
                     window.gradio_config = data
+                    window.gradio_config.css = css
+                    setConfig(data)
                 })
         }
     }, [project?.name, projectId, modelId, modelVersionId, modelInfo.isSuccess, modelVersionInfo.isSuccess])
