@@ -9,11 +9,20 @@ import { fetchModel } from '@/domain/model/services/model'
 import { useQuery } from 'react-query'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import axios from 'axios'
+import { Modal } from 'baseui/modal'
+import { toaster } from 'baseui/toast'
+import { Spinner } from 'baseui/spinner'
+
+declare global {
+    interface Window {
+        wait: Function | null
+        gradio_config: any
+    }
+}
 
 // import('http://127.0.0.1:8080/index.js')
 // @ts-ignore
 import('http://localhost:3000/src/main.ts')
-import { toaster } from 'baseui/toast'
 
 export default function OnlineEval() {
     const { project } = useProject()
@@ -27,13 +36,12 @@ export default function OnlineEval() {
     const modelInfo = useQuery(`fetchModel:${projectId}:${modelId}`, () => fetchModel(projectId, modelId))
     const modelVersionInfo = useFetchModelVersion(projectId, modelId, modelVersionId)
     const formRef = React.useRef<any>()
+    const [isLoading, setIsLoading] = React.useState(false)
 
     useEffect(() => {
-        // @ts-ignore
+        if (window.wait) return
         window.wait = async () => {
             if (!formRef.current) return
-            console.log('wait', formRef.current.getFieldsValue())
-
             const values = formRef.current.getFieldsValue()
 
             if (
@@ -42,39 +50,42 @@ export default function OnlineEval() {
                 values.resourcePool === undefined
             ) {
                 toaster.negative('Please fill in all fields', {})
-                return
+                return Promise.reject()
             }
 
-            const resp = await axios.post(`/api/v1/project/${projectId}/serving`, {
-                modelVersionUrl: values.modelVersionUrl,
-                runtimeVersionUrl: values.runtimeVersionUrl,
-                resourcePool: values.resourcePool,
-            })
+            try {
+                setIsLoading(true)
 
-            if (!resp.data?.baseUri) return
+                const resp = await axios.post(`/api/v1/project/${projectId}/serving`, {
+                    modelVersionUrl: values.modelVersionUrl,
+                    runtimeVersionUrl: values.runtimeVersionUrl,
+                    resourcePool: values.resourcePool,
+                })
 
-            async function checkStatus(baseUri: string) {
-                baseUri = '/gateway/model-serving/23/'
-                return await axios.get(baseUri)
+                if (!resp.data?.baseUri) return
+
+                window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}/run/`
+                // window.gradio_config.root = `http://${location.host}/gateway/model-serving/23/run/`
+
+                async function checkStatus(baseUri: string) {
+                    return await axios.get(baseUri)
+                }
+
+                await new Promise((resolve) => {
+                    const id = setInterval(() => {
+                        checkStatus(resp.data?.baseUri).then(() => {
+                            setIsLoading(false)
+                            clearInterval(id)
+                            resolve(null)
+                        })
+                    }, 2000)
+                })
+            } catch (e) {
+                console.log(e)
+                setIsLoading(false)
             }
-
-            const rtn = await new Promise((resolve) => {
-                const id = setInterval(() => {
-                    console.log('2, interval')
-                    checkStatus(resp.data?.baseUri).then(() => {
-                        // @ts-ignore
-                        window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}`
-                        console.log('3', window.gradio_config)
-                        clearInterval(id)
-                        resolve(null)
-                    })
-                }, 2000)
-            })
-
-            console.log('1', rtn)
         }
         return () => {
-            // @ts-ignores
             window.wait = null
         }
     }, [formRef, projectId])
@@ -95,7 +106,6 @@ export default function OnlineEval() {
                 .then((res) => res.json())
                 .then((data) => {
                     setConfig(data)
-                    // @ts-ignore
                     window.gradio_config = data
                 })
         }
@@ -112,11 +122,26 @@ export default function OnlineEval() {
                 />
             </Card>
             {config && (
+                // @ts-ignore
                 <gradio-app>
                     <div id='online-eval' />
+                    {/* @ts-ignore */}
                 </gradio-app>
             )}
-            {/* <iframe src='http://localhost:3000/' title='gradio' height='600px' frameBorder='0' /> */}
+            <Modal
+                isOpen={isLoading}
+                closeable={false}
+                role={'dialog'}
+                overrides={{
+                    Dialog: {
+                        style: {
+                            width: 'auto',
+                        },
+                    },
+                }}
+            >
+                <Spinner />
+            </Modal>
         </>
     )
 }
