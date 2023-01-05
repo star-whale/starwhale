@@ -1,1 +1,3 @@
-{"version":3,"file":"index3.js","sources":["../../app/src/components/Box/Box.svelte","../../app/src/components/Box/index.ts"],"sourcesContent":["<script lang=\"ts\">\n\timport { Block } from \"@gradio/atoms\";\n\texport let elem_id: string;\n\texport let visible: boolean = true;\n</script>\n\n<Block {elem_id} {visible} explicit_call>\n\t<slot />\n</Block>\n","export { default as Component } from \"./Box.svelte\";\nexport const modes = [\"static\"];\n"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;QAEY;QACA,UAAmB;;;;;;;;;;;;;;;;;;MCFlB,QAAQ,CAAC,QAAQ;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:4cf8fcae8afbc5a6cbbe2c9baaaa8aeaa36beaf17a8010ed50bcf4c746eaa9e9
+size 624

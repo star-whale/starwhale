@@ -1,1 +1,3 @@
-{"version":3,"file":"csv.js","sources":["../../../node_modules/.pnpm/d3-dsv@3.0.1/node_modules/d3-dsv/src/csv.js"],"sourcesContent":["import dsv from \"./dsv.js\";\n\nvar csv = dsv(\",\");\n\nexport var csvParse = csv.parse;\nexport var csvParseRows = csv.parseRows;\nexport var csvFormat = csv.format;\nexport var csvFormatBody = csv.formatBody;\nexport var csvFormatRows = csv.formatRows;\nexport var csvFormatRow = csv.formatRow;\nexport var csvFormatValue = csv.formatValue;\n"],"names":["dsv"],"mappings":";AAEA,IAAI,MAAMA,UAAI,GAAG;AAEP,IAAC,WAAW,IAAI;AAChB,IAAC,eAAe,IAAI;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:33c4f1e7abc1af1726bf26e4a3e2996498e13474d4fa538405a2c2e8f8bd9c1c
+size 582

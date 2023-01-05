@@ -1,1 +1,3 @@
-{"version":3,"file":"color.js","sources":["../../utils/src/color.ts"],"sourcesContent":["import { colors, ordered_colors } from \"@gradio/theme\";\n\nexport const get_next_color = (index: number): keyof typeof colors => {\n\treturn ordered_colors[index % ordered_colors.length];\n};\n"],"names":[],"mappings":";MAEa,iBAAiB,CAAC,UAAuC;SAC9D,eAAe,QAAQ,eAAe;AAC9C;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:d6c5a903dbbc13517768497a5431953d7b3424ef553f9966971252dcc49ccf80
+size 364

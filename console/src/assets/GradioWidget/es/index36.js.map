@@ -1,1 +1,3 @@
-{"version":3,"file":"index36.js","sources":["../../app/src/components/Textbox/index.ts"],"sourcesContent":["export { default as Component } from \"./Textbox.svelte\";\nexport const modes = [\"static\", \"dynamic\"];\n\nexport const document = (config: Record<string, any>) => ({\n\ttype: \"string\",\n\tdescription: \"text string\",\n\texample_data: config.value || \"hello world\"\n});\n"],"names":[],"mappings":";MACa,QAAQ,CAAC,UAAU,SAAS;MAE5B,WAAW,CAAC;EACxB,MAAM;AAAA,EACN,aAAa;AAAA,EACb,cAAc,OAAO,SAAS;AAC/B;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:34219daa9074517e0b4d607ce61e341a36ded80465d2dcce33b8bb77359d75f7
+size 516

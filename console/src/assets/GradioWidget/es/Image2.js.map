@@ -1,1 +1,3 @@
-{"version":3,"file":"Image2.js","sources":["../../icons/src/Image.svelte"],"sourcesContent":["<svg\n\txmlns=\"http://www.w3.org/2000/svg\"\n\twidth=\"100%\"\n\theight=\"100%\"\n\tviewBox=\"0 0 24 24\"\n\tfill=\"none\"\n\tstroke=\"currentColor\"\n\tstroke-width=\"1.5\"\n\tstroke-linecap=\"round\"\n\tstroke-linejoin=\"round\"\n\tclass=\"feather feather-image\"\n\t><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\" /><circle\n\t\tcx=\"8.5\"\n\t\tcy=\"8.5\"\n\t\tr=\"1.5\"\n\t/><polyline points=\"21 15 16 10 5 21\" /></svg\n>\n"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;AAWE;AAAyD;AAIxD;;;;;;;;;;;;;;;;;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:775c4e89f71bb1b75bdee2620268b9a809ff1743bb74431fe546b95f6312fcbf
+size 645

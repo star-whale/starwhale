@@ -1,19 +1,3 @@
-function normalise_file(file, root) {
-  if (file == null)
-    return null;
-  if (typeof file === "string") {
-    return {
-      name: "file_data",
-      data: file
-    };
-  } else if (file.is_file) {
-    file.data = root + "file=" + file.name;
-  } else if (Array.isArray(file)) {
-    for (const x of file) {
-      normalise_file(x, root);
-    }
-  }
-  return file;
-}
-export { normalise_file as n };
-//# sourceMappingURL=utils.js.map
+version https://git-lfs.github.com/spec/v1
+oid sha256:12eb9e9450e161f6f8d637cb3270c3da0489705b021679e405a97dde2c84f09b
+size 432

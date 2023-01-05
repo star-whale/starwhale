@@ -1,1 +1,3 @@
-{"version":3,"file":"utils.js","sources":["../../upload/src/utils.ts"],"sourcesContent":["import type { FileData } from \"./types\";\n\nexport function normalise_file(\n\tfile: string | FileData | null,\n\troot: string\n): FileData | null {\n\tif (file == null) return null;\n\tif (typeof file === \"string\") {\n\t\treturn {\n\t\t\tname: \"file_data\",\n\t\t\tdata: file\n\t\t};\n\t} else if (file.is_file) {\n\t\tfile.data = root + \"file=\" + file.name;\n\t} else if (Array.isArray(file)) {\n\t\tfor (const x of file) {\n\t\t\tnormalise_file(x, root);\n\t\t}\n\t}\n\treturn file;\n}\n"],"names":[],"mappings":"wBAGC,MACA,MACkB;MACd,QAAQ;WAAa;MACrB,OAAO,SAAS,UAAU;WACtB;AAAA,MACN,MAAM;AAAA,MACN,MAAM;AAAA;aAEG,KAAK,SAAS;SACnB,OAAO,OAAO,UAAU,KAAK;AAAA,aACxB,MAAM,QAAQ,IAAI,GAAG;eACpB,KAAK,MAAM;qBACN,GAAG,IAAI;AAAA;;SAGjB;AACR;;"}
+version https://git-lfs.github.com/spec/v1
+oid sha256:491011bccee0a795329c67f4e138ca234a999d1ddc5d3ea0660ab1f2790dd028
+size 831

@@ -1,9 +1,3 @@
-var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
-function getDefaultExportFromCjs(x) {
-  return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
-}
-function commonjsRequire(path) {
-  throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
-}
-export { commonjsRequire as a, commonjsGlobal as c, getDefaultExportFromCjs as g };
-//# sourceMappingURL=_commonjsHelpers.js.map
+version https://git-lfs.github.com/spec/v1
+oid sha256:bdc114c157fe36fe1b4918dab0485c332e480fc7e6e3e2a2b597bd6b30e3b651
+size 717
