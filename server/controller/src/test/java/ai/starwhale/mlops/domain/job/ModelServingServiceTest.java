@@ -225,7 +225,7 @@ public class ModelServingServiceTest {
 
         var capture = ArgumentCaptor.forClass(String.class);
         svc.gc();
-        verify(k8sClient, atLeastOnce()).deleteStatefulSet(capture.capture());
+        verify(k8sClient, times(3)).deleteStatefulSet(capture.capture());
         var names = capture.getAllValues();
         assertThat(names, containsInAnyOrder(oldestName, noEntityName, maxTtlName));
 
