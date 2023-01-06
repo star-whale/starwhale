@@ -29,6 +29,7 @@ from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldErro
 from starwhale.utils.config import SWCliConfigMixed
 
 from .uri import URI
+from .store import BundleField
 
 
 class BaseBundle(metaclass=ABCMeta):
@@ -76,9 +77,49 @@ class BaseBundle(metaclass=ABCMeta):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filters = filters or {}
         _cls = cls._get_cls(project_uri)
-        return _cls.list(project_uri, page, size)  # type: ignore
+        _filter = cls.get_filter_dict(filters, cls.get_filter_fields())
+        return _cls.list(project_uri, page, size, _filter)  # type: ignore
+
+    @classmethod
+    def get_filter_dict(
+        cls,
+        filters: t.Union[t.Dict[str, t.Any], t.List[str]],
+        fields: t.Optional[t.List[str]] = None,
+    ) -> t.Dict[str, t.Any]:
+        fields = fields or []
+        if isinstance(filters, t.Dict):
+            return {k: v for k, v in filters.items() if k in fields}
+
+        _filter_dict: t.Dict[str, t.Any] = {}
+        for _f in filters:
+            _item = _f.split("=", 1)
+            if _item[0] in fields:
+                _filter_dict[_item[0]] = _item[1] if len(_item) > 1 else ""
+        return _filter_dict
+
+    @classmethod
+    def get_filter_fields(cls) -> t.List[str]:
+        return ["name", "owner", "latest"]
+
+    @classmethod
+    def do_bundle_filter(
+        cls,
+        bundle_field: BundleField,
+        filters: t.Union[t.Dict[str, t.Any], t.List[str]],
+    ) -> bool:
+        filter_dict = cls.get_filter_dict(filters, cls.get_filter_fields())
+        _name = filter_dict.get("name")
+        if _name and not bundle_field.name.startswith(_name):
+            return False
+        _latest = filter_dict.get("latest") is not None
+        if _latest and "latest" not in bundle_field.tags:
+            return False
+
+        return True
 
     @abstractclassmethod
     def _get_cls(cls, uri: URI) -> t.Any:

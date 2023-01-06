@@ -1038,11 +1038,16 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filters = filters or {}
         rs = defaultdict(list)
         for _bf in RuntimeStorage.iter_all_bundles(
             project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
         ):
+            if not cls.do_bundle_filter(_bf, filters):
+                continue
+
             if not _bf.path.is_file():
                 continue
 
@@ -1757,9 +1762,13 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filter_dict = filter_dict or {}
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
+        return crm._fetch_bundle_all_list(
+            project_uri, URIType.RUNTIME, page, size, filter_dict
+        )
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build runtime in the cloud instance")

@@ -118,7 +118,7 @@ def _diff(
     view(base_uri).diff(URI(compare_uri, expected_type=URIType.DATASET), show_details)
 
 
-@dataset_cmd.command("list", aliases=["ls"], help="List dataset")
+@dataset_cmd.command("list", aliases=["ls"])
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of dataset version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed datasets")
@@ -128,6 +128,13 @@ def _diff(
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for dataset list"
 )
+@click.option(
+    "filters",
+    "-fl",
+    "--filter",
+    multiple=True,
+    help="Filter output based on conditions provided.",
+)
 @click.pass_obj
 def _list(
     view: DatasetTermView,
@@ -136,8 +143,23 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
+    filters: list,
 ) -> None:
-    view.list(project, fullname, show_removed, page, size)
+    """
+    List Dataset
+
+    The filtering flag (-fl or --filter) format is a key=value pair or a flag.
+    If there is more than one filter, then pass multiple flags.\n
+    (e.g. --filter name=mnist --filter latest)
+
+    \b
+    The currently supported filters are:
+      name\tTEXT\tThe prefix of the dataset name
+      owner\tTEXT\tThe name or id of the dataset owner
+      latest\tFLAG\t[Cloud] Only show the latest version
+            \t \t[Standalone] Only show the version with "latest" tag
+    """
+    view.list(project, fullname, show_removed, page, size, filters)
 
 
 @dataset_cmd.command("info", help="Show dataset details")

@@ -265,7 +265,7 @@ def _restore(target: str) -> None:
     RuntimeTermView.restore(target)
 
 
-@runtime_cmd.command("list", aliases=["ls"], help="List runtime")
+@runtime_cmd.command("list", aliases=["ls"])
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
@@ -275,6 +275,13 @@ def _restore(target: str) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
+@click.option(
+    "filters",
+    "-fl",
+    "--filter",
+    multiple=True,
+    help="Filter output based on conditions provided.",
+)
 @click.pass_obj
 def _list(
     view: t.Type[RuntimeTermView],
@@ -283,8 +290,23 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
+    filters: list,
 ) -> None:
-    view.list(project, fullname, show_removed, page, size)
+    """
+    List Runtime
+
+    The filtering flag (-fl or --filter) format is a key=value pair or a flag.
+    If there is more than one filter, then pass multiple flags.\n
+    (e.g. --filter name=mnist --filter latest)
+
+    \b
+    The currently supported filters are:
+      name\tTEXT\tThe prefix of the runtime name
+      owner\tTEXT\tThe name or id of the runtime owner
+      latest\tFLAG\t[Cloud] Only show the latest version
+            \t \t[Standalone] Only show the version with "latest" tag
+    """
+    view.list(project, fullname, show_removed, page, size, filters)
 
 
 @runtime_cmd.command(

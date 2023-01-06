@@ -131,13 +131,20 @@ swcli dataset list [OPTIONS]
 
 `dataset list` 命令输出当前选定的instance和project下的所有数据集及相关版本。命令参数如下：
 
-|参数|参数别名|必要性|类型|默认值|说明|
-|------|--------|-------|-----------|-----|-----------|
+|参数| 参数别名 |必要性|类型|默认值|说明|
+|------|-----|----|-----------|-----|-----------|
 |`--project`|`-p`|❌|String|`swcli project select`命令选定的默认project|Project URI|
-|`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
-|`--show-removed`||❌|Boolean|False|显示本地已经删除但能恢复的数据集。|
-|`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
-|`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
+|`--fullname`|`-f` |❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
+|`--show-removed`|`-sr`| ❌ |Boolean|False|显示本地已经删除但能恢复的数据集。|
+|`--page`| | ❌ |Integer|1|Cloud Instance中分页显示中page序号。|
+|`--size`| | ❌ |Integer|20|Cloud Instance中分页显示中每页数量。|
+| `--filter` |`-fl`| ❌ | String  | | 过滤器，使用key=value格式或者flag，可使用多个filter，具体支持的filter如下： |
+
+| Filter | 类型        | 说明                                                    | 示例|
+|----|-----------|-------------------------------------------------------|----|
+|`name`| Key-Value | 数据集名称前缀 |--filter name=mnist|
+|`owner`| Key-Value | 拥有者名称 |--filter owner=starwhale|
+|`latest`|Flag| Cloud Instance: 仅展示最新版本 <br/> Standalone Instance: 仅展示带有latest标签的版本 |--filter latest|
 
 `dataset list` 的alias命令为 `dataset ls`。
 
@@ -147,7 +154,10 @@ swcli dataset list [OPTIONS]
 swcli dataset remove [OPTIONS] DATASET
 ```
 
-`dataset remove` 命令可以删除整个数据集或数据集中的某个版本。删除可以分为硬删除和软删除，默认为软删除，指定 `--force` 参数为硬删除。所有的软删除数据集在没有GC之前，都可以通过 `swcli dataset recover` 命令进行恢复。`DATASET` 参数为Dataset URI，当没有指定版本时，会对整个数据集所有版本进行删除，若URI带有版本信息，则只会对该版本进行删除。软删除的数据集，可以通过 `swcli dataset list --show-removed` 命令查看。
+`dataset remove` 命令可以删除整个数据集或数据集中的某个版本。删除可以分为硬删除和软删除，默认为软删除，指定 `--force`
+参数为硬删除。所有的软删除数据集在没有GC之前，都可以通过 `swcli dataset recover` 命令进行恢复。`DATASET` 参数为Dataset
+URI，当没有指定版本时，会对整个数据集所有版本进行删除，若URI带有版本信息，则只会对该版本进行删除。软删除的数据集，可以通过 `swcli dataset list --show-removed`
+命令查看。
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|

@@ -257,7 +257,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filters = filters or {}
         rs = defaultdict(list)
 
         for _bf in DatasetStorage.iter_all_bundles(
@@ -265,6 +267,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             bundle_type=BundleType.DATASET,
             uri_type=URIType.DATASET,
         ):
+            if not cls.do_bundle_filter(_bf, filters):
+                continue
+
             _mf = _bf.path / DEFAULT_MANIFEST_NAME
             if not _mf.exists():
                 continue
@@ -521,9 +526,13 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        filter_dict = filter_dict or {}
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
+        return crm._fetch_bundle_all_list(
+            project_uri, URIType.DATASET, page, size, filter_dict
+        )
 
     def summary(self) -> t.Optional[DatasetSummary]:
         resp = self.do_http_request(

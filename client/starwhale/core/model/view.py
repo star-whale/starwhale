@@ -201,10 +201,12 @@ class ModelTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        filters = filters or {}
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
-        _models, _pager = Model.list(_uri, page, size)
+        _models, _pager = Model.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_models, show_removed, fullname)
         return _data, _pager
 
@@ -308,8 +310,12 @@ class ModelTermViewRich(ModelTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        filters = filters or []
+        _models, _pager = super().list(
+            project_uri, fullname, show_removed, page, size, filters
+        )
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
             "size": lambda x: pretty_bytes(x),
@@ -329,8 +335,12 @@ class ModelTermViewJson(ModelTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[t.List[str]] = None,
     ) -> None:
-        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        filters = filters or []
+        _models, _pager = super().list(
+            project_uri, fullname, show_removed, page, size, filters
+        )
         cls.pretty_json(_models)
 
     def info(self, fullname: bool = False) -> None:
