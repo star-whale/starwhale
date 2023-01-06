@@ -75,9 +75,7 @@ public class ModelServingServiceTest {
     private final K8sClient k8sClient = mock(K8sClient.class);
     private final K8sJobTemplate k8sJobTemplate = mock(K8sJobTemplate.class);
     private final RuntimeMapper runtimeMapper = mock(RuntimeMapper.class);
-    private final RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
     private final ModelMapper modelMapper = mock(ModelMapper.class);
-    private final ModelVersionMapper modelVersionMapper = mock(ModelVersionMapper.class);
     private final SystemSettingService systemSettingService = mock(SystemSettingService.class);
     private final RunTimeProperties runTimeProperties = mock(RunTimeProperties.class);
     private final ModelServingTokenValidator modelServingTokenValidator = mock(ModelServingTokenValidator.class);
@@ -93,9 +91,7 @@ public class ModelServingServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeMapper,
-                runtimeVersionMapper,
                 modelMapper,
-                modelVersionMapper,
                 systemSettingService,
                 runTimeProperties,
                 "inst",
@@ -117,13 +113,9 @@ public class ModelServingServiceTest {
 
         var runtime = RuntimeEntity.builder().runtimeName("rt").build();
         when(runtimeMapper.find(any())).thenReturn(runtime);
-        var runtimeVer = RuntimeVersionEntity.builder().id(8L).image("img").build();
-        when(runtimeVersionMapper.find(any())).thenReturn(runtimeVer);
 
         var model = ModelEntity.builder().modelName("md").build();
         when(modelMapper.find(any())).thenReturn(model);
-        var modelVer = ModelVersionEntity.builder().id(9L).build();
-        when(modelVersionMapper.find(any())).thenReturn(modelVer);
 
         var pypi = mock(RunTimeProperties.Pypi.class);
         when(runTimeProperties.getPypi()).thenReturn(pypi);
@@ -146,8 +138,10 @@ public class ModelServingServiceTest {
                 .resourcePool(resourcePool)
                 .build();
         when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
-        when(runtimeDao.getRuntimeVersionId("8", null)).thenReturn(8L);
-        when(modelDao.getModelVersionId("9", null)).thenReturn(9L);
+        var runtimeVer = RuntimeVersionEntity.builder().id(8L).image("img").build();
+        when(runtimeDao.getRuntimeVersion("8")).thenReturn(runtimeVer);
+        var modelVer = ModelVersionEntity.builder().id(9L).build();
+        when(modelDao.getModelVersion("9")).thenReturn(modelVer);
 
         var ss = new V1StatefulSet();
         ss.metadata(new V1ObjectMeta());

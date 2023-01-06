@@ -73,9 +73,7 @@ public class ModelServingService {
     private final K8sClient k8sClient;
     private final K8sJobTemplate k8sJobTemplate;
     private final RuntimeMapper runtimeMapper;
-    private final RuntimeVersionMapper runtimeVersionMapper;
     private final ModelMapper modelMapper;
-    private final ModelVersionMapper modelVersionMapper;
     private final SystemSettingService systemSettingService;
     private final String instanceUri;
     private final RunTimeProperties runTimeProperties;
@@ -97,9 +95,7 @@ public class ModelServingService {
             K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
             RuntimeMapper runtimeMapper,
-            RuntimeVersionMapper runtimeVersionMapper,
             ModelMapper modelMapper,
-            ModelVersionMapper modelVersionMapper,
             SystemSettingService systemSettingService,
             RunTimeProperties runTimeProperties,
             @Value("${sw.instance-uri}") String instanceUri,
@@ -116,9 +112,7 @@ public class ModelServingService {
         this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
         this.runtimeMapper = runtimeMapper;
-        this.runtimeVersionMapper = runtimeVersionMapper;
         this.modelMapper = modelMapper;
-        this.modelVersionMapper = modelVersionMapper;
         this.systemSettingService = systemSettingService;
         this.runTimeProperties = runTimeProperties;
         this.instanceUri = instanceUri;
@@ -136,18 +130,14 @@ public class ModelServingService {
     ) {
         User user = userService.currentUserDetail();
         Long projectId = projectManager.getProjectId(projectUrl);
-        Long runtimeVersionId = runtimeDao.getRuntimeVersionId(runtimeVersionUrl, null);
-        Long modelVersionId = modelDao.getModelVersionId(modelVersionUrl, null);
-
-        // TODO move the deployment logic into the scheduler
-        var runtime = runtimeVersionMapper.find(runtimeVersionId);
-        var model = modelVersionMapper.find(modelVersionId);
+        var runtime = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
+        var model = modelDao.getModelVersion(modelVersionUrl);
 
         var entity = ModelServingEntity.builder()
                 .ownerId(user.getId())
-                .runtimeVersionId(runtimeVersionId)
+                .runtimeVersionId(runtime.getId())
                 .projectId(projectId)
-                .modelVersionId(modelVersionId)
+                .modelVersionId(model.getId())
                 .jobStatus(JobStatus.CREATED)
                 .resourcePool(resourcePool)
                 .lastVisitTime(new Date())
@@ -157,7 +147,7 @@ public class ModelServingService {
         synchronized (this) {
             modelServingMapper.add(entity);
 
-            var services = modelServingMapper.list(projectId, modelVersionId, runtimeVersionId, resourcePool);
+            var services = modelServingMapper.list(projectId, model.getId(), runtime.getId(), resourcePool);
             if (services.size() != 1) {
                 // this can not happen
                 throw new SwProcessException(SwProcessException.ErrorType.DB,
