@@ -16,12 +16,7 @@ from binascii import crc32
 import jsonlines
 from loguru import logger
 
-from starwhale.consts import (
-    AUTH_ENV_FNAME,
-    DEFAULT_PROJECT,
-    STANDALONE_INSTANCE,
-    SWDS_DATA_FNAME_FMT,
-)
+from starwhale.consts import DEFAULT_PROJECT, STANDALONE_INSTANCE, SWDS_DATA_FNAME_FMT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.base.type import (
@@ -35,7 +30,6 @@ from starwhale.core.dataset import model
 from starwhale.core.dataset.type import (
     Link,
     Binary,
-    LinkAuth,
     MIMEType,
     BaseArtifact,
     DatasetSummary,
@@ -381,7 +375,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
         increased_rows = 0
         total_data_size = 0
-        auth_candidates: t.Dict[str, LinkAuth] = {}
         include_link = False
 
         map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
@@ -410,7 +403,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                         _data_fpath
                     )
                 data_uri, _ = map_path_sign[_data_fpath]
-                auth = ""
                 object_store_type = ObjectStoreType.LOCAL
 
                 def _travel_link(obj: t.Any) -> None:
@@ -438,13 +430,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             else:
                 _remote_link = row_data
                 data_uri = _remote_link.uri
-                if _remote_link.auth:
-                    auth = _remote_link.auth.name
-                    auth_candidates[
-                        f"{_remote_link.auth.ltype}.{_remote_link.auth.name}"
-                    ] = _remote_link.auth
-                else:
-                    auth = ""
                 object_store_type = ObjectStoreType.REMOTE
                 include_link = True
 
@@ -457,7 +442,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                     data_offset=row_data.offset,
                     data_size=row_data.size,
                     data_origin=DataOriginType.NEW,
-                    auth_name=auth,
                     data_type=row_data.astype(),
                     annotations=row_annotations,
                     _append_seq_id=append_seq_id,
@@ -468,7 +452,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             increased_rows += 1
 
         self._copy_files(map_path_sign)
-        self._copy_auth(auth_candidates)
         self.tabular_dataset.info = self.get_info()  # type: ignore
 
         # TODO: provide fine-grained rows/increased rows by dataset pythonic api
@@ -488,14 +471,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             (self.data_output_dir / sign[: DatasetStorage.short_sign_cnt]).symlink_to(
                 obj_path.absolute()
             )
-
-    def _copy_auth(self, auth_candidates: t.Dict[str, LinkAuth]) -> None:
-        if not auth_candidates:
-            return
-
-        with (self.workdir / AUTH_ENV_FNAME).open("w") as f:
-            for auth in auth_candidates.values():
-                f.write("\n".join(auth.dump_env()))
 
     @property
     def data_format_type(self) -> DataFormatType:

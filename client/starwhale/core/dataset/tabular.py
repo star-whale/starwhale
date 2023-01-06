@@ -110,7 +110,6 @@ class TabularDatasetRow(ASDictMixin):
         data_size: int = 0,
         data_origin: DataOriginType = DataOriginType.NEW,
         data_type: t.Optional[t.Dict[str, t.Any]] = None,
-        auth_name: str = "",
         annotations: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
@@ -121,7 +120,6 @@ class TabularDatasetRow(ASDictMixin):
         self.data_size = data_size
         self.data_origin = data_origin
         self.object_store_type = object_store_type
-        self.auth_name = auth_name
         self.data_type = data_type or {}
         self.annotations = annotations or {}
         self.extra_kw = kw
@@ -140,7 +138,6 @@ class TabularDatasetRow(ASDictMixin):
         data_size: int = 0,
         data_origin: str = DataOriginType.NEW.value,
         data_type: str = "",
-        auth_name: str = "",
         **kw: t.Any,
     ) -> TabularDatasetRow:
         _annotations = {}
@@ -160,7 +157,6 @@ class TabularDatasetRow(ASDictMixin):
             data_offset=data_offset,
             data_size=data_size,
             data_origin=DataOriginType(data_origin),
-            auth_name=auth_name,
             data_type=json.loads(data_type),
             annotations=_annotations,
             **_extra_kw,

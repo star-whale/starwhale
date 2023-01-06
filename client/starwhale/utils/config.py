@@ -1,6 +1,9 @@
 import os
+import sys
 import typing as t
 import getpass
+import subprocess
+from shutil import which
 from pathlib import Path
 
 import yaml
@@ -20,7 +23,7 @@ from starwhale.consts import (
     DEFAULT_SW_LOCAL_STORAGE,
 )
 from starwhale.consts.env import SWEnv
-from starwhale.utils.error import NotFoundError
+from starwhale.utils.error import NotFoundError, NoSupportError
 
 from . import console, now_str, fmt_http_server
 from .fs import ensure_dir, ensure_file
@@ -146,6 +149,10 @@ class SWCliConfigMixed:
     def current_instance(self) -> str:
         return str(self._config["current_instance"])
 
+    @property
+    def link_auths(self) -> t.Any:
+        return self._config.get("link_auths")
+
     def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
         instance = self._get_instance_alias(instance)
         return self._config["instances"].get(instance) or {}
@@ -248,3 +255,12 @@ class SWCliConfigMixed:
         )
 
         update_swcli_config(**self._config)
+
+
+def edit_from_shell() -> None:
+    _editor = os.environ.get("EDITOR") or os.environ.get("VISUAL") or "vi"
+    if which(_editor.split()[0]) is None:
+        raise NoSupportError(
+            f"no found {_editor} bin in {sys.platform}. Please configure one using EDITOR or VISUAL environment variable"
+        )
+    subprocess.call(f"{_editor} {get_swcli_config_path()}", shell=True)

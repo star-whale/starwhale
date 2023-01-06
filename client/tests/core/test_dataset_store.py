@@ -1,11 +1,13 @@
 import os
 import string
+import tempfile
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
 
 from starwhale import URI, URIType
+from starwhale.utils import config
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import (
@@ -41,7 +43,7 @@ class TestDatasetBackend(TestCase):
             "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
             expected_type=URIType.DATASET,
         )
-        obj = SignedUrlBackend(dataset_uri)._make_file("", (Link(data_uri), 0, -1))
+        obj = SignedUrlBackend(dataset_uri)._make_file((Link(data_uri), 0, -1))
         assert obj.read(1) == b"a"
         assert obj.read(-1) == raw_content[1:]
         assert req_signed_url.call_count == 1
@@ -50,44 +52,63 @@ class TestDatasetBackend(TestCase):
 
     @patch("os.environ", {})
     def test_s3_conn_from_uri(self) -> None:
-        conn = S3Connection.from_uri("s3://username:password@127.0.0.1:8000/bucket/key")
-        assert conn.endpoint == "http://127.0.0.1:8000"
-        assert conn.access_key == "username"
-        assert conn.secret_key == "password"
-        assert conn.bucket == "bucket"
-        assert conn.region == "local"
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            config._config = {}
+            S3Connection.connections_config = []
+            os.environ["SW_CLI_CONFIG"] = tmpdirname + "/config.yaml"
+            conn = S3Connection.from_uri(
+                "s3://username:password@127.0.0.1:8000/bucket/key"
+            )
+            assert conn.endpoint == "http://127.0.0.1:8000"
+            assert conn.access_key == "username"
+            assert conn.secret_key == "password"
+            assert conn.bucket == "bucket"
+            assert conn.region == "local"
 
-        with self.assertRaises(FieldTypeOrValueError):
-            S3Connection.from_uri("s3://127.0.0.1:8000/bucket/key")
+            with self.assertRaises(NoSupportError):
+                S3Connection.from_uri("s3://127.0.0.1:8000/bucket/key")
 
-        os.environ["USER.S3.SECRET"] = "secret"
-        os.environ["USER.S3.ACCESS_KEY"] = "access_key"
-        os.environ["SW_S3_READ_TIMEOUT"] = "100.0"
-        conn = S3Connection.from_uri("s3://127.0.0.1:8000/bucket/key")
-        assert conn.endpoint == "http://127.0.0.1:8000"
-        assert conn.access_key == "access_key"
-        assert conn.secret_key == "secret"
-        assert conn.bucket == "bucket"
-        assert conn.region == "local"
-        assert conn.connect_timeout == 10.0
-        assert conn.read_timeout == 100.0
-        assert conn.total_max_attempts == 6
-        assert conn.extra_s3_configs == {}
+            config.update_swcli_config(
+                **{
+                    "link_auths": [
+                        {
+                            "type": "s3",
+                            "ak": "access_key",
+                            "sk": "secret",
+                            "endpoint": "http://127.0.0.1:8000",
+                            "bucket": "bucket",
+                            "connect_timeout": 10.0,
+                            "read_timeout": 100.0,
+                        },
+                    ]
+                }
+            )
+            S3Connection.connections_config = []
+            conn = S3Connection.from_uri("s3://127.0.0.1:8000/bucket/key")
+            assert conn.endpoint == "http://127.0.0.1:8000"
+            assert conn.access_key == "access_key"
+            assert conn.secret_key == "secret"
+            assert conn.bucket == "bucket"
+            assert conn.region == "local"
+            assert conn.connect_timeout == 10.0
+            assert conn.read_timeout == 100.0
+            assert conn.total_max_attempts == 6
+            assert conn.extra_s3_configs == {}
 
-        with self.assertRaises(NoSupportError):
-            S3Connection.from_uri("bucket/key")
+            with self.assertRaises(NoSupportError):
+                S3Connection.from_uri("bucket/key")
 
-        with self.assertRaises(FieldTypeOrValueError):
-            S3Connection.from_uri("s3://127.0.0.1:8000")
+            with self.assertRaises(FieldTypeOrValueError):
+                S3Connection.from_uri("s3://127.0.0.1:8000")
 
-        with self.assertRaises(FieldTypeOrValueError):
-            S3Connection.from_uri("s3://127.0.0.1:8000/bucket")
+            with self.assertRaises(FieldTypeOrValueError):
+                S3Connection.from_uri("s3://127.0.0.1:8000/bucket")
 
-        with self.assertRaises(FieldTypeOrValueError):
-            S3Connection.from_uri("s3://127.0.0.1:8000/bucket/")
+            with self.assertRaises(FieldTypeOrValueError):
+                S3Connection.from_uri("s3://127.0.0.1:8000/bucket/")
 
-        conn = S3Connection.from_uri("minio://127.0.0.1:8000/bucket/key")
-        assert conn.endpoint == "http://127.0.0.1:8000"
+            conn = S3Connection.from_uri("minio://127.0.0.1:8000/bucket/key")
+            assert conn.endpoint == "http://127.0.0.1:8000"
 
     @patch("os.environ", {})
     def test_s3_conn_from_env(self) -> None:
@@ -114,13 +135,15 @@ class TestDatasetBackend(TestCase):
         uri = Link("s3://username:password@127.0.0.1:8000/bucket/key")
         conn = S3Connection.from_uri("s3://username:password@127.0.0.1:8000/bucket/key")
         backend = S3StorageBackend(conn)
-        s3_file: S3BufferedFileLike = backend._make_file("bucket", (uri, 0, -1))  # type: ignore
+        s3_file: S3BufferedFileLike = backend._make_file(bucket="bucket", key_compose=(uri, 0, -1))  # type: ignore
         assert s3_file.key == "key"
         assert s3_file._current_s3_start == 0
         assert s3_file.end == -1
         s3_file.close()
 
-        with backend._make_file("bucket", (Link("/path/key2"), 0, -1)) as s3_file:
+        with backend._make_file(
+            bucket="bucket", key_compose=(Link("/path/key2"), 0, -1)
+        ) as s3_file:
             assert s3_file.key == "path/key2"
 
 
@@ -253,7 +276,7 @@ class TestBufferedFile(TestCase):
             content=raw_content,
         )
 
-        obj = HttpBackend()._make_file("", (Link(data_uri), 0, -1))
+        obj = HttpBackend()._make_file((Link(data_uri), 0, -1))
         assert obj.read(1) == b"a"
         assert obj.read(-1) == raw_content[1:]
         assert req_file_download.call_count == 1

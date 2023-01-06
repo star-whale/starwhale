@@ -13,6 +13,7 @@ from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
 from starwhale import URI
+from starwhale.utils import config
 
 CURRENT_DIR = os.path.dirname(__file__)
 step_spec_f: t.Callable[
@@ -101,6 +102,22 @@ class TestCli:
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
             assert self.instance_api.login(url=self.server_url)
+        config.update_swcli_config(
+            **{
+                "link_auths": [
+                    {
+                        "type": "s3",
+                        "ak": "starwhale",
+                        "sk": "starwhale",
+                        "endpoint": "http://10.131.0.1:9000",
+                        "bucket": "users",
+                        "region": "local",
+                        "connect_timeout": 10.0,
+                        "read_timeout": 100.0,
+                    },
+                ]
+            }
+        )
 
     def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
         self.select_local_instance()

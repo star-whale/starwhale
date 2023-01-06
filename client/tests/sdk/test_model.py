@@ -269,7 +269,6 @@ class TestModelPipelineHandler(TestCase):
                         "type": ArtifactType.Image.value,
                         "mime_type": MIMEType.GRAYSCALE.value,
                     },
-                    auth_name="",
                 ).asdict(),
             ],
         ]

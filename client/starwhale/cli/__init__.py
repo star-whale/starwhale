@@ -15,6 +15,7 @@ from starwhale.core.project.cli import project_cmd
 from starwhale.core.runtime.cli import runtime_cmd
 from starwhale.core.instance.cli import instance_cmd
 
+from .cli import config_cmd
 from .mngt import add_mngt_command
 from .completion import completion_cmd
 
@@ -46,6 +47,7 @@ def create_sw_cli() -> click.core.Group:
     cli.add_command(dataset_cmd, aliases=["ds"])  # type: ignore
     cli.add_command(open_board)
     cli.add_command(completion_cmd)
+    cli.add_command(config_cmd)
     add_mngt_command(cli)
 
     return cli

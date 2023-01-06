@@ -2,13 +2,7 @@ import struct
 import typing as t
 from pathlib import Path
 
-from starwhale import (
-    Link,
-    S3LinkAuth,
-    GrayscaleImage,
-    SWDSBinBuildExecutor,
-    UserRawBuildExecutor,
-)
+from starwhale import Link, GrayscaleImage, SWDSBinBuildExecutor, UserRawBuildExecutor
 
 _TItem = t.Generator[t.Tuple[t.Any, t.Any], None, None]
 
@@ -75,7 +69,6 @@ class RawDatasetProcessExecutor(UserRawBuildExecutor):
 
 
 class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
-    _auth = S3LinkAuth(name="mnist", access_key="minioadmin", secret="minioadmin")
     _endpoint = "10.131.0.1:9000"
     _bucket = "users"
 
@@ -92,7 +85,6 @@ class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
             for i in range(label_number):
                 _data = Link(
                     f"{uri}",
-                    self._auth,
                     offset=offset,
                     size=image_size,
                     data_type=GrayscaleImage(display_name=f"{i}", shape=(28, 28, 1)),

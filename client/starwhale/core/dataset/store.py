@@ -41,7 +41,7 @@ from starwhale.utils.error import (
     FieldTypeOrValueError,
 )
 from starwhale.utils.retry import http_retry
-from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.core.dataset.type import Link
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
@@ -187,6 +187,13 @@ class FileLikeObj(Protocol[_TFLType]):
 
 
 class S3Connection:
+    connections_config: t.List[S3Connection] = []
+    init_config_lock = threading.Lock()
+    supported_schemes = {"s3", "minio", "aliyun", "oss"}
+    DEFAULT_CONNECT_TIMEOUT = 10.0
+    DEFAULT_READ_TIMEOUT = 50.0
+    DEFAULT_MAX_ATTEMPTS = 6
+
     def __init__(
         self,
         endpoint: str,
@@ -194,14 +201,15 @@ class S3Connection:
         secret_key: str,
         region: str = "",
         bucket: str = "",
-        connect_timeout: float = 10.0,
-        read_timeout: float = 50.0,
-        total_max_attempts: int = 6,
+        connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
+        read_timeout: float = DEFAULT_READ_TIMEOUT,
+        total_max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     ) -> None:
         self.endpoint = endpoint.strip()
         if self.endpoint and not self.endpoint.startswith(("http://", "https://")):
             self.endpoint = f"http://{self.endpoint}"
-
+        r = urlparse(self.endpoint)
+        self.endpoint_loc = r.netloc.split("@")[-1]
         self.access_key = access_key
         self.secret_key = secret_key
         self.region = region
@@ -218,55 +226,88 @@ class S3Connection:
         # https://botocore.amazonaws.com/v1/documentation/api/latest/reference/config.html
         self.extra_s3_configs = json.loads(os.environ.get("SW_S3_EXTRA_CONFIGS", "{}"))
 
+    def fits(self, bucket: str, endpoint_loc: str) -> bool:
+        return self.bucket == bucket and self.endpoint_loc == endpoint_loc
+
     def __str__(self) -> str:
         return f"endpoint[{self.endpoint}]-region[{self.region}]"
 
     __repr__ = __str__
 
     @classmethod
-    def from_uri(cls, uri: str, auth_name: str = "") -> S3Connection:
+    def from_uri(cls, uri: str) -> S3Connection:
         """make S3 Connection by uri
 
         uri:
             - s3://username:password@127.0.0.1:8000/bucket/key
             - s3://127.0.0.1:8000/bucket/key
         """
-        from .type import S3LinkAuth
-
-        uri = uri.strip()
-        if not uri or not uri.startswith(("s3://", "minio://")):
+        r = urlparse(uri.strip())
+        if r.scheme not in cls.supported_schemes:
             raise NoSupportError(
-                f"s3 connection only support s3:// prefix, the actual uri is {uri}"
+                f"s3 connection only support {cls.supported_schemes} prefix, the actual uri is {uri}"
             )
-
-        r = urlparse(uri)
-
-        link_auth = S3LinkAuth.from_env(auth_name)
-        access = r.username or link_auth.access_key
-        secret = r.password or link_auth.secret
-        region = link_auth.region
-        endpoint = r.netloc.split("@")[-1] or link_auth.endpoint
-
+        endpoint_loc = r.netloc.split("@")[-1]
         parts = r.path.lstrip("/").split("/", 1)
         if len(parts) != 2 or parts[0] == "" or parts[1] == "":
             raise FieldTypeOrValueError(
                 f"{uri} is not a valid s3 uri for bucket and key"
             )
         bucket = parts[0]
+        cls.build_init_connections()
+        for connection in S3Connection.connections_config:
+            if connection.fits(bucket, endpoint_loc):
+                return connection
+        if r.username and r.password:
+            return cls(
+                endpoint=endpoint_loc,
+                access_key=r.username,
+                secret_key=r.password,
+                region=_DEFAULT_S3_REGION,
+                bucket=bucket,
+            )
+        raise NoSupportError(f"no matching s3 config in {get_swcli_config_path()}")
 
-        if not endpoint:
-            raise FieldTypeOrValueError("endpoint is empty")
-
-        if not access or not secret:
-            raise FieldTypeOrValueError("no access_key or secret_key")
-
-        return cls(
-            endpoint=endpoint,
-            access_key=access,
-            secret_key=secret,
-            region=region or _DEFAULT_S3_REGION,
-            bucket=bucket,
-        )
+    @classmethod
+    def build_init_connections(cls) -> None:
+        with S3Connection.init_config_lock:
+            if S3Connection.connections_config:
+                return
+            sw_config = SWCliConfigMixed()
+            link_auths = sw_config.link_auths
+            if not link_auths:
+                return
+            for la in link_auths:
+                if not la.get("type") or type(la.get("type")) != str:
+                    continue
+                if la.get("type") not in cls.supported_schemes:
+                    continue
+                if (
+                    not la.get("endpoint")
+                    or not la.get("ak")
+                    or not la.get("sk")
+                    or not la.get("bucket")
+                ):
+                    continue
+                S3Connection.connections_config.append(
+                    cls(
+                        endpoint=la.get("endpoint"),
+                        access_key=la.get("ak"),
+                        secret_key=la.get("sk"),
+                        region=la.get("region") or _DEFAULT_S3_REGION,
+                        bucket=la.get("bucket"),
+                        connect_timeout=la.get(
+                            "connect_timeout", cls.DEFAULT_CONNECT_TIMEOUT
+                        ),
+                        read_timeout=la.get("read_timeout", cls.DEFAULT_READ_TIMEOUT),
+                        total_max_attempts=la.get(
+                            "total_max_attempts", cls.DEFAULT_MAX_ATTEMPTS
+                        ),
+                    )
+                )
+            env_conn = cls.from_env()
+            if env_conn:
+                S3Connection.connections_config.append(env_conn)
 
     @classmethod
     def from_env(cls) -> S3Connection:
@@ -312,14 +353,14 @@ class ObjectStore:
         return f"ObjectStored:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
-    def from_data_link_uri(cls, data_link: Link, auth_name: str) -> ObjectStore:
+    def from_data_link_uri(cls, data_link: Link) -> ObjectStore:
         if not data_link:
             raise FieldTypeOrValueError("data_link is empty")
 
         # TODO: support other uri type
-        if data_link.scheme in ("s3", "minio", "oss", "aliyun"):
+        if data_link.scheme in S3Connection.supported_schemes:
             backend = SWDSBackendType.S3
-            conn = S3Connection.from_uri(data_link.uri, auth_name)
+            conn = S3Connection.from_uri(data_link.uri)
             bucket = conn.bucket
         elif data_link.scheme in ["http", "https"]:
             backend = SWDSBackendType.Http
@@ -368,7 +409,6 @@ class StorageBackend(metaclass=ABCMeta):
 
 
 class S3StorageBackend(StorageBackend):
-
     lock_s3_creation = threading.Lock()
 
     def __init__(
@@ -438,7 +478,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
 
     @http_retry
     def _make_file(
-        self, auth: str, key_compose: t.Tuple[Link, int, int]
+        self, key_compose: t.Tuple[Link, int, int], **kwargs: t.Any
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
         return HttpBufferedFileLike(
@@ -469,7 +509,7 @@ class HttpBackend(StorageBackend, CloudRequestMixed):
 
     @http_retry
     def _make_file(
-        self, auth: str, key_compose: t.Tuple[Link, int, int]
+        self, key_compose: t.Tuple[Link, int, int], **kwargs: t.Any
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
         return HttpBufferedFileLike(
