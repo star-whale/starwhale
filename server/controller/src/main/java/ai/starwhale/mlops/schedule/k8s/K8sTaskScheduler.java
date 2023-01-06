@@ -82,9 +82,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             ResourceEventHandler<V1Job> eventHandlerJob,
             ResourceEventHandler<V1Node> eventHandlerNode,
             ResourceEventHandler<V1Pod> eventHandlerPod, @Value("${sw.instance-uri}") String instanceUri,
-            @Value("${sw.dataset.load.batchSize}") int datasetLoadBatchSize,
-            @Value("${sw.infra.k8s.job.restartPolicy:OnFailure}") String restartPolicy,
-            @Value("${sw.infra.k8s.job.backoffLimit:10}") Integer backoffLimit,
+            @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
+            @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
+            @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
             StorageAccessService storageAccessService) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;

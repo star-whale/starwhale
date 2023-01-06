@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("${sw.controller.apiPrefix}")
+@RequestMapping("${sw.controller.api-prefix}")
 public class LogController implements LogApi {
 
     final TaskService taskService;

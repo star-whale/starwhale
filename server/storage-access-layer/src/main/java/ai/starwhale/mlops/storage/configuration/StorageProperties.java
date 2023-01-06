@@ -17,10 +17,14 @@
 package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.s3.S3Config;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @ConfigurationProperties(prefix = "sw.storage")
 public class StorageProperties {
 

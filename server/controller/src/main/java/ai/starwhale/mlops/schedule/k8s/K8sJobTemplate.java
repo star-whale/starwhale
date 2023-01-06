@@ -61,7 +61,7 @@ public class K8sJobTemplate {
     final V1Job v1Job;
 
     public K8sJobTemplate(
-            @Value("${sw.infra.k8s.job-template-path}") String evalJobTemplatePath,
+            @Value("${sw.infra.k8s.job.template-path}") String evalJobTemplatePath,
             @Value("${sw.infra.k8s.model-serving-template-path}") String msPath,
             @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
     )

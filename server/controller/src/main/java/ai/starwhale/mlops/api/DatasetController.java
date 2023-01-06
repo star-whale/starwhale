@@ -63,7 +63,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("${sw.controller.apiPrefix}")
+@RequestMapping("${sw.controller.api-prefix}")
 @Slf4j
 public class DatasetController implements DatasetApi {
 
