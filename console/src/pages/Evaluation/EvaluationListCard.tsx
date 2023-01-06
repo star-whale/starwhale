@@ -51,7 +51,14 @@ export default function EvaluationListCard() {
     const store = useEvaluationStore()
 
     const $data = useMemo(() => evaluationsInfo.data?.records ?? [], [evaluationsInfo])
-    const $columns = useDatastoreColumns(evaluationsInfo?.data?.columnTypes ?? [])
+    const $columns = useDatastoreColumns(
+        evaluationsInfo?.data?.columnTypes?.sort((ca, cb) => {
+            if (ca.name === 'id') return -1
+            if (ca.name?.startsWith('sys/')) return -1
+            if (ca.name > cb.name) return -1
+            return 1
+        }) ?? []
+    )
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
