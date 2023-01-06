@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -49,13 +50,16 @@ import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -171,6 +175,7 @@ public class ModelServingServiceTest {
     @Test
     public void testGarbageCollection() throws ApiException {
         final String oldestName = "model-serving-7";
+        final String notTheOldestName = "model-serving-8";
         final String noEntityName = "model-serving-9";
         final String maxTtlName = "model-serving-10";
 
@@ -190,7 +195,7 @@ public class ModelServingServiceTest {
                 .metadata(new V1ObjectMeta().name(oldestName))
                 .status(runningStatus);
         final var shouldNotBeGc = new V1StatefulSet()
-                .metadata(new V1ObjectMeta().name("model-serving-8"))
+                .metadata(new V1ObjectMeta().name(notTheOldestName))
                 .status(runningStatus);
 
         final var noEntity = new V1StatefulSet().metadata(new V1ObjectMeta().name(noEntityName));
@@ -206,6 +211,19 @@ public class ModelServingServiceTest {
         when(modelServingMapper.find(11L)).thenReturn(
                 ModelServingEntity.builder().lastVisitTime(new Date(now - 2 * 1000)).build());
 
+        var pendingPod = new V1Pod().status(new V1PodStatus().phase("Pending"));
+        var or = new V1OwnerReference().kind("StatefulSet").name("model-serving-11");
+        pendingPod.metadata(new V1ObjectMeta().ownerReferences(List.of(or)));
+
+        var readyPod1 = new V1Pod().status(new V1PodStatus().phase("Running"));
+        var orOld = new V1OwnerReference().kind("StatefulSet").name(oldestName);
+        readyPod1.metadata(new V1ObjectMeta().ownerReferences(List.of(orOld)));
+
+        var readyPod2 = new V1Pod().status(new V1PodStatus().phase("Running"));
+        var orNew = new V1OwnerReference().kind("StatefulSet").name(notTheOldestName);
+        readyPod2.metadata(new V1ObjectMeta().ownerReferences(List.of(orNew)));
+
+        when(k8sClient.getPodList(any())).thenReturn(new V1PodList().items(List.of(pendingPod, readyPod1, readyPod2)));
 
         var list = new V1StatefulSetList();
         list.setItems(List.of(noStatus, noMeta, oldest, shouldNotBeGc, pending, noEntity, reachesTheMaxTtl));
@@ -213,7 +231,7 @@ public class ModelServingServiceTest {
 
         var capture = ArgumentCaptor.forClass(String.class);
         svc.gc();
-        verify(k8sClient, times(3)).deleteStatefulSet(capture.capture());
+        verify(k8sClient, atLeastOnce()).deleteStatefulSet(capture.capture());
         var names = capture.getAllValues();
         assertThat(names, containsInAnyOrder(oldestName, noEntityName, maxTtlName));
 
@@ -226,6 +244,7 @@ public class ModelServingServiceTest {
         list.setItems(List.of(pending, theOnlyRunningAndInMinTtl));
         reset(k8sClient);
         when(k8sClient.getStatefulSetList(any())).thenReturn(list);
+        when(k8sClient.getPodList(any())).thenReturn(new V1PodList().items(List.of(pendingPod, readyPod1, readyPod2)));
         svc.gc();
         verify(k8sClient, times(0)).deleteStatefulSet(any());
     }

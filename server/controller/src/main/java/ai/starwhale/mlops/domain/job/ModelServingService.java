@@ -43,13 +43,13 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.util.labels.EqualityMatcher;
-import io.kubernetes.client.util.labels.LabelSelector;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -246,7 +246,9 @@ public class ModelServingService {
 
         // add owner reference for svc and we can just delete the stateful-set when gc is needed
         var ownerRef = new V1OwnerReference();
+        ownerRef.name(name);
         ownerRef.kind(ss.getKind());
+        ownerRef.apiVersion(ss.getApiVersion());
         Objects.requireNonNull(ss.getMetadata());
         ownerRef.uid(ss.getMetadata().getUid());
         meta.ownerReferences(List.of(ownerRef));
@@ -276,12 +278,38 @@ public class ModelServingService {
 
 
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
-    public void gc() throws ApiException {
+    public void gc() {
+        try {
+            internalGc();
+        } catch (ApiException e) {
+            log.error("Failed to gc, code: {}, body: {}", e.getCode(), e.getResponseBody(), e);
+        }
+    }
+
+    public void internalGc() throws ApiException {
         var labelSelector = K8sClient.toV1LabelSelector(Map.of(
                 K8sJobTemplate.LABEL_WORKLOAD_TYPE,
                 K8sJobTemplate.WORKLOAD_TYPE_ONLINE_EVAL
         ));
         var statefulSetList = k8sClient.getStatefulSetList(labelSelector);
+        var podList = k8sClient.getPodList(labelSelector);
+        var pods = new HashMap<String, V1Pod>();
+        for (var pod : podList.getItems()) {
+            if (pod.getMetadata() == null || pod.getMetadata().getOwnerReferences() == null) {
+                continue;
+            }
+            for (var ownerRef : pod.getMetadata().getOwnerReferences()) {
+                if (ownerRef.getKind() == null || !ownerRef.getKind().equals("StatefulSet")) {
+                    continue;
+                }
+                var name = ownerRef.getName();
+                if (StringUtils.isEmpty(name)) {
+                    continue;
+                }
+                pods.put(name, pod);
+                log.info("found pod {} for stateful set {}", pod.getMetadata().getName(), name);
+            }
+        }
 
         boolean hasPending = false;
         Map<Date, V1StatefulSet> mayBeGarbageCollected = new TreeMap<>((t1, t2) -> {
@@ -303,7 +331,7 @@ public class ModelServingService {
                 continue;
             }
 
-            // check if in db record
+            // check if the record in db
             ModelServingEntity entity;
             synchronized (this) {
                 entity = modelServingMapper.find(id);
@@ -330,10 +358,26 @@ public class ModelServingService {
                 log.info("ignore stateful set {} (no status found)", name);
                 continue;
             }
+
+            // check if the pod is running
+            var pod = pods.get(name);
+            if (pod == null) {
+                // maybe no enough resources
+                log.info("stateful set {} has no matching pod", name);
+                hasPending = true;
+                continue;
+            }
+            var podStatus = pod.getStatus();
+            // no status found or the status is pending
+            if (podStatus == null || (podStatus.getPhase() != null && podStatus.getPhase().equals("Pending"))) {
+                log.info("stateful set {} has pending pod", name);
+                hasPending = true;
+                continue;
+            }
+
             // current replica of online eval is 1, so 0 means not ready
             if (status.getReadyReplicas() == null || status.getReadyReplicas() == 0) {
-                hasPending = true;
-                log.info("found pending stateful set {}", name);
+                log.info("found stateful set {} not ready, won't gc", name);
                 continue;
             }
 

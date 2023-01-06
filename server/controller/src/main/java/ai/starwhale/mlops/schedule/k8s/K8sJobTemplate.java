@@ -121,9 +121,15 @@ public class K8sJobTemplate {
 
         // set name and labels
         ss.getMetadata().name(name);
+
+        var labels = new HashMap<String, String>();
+        labels.putAll(Map.of(LABEL_APP, name, LABEL_WORKLOAD_TYPE, WORKLOAD_TYPE_ONLINE_EVAL));
+        labels.putAll(starwhaleJobLabel);
+
+        ss.getMetadata().labels(labels);
+
         var spec = ss.getSpec();
         Objects.requireNonNull(spec);
-        var labels = Map.of(LABEL_APP, name, LABEL_WORKLOAD_TYPE, WORKLOAD_TYPE_ONLINE_EVAL);
         spec.getSelector().matchLabels(labels);
         Objects.requireNonNull(spec.getTemplate().getMetadata());
         spec.getTemplate().getMetadata().labels(labels);
@@ -142,7 +148,7 @@ public class K8sJobTemplate {
         readiness.httpGet(httpGet);
         httpGet.path("/");
         httpGet.port(new IntOrString(ONLINE_EVAL_PORT_IN_POD));
-        httpGet.scheme("http");
+        httpGet.scheme("HTTP");
 
         var containerSpecMap = new HashMap<String, ContainerOverwriteSpec>();
         containerSpecMap.put(containerName, cos);
