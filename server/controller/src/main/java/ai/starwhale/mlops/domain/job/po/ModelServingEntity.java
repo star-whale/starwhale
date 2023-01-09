@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -41,4 +41,5 @@ public class ModelServingEntity extends BaseEntity {
     private Long runtimeVersionId;
     private Integer isDeleted;
     private String resourcePool;
+    private Date lastVisitTime;
 }

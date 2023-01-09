@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.Date;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -134,10 +135,10 @@ public class ProxyServlet extends HttpServlet {
         }
         var id = Long.parseLong(parts[1]);
 
-        // TODO add cache
         if (modelServingMapper.find(id) == null) {
             throw new IllegalArgumentException("can not find model serving entry " + parts[1]);
         }
+        modelServingMapper.updateLastVisitTime(id, new Date());
 
         var svc = ModelServingService.getServiceName(id);
         var handler = "";

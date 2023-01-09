@@ -16,14 +16,17 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
@@ -55,6 +58,10 @@ public class K8sJobTemplate {
     private final String pipCacheHostPath;
 
     public static final String DEVICE_LABEL_NAME_PREFIX = "device.starwhale.ai-";
+    public static final String LABEL_APP = "app";
+    public static final String LABEL_WORKLOAD_TYPE = "starwhale-workload-type";
+    public static final String WORKLOAD_TYPE_ONLINE_EVAL = "online-eval";
+    public static final int ONLINE_EVAL_PORT_IN_POD = 8080;
 
     final String evalJobTemplate;
     final String modelServingJobTemplate;
@@ -111,24 +118,43 @@ public class K8sJobTemplate {
     public V1StatefulSet renderModelServingOrch(Map<String, String> envs, String image, String name) {
         var ss = Yaml.loadAs(this.modelServingJobTemplate, V1StatefulSet.class);
         Objects.requireNonNull(ss.getMetadata());
+
+        // set name and labels
         ss.getMetadata().name(name);
+
+        var labels = new HashMap<String, String>();
+        labels.putAll(Map.of(LABEL_APP, name, LABEL_WORKLOAD_TYPE, WORKLOAD_TYPE_ONLINE_EVAL));
+        labels.putAll(starwhaleJobLabel);
+
+        ss.getMetadata().labels(labels);
+
         var spec = ss.getSpec();
         Objects.requireNonNull(spec);
-        var labels = Map.of("app", name);
         spec.getSelector().matchLabels(labels);
         Objects.requireNonNull(spec.getTemplate().getMetadata());
         spec.getTemplate().getMetadata().labels(labels);
-        var podSpec = spec.getTemplate().getSpec();
-        Objects.requireNonNull(podSpec);
 
+        // set container spec
         final String containerName = "worker";
         var cos = new ContainerOverwriteSpec();
         cos.setName(containerName);
         cos.setImage(image);
         cos.setEnvs(envs.entrySet().stream().map(K8sJobTemplate::toEnvVar).collect(Collectors.toList()));
+        // add readiness probe
+        var readiness = new V1Probe();
+        cos.setReadinessProbe(readiness);
+        readiness.failureThreshold(3);
+        var httpGet = new V1HTTPGetAction();
+        readiness.httpGet(httpGet);
+        httpGet.path("/");
+        httpGet.port(new IntOrString(ONLINE_EVAL_PORT_IN_POD));
+        httpGet.scheme("HTTP");
+
         var containerSpecMap = new HashMap<String, ContainerOverwriteSpec>();
         containerSpecMap.put(containerName, cos);
 
+        var podSpec = spec.getTemplate().getSpec();
+        Objects.requireNonNull(podSpec);
         patchPodSpec("Always", containerSpecMap, null, podSpec);
         patchPipCacheVolume(ss.getSpec().getTemplate().getSpec().getVolumes());
         addDeviceInfoLabel(spec.getTemplate(), containerSpecMap);
@@ -172,7 +198,9 @@ public class K8sJobTemplate {
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.envs)) {
                 c.env(containerOverwriteSpec.envs);
             }
-
+            if (containerOverwriteSpec.readinessProbe != null) {
+                c.readinessProbe(containerOverwriteSpec.readinessProbe);
+            }
         });
     }
 

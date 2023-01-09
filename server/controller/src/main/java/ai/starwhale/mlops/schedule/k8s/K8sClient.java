@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
@@ -102,6 +103,10 @@ public class K8sClient {
         batchV1Api.deleteNamespacedJob(id, ns, null, null, 1, false, null, null);
     }
 
+    public void deleteStatefulSet(String name) throws ApiException {
+        appsV1Api.deleteNamespacedStatefulSet(name, ns, null, null, 1, false, null, null);
+    }
+
     /**
      * get all jobs with in this.ns
      *
@@ -109,6 +114,15 @@ public class K8sClient {
      */
     public V1JobList getJobs(String labelSelector) throws ApiException {
         return batchV1Api.listNamespacedJob(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
+    }
+
+    public V1StatefulSetList getStatefulSetList(String labelSelector) throws ApiException {
+        return appsV1Api.listNamespacedStatefulSet(ns, null, null, null, null,
+                labelSelector, null, null, null, 30, null);
+    }
+
+    public V1PodList getPodList(String labelSelector) throws ApiException {
+        return coreV1Api.listNamespacedPod(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 
     public void watchJob(ResourceEventHandler<V1Job> eventH, String selector) {
@@ -227,7 +241,7 @@ public class K8sClient {
 
     public V1PodList getPodsByJobName(String job) throws ApiException {
         var selector = toV1LabelSelector(Map.of(K8sJobTemplate.JOB_IDENTITY_LABEL, job));
-        return coreV1Api.listNamespacedPod(ns, null, null, null, null, selector, null, null, null, 30, null);
+        return getPodList(selector);
     }
 
     public static String toV1LabelSelector(Map<String, String> labels) {
