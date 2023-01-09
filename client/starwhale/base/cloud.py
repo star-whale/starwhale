@@ -224,6 +224,7 @@ class CloudRequestMixed:
                     "size": self.get_bundle_size_from_resp(typ, _h),
                     "created_at": self.fmt_timestamp(_h["createdTime"]),
                     "is_removed": _h.get("is_removed", False),
+                    "alias": _h.get("alias", ""),
                 }
             )
 

@@ -76,8 +76,8 @@ class TestCloudRequestMixed(TestCase):
             json={
                 "data": {
                     "list": [
-                        {"id": 2, "name": "tc_v2", "createdTime": 3000},
-                        {"id": 1, "name": "tc_v1", "createdTime": 1000},
+                        {"id": 2, "name": "tc_v2", "createdTime": 3000, "alias": "v2"},
+                        {"id": 1, "name": "tc_v1", "createdTime": 1000, "alias": "v1"},
                     ],
                     "total": 2,
                     "size": 2,
@@ -92,9 +92,24 @@ class TestCloudRequestMixed(TestCase):
             json={
                 "data": {
                     "list": [
-                        {"id": 5, "name": "mnist_v3", "createdTime": 2000},
-                        {"id": 4, "name": "mnist_v2", "createdTime": 2000},
-                        {"id": 3, "name": "mnist_v1", "createdTime": 2000},
+                        {
+                            "id": 5,
+                            "name": "mnist_v3",
+                            "createdTime": 2000,
+                            "alias": "v3",
+                        },
+                        {
+                            "id": 4,
+                            "name": "mnist_v2",
+                            "createdTime": 2000,
+                            "alias": "v2",
+                        },
+                        {
+                            "id": 3,
+                            "name": "mnist_v1",
+                            "createdTime": 2000,
+                            "alias": "v1",
+                        },
                     ],
                     "total": 3,
                     "size": 3,
@@ -109,7 +124,12 @@ class TestCloudRequestMixed(TestCase):
             json={
                 "data": {
                     "list": [
-                        {"id": 5, "name": "mnist_v3", "createdTime": 2000},
+                        {
+                            "id": 5,
+                            "name": "mnist_v3",
+                            "createdTime": 2000,
+                            "alias": "v3",
+                        },
                     ],
                     "total": 1,
                     "size": 1,

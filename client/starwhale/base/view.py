@@ -232,15 +232,19 @@ class BaseTermView(SWCliConfigMixed):
                 if _v.get("id"):
                     _version = f"[{_v['id']:2}] {_version}"
 
-                result.append(
-                    {
-                        "name": _name,
-                        "version": _version,
-                        "tags": _v.get("tags", []),
-                        "size": _v.get("size", 0),
-                        "created_at": _v.get("created_at"),
-                    }
-                )
+                _item = {
+                    "name": _name,
+                    "version": _version,
+                    "tags": _v.get("tags"),
+                    "alias": _v.get("alias"),
+                    "size": _v.get("size", 0),
+                    "created_at": _v.get("created_at"),
+                }
+                if "alias" not in _v:
+                    _item.pop("alias")
+                if "tags" not in _v:
+                    _item.pop("tags")
+                result.append(_item)
 
         order_keys = [Order("name"), Order("created_at", True)]
         return sort_obj_list(result, order_keys)
