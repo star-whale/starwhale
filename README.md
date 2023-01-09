@@ -255,6 +255,8 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     swcli dataset info mnist/version/latest
    ```
 
+  Starwhale also supports build dataset with pure python sdk. You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/datasets/sdk/dataset-sdk.ipynb).
+
 - 🍖 **STEP6**: Running an evaluation job
 
    ```bash

@@ -29,3 +29,5 @@ pillow
 # for starwhale[audio] test
 soundfile
 openapi-spec-validator
+# for jupyternotebook
+jupyter
