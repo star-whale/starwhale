@@ -38,10 +38,12 @@ export function withEditorRegister(EditorApp: React.FC) {
     return function EditorLoader(props: any) {
         // const [registred, setRegistred] = React.useState(false)
         useEffect(() => {
+            /*
             import('http://127.0.0.1:8080/widget.js').then((module) => {
                 // setRegistred(true)
                 console.log(module)
             })
+            */
         }, [])
         // if (!registred) {
         //     return <BusyPlaceholder type='spinner' />

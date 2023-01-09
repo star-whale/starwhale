@@ -9,7 +9,6 @@ import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { ICreateOnlineEvalSchema } from '@model/schemas/model'
 import { createUseStyles } from 'react-jss'
-import { FormInstance } from 'rc-field-form'
 
 interface ICreateOnlineEvalProps {
     modelId: string
@@ -34,7 +33,7 @@ const useStyles = createUseStyles({
 
 const { Form, FormItem, useForm } = createForm<ICreateOnlineEvalProps>()
 
-function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef: React.RefObject<any>) {
+function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef: React.ForwardedRef<any>) {
     const [form] = useForm()
     const {
         projectId,

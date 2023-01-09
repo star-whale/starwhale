@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect } from 'react'
+import React, { useEffect } from 'react'
 import CreateOnlineEvalForm from '@model/components/CreateOnlineEvalForm'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
@@ -11,12 +11,15 @@ import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import axios from 'axios'
 import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
+// eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner } from 'baseui/spinner'
 import css from '@/assets/GradioWidget/es/style.css'
+// eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
 
 declare global {
     interface Window {
+        // eslint-disable-next-line @typescript-eslint/ban-types
         wait: Function | null
         gradio_config: any
     }
@@ -45,8 +48,8 @@ export default function OnlineEval() {
     const [isLoading, setIsLoading] = React.useState(false)
 
     useEffect(() => {
-        if (window.wait) return
-        window.wait = async () => {
+        if (window.wait) return undefined
+        window.wait = async (): Promise<void> => {
             if (!formRef.current) return
             const values = formRef.current.getFieldsValue()
 
@@ -56,7 +59,8 @@ export default function OnlineEval() {
                 values.resourcePool === undefined
             ) {
                 toaster.negative('Please fill in all fields', {})
-                return Promise.reject()
+                await Promise.reject(new Error('no runtime version'))
+                return
             }
 
             try {
@@ -70,15 +74,12 @@ export default function OnlineEval() {
 
                 if (!resp.data?.baseUri) return
 
+                // eslint-disable-next-line no-restricted-globals
                 window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}/run/`
-
-                async function checkStatus(baseUri: string) {
-                    return await axios.get(baseUri)
-                }
 
                 await new Promise((resolve) => {
                     const id = setInterval(() => {
-                        checkStatus(resp.data?.baseUri).then(() => {
+                        axios.get(resp.data?.baseUri).then(() => {
                             setIsLoading(false)
                             clearInterval(id)
                             resolve(null)
@@ -86,7 +87,6 @@ export default function OnlineEval() {
                     }, 2000)
                 })
             } catch (e) {
-                console.log(e)
                 setIsLoading(false)
             }
         }
@@ -115,17 +115,22 @@ export default function OnlineEval() {
                     setConfig(data)
                 })
         }
-    }, [project?.name, projectId, modelId, modelVersionId, modelInfo.isSuccess, modelVersionInfo.isSuccess])
+    }, [
+        project?.name,
+        projectId,
+        modelId,
+        modelVersionId,
+        modelInfo.isSuccess,
+        modelVersionInfo.isSuccess,
+        modelInfo?.data?.name,
+        modelInfo?.data?.versionName,
+        modelVersionInfo?.data?.versionName,
+    ])
 
     return (
         <>
             <Card title={t('online eval')}>
-                <CreateOnlineEvalForm
-                    ref={formRef}
-                    onSubmit={(data: any) => {
-                        console.log(data)
-                    }}
-                />
+                <CreateOnlineEvalForm ref={formRef} onSubmit={() => {}} />
             </Card>
             {config && (
                 // @ts-ignore
@@ -137,7 +142,7 @@ export default function OnlineEval() {
             <Modal
                 isOpen={isLoading}
                 closeable={false}
-                role={'dialog'}
+                role='dialog'
                 overrides={{
                     Dialog: {
                         style: {
