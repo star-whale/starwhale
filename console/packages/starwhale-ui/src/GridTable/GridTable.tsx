@@ -56,6 +56,7 @@ function GridTable({
     onSelectionChange,
     searchable = false,
     filterable = false,
+    queryable = false,
     columnable = false,
     compareable = false,
     viewable = false,
@@ -110,6 +111,7 @@ function GridTable({
                     initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
+                    queryable={queryable}
                     columnable={columnable}
                     compareable={compareable}
                     viewable={viewable}

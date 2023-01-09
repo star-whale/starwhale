@@ -15,6 +15,7 @@ import FilterOperateMenu from './filter-operate-menu'
 import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
+import ConfigQuery from './config-query'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -66,6 +67,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const columnable = props.columnable === undefined ? true : props.columnable
     const viewable = props.viewable === undefined ? true : props.viewable
     const compareable = props.viewable === undefined ? true : props.compareable
+    const queryable = props.viewable === undefined ? true : props.queryable
+    const selectable = props.selectable === undefined ? true : props.selectable
+
     const { useStore } = props
     const store = useStore()
 
@@ -161,7 +165,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     return (
         <StatefulContainer
-            batchActions={props.batchActions}
             // @ts-ignore
             columns={$columns}
             initialSortIndex={props.initialSortIndex}
@@ -185,13 +188,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             }: StatefulContainerPropsT['children']) => (
                 <>
                     <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
-                        <div
-                            ref={headlineRef}
-                            className={css({
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            })}
-                        >
+                        <div ref={headlineRef}>
                             <div
                                 className='flex-row-center mb-20 g-20'
                                 style={{
@@ -220,18 +217,37 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
                             </div>
+                            <div
+                                style={{
+                                    gridTemplateColumns: '1fr auto',
+                                    display: 'grid',
+                                }}
+                            >
+                                {queryable && (
+                                    <div className='table-config-query' style={{ flex: 1 }}>
+                                        <ConfigQuery
+                                            filters={store.currentView?.filters ?? []}
+                                            columns={props.columns}
+                                            rows={props.rows}
+                                            onFilterSet={handeFilterSet}
+                                            onSave={handleFilterSave}
+                                            onSaveAs={handleFilterSaveAs}
+                                        />
+                                    </div>
+                                )}
 
-                            {columnable && !$rowSelectedIds.size && (
-                                <div className='flex-row-center mb-20'>
-                                    <ConfigManageColumns
-                                        view={store.currentView}
-                                        columns={props.columns}
-                                        onApply={handleApply}
-                                        onSave={handleSave}
-                                        onSaveAs={handleSaveAs}
-                                    />
-                                </div>
-                            )}
+                                {columnable && !$rowSelectedIds.size && (
+                                    <div className='table-config-column flex-row-center mb-20'>
+                                        <ConfigManageColumns
+                                            view={store.currentView}
+                                            columns={props.columns}
+                                            onApply={handleApply}
+                                            onSave={handleSave}
+                                            onSaveAs={handleSaveAs}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -243,8 +259,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         {$columns.length > 0 && (
                             <DataTable
                                 useStore={props.useStore}
-                                batchActions={props.batchActions}
                                 columns={$columns}
+                                selectable={selectable}
                                 rawColumns={props.columns}
                                 emptyMessage={props.emptyMessage}
                                 filters={$filtersEnabled}

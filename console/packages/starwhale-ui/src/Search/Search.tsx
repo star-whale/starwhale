@@ -73,7 +73,7 @@ export default function Search({ ...props }: ISearchProps) {
     }, [query.filter])
 
     useDeepEffect(() => {
-        updateQuery({ filter: items.filter((v) => v.value) as any })
+        // updateQuery({ filter: items.filter((v) => v.value) as any })
     }, [items, column])
 
     return (

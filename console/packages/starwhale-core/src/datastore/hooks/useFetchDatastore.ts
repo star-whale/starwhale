@@ -89,7 +89,7 @@ export function useQueryDatasetList(
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recordQuery])
+    }, [recordQuery.tableName])
 
     return recordInfo
 }

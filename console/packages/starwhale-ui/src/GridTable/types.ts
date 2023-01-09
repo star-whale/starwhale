@@ -14,6 +14,8 @@ export interface ITableProps {
     compareable?: boolean
     isLoading?: boolean
     viewable?: boolean
+    queryable?: boolean
+    selectable?: boolean
     id?: string
     data: any[]
     columns: any[]

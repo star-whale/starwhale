@@ -25,6 +25,7 @@ import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const page = { pageNum: 1, pageSize: 1000 }
+
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
@@ -50,7 +51,6 @@ export default function EvaluationListCard() {
 
     const store = useEvaluationStore()
 
-    const $data = useMemo(() => evaluationsInfo.data?.records ?? [], [evaluationsInfo])
     const $columns = useDatastoreColumns(
         evaluationsInfo?.data?.columnTypes?.sort((ca, cb) => {
             if (ca.name === 'id') return -1
@@ -113,22 +113,12 @@ export default function EvaluationListCard() {
 
     const [compareRows, setCompareRows] = useState<any[]>([])
 
-    const batchAction = useMemo(
-        () => [
-            {
-                label: 'Compare',
-                onClick: ({ selection }: any) => {
-                    const rows = selection.map((item: any) => item.data)
-                    setCompareRows(rows)
-                },
-            },
-        ],
-        [setCompareRows]
-    )
-
     React.useEffect(() => {
-        setCompareRows($data.filter((r) => store.rowSelectedIds.includes(r.id)))
-    }, [store.rowSelectedIds, $data])
+        if (evaluationsInfo.isSuccess)
+            setCompareRows(evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? [])
+    }, [store.rowSelectedIds, evaluationsInfo.isSuccess])
+
+    console.log(evaluationsInfo)
 
     React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
@@ -136,7 +126,7 @@ export default function EvaluationListCard() {
             (state: any[]) => store.onSelectMany(state)
         )
         return unsub
-    }, [store, $data])
+    }, [store])
 
     // sync local to api
     React.useEffect(() => {
@@ -156,7 +146,7 @@ export default function EvaluationListCard() {
             }
         )
         return unsub
-    }, [store, $data, projectId, evaluationViewConfig])
+    }, [store, projectId, evaluationViewConfig])
 
     // sync api to local
     React.useEffect(() => {
@@ -206,12 +196,11 @@ export default function EvaluationListCard() {
                     return (
                         <GridTable
                             store={useEvaluationStore}
-                            filterable
-                            searchable
                             columnable
                             viewable
+                            queryable
+                            selectable
                             isLoading={evaluationsInfo.isLoading}
-                            batchActions={batchAction}
                             columns={$columnsWithSpecColumns}
                             data={evaluationsInfo.data?.records ?? []}
                         />

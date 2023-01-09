@@ -145,6 +145,8 @@ export type StatefulDataTablePropsT = {
     columnable?: boolean
     viewable?: boolean
     compareable?: boolean
+    queryable?: boolean
+    selectable?: boolean
     controlRef?: ControlRefT
     useStore: IStore
 }
