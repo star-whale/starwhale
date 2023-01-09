@@ -9,7 +9,6 @@ import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { ICreateOnlineEvalSchema } from '@model/schemas/model'
 import { createUseStyles } from 'react-jss'
-import { FormInstance } from 'rc-field-form'
 
 interface ICreateOnlineEvalProps {
     modelId: string
