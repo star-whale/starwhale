@@ -47,21 +47,36 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
                 .jobStatus(JobStatus.RUNNING)
                 .lastVisitTime(new Date(System.currentTimeMillis() / 1000 * 1000))
                 .build();
-        modelServingMapper.add(entity);
+        modelServingMapper.insertIgnore(entity);
         var id = entity.getId();
         var result = modelServingMapper.find(id);
         Assertions.assertEquals(entity, result);
 
         entity.setId(null);
         // insert if not exists (ignore)
-        modelServingMapper.add(entity);
+        modelServingMapper.insertIgnore(entity);
         // no insertion
         Assertions.assertNull(entity.getId());
         entity.setId(id);
 
+        var another = ModelServingEntity.builder()
+                .modelVersionId(2L)
+                .projectId(entity.getProjectId())
+                .runtimeVersionId(entity.getRuntimeVersionId())
+                .ownerId(entity.getOwnerId())
+                .createUser(entity.getCreateUser())
+                .isDeleted(entity.getIsDeleted())
+                .resourcePool(entity.getResourcePool())
+                .jobStatus(entity.getJobStatus())
+                .lastVisitTime(entity.getLastVisitTime())
+                .build();
+        modelServingMapper.add(another);
+        result = modelServingMapper.find(another.getId());
+        Assertions.assertEquals(another, result);
+
 
         var list = modelServingMapper.list(null, null, null, null);
-        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(2, list.size());
         Assertions.assertEquals(id, list.get(0).getId());
 
         list = modelServingMapper.list(null, 7L, null, null);

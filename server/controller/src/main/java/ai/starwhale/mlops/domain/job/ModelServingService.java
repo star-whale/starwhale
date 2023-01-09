@@ -26,12 +26,10 @@ import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
-import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
-import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -145,7 +143,7 @@ public class ModelServingService {
 
         long id;
         synchronized (this) {
-            modelServingMapper.add(entity);
+            modelServingMapper.insertIgnore(entity);
 
             var services = modelServingMapper.list(projectId, model.getId(), runtime.getId(), resourcePool);
             if (services.size() != 1) {
@@ -270,7 +268,9 @@ public class ModelServingService {
     @Scheduled(initialDelay = 10000, fixedDelay = 10000)
     public void gc() {
         try {
-            internalGc();
+            synchronized (this) {
+                internalGc();
+            }
         } catch (ApiException e) {
             log.error("Failed to gc, code: {}, body: {}", e.getCode(), e.getResponseBody(), e);
         }
@@ -322,10 +322,7 @@ public class ModelServingService {
             }
 
             // check if the record in db
-            ModelServingEntity entity;
-            synchronized (this) {
-                entity = modelServingMapper.find(id);
-            }
+            var entity = modelServingMapper.find(id);
             if (entity == null) {
                 // delete the unknown stateful set
                 log.info("delete stateful set {} when there is no entry in db", name);

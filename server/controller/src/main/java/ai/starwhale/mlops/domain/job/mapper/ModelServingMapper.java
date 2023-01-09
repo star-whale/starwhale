@@ -49,6 +49,10 @@ public interface ModelServingMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(ModelServingEntity entity);
 
+    @InsertProvider(value = SqlProviderAdapter.class, method = "insertIgnore")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertIgnore(ModelServingEntity entity);
+
     @Select("select * from " + TABLE + " where id=#{id}")
     ModelServingEntity find(long id);
 
@@ -65,6 +69,19 @@ public interface ModelServingMapper {
 
     class SqlProviderAdapter {
         public String insert() {
+            var values = Arrays.stream(COLUMNS)
+                    .map(i -> "#{" + CaseUtils.toCamelCase(i, false, '_') + "}")
+                    .toArray(String[]::new);
+            return new SQL() {
+                {
+                    INSERT_INTO(TABLE);
+                    INTO_COLUMNS(COLUMNS);
+                    INTO_VALUES(values);
+                }
+            }.toString();
+        }
+
+        public String insertIgnore() {
             var values = Arrays.stream(COLUMNS)
                     .map(i -> "#{" + CaseUtils.toCamelCase(i, false, '_') + "}")
                     .toArray(String[]::new);
