@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import EditorContextProvider from '@starwhale/core/context/EditorContextProvider'
 import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
 import { createCustomStore } from '@starwhale/core/store'
@@ -23,7 +23,6 @@ export function withEditorRegister(EditorApp: React.FC) {
         // }, [])
         // if (!registred) {
         //     return <BusyPlaceholder type='spinner' />
-        // }
         // log.debug('WidgetFactory', WidgetFactory.widgetMap)
         // @FIXME
         const { projectId } = useParams<{ projectId: string }>()
