@@ -58,7 +58,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     static final String PATH_QUERY_TABLE = "/datastore/queryTable";
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
-    public ProjectNameExtractorDataStoreMixed(@Value("${sw.controller.apiPrefix}") String apiPrefix,
+    public ProjectNameExtractorDataStoreMixed(@Value("${sw.controller.api-prefix}") String apiPrefix,
             ObjectMapper objectMapper) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;

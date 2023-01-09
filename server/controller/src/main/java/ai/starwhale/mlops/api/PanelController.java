@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("${sw.controller.apiPrefix}")
+@RequestMapping("${sw.controller.api-prefix}")
 public class PanelController implements PanelApi {
 
     private final PluginService pluginService;

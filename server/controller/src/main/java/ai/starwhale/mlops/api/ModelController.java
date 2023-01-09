@@ -54,7 +54,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
-@RequestMapping("${sw.controller.apiPrefix}")
+@RequestMapping("${sw.controller.api-prefix}")
 public class ModelController implements ModelApi {
 
     private final ModelService modelService;
