@@ -133,7 +133,6 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
-        # TODO: remove yaml_name in build function
         self.store.building = True  # type: ignore
 
         # use a temp dir to build resources
