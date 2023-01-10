@@ -21,8 +21,8 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[float, t.List[float]]:  # type: ignore
-        data_tensor = self._pre(img)
+    def ppl(self, data: t.Dict[str, t.Any], **kw: t.Any) -> t.Tuple[float, t.List[float]]:  # type: ignore
+        data_tensor = self._pre(data["img"])
         output = self.model(data_tensor)
         return self._post(output)
 
@@ -30,7 +30,7 @@ class MNISTInference(PipelineHandler):
     def upload_bin_file(self, file: t.Any) -> t.Any:
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))
-        _, prob = self.ppl(data)
+        _, prob = self.ppl({"img": data})
         return {i: p for i, p in enumerate(prob)}
 
     @multi_classification(
@@ -45,7 +45,7 @@ class MNISTInference(PipelineHandler):
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["label"])
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
         return label, result, pr

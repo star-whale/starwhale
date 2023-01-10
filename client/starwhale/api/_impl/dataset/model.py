@@ -115,7 +115,6 @@ class Dataset:
         if create:
             setattr(self.__core_dataset, "_version", self.version)
 
-        self._append_use_swds_bin = False
         _summary = None
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
@@ -130,10 +129,6 @@ class Dataset:
                 self._create_by_append = True
                 self._fork_dataset()
                 _summary = CoreDataset.get_dataset(_origin_uri).summary()
-                if _summary:
-                    self._append_use_swds_bin = not (
-                        _summary.include_link or _summary.include_user_raw
-                    )
             else:
                 self._append_from_version = ""
                 self._create_by_append = False
@@ -527,7 +522,7 @@ class Dataset:
     @_check_readonly
     @_forbid_handler_build
     def __setitem__(
-        self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple]
+        self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple, t.Dict]
     ) -> None:
         # TODO: tune the performance of getitem by cache
         self._trigger_icode_build = True
@@ -539,17 +534,19 @@ class Dataset:
         if isinstance(value, DataRow):
             value.index = key
             row = value
+        elif isinstance(value, dict):
+            row = DataRow(index=key, data=value)
         elif isinstance(value, (tuple, list)):
-            if len(value) == 2:
-                data, annotations = value
-            elif len(value) == 3:
-                _, data, annotations = value
+            if len(value) == 1:
+                data = value[0]
+            elif len(value) == 2:
+                _, data = value
             else:
                 raise ValueError(f"{value} cannot unpack")
 
-            row = DataRow(index=key, data=data, annotations=annotations)
+            row = DataRow(index=key, data=data)
         else:
-            raise TypeError(f"value only supports tuple or DataRow type: {value}")
+            raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
         # TODO improve accuracy of _rows_cnt during building
         self._rows_cnt += 1
@@ -586,7 +583,6 @@ class Dataset:
                     append=self._create_by_append,
                     append_from_version=append_from_version,
                     append_from_uri=append_from_uri,
-                    append_with_swds_bin=self._append_use_swds_bin,
                     instance_name=self.project_uri.instance,
                 )
         return self._row_writer
@@ -620,14 +616,16 @@ class Dataset:
     def append(self, item: t.Any) -> None:
         if isinstance(item, DataRow):
             self.__setitem__(item.index, item)
+        elif isinstance(item, dict):
+            self.__setitem__(self._rows_cnt, item)
         elif isinstance(item, (list, tuple)):
-            if len(item) == 2:
-                row = DataRow(self._rows_cnt, item[0], item[1])
-            elif len(item) == 3:
-                row = DataRow(item[0], item[1], item[2])
+            if len(item) == 1:
+                row = DataRow(self._rows_cnt, item[0])
+            elif len(item) == 2:
+                row = DataRow(item[0], item[1])
             else:
                 raise ValueError(
-                    f"cannot unpack value({item}), expected sequence is (index, data, annotations) or (data, annotations)"
+                    f"cannot unpack value({item}), expected sequence is (index, data) or data"
                 )
 
             self.__setitem__(row.index, row)

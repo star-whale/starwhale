@@ -10,9 +10,11 @@ title: The `caltech-101` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
-    - `label`: the label for the image
+- `row.data`: `dict`
+  - `image`: `starwhale.Image`
+  - `label`: the label for the image
+- `row.index` of type `str`:
+
 
 ## Build `caltech-101` Dataset locally
 

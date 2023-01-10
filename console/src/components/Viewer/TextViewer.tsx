@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
 import { StatefulTooltip } from 'baseui/tooltip'
-import { IArtifactText } from '@/domain/dataset/sdk'
+import _ from 'lodash'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -17,7 +17,7 @@ const useStyles = createUseStyles({
 
 type ITextViewerProps = {
     isZoom?: boolean
-    data: IArtifactText
+    data: any
 }
 
 const utf8Decoder = new TextDecoder('utf-8')
@@ -27,7 +27,17 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
     const styles = useStyles()
 
     useEffect(() => {
-        if (!data.src) return
+        if (!_.isObject(data)) {
+            setText(data)
+            return
+        }
+        // @ts-ignore
+        if (data.content) {
+            // @ts-ignore
+            setText(data.content)
+            return
+        }
+        // @ts-ignore
         fetch(data.src)
             .then((response) => response.arrayBuffer())
             .then((buffer) => {

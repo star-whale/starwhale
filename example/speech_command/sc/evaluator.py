@@ -64,8 +64,8 @@ class M5Inference(PipelineHandler):
         ).to(self.device)
 
     @torch.no_grad()
-    def ppl(self, audio: Audio, **kw):
-        _tensor = self._pre(audio)
+    def ppl(self, data: dict, **kw):
+        _tensor = self._pre(data["speech"])
         output = self.model(_tensor)
         return self._post(output)
 
@@ -79,7 +79,7 @@ class M5Inference(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(ALL_LABELS_MAP[_data["annotations"]["label"]])
+            label.append(ALL_LABELS_MAP[_data["ds_data"]["command"]])
             pr.append(_data["result"][1])
             result.append(_data["result"][0])
         return label, result, pr

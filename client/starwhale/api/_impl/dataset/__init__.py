@@ -21,8 +21,8 @@ from starwhale.core.dataset.type import (
 )
 
 from .model import Dataset
-from .loader import get_data_loader, SWDSBinDataLoader, UserRawDataLoader
-from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
+from .loader import get_data_loader
+from .builder import BuildExecutor, SWDSBinBuildExecutor
 
 __all__ = [
     "get_data_loader",
@@ -34,10 +34,7 @@ __all__ = [
     "MIMEType",
     "LinkType",
     "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
-    "SWDSBinDataLoader",
-    "UserRawDataLoader",
     "Binary",
     "Text",
     "Line",

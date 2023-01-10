@@ -14,19 +14,13 @@ from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import (
-    URIType,
-    RunSubDirType,
-    DataFormatType,
-    DataOriginType,
-    ObjectStoreType,
-)
+from starwhale.base.type import URIType, RunSubDirType, DataOriginType
 from starwhale.api._impl.job import context_holder
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.type import Link, MIMEType, ArtifactType, DatasetSummary
-from starwhale.core.dataset.store import DatasetStorage
+from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
+from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
-from starwhale.api._impl.dataset.loader import DataRow, UserRawDataLoader
+from starwhale.api._impl.dataset.loader import DataRow, DataLoader
 
 
 class SimpleHandler(PipelineHandler):
@@ -92,15 +86,14 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_s3_loader(self, m_summary: MagicMock, m_resource: MagicMock) -> None:
         os.environ["SW_S3_BUCKET"] = "starwhale"
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=True,
-        )
+        m_summary.return_value = DatasetSummary()
+        ObjectStore._stores = {}
 
         _loader = get_data_loader(
             dataset_uri=URI("mnist/version/latest", URIType.DATASET),
         )
-        assert isinstance(_loader, UserRawDataLoader)
-        assert not _loader._stores
+        assert isinstance(_loader, DataLoader)
+        assert not ObjectStore._stores
 
     @patch("starwhale.api._impl.model.PPLResultIterator")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
@@ -168,15 +161,15 @@ class TestModelPipelineHandler(TestCase):
 
         # mock dataset
         m_summary.return_value = DatasetSummary(
-            include_user_raw=False,
-            include_link=False,
             rows=1,
             increased_rows=1,
         )
 
         fname = "data_ubyte_0.swds_bin"
         m_scan_id.return_value = [{"id": 0}]
-        m_ds.return_value = [[DataRow(0, Link(fname), {"label": 0})]]
+        m_ds.return_value = [
+            [DataRow(0, {"image": GrayscaleImage(link=Link(fname)), "label": 0})]
+        ]
         m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
 
         datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
@@ -240,12 +233,10 @@ class TestModelPipelineHandler(TestCase):
                 assert np.array_equal(y, np_data)
                 assert torch.equal(z, tensor_data)
 
-                assert label_data == data[0]["annotations"]["label"]
+                assert label_data == data[0]["ds_data"]["label"]
 
         # mock dataset
         m_summary.return_value = DatasetSummary(
-            include_user_raw=False,
-            include_link=False,
             rows=1,
             increased_rows=1,
         )
@@ -255,20 +246,20 @@ class TestModelPipelineHandler(TestCase):
             [{"id": 0, "value": 1}],
             [
                 TabularDatasetRow(
-                    id=0,
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link(fname),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": label_data},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": GrayscaleImage(
+                            link=Link(
+                                fname,
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
+                        "label": label_data,
                     },
+                    data_origin=DataOriginType.NEW,
+                    id=0,
                 ).asdict(),
             ],
         ]

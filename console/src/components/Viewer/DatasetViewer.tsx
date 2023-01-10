@@ -2,7 +2,6 @@ import React from 'react'
 import IconFont from '@/components/IconFont'
 import {
     ArtifactType,
-    DatasetObject,
     IArtifactAudio,
     IArtifactImage,
     IArtifactVideo,
@@ -16,7 +15,7 @@ import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
 
 export type IDatasetViewerProps = {
-    dataset?: DatasetObject
+    dataset?: any
     isZoom?: boolean
     hiddenLabels?: Set<number>
 }
@@ -41,10 +40,13 @@ export function Placeholder() {
 }
 
 export default function DatasetViewer({ dataset, isZoom = false, hiddenLabels = new Set() }: IDatasetViewerProps) {
-    const { data } = dataset || {}
+    const data = dataset
 
     const Viewer = React.useMemo(() => {
-        if (!dataset || !data?.src) return <Placeholder />
+        if (!data) return <Placeholder />
+        if (typeof data === 'number' || typeof data === 'string' || typeof data === 'boolean') {
+            return <TextViewer data={data} isZoom={isZoom} />
+        }
 
         const { _type, _mime_type: mimeType } = data
 

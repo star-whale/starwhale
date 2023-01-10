@@ -48,8 +48,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                 ds.append(
                     DataRow(
                         index=i,
-                        data=Binary(f"data-{i}".encode()),
-                        annotations={"label": i},
+                        data={"data": Binary(f"data-{i}".encode()), "label": i},
                     )
                 )
             ds.commit()
@@ -61,8 +60,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                 ds.append(
                     DataRow(
                         index=f"{i}",
-                        data=Binary(f"data-{i}".encode()),
-                        annotations={"label": i},
+                        data={"data": Binary(f"data-{i}".encode()), "label": i},
                     )
                 )
             ds.commit()
@@ -99,13 +97,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 11
         ds = dataset("mnist", create=True)
         assert len(ds) == 0
-        ds.append(DataRow(index=0, data=Binary(b""), annotations={"label": 1}))
+        ds.append(DataRow(index=0, data={"data": Binary(b""), "label": 1}))
         assert len(ds) == 1
         for i in range(1, size):
-            ds.append((i, Binary(), {"label": i}))
+            ds.append((i, {"data": Binary(), "label": i}))
         assert len(ds) == size
 
-        ds.append((Binary(), {"label": 1}))
+        ds.append({"data": Binary(), "label": 1})
 
         with self.assertRaises(TypeError):
             ds.append(1)
@@ -127,7 +125,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 10
         ds.extend(
             [
-                DataRow(index=i, data=Binary(), annotations={"label": i})
+                DataRow(index=i, data={"data": Binary(), "label": i})
                 for i in range(0, size)
             ]
         )
@@ -154,12 +152,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 0
         assert ds._row_writer is None
 
-        ds["index-2"] = DataRow(
-            index="index-2", data=Binary(), annotations={"label": 2}
-        )
-        ds["index-1"] = DataRow(
-            index="index-1", data=Binary(), annotations={"label": 1}
-        )
+        ds["index-2"] = DataRow(index="index-2", data={"data": Binary(), "label": 2})
+        ds["index-1"] = DataRow(index="index-1", data={"data": Binary(), "label": 1})
 
         assert len(ds) == 2
         assert ds._row_writer is not None
@@ -167,10 +161,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._row_writer._kw["dataset_version"] == ds.version
         assert not ds._row_writer._kw["append"]
 
-        ds["index-4"] = "index-4", Binary(), {"label": 4}
-        ds["index-3"] = Binary(), {"label": 3}
+        ds["index-4"] = "index-4", {"data": Binary(), "label": 4}
+        ds["index-3"] = {"data": Binary(), "label": 3}
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             ds["index-5"] = (1,)
 
         with self.assertRaises(TypeError):
@@ -200,7 +194,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         def _do_task(_start: int) -> None:
             for i in range(_start, size):
-                ds.append(DataRow(index=i, data=Binary(), annotations={"label": i}))
+                ds.append(DataRow(index=i, data={"data": Binary(), "label": i}))
 
         pool = ThreadPoolExecutor(max_workers=10)
         tasks = [pool.submit(_do_task, i * 10) for i in range(0, 9)]
@@ -216,14 +210,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_setitem_same_key(self) -> None:
         ds = dataset("mnist", create=True)
-        ds.append(DataRow(1, Binary(b""), {"label": "1-1"}))
+        ds.append(DataRow(1, {"data": Binary(b""), "label": "1-1"}))
         assert len(ds) == 1
 
         for i in range(0, 10):
-            ds[2] = Binary(b""), {"label": f"2-{i}"}
+            ds[2] = {"data": Binary(b""), "label": f"2-{i}"}
 
         # assert len(ds) == 2  TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(3, Binary(b""), {"label": "3-1"}))
+        ds.append(DataRow(3, {"data": Binary(b""), "label": "3-1"}))
 
         # assert len(ds) == 3 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
         ds.commit()
@@ -231,7 +225,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         load_ds = dataset(ds.uri)
         assert len(list(load_ds)) == 3
-        assert load_ds[2].annotations == {"label": "2-9"}  # type: ignore
+        assert load_ds[2].data["label"] == "2-9"  # type: ignore
         assert len(load_ds) == 3
 
     def test_readonly(self) -> None:
@@ -241,13 +235,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds.readonly
         readonly_msg = "in the readonly mode"
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
-            ds.append(DataRow(1, Binary(), {}))
+            ds.append(DataRow(1, {"data": Binary(b"")}))
 
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
-            ds.extend([DataRow(1, Binary(), {})])
+            ds.extend([DataRow(1, {"data": Binary(b"")})])
 
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
-            ds[1] = Binary(), {}
+            ds[1] = {}
 
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
             ds.flush()
@@ -284,7 +278,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_del_item_from_empty(self) -> None:
         with dataset("mnist", create=True) as ds:
             for i in range(0, 3):
-                ds.append(DataRow(i, Binary(), {"label": i}))
+                ds.append(DataRow(i, {"data": Binary(), "label": i}))
 
             ds.flush()
             del ds[0]
@@ -311,7 +305,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_build_from_handler_empty(self) -> None:
         def _handler() -> t.Generator:
             for i in range(0, 100):
-                yield i, Binary(), {"label": i}
+                yield i, {"data": Binary(), "label": i}
 
         ds = dataset("mnist", create=True)
         ds.build_handler = _handler
@@ -321,13 +315,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         reopen_ds = dataset(ds.uri)
         items = list(reopen_ds)
         assert len(items) == len(reopen_ds) == 100
-        assert "label" in items[-1].annotations
+        assert "label" in items[-1].data
         assert isinstance(items[-1].index, int)
 
     def test_build_from_handler_existed(self) -> None:
         def _handler() -> t.Generator:
             for i in range(0, 100):
-                yield f"label-{i}", Binary(), {"label": i}
+                yield f"label-{i}", {
+                    "data": Binary(bytes(f"data-{i}", "utf-8")),
+                    "label": i,
+                }
 
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         with dataset(existed_ds_uri, create_from_handler=_handler) as ds:
@@ -339,8 +336,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         summary = reopen_ds.summary()
         assert isinstance(summary, DatasetSummary)
         assert summary.rows == 110
-        assert not summary.include_link
-        assert not summary.include_user_raw
         assert summary.increased_rows == 100
         items = list(reopen_ds)
         assert len(items) == 110
@@ -350,7 +345,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_build_from_handler_with_copy_src(self) -> None:
         def _handler() -> t.Generator:
             for i in range(0, 100):
-                yield DataRow(f"label-{i}", Binary(), {"label": i})
+                yield DataRow(f"label-{i}", {"data": Binary(), "label": i})
 
         workdir = Path(self.local_storage) / ".data"
         ensure_dir(workdir)
@@ -380,7 +375,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_forbid_handler(self) -> None:
         ds = dataset("mnist", create=True)
         for i in range(0, 3):
-            ds.append(DataRow(i, Binary(), {"label": i}))
+            ds.append(DataRow(i, {"data": Binary(), "label": i}))
 
         assert ds._trigger_icode_build
         assert not ds._trigger_handler_build
@@ -398,13 +393,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         msg = "no support build from handler and from cache code at the same time"
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds.append(DataRow(1, Binary(), {"label": 1}))
+            ds.append(DataRow(1, {"data": Binary(), "label": 1}))
 
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds.extend([DataRow(1, Binary(), {"label": 1})])
+            ds.extend([DataRow(1, {"data": Binary(), "label": 1})])
 
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds[1] = DataRow(1, Binary(), {"label": 1})
+            ds[1] = DataRow(1, {"data": Binary(), "label": 1})
 
         with self.assertRaisesRegex(NoSupportError, msg):
             del ds[1]
@@ -413,13 +408,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._trigger_handler_build
         assert not ds._trigger_icode_build
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds.append(DataRow(1, Binary(), {"label": 1}))
+            ds.append(DataRow(1, {"data": Binary(), "label": 1}))
 
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds.extend([DataRow(1, Binary(), {"label": 1})])
+            ds.extend([DataRow(1, {"data": Binary(), "label": 1})])
 
         with self.assertRaisesRegex(NoSupportError, msg):
-            ds[1] = DataRow(1, Binary(), {"label": 1})
+            ds[1] = DataRow(1, {"data": Binary(), "label": 1})
 
         with self.assertRaisesRegex(NoSupportError, msg):
             del ds[1]
@@ -448,16 +443,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 10
         ds.flush()
 
-        ds.append(DataRow(index=1, data=Binary(b""), annotations={"label": 101}))
+        ds.append(DataRow(index=1, data={"data": Binary(b"101"), "label": 101}))
         # assert len(ds) == 10 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=100, data=Binary(b""), annotations={"label": 100}))
+        ds.append(DataRow(index=100, data={"data": Binary(b"100"), "label": 100}))
         # assert len(ds) == 11 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=101, data=Binary(b""), annotations={"label": 101}))
+        ds.append(DataRow(index=101, data={"data": Binary(b"101"), "label": 101}))
         ds.commit()
         ds.close()
 
         load_ds = dataset(ds.uri)
-        assert load_ds[1].annotations == {"label": 101}  # type: ignore
+        assert load_ds[1].data["label"] == 101  # type: ignore
         assert {d.index for d in load_ds} == set(list(range(0, 10)) + [100, 101])
         assert len(load_ds) == 12
         _summary = load_ds.summary()
@@ -487,8 +482,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         _d = ds[0]
         assert isinstance(_d, DataRow)
         assert _d.index == 0
-        assert _d.data == Binary(b"data-0")
-        assert _d.annotations == {"label": 0}
+        assert _d.data["data"].to_bytes() == b"data-0"
+        assert _d.data["label"] == 0
 
     def test_load_with_tag(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -666,7 +661,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         for i in range(0, cnt):
             ds.append(
                 DataRow(
-                    index=i, data=Binary(f"data-{i}".encode()), annotations={"label": i}
+                    index=i, data={"data": Binary(f"data-{i}".encode()), "label": i}
                 )
             )
 
@@ -674,13 +669,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert tmp_dir.exists()
         assert len(list(tmp_dir.iterdir())) != 0
         assert not snapshot_workdir.exists()
-        assert update_table_req.called
         assert not upload_file_req.called
 
         ds.commit()
         assert not tmp_dir.exists()
         assert not snapshot_workdir.exists()
         assert upload_file_req.called
+        assert update_table_req.called
 
         ds.close()
 
@@ -781,7 +776,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_info_update(self) -> None:
         ds = dataset("mnist", create=True)
-        ds.append(DataRow(1, Binary(b"123"), {"label": 1}))
+        ds.append(DataRow(1, {"data": Binary(b"123"), "label": 1}))
 
         assert list(ds.info) == []
         assert not bool(ds.info)
@@ -877,20 +872,20 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         head = ds.head(n=1)
         assert len(head) == 1
-        assert head[0]["index"] == 0
+        assert head[0]["index"] == "0"
         assert "raw" not in head[0]["data"]
 
         head = ds.head(n=2)
         assert len(head) == 2
-        assert head[0]["index"] == 0
-        assert head[1]["index"] == 1
-        assert "raw" not in head[0]["data"]
-        assert "raw" not in head[1]["data"]
+        assert head[0]["index"] == "0"
+        assert head[1]["index"] == "1"
+        assert not head[0]["data"]["data"]._bytes
+        assert not head[1]["data"]["data"]._bytes
 
         head = ds.head(n=2, show_raw_data=True)
         assert len(head) == 2
-        assert head[0]["data"]["raw"] == b"data-0"
-        assert head[1]["data"]["raw"] == b"data-1"
+        assert head[0]["data"]["data"]._bytes == b"data-0"
+        assert head[1]["data"]["data"]._bytes == b"data-1"
 
     @Mocker()
     def test_copy(self, rm: Mocker) -> None:
@@ -932,9 +927,9 @@ class TestPytorch(_DatasetSDKTestBase):
         items = list(torch_loader)
         assert len(ds) == len(items)
         assert len(items[0]) == 2
-        assert isinstance(items[0][1], dict)
-        assert "label" in items[0][1]
-        assert isinstance(items[0][0], Binary)
+        assert isinstance(items[0], dict)
+        assert "label" in items[0]
+        assert isinstance(items[0]["data"], Binary)
 
     def test_skip_default_transform_with_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -952,7 +947,7 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_binary_type_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
-        assert isinstance(ds["0"].data, Binary)  # type: ignore
+        assert isinstance(ds["0"].data["data"], Binary)  # type: ignore
 
         torch_loader = tdata.DataLoader(
             ds.to_pytorch(skip_default_transform=False), batch_size=None
@@ -963,7 +958,7 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_binary_type_with_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
-        assert isinstance(ds["0"].data, Binary)  # type: ignore
+        assert isinstance(ds["0"].data["data"], Binary)  # type: ignore
 
         torch_loader = tdata.DataLoader(
             ds.to_pytorch(skip_default_transform=False), batch_size=2
@@ -971,14 +966,12 @@ class TestPytorch(_DatasetSDKTestBase):
         items = list(torch_loader)
         assert len(items) == 5
         first_item = items[0]
-        assert isinstance(first_item, list)
-        assert len(first_item) == 2
-        assert len(first_item[0]) == 2
+        assert isinstance(first_item, dict)
+        assert len(first_item["data"]) == 2
+        assert len(first_item["label"]) == 2
 
-        assert isinstance(first_item[1], dict)
-        assert list(first_item[1].keys()) == ["label"]
-        assert isinstance(first_item[1]["label"], torch.Tensor)
-        assert list(first_item[1]["label"].size()) == [2]
+        assert isinstance(first_item["label"], torch.Tensor)
+        assert list(first_item["label"].size()) == [2]
 
     def test_binary_type_with_batch_fetch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -1003,27 +996,27 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_use_custom_transform(self) -> None:
         with dataset("mnist", create=True) as ds:
             for i in range(0, 10):
-                ds.append((Text(f"data-{i}"), {"label": i}))
+                ds.append({"txt": Text(f"data-{i}"), "label": i})
 
             ds.commit()
 
         def _custom_transform(data: t.Any) -> t.Any:
-            if isinstance(data, Text):
-                return f"custom-{data.to_str()}"
-            else:
-                return data
+            txt = data["txt"].to_str()
+            data["txt"] = f"custom-{txt}"
+            return data
 
         torch_loader = tdata.DataLoader(
             dataset(ds.uri).to_pytorch(transform=_custom_transform), batch_size=1
         )
         item = next(iter(torch_loader))
-        assert isinstance(item, list) and len(item) == 2
-        assert item[0][0] in ("custom-data-0", "custom-data-1")
+        assert isinstance(item["label"], torch.Tensor)
+        assert item["txt"][0] in ("custom-data-0", "custom-data-1")
 
     def test_complex_transform(self) -> None:
         ds = dataset("mnist", create=True)
         for i in range(0, 10):
-            annotations = {
+            data = {
+                "text": Text(f"data-{i}"),
                 "int": 1,
                 "float": 1.1,
                 "tuple": (1, 2, 3),
@@ -1032,64 +1025,62 @@ class TestPytorch(_DatasetSDKTestBase):
                 "str": f"str-{i}",
                 "bytes": f"bytes-{i}".encode(),
             }
-            ds.append((Text(f"data-{i}"), annotations))
+            ds.append(data)
         ds.commit()
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
         item = next(iter(torch_loader))
 
-        assert isinstance(item, list)
-        assert len(item) == 2
-        assert isinstance(item[0], tuple)
-        assert len(item[0]) == 2
-        assert item[0][0].startswith("data-")
+        assert isinstance(item["text"], list)
+        assert len(item["text"]) == 2
+        assert item["text"][0].startswith("data-")
 
-        assert isinstance(item[1], dict)
-        assert item[1]["int"].dtype == torch.int64
-        assert list(item[1]["int"].size()) == [2]
-        assert torch.equal(item[1]["int"], torch.tensor([1, 1]))
+        assert isinstance(item["map"], dict)
+        assert item["int"].dtype == torch.int64
+        assert list(item["int"].size()) == [2]
+        assert torch.equal(item["int"], torch.tensor([1, 1]))
         assert torch.equal(
-            item[1]["float"], torch.tensor([1.1000, 1.1000], dtype=torch.float64)
+            item["float"], torch.tensor([1.1000, 1.1000], dtype=torch.float64)
         )
-        assert torch.equal(item[1]["tuple"][0], torch.tensor([1, 1]))
-        assert isinstance(item[1]["map"]["key"], torch.Tensor)
-        assert item[1]["map"]["key"].dtype == torch.int64
-        assert list(item[1]["map"]["key"].size()) == [2]
-        assert len(item[1]["str"]) == 2
-        assert item[1]["str"][0].startswith("str-")
-        assert len(item[1]["bytes"]) == 2
-        assert item[1]["bytes"][0].startswith(b"bytes-")
+        assert torch.equal(item["tuple"][0], torch.tensor([1, 1]))
+        assert isinstance(item["map"]["key"], torch.Tensor)
+        assert item["map"]["key"].dtype == torch.int64
+        assert list(item["map"]["key"].size()) == [2]
+        assert len(item["str"]) == 2
+        assert item["str"][0].startswith("str-")
+        assert len(item["bytes"]) == 2
+        assert item["bytes"][0].startswith(b"bytes-")
 
     def test_image_transform(self) -> None:
         ds = dataset("mnist", create=True)
         for i in range(1, 10):
             _img = self._create_real_image((i, i, i))
-            ds.append((Image(_img), {"label": i}))
+            ds.append({"img": Image(_img), "label": i})
 
         ds.commit()
 
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
         item = next(iter(torch_loader))
-        assert isinstance(item[0], torch.Tensor)
-        assert item[0].dtype == torch.uint8
-        assert list(item[0].size()) == [2, 2, 2, 3]
+        assert isinstance(item["img"], torch.Tensor)
+        assert item["img"].dtype == torch.uint8
+        assert list(item["img"].size()) == [2, 2, 2, 3]
 
     def test_audio_transform(self) -> None:
         with dataset("mnist", create=True) as ds:
             _audio = self._create_real_audio()
-            ds.append((Audio(_audio), {"label": 1}))
+            ds.append({"audio": Audio(_audio), "label": 1})
             ds.commit()
 
         torch_loader = tdata.DataLoader(dataset(ds.uri).to_pytorch(), batch_size=2)
         item = next(iter(torch_loader))
-        assert isinstance(item[0], torch.Tensor)
-        assert len(item[0]) != 0
-        assert item[0].dtype == torch.float64
+        assert isinstance(item["audio"], torch.Tensor)
+        assert len(item["audio"]) != 0
+        assert item["audio"].dtype == torch.float64
 
 
 # TODO: wait for tensorflow release for python3.11
 # https://github.com/tensorflow/tensorflow/issues/58032
 skip_py311 = pytest.mark.skipif(
-    sys.version_info > (3, 10),
+    sys.version_info >= (3, 11),
     reason="skip python3.11, because tensorflow does not release the related wheel package.",
 )
 
@@ -1220,10 +1211,10 @@ class TestTensorflow(_DatasetSDKTestBase):
 
         items = list(tf_ds)
         assert len(items[0]) == 2
-        assert isinstance(items[0][0], tf.Tensor)
-        assert items[0][0].dtype == tf.string
-        assert items[0][0].numpy().startswith(b"data-")
-        assert items[0][1]["label"].dtype == tf.int64
+        assert isinstance(items[0]["data"], tf.Tensor)
+        assert items[0]["data"].dtype == tf.string
+        assert items[0]["data"].numpy().startswith(b"data-")
+        assert items[0]["label"].dtype == tf.int64
         assert len(items) == len(ds)
 
     def test_tf_dataset_with_index(self) -> None:
@@ -1236,13 +1227,13 @@ class TestTensorflow(_DatasetSDKTestBase):
         assert isinstance(tf_ds, tf.data.Dataset)
 
         items = list(tf_ds)
-        assert len(items[0]) == 3
-        assert items[0][0].dtype == tf.string
+        assert len(items[0]) == 2
+        assert items[0][1]["data"].dtype == tf.string
 
         batch_ds = tf_ds.batch(2, drop_remainder=True)
         items = list(batch_ds.as_numpy_iterator())
         assert len(items)
         assert len(items[0][0].tolist()) == 2
-        assert len(items[0][1].tolist()) == 2
-        assert items[0][1].tolist()[0].startswith(b"data-")
-        assert len(items[0][2]["label"].tolist()) == 2
+        assert len(items[0][1]) == 2
+        assert items[0][1]["data"][0].startswith(b"data-")
+        assert len(items[0][1]["label"].tolist()) == 2

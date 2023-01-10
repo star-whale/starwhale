@@ -24,6 +24,8 @@ def default_transform(data: t.Any) -> t.Any:
         return data.to_bytes()
     elif isinstance(data, sw_type.Text):
         return data.to_str()
+    elif isinstance(data, dict):
+        return {k: default_transform(v) for k, v in data.items()}
     elif isinstance(data, collections.abc.Mapping):  # type: ignore
         try:
             return data_type({k: default_transform(v) for k, v in data.items()})
@@ -66,9 +68,9 @@ class TorchIterableDataset(IterableDataset):
         _t = self.transform
         for row in self.dataset:
             if self.drop_index:
-                yield _t(row.data), _t(row.annotations)
+                yield _t(row.data)
             else:
-                yield _t(row.index), _t(row.data), _t(row.annotations)
+                yield _t(row.index), _t(row.data)
 
     def __len__(self) -> int:
         return len(self.dataset)

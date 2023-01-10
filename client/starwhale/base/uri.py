@@ -194,6 +194,9 @@ class URI:
                 if _obj.version:
                     self.full_uri = f"{self.full_uri}/version/{_obj.version}"
 
+    def asdict(self) -> t.Dict:
+        return {"full_uri": self.full_uri}
+
     @property
     def real_request_uri(self) -> t.Union[str, Path]:
         if self.instance_type == InstanceType.CLOUD:

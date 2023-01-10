@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale import Text, PipelineHandler, multi_classification
+from starwhale import PipelineHandler, multi_classification
 
 from .model import TextClassificationModel
 
@@ -22,8 +22,8 @@ class TextClassificationHandler(PipelineHandler):
         self.vocab = self._load_vocab()
 
     @torch.no_grad()
-    def ppl(self, text: Text, **kw):
-        ngrams = list(ngrams_iterator(self.tokenizer(text.to_str()), 2))
+    def ppl(self, data: dict, **kw):
+        ngrams = list(ngrams_iterator(self.tokenizer(data["text"]), 2))
         tensor = torch.tensor(self.vocab(ngrams)).to(self.device)
         output = self.model(tensor, torch.tensor([0]).to(self.device))
         pred_value = output.argmax(1).item()
@@ -40,7 +40,7 @@ class TextClassificationHandler(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["label"])
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
 

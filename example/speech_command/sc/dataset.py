@@ -1,14 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale import (
-    Link,
-    Audio,
-    MIMEType,
-    S3LinkAuth,
-    BuildExecutor,
-    UserRawBuildExecutor,
-)
+from starwhale import Link, Audio, MIMEType, S3LinkAuth, BuildExecutor
 
 dataset_dir = (
     Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
@@ -32,15 +25,15 @@ class SWDSBuildExecutor(BuildExecutor):
                     )
 
                     speaker_id, utterance_num = data_path.stem.split("_nohash_")
-                    annotations = {
-                        "label": data_path.parent.name,
+                    yield item, {
+                        "speech": data,
+                        "command": data_path.parent.name,
                         "speaker_id": speaker_id,
                         "utterance_num": int(utterance_num),
                     }
-                    yield item, data, annotations
 
 
-class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
+class LinkRawDatasetBuildExecutor(BuildExecutor):
 
     _auth = S3LinkAuth(name="speech", access_key="minioadmin", secret="minioadmin")
     _addr = "10.131.0.1:9000"
@@ -62,7 +55,6 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
         objects = s3.Bucket(self._bucket).objects.filter(
             Prefix="dataset/SpeechCommands/speech_commands_v0.02"
         )
-
         for obj in objects:
             path = Path(obj.key)  # type: ignore
             command = path.parent.name
@@ -73,21 +65,19 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
                 or not path.name.endswith(".wav")
             ):
                 continue
-
             speaker_id, utterance_num = path.stem.split("_nohash_")
             uri = f"s3://{self._addr}/{self._bucket}/{obj.key.lstrip('/')}"
             idx = f"{command}/{path.name}"
-            data = Link(
-                uri,
-                size=obj.size,
-                data_type=Audio(
-                    mime_type=MIMEType.WAV,
-                    shape=(1,),
+            data = Audio(
+                mime_type=MIMEType.WAV,
+                shape=(1,),
+                link=Link(
+                    uri,
                 ),
             )
-            annotations = {
-                "label": command,
+            yield idx, {
+                "speech": data,
+                "command": command,
                 "speaker_id": speaker_id,
                 "utterance_num": int(utterance_num),
             }
-            yield idx, data, annotations

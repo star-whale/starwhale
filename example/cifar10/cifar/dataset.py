@@ -27,21 +27,19 @@ def _iter_item(paths: t.List[Path]) -> t.Generator[t.Tuple[t.Any, t.Dict], None,
             for data, label, filename in zip(
                 content[b"data"], content[b"labels"], content[b"filenames"]
             ):
-                annotations = {
-                    "label": label,
-                    "label_display_name": dataset_meta["label_names"][label],
-                }
-
                 image_array = data.reshape(3, 32, 32).transpose(1, 2, 0)
                 image_bytes = io.BytesIO()
                 PILImage.fromarray(image_array).save(image_bytes, format="PNG")
-
-                yield Image(
-                    fp=image_bytes.getvalue(),
-                    display_name=filename.decode(),
-                    shape=image_array.shape,
-                    mime_type=MIMEType.PNG,
-                ), annotations
+                yield {
+                    "image": Image(
+                        fp=image_bytes.getvalue(),
+                        display_name=filename.decode(),
+                        shape=image_array.shape,
+                        mime_type=MIMEType.PNG,
+                    ),
+                    "label": label,
+                    "label_display_name": dataset_meta["label_names"][label],
+                }
 
 
 class CIFAR10TrainBuildExecutor(BuildExecutor):

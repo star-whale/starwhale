@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from starwhale import Text, PipelineHandler
+from starwhale import PipelineHandler
 
 from .bleu import calculate_bleu
 from .model import DecoderRNN, EncoderRNN
@@ -22,8 +22,10 @@ class NMTPipeline(PipelineHandler):
         self.max_length = MAX_LENGTH
 
     @torch.no_grad()
-    def ppl(self, text: Text, **kw):
-        input_tensor = sentence_to_tensor(self.vocab.vin, text.content, self.device)
+    def ppl(self, data: dict, **kw):
+        input_tensor = sentence_to_tensor(
+            self.vocab.vin, data["english"].content, self.device
+        )
         input_length = input_tensor.size()[0]
 
         encoder_hidden = self.encoder.initHidden()
@@ -59,7 +61,7 @@ class NMTPipeline(PipelineHandler):
         result, label = [], []
         for _data in _data_loader:
             result.append(_data["result"])
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["french"].content)
 
         bleu = calculate_bleu(result, [label])
         print(f"bleu: {bleu}")

@@ -10,10 +10,9 @@ title: The `coco-raw` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
-  - `mask`: `starwhale.Link` loaded as dict
-    - `uri`: the path where the `mask` file sits
+- `data` of type dict:
+  - `mask`: `starwhale.Image`
+  - `image`: `starwhale.Image`
   - `segments_info`:  array of `segment_info`
     - `bbox_view`: `starwhale.BoundingBox` used by viewer
     - other original fields
