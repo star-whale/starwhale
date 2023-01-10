@@ -151,6 +151,7 @@ class BaseTermView(SWCliConfigMixed):
             "runtime": BaseTermView.place_holder_for_empty(),
         }
         data = BaseTermView.get_history_data(history, fullname)
+        print(data)
         BaseTermView.print_table(
             title, data, custom_header, custom_column=custom_column
         )
@@ -324,14 +325,17 @@ class BaseTermView(SWCliConfigMixed):
             _version = _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT]
             if _h.get("id"):
                 _version = f"[{_h['id']:2}] {_version}"
-
-            result.append(
-                {
-                    "version": _version,
-                    "tags": _h.get("tags", []),
-                    "size": _h.get("size", 0),
-                    "runtime": _h.get("runtime", ""),
-                    "created_at": _h.get("created_at"),
-                }
-            )
+            _item = {
+                "version": _version,
+                "tags": _h.get("tags"),
+                "alias": _h.get("alias"),
+                "size": _h.get("size", 0),
+                "runtime": _h.get("runtime", ""),
+                "created_at": _h.get("created_at"),
+            }
+            if "alias" not in _h:
+                _item.pop("alias")
+            if "tags" not in _h:
+                _item.pop("tags")
+            result.append(_item)
         return result
