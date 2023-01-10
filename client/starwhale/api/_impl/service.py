@@ -65,7 +65,11 @@ class Service:
         return server.app.openapi()
 
     def _render_api(self, _api: Api, hijack_submit: bool) -> None:
-        js_func = "x => { wait(); return x; }" if hijack_submit else ""
+        js_func: t.Optional[str] = None
+        if hijack_submit:
+            js_func = (
+                "async(x) => { typeof wait === 'function' && await wait(); return x; }"
+            )
         with gradio.Row():
             with gradio.Column():
                 for i in _api.input:

@@ -47,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("${sw.controller.apiPrefix}")
+@RequestMapping("${sw.controller.api-prefix}")
 public class JobController implements JobApi {
 
     private final JobService jobService;

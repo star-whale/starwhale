@@ -20,20 +20,26 @@ sw:
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starwhale}
-    expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
+    expire-minutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
   dataset:
     load:
-      batchSize: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
+      batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:
     size: ${SW_TASK_SPLIT_SIZE:1}
-    deletionDelayMinutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
+    deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
+  online-eval:
+    max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
+    min-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MIN_TTL_SECS:1800} # 30min
   instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   infra:
     k8s:
       name-space: ${SW_K8S_NAME_SPACE:default}
       host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:}
-      job-template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
       model-serving-template-path: ${SW_K8S_MODEL_SERVING_TEMPLATE_PATH:}
+      job:
+        template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
+        restart-policy: ${SW_K8S_JOB_RESTART_POLICY:OnFailure}
+        backoff-limit: ${SW_K8S_JOB_BACKOFF_LIMIT:10}
   storage:
     type: ${SW_STORAGE_TYPE:minio}
     path-prefix: ${SW_STORAGE_PREFIX:starwhale}
@@ -42,29 +48,27 @@ sw:
       service-provider: ${SW_INSTANCE_URI}/obj-store
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
-      accessKey: ${SW_STORAGE_ACCESSKEY:starwhale}
-      secretKey: ${SW_STORAGE_SECRETKEY:starwhale}
+      access-key: ${SW_STORAGE_ACCESSKEY:starwhale}
+      secret-key: ${SW_STORAGE_SECRETKEY:starwhale}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
-      hugeFileThreshold: 10485760 # 10MB
-      hugeFilePartSize: 5242880 # 5MB
+      huge-file-threshold: 10485760 # 10MB
+      huge-file-part-size: 5242880 # 5MB
   controller:
-    apiPrefix: /api/v1
-    whiteList: /api/v1/report
+    api-prefix: /api/v1
+    white-list: /api/v1/report
   datastore:
-    fsRootDir: ${SW_DATA_STORE_FS_ROOT_DIR:.}
-    walFileSize: ${SW_DATASTORE_WAL_FILE_SIZE:65536}
-    walMaxFileSize: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
-    walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
-    ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
-    dataRootPath: ${SW_DATASTORE_DATA_ROOT_PATH:}
-    dumpInterval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
-    minNoUpdatePeriod: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:1d}
+    wal-file-size: ${SW_DATASTORE_WAL_FILE_SIZE:65536}
+    wal-max-file-size: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
+    oss-max-attempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
+    data-root-path: ${SW_DATASTORE_DATA_ROOT_PATH:}
+    dump-interval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
+    min-no-update-period: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:1d}
     parquet:
-      compressionCodec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
-      rowGroupSize: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}
-      pageSize: ${SW_DATASTORE_PARQUET_PAGE_SIZE:1MB}
-      pageRowCountLimit: ${SW_DATASTORE_PARQUET_PAGE_ROW_COUNT_LIMIT:20000}
+      compression-codec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
+      row-group-size: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}
+      page-size: ${SW_DATASTORE_PARQUET_PAGE_SIZE:1MB}
+      page-row-count-limit: ${SW_DATASTORE_PARQUET_PAGE_ROW_COUNT_LIMIT:20000}
 ---
 #Development
 spring:

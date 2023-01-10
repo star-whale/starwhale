@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.mapper;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import java.util.Date;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -44,26 +45,51 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
                 .isDeleted(0)
                 .resourcePool("bar")
                 .jobStatus(JobStatus.RUNNING)
+                .lastVisitTime(new Date(System.currentTimeMillis() / 1000 * 1000))
                 .build();
-        modelServingMapper.add(entity);
+        modelServingMapper.insertIgnore(entity);
         var id = entity.getId();
         var result = modelServingMapper.find(id);
         Assertions.assertEquals(entity, result);
 
         entity.setId(null);
         // insert if not exists (ignore)
-        modelServingMapper.add(entity);
+        modelServingMapper.insertIgnore(entity);
         // no insertion
-        Assertions.assertEquals(null, entity.getId());
+        Assertions.assertNull(entity.getId());
+        entity.setId(id);
+
+        var another = ModelServingEntity.builder()
+                .modelVersionId(2L)
+                .projectId(entity.getProjectId())
+                .runtimeVersionId(entity.getRuntimeVersionId())
+                .ownerId(entity.getOwnerId())
+                .createUser(entity.getCreateUser())
+                .isDeleted(entity.getIsDeleted())
+                .resourcePool(entity.getResourcePool())
+                .jobStatus(entity.getJobStatus())
+                .lastVisitTime(entity.getLastVisitTime())
+                .build();
+        modelServingMapper.add(another);
+        result = modelServingMapper.find(another.getId());
+        Assertions.assertEquals(another, result);
 
 
         var list = modelServingMapper.list(null, null, null, null);
-        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(2, list.size());
         Assertions.assertEquals(id, list.get(0).getId());
 
         list = modelServingMapper.list(null, 7L, null, null);
         Assertions.assertEquals(0, list.size());
         list = modelServingMapper.list(2L, 1L, 3L, "bar");
         Assertions.assertEquals(1, list.size());
+
+        // test updating last visit time
+        var visit = new Date(1000);
+        modelServingMapper.updateLastVisitTime(id, visit);
+        result = modelServingMapper.find(id);
+        Assertions.assertEquals(visit, result.getLastVisitTime());
+        entity.setLastVisitTime(visit);
+        Assertions.assertEquals(entity, result);
     }
 }

@@ -39,7 +39,7 @@ public class ContentCachingFilter extends OncePerRequestFilter {
 
     private final String apiPrefix;
 
-    public ContentCachingFilter(@Value("${sw.controller.apiPrefix}") String apiPrefix) {
+    public ContentCachingFilter(@Value("${sw.controller.api-prefix}") String apiPrefix) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/') + "/datastore";
     }
 

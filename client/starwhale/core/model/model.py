@@ -689,6 +689,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         for _fname in _mc.config:
             copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)
 
+        # rename model config if not default to make sure model.yaml exists
+        # prevent using the wrong config when running in the cloud
+        if yaml_name != DefaultYAMLName.MODEL:
+            d = self.store.src_dir
+            os.rename(d / yaml_name, d / DefaultYAMLName.MODEL)
+
         # TODO link models to unified storage
         for _fname in _mc.model:
             copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)

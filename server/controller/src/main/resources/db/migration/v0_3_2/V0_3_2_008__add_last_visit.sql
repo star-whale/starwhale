@@ -14,22 +14,5 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.configuration;
-
-import ai.starwhale.mlops.storage.s3.S3Config;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@ConfigurationProperties(prefix = "sw.storage")
-public class StorageProperties {
-
-    String type;
-    String pathPrefix;
-    S3Config s3Config;
-
-}
+ALTER TABLE `model_serving_info`
+    ADD last_visit_time DATETIME NOT NULL;

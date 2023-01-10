@@ -1,5 +1,6 @@
 import os
 import typing as t
+import pathlib
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -433,3 +434,55 @@ class CloudModelTest(TestCase):
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
         assert len(call_args[5]) == 0
+
+
+@patch("starwhale.core.model.model.StandaloneModel._get_service")
+def test_build_with_custom_config_file(
+    m_get_service: MagicMock, tmp_path: pathlib.Path
+):
+    sw_config._config = {
+        "storage": {
+            "root": tmp_path.absolute(),
+        },
+        "instances": {
+            "local": {
+                "current_project": "self",
+                "type": "standalone",
+                "uri": "local",
+            }
+        },
+        "current_instance": "local",
+    }
+
+    svc = MagicMock(spec=Service)
+    svc.get_spec.return_value = {}
+    m_get_service.return_value = svc
+
+    name = "foo"
+    workdir = tmp_path / "bar"
+    cfg = "my_custom_config.yaml"
+    ensure_dir(workdir)
+    ensure_dir(workdir / "models")
+    ensure_file(workdir / "models/mnist_cnn.pt", "baz")
+    ensure_dir(workdir / "config")
+    ensure_file(workdir / "config/hyperparam.json", "baz")
+    ensure_file(workdir / cfg, _model_yaml)
+
+    model_uri = URI(name, expected_type=URIType.MODEL)
+    sm = StandaloneModel(model_uri)
+    sm.build(workdir=workdir, yaml_name=cfg)
+
+    build_version = sm.uri.object.version
+
+    bundle_path = (
+        tmp_path
+        / "self"
+        / URIType.MODEL
+        / name
+        / build_version[:VERSION_PREFIX_CNT]
+        / f"{build_version}{BundleType.MODEL}"
+    )
+
+    assert bundle_path.exists()
+    assert (bundle_path / "src").exists()
+    assert (bundle_path / "src" / DefaultYAMLName.MODEL).exists()

@@ -49,7 +49,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     public TaskWatcherForSchedule(
             SwTaskScheduler taskScheduler,
             TaskStatusMachine taskStatusMachine,
-            @Value("${sw.task.deletionDelayMinutes}") Long deletionDelayMinutes
+            @Value("${sw.task.deletion-delay-minutes}") Long deletionDelayMinutes
     ) {
         this.taskScheduler = taskScheduler;
         this.taskStatusMachine = taskStatusMachine;

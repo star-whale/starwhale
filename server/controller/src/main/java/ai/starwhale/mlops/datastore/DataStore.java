@@ -66,16 +66,16 @@ public class DataStore {
     private final DumpThread dumpThread;
 
     public DataStore(StorageAccessService storageAccessService,
-            @Value("${sw.datastore.walFileSize}") int walFileSize,
-            @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts,
-            @Value("${sw.datastore.dataRootPath:}") String dataRootPath,
-            @Value("${sw.datastore.dumpInterval:1h}") String dumpInterval,
-            @Value("${sw.datastore.minNoUpdatePeriod:1d}") String minNoUpdatePeriod,
-            @Value("${sw.datastore.parquet.compressionCodec:SNAPPY}") String compressionCodec,
-            @Value("${sw.datastore.parquet.rowGroupSize:128MB}") String rowGroupSize,
-            @Value("${sw.datastore.parquet.pageSize:1MB}") String pageSize,
-            @Value("${sw.datastore.parquet.pageRowCountLimit:20000}") int pageRowCountLimit) {
+            @Value("${sw.datastore.wal-file-size}") int walFileSize,
+            @Value("${sw.datastore.wal-max-file-size}") int walMaxFileSize,
+            @Value("${sw.datastore.oss-max-attempts}") int ossMaxAttempts,
+            @Value("${sw.datastore.data-root-path:}") String dataRootPath,
+            @Value("${sw.datastore.dump-interval:1h}") String dumpInterval,
+            @Value("${sw.datastore.min-no-update-period:1d}") String minNoUpdatePeriod,
+            @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
+            @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
+            @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
+            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit) {
         this.storageAccessService = storageAccessService;
         if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
             dataRootPath += "/";

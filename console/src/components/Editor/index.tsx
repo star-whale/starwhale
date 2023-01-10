@@ -23,7 +23,6 @@ export function withEditorRegister(EditorApp: React.FC) {
         // }, [])
         // if (!registred) {
         //     return <BusyPlaceholder type='spinner' />
-        // }
         // log.debug('WidgetFactory', WidgetFactory.widgetMap)
         // @FIXME
         const { projectId } = useParams<{ projectId: string }>()

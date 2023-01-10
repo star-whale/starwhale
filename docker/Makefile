@@ -18,7 +18,7 @@ DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERV
 DH_NODEJS_IMAGE := ${GHCR_IO_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
+ROOT_DIR := $(shell dirname $(abspath $(DOCKER_DIR)))
 
 ifndef YARN_REGISTRY
 	YARN_REGISTRY = https://registry.npmmirror.com
@@ -145,13 +145,13 @@ build-nodejs:
 release-nodejs:
 	$(call push-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
 
-build-console:
+build-console: build-gradio-ui
 	docker volume create --name ${YARN_VOLUME} && \
 	docker run --rm -v ${YARN_VOLUME}:/app ${DH_NODEJS_IMAGE} /bin/sh -c "cp -r /root/.npmrc /app/ && chown $(shell id -u):$(shell id -g) -R /app" && \
 	docker run --rm \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${YARN_VOLUME}:/var/yarn-cache \
-		-v ${ROOT_DIR}console:/app \
+		-v ${ROOT_DIR}/console:/app \
 		-e HOME=/var/yarn-cache \
 		--network host \
 		-w /app ${DH_NODEJS_IMAGE} \
@@ -163,7 +163,29 @@ build-jar:
 	docker run --rm -u $(shell id -u):$(shell id -g) \
 		-e MAVEN_CONFIG=/var/maven/.m2 \
 		-v ${MVN_VOLUME}:/var/maven/.m2 \
-		-v ${ROOT_DIR}:/app \
+		-v ${ROOT_DIR}/:/app \
 		--network host \
 		-w /app/server ${MVN_IMG} \
 		mvn -Duser.home=/var/maven clean package -f pom.xml -DskipTests
+
+build-gradio-ui:
+	$(eval GRADIO_DIR="${ROOT_DIR}/gradio")
+	$(eval UI_DEST="/starwhale/console/src/assets/GradioWidget")
+	$(eval SWU=$(shell id -u))
+	$(eval SWG=$(shell id -g))
+	docker volume create --name ${YARN_VOLUME}
+	# use the latest version of starwhale version gradio
+	rm -rf ${GRADIO_DIR} && git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio ${GRADIO_DIR}
+	# TODO use non root user to run the building, pnpm should be supported in the building image
+	docker run --rm \
+		-v ${YARN_VOLUME}:/var/yarn-cache \
+		-e HOME=/var/yarn-cache \
+		-v ${ROOT_DIR}:/starwhale \
+		-w /starwhale/gradio/ui \
+		${DH_NODEJS_IMAGE} \
+		/bin/sh -x -c "npm i -g pnpm && pnpm i && pnpm build && \
+			rm -rf ${UI_DEST} && mkdir -p ${UI_DEST} && \
+			mv packages/starwhale/build ${UI_DEST}/es && \
+			chown ${SWU}:${SWG} -R ${UI_DEST} && \
+			chown ${SWU}:${SWG} -R /starwhale/gradio"
+

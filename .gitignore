@@ -92,6 +92,7 @@ __pycache__
 .Python
 pip-delete-this-directory.txt
 .mypy*
+.ipynb_checkpoints/
 
 # Other
 .cache
@@ -106,3 +107,8 @@ docker/charts/index.yaml
 docker/charts/starwhale-*.tgz
 
 /client/.idea/
+
+# for building gradio
+gradio
+.pnpm-store/
+console/src/assets/GradioWidget/
