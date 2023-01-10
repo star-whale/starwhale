@@ -120,7 +120,6 @@ export default function DatasetVersionFilePreview({
         return row
     }, [datasets, fileId])
     const previewData = preview
-    console.log(previewData)
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
@@ -142,7 +141,7 @@ export default function DatasetVersionFilePreview({
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return <Summary data={data?.summary ?? {}} />
-    }, [data, activeKey, setHiddenLabels, hiddenLabels])
+    }, [previewData, data, activeKey, setHiddenLabels, hiddenLabels])
 
     if (!isFullscreen) return <></>
 
