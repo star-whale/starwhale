@@ -31,20 +31,20 @@ def _do_iter_item(fname):
             content[b"filenames"],
         ):
             # TODO: support global classLabel
-            annotations = {
+            image_array = data.reshape(3, 32, 32).transpose(1, 2, 0)
+            image_bytes = io.BytesIO()
+            PILImage.fromarray(image_array).save(image_bytes, format="PNG")
+            item = {
                 "fine_label": fine_label,
                 "fine_label_name": meta[b"fine_label_names"][fine_label].decode(),
                 "coarse_label": coarse_label,
                 "coarse_label_name": meta[b"coarse_label_names"][coarse_label].decode(),
+                "image": Image(
+                    fp=image_bytes.getvalue(),
+                    display_name=filename.decode(),
+                    shape=image_array.shape,
+                    mime_type=MIMEType.PNG,
+                ),
             }
 
-            image_array = data.reshape(3, 32, 32).transpose(1, 2, 0)
-            image_bytes = io.BytesIO()
-            PILImage.fromarray(image_array).save(image_bytes, format="PNG")
-
-            yield Image(
-                fp=image_bytes.getvalue(),
-                display_name=filename.decode(),
-                shape=image_array.shape,
-                mime_type=MIMEType.PNG,
-            ), annotations
+            yield item

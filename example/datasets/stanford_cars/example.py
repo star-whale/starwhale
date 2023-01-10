@@ -25,13 +25,12 @@ ds_name = "stanford_cars/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
-    draw_bbox(draw, annotations["bbox"])
+    draw_bbox(draw, data["bbox"])
     draw.text(
-        (annotations["bbox"].x, annotations["bbox"].y),
-        str(annotations["label"]),
+        (data["bbox"].x, data["bbox"].y),
+        str(data["label"]),
         fill="red",
     )
     img.show()

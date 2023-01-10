@@ -93,16 +93,17 @@ def add_img(ds, img, labels):
     ds.append(
         (
             img,
-            Link(
-                uri=fp.url,
-                data_type=Image(
+            {
+                "image": Image(
+                    link=Link(
+                        uri=fp.url,
+                    ),
                     display_name=img,
                     mime_type=MIMEType.JPEG,
                     shape=(fp.width, fp.height),
                 ),
-                with_local_fs_data=False,
-            ),
-            {"labels": labels},
+                "labels": labels,
+            },
         )
     )
 

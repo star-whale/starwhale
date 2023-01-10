@@ -27,12 +27,14 @@ def build_ds():
             ds.append(
                 (
                     f"{category}/{_name}",
-                    Link(
-                        uri=f"{PATH_ROOT}/{category}/{_name}",
-                        data_type=Image(display_name=_name, mime_type=MIMEType.JPEG),
-                        with_local_fs_data=False,
-                    ),
-                    {"label": category},
+                    {
+                        "image": Image(
+                            display_name=_name,
+                            mime_type=MIMEType.JPEG,
+                            link=Link(uri=f"{PATH_ROOT}/{category}/{_name}"),
+                        ),
+                        "label": category,
+                    },
                 )
             )
 

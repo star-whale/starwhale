@@ -21,12 +21,16 @@ def build_ds():
         ds.append(
             (
                 f_name,
-                Link(
-                    uri=f"{PATH_ROOT}/{name}/{f_name}",
-                    data_type=Image(display_name=f_name, mime_type=MIMEType.JPEG),
-                    with_local_fs_data=False,
-                ),
-                {"identity": name},
+                {
+                    "image": Image(
+                        link=Link(
+                            uri=f"{PATH_ROOT}/{name}/{f_name}",
+                        ),
+                        display_name=f_name,
+                        mime_type=MIMEType.JPEG,
+                    ),
+                    "identity": name,
+                },
             )
         )
 

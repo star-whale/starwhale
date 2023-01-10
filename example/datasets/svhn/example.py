@@ -25,10 +25,9 @@ ds_name = "svhn/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
-    for num in annotations["numbers"]:
+    for num in data["numbers"]:
         draw.text(
             (
                 num["bbox"].x + num["bbox"].width / 2,

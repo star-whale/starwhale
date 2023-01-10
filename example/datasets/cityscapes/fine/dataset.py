@@ -23,15 +23,12 @@ def request_link_json(anno_link):
     return requests.get(anno_link, timeout=10).json()
 
 
-def mask_link(_name, dir_name):
-    return Link(
-        with_local_fs_data=False,
-        data_type=Image(
-            display_name=_name,
-            mime_type=MIMEType.PNG,
-            as_mask=True,
-        ),
-        uri=f"{PATH_ROOT}/{ANNO_PATH}/{dir_name}/{_name}",
+def mask_image(_name, dir_name):
+    return Image(
+        display_name=_name,
+        mime_type=MIMEType.PNG,
+        as_mask=True,
+        link=Link(uri=f"{PATH_ROOT}/{ANNO_PATH}/{dir_name}/{_name}"),
     )
 
 
@@ -51,17 +48,17 @@ def build_ds():
                 item_id = _name.replace(SUFFIX_COLOR_MASK, "")
                 if item_id not in items:
                     items[item_id] = {"dir": dir_name}
-                items[item_id]["color_mask"] = mask_link(_name, dir_name)
+                items[item_id]["color_mask"] = mask_image(_name, dir_name)
             elif _name.endswith(SUFFIX_INSTANCE_ID_MASK):
                 item_id = _name.replace(SUFFIX_INSTANCE_ID_MASK, "")
                 if item_id not in items:
                     items[item_id] = {"dir": dir_name}
-                items[item_id]["instance_mask"] = mask_link(_name, dir_name)
+                items[item_id]["instance_mask"] = mask_image(_name, dir_name)
             elif _name.endswith(SUFFIX_LABEL_ID_MASK):
                 item_id = _name.replace(SUFFIX_LABEL_ID_MASK, "")
                 if item_id not in items:
                     items[item_id] = {"dir": dir_name}
-                items[item_id]["label_mask"] = mask_link(_name, dir_name)
+                items[item_id]["label_mask"] = mask_image(_name, dir_name)
             elif _name.endswith(SUFFIX_POLYGON):
                 item_id = _name.replace(SUFFIX_POLYGON, "")
                 if item_id not in items:
@@ -76,24 +73,21 @@ def build_ds():
                     obj["polygon"] = to_polygon_view(obj["polygon"])
                 items[item_id]["polygons"] = polygon_anno
 
-    for name, anno_ in items.items():
-        _dir = anno_["dir"]
+    for name, data in items.items():
+        _dir = data["dir"]
+        data["image"] = Image(
+            display_name=name,
+            link=Link(uri=f"{PATH_ROOT}/{DATA_PATH}/{_dir}/{name}{SUFFIX_DATA}"),
+            mime_type=MIMEType.JPEG,
+            shape=(
+                data["polygons"]["imgHeight"],
+                data["polygons"]["imgWidth"],
+            ),
+        )
         ds.append(
             (
                 name,
-                Link(
-                    uri=f"{PATH_ROOT}/{DATA_PATH}/{_dir}/{name}{SUFFIX_DATA}",
-                    data_type=Image(
-                        display_name=name,
-                        mime_type=MIMEType.JPEG,
-                        shape=(
-                            anno_["polygons"]["imgHeight"],
-                            anno_["polygons"]["imgWidth"],
-                        ),
-                    ),
-                    with_local_fs_data=False,
-                ),
-                anno_,
+                data,
             )
         )
 

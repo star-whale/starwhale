@@ -20,8 +20,9 @@ from starwhale.api._impl.data_store import _get_type
 
 def iter_simple_bin_item():
     for i in range(1, 9):
-        annotations = {
+        data = {
             "index": i,
+            "text": Text(f"data-{i}"),
             "label": f"label-{i}",
             "label_float": 0.100092 + i,
             "list_int": [j for j in range(0, i)],
@@ -29,7 +30,7 @@ def iter_simple_bin_item():
             "link": PlainLink(f"uri-{i}", f"display-{i}"),
         }
 
-        yield f"idx-{i}", Text(f"data-{i}"), annotations
+        yield f"idx-{i}", data
 
 
 def iter_swds_bin_item():
@@ -43,8 +44,9 @@ def iter_swds_bin_item():
             iscrowd=1,
         )
         coco.segmentation = [1, 2, 3, 4]
-        annotations = {
+        data = {
             "index": i,
+            "text": Text(f"data-{i}"),
             "label": f"label-{i}",
             "label_float": 0.100092 + i,
             "list_int": [j for j in range(0, i)],
@@ -63,20 +65,22 @@ def iter_swds_bin_item():
             ),
         }
 
-        yield f"idx-{i}", Text(f"data-{i}"), annotations
+        yield f"idx-{i}", data
 
 
 def _load_dataset(uri):
     print("-" * 20)
     print(uri)
-    for idx, data, annotations in get_data_loader(uri, "idx-0", "idx-2"):
-        print(f"---->[{idx}] {data} data-length:{len(data.to_bytes())}")
-        ats = "\n".join(
-            [f"\t{k}-{v}-{type(v)}-{_get_type(v)}" for k, v in annotations.items()]
+    for idx, data in get_data_loader(uri, "idx-0", "idx-2"):
+        print(
+            f"---->[{idx}] {data['text'].content} data-length:{len(data['text'].to_bytes())}"
         )
-        print(f"annotations: {len(annotations)}\n {ats}")
-        if "artifact_s3_link" in annotations:
-            link = annotations["artifact_s3_link"]
+        ats = "\n".join(
+            [f"\t{k}-{v}-{type(v)}-{_get_type(v)}" for k, v in data.items()]
+        )
+        print(f"data: {len(data)}\n {ats}")
+        if "artifact_s3_link" in data:
+            link = data["artifact_s3_link"]
             content = link.to_bytes(uri)
             image = PILImage.open(io.BytesIO(content))
             print(

@@ -10,8 +10,8 @@ title: The `flickr8k` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
 - `annotations` of type dict:
+    - `image`: `starwhale.Image`
     - `labels`: the labels for the image
 
 ## Build `flickr8k` Dataset locally

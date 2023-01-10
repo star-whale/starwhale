@@ -56,16 +56,21 @@ def build_ds():
                     "bbox": to_box_view(obj["bndbox"]),
                 }
             )
-        anno = {
-            "mask": Link(
-                with_local_fs_data=False,
-                data_type=Image(
-                    display_name=f_name,
-                    shape=img_shape,
-                    mime_type=MIMEType.PNG,
-                    as_mask=True,
+        data = {
+            "image": Image(
+                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH}/{f_name}.jpg"),
+                display_name=f_name,
+                shape=img_shape,
+                mime_type=MIMEType.JPEG,
+            ),
+            "mask": Image(
+                link=Link(
+                    uri=f"{PATH_ROOT}/{MASK_PATH}/{f_name}.png",
                 ),
-                uri=f"{PATH_ROOT}/{MASK_PATH}/{f_name}.png",
+                display_name=f_name,
+                shape=img_shape,
+                mime_type=MIMEType.PNG,
+                as_mask=True,
             ),
             "segmented": xml["annotation"]["segmented"],
             "pets": pets,
@@ -76,14 +81,7 @@ def build_ds():
         ds.append(
             (
                 f_name,
-                Link(
-                    uri=f"{PATH_ROOT}/{DATA_PATH}/{f_name}.jpg",
-                    data_type=Image(
-                        display_name=f_name, mime_type=MIMEType.JPEG, shape=img_shape
-                    ),
-                    with_local_fs_data=False,
-                ),
-                anno,
+                data,
             )
         )
 

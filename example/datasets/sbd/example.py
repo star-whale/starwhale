@@ -10,13 +10,12 @@ ds_name = "sbd/version/latest"
 ds = dataset(ds_name)
 row = ds["2008_000202"]
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
 
     msk = PILImage.fromarray(
-        numpy.frombuffer(annotations["boundaries"], dtype=numpy.uint8).reshape(
-            annotations["shape"]
+        numpy.frombuffer(data["boundaries"].to_bytes(), dtype=numpy.uint8).reshape(
+            data["shape"]
         )
         * 50
     ).convert("RGBA")

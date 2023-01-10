@@ -12,6 +12,7 @@ title: The `oxfordIIITPet` Dataset
 
 - `data`: `starwhale.Image` loaded as bytes array
 - `annotations` of type dict:
+    - `image`: `starwhale.Image`
     - `mask`: `starwhale.Link` the mask file for the image
     - `pets` `annotation.object` in original xml
         - `name`: `annotation.object.name` in original xml

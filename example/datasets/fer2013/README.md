@@ -10,8 +10,8 @@ title: The `fer2013` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.GrayscaleImage` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.GrayscaleImage` with shape (48, 48)
     - `label`: the label for the image
 
 ## Build `fer2013` Dataset locally

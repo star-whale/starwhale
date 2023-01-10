@@ -9,10 +9,10 @@ ds_name = "flickr8k/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
     i = 0
-    for label in row.annotations["labels"]:
+    for label in data["labels"]:
         draw.text((28, 36 + i * 28), label, fill="red")
         i += 1
     img.show()

@@ -10,9 +10,9 @@ title: The `culane` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
-    - `mask`: `starwhale.Link` the mask file of the lines
+- `data` of type dict:
+    - `image`: `starwhale.Image`
+    - `mask`: `starwhale.Image` the mask file of the lines
     - `lines`:  `list` of `starwhale.Line`
 
 ## Build `culane` Dataset locally

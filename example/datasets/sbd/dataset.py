@@ -3,7 +3,7 @@ import io
 import requests
 import scipy.io
 
-from starwhale import Link, Image, dataset, MIMEType  # noqa: F401
+from starwhale import Link, Image, Binary, dataset, MIMEType  # noqa: F401
 from starwhale.utils.retry import http_retry
 
 PATH_ROOT = (
@@ -30,12 +30,15 @@ def build_ds():
             ds.append(
                 (
                     item,
-                    Link(
-                        uri=f"{PATH_ROOT}/{DATA_PATH}/{item}.jpg",
-                        data_type=Image(display_name=item, mime_type=MIMEType.JPEG),
-                        with_local_fs_data=False,
-                    ),
-                    {"boundaries": boundaries.tobytes(), "shape": boundaries.shape},
+                    {
+                        "image": Image(
+                            link=Link(uri=f"{PATH_ROOT}/{DATA_PATH}/{item}.jpg"),
+                            display_name=item,
+                            mime_type=MIMEType.JPEG,
+                        ),
+                        "boundaries": Binary(boundaries.tobytes()),
+                        "shape": boundaries.shape,
+                    },
                 )
             )
 

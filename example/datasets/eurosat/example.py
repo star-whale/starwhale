@@ -9,8 +9,7 @@ ds_name = "eurosat/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
-    draw.text((28, 36), annotations["label"], fill="red")
+    draw.text((28, 36), data["label"], fill="red")
     img.show()

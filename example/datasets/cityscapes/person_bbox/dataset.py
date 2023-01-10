@@ -28,27 +28,26 @@ def build_ds():
         category = d["name"]
         for f in d["contents"]:
             _name = str(f["name"])
-            anno_ = request_link_json(f"{PATH_ROOT}/{ANNO_PATH}/{category}/{_name}")
-            if not anno_["objects"]:
-                print(anno_["objects"])
+            data = request_link_json(f"{PATH_ROOT}/{ANNO_PATH}/{category}/{_name}")
+            if not data["objects"]:
+                print(data["objects"])
                 continue
-            for obj in anno_["objects"]:
+            for obj in data["objects"]:
                 obj["bbox"] = to_box_view(obj["bbox"])
                 obj["bboxVis"] = to_box_view(obj["bboxVis"])
             d_name = _name.replace(SUFFIX_ANNO, SUFFIX_DATA)
+            data["image"] = Image(
+                display_name=d_name,
+                link=Link(
+                    uri=f"{PATH_ROOT}/{DATA_PATH}/{category}/{d_name}",
+                ),
+                mime_type=MIMEType.JPEG,
+                shape=(data["imgHeight"], data["imgWidth"]),
+            )
             ds.append(
                 (
                     f"{category}/{d_name}",
-                    Link(
-                        uri=f"{PATH_ROOT}/{DATA_PATH}/{category}/{d_name}",
-                        data_type=Image(
-                            display_name=d_name,
-                            mime_type=MIMEType.JPEG,
-                            shape=(anno_["imgHeight"], anno_["imgWidth"]),
-                        ),
-                        with_local_fs_data=False,
-                    ),
-                    anno_,
+                    data,
                 )
             )
 
