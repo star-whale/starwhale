@@ -155,11 +155,11 @@ export default function EvaluationListCard() {
                     !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
                     evaluationViewConfig.isSuccess
                 ) {
-                    // console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
-                    await setEvaluationViewConfig(projectId, {
-                        name: 'evaluation',
-                        content: JSON.stringify(store.getRawConfigs()),
-                    })
+                    console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
+                    // await setEvaluationViewConfig(projectId, {
+                    //     name: 'evaluation',
+                    //     content: JSON.stringify(store.getRawConfigs(), null),
+                    // })
                 }
             }
         )
@@ -174,7 +174,10 @@ export default function EvaluationListCard() {
                 apiState = JSON.parse(evaluationViewConfig.data?.content, undefined)
                 if (!_.isEqual(apiState, store.getRawConfigs())) {
                     // console.log('upcoming state', apiState, evaluationViewConfig.data)
-                    store.setRawConfigs(apiState)
+                    store.setRawConfigs({
+                        isInit: true,
+                        ...apiState,
+                    })
                 }
             } catch (e) {
                 // console.log(e)

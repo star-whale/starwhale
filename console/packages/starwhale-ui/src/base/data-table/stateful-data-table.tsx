@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Search } from 'baseui/icon'
 import { SIZE as INPUT_SIZES } from 'baseui/input'
 import Input from '@/components/Input'
@@ -107,6 +107,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const handleApply = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-shadow
         (selectedIds, pinnedIds, sortedIds) => {
+            console.log('1234', selectedIds, pinnedIds, sortedIds)
             store.onCurrentViewColumnsChange(selectedIds, pinnedIds, sortedIds)
         },
         [store]
@@ -136,41 +137,33 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const handeQuerySet = useCallback(
         (items) => {
+            console.log('123')
             store.onCurrentViewQueriesChange(items)
-        },
-        [store]
-    )
-
-    const handleFilterSave = useCallback(
-        (filters) => {
-            store.onShowViewModel(true, {
-                ...store.currentView,
-                filters,
-            })
-        },
-        [store]
-    )
-
-    const handleFilterSaveAs = useCallback(
-        (filters) => {
-            store.onShowViewModel(true, {
-                ...store.currentView,
-                id: undefined,
-                filters,
-            })
         },
         [store]
     )
 
     // changed status must be after all the store changes(after api success)
     const [changed, setChanged] = useState(false)
+
+    const prevUpdatedTime = useRef<number | undefined>(store.currentView.updatedTime)
+
     React.useEffect(() => {
         const unsub = useStore.subscribe(
-            (state: ITableState) => state.currentView.updatedTime ?? [],
-            () => !props.loading && setChanged(true)
+            (state: ITableState) => state.currentView.updatedTime,
+            (updatedTime?: number) => {
+                if (!store.isInit) return
+
+                if (prevUpdatedTime.current !== updatedTime && !!props.loading) {
+                    setChanged(true)
+                    prevUpdatedTime.current = updatedTime
+                } else {
+                    setChanged(false)
+                }
+            }
         )
         return unsub
-    }, [store, props.loading])
+    }, [store, props.loading, changed, prevUpdatedTime])
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
@@ -208,7 +201,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             <div
                                 className='flex-row-left mb-20 g-20'
                                 style={{
-                                    display: 'flex',
+                                    display: 'grid',
+                                    gridTemplateColumns: '280px auto auto',
                                 }}
                             >
                                 {viewable && (
@@ -225,8 +219,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                         columns={props.columns}
                                         rows={props.rows}
                                         onFilterSet={handeFilterSet}
-                                        onSave={handleFilterSave}
-                                        onSaveAs={handleFilterSaveAs}
+                                        // onSave={handleFilterSave}
+                                        // onSaveAs={handleFilterSaveAs}
                                     />
                                 )}
 
@@ -234,8 +228,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {changed && (
                                     <div>
-                                        <Button onClick={props?.onSave}>Save</Button>&nbsp;&nbsp;
-                                        <Button onClick={props?.onSaveAs}>Save As</Button>
+                                        <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
+                                        <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
                                     </div>
                                 )}
                             </div>
