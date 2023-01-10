@@ -64,7 +64,7 @@ export function useQueryDatasetList(
 
     const recordQuery = useMemo(() => {
         const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
-        const filter = options?.filter ? column.toQuery(options?.filter) : undefined
+        const filter = options?.filter && options?.filter.length > 0 ? column.toQuery(options?.filter) : undefined
         const raw = {
             tableName,
             start,

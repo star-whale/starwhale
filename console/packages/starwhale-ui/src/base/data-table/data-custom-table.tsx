@@ -833,7 +833,7 @@ function MeasureScrollbarWidth(props) {
 }
 
 export function DataTable({
-    selectable,
+    selectable = false,
     columns,
     rawColumns,
     filters,

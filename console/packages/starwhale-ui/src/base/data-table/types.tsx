@@ -1,5 +1,6 @@
 // @flow
 
+import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import * as React from 'react'
 
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
@@ -44,6 +45,7 @@ export type SharedColumnOptionsT<ValueT> = {
     pin?: 'LEFT'
     filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
+    columnType?: ColumnSchemaDesc
 }
 
 export type RenderCellT<ValueT> = React.Component<{
@@ -105,7 +107,14 @@ export type ControlRefT = {
     current: ImperativeMethodsT | null
 }
 
+export type QueryT = {
+    property?: string
+    op?: string
+    value?: any
+}
+
 export type ConfigT = {
+    updatedTime?: number
     id?: string
     def?: boolean
     isShow?: boolean
@@ -113,6 +122,7 @@ export type ConfigT = {
     sortedIds?: Array<any>
     pinnedIds?: Array<any>
     filters?: Array<any>
+    queries?: QueryT[]
     name?: string
     sortBy?: string
     sortDirection?: SortDirectionsT
@@ -131,7 +141,7 @@ export type StatefulDataTablePropsT = {
     loading?: boolean
     loadingMessage?: string | React.Component<any>
     onFilterSet?: (v: any[]) => void
-    onFilterAdd?: (v: string, { description: string }: any) => any
+    onFilterAdd?: (v: string, { description }: any) => any
     onFilterRemove?: (v: string) => any
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void

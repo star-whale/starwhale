@@ -5,7 +5,7 @@ import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 // eslint-disable-next-line import/no-cycle
-import { ConfigT, SortDirectionsT } from './types'
+import { ConfigT, QueryT, SortDirectionsT } from './types'
 // eslint-disable-next-line import/no-cycle
 import { FilterOperateSelectorValueT } from './filter-operate-selector'
 
@@ -31,6 +31,7 @@ export interface ICurrentViewState {
     currentView: ConfigT
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
+    onCurrentViewQueriesChange: (queries: QueryT[]) => void
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) => void
     onCurrentViewColumnsPin: (columnId: string, bool?: boolean) => void
 }
@@ -129,9 +130,12 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => ({
     currentView: {},
-    onCurrentViewFiltersChange: (filters) => set({ currentView: { ...get().currentView, filters } }),
+    onCurrentViewFiltersChange: (filters) =>
+        set({ currentView: { ...get().currentView, filters, updatedTime: Date.now() } }),
+    onCurrentViewQueriesChange: (queries) =>
+        set({ currentView: { ...get().currentView, queries, updatedTime: Date.now() } }),
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) =>
-        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, sortedIds } }),
+        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, sortedIds, updatedTime: Date.now() } }),
     onCurrentViewColumnsPin: (columnId: string, pined = false) => {
         const { pinnedIds = [], selectedIds = [] } = get().currentView
         const $pinnedIds = new Set(pinnedIds)
@@ -151,11 +155,12 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
                 ...get().currentView,
                 pinnedIds: Array.from($pinnedIds),
                 selectedIds: sortedMergeSelectedIds,
+                updatedTime: Date.now(),
             },
         })
     },
     onCurrentViewSort: (key, direction) =>
-        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction } }),
+        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction, updatedTime: Date.now() } }),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

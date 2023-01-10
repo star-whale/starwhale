@@ -1,17 +1,17 @@
 import Search from '@starwhale/ui/Search'
-import { ColumnT } from './types'
+import { ColumnT, QueryT } from './types'
+import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 
 type PropsT = {
     columns: ColumnT[]
-    filters: any[]
-    rows: any[]
-    onFilterSet?: (filterParams: any[]) => void
-    onSave?: (filterParams: any[]) => void
-    onSaveAs?: (filterParams: any[]) => void
+    value: QueryT[]
+    onChange: (args: QueryT[]) => void
 }
 
 function ConfigQuery(props: PropsT) {
-    return <Search fields={[]} />
+    const columnTypes = props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
+
+    return <Search fields={columnTypes as ColumnSchemaDesc[]} value={props.value} onChange={props.onChange} />
 }
 
 export default ConfigQuery

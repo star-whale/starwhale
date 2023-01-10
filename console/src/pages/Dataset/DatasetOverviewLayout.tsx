@@ -1,6 +1,6 @@
 import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
@@ -37,7 +37,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
     const { datasetVersion, setDatasetVersion } = useDatasetVersion()
-    const { query } = useQueryArgs()
+    const { query, updateQuery } = useQueryArgs()
     const [page] = usePage()
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
@@ -233,7 +233,15 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                 </Button>
                             )}
                         </div>
-                        {datasetVersionId && <Search fields={datastore.data?.columnTypes ?? []} />}
+                        {datasetVersionId && (
+                            <Search
+                                fields={datastore.data?.columnTypes ?? []}
+                                value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
+                                onChange={(items) => {
+                                    updateQuery({ filter: items.filter((v) => v.value) as any })
+                                }}
+                            />
+                        )}
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}

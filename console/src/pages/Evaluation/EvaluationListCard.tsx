@@ -36,7 +36,13 @@ export default function EvaluationListCard() {
         if (!project?.name) return ''
         return tableNameOfSummary(project?.name as string)
     }, [project])
-    const evaluationsInfo = useQueryDatasetList(summaryTableName, page, true)
+    const store = useEvaluationStore()
+    const [options, setOptions] = useState<any>({
+        ...page,
+        filter: store.currentView.queries,
+    })
+
+    const evaluationsInfo = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
@@ -48,8 +54,6 @@ export default function EvaluationListCard() {
         },
         [evaluationsInfo, projectId]
     )
-
-    const store = useEvaluationStore()
 
     const $columns = useDatastoreColumns(
         evaluationsInfo?.data?.columnTypes?.sort((ca, cb) => {
@@ -64,6 +68,7 @@ export default function EvaluationListCard() {
         return $columns.map((column) => {
             if (column.key === 'id')
                 return CustomColumn({
+                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     mapDataToValue: (item: any) => item.id,
@@ -81,6 +86,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
+                    columnType: column.columnType,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -101,6 +107,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
+                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     mapDataToValue: (data: any) =>
@@ -118,7 +125,18 @@ export default function EvaluationListCard() {
             setCompareRows(evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? [])
     }, [store.rowSelectedIds, evaluationsInfo.isSuccess])
 
-    console.log(evaluationsInfo)
+    React.useEffect(() => {
+        const unsub = useEvaluationStore.subscribe(
+            (state: ITableState) => state.currentView.queries ?? [],
+            (queries: any[]) => {
+                setOptions({
+                    ...options,
+                    filter: queries,
+                })
+            }
+        )
+        return unsub
+    }, [store])
 
     React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
@@ -200,7 +218,7 @@ export default function EvaluationListCard() {
                             viewable
                             queryable
                             selectable
-                            isLoading={evaluationsInfo.isLoading}
+                            isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
                             data={evaluationsInfo.data?.records ?? []}
                         />

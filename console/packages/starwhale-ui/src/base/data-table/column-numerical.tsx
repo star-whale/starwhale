@@ -514,10 +514,11 @@ function NumericalColumn(options: OptionsT): NumericalColumnT {
         sortFn: function (a, b) {
             return a - b
         },
-        filterType: options.filterType ??  FilterTypes.number,
+        filterType: options.filterType ?? FilterTypes.number,
         title: normalizedOptions.title,
         key: options.key,
         pin: options.pin,
+        columnType: options.columnType,
     })
 }
 

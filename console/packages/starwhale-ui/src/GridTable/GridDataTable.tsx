@@ -46,12 +46,13 @@ const useStyles = createUseStyles({
     },
 })
 
-function GridTable({
+function GridDataTable({
     isLoading,
     columns = [],
     data = [],
     paginationProps,
     rowActions = [],
+    onSelectionChange,
     searchable = false,
     filterable = false,
     queryable = false,
@@ -105,6 +106,7 @@ function GridTable({
                     store={store}
                     useStore={api}
                     resizableColumnWidths
+                    onSelectionChange={onSelectionChange}
                     initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
@@ -142,9 +144,9 @@ function GridTable({
     )
 }
 
-export const MemoGridTable = React.memo(GridTable, areEqual)
+export const MemoGridTable = React.memo(GridDataTable, areEqual)
 
-export default function ContextGridTable({
+export default function ContextGridDataTable({
     storeKey = 'table',
     initState = {},
     store = undefined,

@@ -1,6 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
-
-import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Search } from 'baseui/icon'
 import { SIZE as INPUT_SIZES } from 'baseui/input'
 import Input from '@/components/Input'
@@ -16,6 +14,8 @@ import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
+import { ITableState } from './store'
+import Button from '@starwhale/ui/Button'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -134,6 +134,13 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         [store]
     )
 
+    const handeQuerySet = useCallback(
+        (items) => {
+            store.onCurrentViewQueriesChange(items)
+        },
+        [store]
+    )
+
     const handleFilterSave = useCallback(
         (filters) => {
             store.onShowViewModel(true, {
@@ -155,6 +162,16 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         [store]
     )
 
+    // changed status must be after all the store changes(after api success)
+    const [changed, setChanged] = useState(false)
+    React.useEffect(() => {
+        const unsub = useStore.subscribe(
+            (state: ITableState) => state.currentView.updatedTime ?? [],
+            () => !props.loading && setChanged(true)
+        )
+        return unsub
+    }, [store, props.loading])
+
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
     const [$sortIndex, $sortDirection] = useMemo(() => {
@@ -171,7 +188,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             initialSortDirection={props.initialSortDirection}
             onIncludedRowsChange={props.onIncludedRowsChange}
             onRowHighlightChange={props.onRowHighlightChange}
-            onSelectionChange={props.onSelectionChange}
             resizableColumnWidths={props.resizableColumnWidths}
             rows={props.rows}
             rowActions={props.rowActions}
@@ -190,10 +206,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
                         <div ref={headlineRef}>
                             <div
-                                className='flex-row-center mb-20 g-20'
+                                className='flex-row-left mb-20 g-20'
                                 style={{
-                                    gridTemplateColumns: '1fr auto 1fr',
-                                    display: 'grid',
+                                    display: 'flex',
                                 }}
                             >
                                 {viewable && (
@@ -216,6 +231,13 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 )}
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
+
+                                {changed && (
+                                    <div>
+                                        <Button onClick={props?.onSave}>Save</Button>&nbsp;&nbsp;
+                                        <Button onClick={props?.onSaveAs}>Save As</Button>
+                                    </div>
+                                )}
                             </div>
                             <div
                                 style={{
@@ -226,12 +248,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 {queryable && (
                                     <div className='table-config-query' style={{ flex: 1 }}>
                                         <ConfigQuery
-                                            filters={store.currentView?.filters ?? []}
+                                            value={store.currentView?.queries ?? []}
                                             columns={props.columns}
-                                            rows={props.rows}
-                                            onFilterSet={handeFilterSet}
-                                            onSave={handleFilterSave}
-                                            onSaveAs={handleFilterSaveAs}
+                                            onChange={handeQuerySet}
                                         />
                                     </div>
                                 )}

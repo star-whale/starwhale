@@ -18,6 +18,7 @@ export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[]): ColumnT[] 
                 case DataTypes.BOOL:
                     columnsWithAttrs.push(
                         BooleanColumn({
+                            columnType: column,
                             key: column.name,
                             title: column.name,
                             filterType: FilterTypes.enum,
@@ -34,6 +35,7 @@ export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[]): ColumnT[] 
                 case DataTypes.FLOAT64:
                     columnsWithAttrs.push(
                         NumericalColumn({
+                            columnType: column,
                             key: column.name,
                             title: column.name,
                             format: (v) => (typeof v === 'string' ? v : v?.toFixed(10)),
@@ -44,6 +46,7 @@ export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[]): ColumnT[] 
                 case 'STRING':
                     columnsWithAttrs.push(
                         StringColumn({
+                            columnType: column,
                             key: column.name,
                             title: column.name,
                             mapDataToValue: (data: any): string => data?.[column.name] ?? '-',

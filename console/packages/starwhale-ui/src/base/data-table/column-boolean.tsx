@@ -105,6 +105,7 @@ function BooleanColumn(options: OptionsT): BooleanColumnT {
         key: options.key,
         pin: options.pin,
         filterType: options.filterType ?? FilterTypes.enum,
+        columnType: options.columnType,
     })
 }
 

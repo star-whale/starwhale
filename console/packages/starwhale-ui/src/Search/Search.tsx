@@ -50,31 +50,29 @@ export const useStyles = createUseStyles({
 
 export interface ISearchProps {
     fields: ColumnSchemaDesc[]
+    value?: ValueT[]
+    onChange?: (args: ValueT[]) => void
 }
 const raw = [{}]
 
-export default function Search({ ...props }: ISearchProps) {
+export default function Search({ value, onChange, ...props }: ISearchProps) {
     const styles = useStyles()
     const ref = useRef<HTMLDivElement>(null)
-    const { query, updateQuery } = useQueryArgs()
 
     const [isEditing, setIsEditing] = useState(false)
 
-    const [items, setItems] = useState<ValueT[]>(query.filter ? query.filter.filter((v: any) => v.value) : (raw as any))
+    const [items, setItems] = useState<ValueT[]>(value ?? (raw as any))
+
+    useEffect(() => {
+        const newItems = value && value.length > 0 ? [...value, ...(raw as any)] : (raw as any)
+        setItems(newItems)
+    }, [value])
 
     useClickAway(ref, () => {
         setIsEditing(false)
     })
 
     const column = React.useMemo(() => new ColumnFilterModel(props.fields), [props.fields])
-
-    useEffect(() => {
-        if (!query.filter) setItems(raw as any)
-    }, [query.filter])
-
-    useDeepEffect(() => {
-        // updateQuery({ filter: items.filter((v) => v.value) as any })
-    }, [items, column])
 
     return (
         <div
@@ -119,6 +117,8 @@ export default function Search({ ...props }: ISearchProps) {
                                 setItems([...newItems, {}])
                                 setIsEditing(true)
                             }
+
+                            onChange?.(newItems.filter((item) => item.property && item.op && item.value))
                         }}
                     />
                 )

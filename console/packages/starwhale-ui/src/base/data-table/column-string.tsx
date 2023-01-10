@@ -65,6 +65,7 @@ function StringColumn(options: OptionsT): StringColumnT {
         key: options.key,
         pin: options.pin,
         filterType: options.filterType ?? FilterTypes.string,
+        columnType: options.columnType,
     })
 }
 
