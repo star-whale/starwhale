@@ -16,5 +16,5 @@ ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data["img"]
 label = row.data["label"]
-show_image(np.frombuffer(data.to_bytes(), dtype=np.uint8).reshape(data.shape))
+show_image(np.frombuffer(data.to_bytes(), dtype=np.uint8).reshape(data.shape))  # type: ignore
 print(label)
