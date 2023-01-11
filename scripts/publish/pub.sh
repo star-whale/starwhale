@@ -57,7 +57,7 @@ build() {
         popd
     else
         pushd ../../console
-        yarn && yarn build
+        make install-dev-tools && make build-all
         popd
     fi
     b_controller
