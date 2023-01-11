@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ONLINE_EVAL;
+
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
@@ -23,6 +25,7 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
+import ai.starwhale.mlops.domain.job.spec.ModelServingSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
@@ -35,8 +38,12 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -57,6 +64,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -124,42 +132,66 @@ public class ModelServingService {
             String projectUrl,
             String modelVersionUrl,
             String runtimeVersionUrl,
-            String resourcePool
+            String resourcePool,
+            String spec
     ) {
         User user = userService.currentUserDetail();
         Long projectId = projectManager.getProjectId(projectUrl);
         var runtime = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
         var model = modelDao.getModelVersion(modelVersionUrl);
 
-        var entity = ModelServingEntity.builder()
-                .ownerId(user.getId())
-                .runtimeVersionId(runtime.getId())
-                .projectId(projectId)
-                .modelVersionId(model.getId())
-                .jobStatus(JobStatus.CREATED)
-                .resourcePool(resourcePool)
-                .lastVisitTime(new Date())
-                .build();
+        ModelServingSpec modelServingSpec = null;
+        String orderedSpecStr = null;
+        if (StringUtils.isNotEmpty(spec)) {
+            try {
+                modelServingSpec = ModelServingSpec.fromYamlString(spec);
+                orderedSpecStr = modelServingSpec.dumps();
+            } catch (JsonProcessingException e) {
+                log.error("parse spec failed", e);
+                var swExp = new SwValidationException(ONLINE_EVAL, "failed to parse spec", e);
+                throw new StarwhaleApiException(swExp, HttpStatus.BAD_REQUEST);
+            }
+        }
 
         long id;
         synchronized (this) {
-            modelServingMapper.insertIgnore(entity);
-
+            ModelServingEntity targetService = null;
             var services = modelServingMapper.list(projectId, model.getId(), runtime.getId(), resourcePool);
-            if (services.size() != 1) {
-                // this can not happen
-                throw new SwProcessException(SwProcessException.ErrorType.DB,
-                        "duplicate entries, size " + services.size());
+            if (services != null && !services.isEmpty()) {
+                // try getting the exactly same service
+                // only care about `spec` for now
+                for (var service : services) {
+                    if (Objects.equals(service.getSpec(), orderedSpecStr)) {
+                        targetService = service;
+                        break;
+                    }
+                }
             }
-            id = services.get(0).getId();
-            // update last visit time, prevents garbage collected
-            modelServingMapper.updateLastVisitTime(id, new Date());
+
+            if (targetService == null) {
+                targetService = ModelServingEntity.builder()
+                        .ownerId(user.getId())
+                        .runtimeVersionId(runtime.getId())
+                        .projectId(projectId)
+                        .modelVersionId(model.getId())
+                        .jobStatus(JobStatus.CREATED)
+                        .resourcePool(resourcePool)
+                        .lastVisitTime(new Date())
+                        .spec(orderedSpecStr)
+                        .build();
+                modelServingMapper.add(targetService);
+            } else {
+                // update last visit time, prevents garbage collected
+                modelServingMapper.updateLastVisitTime(targetService.getId(), new Date());
+            }
+
+            id = targetService.getId();
         }
 
         log.info("Model serving job has been created. ID={}", id);
 
         try {
-            deploy(runtime, model, projectId.toString(), user, id);
+            deploy(runtime, model, projectId.toString(), user, id, modelServingSpec);
         } catch (ApiException e) {
             log.error(e.getResponseBody(), e);
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
@@ -175,7 +207,8 @@ public class ModelServingService {
             ModelVersionEntity model,
             String project,
             User owner,
-            long id
+            long id,
+            ModelServingSpec modelServingSpec
     ) throws ApiException {
         var name = getServiceName(id);
 
@@ -206,7 +239,12 @@ public class ModelServingService {
                 // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
                 "SW_PRODUCTION", "1"
         );
-        var ss = k8sJobTemplate.renderModelServingOrch(envs, image, name);
+
+        ResourceOverwriteSpec resourceOverwriteSpec = null;
+        if (modelServingSpec != null && modelServingSpec.getResources() != null) {
+            resourceOverwriteSpec = new ResourceOverwriteSpec(modelServingSpec.getResources());
+        }
+        var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec);
         try {
             ss = k8sClient.deployStatefulSet(ss);
         } catch (ApiException e) {

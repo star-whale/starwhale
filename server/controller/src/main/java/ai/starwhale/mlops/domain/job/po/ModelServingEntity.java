@@ -41,5 +41,6 @@ public class ModelServingEntity extends BaseEntity {
     private Long runtimeVersionId;
     private Integer isDeleted;
     private String resourcePool;
+    private String spec;
     private Date lastVisitTime;
 }

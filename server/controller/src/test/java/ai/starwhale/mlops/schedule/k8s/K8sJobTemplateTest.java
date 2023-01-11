@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
@@ -151,10 +152,18 @@ public class K8sJobTemplateTest {
     public void testRenderModelServingOrch() {
         var name = "stateful-set-name";
         var envs = Map.of("foo", "bar");
-        var ss = k8sJobTemplate.renderModelServingOrch(envs, "img", name);
+        var rr = RuntimeResource.builder().type("CPU").request(7f).limit(8f).build();
+        var resourceOverwriteSpec = new ResourceOverwriteSpec(List.of(rr));
+        var ss = k8sJobTemplate.renderModelServingOrch(name, "img", envs, resourceOverwriteSpec);
         assertThat(ss.getMetadata().getName(), is(name));
         var mainContainer = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(mainContainer.getImage(), is("img"));
         assertThat(mainContainer.getEnv(), is(List.of(new V1EnvVar().name("foo").value("bar"))));
+        var containerResources = mainContainer.getResources();
+        assertThat(containerResources.getRequests(), is(Map.of("CPU", new Quantity("7.0"))));
+        assertThat(containerResources.getLimits(), is(Map.of("CPU", new Quantity("8.0"))));
+
+        // no exception is ok
+        k8sJobTemplate.renderModelServingOrch(name, "img", envs, null);
     }
 }
