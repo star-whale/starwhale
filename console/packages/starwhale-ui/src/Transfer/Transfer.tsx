@@ -150,8 +150,9 @@ export default function Transfer({
 
     // waiting for value changed action
     useEffect(() => {
-        setLeft({ ...left, selectedIds: [] })
-        setRight({ ...value, selectedIds: [] })
+        // , selectedIds: []
+        setLeft({ ...left })
+        setRight({ ...value })
     }, [value.selectedIds])
 
     return (

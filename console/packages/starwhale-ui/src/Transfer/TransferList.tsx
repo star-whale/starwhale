@@ -161,6 +161,11 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
         setDragId(-1)
     }
 
+    const $data = useMemo(() => {
+        console.log('data', data, selectedIds)
+        return data?.sort((a: any, b: any) => selectedIds.indexOf(a.id) - selectedIds.indexOf(b.id))
+    }, [data, selectedIds])
+
     const List = useMemo(() => {
         if (isDragable) {
             return (
@@ -168,7 +173,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                     <ReactSortable
                         delay={100}
                         handle='.handle'
-                        list={data}
+                        list={$data}
                         setList={(newData) => {
                             handleOrderChange(
                                 newData.map((v) => v.id),
@@ -241,7 +246,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
             <div className='transfer-list-content'>
                 <div className='transfer-list-content-header'>
                     <Checkbox
-                        checked={selectedIds.length === props.raw?.length}
+                        checked={selectedIds.length === props.raw?.length && selectedIds.length !== 0}
                         onChange={(e) =>
                             (e.target as any)?.checked ? handleSelectMany(props.raw ?? []) : handleSelectNone()
                         }

@@ -100,44 +100,41 @@ function GridTable({
                 className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
                 ref={wrapperRef}
             >
-                {isLoading && <BusyPlaceholder />}
-                {!isLoading && (
-                    <StatefulDataTable
-                        store={store}
-                        useStore={api}
-                        resizableColumnWidths
-                        initialFilters={$filters}
-                        searchable={searchable}
-                        filterable={filterable}
-                        queryable={queryable}
-                        columnable={columnable}
-                        compareable={compareable}
-                        viewable={viewable}
-                        loading={!!isLoading}
-                        rowActions={rowActions}
-                        columns={columns}
-                        rows={$rows}
-                        // @ts-ignore
-                        loadingMessage={() =>
-                            (
-                                <Skeleton
-                                    overrides={{
-                                        Root: {
-                                            style: {
-                                                paddingTop: '10px',
-                                            },
+                <StatefulDataTable
+                    store={store}
+                    useStore={api}
+                    resizableColumnWidths
+                    initialFilters={$filters}
+                    searchable={searchable}
+                    filterable={filterable}
+                    queryable={queryable}
+                    columnable={columnable}
+                    compareable={compareable}
+                    viewable={viewable}
+                    loading={!!isLoading}
+                    rowActions={rowActions}
+                    columns={columns}
+                    rows={$rows}
+                    // @ts-ignore
+                    loadingMessage={() =>
+                        (
+                            <Skeleton
+                                overrides={{
+                                    Root: {
+                                        style: {
+                                            paddingTop: '10px',
                                         },
-                                    }}
-                                    rows={10}
-                                    width='100%'
-                                    animation
-                                />
-                            ) as any
-                        }
-                        // @ts-ignore
-                        emptyMessage={() => (<BusyPlaceholder type='notfound' />) as any}
-                    />
-                )}
+                                    },
+                                }}
+                                rows={10}
+                                width='100%'
+                                animation
+                            />
+                        ) as any
+                    }
+                    // @ts-ignore
+                    emptyMessage={() => (<BusyPlaceholder type='notfound' />) as any}
+                />
             </div>
             <Pagination {...paginationProps} />
         </>
