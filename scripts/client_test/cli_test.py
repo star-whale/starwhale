@@ -273,13 +273,13 @@ class TestCli:
             self.build_runtime(rt["workdir"])
 
         for name, expl in EXAMPLES.items():
-            print(f"preparing data for {expl}")
+            logger.info(f"preparing data for {expl}")
             rc = subprocess.call(
                 ["make", "CN=1", "prepare-data"],
                 cwd=expl["workdir"],
             )
             if rc != 0:
-                print(f"prepare data for {expl} failed")
+                logger.error(f"prepare data for {expl} failed")
                 raise
 
         for name, expl in EXAMPLES.items():
