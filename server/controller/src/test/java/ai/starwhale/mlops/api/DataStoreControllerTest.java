@@ -661,6 +661,11 @@ public class DataStoreControllerTest {
         }
 
         @Test
+        public void testVirtualColumnQuery() {
+
+        }
+
+        @Test
         public void testNullTableName() {
             this.req.setTableName(null);
             assertThrows(SwValidationException.class,

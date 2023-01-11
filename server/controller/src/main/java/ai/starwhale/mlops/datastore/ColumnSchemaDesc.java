@@ -35,9 +35,14 @@ import lombok.NoArgsConstructor;
 public class ColumnSchemaDesc {
 
     /**
-     * The name of the column or the attribute.
+     * The alias name of the column or the attribute.
      */
     private String name;
+
+    /**
+     * The origin name of the column or the attribute.
+     */
+    private String origin;
 
     /**
      * The type of the column or the attribute.

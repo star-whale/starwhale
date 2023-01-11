@@ -442,6 +442,14 @@ public class DataStore {
                     }
                 }
             }
+            // virtual column
+            for (String column : new HashSet<>(invalidColumns)) {
+                if (column.startsWith("$.")) {
+                    // TODO column need replace with alias
+                    ret.put(column, columns.get(column));
+                    invalidColumns.remove(column);
+                }
+            }
             if (!invalidColumns.isEmpty()) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "invalid columns: " + invalidColumns);
@@ -457,7 +465,11 @@ public class DataStore {
         for (var entry : values.entrySet()) {
             var columnName = entry.getKey();
             var columnValue = entry.getValue();
-            ret.put(columnName, columnTypeMap.get(columnName).encode(columnValue, rawResult));
+            var columnType = columnTypeMap.get(columnName);
+            if (ColumnTypeVirtual.TYPE_NAME.equals(columnType.getTypeName())) {
+                continue;
+            }
+            ret.put(columnName, columnType.encode(columnValue, rawResult));
         }
         return ret;
     }
