@@ -19,9 +19,7 @@ package ai.starwhale.mlops.datastore.parquet;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.ParquetReader.Builder;
 import org.apache.parquet.hadoop.api.ReadSupport;
 
 public class SwParquetReaderBuilder extends ParquetReader.Builder<Map<String, Object>> {

@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.common.TarFileUtil;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

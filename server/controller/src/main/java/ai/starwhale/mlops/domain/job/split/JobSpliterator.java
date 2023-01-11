@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import java.util.List;
 

@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
-import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
