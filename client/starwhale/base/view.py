@@ -151,7 +151,6 @@ class BaseTermView(SWCliConfigMixed):
             "runtime": BaseTermView.place_holder_for_empty(),
         }
         data = BaseTermView.get_history_data(history, fullname)
-        print(data)
         BaseTermView.print_table(
             title, data, custom_header, custom_column=custom_column
         )
