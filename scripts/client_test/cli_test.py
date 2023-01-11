@@ -273,16 +273,14 @@ class TestCli:
             self.build_runtime(rt["workdir"])
 
         for name, expl in EXAMPLES.items():
-            p = subprocess.Popen(
+            print(f"preparing data for {expl}")
+            rc = subprocess.call(
                 ["make", "CN=1", "prepare-data"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
                 cwd=expl["workdir"],
             )
-            with p.stdout:  # type: ignore
-                for line in iter(p.stdout.readline, b""):  # type: ignore
-                    logging.info("got line from subprocess: %r", line)
-            assert not p.wait()
+            if rc != 0:
+                print(f"prepare data for {expl} failed")
+                raise
 
         for name, expl in EXAMPLES.items():
             workdir_ = expl["workdir"]
