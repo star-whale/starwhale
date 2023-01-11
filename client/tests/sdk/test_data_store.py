@@ -2,6 +2,7 @@ import os
 import json
 import time
 import unittest
+import concurrent.futures
 from typing import Dict, List
 from unittest.mock import Mock, patch
 
@@ -1227,6 +1228,45 @@ class TestLocalDataStore(BaseTestCase):
             ],
             list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "composite",
+        )
+
+    def test_data_store_update_table_with_multithread(self) -> None:
+        ds = data_store.LocalDataStore(self.datastore_root)
+
+        def ds_update(index: int) -> bool:
+            for i in range(100 * (index - 1), 100 * index):
+                ds.update_table(
+                    "project/a_b/eval/test-m",
+                    data_store.TableSchema(
+                        "k",
+                        [
+                            data_store.ColumnSchema("k", data_store.INT64),
+                            data_store.ColumnSchema("a", data_store.STRING),
+                            data_store.ColumnSchema("b", data_store.STRING),
+                        ],
+                    ),
+                    [{"k": i, "a": "0", "b": "0"}],
+                )
+            return True
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+            futures = [pool.submit(ds_update(index=index)) for index in range(0, 5)]
+            results = [
+                future.result for future in concurrent.futures.as_completed(futures)
+            ]
+
+        assert all(results)
+
+        self.assertEqual(
+            500,
+            len(
+                list(
+                    ds.scan_tables(
+                        [data_store.TableDesc("project/a_b/eval/test-m", None, False)]
+                    )
+                )
+            ),
+            "length check",
         )
 
     def test_data_store_scan(self) -> None:
