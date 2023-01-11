@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useEffect, useImperativeHandle, useContext } from 'react'
+import React, { useMemo, useCallback, useRef, useEffect, useImperativeHandle, useContext, useState } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
 import { Search } from 'baseui/icon'
 import { useStyletron } from 'baseui'
@@ -19,6 +19,7 @@ import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { useDeepEffect } from '@starwhale/core/utils'
 import TransferList from '@starwhale/ui/Transfer/TransferList'
+import { Transfer } from '@starwhale/ui/Transfer'
 
 const useStyles = createUseStyles({
     transfer: {
@@ -51,13 +52,6 @@ const useStyles = createUseStyles({
             paddingLeft: 0,
             paddingRight: 0,
         },
-        '& .query': {
-            width: '280px',
-        },
-        '& .list': {
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-        },
     },
 })
 
@@ -74,8 +68,7 @@ type T = string
 const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
     const styles = useStyles()
     const [css, theme] = useStyletron()
-    const [isOpen, setIsOpen] = React.useState(false)
-    const [query, setQuery] = React.useState('')
+    const [isOpen, setIsOpen] = React.useState(true)
     const { expandedWidth, expanded, setExpanded } = useDrawer()
 
     useEffect(() => {
@@ -91,19 +84,6 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
 
     const ref = useRef(null)
     const { columns } = props
-
-    const columnAllIds = useMemo(() => {
-        return columns.map((v) => v.key as string)
-    }, [columns])
-    const matchedColumns = React.useMemo(() => {
-        return columns.filter((column) => matchesQuery(column.title, query)) ?? []
-    }, [columns, query])
-    const columnMatchedIds = useMemo(() => {
-        return matchedColumns.map((v) => v.key) ?? []
-    }, [matchedColumns])
-
-    const [left, setLeft] = React.useState({})
-    const [right, setRight] = React.useState({})
 
     // useDeepEffect(() => {
     //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
@@ -172,6 +152,8 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         [props.isInline, isOpen]
     )
 
+    const [value, setValue] = useState(() => props.view)
+
     return (
         <div ref={ref}>
             {!props.isInline && (
@@ -204,40 +186,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
             <Wrapper>
                 <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>Manage Columns</div>
                 <div className={cn('body', props.isInline ? 'body--inline' : '')}>
-                    <div className='query'>
-                        <Input
-                            overrides={{
-                                Before: function Before() {
-                                    return (
-                                        <div
-                                            className={css({
-                                                alignItems: 'center',
-                                                display: 'flex',
-                                                paddingLeft: theme.sizing.scale500,
-                                            })}
-                                        >
-                                            <Search size='18px' />
-                                        </div>
-                                    )
-                                },
-                            }}
-                            value={query}
-                            // @ts-ignore
-                            onChange={(event) => setQuery(event.target.value)}
-                        />
-                    </div>
-                    <div className='list'>
-                        <TransferList value={left} onChange={setLeft} columns={columns} />
-                        <div className='transfer-list-toolbar'>
-                            <Button>
-                                <IconFont type='arrow_right' />
-                            </Button>
-                            <Button>
-                                <IconFont type='arrow_left' />
-                            </Button>
-                        </div>
-                        <TransferList isDragable value={right} onChange={setRight} columns={columns} />
-                    </div>
+                    <Transfer columns={columns} isDragable isSearchable value={value} onChange={setValue} />
                 </div>
             </Wrapper>
         </div>

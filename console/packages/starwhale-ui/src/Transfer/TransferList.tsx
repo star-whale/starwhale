@@ -3,65 +3,42 @@ import Checkbox from '../Checkbox'
 import { createUseStyles } from 'react-jss'
 import { LabelSmall } from 'baseui/typography'
 import classNames from 'classnames'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useHover } from 'react-use'
 import { ColumnT, ConfigT } from '../base/data-table/types'
-import { DnDContainer } from '../DnD'
+import Button from '../Button'
+import IconFont from '../IconFont'
+import { ReactSortable } from 'react-sortablejs'
+import { useDeepEffect } from '@starwhale/core/utils'
 
 const useStyles = createUseStyles({
-    transfer: {
-        '&:.transfer-list': {
-            flex: 1,
-            borderRadius: '4px',
-            display: 'flex',
-            overflow: 'hidden',
-        },
-        '& .transfer-list-content': {
-            border: '1px solid #CFD7E6',
-            flex: '1',
-            display: 'flex',
-            flexDirection: 'column',
-        },
-        '& .transfer-list-toolbar': {
-            display: 'flex',
-            flex: 'none',
-            flexDirection: 'column',
-            alignSelf: 'center',
-            margin: '0 10px',
-            verticalAlign: 'middle',
-            gap: '20px',
-        },
-        '& .transfer-list-content-header': {
-            display: 'flex',
-            height: '42px',
-            borderBottom: '1px solid #EEF1F6',
-            marginBottom: '8px',
-            fontSize: '14px',
-            marginLeft: '10px',
-            marginRight: '9px',
-            alignItems: 'center',
-            gap: '9px',
-            flex: 'none',
-        },
-        '& .transfer-list-content-body': {
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-        },
-        '& .transfer-list-content-ul': {
-            overflow: 'auto',
-        },
-        '& .transfer-list-content-item': {
-            paddingLeft: '10px',
-            paddingRight: '9px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '9px',
+    transferList: {
+        '& .sortable-ghost ': {
             height: '32px',
-            willChange: 'transform',
-            flexWrap: 'nowrap',
-            justifyContent: 'space-between',
+            overflow: 'hidden',
+            boxShadow: ' 0 2px 8px 0 rgba(0,0,0,0.20)',
+            zIndex: 100,
         },
+    },
+    wrapper: {
+        'position': 'relative',
+        'width': '100%',
+        '&:hover': {
+            '& $handler': {
+                display: 'block',
+            },
+        },
+    },
+    handler: {
+        position: 'absolute',
+        top: '5px',
+        width: '30px',
+        marginLeft: '-15px',
+        left: 'calc(100% - 50px)',
+        display: 'none',
+        textAlign: 'center',
+        zIndex: '99',
+        cursor: '-webkit-grabbing',
     },
 })
 
@@ -72,6 +49,7 @@ type TransferListPropsT = {
     value: TransferValueT
     columns: ColumnT[]
     onChange: (args: TransferValueT) => void
+    raw: any[]
 }
 
 export default function TransferList({ isDragable = false, columns, value, ...props }: TransferListPropsT) {
@@ -84,142 +62,188 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
         handleSelectMany,
         handleSelectNone,
         handleSelectOne,
-        handleOrderChange,
         handlePinOne,
-        handleEmpty,
-    } = useSelection<T>({
+        handleOrderChange,
+    } = useSelection({
         initialSelectedIds: value?.selectedIds ?? [],
         initialPinnedIds: value?.pinnedIds ?? [],
         initialSortedIds: value?.sortedIds ?? [],
     })
 
-    // useDeepEffect(() => {
-    //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
-    //     props.onApply?.(selectedIds, pinnedIds, sortedIds)
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [selectedIds, sortedIds, pinnedIds])
+    useDeepEffect(() => {
+        props.onChange?.({ selectedIds, pinnedIds, sortedIds })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedIds, sortedIds, pinnedIds])
 
-    const dndData = useMemo(() => {
-        const DnDCell = ({ column, pined }: { column: ColumnT; pined: boolean }) => {
-            const [hoverable] = useHover((hoverd) => {
-                if (!column) return <></>
+    const [data, setData] = useState<any>(() =>
+        props.raw?.map((id) => {
+            const column = columns.find((v) => v.key === id)
+            if (!column) return { id, text: '' }
+            return {
+                id: column?.key as string,
+                ...column,
+            }
+        })
+    )
 
-                return (
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            paddingLeft: '10px',
-                            paddingRight: '9px',
-                            height: '32px',
-                            cursor: 'pointer',
-                            willChange: 'transform',
-                            flexWrap: 'nowrap',
-                            justifyContent: 'space-between',
-                            background: hoverd ? '#F0F4FF' : '#FFFFFF',
-                            flex: 1,
+    const DnDCell = ({ column }: { column: ColumnT }) => {
+        const [hoverable] = useHover((hoverd) => {
+            if (!column) return <></>
+
+            const pined = pinnedIds.includes(column.key)
+
+            return (
+                <div className='transfer-list-content-item' title={column.title}>
+                    <Checkbox
+                        checked={selectedIds?.includes(column.key)}
+                        onChange={() => handleSelectOne(column.key)}
+                        overrides={{
+                            Root: {
+                                style: {
+                                    flex: 1,
+                                    height: '100%',
+                                },
+                            },
                         }}
-                        title={column.title}
                     >
-                        <LabelSmall $style={{ flex: 1, overflow: 'hidden', lineHeight: '1.2' }} className='line-clamp'>
+                        <LabelSmall $style={{ overflow: 'hidden', lineHeight: '1.2' }} className='line-clamp'>
                             {column.title}
                         </LabelSmall>
-                        <div>
-                            {(pined || hoverd) && (
-                                <Button
-                                    overrides={{
-                                        BaseButton: {
-                                            style: {
-                                                'paddingLeft': '7px',
-                                                'paddingRight': '7px',
-                                                'color': pined ? 'rgba(2,16,43,0.80)' : 'rgba(2,16,43,0.20)',
-                                                ':hover': {
-                                                    backgroundColor: 'transparent',
-                                                    color: pined ? '#02102B' : 'rgba(2,16,43,0.50)',
-                                                },
-                                            },
-                                        },
-                                    }}
-                                    as='transparent'
-                                    onClick={() => handlePinOne(column.key as string)}
-                                >
-                                    <IconFont size={14} type='pin' />
-                                </Button>
-                            )}
+                    </Checkbox>
+                    <div>
+                        {(pined || hoverd) && (
                             <Button
                                 overrides={{
                                     BaseButton: {
                                         style: {
-                                            paddingLeft: '7px',
-                                            paddingRight: '7px',
-                                            color: 'rgba(2,16,43,0.40)',
+                                            'paddingLeft': '7px',
+                                            'paddingRight': '7px',
+                                            'color': pined ? 'rgba(2,16,43,0.80)' : 'rgba(2,16,43,0.20)',
+                                            ':hover': {
+                                                backgroundColor: 'transparent',
+                                                color: pined ? '#02102B' : 'rgba(2,16,43,0.50)',
+                                            },
                                         },
                                     },
                                 }}
                                 as='transparent'
-                                onClick={() => handleSelectOne(column.key as string)}
+                                onClick={() => handlePinOne(column.key as string)}
                             >
-                                <IconFont size={14} type='delete' />
+                                <IconFont size={14} type='pin' />
                             </Button>
-                        </div>
+                        )}
                     </div>
-                )
-            })
-
-            return hoverable
-        }
-
-        return selectedIds.map((id) => {
-            const column = columns.find((v) => v.key === id)
-
-            if (!column) return { id, text: <></> }
-            return {
-                id: column?.key as string,
-                // @ts-ignore
-                text: <DnDCell column={column} pined={pinnedIds.includes(id)} />,
-            }
+                </div>
+            )
         })
-    }, [selectedIds, pinnedIds, columns, handlePinOne, handleSelectOne])
+
+        return hoverable
+    }
+
+    useEffect(() => {
+        setData(() =>
+            props.raw?.map((id) => {
+                const column = columns.find((v) => v.key === id)
+                if (!column) return { id, text: '' }
+                return {
+                    id: column?.key as string,
+                    ...column,
+                }
+            })
+        )
+    }, [columns, props.raw])
+
+    const [dragId, setDragId] = useState(-1)
+    const dragSelect = (currentIndex: number) => {
+        setDragId(currentIndex)
+    }
+    const dragUnselect = () => {
+        setDragId(-1)
+    }
 
     const List = useMemo(() => {
         if (isDragable) {
             return (
                 <ul className='transfer-list-content-ul'>
-                    {dndData.length > 0 && <DnDContainer onOrderChange={handleOrderChange} data={dndData} />}
+                    <ReactSortable
+                        delay={100}
+                        handle='.handle'
+                        list={data}
+                        setList={(newData) => {
+                            handleOrderChange(
+                                newData.map((v) => v.id),
+                                dragId
+                            )
+                            setData(newData)
+                        }}
+                        animation={50}
+                        onChoose={(args) => dragSelect(args.oldIndex as number)}
+                        onUnchoose={dragUnselect}
+                    >
+                        {data?.map((item: any) => {
+                            return (
+                                <div
+                                    key={item.id}
+                                    className={`${styles.wrapper} item`}
+                                    style={{
+                                        boxShadow: item.chosen ? '0 2px 8px 0 rgba(0,0,0,0.20)' : undefined,
+                                        zIndex: item.chosen ? 10 : 0,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <div className={`handle ${styles.handler}`}>
+                                        <IconFont type='drag' />
+                                    </div>
+                                    <DnDCell column={item} />
+                                </div>
+                            )
+                        })}
+                    </ReactSortable>
                 </ul>
             )
         }
         return (
             <ul className='transfer-list-content-ul'>
-                {value.selectedIds?.map((id: any) => {
+                {props.raw?.map((id: any) => {
                     const column = columns.find((v: any) => v.key === id)
                     if (!column) return null
 
                     return (
                         <li key={id} className='transfer-list-content-item' title={column.title}>
-                            <Checkbox checked={selectedIds?.includes(id)} onChange={() => handleSelectOne(id)} />
-                            <LabelSmall
-                                $style={{ flex: 1, overflow: 'hidden', lineHeight: '1.1' }}
-                                className='line-clamp'
+                            <Checkbox
+                                checked={selectedIds?.includes(id)}
+                                onChange={() => handleSelectOne(id)}
+                                overrides={{
+                                    Root: {
+                                        style: {
+                                            flex: 1,
+                                        },
+                                    },
+                                }}
                             >
-                                {column.title}
-                            </LabelSmall>
+                                <LabelSmall
+                                    $style={{ flex: 1, overflow: 'hidden', lineHeight: '1.1' }}
+                                    className='line-clamp'
+                                >
+                                    {column.title}
+                                </LabelSmall>
+                            </Checkbox>
                         </li>
                     )
                 })}
             </ul>
         )
-    }, [columns, isDragable, selectedIds, dndData])
+    }, [columns, isDragable, selectedIds, props.raw])
 
     return (
-        <div className={classNames('transfer-list', styles.transfer)}>
+        <div className={classNames(styles.transferList, 'transfer-list')}>
             {/* All columns edit */}
             <div className='transfer-list-content'>
                 <div className='transfer-list-content-header'>
                     <Checkbox
-                        checked={selectedIds.length === value.selectedIds?.length}
+                        checked={selectedIds.length === props.raw?.length}
                         onChange={(e) =>
-                            (e.target as any)?.checked ? handleSelectMany(value.selectedIds ?? []) : handleSelectNone()
+                            (e.target as any)?.checked ? handleSelectMany(props.raw ?? []) : handleSelectNone()
                         }
                     />
                     <LabelSmall>All columns</LabelSmall>
@@ -229,7 +253,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                             color: 'rgba(2,16,43,0.40)',
                         }}
                     >
-                        ({selectedIds.length}/{value.selectedIds?.length})
+                        ({selectedIds.length}/{props.raw?.length})
                     </span>
                 </div>
                 <div className='transfer-list-content-body'>{List}</div>
