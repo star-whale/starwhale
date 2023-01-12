@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.api.protocol.model;
 
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
