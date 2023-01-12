@@ -444,8 +444,7 @@ public class DataStore {
             }
             // virtual column
             for (String column : new HashSet<>(invalidColumns)) {
-                if (column.startsWith("$.")) {
-                    // TODO column need replace with alias
+                if (ColumnTypeVirtual.isVirtual(column)) {
                     ret.put(column, columns.get(column));
                     invalidColumns.remove(column);
                 }
@@ -465,12 +464,20 @@ public class DataStore {
         for (var entry : values.entrySet()) {
             var columnName = entry.getKey();
             var columnValue = entry.getValue();
-            var columnType = columnTypeMap.get(columnName);
-            if (ColumnTypeVirtual.TYPE_NAME.equals(columnType.getTypeName())) {
-                continue;
-            }
-            ret.put(columnName, columnType.encode(columnValue, rawResult));
+            ret.put(columnName, columnTypeMap.get(columnName).encode(columnValue, rawResult));
         }
+        // add virtual values to result
+        columnTypeMap.entrySet().stream()
+                .filter(
+                    entry -> ColumnTypeVirtual.TYPE_NAME.equals(entry.getValue().getTypeName()))
+                .forEach(entry -> {
+                    var columnName = entry.getKey();
+                    var columnType = (ColumnTypeVirtual) entry.getValue();
+                    var virtualVal = columnType.parseFromValues(values);
+                    if (virtualVal != null) {
+                        ret.put(columnName, columnType.encode(virtualVal, rawResult));
+                    }
+                });
         return ret;
     }
 

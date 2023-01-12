@@ -176,7 +176,6 @@ public class DataStoreController implements DataStoreApi {
     @Override
     public void queryAndExport(QueryTableRequest request, HttpServletResponse httpResponse) {
         try {
-            // TODO use vo
             RecordList recordList = queryRecordList(request);
             byte[] bytes = recordsExporter.asBytes(recordList);
             httpResponse.addHeader("Content-Disposition",

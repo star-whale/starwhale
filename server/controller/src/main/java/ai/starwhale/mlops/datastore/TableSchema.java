@@ -171,18 +171,26 @@ public class TableSchema {
                 ColumnSchema::getName, ColumnSchema::getType));
     }
 
+    /**
+     * get column pairs
+     *
+     * @param columnAliases originName, alias
+     * @return alias, ColumnType
+     */
     public Map<String, ColumnType> getColumnTypeMapping(@NonNull Map<String, String> columnAliases) {
         var ret = new HashMap<String, ColumnType>();
         for (var entry : columnAliases.entrySet()) {
             var name = entry.getKey();
-            if (name.startsWith("$.")) {
-                var path = name.substring(2);
-                // todo there seems no way to get the virtual column type! Fortunately,this property is not yet used.
-                ret.put(entry.getValue(), new ColumnTypeVirtual(entry.getValue(), path, null));
-                continue;
-            }
             var columnSchema = this.columnSchemaMap.get(name);
             if (columnSchema == null) {
+                if (ColumnTypeVirtual.isVirtual(name)) {
+                    var virtualSchema = ColumnTypeVirtual.build(
+                            entry.getValue(), name, this.columnSchemaMap::get);
+                    if (virtualSchema != null) {
+                        ret.put(entry.getValue(), virtualSchema);
+                    }
+                    continue;
+                }
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "column name " + entry.getKey() + " not found");
             }

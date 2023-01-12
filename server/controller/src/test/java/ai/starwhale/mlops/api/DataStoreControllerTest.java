@@ -38,6 +38,10 @@ import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnTypeList;
+import ai.starwhale.mlops.datastore.ColumnTypeObject;
+import ai.starwhale.mlops.datastore.ColumnTypeScalar;
+import ai.starwhale.mlops.datastore.ColumnTypeVirtual;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.RecordList;
@@ -662,7 +666,311 @@ public class DataStoreControllerTest {
 
         @Test
         public void testVirtualColumnQuery() {
+            DataStoreControllerTest.this.controller.updateTable(new UpdateTableRequest() {
+                {
+                    setTableName("t-virtual");
+                    setTableSchemaDesc(new TableSchemaDesc("k-v",
+                            List.of(
+                                ColumnSchemaDesc.builder().name("k-v").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("u").pythonType("dict")
+                                    .type(ColumnTypeObject.TYPE_NAME)
+                                    .attributes(List.of(
+                                        ColumnSchemaDesc.builder()
+                                            .name("u1")
+                                            .type(ColumnTypeScalar.INT8.getTypeName())
+                                            .build(),
+                                        ColumnSchemaDesc.builder()
+                                            .name("u2")
+                                            .type(ColumnTypeScalar.STRING.getTypeName())
+                                            .build(),
+                                        ColumnSchemaDesc.builder()
+                                            .name("u3")
+                                            .type(ColumnTypeList.TYPE_NAME)
+                                            .elementType(
+                                                ColumnSchemaDesc.builder()
+                                                    .type(ColumnTypeScalar.FLOAT32.getTypeName())
+                                                    .build())
+                                            .build(),
+                                        ColumnSchemaDesc.builder()
+                                            .name("uo")
+                                            .type(ColumnTypeObject.TYPE_NAME)
+                                            .pythonType("dict-uo")
+                                            .attributes(List.of(
+                                                ColumnSchemaDesc.builder()
+                                                    .name("uo1")
+                                                    .type(ColumnTypeScalar.STRING.getTypeName())
+                                                    .build(),
+                                                ColumnSchemaDesc.builder()
+                                                    .name("uo2")
+                                                    .type(ColumnTypeScalar.STRING.getTypeName())
+                                                    .build()))
+                                            .build(),
+                                        ColumnSchemaDesc.builder()
+                                            .name("ulo")
+                                            .type(ColumnTypeList.TYPE_NAME)
+                                            .elementType(
+                                                ColumnSchemaDesc.builder()
+                                                    .name("ulo-array")
+                                                    .type(ColumnTypeObject.TYPE_NAME)
+                                                    .pythonType("dict-uo")
+                                                    .attributes(List.of(
+                                                        ColumnSchemaDesc.builder()
+                                                            .name("ulo1")
+                                                            .type(ColumnTypeScalar.STRING.getTypeName())
+                                                            .build(),
+                                                        ColumnSchemaDesc.builder()
+                                                            .name("ulo2")
+                                                            .type(ColumnTypeScalar.STRING.getTypeName())
+                                                            .build()))
+                                                    .build())
+                                            .build()
+                                    )).build()
+                            )));
+                    setRecords(List.of(new RecordDesc() {
+                        {
+                            setValues(List.of(new RecordValueDesc() {
+                                {
+                                    setKey("k-v");
+                                    setValue("00000000");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("a");
+                                    setValue("00000001");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("u");
+                                    setValue(Map.of(
+                                            "u1", ColumnTypeScalar.INT8.encode((byte) 0b00000001, false),
+                                            "u2", "sw1",
+                                            "u3", List.of(ColumnTypeScalar.FLOAT32.encode(1.003f, false)),
+                                            "uo", Map.of("uo1", "swo1", "uo2", "swo2"),
+                                            "ulo", List.of(
+                                                    Map.of("ulo1", "swlo1", "ulo2", "swlo2"),
+                                                    Map.of("ulo1", "swlo1", "ulo2", "swlo2"))
+                                    ));
+                                }
+                            }));
+                        }
+                    }, new RecordDesc() {
+                        {
+                            setValues(List.of(new RecordValueDesc() {
+                                {
+                                    setKey("k-v");
+                                    setValue("00000001");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("a");
+                                    setValue("00000002");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("u");
+                                    setValue(Map.of(
+                                            "u1", ColumnTypeScalar.INT8.encode((byte) 0b00000010, false),
+                                            "u2", "sw2",
+                                            "u3", List.of(ColumnTypeScalar.FLOAT32.encode(1.006f, false))
+                                    ));
+                                }
+                            }));
+                        }
+                    }, new RecordDesc() {
+                        {
+                            setValues(List.of(new RecordValueDesc() {
+                                {
+                                    setKey("k-v");
+                                    setValue("00000002");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("a");
+                                    setValue("00000003");
+                                }
+                            }, new RecordValueDesc() {
+                                {
+                                    setKey("u");
+                                    setValue(Map.of(
+                                            "u1", ColumnTypeScalar.INT8.encode((byte) 0b00000011, false),
+                                            "u2", "sw3",
+                                            "u3", List.of(ColumnTypeScalar.FLOAT32.encode(1.008f, false))
+                                    ));
+                                }
+                            }));
+                        }
+                    }));
+                }
+            });
+            var request = new QueryTableRequest() {
+                    {
+                        setTableName("t-virtual");
+                        setColumns(List.of(new ColumnDesc() {
+                            {
+                                setColumnName("k-v");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("a");
+                                setAlias("b");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("u");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("$.u.u1");
+                                setAlias("u1");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("$.u.u2");
+                                setAlias("u2");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("$.u.u3[0]");
+                                setAlias("u3");
+                            }
+                        }));
+                        setFilter(new TableQueryFilterDesc() {
+                            {
+                                setOperator(TableQueryFilter.Operator.LESS.toString());
+                                setOperands(List.of(new TableQueryOperandDesc() {
+                                    {
+                                        setColumnName("a");
+                                    }
+                                }, new TableQueryOperandDesc() {
+                                    {
+                                        setIntValue(3L);
+                                    }
+                                }));
+                            }
+                        });
+                        setOrderBy(List.of(new OrderByDesc("a")));
+                        setStart(0);
+                        setLimit(10);
+                        setRawResult(true);
+                    }
+            };
+            var resp = DataStoreControllerTest.this.controller.queryTable(request);
 
+            assertThat("virtual column query",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    is(List.of(
+                            ColumnSchemaDesc.builder().name("b").type(ColumnTypeScalar.INT32.getTypeName()).build(),
+                            ColumnSchemaDesc.builder().name("k-v").type(ColumnTypeScalar.INT32.getTypeName()).build(),
+                            ColumnSchemaDesc.builder()
+                                .name("u")
+                                .pythonType("dict")
+                                .type(ColumnTypeObject.TYPE_NAME)
+                                .attributes(List.of(ColumnSchemaDesc.builder()
+                                        .name("ulo")
+                                        .type(ColumnTypeList.TYPE_NAME)
+                                        .elementType(
+                                            ColumnSchemaDesc.builder()
+                                                //.name("ulo-array")
+                                                .type(ColumnTypeObject.TYPE_NAME)
+                                                .pythonType("dict-uo")
+                                                .attributes(List.of(
+                                                    ColumnSchemaDesc.builder()
+                                                        .name("ulo2")
+                                                        .type(ColumnTypeScalar.STRING.getTypeName())
+                                                        .build(),
+                                                    ColumnSchemaDesc.builder()
+                                                        .name("ulo1")
+                                                        .type(ColumnTypeScalar.STRING.getTypeName())
+                                                        .build()))
+                                                .build())
+                                        .build(),
+                                    ColumnSchemaDesc.builder()
+                                        .name("uo")
+                                        .type(ColumnTypeObject.TYPE_NAME)
+                                        .pythonType("dict-uo")
+                                        .attributes(List.of(
+                                            ColumnSchemaDesc.builder()
+                                                .name("uo1")
+                                                .type(ColumnTypeScalar.STRING.getTypeName())
+                                                .build(),
+                                            ColumnSchemaDesc.builder()
+                                                .name("uo2")
+                                                .type(ColumnTypeScalar.STRING.getTypeName())
+                                                .build()))
+                                        .build(),
+                                    ColumnSchemaDesc.builder()
+                                        .name("u1")
+                                        .type(ColumnTypeScalar.INT8.getTypeName())
+                                        .build(),
+                                    ColumnSchemaDesc.builder()
+                                        .name("u2")
+                                        .type(ColumnTypeScalar.STRING.getTypeName())
+                                        .build(),
+                                    ColumnSchemaDesc.builder()
+                                        .name("u3")
+                                        .type(ColumnTypeList.TYPE_NAME)
+                                        .elementType(
+                                            ColumnSchemaDesc.builder()
+                                                .type(ColumnTypeScalar.FLOAT32.getTypeName())
+                                                .build())
+                                        .build()
+                                )).build(),
+                            ColumnSchemaDesc.builder()
+                                .name("u1")
+                                .origin("u.u1")
+                                .type(ColumnTypeVirtual.TYPE_NAME)
+                                .elementType(
+                                        ColumnSchemaDesc.builder().type(ColumnTypeScalar.INT8.getTypeName()).build())
+                                .build(),
+                            ColumnSchemaDesc.builder()
+                                .name("u2")
+                                .origin("u.u2")
+                                .type(ColumnTypeVirtual.TYPE_NAME)
+                                .elementType(
+                                        ColumnSchemaDesc.builder().type(ColumnTypeScalar.STRING.getTypeName()).build())
+                                .build(),
+                            ColumnSchemaDesc.builder()
+                                .name("u3")
+                                .origin("u.u3[0]")
+                                .type(ColumnTypeVirtual.TYPE_NAME)
+                                .elementType(
+                                        ColumnSchemaDesc.builder().type(ColumnTypeScalar.FLOAT32.getTypeName()).build())
+                                .build()
+                        )
+                    ));
+            assertThat("virtual column query",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(
+                            Map.of(
+                                "k-v", "0",
+                                "b", "1",
+                                "u", Map.of(
+                                    "u1", "1",
+                                    "u2", "sw1",
+                                    "u3", List.of("1.003"),
+                                    "uo", Map.of("uo1", "swo1", "uo2", "swo2"),
+                                    "ulo", List.of(
+                                        Map.of("ulo1", "swlo1", "ulo2", "swlo2"),
+                                        Map.of("ulo1", "swlo1", "ulo2", "swlo2"))
+                                    ),
+                                "u1", "1",
+                                "u2", "sw1",
+                                "u3", "1.003"
+                            ),
+                            Map.of(
+                                "k-v", "1",
+                                "b", "2",
+                                "u", Map.of(
+                                    "u1", "2",
+                                    "u2", "sw2",
+                                    "u3", List.of("1.006")),
+                                "u1", "2",
+                                "u2", "sw2",
+                                "u3", "1.006"
+                                )
+                        )
+                    ));
         }
 
         @Test

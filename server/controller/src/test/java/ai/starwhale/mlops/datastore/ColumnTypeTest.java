@@ -104,6 +104,43 @@ public class ColumnTypeTest {
                                 "b", new ColumnTypeObject("tt",
                                         Map.of("a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.INT32))))));
 
+        assertThat("simple virtual", ColumnType.fromColumnSchemaDesc(
+                ColumnSchemaDesc.builder()
+                    .type("VIRTUAL")
+                    .name("x-b")
+                    .origin("x.b")
+                    .elementType(ColumnSchemaDesc.builder()
+                                    .name("b")
+                                    .type("INT32")
+                                    .build())
+                    .build()
+                ), is(new ColumnTypeVirtual("x-b", "x.b", ColumnTypeScalar.INT32)));
+
+        assertThat("virtual", ColumnType.fromColumnSchemaDesc(
+                ColumnSchemaDesc.builder()
+                    .type("VIRTUAL")
+                    .name("x-b")
+                    .origin("x.b")
+                    .elementType(ColumnSchemaDesc.builder()
+                        .name("b")
+                        .type("OBJECT")
+                        .pythonType("tt")
+                        .attributes(List.of(
+                            ColumnSchemaDesc.builder()
+                                .name("a")
+                                .type("INT32")
+                                .build(),
+                            ColumnSchemaDesc.builder()
+                                .name("b")
+                                .type("INT32")
+                                .build()))
+                        .build())
+                    .build()
+                ), is(new ColumnTypeVirtual("x-b", "x.b",
+                        new ColumnTypeObject(
+                            "tt",
+                            Map.of("b", ColumnTypeScalar.INT32, "a", ColumnTypeScalar.INT32)))));
+
         assertThrows(IllegalArgumentException.class,
                 () -> ColumnType.fromColumnSchemaDesc(ColumnSchemaDesc.builder().type("INVALID").build()),
                 "invalid type");
@@ -137,6 +174,13 @@ public class ColumnTypeTest {
                                         .type("INT32")
                                         .build())).build()),
                 "empty pythonType");
+        assertThrows(IllegalArgumentException.class,
+                () -> ColumnType.fromColumnSchemaDesc(
+                    ColumnSchemaDesc.builder()
+                        .type("VIRTUAL")
+                        .origin("x.b")
+                        .build()
+                ));
     }
 
     @Test

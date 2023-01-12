@@ -39,17 +39,17 @@ public abstract class ColumnType {
 
     public static ColumnType fromColumnSchemaDesc(ColumnSchemaDesc schema) {
         var typeName = schema.getType().toUpperCase();
-        if (typeName.equals(ColumnTypeList.TYPE_NAME) || typeName.equals(ColumnTypeTuple.TYPE_NAME)) {
+        if (ColumnTypeList.TYPE_NAME.equals(typeName) || ColumnTypeTuple.TYPE_NAME.equals(typeName)) {
             var elementType = schema.getElementType();
             if (elementType == null) {
                 throw new IllegalArgumentException("elementType should not be null for " + typeName);
             }
-            if (typeName.equals(ColumnTypeList.TYPE_NAME)) {
+            if (ColumnTypeList.TYPE_NAME.equals(typeName)) {
                 return new ColumnTypeList(ColumnType.fromColumnSchemaDesc(elementType));
             } else {
                 return new ColumnTypeTuple(ColumnType.fromColumnSchemaDesc(elementType));
             }
-        } else if (typeName.equals(ColumnTypeMap.TYPE_NAME)) {
+        } else if (ColumnTypeMap.TYPE_NAME.equals(typeName)) {
             var keyType = schema.getKeyType();
             if (keyType == null) {
                 throw new IllegalArgumentException("keyType should not be null for MAP");
@@ -60,7 +60,7 @@ public abstract class ColumnType {
             }
             return new ColumnTypeMap(ColumnType.fromColumnSchemaDesc(keyType),
                     ColumnType.fromColumnSchemaDesc(valueType));
-        } else if (typeName.equals(ColumnTypeObject.TYPE_NAME)) {
+        } else if (ColumnTypeObject.TYPE_NAME.equals(typeName)) {
             var attributes = schema.getAttributes();
             if (attributes == null || attributes.isEmpty()) {
                 throw new IllegalArgumentException("attributes should not be null or empty for OBJECT");
@@ -76,6 +76,13 @@ public abstract class ColumnType {
                 }
             }
             return new ColumnTypeObject(schema.getPythonType(), attributeMap);
+        } else if (ColumnTypeVirtual.TYPE_NAME.equals(typeName)) {
+            var elementType = schema.getElementType();
+            if (elementType == null) {
+                throw new IllegalArgumentException("elementType should not be null for " + typeName);
+            }
+            return new ColumnTypeVirtual(schema.getName(), schema.getOrigin(),
+                    ColumnType.fromColumnSchemaDesc(elementType));
         }
         var columnType = ColumnTypeScalar.getColumnTypeByName(typeName);
         if (columnType == null) {

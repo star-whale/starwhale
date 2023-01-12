@@ -17,10 +17,8 @@
 package ai.starwhale.mlops.api.protocol.datastore;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
-import ai.starwhale.mlops.datastore.VirtualColumnSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -33,7 +31,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(Include.NON_NULL)
-@JsonSerialize(using = VirtualColumnSerializer.class)
 public class RecordListVo {
 
     private List<ColumnSchemaDesc> columnTypes;
