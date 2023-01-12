@@ -32,7 +32,7 @@ export interface ICurrentViewState {
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
     onCurrentViewQueriesChange: (queries: QueryT[]) => void
-    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) => void
+    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) => void
     onCurrentViewColumnsPin: (columnId: string, bool?: boolean) => void
 }
 export interface IViewInteractiveState {
@@ -134,8 +134,8 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
         set({ currentView: { ...get().currentView, filters, updatedTime: Date.now() } }),
     onCurrentViewQueriesChange: (queries) =>
         set({ currentView: { ...get().currentView, queries, updatedTime: Date.now() } }),
-    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) =>
-        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, sortedIds, updatedTime: Date.now() } }),
+    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
+        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids, updatedTime: Date.now() } }),
     onCurrentViewColumnsPin: (columnId: string, pined = false) => {
         const { pinnedIds = [], selectedIds = [] } = get().currentView
         const $pinnedIds = new Set(pinnedIds)

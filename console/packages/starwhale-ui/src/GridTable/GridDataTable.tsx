@@ -85,8 +85,8 @@ function GridDataTable({
                 currentView: {
                     name: '',
                     filters: [],
-                    selectedIds: columns.map((v) => v.key) ?? [],
-                    sortedIds: [],
+                    ids: columns.map((v) => v.key) ?? [],
+                    selectedIds: [],
                     pinnedIds: [],
                 },
             })

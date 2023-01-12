@@ -1,7 +1,7 @@
 import { useStyletron } from 'baseui'
 import { Search } from 'baseui/icon'
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { createUseStyles } from 'react-jss'
 import { ColumnT, ConfigT } from '../base/data-table/types'
 import Button from '../Button'
@@ -9,6 +9,7 @@ import IconFont from '../IconFont'
 import Input from '../Input'
 import TransferList from './TransferList'
 import { useDeepEffect } from '@starwhale/core/utils'
+import useUnSortedSelection from '../utils/useUnsortedSelection'
 
 const useStyles = createUseStyles({
     transfer: {
@@ -87,7 +88,7 @@ const useStyles = createUseStyles({
 type TransferValueT = {
     selectedIds: any[]
     pinnedIds: any[]
-    sortedIds: any[]
+    ids: any[]
 }
 
 type TransferPropsT = {
@@ -97,7 +98,7 @@ type TransferPropsT = {
     columns?: ColumnT[]
     onChange?: (args: TransferValueT) => void
 }
-const defaultValue = { selectedIds: [], pinnedIds: [], sortedIds: [] }
+const defaultValue = { selectedIds: [], pinnedIds: [], ids: [] }
 
 export function matchesQuery(text: string, query: string): boolean {
     return text.toLowerCase().includes(query.toLowerCase())
@@ -116,8 +117,16 @@ export default function Transfer({
     const [css, theme] = useStyletron()
     const [query, setQuery] = React.useState('')
 
+    if (!value) value = defaultValue
+
+    // cached & filtered columns
+    const columnMap = useMemo(() => {
+        const m = new Map()
+        columns.forEach((v) => m.set(v.key, v))
+        return m
+    }, [columns])
     const columnAllIds = useMemo(() => {
-        return columns.map((v) => v.key as string)
+        return columns.map((v) => v.key as string).sort((a, b) => a.localeCompare(b))
     }, [columns])
     const matchedColumns = React.useMemo(() => {
         return columns.filter((column) => matchesQuery(column.title, query)) ?? []
@@ -126,34 +135,47 @@ export default function Transfer({
         return matchedColumns.map((v) => v.key) ?? []
     }, [matchedColumns])
 
-    // keep raw list
-    const $left = useMemo(() => {
-        return columnAllIds
-            .filter((id) => !value.selectedIds?.includes(id))
-            .filter((id) => columnMatchedIds.includes(id))
-    }, [columnMatchedIds, value.selectedIds])
+    // computed: keep raw list
+    const $leftFilteredColumns = useMemo(() => {
+        return (
+            columnAllIds
+                .filter((id) => !value.ids?.includes(id))
+                .filter((id) => columnMatchedIds.includes(id))
+                .map((id) => columnMap.get(id)) ?? []
+        )
+    }, [columnMatchedIds, value.ids, columnMap])
 
-    const $right = useMemo(() => {
-        return columnAllIds
-            .filter((id) => value.selectedIds?.includes(id))
-            .filter((id) => columnMatchedIds.includes(id))
-    }, [columnMatchedIds, value.selectedIds])
+    const $rightFilteredColumns = useMemo(() => {
+        return value.ids?.filter((id) => columnMatchedIds.includes(id)).map((id) => columnMap.get(id)) ?? []
+    }, [columnMatchedIds, value.ids, columnMap])
 
-    // move action
+    const leftOperators = useUnSortedSelection({
+        initialIds: $leftFilteredColumns.map((v) => v.key),
+        initialSelectedIds: [],
+        initialPinnedIds: [],
+    })
+    const rightOperators = useUnSortedSelection({
+        initialIds: $rightFilteredColumns.map((v) => v.key),
+        initialSelectedIds: value?.selectedIds ?? [],
+        initialPinnedIds: value?.pinnedIds ?? [],
+    })
+
+    // handelers: move action
     const handleToRight = useCallback(() => {
-        onChange({ ...right, selectedIds: [...value.selectedIds, ...left.selectedIds] })
-    }, [left, right, value])
+        onChange({
+            selectedIds: rightOperators.selectedIds,
+            pinnedIds: rightOperators.pinnedIds,
+            ids: [...(value.ids ?? []), ...leftOperators.selectedIds],
+        })
+    }, [leftOperators, rightOperators, value])
 
     const handleToLeft = useCallback(() => {
-        onChange({ ...right, selectedIds: value.selectedIds?.filter((id: any) => !right.selectedIds.includes(id)) })
-    }, [left, right, value])
-
-    // waiting for value changed action
-    useEffect(() => {
-        // , selectedIds: []
-        setLeft({ ...left })
-        setRight({ ...value })
-    }, [value.selectedIds])
+        onChange({
+            pinnedIds: [],
+            selectedIds: [],
+            ids: value.ids?.filter((id: any) => !rightOperators.selectedIds.includes(id)),
+        })
+    }, [rightOperators, value])
 
     return (
         <div className={styles.transfer}>
@@ -182,21 +204,37 @@ export default function Transfer({
                 </div>
             )}
             <div className='list'>
-                <TransferList value={left} onChange={setLeft as any} columns={columns} raw={$left} />
+                <TransferList columns={$leftFilteredColumns} operators={leftOperators} />
                 <div className='transfer-list-toolbar'>
-                    <Button disabled={left.selectedIds.length === 0} onClick={handleToRight}>
+                    <Button disabled={leftOperators?.selectedIds?.length === 0} onClick={handleToRight}>
                         <IconFont type='arrow_right' />
                     </Button>
-                    <Button disabled={right.selectedIds.length === 0} onClick={handleToLeft}>
+                    <Button disabled={rightOperators?.selectedIds?.length === 0} onClick={handleToLeft}>
                         <IconFont type='arrow_left' />
                     </Button>
                 </div>
                 <TransferList
-                    value={right}
-                    onChange={setRight as any}
-                    columns={columns}
+                    columns={$rightFilteredColumns}
                     isDragable={isDragable}
-                    raw={$right}
+                    operators={{
+                        ...rightOperators,
+                        handlePinOne: (id: any) => {
+                            const rtn = rightOperators.handlePinOne(id)
+                            onChange({
+                                selectedIds: rtn.selectedIds,
+                                pinnedIds: rtn.pinnedIds,
+                                ids: rtn.ids,
+                            })
+                        },
+                        handleOrderChange: (ids: any[], dragId: any) => {
+                            const rtn = rightOperators.handleOrderChange(ids, dragId)
+                            onChange({
+                                selectedIds: rtn.selectedIds,
+                                pinnedIds: rtn.pinnedIds,
+                                ids: rtn.ids,
+                            })
+                        },
+                    }}
                 />
             </div>
         </div>

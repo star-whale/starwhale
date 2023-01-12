@@ -3,13 +3,14 @@ import Checkbox from '../Checkbox'
 import { createUseStyles } from 'react-jss'
 import { LabelSmall } from 'baseui/typography'
 import classNames from 'classnames'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useHover } from 'react-use'
 import { ColumnT, ConfigT } from '../base/data-table/types'
 import Button from '../Button'
 import IconFont from '../IconFont'
 import { ReactSortable } from 'react-sortablejs'
 import { useDeepEffect } from '@starwhale/core/utils'
+import useUnSortedSelection from '../utils/useUnsortedSelection'
 
 const useStyles = createUseStyles({
     transferList: {
@@ -42,49 +43,36 @@ const useStyles = createUseStyles({
     },
 })
 
-type TransferValueT = Pick<ConfigT, 'selectedIds' | 'pinnedIds' | 'sortedIds'>
+type TransferValueT = Pick<ConfigT, 'selectedIds' | 'pinnedIds' | 'ids'>
 
 type TransferListPropsT = {
     isDragable?: boolean
-    value: TransferValueT
+    operators: TransferValueT & {
+        handleOrderChange: (ids: string[], dragId: any) => void
+        handleSelectOne: (id: string) => void
+        handleSelectMany: (ids: string[]) => void
+        handleSelectNone: () => void
+        handlePinOne: (id: string) => void
+    }
     columns: ColumnT[]
-    onChange: (args: TransferValueT) => void
-    raw: any[]
 }
 
-export default function TransferList({ isDragable = false, columns, value, ...props }: TransferListPropsT) {
+export default TransferList
+
+function TransferList({ isDragable = false, columns, ...props }: TransferListPropsT) {
     const styles = useStyles()
+    const [dragId, setDragId] = useState(-1)
 
     const {
-        selectedIds,
-        sortedIds,
-        pinnedIds,
+        selectedIds = [],
+        pinnedIds = [],
+        ids = [],
+        handleOrderChange,
+        handleSelectOne,
         handleSelectMany,
         handleSelectNone,
-        handleSelectOne,
         handlePinOne,
-        handleOrderChange,
-    } = useSelection({
-        initialSelectedIds: value?.selectedIds ?? [],
-        initialPinnedIds: value?.pinnedIds ?? [],
-        initialSortedIds: value?.sortedIds ?? [],
-    })
-
-    useDeepEffect(() => {
-        props.onChange?.({ selectedIds, pinnedIds, sortedIds })
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedIds, sortedIds, pinnedIds])
-
-    const [data, setData] = useState<any>(() =>
-        props.raw?.map((id) => {
-            const column = columns.find((v) => v.key === id)
-            if (!column) return { id, text: '' }
-            return {
-                id: column?.key as string,
-                ...column,
-            }
-        })
-    )
+    } = props.operators
 
     const DnDCell = ({ column }: { column: ColumnT }) => {
         const [hoverable] = useHover((hoverd) => {
@@ -96,7 +84,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                 <div className='transfer-list-content-item' title={column.title}>
                     <Checkbox
                         checked={selectedIds?.includes(column.key)}
-                        onChange={() => handleSelectOne(column.key)}
+                        onChange={() => handleSelectOne(column.key as string)}
                         overrides={{
                             Root: {
                                 style: {
@@ -127,7 +115,9 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                                     },
                                 }}
                                 as='transparent'
-                                onClick={() => handlePinOne(column.key as string)}
+                                onClick={() => {
+                                    handlePinOne(column.key as string)
+                                }}
                             >
                                 <IconFont size={14} type='pin' />
                             </Button>
@@ -140,52 +130,46 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
         return hoverable
     }
 
-    useEffect(() => {
-        setData(() =>
-            props.raw?.map((id) => {
-                const column = columns.find((v) => v.key === id)
-                if (!column) return { id, text: '' }
+    const $data = useMemo(() => {
+        return columns
+            .map((column: any) => {
                 return {
-                    id: column?.key as string,
+                    id: column.key,
                     ...column,
                 }
             })
-        )
-    }, [columns, props.raw])
+            .sort((a: any, b: any) => {
+                return ids.indexOf(a.id) - ids.indexOf(b.id)
+            })
+    }, [columns, ids])
 
-    const [dragId, setDragId] = useState(-1)
-    const dragSelect = (currentIndex: number) => {
-        setDragId(currentIndex)
-    }
-    const dragUnselect = () => {
-        setDragId(-1)
-    }
-
-    const $data = useMemo(() => {
-        console.log('data', data, selectedIds)
-        return data?.sort((a: any, b: any) => selectedIds.indexOf(a.id) - selectedIds.indexOf(b.id))
-    }, [data, selectedIds])
+    const dataRef = useRef<any>()
 
     const List = useMemo(() => {
         if (isDragable) {
             return (
                 <ul className='transfer-list-content-ul'>
                     <ReactSortable
-                        delay={100}
+                        delay={0}
                         handle='.handle'
                         list={$data}
                         setList={(newData) => {
-                            handleOrderChange(
-                                newData.map((v) => v.id),
-                                dragId
-                            )
-                            setData(newData)
+                            dataRef.current = newData
                         }}
                         animation={50}
-                        onChoose={(args) => dragSelect(args.oldIndex as number)}
-                        onUnchoose={dragUnselect}
+                        onChoose={(args) => setDragId(args.oldIndex as number)}
+                        onEnd={() => {
+                            if (dataRef.current) {
+                                handleOrderChange(
+                                    dataRef.current.map((v: any) => v.id),
+                                    dragId
+                                )
+                                dataRef.current = undefined
+                            }
+                            setDragId(-1)
+                        }}
                     >
-                        {data?.map((item: any) => {
+                        {$data?.map((item: any) => {
                             return (
                                 <div
                                     key={item.id}
@@ -209,10 +193,8 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
         }
         return (
             <ul className='transfer-list-content-ul'>
-                {props.raw?.map((id: any) => {
-                    const column = columns.find((v: any) => v.key === id)
-                    if (!column) return null
-
+                {$data?.map((column: any) => {
+                    const id = column.key
                     return (
                         <li key={id} className='transfer-list-content-item' title={column.title}>
                             <Checkbox
@@ -238,7 +220,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                 })}
             </ul>
         )
-    }, [columns, isDragable, selectedIds, props.raw])
+    }, [columns, isDragable, selectedIds])
 
     return (
         <div className={classNames(styles.transferList, 'transfer-list')}>
@@ -246,9 +228,9 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
             <div className='transfer-list-content'>
                 <div className='transfer-list-content-header'>
                     <Checkbox
-                        checked={selectedIds.length === props.raw?.length && selectedIds.length !== 0}
+                        checked={selectedIds.length === $data?.length && selectedIds.length !== 0}
                         onChange={(e) =>
-                            (e.target as any)?.checked ? handleSelectMany(props.raw ?? []) : handleSelectNone()
+                            (e.target as any)?.checked ? handleSelectMany($data.map((v) => v.key)) : handleSelectNone()
                         }
                     />
                     <LabelSmall>All columns</LabelSmall>
@@ -258,7 +240,7 @@ export default function TransferList({ isDragable = false, columns, value, ...pr
                             color: 'rgba(2,16,43,0.40)',
                         }}
                     >
-                        ({selectedIds.length}/{props.raw?.length})
+                        ({selectedIds.length}/{$data.length})
                     </span>
                 </div>
                 <div className='transfer-list-content-body'>{List}</div>

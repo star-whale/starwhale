@@ -147,24 +147,30 @@ export default function EvaluationListCard() {
     }, [store])
 
     // sync local to api
-    React.useEffect(() => {
-        const unsub = useEvaluationStore.subscribe(
-            (state: ITableState) => state,
-            async (state: ITableState, prevState: ITableState) => {
-                if (
-                    !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
-                    evaluationViewConfig.isSuccess
-                ) {
-                    console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
-                    // await setEvaluationViewConfig(projectId, {
-                    //     name: 'evaluation',
-                    //     content: JSON.stringify(store.getRawConfigs(), null),
-                    // })
-                }
-            }
-        )
-        return unsub
-    }, [store, projectId, evaluationViewConfig])
+    const doSave = async () => {
+        await setEvaluationViewConfig(projectId, {
+            name: 'evaluation',
+            content: JSON.stringify(store.getRawConfigs(), null),
+        })
+    }
+    // React.useEffect(() => {
+    //     const unsub = useEvaluationStore.subscribe(
+    //         (state: ITableState) => state,
+    //         async (state: ITableState, prevState: ITableState) => {
+    //             if (
+    //                 !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
+    //                 evaluationViewConfig.isSuccess
+    //             ) {
+    //                 console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
+    //                 await setEvaluationViewConfig(projectId, {
+    //                     name: 'evaluation',
+    //                     content: JSON.stringify(store.getRawConfigs(), null),
+    //                 })
+    //             }
+    //         }
+    //     )
+    //     return unsub
+    // }, [store, projectId, evaluationViewConfig])
 
     // sync api to local
     React.useEffect(() => {
@@ -224,6 +230,7 @@ export default function EvaluationListCard() {
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
                             data={evaluationsInfo.data?.records ?? []}
+                            onSave={doSave as any}
                         />
                     )
                 }}

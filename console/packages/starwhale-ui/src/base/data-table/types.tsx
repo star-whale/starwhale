@@ -119,7 +119,7 @@ export type ConfigT = {
     def?: boolean
     isShow?: boolean
     selectedIds?: Array<any>
-    sortedIds?: Array<any>
+    ids?: Array<any>
     pinnedIds?: Array<any>
     filters?: Array<any>
     queries?: QueryT[]
@@ -129,7 +129,6 @@ export type ConfigT = {
 }
 
 export type StatefulDataTablePropsT = {
-    batchActions?: BatchActionT[]
     columns: ColumnT[]
     rawColumns: ColumnT[]
     emptyMessage?: string | React.Component<any>
@@ -146,6 +145,7 @@ export type StatefulDataTablePropsT = {
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
     onSelectionChange?: (rows: RowT[]) => any
+    onSave?: (view: ConfigT) => void
     resizableColumnWidths?: boolean
     rows: RowT[]
     rowActions?: RowActionT[] | ((row: RowT) => RowActionT[])

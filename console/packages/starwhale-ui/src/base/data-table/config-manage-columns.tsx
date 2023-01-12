@@ -60,8 +60,6 @@ type PropsT = {
     view: ConfigT
     columns: ColumnT[]
     onApply?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
-    onSave?: (view: ConfigT) => void
-    onSaveAs?: (view: ConfigT) => void
 }
 
 type T = string
@@ -84,26 +82,6 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
 
     const ref = useRef(null)
     const { columns } = props
-
-    // useDeepEffect(() => {
-    //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
-    //     props.onApply?.(selectedIds, pinnedIds, sortedIds)
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [selectedIds, sortedIds, pinnedIds])
-
-    // useImperativeHandle(
-    //     configRef,
-    //     () => ({
-    //         getConfig: () => {
-    //             return {
-    //                 selectedIds,
-    //                 sortedIds,
-    //                 pinnedIds,
-    //             }
-    //         },
-    //     }),
-    //     [selectedIds, sortedIds, pinnedIds]
-    // )
 
     const Wrapper = React.useCallback(
         // eslint-disable-next-line react/no-unused-prop-types
@@ -152,7 +130,27 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         [props.isInline, isOpen]
     )
 
-    const [value, setValue] = useState(() => props.view)
+    const [value, setValue] = useState<any>(props.view)
+
+    useImperativeHandle(
+        configRef,
+        () => ({
+            getConfig: () => {
+                return value
+            },
+        }),
+        [value]
+    )
+
+    useEffect(() => {
+        setValue(props.view)
+    }, [props.view])
+
+    // useDeepEffect(() => {
+    //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
+    //     props.onApply?.(selectedIds, pinnedIds, sortedIds)
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [selectedIds, sortedIds, pinnedIds])
 
     return (
         <div ref={ref}>
@@ -186,7 +184,16 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
             <Wrapper>
                 <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>Manage Columns</div>
                 <div className={cn('body', props.isInline ? 'body--inline' : '')}>
-                    <Transfer columns={columns} isDragable isSearchable value={value} onChange={setValue} />
+                    <Transfer
+                        columns={columns}
+                        isDragable
+                        isSearchable
+                        value={value}
+                        onChange={(v) => {
+                            setValue(v)
+                            props.onApply?.(v.selectedIds, v.pinnedIds, v.ids)
+                        }}
+                    />
                 </div>
             </Wrapper>
         </div>
@@ -196,7 +203,5 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
 ConfigManageColumns.defaultProps = {
     isInline: false,
     onApply: () => {},
-    onSave: () => {},
-    onSaveAs: () => {},
 }
 export default ConfigManageColumns

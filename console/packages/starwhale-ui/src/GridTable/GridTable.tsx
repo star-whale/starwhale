@@ -58,6 +58,7 @@ function GridTable({
     columnable = false,
     compareable = false,
     viewable = false,
+    onSave,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const api = useTableContext()
@@ -83,8 +84,8 @@ function GridTable({
                 currentView: {
                     name: '',
                     filters: [],
-                    selectedIds: columns.map((v) => v.key) ?? [],
-                    sortedIds: [],
+                    selectedIds: [],
+                    ids: columns.map((v) => v.key),
                     pinnedIds: [],
                 },
             })
@@ -115,6 +116,7 @@ function GridTable({
                     rowActions={rowActions}
                     columns={columns}
                     rows={$rows}
+                    onSave={onSave}
                     // @ts-ignore
                     loadingMessage={() =>
                         (

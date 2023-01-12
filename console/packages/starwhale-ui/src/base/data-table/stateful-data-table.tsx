@@ -74,14 +74,14 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const store = useStore()
 
     const { columns } = props
-    const { pinnedIds = [], selectedIds = [] }: ConfigT = store.currentView || {}
+    const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
         // if (!columnable) return columns
 
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
-        return selectedIds
+        return ids
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
                 return {
@@ -89,7 +89,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
                 }
             }) as ColumnT[]
-    }, [columns, columnable, pinnedIds, selectedIds])
+    }, [columns, columnable, pinnedIds, ids])
 
     const $filters = React.useMemo(() => {
         return (
@@ -106,15 +106,17 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const handleApply = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        (selectedIds, pinnedIds, sortedIds) => {
-            console.log('1234', selectedIds, pinnedIds, sortedIds)
-            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, sortedIds)
+        (selectedIds, pinnedIds, ids) => {
+            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, ids)
         },
         [store]
     )
     const handleSave = useCallback(
         (view) => {
-            store.onShowViewModel(true, view)
+            if (!view.id || view.id === 'id') store.onShowViewModel(true, view)
+            else {
+                props.onSave?.(view).then()
+            }
         },
         [store]
     )
@@ -154,7 +156,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             (updatedTime?: number) => {
                 if (!store.isInit) return
 
-                if (prevUpdatedTime.current !== updatedTime && !!props.loading) {
+                console.log(prevUpdatedTime, updatedTime, props.loading)
+
+                if (prevUpdatedTime.current !== updatedTime && !props.loading) {
                     setChanged(true)
                     prevUpdatedTime.current = updatedTime
                 } else {
@@ -219,8 +223,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                         columns={props.columns}
                                         rows={props.rows}
                                         onFilterSet={handeFilterSet}
-                                        // onSave={handleFilterSave}
-                                        // onSaveAs={handleFilterSaveAs}
                                     />
                                 )}
 
@@ -255,8 +257,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                             view={store.currentView}
                                             columns={props.columns}
                                             onApply={handleApply}
-                                            onSave={handleSave}
-                                            onSaveAs={handleSaveAs}
                                         />
                                     </div>
                                 )}
