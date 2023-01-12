@@ -36,5 +36,5 @@ export interface ICreateOnlineEvalSchema {
     modelVersionUrl: string
     runtimeVersionUrl: string
     resourcePool: string
-    ttlInSeconds: number
+    spec: string
 }
