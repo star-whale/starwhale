@@ -56,7 +56,7 @@ from starwhale.core.dataset.type import (
     BoundingBox,
     ArtifactType,
     GrayscaleImage,
-    COCOObjectAnnotation,
+    COCOObjectAnnotation, BoundingBox3D,
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
@@ -919,6 +919,28 @@ class TestDatasetType(TestCase):
         assert isinstance(_bout, bytes)
         _array = numpy.frombuffer(_bout, dtype=numpy.float64)
         assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
+
+    def test_bbox3d(self) -> None:
+        bbox_a = BoundingBox(1, 2, 3, 4)
+        bbox_b = BoundingBox(3, 4, 3, 4)
+        bbox = BoundingBox3D(bbox_a, bbox_b)
+        assert bbox.to_list() == [[1, 2, 3, 4], [3, 4, 3, 4]]
+        _asdict = json.loads(json.dumps(bbox.asdict()))
+        assert _asdict["_type"] == "bounding_box3D"
+        assert _asdict["bbox_a"]["x"] == 1
+        assert _asdict["bbox_a"]["y"] == 2
+        assert _asdict["bbox_a"]["width"] == 3
+        assert _asdict["bbox_a"]["height"] == 4
+        assert _asdict["bbox_b"]["x"] == 3
+        assert _asdict["bbox_b"]["y"] == 4
+        assert _asdict["bbox_b"]["width"] == 3
+        assert _asdict["bbox_b"]["height"] == 4
+        assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
+        _bout = bbox.to_bytes()
+        assert isinstance(_bout, bytes)
+        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(BoundingBox3D.SHAPE)
+        assert numpy.array_equal(_array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64))
+
 
     def test_text(self) -> None:
         text = Text("test")
