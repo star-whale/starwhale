@@ -137,14 +137,14 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
         set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids, updatedTime: Date.now() } }),
     onCurrentViewColumnsPin: (columnId: string, pined = false) => {
-        const { pinnedIds = [], selectedIds = [] } = get().currentView
+        const { pinnedIds = [], ids = [] } = get().currentView
         const $pinnedIds = new Set(pinnedIds)
         if (pined) {
             $pinnedIds.add(columnId)
         } else {
             $pinnedIds.delete(columnId)
         }
-        const sortedMergeSelectedIds = Array.from(selectedIds).sort((v1, v2) => {
+        const sortedMergeSelectedIds = Array.from(ids).sort((v1, v2) => {
             const index1 = $pinnedIds.has(v1) ? 1 : -1
             const index2 = $pinnedIds.has(v2) ? 1 : -1
             return index2 - index1
@@ -154,7 +154,7 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             currentView: {
                 ...get().currentView,
                 pinnedIds: Array.from($pinnedIds),
-                selectedIds: sortedMergeSelectedIds,
+                ids: sortedMergeSelectedIds,
                 updatedTime: Date.now(),
             },
         })

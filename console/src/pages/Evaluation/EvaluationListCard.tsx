@@ -23,6 +23,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import GridResizer from '@/components/AutoResizer/GridResizer'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import EvaluationListCompare from './EvaluationListCompare'
+import { toaster } from 'baseui/toast'
 
 const page = { pageNum: 1, pageSize: 1000 }
 
@@ -152,6 +153,8 @@ export default function EvaluationListCard() {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
         })
+        toaster.positive('success saved', {})
+        return {}
     }
     // React.useEffect(() => {
     //     const unsub = useEvaluationStore.subscribe(

@@ -16,6 +16,7 @@ import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
 import { ITableState } from './store'
 import Button from '@starwhale/ui/Button'
+import { update } from 'immutability-helper'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -107,15 +108,18 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const handleApply = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-shadow
         (selectedIds, pinnedIds, ids) => {
+            console.log('----', ids)
             store.onCurrentViewColumnsChange(selectedIds, pinnedIds, ids)
         },
         [store]
     )
     const handleSave = useCallback(
-        (view) => {
+        async (view) => {
             if (!view.id || view.id === 'id') store.onShowViewModel(true, view)
             else {
-                props.onSave?.(view).then()
+                const a = await props.onSave?.(view)
+                console.log('a', a)
+                setChanged(false)
             }
         },
         [store]
@@ -154,16 +158,18 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         const unsub = useStore.subscribe(
             (state: ITableState) => state.currentView.updatedTime,
             (updatedTime?: number) => {
+                // const updatedTime = currentView.updatedTime
                 if (!store.isInit) return
-
-                console.log(prevUpdatedTime, updatedTime, props.loading)
 
                 if (prevUpdatedTime.current !== updatedTime && !props.loading) {
                     setChanged(true)
-                    prevUpdatedTime.current = updatedTime
+                    // prevUpdatedTime.current = updatedTime
                 } else {
                     setChanged(false)
                 }
+            },
+            {
+                fireImmediately: true,
             }
         )
         return unsub
