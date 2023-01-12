@@ -714,7 +714,8 @@ def _scan_parquet_file(
 
     for i in range(f.num_row_groups):
         stats = f.metadata.row_group(i).column(key_index).statistics
-        if (end is not None and stats.min >= end) or (
+        _end_check: Callable = lambda x, y: x > y if end_inclusive else x >= y
+        if (end is not None and _end_check(stats.min, end)) or (
             start is not None and stats.max < start
         ):
             continue
@@ -725,7 +726,6 @@ def _scan_parquet_file(
         n_cols = len(names)
         for j in range(n_rows):
             key = types[0].deserialize(table[0][j].as_py())
-            _end_check: Callable = lambda x, y: x > y if end_inclusive else x >= y
             if (start is not None and key < start) or (
                 end is not None and _end_check(key, end)
             ):

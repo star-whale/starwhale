@@ -171,6 +171,49 @@ class TestBasicFunctions(BaseTestCase):
             "keep none",
         )
 
+    def test_only_one_end_inclusive(self) -> None:
+        path = os.path.join(self.datastore_root, "base-10.parquet")
+        data_store._write_parquet_file(
+            path,
+            pa.Table.from_pydict(
+                {
+                    "a": [0],
+                    "b": ["x"],
+                    "c": [10],
+                    "-": [None],
+                    "~c": [False],
+                },
+                metadata={
+                    "schema": str(
+                        data_store.TableSchema(
+                            "a",
+                            [
+                                data_store.ColumnSchema("a", data_store.INT64),
+                                data_store.ColumnSchema("b", data_store.STRING),
+                                data_store.ColumnSchema("c", data_store.INT64),
+                                data_store.ColumnSchema("-", data_store.BOOL),
+                                data_store.ColumnSchema("~c", data_store.BOOL),
+                            ],
+                        )
+                    )
+                },
+            ),
+        )
+        self.assertEqual(
+            1,
+            len(
+                list(
+                    data_store._scan_parquet_file(
+                        path,
+                        start=0,
+                        end=0,
+                        end_inclusive=True,
+                    )
+                )
+            ),
+            "end inclusive and end is max",
+        )
+
     def test_merge_scan(self) -> None:
         self.assertEqual([], list(data_store._merge_scan([], False)), "no iter")
         self.assertEqual(
