@@ -200,7 +200,8 @@ public class JobController implements JobApi {
                 projectUrl,
                 request.getModelVersionUrl(),
                 request.getRuntimeVersionUrl(),
-                request.getResourcePool()
+                request.getResourcePool(),
+                request.getSpec()
         );
 
         return ResponseEntity.ok(Code.success.asResponse(resp));

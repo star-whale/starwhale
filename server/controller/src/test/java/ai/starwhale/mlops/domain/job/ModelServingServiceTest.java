@@ -37,6 +37,7 @@ import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
@@ -45,6 +46,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
@@ -140,24 +142,36 @@ public class ModelServingServiceTest {
         var modelVer = ModelVersionEntity.builder().id(9L).build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
 
+        var spec = "---\n"
+                + "resources:\n"
+                + "- type: \"foo\"\n"
+                + "  request: 7.0\n"
+                + "  limit: 8.0\n";
+
         var ss = new V1StatefulSet();
         ss.metadata(new V1ObjectMeta());
         when(k8sClient.deployStatefulSet(any())).thenReturn(ss);
-        svc.create("2", "9", "8", resourcePool);
+        svc.create("2", "9", "8", resourcePool, spec);
 
+        var rc = RuntimeResource.builder().type("foo").request(7f).limit(8f).build();
+        var expectedResource = new ResourceOverwriteSpec(List.of(rc));
+        var expectedEnvs = Map.of(
+                "SW_PYPI_TRUSTED_HOST", "trusted-host",
+                "SW_PYPI_EXTRA_INDEX_URL", "extra-index",
+                "SW_PYPI_INDEX_URL", "index",
+                "SW_PROJECT", "2",
+                "SW_TOKEN", "token",
+                "SW_INSTANCE_URI", "inst",
+                "SW_MODEL_VERSION", "md/version/9",
+                "SW_RUNTIME_VERSION", "rt/version/8",
+                "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
+                "SW_PRODUCTION", "1"
+        );
         verify(k8sJobTemplate).renderModelServingOrch(
-                Map.of(
-                        "SW_PYPI_TRUSTED_HOST", "trusted-host",
-                        "SW_PYPI_EXTRA_INDEX_URL", "extra-index",
-                        "SW_PYPI_INDEX_URL", "index",
-                        "SW_PROJECT", "2",
-                        "SW_TOKEN", "token",
-                        "SW_INSTANCE_URI", "inst",
-                        "SW_MODEL_VERSION", "md/version/9",
-                        "SW_RUNTIME_VERSION", "rt/version/8",
-                        "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
-                        "SW_PRODUCTION", "1"
-                ), "img", "model-serving-7");
+                "model-serving-7",
+                "img",
+                expectedEnvs,
+                expectedResource);
 
         verify(k8sClient).deployService(any());
     }

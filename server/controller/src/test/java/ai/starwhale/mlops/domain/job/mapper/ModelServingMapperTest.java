@@ -47,17 +47,10 @@ public class ModelServingMapperTest extends MySqlContainerHolder {
                 .jobStatus(JobStatus.RUNNING)
                 .lastVisitTime(new Date(System.currentTimeMillis() / 1000 * 1000))
                 .build();
-        modelServingMapper.insertIgnore(entity);
+        modelServingMapper.add(entity);
         var id = entity.getId();
         var result = modelServingMapper.find(id);
         Assertions.assertEquals(entity, result);
-
-        entity.setId(null);
-        // insert if not exists (ignore)
-        modelServingMapper.insertIgnore(entity);
-        // no insertion
-        Assertions.assertNull(entity.getId());
-        entity.setId(id);
 
         var another = ModelServingEntity.builder()
                 .modelVersionId(2L)

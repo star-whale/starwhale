@@ -226,7 +226,7 @@ public class JobControllerTest {
     @Test
     public void testCreateModelServing() {
         var vo = ModelServingVo.builder().id("8").baseUri("/gateway/model-serving/8").build();
-        given(modelServingService.create("foo", "bar", "baz", "default")).willReturn(vo);
+        given(modelServingService.create("foo", "bar", "baz", "default", null)).willReturn(vo);
         var req = new ModelServingRequest();
         req.setModelVersionUrl("bar");
         req.setRuntimeVersionUrl("baz");
