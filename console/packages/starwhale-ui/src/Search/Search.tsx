@@ -102,7 +102,7 @@ export default function Search({ value, onChange, ...props }: ISearchProps) {
                         containerRef={ref}
                         onChange={(newValue: any) => {
                             let newItems = []
-                            if (!value) {
+                            if (!newValue) {
                                 newItems = items.filter((_, i) => i !== index)
                             } else {
                                 newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
@@ -110,6 +110,7 @@ export default function Search({ value, onChange, ...props }: ISearchProps) {
                             if (newItems.length === 0) {
                                 newItems = [{}]
                             }
+
                             setItems(newItems)
 
                             if (newValue && newValue.property && newValue.op && newValue.value) {
@@ -117,7 +118,7 @@ export default function Search({ value, onChange, ...props }: ISearchProps) {
                                 setIsEditing(true)
                             }
 
-                            onChange?.(newItems.filter((tmp) => tmp.property && tmp.op && tmp.value))
+                            onChange?.(newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value))
                         }}
                     />
                 )
