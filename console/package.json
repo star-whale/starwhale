@@ -129,7 +129,7 @@
     "lint:fix": "eslint --fix -c .eslintrc.js './{src,packages}/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "start": "vite --host 0.0.0.0",
+    "start": "vite --host 0.0.0.0 --force",
     "build": "NODE_OPTIONS='--max-old-space-size=5120' vite build",
     "serve": "vite preview",
     "test": "jest --config jest/jest.config.ts",

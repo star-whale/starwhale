@@ -48,6 +48,7 @@ export default function OnlineEval() {
     const { project } = useProject()
     const [t] = useTranslation()
     const [config, setConfig] = React.useState<any>(null)
+    const [gradioId, setGradioId] = React.useState(1)
     const { projectId, modelId, modelVersionId } = useParams<{
         projectId: string
         modelId: string
@@ -122,6 +123,9 @@ export default function OnlineEval() {
         if (modelInfo.isSuccess || modelVersionInfo.isSuccess) {
             const versionName = modelVersionId ? modelVersionInfo?.data?.versionName : modelInfo?.data?.versionName
             const modelName = modelInfo?.data?.name
+            if (!modelName || !versionName) {
+                return
+            }
 
             fetch(`/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file`, {
                 headers: {
@@ -136,6 +140,8 @@ export default function OnlineEval() {
                     window.gradio_config = data
                     window.gradio_config.css = css
                     setConfig(data)
+                    // update gradio id to trigger gradio reloading
+                    setGradioId((i) => i + 1)
                 })
         }
     }, [
@@ -157,7 +163,7 @@ export default function OnlineEval() {
             </Card>
             {config && (
                 // @ts-ignore
-                <gradio-app>
+                <gradio-app key={gradioId.toString()}>
                     <div id='online-eval' />
                     {/* @ts-ignore */}
                 </gradio-app>
