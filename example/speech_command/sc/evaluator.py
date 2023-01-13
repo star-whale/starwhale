@@ -4,9 +4,11 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import gradio
 import torchaudio
 
 from starwhale import Audio, PipelineHandler, multi_classification
+from starwhale.api.service import api
 
 from .model import M5
 
@@ -108,3 +110,16 @@ class M5Inference(PipelineHandler):
         model.eval()
         print("m5 model loaded, start to inference...")
         return model
+
+    @api(
+        [
+            gradio.Audio(type="filepath"),
+            gradio.Audio(source="microphone", type="filepath"),
+        ],
+        gradio.Label(),
+    )
+    def online_eval(self, file: str):
+        with open(file, "rb") as f:
+            data = f.read()
+        _, prob = self.ppl(Audio(fp=data))
+        return {ALL_LABELS[i]: p for i, p in enumerate(prob)}
