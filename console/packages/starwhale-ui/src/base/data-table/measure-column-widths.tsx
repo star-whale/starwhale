@@ -120,15 +120,28 @@ export default function MeasureColumnWidths({
             )
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
+            // console.log(columnIndex, nextWidth, prevWidth, dimensions.width, columns)
+
             if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 2) {
                 widthMap.set(columnIndex, nextWidth)
 
-                // 1.Refresh at 100% of done
-                // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
-                if (widthMap.size === columns.length) {
+                if (columnIndex < columns.length) {
                     setWidthMap(widthMap)
                     onWidthsChange(Array.from(widthMap.values()))
                 }
+
+                // 1.Refresh at 100% of done
+                // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
+                // console.log('update', widthMap.size, columns.length, widthMap)
+                // if (widthMap.size > columns.length) {
+                //     const newMap = Array.from(widthMap).slice(0, columns.length)
+                //     console.log('new map', new Map(newMap))
+                //     setWidthMap(new Map(newMap))
+                //     onWidthsChange(Array.from(newMap.values()))
+                // } else if (widthMap.size === columns.length) {
+                //     setWidthMap(widthMap)
+                //     onWidthsChange(Array.from(widthMap.values()))
+                // }
             }
         },
         [columns, onWidthsChange, widthMap]
