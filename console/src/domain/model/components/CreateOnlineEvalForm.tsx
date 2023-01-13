@@ -3,7 +3,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import RuntimeSelector from '@runtime/components/RuntimeSelector'
 import RuntimeVersionSelector from '@runtime/components/RuntimeVersionSelector'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import ModelSelector from '@model/components/ModelSelector'
 import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
@@ -52,6 +52,7 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
 
     const styles = useStyles()
     const [t] = useTranslation()
+    const history = useHistory()
 
     const [modelId, setModelId] = useState($modelId)
     const [runtimeId, setRuntimeId] = useState('')
@@ -67,8 +68,13 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
                 // empty the resource amounts when no advance or resource pool changes
                 form.resetFields(['resourceAmount'])
             }
+
+            // update uri if model version changed
+            if ('modelVersionUrl' in changes) {
+                history.push(`/projects/${projectId}/online_eval/${modelId}/${changes.modelVersionUrl}`)
+            }
         },
-        [form]
+        [form, history, modelId, projectId]
     )
 
     const handleSubmit = useCallback(
