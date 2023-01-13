@@ -16,7 +16,6 @@ import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
 import { ITableState } from './store'
 import Button from '@starwhale/ui/Button'
-import { update } from 'immutability-helper'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -108,18 +107,16 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const handleApply = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-shadow
         (selectedIds, pinnedIds, ids) => {
-            console.log('----', ids)
             store.onCurrentViewColumnsChange(selectedIds, pinnedIds, ids)
         },
         [store]
     )
     const handleSave = useCallback(
         async (view) => {
-            if (!view.id || view.id === 'id') store.onShowViewModel(true, view)
+            if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
             else {
-                const a = await props.onSave?.(view)
-                console.log('a', a)
-                setChanged(false)
+                store.onViewUpdate(view)
+                props.onSave?.(view)
             }
         },
         [store]
@@ -143,37 +140,18 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const handeQuerySet = useCallback(
         (items) => {
-            console.log('123')
             store.onCurrentViewQueriesChange(items)
         },
         [store]
     )
 
     // changed status must be after all the store changes(after api success)
-    const [changed, setChanged] = useState(false)
-
-    const prevUpdatedTime = useRef<number | undefined>(store.currentView.updatedTime)
-
-    React.useEffect(() => {
-        const unsub = useStore.subscribe(
-            (state: ITableState) => state.currentView.updatedTime,
-            (updatedTime?: number) => {
-                // const updatedTime = currentView.updatedTime
-                if (!store.isInit) return
-
-                if (prevUpdatedTime.current !== updatedTime && !props.loading) {
-                    setChanged(true)
-                    // prevUpdatedTime.current = updatedTime
-                } else {
-                    setChanged(false)
-                }
-            },
-            {
-                fireImmediately: true,
-            }
-        )
-        return unsub
-    }, [store, props.loading, changed, prevUpdatedTime])
+    const changed = useMemo(() => {
+        const view = store.views.find((v) => v.id === store.currentView?.id)
+        if (!view && store.currentView?.id === 'all') return false
+        if (_.isEqual(view, store.currentView)) return false
+        return true
+    }, [store.currentView, store.views])
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
@@ -234,7 +212,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
 
-                                {changed && (
+                                {changed && store.currentView?.id && (
                                     <div>
                                         <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
                                         <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>

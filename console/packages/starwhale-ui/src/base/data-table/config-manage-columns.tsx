@@ -1,24 +1,14 @@
-import React, { useMemo, useCallback, useRef, useEffect, useImperativeHandle, useContext, useState } from 'react'
-import { SHAPE, SIZE, KIND } from 'baseui/button'
-import { Search } from 'baseui/icon'
+import React, { useRef, useEffect, useImperativeHandle, useState } from 'react'
+import { SHAPE, SIZE } from 'baseui/button'
 import { useStyletron } from 'baseui'
-import { useHover } from 'react-use'
 import { Drawer } from 'baseui/drawer'
-import { LabelSmall } from 'baseui/typography'
 import Button from '@/components/Button'
-import Input from '@/components/Input'
-import useSelection from '@starwhale/ui/utils/useSelection'
 import { useDrawer } from '@/hooks/useDrawer'
 import IconFont from '@/components/IconFont'
 import { expandBorderRadius } from '@/utils'
-import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
-import Checkbox from '../../Checkbox'
-import { DnDContainer } from '../../DnD'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { useDeepEffect } from '@starwhale/core/utils'
-import TransferList from '@starwhale/ui/Transfer/TransferList'
 import { Transfer } from '@starwhale/ui/Transfer'
 
 const useStyles = createUseStyles({
@@ -65,8 +55,8 @@ type PropsT = {
 type T = string
 const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
     const styles = useStyles()
-    const [css, theme] = useStyletron()
-    const [isOpen, setIsOpen] = React.useState(true)
+    const [, theme] = useStyletron()
+    const [isOpen, setIsOpen] = React.useState(false)
     const { expandedWidth, expanded, setExpanded } = useDrawer()
 
     useEffect(() => {

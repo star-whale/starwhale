@@ -1,14 +1,12 @@
 import { useStyletron } from 'baseui'
 import { Search } from 'baseui/icon'
-import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { createUseStyles } from 'react-jss'
-import { ColumnT, ConfigT } from '../base/data-table/types'
+import { ColumnT } from '../base/data-table/types'
 import Button from '../Button'
 import IconFont from '../IconFont'
 import Input from '../Input'
 import TransferList from './TransferList'
-import { useDeepEffect } from '@starwhale/core/utils'
 import useUnSortedSelection from '../utils/useUnsortedSelection'
 
 const useStyles = createUseStyles({
@@ -112,11 +110,10 @@ export default function Transfer({
     onChange = () => {},
 }: TransferPropsT) {
     const styles = useStyles()
-    const [left, setLeft] = React.useState<TransferValueT>(defaultValue)
-    const [right, setRight] = React.useState<TransferValueT>(defaultValue)
     const [css, theme] = useStyletron()
     const [query, setQuery] = React.useState('')
 
+    // eslint-disable-next-line no-param-reassign
     if (!value) value = defaultValue
 
     // cached & filtered columns
@@ -143,7 +140,7 @@ export default function Transfer({
                 .filter((id) => columnMatchedIds.includes(id))
                 .map((id) => columnMap.get(id)) ?? []
         )
-    }, [columnMatchedIds, value.ids, columnMap])
+    }, [columnMatchedIds, value.ids, columnMap, columnAllIds])
 
     const $rightFilteredColumns = useMemo(() => {
         return value.ids?.filter((id) => columnMatchedIds.includes(id)).map((id) => columnMap.get(id)) ?? []
@@ -167,15 +164,15 @@ export default function Transfer({
             pinnedIds: rightOperators.pinnedIds,
             ids: [...(value.ids ?? []), ...leftOperators.selectedIds],
         })
-    }, [leftOperators, rightOperators, value])
+    }, [leftOperators, rightOperators, value, onChange])
 
     const handleToLeft = useCallback(() => {
         onChange({
-            pinnedIds: [],
+            pinnedIds: rightOperators.pinnedIds,
             selectedIds: [],
             ids: value.ids?.filter((id: any) => !rightOperators.selectedIds.includes(id)),
         })
-    }, [rightOperators, value])
+    }, [rightOperators, value, onChange])
 
     return (
         <div className={styles.transfer}>

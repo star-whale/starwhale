@@ -263,7 +263,7 @@ function FileTree({ data: rawData = [], search = '', onSearch = () => {} }: File
             <Input
                 value={search}
                 onChange={(e) => {
-                    onSearch?.(e.target.value)
+                    onSearch?.((e.target as any).value)
                 }}
                 startEnhancer={() => <IconFont type='search' style={{ color: 'rgba(2,16,43,0.40)' }} />}
                 overrides={{

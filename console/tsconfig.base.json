@@ -31,7 +31,6 @@
   "include": [
     "src",
     "types",
-    "packages"
   ],
   "exclude": [
     "src/stories",
@@ -40,6 +39,7 @@
     "**/node_modules/**",
     "**/__generated__/**",
     "**/__tests__/**",
-    "**/build/**"
+    "**/build/**",
+    "packages/starwhale-ui/src/base/**/*",
   ]
 }

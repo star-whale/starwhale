@@ -1,16 +1,13 @@
-import useSelection from '@starwhale/ui/utils/useSelection'
-import Checkbox from '../Checkbox'
 import { createUseStyles } from 'react-jss'
 import { LabelSmall } from 'baseui/typography'
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useHover } from 'react-use'
+import { ReactSortable } from 'react-sortablejs'
 import { ColumnT, ConfigT } from '../base/data-table/types'
 import Button from '../Button'
 import IconFont from '../IconFont'
-import { ReactSortable } from 'react-sortablejs'
-import { useDeepEffect } from '@starwhale/core/utils'
-import useUnSortedSelection from '../utils/useUnsortedSelection'
+import Checkbox from '../Checkbox'
 
 const useStyles = createUseStyles({
     transferList: {
@@ -61,7 +58,6 @@ export default TransferList
 
 function TransferList({ isDragable = false, columns, ...props }: TransferListPropsT) {
     const styles = useStyles()
-    const [dragId, setDragId] = useState(-1)
 
     const {
         selectedIds = [],
@@ -143,7 +139,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
             })
     }, [columns, ids])
 
-    const dataRef = useRef<any>()
+    const dataRef = useRef<any>($data)
 
     const List = useMemo(() => {
         if (isDragable) {
@@ -157,16 +153,16 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                             dataRef.current = newData
                         }}
                         animation={50}
-                        onChoose={(args) => setDragId(args.oldIndex as number)}
-                        onEnd={() => {
+                        onChoose={() => {}}
+                        onUnchoose={() => {}}
+                        onEnd={(args) => {
                             if (dataRef.current) {
                                 handleOrderChange(
                                     dataRef.current.map((v: any) => v.id),
-                                    dragId
+                                    $data[args.oldIndex as any].id
                                 )
                                 dataRef.current = undefined
                             }
-                            setDragId(-1)
                         }}
                     >
                         {$data?.map((item: any) => {
@@ -220,7 +216,8 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                 })}
             </ul>
         )
-    }, [columns, isDragable, selectedIds])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [columns, isDragable, selectedIds, handleSelectOne, $data, handlePinOne, handleOrderChange])
 
     return (
         <div className={classNames(styles.transferList, 'transfer-list')}>

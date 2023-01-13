@@ -2,7 +2,6 @@ import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
-import { useQueryArgs, useDeepEffect } from '@starwhale/core/utils'
 // eslint-disable-next-line import/no-cycle
 import FilterRenderer from './FilterRenderer'
 // eslint-disable-next-line import/no-cycle
@@ -101,24 +100,24 @@ export default function Search({ value, onChange, ...props }: ISearchProps) {
                         }}
                         // @ts-ignore
                         containerRef={ref}
-                        onChange={(value) => {
+                        onChange={(newValue: any) => {
                             let newItems = []
                             if (!value) {
                                 newItems = items.filter((_, i) => i !== index)
                             } else {
-                                newItems = items.map((tmp, i) => (i === index ? value : tmp))
+                                newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
                             }
                             if (newItems.length === 0) {
                                 newItems = [{}]
                             }
                             setItems(newItems)
 
-                            if (value && value.property && value.op && value.value) {
+                            if (newValue && newValue.property && newValue.op && newValue.value) {
                                 setItems([...newItems, {}])
                                 setIsEditing(true)
                             }
 
-                            onChange?.(newItems.filter((item) => item.property && item.op && item.value))
+                            onChange?.(newItems.filter((tmp) => tmp.property && tmp.op && tmp.value))
                         }}
                     />
                 )

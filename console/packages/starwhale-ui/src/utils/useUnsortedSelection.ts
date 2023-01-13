@@ -1,7 +1,5 @@
 import { useDeepEffect } from '@starwhale/core/utils'
-import _ from 'lodash'
-import React, { useCallback, useEffect } from 'react'
-import usePrevious from './usePrevious'
+import React, { useCallback } from 'react'
 
 export interface IUseSelectionPropsT<T = any> {
     initialIds: T[]
@@ -40,7 +38,6 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             } else {
                 selectedIds.add(id)
             }
-            console.log('handleSelectOne', selectedIds)
             setSelectedIds(new Set(selectedIds))
         },
         [setSelectedIds, selectedIds]
@@ -51,6 +48,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             const sortedMergeIds = Array.from(newIds).filter((v: T) => ids.has(v))
             const $pinnedIds = new Set(pinnedIds)
             const dragIndex = sortedMergeIds.findIndex((v: T) => v === dragId)
+
             $pinnedIds.delete(dragId)
 
             // move pined column to no pined column will auto remove pined status
@@ -62,6 +60,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             })
 
             const maxPinedFlag = Math.max(...pindedFlag)
+
             if (dragIndex > maxPinedFlag) {
                 $pinnedIds.delete(dragId)
             } else if (dragIndex < maxPinedFlag) {
@@ -76,7 +75,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
                 selectedIds: Array.from(selectedIds),
             }
         },
-        [setIds, ids, pinnedIds]
+        [setIds, ids, pinnedIds, selectedIds]
     )
 
     const handlePinOne = useCallback(
@@ -89,7 +88,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             setPinnedIds(new Set(pinnedIds))
 
             const prevIds = ids
-            Array.from(pinnedIds).forEach((id) => prevIds.delete(id))
+            Array.from(pinnedIds).forEach((i) => prevIds.delete(i))
             const sortedIds = [...Array.from(pinnedIds), ...Array.from(prevIds)]
             setIds(new Set(sortedIds))
             return { pinnedIds: Array.from(pinnedIds), ids: sortedIds, selectedIds: Array.from(selectedIds) }
@@ -101,7 +100,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
         ids: Array.from(ids),
         selectedIds: Array.from(selectedIds),
         pinnedIds: Array.from(pinnedIds),
-        setSelectedIds: (ids: T[]) => setSelectedIds(new Set([...ids])),
+        setSelectedIds: (newIds: T[]) => setSelectedIds(new Set([...newIds])),
         handleSelectMany,
         handleSelectNone,
         handleSelectOne,

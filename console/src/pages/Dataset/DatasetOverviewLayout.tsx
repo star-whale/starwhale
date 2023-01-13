@@ -1,6 +1,6 @@
 import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'

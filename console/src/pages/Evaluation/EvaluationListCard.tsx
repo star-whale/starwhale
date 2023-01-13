@@ -22,8 +22,8 @@ import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import GridResizer from '@/components/AutoResizer/GridResizer'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
-import EvaluationListCompare from './EvaluationListCompare'
 import { toaster } from 'baseui/toast'
+import EvaluationListCompare from './EvaluationListCompare'
 
 const page = { pageNum: 1, pageSize: 1000 }
 
@@ -124,16 +124,16 @@ export default function EvaluationListCard() {
     React.useEffect(() => {
         if (evaluationsInfo.isSuccess)
             setCompareRows(evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? [])
-    }, [store.rowSelectedIds, evaluationsInfo.isSuccess])
+    }, [store.rowSelectedIds, evaluationsInfo.isSuccess, evaluationsInfo.data?.records])
 
     React.useEffect(() => {
         const unsub = useEvaluationStore.subscribe(
             (state: ITableState) => state.currentView.queries ?? [],
             (queries: any[]) => {
-                setOptions({
-                    ...options,
+                setOptions((o: any) => ({
+                    ...o,
                     filter: queries,
-                })
+                }))
             }
         )
         return unsub
@@ -153,27 +153,37 @@ export default function EvaluationListCard() {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
         })
-        toaster.positive('success saved', {})
+        toaster.positive('Successfully saved', {})
         return {}
     }
-    // React.useEffect(() => {
-    //     const unsub = useEvaluationStore.subscribe(
-    //         (state: ITableState) => state,
-    //         async (state: ITableState, prevState: ITableState) => {
-    //             if (
-    //                 !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
-    //                 evaluationViewConfig.isSuccess
-    //             ) {
-    //                 console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
-    //                 await setEvaluationViewConfig(projectId, {
-    //                     name: 'evaluation',
-    //                     content: JSON.stringify(store.getRawConfigs(), null),
-    //                 })
-    //             }
-    //         }
-    //     )
-    //     return unsub
-    // }, [store, projectId, evaluationViewConfig])
+
+    React.useEffect(() => {
+        const unsub = useEvaluationStore.subscribe(
+            (state: ITableState) => state,
+            async (state: ITableState, prevState: ITableState) => {
+                // console.log(
+                //     'save to api ?',
+                //     store.getRawIfChangedConfigs(state),
+                //     store.getRawIfChangedConfigs(prevState)
+                // )
+
+                // wait for api config
+                if (!prevState.isInit && state.isInit) return
+
+                if (
+                    !_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState)) &&
+                    evaluationViewConfig.isSuccess
+                ) {
+                    // console.log('saved')
+                    await setEvaluationViewConfig(projectId, {
+                        name: 'evaluation',
+                        content: JSON.stringify(store.getRawConfigs(), null),
+                    })
+                }
+            }
+        )
+        return unsub
+    }, [store, projectId, evaluationViewConfig])
 
     // sync api to local
     React.useEffect(() => {

@@ -94,7 +94,6 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
 
     const handleOrderChange = useCallback(
         (ids: T[], dragId: T) => {
-            console.log('handleOrderChange', ids, dragId)
             const sortedMergeSelectedIds = Array.from(ids).filter((v: T) => selectedIds.has(v))
             setSortedIds(new Set(sortedMergeSelectedIds))
             const $pinnedIds = new Set(pinnedIds)

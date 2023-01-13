@@ -17,6 +17,7 @@ export interface ITableStateInitState {
     key: string
     setRawConfigs: (obj: Record<string, any>) => void
     getRawConfigs: (state?: ITableState) => typeof rawInitialState
+    getRawIfChangedConfigs: (state?: ITableState) => typeof rawIfChangedInitialState
 }
 export interface IViewState {
     views: ConfigT[]
@@ -61,8 +62,16 @@ const rawInitialState: Partial<ITableState> = {
     views: [],
     defaultView: {},
     currentView: {},
-    viewEditing: {},
-    viewModelShow: false,
+    // viewEditing: {},
+    // viewModelShow: false,
+    rowSelectedIds: [],
+}
+
+const rawIfChangedInitialState: Partial<ITableState> = {
+    key: 'table',
+    views: [],
+    defaultView: {},
+    currentView: {},
     rowSelectedIds: [],
 }
 
@@ -130,12 +139,10 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => ({
     currentView: {},
-    onCurrentViewFiltersChange: (filters) =>
-        set({ currentView: { ...get().currentView, filters, updatedTime: Date.now() } }),
-    onCurrentViewQueriesChange: (queries) =>
-        set({ currentView: { ...get().currentView, queries, updatedTime: Date.now() } }),
+    onCurrentViewFiltersChange: (filters) => set({ currentView: { ...get().currentView, filters } }),
+    onCurrentViewQueriesChange: (queries) => set({ currentView: { ...get().currentView, queries } }),
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
-        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids, updatedTime: Date.now() } }),
+        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids } }),
     onCurrentViewColumnsPin: (columnId: string, pined = false) => {
         const { pinnedIds = [], ids = [] } = get().currentView
         const $pinnedIds = new Set(pinnedIds)
@@ -155,12 +162,11 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
                 ...get().currentView,
                 pinnedIds: Array.from($pinnedIds),
                 ids: sortedMergeSelectedIds,
-                updatedTime: Date.now(),
             },
         })
     },
     onCurrentViewSort: (key, direction) =>
-        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction, updatedTime: Date.now() } }),
+        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction } }),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -187,6 +193,7 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
             ..._.pick(obj, Object.keys(rawInitialState)),
         }),
     getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
+    getRawIfChangedConfigs: (state) => _.pick(state ?? get(), Object.keys(rawIfChangedInitialState)),
 })
 
 export interface IRowState {
