@@ -74,7 +74,7 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
                 history.push(`/projects/${projectId}/online_eval/${modelId}/${changes.modelVersionUrl}`)
             }
         },
-        [form]
+        [form, history, modelId, projectId]
     )
 
     const handleSubmit = useCallback(
