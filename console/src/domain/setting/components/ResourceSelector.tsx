@@ -29,8 +29,8 @@ export default function ResourceSelector({ data, value, onChange, overrides, dis
 
     const $options = React.useMemo(() => {
         const _options = options.filter((v) => v.id?.includes(keyword)) ?? []
-        const valueExsits = options.find((item) => item.id === value)
-        if (!valueExsits && value)
+        const valueExists = options.find((item) => item.id === value)
+        if (!valueExists && value)
             _options.push({
                 id: value,
                 label: value,

@@ -13,6 +13,7 @@ import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
 // eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner } from 'baseui/spinner'
+import yaml from 'js-yaml'
 import css from '@/assets/GradioWidget/es/style.css'
 // eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
@@ -23,6 +24,16 @@ declare global {
         wait: Function | null
         gradio_config: any
     }
+}
+
+interface ISystemResource {
+    type: string
+    request: number
+    limit: number
+}
+
+interface ISpec {
+    resources: Array<ISystemResource>
 }
 
 // production mode
@@ -66,10 +77,22 @@ export default function OnlineEval() {
             try {
                 setIsLoading(true)
 
+                // spec of `spec` see https://github.com/star-whale/starwhale/pull/1709
+                const spec: ISpec = { resources: [] }
+                // eslint-disable-next-line guard-for-in,no-restricted-syntax
+                for (const k in values.resourceAmount) {
+                    spec.resources.push({
+                        type: k,
+                        request: Number(values.resourceAmount[k]),
+                        limit: Number(values.resourceAmount[k]),
+                    })
+                }
+
                 const resp = await axios.post(`/api/v1/project/${projectId}/serving`, {
                     modelVersionUrl: values.modelVersionUrl,
                     runtimeVersionUrl: values.runtimeVersionUrl,
                     resourcePool: values.resourcePool,
+                    spec: spec.resources.length > 0 ? yaml.dump(spec) : '',
                 })
 
                 if (!resp.data?.baseUri) return

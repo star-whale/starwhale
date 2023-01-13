@@ -2,6 +2,12 @@ export interface ILocaleItem {
     en: string
 }
 
+const basic = {
+    'resource.unit.cpu': {
+        en: 'Core',
+    },
+}
+
 const dataset = {
     'dataset.remove.confirm': {
         en: 'Confirm Remove Dataset?',
@@ -47,6 +53,15 @@ const model = {
     },
     'online eval': {
         en: 'Online Evaluation',
+    },
+    'online eval.advance': {
+        en: 'Advance',
+    },
+    'online eval.resource amount.tooltip': {
+        en: 'Leave it blank will use the default configuration',
+    },
+    'online eval.memory.placeholder': {
+        en: 'e.g. 1.5G',
     },
 }
 
@@ -787,6 +802,7 @@ const locales0 = {
     'Update Setting Success': {
         en: 'Update Setting Success',
     },
+    ...basic,
     ...dataset,
     ...model,
     ...runtime,
