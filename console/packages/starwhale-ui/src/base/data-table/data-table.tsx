@@ -660,7 +660,8 @@ function MeasureScrollbarWidth(props) {
 }
 
 export function DataTable({
-    batchActions,
+    // @ts-ignore
+    batchActions = [],
     columns,
     filters,
     emptyMessage,

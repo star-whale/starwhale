@@ -46,19 +46,19 @@ const useStyles = createUseStyles({
     },
 })
 
-function GridTable({
+function GridDataTable({
     isLoading,
     columns = [],
     data = [],
     paginationProps,
     rowActions = [],
+    onSelectionChange,
     searchable = false,
     filterable = false,
     queryable = false,
     columnable = false,
     compareable = false,
     viewable = false,
-    onSave,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const api = useTableContext()
@@ -81,11 +81,12 @@ function GridTable({
     useEffect(() => {
         if (!store.isInit && columns.length > 0) {
             api.setState({
+                isInit: true,
                 currentView: {
                     name: '',
                     filters: [],
+                    ids: columns.map((v) => v.key) ?? [],
                     selectedIds: [],
-                    ids: columns.map((v) => v.key),
                     pinnedIds: [],
                 },
             })
@@ -105,6 +106,7 @@ function GridTable({
                     store={store}
                     useStore={api}
                     resizableColumnWidths
+                    onSelectionChange={onSelectionChange}
                     initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
@@ -116,7 +118,6 @@ function GridTable({
                     rowActions={rowActions}
                     columns={columns}
                     rows={$rows}
-                    onSave={onSave}
                     // @ts-ignore
                     loadingMessage={() =>
                         (
@@ -143,9 +144,9 @@ function GridTable({
     )
 }
 
-export const MemoGridTable = React.memo(GridTable, areEqual)
+export const MemoGridTable = React.memo(GridDataTable, areEqual)
 
-export default function ContextGridTable({
+export default function ContextGridDataTable({
     storeKey = 'table',
     initState = {},
     store = undefined,

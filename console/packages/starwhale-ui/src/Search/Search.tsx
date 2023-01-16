@@ -2,7 +2,6 @@ import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
-import { useQueryArgs, useDeepEffect } from '@starwhale/core/utils'
 // eslint-disable-next-line import/no-cycle
 import FilterRenderer from './FilterRenderer'
 // eslint-disable-next-line import/no-cycle
@@ -50,31 +49,29 @@ export const useStyles = createUseStyles({
 
 export interface ISearchProps {
     fields: ColumnSchemaDesc[]
+    value?: ValueT[]
+    onChange?: (args: ValueT[]) => void
 }
 const raw = [{}]
 
-export default function Search({ ...props }: ISearchProps) {
+export default function Search({ value, onChange, ...props }: ISearchProps) {
     const styles = useStyles()
     const ref = useRef<HTMLDivElement>(null)
-    const { query, updateQuery } = useQueryArgs()
 
     const [isEditing, setIsEditing] = useState(false)
 
-    const [items, setItems] = useState<ValueT[]>(query.filter ? query.filter.filter((v: any) => v.value) : (raw as any))
+    const [items, setItems] = useState<ValueT[]>(value ?? (raw as any))
+
+    useEffect(() => {
+        const newItems = value && value.length > 0 ? [...value, ...(raw as any)] : (raw as any)
+        setItems(newItems)
+    }, [value])
 
     useClickAway(ref, () => {
         setIsEditing(false)
     })
 
     const column = React.useMemo(() => new ColumnFilterModel(props.fields), [props.fields])
-
-    useEffect(() => {
-        if (!query.filter) setItems(raw as any)
-    }, [query.filter])
-
-    useDeepEffect(() => {
-        updateQuery({ filter: items.filter((v) => v.value) as any })
-    }, [items, column])
 
     return (
         <div
@@ -103,22 +100,25 @@ export default function Search({ ...props }: ISearchProps) {
                         }}
                         // @ts-ignore
                         containerRef={ref}
-                        onChange={(value) => {
+                        onChange={(newValue: any) => {
                             let newItems = []
-                            if (!value) {
+                            if (!newValue) {
                                 newItems = items.filter((_, i) => i !== index)
                             } else {
-                                newItems = items.map((tmp, i) => (i === index ? value : tmp))
+                                newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
                             }
                             if (newItems.length === 0) {
                                 newItems = [{}]
                             }
+
                             setItems(newItems)
 
-                            if (value && value.property && value.op && value.value) {
+                            if (newValue && newValue.property && newValue.op && newValue.value) {
                                 setItems([...newItems, {}])
                                 setIsEditing(true)
                             }
+
+                            onChange?.(newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value))
                         }}
                     />
                 )

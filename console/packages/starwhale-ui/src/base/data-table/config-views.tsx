@@ -87,9 +87,9 @@ function ConfigViews(props: PropsT) {
                         useStore.setState({
                             currentView: {
                                 filters: [],
-                                selectedIds: props.columns.map((v) => v.key),
+                                ids: props.columns.map((v) => v.key),
                                 pinnedIds: [],
-                                sortedIds: [],
+                                selectedIds: [],
                                 sortBy: '',
                                 id: ALLRUNS,
                             },
@@ -134,10 +134,14 @@ function ConfigViews(props: PropsT) {
                         onClick={(event) => {
                             event.preventDefault()
                             const newView = (viewRef.current as any).getView()
+
+                            if (!newView.name) return toaster.negative('name required', { autoHideDuration: 2000 })
+
                             if (store.checkDuplicateViewName(newView.name, newView.id)) {
                                 toaster.negative('View name already exists', { autoHideDuration: 2000 })
                                 return
                             }
+
                             store.onViewUpdate(newView)
                             store.onShowViewModel(false, null)
                         }}

@@ -40,6 +40,7 @@
     "**/node_modules/**",
     "**/__generated__/**",
     "**/__tests__/**",
-    "**/build/**"
+    "**/build/**",
+    "packages/starwhale-ui/src/base/**/*",
   ]
 }

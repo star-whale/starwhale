@@ -90,6 +90,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
         pin: options.pin,
         filterType: options.filterType,
+        columnType: options.columnType,
     }
 }
 

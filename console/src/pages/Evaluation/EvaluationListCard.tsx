@@ -22,9 +22,11 @@ import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import GridResizer from '@/components/AutoResizer/GridResizer'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
+import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const page = { pageNum: 1, pageSize: 1000 }
+
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
@@ -35,7 +37,13 @@ export default function EvaluationListCard() {
         if (!project?.name) return ''
         return tableNameOfSummary(project?.name as string)
     }, [project])
-    const evaluationsInfo = useQueryDatasetList(summaryTableName, page, true)
+    const store = useEvaluationStore()
+    const [options, setOptions] = useState<any>({
+        ...page,
+        filter: store.currentView.queries,
+    })
+
+    const evaluationsInfo = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
@@ -48,15 +56,20 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const store = useEvaluationStore()
-
-    const $data = useMemo(() => evaluationsInfo.data?.records ?? [], [evaluationsInfo])
-    const $columns = useDatastoreColumns(evaluationsInfo?.data?.columnTypes ?? [])
+    const $columns = useDatastoreColumns(
+        evaluationsInfo?.data?.columnTypes?.sort((ca, cb) => {
+            if (ca.name === 'id') return -1
+            if (ca.name?.startsWith('sys/')) return -1
+            if (ca.name > cb.name) return -1
+            return 1
+        }) ?? []
+    )
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'id')
                 return CustomColumn({
+                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     mapDataToValue: (item: any) => item.id,
@@ -74,6 +87,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
+                    columnType: column.columnType,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -94,6 +108,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
+                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     mapDataToValue: (data: any) =>
@@ -106,22 +121,23 @@ export default function EvaluationListCard() {
 
     const [compareRows, setCompareRows] = useState<any[]>([])
 
-    const batchAction = useMemo(
-        () => [
-            {
-                label: 'Compare',
-                onClick: ({ selection }: any) => {
-                    const rows = selection.map((item: any) => item.data)
-                    setCompareRows(rows)
-                },
-            },
-        ],
-        [setCompareRows]
-    )
+    React.useEffect(() => {
+        if (evaluationsInfo.isSuccess)
+            setCompareRows(evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? [])
+    }, [store.rowSelectedIds, evaluationsInfo.isSuccess, evaluationsInfo.data?.records])
 
     React.useEffect(() => {
-        setCompareRows($data.filter((r) => store.rowSelectedIds.includes(r.id)))
-    }, [store.rowSelectedIds, $data])
+        const unsub = useEvaluationStore.subscribe(
+            (state: ITableState) => state.currentView.queries ?? [],
+            (queries: any[]) => {
+                setOptions((o: any) => ({
+                    ...o,
+                    filter: queries,
+                }))
+            }
+        )
+        return unsub
+    }, [store])
 
     React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
@@ -129,27 +145,45 @@ export default function EvaluationListCard() {
             (state: any[]) => store.onSelectMany(state)
         )
         return unsub
-    }, [store, $data])
+    }, [store])
 
     // sync local to api
+    const doSave = async () => {
+        await setEvaluationViewConfig(projectId, {
+            name: 'evaluation',
+            content: JSON.stringify(store.getRawConfigs(), null),
+        })
+        toaster.positive('Successfully saved', {})
+        return {}
+    }
+
     React.useEffect(() => {
         const unsub = useEvaluationStore.subscribe(
             (state: ITableState) => state,
             async (state: ITableState, prevState: ITableState) => {
+                // console.log(
+                //     'save to api ?',
+                //     store.getRawIfChangedConfigs(state),
+                //     store.getRawIfChangedConfigs(prevState)
+                // )
+
+                // wait for api config
+                if (!prevState.isInit && state.isInit) return
+
                 if (
-                    !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
+                    !_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState)) &&
                     evaluationViewConfig.isSuccess
                 ) {
-                    // console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
+                    // console.log('saved')
                     await setEvaluationViewConfig(projectId, {
                         name: 'evaluation',
-                        content: JSON.stringify(store.getRawConfigs()),
+                        content: JSON.stringify(store.getRawConfigs(), null),
                     })
                 }
             }
         )
         return unsub
-    }, [store, $data, projectId, evaluationViewConfig])
+    }, [store, projectId, evaluationViewConfig])
 
     // sync api to local
     React.useEffect(() => {
@@ -159,7 +193,10 @@ export default function EvaluationListCard() {
                 apiState = JSON.parse(evaluationViewConfig.data?.content, undefined)
                 if (!_.isEqual(apiState, store.getRawConfigs())) {
                     // console.log('upcoming state', apiState, evaluationViewConfig.data)
-                    store.setRawConfigs(apiState)
+                    store.setRawConfigs({
+                        isInit: true,
+                        ...apiState,
+                    })
                 }
             } catch (e) {
                 // console.log(e)
@@ -199,14 +236,14 @@ export default function EvaluationListCard() {
                     return (
                         <GridTable
                             store={useEvaluationStore}
-                            filterable
-                            searchable
                             columnable
                             viewable
-                            isLoading={evaluationsInfo.isLoading}
-                            batchActions={batchAction}
+                            queryable
+                            selectable
+                            isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
                             data={evaluationsInfo.data?.records ?? []}
+                            onSave={doSave as any}
                         />
                     )
                 }}
