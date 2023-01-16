@@ -2,7 +2,7 @@
 title: 法语-英语的Neural machine translation(NMT)模型评测
 ---
 
-本例子[参考PyTorch NLP from scratch](https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html)对[fra-eng数据集](https://www.manythings.org/anki/fra-eng.zip)进行Neural Machine Translation和模型评测，相关代码的链接：[example/nmt](https://github.com/star-whale/starwhale/tree/main/example/nmt)。
+本例子[参考PyTorch NLP from scratch](https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html)对[fra-eng数据集](https://www.manythings.org/anki/fra-eng.zip)进行Neural Machine Translation和模型评测，相关代码的链接：[example/nmt](https://github.com/star-whale/starwhale/tree/main/example/nmt)。
 
 从该例中，我们能实践如下Starwhale功能：
 
