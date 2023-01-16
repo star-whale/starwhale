@@ -1,12 +1,15 @@
 import io
+import operator
 from pathlib import Path
 
 import numpy as np
 import torch
+import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image, PipelineHandler, multi_classification
+from starwhale.api.service import api
 
 from .model import Net
 
@@ -62,3 +65,23 @@ class CIFAR10Inference(PipelineHandler):
         model.eval()
         print("load cifar_net model, start to inference...")
         return model
+
+    @api(gradio.Image(type="pil"), gradio.Text(label="prediction"))
+    def online_eval(self, img: PILImage.Image):
+        buf = io.BytesIO()
+        img.resize((32, 32)).save(buf, format="jpeg")
+        classes = (
+            "plane",
+            "car",
+            "bird",
+            "cat",
+            "deer",
+            "dog",
+            "frog",
+            "horse",
+            "ship",
+            "truck",
+        )
+        _, prob = self.ppl(Image(fp=buf.getvalue()))
+        offset = max(enumerate(prob[0]), key=operator.itemgetter(1))[0]
+        return classes[offset]
