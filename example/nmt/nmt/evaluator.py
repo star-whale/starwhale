@@ -1,8 +1,10 @@
 import os
 
 import torch
+import gradio
 
 from starwhale import Text, PipelineHandler
+from starwhale.api.service import api
 
 from .bleu import calculate_bleu
 from .model import DecoderRNN, EncoderRNN
@@ -84,3 +86,7 @@ class NMTPipeline(PipelineHandler):
         param = torch.load(_ROOT_DIR + "/models/decoder.pth", map_location=device)
         model.load_state_dict(param)
         return model
+
+    @api(gradio.Text(label="en"), gradio.Text(label="fr"))
+    def online_eval(self, content: str):
+        return self.ppl(Text(content))
