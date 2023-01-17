@@ -6,20 +6,124 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import gradio
 
 from starwhale import Video, PipelineHandler, PPLResultIterator, multi_classification
+from starwhale.api.service import api
 
 from .model import MFNET_3D
 from .sampler import RandomSampling
 from .transform import Resize, Compose, ToTensor, Normalize, RandomCrop
 
 root_dir = Path(__file__).parent.parent
+_LABELS = (
+    "ApplyEyeMakeup",
+    "ApplyLipstick",
+    "Archery",
+    "BabyCrawling",
+    "BalanceBeam",
+    "BandMarching",
+    "BaseballPitch",
+    "Basketball",
+    "BasketballDunk",
+    "BenchPress",
+    "Biking",
+    "Billiards",
+    "BlowDryHair",
+    "BlowingCandles",
+    "BodyWeightSquats",
+    "Bowling",
+    "BoxingPunchingBag",
+    "BoxingSpeedBag",
+    "BreastStroke",
+    "BrushingTeeth",
+    "CleanAndJerk",
+    "CliffDiving",
+    "CricketBowling",
+    "CricketShot",
+    "CuttingInKitchen",
+    "Diving",
+    "Drumming",
+    "Fencing",
+    "FieldHockeyPenalty",
+    "FloorGymnastics",
+    "FrisbeeCatch",
+    "FrontCrawl",
+    "GolfSwing",
+    "Haircut",
+    "Hammering",
+    "HammerThrow",
+    "HandstandPushups",
+    "HandstandWalking",
+    "HeadMassage",
+    "HighJump",
+    "HorseRace",
+    "HorseRiding",
+    "HulaHoop",
+    "IceDancing",
+    "JavelinThrow",
+    "JugglingBalls",
+    "JumpingJack",
+    "JumpRope",
+    "Kayaking",
+    "Knitting",
+    "LongJump",
+    "Lunges",
+    "MilitaryParade",
+    "Mixing",
+    "MoppingFloor",
+    "Nunchucks",
+    "ParallelBars",
+    "PizzaTossing",
+    "PlayingCello",
+    "PlayingDaf",
+    "PlayingDhol",
+    "PlayingFlute",
+    "PlayingGuitar",
+    "PlayingPiano",
+    "PlayingSitar",
+    "PlayingTabla",
+    "PlayingViolin",
+    "PoleVault",
+    "PommelHorse",
+    "PullUps",
+    "Punch",
+    "PushUps",
+    "Rafting",
+    "RockClimbingIndoor",
+    "RopeClimbing",
+    "Rowing",
+    "SalsaSpin",
+    "ShavingBeard",
+    "Shotput",
+    "SkateBoarding",
+    "Skiing",
+    "Skijet",
+    "SkyDiving",
+    "SoccerJuggling",
+    "SoccerPenalty",
+    "StillRings",
+    "SumoWrestling",
+    "Surfing",
+    "Swing",
+    "TableTennisShot",
+    "TaiChi",
+    "TennisSwing",
+    "ThrowDiscus",
+    "TrampolineJumping",
+    "Typing",
+    "UnevenBars",
+    "VolleyballSpiking",
+    "WalkingWithDog",
+    "WallPushups",
+    "WritingOnBoard",
+    "YoYo",
+)
 
 
 def ppl_post(output: torch.Tensor) -> t.List[t.Tuple[str, t.List[float]]]:
-    output = output.squeeze()
     pred_value = output.argmax(-1).flatten().tolist()
-    probability_matrix = np.exp(output.tolist()).tolist()
+    probability_matrix = torch.nn.Softmax(dim=1)(output).tolist()
     return list(zip([str(p) for p in pred_value], probability_matrix))
 
 
@@ -104,19 +208,11 @@ class UCF101PipelineHandler(PipelineHandler):
         )
 
     @torch.no_grad()
-    def ppl(self, videos: t.List[Video], annotations, index, **kw: t.Any) -> t.Any:
+    def ppl(self, videos: t.List[Video], **kw: t.Any) -> t.Any:
         _frames_tensor = ppl_pre(
             videos=videos, sampler=self.sampler, transforms=self.transforms
         )
         output = self.model(_frames_tensor)
-
-        # recording
-        probs = torch.nn.Softmax(dim=1)(output)
-        label = torch.max(probs, 1)[1].detach().cpu().numpy()[0]
-        print(
-            f"id is:{index},real label is:{annotations},predict value is:{label}, probability is:{probs[0][label]}"
-        )
-
         return ppl_post(output)
 
     @multi_classification(
@@ -132,3 +228,10 @@ class UCF101PipelineHandler(PipelineHandler):
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
         return label, result, pr
+
+    @api(gradio.Video(type="filepath"), gradio.Label())
+    def online_eval(self, file: str):
+        with open(file, "rb") as f:
+            data = f.read()
+        prob = self.ppl([Video(fp=data)])[0]
+        return {_LABELS[i]: p for i, p in enumerate(prob[1])}

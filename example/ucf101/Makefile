@@ -25,3 +25,7 @@ prepare-data:
 	[ -d models ] ||  mkdir -p models
 	[ -f models/PyTorch-MFNet_ep-0000.pth ] || ([ -z $(CN) ] && curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.s3.us-west-1.amazonaws.com/model/ucf101.pth) || curl -o models/PyTorch-MFNet_ep-0000.pth https://starwhale-examples.oss-cn-beijing.aliyuncs.com/model/ucf101.pth
 	python3 -m pip install -r requirements.txt
+
+.POHNY: show-labels
+show-labels:
+	cat data/test_list1.txt | awk '{print $$3}' | awk -F'/' '{print $$1}' | sort | uniq
