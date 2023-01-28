@@ -9,7 +9,8 @@ module.exports = {
                 "tutorials/ag_news",
                 "tutorials/cifar10",
                 "tutorials/pfp",
-                "tutorials/nmt"
+                "tutorials/nmt",
+                "tutorials/ucf101"
             ],
             "Fundamentals": [
                 "fundamentals/concepts",
