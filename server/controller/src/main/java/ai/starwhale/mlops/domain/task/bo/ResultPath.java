@@ -14,21 +14,44 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.report.req;
+package ai.starwhale.mlops.domain.task.bo;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TaskLog {
+public class ResultPath {
 
-    private String readerId;
+    String root;
 
-    private String log;
+    /**
+     * the dir that contains execution result , no hierarchy ,flat
+     */
+    String resultDir;
 
+    /**
+     * the dir of logs , no hierarchy ,flat
+     */
+    String logDir;
+
+    static final String DIR_RESULT = "/result";
+
+    static final String DIR_LOG = "/logs";
+
+    public ResultPath(String rootPath) {
+        this.root = rootPath;
+        this.resultDir = DIR_RESULT;
+        this.logDir = DIR_LOG;
+    }
+
+    public String resultDir() {
+        return this.root + resultDir;
+    }
+
+    public String logDir() {
+        return this.root + logDir;
+    }
 }
