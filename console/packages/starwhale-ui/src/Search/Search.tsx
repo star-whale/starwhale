@@ -2,6 +2,7 @@ import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
+import _ from 'lodash'
 // eslint-disable-next-line import/no-cycle
 import FilterRenderer from './FilterRenderer'
 // eslint-disable-next-line import/no-cycle
@@ -47,31 +48,100 @@ export const useStyles = createUseStyles({
     },
 })
 
+// @ts-ignore
+const containsNode = (parent, child) => {
+    return child && parent && parent.contains(child as any)
+}
+
 export interface ISearchProps {
     fields: ColumnSchemaDesc[]
     value?: ValueT[]
     onChange?: (args: ValueT[]) => void
 }
-const raw = [{}]
 
-export default function Search({ value, onChange, ...props }: ISearchProps) {
+export default function Search({ value = [], onChange, ...props }: ISearchProps) {
     const styles = useStyles()
     const ref = useRef<HTMLDivElement>(null)
-
     const [isEditing, setIsEditing] = useState(false)
-
-    const [items, setItems] = useState<ValueT[]>(value ?? (raw as any))
+    const [items, setItems] = useState<ValueT[]>(value)
+    const [editingItem, setEditingItem] = useState<{ index: any; value: ValueT } | null>(null)
 
     useEffect(() => {
-        const newItems = value && value.length > 0 ? [...value, ...(raw as any)] : (raw as any)
-        setItems(newItems)
-    }, [value])
+        if (_.isEqual(value, items)) return
+        setItems(value ?? [])
+    }, [value, items])
 
-    useClickAway(ref, () => {
+    useClickAway(ref, (e) => {
+        if (containsNode(ref.current, e.target)) return
         setIsEditing(false)
     })
 
-    const column = React.useMemo(() => new ColumnFilterModel(props.fields), [props.fields])
+    const column = React.useMemo(() => {
+        return new ColumnFilterModel(props.fields)
+    }, [props.fields])
+
+    const count = React.useRef(100)
+    const filters = React.useMemo(() => {
+        count.current += 1
+        const tmps = items.map((item, index) => {
+            return (
+                <FilterRenderer
+                    key={[index, item.property].join('-')}
+                    value={item}
+                    isEditing={isEditing}
+                    isDisabled={false}
+                    isFocus={editingItem?.index === index}
+                    column={column}
+                    onClick={() => {
+                        if (editingItem?.index !== index) setEditingItem({ index, value: item })
+                    }}
+                    // @ts-ignore
+                    containerRef={ref}
+                    onChange={(newValue: any) => {
+                        let newItems = []
+                        if (!newValue) {
+                            newItems = items.filter((key, i) => i !== index)
+                        } else {
+                            newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
+                        }
+                        newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value)
+                        setItems(newItems)
+                        onChange?.(newItems)
+                        setEditingItem({ index: -1, value: {} })
+                    }}
+                />
+            )
+        })
+        tmps.push(
+            <FilterRenderer
+                key={count.current}
+                value={{}}
+                isEditing={isEditing}
+                isDisabled={false}
+                isFocus={editingItem ? editingItem.index === -1 : false}
+                column={column}
+                style={{ flex: 1 }}
+                onClick={() => {
+                    if (editingItem?.index !== -1) setEditingItem({ index: -1, value: {} })
+                }}
+                // @ts-ignore
+                containerRef={ref}
+                onChange={(newValue: any) => {
+                    let newItems = [...items]
+                    // remove prev item
+                    if (!newValue) {
+                        newItems.splice(-1)
+                    } else {
+                        newItems.push(newValue)
+                    }
+                    newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value)
+                    setItems(newItems)
+                    onChange?.(newItems)
+                }}
+            />
+        )
+        return tmps
+    }, [items, isEditing, column, editingItem, onChange])
 
     return (
         <div
@@ -80,49 +150,16 @@ export default function Search({ value, onChange, ...props }: ISearchProps) {
             className={styles.searchBar}
             ref={ref}
             style={{ borderColor: isEditing ? '#799EE8' : '#CFD7E6' }}
-            onKeyDown={(e) => {
-                // @ts-ignore
+            onKeyDown={(e: React.BaseSyntheticEvent) => {
+                if (e.target.classList.contains('filter-remove')) return
+                setIsEditing(true)
+            }}
+            onClick={(e: React.BaseSyntheticEvent) => {
                 if (e.target.classList.contains('filter-remove')) return
                 setIsEditing(true)
             }}
         >
-            {items.map((item, index) => {
-                return (
-                    <FilterRenderer
-                        key={[index, item.property].join('-')}
-                        value={item}
-                        isEditing={isEditing}
-                        isDisabled={false}
-                        isFocus={index === items.length - 1 && isEditing}
-                        column={column}
-                        style={{
-                            flex: index === items.length - 1 ? 1 : undefined,
-                        }}
-                        // @ts-ignore
-                        containerRef={ref}
-                        onChange={(newValue: any) => {
-                            let newItems = []
-                            if (!newValue) {
-                                newItems = items.filter((_, i) => i !== index)
-                            } else {
-                                newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
-                            }
-                            if (newItems.length === 0) {
-                                newItems = [{}]
-                            }
-
-                            setItems(newItems)
-
-                            if (newValue && newValue.property && newValue.op && newValue.value) {
-                                setItems([...newItems, {}])
-                                setIsEditing(true)
-                            }
-
-                            onChange?.(newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value))
-                        }}
-                    />
-                )
-            })}
+            {filters}
         </div>
     )
 }

@@ -19,11 +19,15 @@ export default function FilterRenderer({
     value: rawValues = {},
     onChange = () => {},
     isFocus = false,
+    isEditing = false,
     style = {},
     column = new ColumnFilterModel([]),
+    ...rest
 }: FilterPropsT & {
     column: ColumnFilterModel
-    style: React.CSSProperties
+    style?: React.CSSProperties
+    onClick?: () => void
+    containerRef?: React.RefObject<HTMLDivElement>
 }) {
     const [values, setValues] = useState<ValueT>(rawValues)
     const [value, setValue] = useState<any>(rawValues?.value)
@@ -59,9 +63,25 @@ export default function FilterRenderer({
         }
     }, [property, $columns])
 
+    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
+        setValue((event.target as any)?.value)
+    }
+
+    const handleReset = () => {
+        setProperty(values?.property)
+        setOp(values?.op)
+        setValue(values.value)
+        setRemoving(false)
+        setEditing(false)
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
         // console.log(event.keyCode, removing && !value, value, op, property)
         switch (event.keyCode) {
+            case 27:
+                handleReset()
+                break
+            case 9: // tab
             case 13: // enter
                 if (value && op && property) {
                     const newValues = {
@@ -98,19 +118,8 @@ export default function FilterRenderer({
         }
     }
 
-    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
-        setValue((event.target as any)?.value)
-    }
-
-    const handleReset = () => {
-        setProperty(values?.property)
-        setOp(values?.op)
-        setValue(values.value)
-        setRemoving(false)
-        setEditing(false)
-    }
-
     const handleFocus = () => {
+        rest.onClick?.()
         setEditing(true)
         inputRef.current?.focus()
     }
@@ -133,11 +142,11 @@ export default function FilterRenderer({
 
     // keep focus by parent component
     useEffect(() => {
-        if (isFocus) {
+        if (isFocus && isEditing) {
             setEditing(true)
             inputRef.current?.focus()
         }
-    }, [isFocus])
+    }, [isFocus, isEditing])
 
     // truncate values when first item is empty but with the same react key
     useEffect(() => {
@@ -167,7 +176,7 @@ export default function FilterRenderer({
                     value={property as any}
                     onChange={(item: any) => setProperty(item)}
                     options={$fieldOptions}
-                    mountNode={document.body}
+                    mountNode={rest.containerRef?.current ?? document.body}
                     innerRef={fieldDropdownRef}
                 />
             )}
@@ -180,7 +189,7 @@ export default function FilterRenderer({
                         inputRef.current?.focus()
                     }}
                     innerRef={opDropdownRef}
-                    mountNode={document.body}
+                    mountNode={rest.containerRef?.current ?? document.body}
                 />
             )}
             {/* <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} /> */}

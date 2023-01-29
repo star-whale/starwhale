@@ -74,10 +74,12 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const store = useStore()
 
     const { columns } = props
+    const isFullyLoaded = store.isInit
     const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
         // if (!columnable) return columns
+        if (!isFullyLoaded) return columns
 
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
@@ -89,7 +91,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
                 }
             }) as ColumnT[]
-    }, [columns, columnable, pinnedIds, ids])
+    }, [columns, columnable, pinnedIds, ids, isFullyLoaded])
 
     const $filters = React.useMemo(() => {
         return (
