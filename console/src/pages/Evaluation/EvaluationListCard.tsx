@@ -43,9 +43,8 @@ export default function EvaluationListCard() {
         filter: store.currentView.queries,
     })
 
-    const evaluationsInfo = useQueryDatasetList(summaryTableName, options, true)
+    const { columnInfo, recordInfo: evaluationsInfo } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
-
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
@@ -56,15 +55,7 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreColumns(
-        evaluationsInfo?.data?.columnTypes?.sort((ca, cb) => {
-            if (ca.name === 'id') return -1
-            if (ca.name?.startsWith('sys/')) return -1
-            if (ca.name > cb.name) return -1
-            return 1
-        }) ?? []
-    )
-
+    const $columns = useDatastoreColumns(columnInfo?.data?.columnTypes)
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'id')
@@ -118,13 +109,9 @@ export default function EvaluationListCard() {
             return column
         })
     }, [t, $columns, projectId])
-
-    const [compareRows, setCompareRows] = useState<any[]>([])
-
-    React.useEffect(() => {
-        if (evaluationsInfo.isSuccess)
-            setCompareRows(evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? [])
-    }, [store.rowSelectedIds, evaluationsInfo.isSuccess, evaluationsInfo.data?.records])
+    const $compareRows = React.useMemo(() => {
+        return evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
+    }, [store.rowSelectedIds, evaluationsInfo.data?.records])
 
     React.useEffect(() => {
         const unsub = useEvaluationStore.subscribe(
@@ -172,9 +159,10 @@ export default function EvaluationListCard() {
 
                 if (
                     !_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState)) &&
+                    evaluationViewConfig.isSuccess &&
                     evaluationViewConfig.isSuccess
                 ) {
-                    // console.log('saved')
+                    // console.log('saved', store.getRawConfigs().currentView)
                     await setEvaluationViewConfig(projectId, {
                         name: 'evaluation',
                         content: JSON.stringify(store.getRawConfigs(), null),
@@ -194,8 +182,8 @@ export default function EvaluationListCard() {
                 if (!_.isEqual(apiState, store.getRawConfigs())) {
                     // console.log('upcoming state', apiState, evaluationViewConfig.data)
                     store.setRawConfigs({
-                        isInit: true,
                         ...apiState,
+                        isInit: true,
                     })
                 }
             } catch (e) {
@@ -247,13 +235,13 @@ export default function EvaluationListCard() {
                         />
                     )
                 }}
-                isResizeable={compareRows.length > 0}
+                isResizeable={$compareRows.length > 0}
                 right={() => {
                     return (
                         <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
                             <EvaluationListCompare
                                 title={t('Compare Evaluations')}
-                                rows={compareRows}
+                                rows={$compareRows}
                                 attrs={evaluationsInfo?.data?.columnTypes}
                             />
                         </Card>

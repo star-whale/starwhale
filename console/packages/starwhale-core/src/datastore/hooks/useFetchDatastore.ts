@@ -91,5 +91,8 @@ export function useQueryDatasetList(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recordQuery.tableName])
 
-    return recordInfo
+    return {
+        columnInfo,
+        recordInfo,
+    }
 }

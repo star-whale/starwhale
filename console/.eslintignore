@@ -5,3 +5,4 @@ node_modules/
 BaseTable/
 stories/
 packages/starwhale-ui/src/base/
+src/assets/**/*.js

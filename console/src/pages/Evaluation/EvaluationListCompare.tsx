@@ -326,7 +326,7 @@ export default function EvaluationListCompare({
                     Rows with diff only
                 </Checkbox>
             </div>
-            <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+            <GridTable store={useEvaluationCompareStore} columns={$columns} data={$rowsWithDiffOnly} />
         </>
     )
 }

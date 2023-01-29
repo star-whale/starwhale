@@ -9,6 +9,7 @@ import { Panel } from 'baseui/accordion'
 import Accordion from '@/components/Accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
+import { useParams } from 'react-router'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -113,6 +114,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 }
 
 function EvaluationWidgetResults() {
+    const { jobId } = useParams<{ jobId: string; projectId: string }>()
     const { project } = useProject()
 
     const tables = React.useMemo(() => {
@@ -133,7 +135,20 @@ function EvaluationWidgetResults() {
                 }}
             >
                 {tables.map((name) => {
-                    return <EvaluationViewer table={name} key={name} />
+                    let filter
+                    if (name.includes('/summary') && jobId)
+                        filter = {
+                            operator: 'EQUAL',
+                            operands: [
+                                {
+                                    stringValue: jobId,
+                                },
+                                {
+                                    columnName: 'id',
+                                },
+                            ],
+                        }
+                    return <EvaluationViewer table={name} key={name} filter={filter} />
                 })}
             </div>
             <FullTablesEditor />

@@ -1,3 +1,4 @@
+import React from 'react'
 import Search from '@starwhale/ui/Search'
 import { ColumnT, QueryT } from './types'
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
@@ -9,7 +10,9 @@ type PropsT = {
 }
 
 function ConfigQuery(props: PropsT) {
-    const columnTypes = props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
+    const columnTypes = React.useMemo(() => {
+        return props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
+    }, [props.columns])
 
     return <Search fields={columnTypes as ColumnSchemaDesc[]} value={props.value} onChange={props.onChange} />
 }

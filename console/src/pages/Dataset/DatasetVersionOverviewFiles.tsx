@@ -176,7 +176,7 @@ export default function DatasetVersionFiles() {
         setLayoutKey(layoutParam ?? '0')
     }, [layoutParam])
 
-    const tables = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
+    const { columnInfo: tables } = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
 
     const rowCount = React.useMemo(() => {
         return getMetaRow(datasetVersion?.versionMeta as string)
