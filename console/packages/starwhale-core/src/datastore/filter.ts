@@ -115,15 +115,22 @@ export class ColumnFilterModel {
         }
     }
 
-    toQuery(items: any): TableQueryFilterDesc {
+    toQuery(items: any): TableQueryFilterDesc | undefined {
         const fields = this.getSearchColumns()
+
         const filters = items
-            .filter((item: any) => item?.value && item?.op && item?.property)
-            .map((item: any) => {
-                const field = fields.find((f) => f.name === item.property) as any
+            .map((item: any) => ({
+                field: fields.find((f) => f.name === item.property),
+                item,
+            }))
+            .filter(({ item, field }: any) => item?.value && item?.op && item?.property && field)
+            .map(({ item, field }: any) => {
                 return ColumnFilterModel.getQuery(field?.name, item.value, item.op, field?.type as DataTypes)
             })
+
         if (filters.length === 1) return filters[0]?.filter
+
+        if (filters.length === 0) return undefined
 
         return {
             operator: 'AND',

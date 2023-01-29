@@ -12,9 +12,17 @@ export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[] = []): Colum
         columnTypes
             ?.sort((ca, cb) => {
                 if (ca.name === 'id') return -1
-                if (ca.name?.startsWith('sys/')) return -1
-                if (ca.name > cb.name) return -1
-                return 1
+                if (cb.name === 'id') return 1
+                if (ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
+                    return ca.name.localeCompare(cb.name)
+                }
+                if (ca.name?.startsWith('sys/') && !cb.name?.startsWith('sys/')) {
+                    return -1
+                }
+                if (!ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
+                    return 1
+                }
+                return ca.name.localeCompare(cb.name)
             })
             .forEach((column) => {
                 if (isPrivateSys(column.name)) return

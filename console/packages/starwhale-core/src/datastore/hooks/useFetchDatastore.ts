@@ -75,7 +75,7 @@ export function useQueryDatasetList(
         return filter ? { ...raw, filter } : raw
     }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName])
 
-    const recordInfo = useQueryDatastore(recordQuery)
+    const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 
     React.useEffect(() => {
         if (tableName) {
