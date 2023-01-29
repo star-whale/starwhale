@@ -9,7 +9,7 @@ fi
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
-PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-'root'}"/.cache/pip}
+PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
@@ -111,7 +111,7 @@ welcome() {
     echo "Run: $1 "
     echo "Model Version: ${SW_MODEL_VERSION}"
     echo "Runtime Version: ${SW_RUNTIME_VERSION}"
-    echo "Local User: ${SW_USER:-'root'}"
+    echo "Local User: ${SW_USER:-root}"
     echo "===================================="
     if [ ! -z "${SW_USER}" ];
     then
