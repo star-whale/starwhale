@@ -52,7 +52,7 @@ public interface StepMapper {
             + "    #{item}"
             + " </foreach>"
             + "</script>")
-    void updateStatus(@Param("stepIds") List<Long> stepIds, @Param("status") StepStatus stepNewStatus);
+    void updateStatus(@Param("stepIds") List<Long> stepIds, @Param("status") StepStatus status);
 
     @Update("update step set finished_time = #{finishedTime} WHERE id = #{stepId}")
     void updateFinishedTime(@Param("stepId") Long stepId, @Param("finishedTime") Date finishedTime);
