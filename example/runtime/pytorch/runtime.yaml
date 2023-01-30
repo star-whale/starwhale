@@ -6,7 +6,7 @@ configs:
   docker:
     image: ghcr.io/star-whale/runtime/pytorch
 dependencies:
-  - requirements-sw-lock.txt
+  - requirements.txt
   - pip:
       - Pillow
       - numpy
