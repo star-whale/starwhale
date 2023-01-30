@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.util.Date;
@@ -29,7 +30,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class StepMapperTest {
+public class StepMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private StepMapper stepMapper;

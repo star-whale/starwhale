@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.evaluation.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class ViewConfigMapperTest {
+public class ViewConfigMapperTest extends MySqlContainerHolder {
 
     @Autowired
     private ViewConfigMapper viewConfigMapper;
