@@ -36,7 +36,7 @@ public interface StepMapper {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     void save(@Param("step") StepEntity stepEntity);
 
-    @Select("select id, step_uuid, step_name, job_id, last_step_id, step_status,"
+    @Select("select id, step_uuid, step_name, job_id, last_step_id, step_status as status,"
             + " finished_time, started_time, created_time, modified_time, concurrency, task_num from step"
             + " where job_id = #{jobId}"
             + " order by id")
