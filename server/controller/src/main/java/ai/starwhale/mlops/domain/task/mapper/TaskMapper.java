@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -43,6 +44,7 @@ public interface TaskMapper {
 
     @Insert("insert into task_info(task_uuid, step_id, task_status, task_request, output_path)"
             + " values (#{task.taskUuid}, #{task.stepId}, #{task.taskStatus}, #{task.taskRequest}, #{task.outputPath})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int addTask(@Param("task") TaskEntity task);
 
     @Insert("<script>"
@@ -51,6 +53,7 @@ public interface TaskMapper {
             + "  #{task.taskUuid}, #{task.stepId}, #{task.taskStatus}, #{task.taskRequest}, #{task.outputPath}"
             + "</foreach>"
             + "</script>")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int addAll(@Param("taskList") List<TaskEntity> taskList);
 
     @Update("<script>"
