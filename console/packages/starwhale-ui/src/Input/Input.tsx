@@ -22,6 +22,20 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
                     ':hover': {
                         borderColor: '#799EE8',
                     },
+                    ':focus': {
+                        backgroundColor: '#fff',
+                    },
+                },
+            },
+            ClearIcon: {
+                style: {
+                    'width': '18px',
+                    'height': '18px',
+                    'fill': 'rgba(2,16,43,0.20)',
+                    'color': 'rgba(2,16,43,0.20)',
+                    ':hover': {
+                        fill: 'rgba(2,16,43,0.40)',
+                    },
                 },
             },
         },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StatefulMenu } from 'baseui/menu'
 import { PLACEMENT, Popover } from 'baseui/popover'
 import { FilterT } from './types'

@@ -150,7 +150,7 @@ function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef 
                     overflow: 'visible',
                     backgroundColor: '#fff',
                     position: 'relative',
-                    right: gridMode === 2 ? '14px' : undefined,
+                    right: gridMode === 2 ? '0px' : undefined,
                     left: gridMode === 0 ? '0px' : undefined,
                 })
             )}

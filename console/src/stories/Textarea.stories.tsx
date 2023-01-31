@@ -3,7 +3,7 @@ import { ComponentStory, ComponentMeta } from '@storybook/react'
 import Input from '@starwhale/ui/Input'
 
 export default {
-    title: 'Components/Input/Input',
+    title: 'Example/Input/Input',
     component: Input,
     argTypes: {},
 } as ComponentMeta<typeof Input>
@@ -15,6 +15,7 @@ const Template: ComponentStory<typeof Input> = (args) => <Input {...args} cleara
 export const Primary = Template.bind({})
 Primary.args = {
     clearable: true,
+    disabled: false,
     size: 'compact',
 }
 
@@ -23,5 +24,5 @@ Clearable.args = {
     clearable: true,
     disabled: false,
     size: 'compact',
-    value: 'text',
+    value: '123',
 }

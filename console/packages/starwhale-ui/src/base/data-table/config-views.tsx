@@ -115,12 +115,23 @@ function ConfigViews(props: PropsT) {
                             width: '700px',
                             display: 'flex',
                             flexDirection: 'column',
+                            minHeight: '640px',
+                            maxHeight: 'calc(100vh - 100px)',
                         },
                     },
                 }}
             >
                 <ModalHeader>{!store.viewEditing?.id ? t('Add a New View') : t('Edit View')}</ModalHeader>
-                <ModalBody style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <ModalBody
+                    style={{
+                        flex: '1',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px',
+                        overflow: 'auto',
+                        paddingRight: '12px',
+                    }}
+                >
                     <ViewsEdit
                         ref={viewRef}
                         view={store.viewEditing}

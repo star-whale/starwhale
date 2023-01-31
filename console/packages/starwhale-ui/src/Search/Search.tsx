@@ -7,13 +7,15 @@ import _ from 'lodash'
 import FilterRenderer from './FilterRenderer'
 // eslint-disable-next-line import/no-cycle
 import { ValueT } from './types'
+import IconFont from '../IconFont'
 
 export const useStyles = createUseStyles({
     searchBar: {
         'display': 'flex',
         'border': '1px solid #CFD7E6',
         'gap': '10px',
-        'height': '36px',
+        'height': '32px',
+        'lineHeight': '20px',
         'overflowX': 'auto',
         'alignItems': 'center',
         'padding': '4px',
@@ -21,6 +23,7 @@ export const useStyles = createUseStyles({
         '&::-webkit-scrollbar': {
             height: '4px !important',
         },
+        'flexGrow': '0',
     },
     filters: {
         'position': 'relative',
@@ -29,14 +32,20 @@ export const useStyles = createUseStyles({
         'gap': '1px',
         'cursor': 'pointer',
         'width': 'auto',
-        'height': '24px',
+        'height': '22px',
         '&:hover $label': {
             backgroundColor: '#EDF3FF',
         },
     },
+    startIcon: {
+        width: '34px',
+        display: 'grid',
+        placeItems: 'center',
+        marginRight: '-10px',
+    },
     label: {
-        height: '24px',
-        lineHeight: '24px',
+        height: '22px',
+        lineHeight: '22px',
         padding: '0 8px',
         background: '#EEF1F6',
         borderRadius: '4px',
@@ -159,6 +168,9 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
                 setIsEditing(true)
             }}
         >
+            <div className={styles.startIcon}>
+                <IconFont type='filter' size={12} kind='gray' />
+            </div>
             {filters}
         </div>
     )

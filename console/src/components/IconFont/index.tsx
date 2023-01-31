@@ -8,74 +8,73 @@ import emptyChartSvg from '@/assets/empty-chart.svg'
 import searchEmptySvg from '@/assets/search-empty.svg'
 import googleSvg from '@/assets/fonts/google.svg'
 
-const iconTypes = [
-    'arrow2_down',
-    'arrow2_right',
-    'clear2',
-    'arrow_left',
-    'arrow_down',
-    'arrow_top',
-    'arrow_right',
-    'eye_off',
-    'eye',
-    'clear',
-    'fold',
-    'fold2',
-    'unfold',
-    'unfold2',
-    'job',
-    'logout',
-    'password',
-    'passwordresets',
-    'dataset',
-    'close',
-    'results',
-    'Model',
-    'project',
-    'show',
-    'revert',
-    'user',
-    'search',
-    'tasks',
-    'add',
-    'setting2',
-    'success',
-    'runtime',
-    'decline',
-    'rise',
-    'pin',
-    'setting',
-    'more',
-    'a-sortasc',
-    'a-sortdesc',
-    'email',
-    'warning',
-    'Facebook',
-    'Twitter',
-    'Instagram',
-    'google',
-    'Github',
-    'a-managemember',
-    'overview',
-    'evaluation',
-    'excel',
-    'text',
-    'audio',
-    'view',
-    'grid',
-    'fullscreen',
-    'token',
-    'drag',
-    'a-Addabove',
-    'a-Addbelow',
-    'arrow2',
-]
+type IconTypesT =
+    | 'arrow2_down'
+    | 'arrow2_right'
+    | 'clear2'
+    | 'arrow_left'
+    | 'arrow_down'
+    | 'arrow_top'
+    | 'arrow_right'
+    | 'eye_off'
+    | 'eye'
+    | 'clear'
+    | 'fold'
+    | 'fold2'
+    | 'unfold'
+    | 'unfold2'
+    | 'job'
+    | 'logout'
+    | 'password'
+    | 'passwordresets'
+    | 'dataset'
+    | 'close'
+    | 'results'
+    | 'Model'
+    | 'project'
+    | 'show'
+    | 'revert'
+    | 'user'
+    | 'search'
+    | 'tasks'
+    | 'add'
+    | 'setting2'
+    | 'success'
+    | 'runtime'
+    | 'decline'
+    | 'rise'
+    | 'pin'
+    | 'setting'
+    | 'more'
+    | 'a-sortasc'
+    | 'a-sortdesc'
+    | 'email'
+    | 'warning'
+    | 'Facebook'
+    | 'Twitter'
+    | 'Instagram'
+    | 'google'
+    | 'Github'
+    | 'a-managemember'
+    | 'overview'
+    | 'evaluation'
+    | 'excel'
+    | 'text'
+    | 'audio'
+    | 'view'
+    | 'grid'
+    | 'fullscreen'
+    | 'token'
+    | 'drag'
+    | 'a-Addabove'
+    | 'a-Addbelow'
+    | 'arrow2'
 
 interface IIconFontProps {
     style?: React.CSSProperties
     size?: number
     kind?: 'inherit' | 'white' | 'gray' | 'white2' | 'primary'
-    type: typeof iconTypes[number]
+    type: IconTypesT
 }
 
 const hijacked = {

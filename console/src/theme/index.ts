@@ -1,6 +1,6 @@
 import { Theme, ThemePrimitives } from 'baseui/theme'
 import color from 'color'
-import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
+import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme } from 'baseui'
 
 export type BaseThemeType = 'light' | 'dark' | 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
@@ -46,19 +46,8 @@ const primitives: Partial<ThemePrimitives> = {
 }
 
 const overrides = {
-    light: {
-        colors: {
-            // ----------- custom -----------
-            brandRootBackground: '#fdfdfd',
-        },
-    },
-    dark: {
-        colors: {
-            // ----------- custom -----------
-            brandRootBackground: BaseDarkTheme.colors.backgroundPrimary,
-            brandHeaderBackground: color(BaseDarkTheme.colors.backgroundPrimary).fade(0.5).string(),
-        },
-    },
+    light: { colors: {} },
+    dark: { colors: {} },
     deep: {
         colors: {
             primary: customPrimaryColors.primary,
@@ -79,6 +68,7 @@ const overrides = {
             tickFillSelectedHover: customPrimaryColors.primary,
             inputBorder: customPrimaryColors.dividerSecondary,
             inputFill: '#FFF',
+            inputFillActive: '#FFF',
             borderFocus: customPrimaryColors.primary,
             toastInfoText: '#4D576A',
             toastInfoBackground: '#F0F5FF',

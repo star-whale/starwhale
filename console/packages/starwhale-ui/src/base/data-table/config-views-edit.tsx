@@ -62,7 +62,13 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 })}
             >
                 <LabelSmall>View Name *</LabelSmall>
-                <Input required value={name} onChange={(event) => setName((event.target as HTMLInputElement).value)} />
+                <Input
+                    placeholder='input text'
+                    required
+                    clearable
+                    value={name}
+                    onChange={(event) => setName((event.target as HTMLInputElement).value)}
+                />
             </div>
             {/* <CategoricalFilter
                 ref={filterRef}
@@ -71,7 +77,16 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 rows={props.rows}
                 filters={props.view?.filters ?? []}
             /> */}
-            <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
+            <div
+                className={css({
+                    display: 'flex',
+                    gap: '10px',
+                    flexDirection: 'column',
+                })}
+            >
+                <LabelSmall>Add Filter</LabelSmall>
+                <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
+            </div>
             <ConfigManageColumns ref={columnRef} isInline view={props.view} columns={props.columns ?? []} />
             <div
                 className={css({

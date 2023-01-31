@@ -7,6 +7,7 @@ import eslint from 'vite-plugin-eslint'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export const alias = {
+    'baseui': path.resolve(__dirname, 'node_modules/baseui'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),
@@ -49,7 +50,7 @@ export default defineConfig({
     },
     resolve: { alias },
     plugins: [
-        eslint(),
+        // eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),

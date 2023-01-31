@@ -192,7 +192,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 className='flex-row-left mb-20 g-20'
                                 style={{
                                     display: 'grid',
-                                    gridTemplateColumns: '280px auto auto',
+                                    gridTemplateColumns: 'minmax(1fr 280px) auto auto',
                                 }}
                             >
                                 {viewable && (
@@ -223,8 +223,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             </div>
                             <div
                                 style={{
-                                    gridTemplateColumns: '1fr auto',
+                                    gridTemplateColumns: 'minmax(200px,1fr) auto',
                                     display: 'grid',
+                                    paddingBottom: '20px',
                                 }}
                             >
                                 {queryable && (
@@ -238,7 +239,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 )}
 
                                 {columnable && !$rowSelectedIds.size && (
-                                    <div className='table-config-column flex-row-center mb-20'>
+                                    <div className='table-config-column flex-row-center'>
                                         <ConfigManageColumns
                                             view={store.currentView}
                                             columns={props.columns}
