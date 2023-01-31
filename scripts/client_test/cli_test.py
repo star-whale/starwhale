@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures._base import Future
 
 from cmds.eval_cmd import Evaluation
+from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
@@ -363,6 +364,17 @@ class TestCli:
             workdir_ = expl["workdir"]
             self.build_model(str(workdir_))
 
+    def smoke_commands(self) -> None:
+        commands = [
+            "timeout 2 swcli --help",
+            "swcli --version",
+        ]
+
+        for cmd in commands:
+            _code, _err = invoke(cmd.split())
+            if _code != 0:
+                raise RuntimeError(f"cmd[{cmd}] run failed, err: {_err}, code: {_code}")
+
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(
@@ -383,3 +395,5 @@ if __name__ == "__main__":
             test_cli.debug()
         else:
             test_cli.test_expl(expl_name=example)
+
+        test_cli.smoke_commands()

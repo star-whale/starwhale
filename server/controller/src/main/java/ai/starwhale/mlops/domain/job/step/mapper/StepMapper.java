@@ -20,21 +20,43 @@ import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.util.Date;
 import java.util.List;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface StepMapper {
 
+    @Insert("insert into step(step_uuid, step_name, job_id, last_step_id, step_status, concurrency, task_num)"
+            + " values (#{step.uuid}, #{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, "
+            + " #{step.concurrency}, #{step.taskNum})")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     void save(@Param("step") StepEntity stepEntity);
 
+    @Select("select id, step_uuid, step_name, job_id, last_step_id, step_status as status,"
+            + " finished_time, started_time, created_time, modified_time, concurrency, task_num from step"
+            + " where job_id = #{jobId}"
+            + " order by id")
     List<StepEntity> findByJobId(@Param("jobId") Long jobId);
 
+    @Update("update step set last_step_id = #{lastStepId} WHERE id = #{stepId}")
     void updateLastStep(@Param("stepId") Long stepId, @Param("lastStepId") Long lastStepId);
 
-    void updateStatus(@Param("stepIds") List<Long> stepIds, @Param("status") StepStatus stepNewStatus);
+    @Update("<script>"
+            + "update step set step_status = #{status} WHERE id in "
+            + " <foreach item='item' index='index' collection='stepIds'"
+            + "   open='(' separator=',' close=')'>"
+            + "    #{item}"
+            + " </foreach>"
+            + "</script>")
+    void updateStatus(@Param("stepIds") List<Long> stepIds, @Param("status") StepStatus status);
 
+    @Update("update step set finished_time = #{finishedTime} WHERE id = #{stepId}")
     void updateFinishedTime(@Param("stepId") Long stepId, @Param("finishedTime") Date finishedTime);
 
+    @Update("update step set started_time = #{startedTime} WHERE id = #{stepId}")
     void updateStartedTime(@Param("stepId") Long stepId, @Param("startedTime") Date startedTime);
 }

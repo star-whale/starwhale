@@ -1,4 +1,5 @@
 import io
+import os
 import random
 import typing as t
 
@@ -37,7 +38,11 @@ class MaskRCnn(PipelineHandler):
         output = self.model(torch.stack([_tensor]))
         return index, self._post(index, output[0])
 
-    @api(gradio.Image(type="filepath"), [gradio.Image(type="pil"), gradio.Json()])
+    @api(
+        gradio.Image(type="filepath"),
+        [gradio.Image(type="pil"), gradio.Json()],
+        examples=[[os.path.join(os.path.dirname(__file__), "../FudanPed00001.png")]],
+    )
     def handler(self, file: str):
         with open(file, "rb") as f:
             data = f.read()

@@ -126,9 +126,9 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - name: Install yarn
+      - name: Install dev tools
         working-directory: ./console
-        run: make install-yarn
+        run: make install-dev-tools
 
       - uses: actions/cache@v3
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -147,7 +147,7 @@ jobs:
 
       - name: Yarn Build
         working-directory: ./console
-        run: make build-ui
+        run: make build-all
         env:
           NODE_OPTIONS: "--max-old-space-size=5120"
 
