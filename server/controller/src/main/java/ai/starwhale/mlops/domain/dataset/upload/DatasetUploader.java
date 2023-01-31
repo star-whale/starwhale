@@ -239,7 +239,7 @@ public class DatasetUploader {
                 .findByNameAndDatasetId(manifest.getVersion(), datasetEntity.getId(), true);
         if (null == datasetVersionEntity) {
             // create
-            datasetVersionEntity = from(projectEntity.getProjectName(), datasetEntity, manifest);
+            datasetVersionEntity = from(uploadRequest.getProject(), datasetEntity, manifest);
             datasetVersionMapper.insert(datasetVersionEntity);
             RevertManager.create(new BundleManager(
                     idConvertor,

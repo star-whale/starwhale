@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.dataset;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -107,7 +108,13 @@ public class DatasetUploaderTest {
         String dsName = "testds3";
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        uploadRequest.setProject("p1");
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
+        verify(datasetVersionMapper).insert(
+                argThat((DatasetVersionEntity datasetVersion) ->
+                    datasetVersion.getIndexTable()
+                        .equals("project/p1/dataset/testds3/mi/mizwkzrqgqzdemjwmrtdmmjummzxczi3/meta")));
+
         datasetUploader.uploadBody(
                 dsVersionId,
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
