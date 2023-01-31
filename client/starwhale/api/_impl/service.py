@@ -2,13 +2,14 @@ import typing as t
 import functools
 from dataclasses import dataclass
 
-import gradio
-from gradio.components import Component
-
 from starwhale.utils import in_production
 
-Input = t.Union[Component, t.List[Component]]
-Output = t.Union[Component, t.List[Component]]
+if t.TYPE_CHECKING:
+    from gradio import Blocks
+    from gradio.components import Component
+
+Input = t.Union["Component", t.List["Component"]]
+Output = t.Union["Component", t.List["Component"]]
 Examples = t.Union[t.List[t.Any], str]
 
 
@@ -78,6 +79,8 @@ class Service:
         return server.app.openapi()
 
     def _render_api(self, _api: Api, hijack_submit: bool) -> None:
+        import gradio
+
         js_func: t.Optional[str] = None
         if hijack_submit:
             js_func = "async(...x) => { typeof wait === 'function' && await wait(); return x; }"
@@ -106,7 +109,9 @@ class Service:
 
     def _gen_gradio_server(
         self, hijack_submit: bool, title: t.Optional[str] = None
-    ) -> gradio.Blocks:
+    ) -> "Blocks":
+        import gradio
+
         apis = self.apis.values()
         with gradio.Blocks() as app:
             with gradio.Tabs():
