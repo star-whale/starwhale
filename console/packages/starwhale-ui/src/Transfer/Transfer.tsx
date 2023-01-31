@@ -123,7 +123,7 @@ export default function Transfer({
         return m
     }, [columns])
     const columnAllIds = useMemo(() => {
-        return columns.map((v) => v.key as string).sort((a, b) => a.localeCompare(b))
+        return columns.map((v) => v.key as string)
     }, [columns])
     const matchedColumns = React.useMemo(() => {
         return columns.filter((column) => matchesQuery(column.title, query)) ?? []

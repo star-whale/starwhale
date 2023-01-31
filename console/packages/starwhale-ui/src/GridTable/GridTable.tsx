@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo } from 'react'
 import { Skeleton } from 'baseui/skeleton'
 import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
@@ -51,12 +51,13 @@ function GridTable({
     columns = [],
     data = [],
     paginationProps,
-    rowActions = [],
+    rowActions,
     searchable = false,
     filterable = false,
     queryable = false,
     columnable = false,
     compareable = false,
+    selectable = false,
     viewable = false,
     onSave,
 }: ITableProps) {
@@ -78,20 +79,6 @@ function GridTable({
         return store.currentView?.filters
     }, [store])
 
-    useEffect(() => {
-        if (!store.isInit && columns.length > 0) {
-            api.setState({
-                currentView: {
-                    name: '',
-                    filters: [],
-                    selectedIds: [],
-                    ids: columns.map((v) => v.key),
-                    pinnedIds: [],
-                },
-            })
-        }
-    }, [store.isInit, columns, api])
-
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
 
@@ -111,6 +98,7 @@ function GridTable({
                     queryable={queryable}
                     columnable={columnable}
                     compareable={compareable}
+                    selectable={selectable}
                     viewable={viewable}
                     loading={!!isLoading}
                     rowActions={rowActions}

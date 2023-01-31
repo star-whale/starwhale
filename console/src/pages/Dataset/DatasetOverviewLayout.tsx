@@ -63,7 +63,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const params = useMemo(() => {
         return { pageNum: 1, pageSize: 1 }
     }, [])
-    const datastore = useQueryDatasetList(datasetVersion?.indexTable, params, true)
+    const { columnInfo: datastore } = useQueryDatasetList(datasetVersion?.indexTable, params, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [

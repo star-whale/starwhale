@@ -1,8 +1,7 @@
 import io
-import operator
+import os
 from pathlib import Path
 
-import numpy as np
 import torch
 import gradio
 from PIL import Image as PILImage
@@ -54,7 +53,7 @@ class CIFAR10Inference(PipelineHandler):
 
     def _post(self, input):
         pred_value = input.argmax(1).flatten().tolist()
-        probability_matrix = np.exp(input.tolist()).tolist()
+        probability_matrix = torch.nn.Softmax(dim=1)(input).tolist()
         return pred_value, probability_matrix
 
     def _load_model(self, device):
@@ -66,7 +65,11 @@ class CIFAR10Inference(PipelineHandler):
         print("load cifar_net model, start to inference...")
         return model
 
-    @api(gradio.Image(type="pil"), gradio.Text(label="prediction"))
+    @api(
+        gradio.Image(type="pil"),
+        gradio.Label(label="prediction"),
+        examples=[os.path.join(os.path.dirname(__file__), "../kitty.jpeg")],
+    )
     def online_eval(self, img: PILImage.Image):
         buf = io.BytesIO()
         img.resize((32, 32)).save(buf, format="jpeg")
@@ -83,5 +86,4 @@ class CIFAR10Inference(PipelineHandler):
             "truck",
         )
         _, prob = self.ppl(Image(fp=buf.getvalue()))
-        offset = max(enumerate(prob[0]), key=operator.itemgetter(1))[0]
-        return classes[offset]
+        return {classes[i]: p for i, p in enumerate(prob[0])}

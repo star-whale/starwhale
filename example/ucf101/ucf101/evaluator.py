@@ -1,3 +1,4 @@
+import os
 import typing as t
 import logging
 import tempfile
@@ -229,7 +230,11 @@ class UCF101PipelineHandler(PipelineHandler):
             pr.append(_data["result"][1])
         return label, result, pr
 
-    @api(gradio.Video(type="filepath"), gradio.Label())
+    @api(
+        gradio.Video(type="filepath"),
+        gradio.Label(num_top_classes=5),
+        examples=[os.path.join(os.path.dirname(__file__), "../taichi.webm")],
+    )
     def online_eval(self, file: str):
         with open(file, "rb") as f:
             data = f.read()

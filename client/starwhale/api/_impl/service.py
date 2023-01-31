@@ -9,6 +9,7 @@ from starwhale.utils import in_production
 
 Input = t.Union[Component, t.List[Component]]
 Output = t.Union[Component, t.List[Component]]
+Examples = t.Union[t.List[t.Any], str]
 
 
 @dataclass
@@ -17,6 +18,7 @@ class Api:
     output: Output
     func: t.Callable
     uri: str
+    examples: t.Optional[Examples]
 
     def view_func(self, ins: t.Any = None) -> t.Callable:
         func = self.func
@@ -31,26 +33,37 @@ class Service:
         self.api_instance: t.Any = None
 
     # TODO: support function as input and output
-    def api(self, input_: Input, output: Output, uri: t.Optional[str] = None) -> t.Any:
+    def api(
+        self,
+        _input: Input,
+        output: Output,
+        uri: t.Optional[str] = None,
+        examples: t.Optional[Examples] = None,
+    ) -> t.Any:
         def decorator(func: t.Any) -> t.Any:
-            self.add_api(input_, output, func, uri or func.__name__)
+            self.add_api(_input, output, func, uri or func.__name__, examples)
             return func
 
         return decorator
 
     # TODO: support checking duplication
     def add_api(
-        self, input_: Input, output: Output, func: t.Callable, uri: str
+        self,
+        _input: Input,
+        output: Output,
+        func: t.Callable,
+        uri: str,
+        examples: t.Optional[Examples] = None,
     ) -> None:
-        if not isinstance(input_, list):
-            input_ = [input_]
+        if not isinstance(_input, list):
+            _input = [_input]
         if not isinstance(output, list):
             output = [output]
-        _api = Api(input_, output, func, uri)
+        _api = Api(_input, output, func, uri, examples)
         self.apis[uri] = _api
 
-    def add_api_instance(self, api_: Api) -> None:
-        self.apis[api_.uri] = api_
+    def add_api_instance(self, _api: Api) -> None:
+        self.apis[_api.uri] = _api
 
     def get_spec(self) -> t.Any:
         # fast path
@@ -70,17 +83,23 @@ class Service:
             js_func = "async(...x) => { typeof wait === 'function' && await wait(); return x; }"
         with gradio.Row():
             with gradio.Column():
+                fn = _api.view_func(self.api_instance)
                 for i in _api.input:
                     comp = gradio.components.get_component_instance(
                         i, render=False
                     ).render()
                     if isinstance(comp, gradio.components.Changeable):
-                        comp.change(
-                            _api.view_func(self.api_instance),
-                            i,
-                            _api.output,
-                            _js=js_func,
-                        )
+                        comp.change(fn=fn, inputs=i, outputs=_api.output, _js=js_func)
+                if _api.examples:
+                    gradio.Examples(
+                        examples=_api.examples,
+                        inputs=[
+                            i
+                            for i in _api.input
+                            if isinstance(i, gradio.components.IOComponent)
+                        ],
+                        fn=fn,
+                    )
             with gradio.Column():
                 for i in _api.output:
                     gradio.components.get_component_instance(i, render=False).render()
@@ -112,8 +131,13 @@ class Service:
 _svc = Service()
 
 
-def api(input_: Input, output: Output, uri: t.Optional[str] = None) -> t.Any:
-    return _svc.api(input_, output, uri)
+def api(
+    _input: Input,
+    output: Output,
+    uri: t.Optional[str] = None,
+    examples: t.Optional[Examples] = None,
+) -> t.Any:
+    return _svc.api(_input, output, uri, examples)
 
 
 def internal_api_list() -> t.Dict[str, Api]:

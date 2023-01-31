@@ -87,6 +87,10 @@ class NMTPipeline(PipelineHandler):
         model.load_state_dict(param)
         return model
 
-    @api(gradio.Text(label="en"), gradio.Text(label="fr"))
+    @api(
+        gradio.Text(label="en"),
+        gradio.Text(label="fr"),
+        examples=["i m not afraid to die .", "i study mathematics ."],
+    )
     def online_eval(self, content: str):
         return self.ppl(Text(content))

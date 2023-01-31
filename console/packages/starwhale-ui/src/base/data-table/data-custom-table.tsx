@@ -1076,6 +1076,7 @@ export function DataTable({
         rowHeightAtIndex,
     ])
     const isSelectable = selectable
+
     const isSelectedAll = React.useMemo(() => {
         if (!selectedRowIds) {
             return false
