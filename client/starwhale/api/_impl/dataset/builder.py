@@ -43,7 +43,6 @@ _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 _header_version = 0
 
-
 _BDType = t.TypeVar("_BDType", bound="BaseBuildExecutor")
 
 
@@ -69,6 +68,185 @@ class BinWriter(Protocol):
         trace: TracebackType,
     ) -> None:
         ...
+
+
+class FragmentBinWriter:
+
+    """
+    bin format:
+        header_magic    uint32  I
+        crc             uint32  I
+        _reserved       uint64  Q
+        size            uint32  I
+        padding_size    uint32  I
+        header_version  uint32  I
+        data_magic      uint32  I --> above 32 bytes
+        data bytes...
+        padding bytes...        --> default 4K padding
+    """
+
+    class _BinSection(t.NamedTuple):
+        offset: int
+        size: int
+        raw_data_offset: int
+        raw_data_size: int
+
+    class _SrcPathSpec(t.NamedTuple):
+        src_path: Path
+        remove_src: bool
+
+    def __init__(
+        self,
+        work_dir: Path,
+        data_output_dir: Path,
+        tabular_dataset: TabularDataset,
+        alignment_bytes_size: int = D_ALIGNMENT_SIZE,
+        volume_bytes_size: int = D_FILE_VOLUME_SIZE,
+        bin2link_threshold: int = D_BIN_TO_LINK_THRESHOLD,
+    ) -> None:
+        self.tabular_dataset = tabular_dataset
+        self.work_dir = work_dir
+        self.data_output_dir = data_output_dir
+        self.volume_bytes_size = volume_bytes_size
+        self.bin2link_threshold = bin2link_threshold
+        self.alignment_bytes_size = alignment_bytes_size
+        self.ds_copy_candidates: t.Dict[str, FragmentBinWriter._SrcPathSpec] = {}
+        self.wrote_size = 0
+        _, bin_writer_path = tempfile.mkstemp(
+            prefix="bin-writer-", dir=str(self.work_dir.absolute())
+        )
+        self.dwriter_path = Path(bin_writer_path)
+        self.dwriter = self.dwriter_path.open("wb")
+        self.total_bin_size = 0
+        self._to_update_rows: t.List[TabularDatasetRow] = []
+        self._lock = threading.Lock()
+
+    def __enter__(self) -> FragmentBinWriter:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:  # pragma: no cover
+            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+
+        self.close()
+
+    def write_row(self, row: TabularDatasetRow) -> None:
+        with self._lock:
+            artifacts = row.artifacts()
+            artifacts_with_bin = False
+            for v in artifacts:
+                if not v.link and isinstance(v.fp, (str, Path)):
+                    v.link = Link(v.fp, with_local_fs_data=True)
+                if v.link and v.link.with_local_fs_data:
+                    v.link.uri = self._copy_file(v.link.uri, False)
+                if (
+                    not v.link
+                    and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase))
+                    and len(v.to_bytes()) > self.bin2link_threshold
+                ):
+                    artifacts_with_bin = True
+                    _bin_section = self._write(v.to_bytes())
+                    v.link = Link(
+                        self.dwriter_path,
+                        offset=_bin_section.raw_data_offset,
+                        size=_bin_section.raw_data_size,
+                        bin_offset=_bin_section.offset,
+                        bin_size=_bin_section.size,
+                    )
+                    v.clear_bytes()
+
+            if not artifacts_with_bin:
+                self.tabular_dataset.put(row)
+            else:
+                self._to_update_rows.append(row)
+            if self.wrote_size > self.volume_bytes_size:
+                self._roll_bin()
+
+    def _roll_bin(self) -> None:
+        if self.wrote_size == 0:
+            return
+        self.wrote_size = 0
+        self.dwriter.close()
+        self._update_link(self.dwriter_path, self._copy_file(self.dwriter_path, True))
+        _, bin_writer_path = tempfile.mkstemp(
+            prefix="bin-writer-", dir=str(self.work_dir.absolute())
+        )
+        self.dwriter_path = Path(bin_writer_path)
+        self.dwriter = self.dwriter_path.open("wb")
+
+    def _update_link(self, old_path: Path, new_path: str) -> None:
+        for row in self._to_update_rows:
+            artifacts = row.artifacts()
+            for at in artifacts:
+                if at.link and str(at.link.uri) == str(old_path):
+                    at.link.uri = new_path
+            self.tabular_dataset.put(row)
+        self._to_update_rows.clear()
+
+    def _write(self, data: bytes) -> FragmentBinWriter._BinSection:
+        size = len(data)
+        crc = crc32(data)  # TODO: crc is right?
+        start = self.dwriter.tell()
+        padding_size = self._get_padding_size(size + _header_size)
+
+        _header = _header_struct.pack(
+            _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
+        )
+        _padding = b"\0" * padding_size
+        self.dwriter.write(_header + data + _padding)
+        _bin_section = FragmentBinWriter._BinSection(
+            offset=start,
+            size=_header_size + size + padding_size,
+            raw_data_offset=start + _header_size,
+            raw_data_size=size,
+        )
+        self.total_bin_size += _bin_section.size
+        self.wrote_size += _bin_section.size
+        return _bin_section
+
+    def _copy_file(
+        self,
+        path: t.Union[Path, str],
+        remove_src: bool = False,
+    ) -> str:
+        _sign_name, _obj_path = DatasetStorage.save_data_file(
+            path, remove_src=remove_src
+        )
+
+        _dest_path = self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
+        _obj_path = _obj_path.resolve().absolute()
+
+        if _dest_path.exists():
+            _dest_path.unlink()
+
+        _dest_path.symlink_to(_obj_path)
+        return _sign_name
+
+    def close(self) -> None:
+        with self._lock:
+            try:
+                empty = self.dwriter.tell() == 0
+                self.dwriter.close()
+                if empty:
+                    # last file is empty
+                    os.unlink(self.dwriter_path)
+                else:
+                    self._roll_bin()
+            except Exception as e:
+                print(f"data write close exception: {e}")
+
+    def flush(self) -> None:
+        with self._lock:
+            self._roll_bin()
+
+    def _get_padding_size(self, size: int) -> int:
+        remain = (size + _header_size) % self.alignment_bytes_size
+        return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
 
 class BaseBuildExecutor(metaclass=ABCMeta):
@@ -113,7 +291,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         if bin_writer:
             self.bin_writer = bin_writer
         else:
-            self.bin_writer = SWDSBinBuildExecutor._BinWriter(
+            self.bin_writer = FragmentBinWriter(
                 self.data_tmpdir,
                 self.data_output_dir,
                 self.tabular_dataset,
@@ -241,174 +419,6 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
     """
 
     # TODO: add more docstring for class
-
-    class _BinSection(t.NamedTuple):
-        offset: int
-        size: int
-        raw_data_offset: int
-        raw_data_size: int
-
-    class _SrcPathSpec(t.NamedTuple):
-        src_path: Path
-        remove_src: bool
-
-    class _BinWriter:
-        def __init__(
-            self,
-            work_dir: Path,
-            data_output_dir: Path,
-            tabular_dataset: TabularDataset,
-            alignment_bytes_size: int = D_ALIGNMENT_SIZE,
-            volume_bytes_size: int = D_FILE_VOLUME_SIZE,
-            bin2link_threshold: int = D_BIN_TO_LINK_THRESHOLD,
-        ) -> None:
-            self.tabular_dataset = tabular_dataset
-            self.work_dir = work_dir
-            self.data_output_dir = data_output_dir
-            self.volume_bytes_size = volume_bytes_size
-            self.bin2link_threshold = bin2link_threshold
-            self.alignment_bytes_size = alignment_bytes_size
-            self.ds_copy_candidates: t.Dict[str, SWDSBinBuildExecutor._SrcPathSpec] = {}
-            self.wrote_size = 0
-            _, bin_writer_path = tempfile.mkstemp(
-                prefix="bin-writer-", dir=str(self.work_dir.absolute())
-            )
-            self.dwriter_path = Path(bin_writer_path)
-            self.dwriter = self.dwriter_path.open("wb")
-            self.total_bin_size = 0
-            self._to_update_rows: t.List[TabularDatasetRow] = []
-            self._lock = threading.Lock()
-
-        def __enter__(self) -> SWDSBinBuildExecutor._BinWriter:
-            return self
-
-        def __exit__(
-            self,
-            type: t.Optional[t.Type[BaseException]],
-            value: t.Optional[BaseException],
-            trace: TracebackType,
-        ) -> None:
-            if value:  # pragma: no cover
-                logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
-
-            self.close()
-
-        def write_row(self, row: TabularDatasetRow) -> None:
-            with self._lock:
-                artifacts = row.artifacts()
-                artifacts_with_bin = False
-                for v in artifacts:
-                    if not v.link and isinstance(v.fp, (str, Path)):
-                        v.link = Link(v.fp, with_local_fs_data=True)
-                    if v.link and v.link.with_local_fs_data:
-                        v.link.uri = self._copy_file(v.link.uri, False)
-                    if (
-                        not v.link
-                        and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase))
-                        and len(v.to_bytes()) > self.bin2link_threshold
-                    ):
-                        artifacts_with_bin = True
-                        _bin_section = self._write(v.to_bytes())
-                        v.link = Link(
-                            self.dwriter_path,
-                            offset=_bin_section.raw_data_offset,
-                            size=_bin_section.raw_data_size,
-                            bin_offset=_bin_section.offset,
-                            bin_size=_bin_section.size,
-                        )
-                        v.clear_bytes()
-
-                if not artifacts_with_bin:
-                    self.tabular_dataset.put(row)
-                else:
-                    self._to_update_rows.append(row)
-                if self.wrote_size > self.volume_bytes_size:
-                    self._roll_bin()
-
-        def _roll_bin(self) -> None:
-            if self.wrote_size == 0:
-                return
-            self.wrote_size = 0
-            self.dwriter.close()
-            self._update_link(
-                self.dwriter_path, self._copy_file(self.dwriter_path, True)
-            )
-            _, bin_writer_path = tempfile.mkstemp(
-                prefix="bin-writer-", dir=str(self.work_dir.absolute())
-            )
-            self.dwriter_path = Path(bin_writer_path)
-            self.dwriter = self.dwriter_path.open("wb")
-
-        def _update_link(self, old_path: Path, new_path: str) -> None:
-            for row in self._to_update_rows:
-                artifacts = row.artifacts()
-                for at in artifacts:
-                    if at.link and str(at.link.uri) == str(old_path):
-                        at.link.uri = new_path
-                self.tabular_dataset.put(row)
-            self._to_update_rows.clear()
-
-        def _write(self, data: bytes) -> SWDSBinBuildExecutor._BinSection:
-            size = len(data)
-            crc = crc32(data)  # TODO: crc is right?
-            start = self.dwriter.tell()
-            padding_size = self._get_padding_size(size + _header_size)
-
-            _header = _header_struct.pack(
-                _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
-            )
-            _padding = b"\0" * padding_size
-            self.dwriter.write(_header + data + _padding)
-            _bin_section = SWDSBinBuildExecutor._BinSection(
-                offset=start,
-                size=_header_size + size + padding_size,
-                raw_data_offset=start + _header_size,
-                raw_data_size=size,
-            )
-            self.total_bin_size += _bin_section.size
-            self.wrote_size += _bin_section.size
-            return _bin_section
-
-        def _copy_file(
-            self,
-            path: t.Union[Path, str],
-            remove_src: bool = False,
-        ) -> str:
-            _sign_name, _obj_path = DatasetStorage.save_data_file(
-                path, remove_src=remove_src
-            )
-
-            _dest_path = (
-                self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
-            )
-            _obj_path = _obj_path.resolve().absolute()
-
-            if _dest_path.exists():
-                _dest_path.unlink()
-
-            _dest_path.symlink_to(_obj_path)
-            return _sign_name
-
-        def close(self) -> None:
-            with self._lock:
-                try:
-                    empty = self.dwriter.tell() == 0
-                    self.dwriter.close()
-                    if empty:
-                        # last file is empty
-                        os.unlink(self.dwriter_path)
-                    else:
-                        self._roll_bin()
-                except Exception as e:
-                    print(f"data write close exception: {e}")
-
-        def flush(self) -> None:
-            with self._lock:
-                self._roll_bin()
-
-        def _get_padding_size(self, size: int) -> int:
-            remain = (size + _header_size) % self.alignment_bytes_size
-            return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
     def make_swds(self) -> DatasetSummary:
         increased_rows = 0
