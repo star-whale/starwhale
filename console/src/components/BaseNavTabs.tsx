@@ -6,6 +6,7 @@ import { useHistory, useLocation } from 'react-router-dom'
 import _ from 'lodash'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { mergeOverrides } from '@/utils/baseui'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { INavItem } from './BaseSidebar'
 
 export interface IComposedNavTabsProps {
@@ -23,6 +24,7 @@ export interface IBaseNavTabsProps extends IComposedNavTabsProps {
 export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOverrides }: IBaseNavTabsProps) {
     const history = useHistory()
     const location = useLocation()
+    const [, theme] = themedUseStyletron()
 
     const activeItemId = useMemo(() => {
         const item = navItems
@@ -44,7 +46,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                 {
                     TabHighlight: {
                         style: {
-                            backgroundColor: 'var(--color-brandPrimary)',
+                            backgroundColor: theme.brandPrimary,
                         },
                     },
                 },
@@ -59,7 +61,6 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                             {
                                 TabPanel: {
                                     style: {
-                                        // padding: '0px !important',
                                         paddingLeft: '0',
                                         paddingRight: '0',
                                         paddingBottom: '0',
@@ -69,10 +70,10 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                                 Tab: {
                                     style: {
                                         'background': 'transparent',
-                                        'color': item.path === activeItemId ? 'var(--color-brandPrimary)' : '',
+                                        'color': item.path === activeItemId ? theme.brandPrimary : '',
                                         ':hover': {
                                             background: 'transparent',
-                                            color: 'var(--color-brandPrimary)',
+                                            color: theme.brandPrimary,
                                         },
                                     },
                                 },

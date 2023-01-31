@@ -1,6 +1,5 @@
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import { IThemedStyleProps } from '@/theme'
-import { useStyletron } from 'baseui'
+import { IThemedStyleProps } from '@starwhale/ui/theme'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import classNames from 'classnames'
 import React from 'react'
 import { createUseStyles } from 'react-jss'
@@ -82,12 +81,12 @@ const useStyles = createUseStyles({
             paddingLeft: '0px',
         },
     },
-    innerText: {
+    innerText: (props: IThemedStyleProps) => ({
         flexShrink: 0,
         fontWeight: '500',
         padding: '0 1em',
-        color: 'var(--color-brandFontNote) !important',
-    },
+        color: `${props.theme.brandFontNote} !important`,
+    }),
 })
 
 export interface IDividerProps {
@@ -96,9 +95,8 @@ export interface IDividerProps {
 }
 
 export default function Divider({ children, orientation = 'center' }: IDividerProps) {
-    const themeType = useCurrentThemeType()
-    const [, theme] = useStyletron()
-    const styles = useStyles({ themeType, theme })
+    const [, theme] = themedUseStyletron()
+    const styles = useStyles({ theme })
     return (
         <div className={classNames(styles.divider, styles[orientation])}>
             <div className={styles.innerText}>{children}</div>

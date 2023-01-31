@@ -9,6 +9,7 @@ import emptyChart from './svg/empty-chart.svg'
 import searchEmptySvg from './svg/search-empty.svg'
 import googleSvg from './svg/google.svg'
 import invalidFile from './svg/invalid-file.svg'
+import { themedUseStyletron } from '../theme/styletron'
 
 type IconTypesT =
     | 'arrow2_down'
@@ -71,6 +72,7 @@ type IconTypesT =
     | 'a-Addabove'
     | 'a-Addbelow'
     | 'arrow2'
+    | 'filter'
 
 interface IIconFontProps {
     style?: React.CSSProperties
@@ -90,11 +92,13 @@ const hijacked = {
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
+    const [, theme] = themedUseStyletron()
+
     const colors = {
-        gray: 'var(--color-brandFontTip)',
-        white: 'var(--color-brandFontWhite)',
-        white2: 'var(--color-brandUserIcon)',
-        primary: 'var(--color-brandPrimary)',
+        gray: theme.brandFontTip,
+        white: theme.brandFontWhite,
+        white2: theme.brandUserIcon,
+        primary: theme.brandPrimary,
     }
 
     return (

@@ -6,7 +6,7 @@ import { BaseProvider } from 'baseui'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { useSidebar } from '@/hooks/useSidebar'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import themes from '@/theme'
+import DeepTheme from '@starwhale/ui/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
 import { ConfirmCtxProvider } from '@/components/Modal/confirm'
@@ -20,13 +20,11 @@ const queryClient = new QueryClient()
 export default function App(): any {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()
-    // const themeType = useCurrentThemeType()
-    const theme = themes.deep
 
     return (
         <QueryClientProvider client={queryClient}>
             <StyletronProvider value={engine}>
-                <BaseProvider theme={theme}>
+                <BaseProvider theme={DeepTheme}>
                     <AuthProvider>
                         <ToasterContainer autoHideDuration={3000} />
                         <ConfirmCtxProvider>

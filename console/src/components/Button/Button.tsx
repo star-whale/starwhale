@@ -1,11 +1,11 @@
 import React from 'react'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
 import { mergeOverrides } from '@/utils/baseui'
-import { useStyletron } from 'baseui'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent' | 'withIcon'
-    kind?: KIND[keyof KIND]
+    kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
 }
@@ -19,8 +19,7 @@ export default function Button({
     children,
     ...props
 }: IButtonProps) {
-    // const styles = useStyles()
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
 
     let overrides = mergeOverrides(
         {
@@ -53,8 +52,6 @@ export default function Button({
                         'borderBottomRightRadius': theme.borders.radius200,
                         'lineHeight': '14px',
                         'width': isFull ? '100%' : 'auto',
-                        // 'paddingBottom': '0',
-                        // 'paddingTop': '0',
                         'paddingLeft': '0',
                         'paddingRight': '0',
                         'paddingBottom': '0',
@@ -87,11 +84,11 @@ export default function Button({
                         'color': 'rgba(2,16,43,0.20)',
                         ':hover': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                         ':focus': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                     },
                 },

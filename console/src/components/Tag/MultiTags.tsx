@@ -1,4 +1,4 @@
-import { useStyletron } from 'baseui'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { Select, SelectProps } from 'baseui/select'
 import React from 'react'
 
@@ -10,7 +10,7 @@ export interface IMultiTagsProps {
 }
 
 export default function MultiTags({ value, placeholder, onChange, getValueLabel }: IMultiTagsProps) {
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
 
     return (
         <Select
@@ -41,14 +41,14 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                             Root: {
                                 style: {
                                     'cursor': 'pointer',
-                                    'backgroundColor': 'var(--color-brandPrimary)',
+                                    'backgroundColor': theme.brandPrimary,
                                     'marginTop': '2px',
                                     'marginBottom': '2px',
                                     'marginRight': '2px',
                                     'marginLeft': '2px',
 
                                     ':hover': {
-                                        backgroundColor: 'var(--color-brandPrimaryHover)',
+                                        backgroundColor: theme.brandPrimaryHover,
                                     },
                                 },
                             },

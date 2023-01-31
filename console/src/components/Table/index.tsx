@@ -4,13 +4,15 @@ import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { BusyPlaceholder } from '@starwhale/ui'
 
 export interface ITableProps extends BaseTableProps {
     paginationProps?: IPaginationProps
 }
 
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
+    const [, theme] = themedUseStyletron()
     const [page, setPage] = usePage()
 
     return (
@@ -35,7 +37,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     // @ts-ignore
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            backgroundColor: theme.brandTableHeaderBackground,
                             fontWeight: 'bold',
                             borderBottomWidth: 0,
                             fontSize: 14,

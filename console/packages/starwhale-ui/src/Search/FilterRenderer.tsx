@@ -158,8 +158,6 @@ export default function FilterRenderer({
         }
     }, [rawValues])
 
-    console.log(editing, op, inputRef)
-
     return (
         // @ts-ignore
         <div

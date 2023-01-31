@@ -18,6 +18,7 @@ import { DatasetObject, parseDataSrc, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -152,6 +153,7 @@ export default function DatasetVersionFiles() {
         datasetId: string
         datasetVersionId: string
     }>()
+    const [, theme] = themedUseStyletron()
     // @FIXME layoutParam missing when build
     const layoutParam = useSearchParam('layout') as string
     const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '0')
@@ -220,7 +222,7 @@ export default function DatasetVersionFiles() {
                 overrides: {
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            backgroundColor: theme.brandTableHeaderBackground,
                             borderBottomWidth: '0',
                             fontWeight: 'bold',
                             fontSize: '14px',
@@ -332,7 +334,7 @@ export default function DatasetVersionFiles() {
                     },
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            backgroundColor: theme.brandTableHeaderBackground,
                             fontWeight: 'bold',
                             borderBottomWidth: 0,
                             fontSize: '14px',
@@ -372,7 +374,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page])
+    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
 
     return (
         <div className={styles.wrapper}>

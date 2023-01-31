@@ -114,6 +114,7 @@ module.exports = {
         'import/no-extraneous-dependencies': 'off',
         'import/no-restricted-imports': 'off',
         'no-restricted-imports': 'off',
+        'import/order': 'off',
     },
     settings: {
         'react': {

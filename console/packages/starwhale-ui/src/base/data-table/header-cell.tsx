@@ -12,6 +12,7 @@ import { SORT_DIRECTIONS } from './constants'
 import Button from '../../Button'
 import { LocaleContext } from './locales'
 import Checkbox from '../../Checkbox'
+import { themedUseStyletron } from '../../theme/styletron'
 
 type HeaderCellPropsT = {
     index: number
@@ -38,7 +39,7 @@ type HeaderCellPropsT = {
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
     const locale = React.useContext(LocaleContext)
-    const [css, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
 
@@ -75,7 +76,6 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
         },
         [props]
     )
-
     return (
         <div
             data-type='header-cell'
@@ -100,7 +100,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     whiteSpace: 'nowrap',
                     outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
                     outlineOffset: '-3px',
-                    backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                    backgroundColor: theme.brandTableHeaderBackground,
                     fontWeight: 'bold',
                     borderBottomWidth: 0,
                     fontSize: '14px',

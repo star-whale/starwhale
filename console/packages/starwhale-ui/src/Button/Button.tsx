@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
-import { useStyletron } from 'baseui'
 import { mergeOverrides } from '../utils'
+import { themedUseStyletron } from '../theme/styletron'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent' | 'withIcon'
@@ -18,7 +18,7 @@ export default function Button({
     children,
     ...props
 }: IButtonProps) {
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
     const defaultStyles: React.CSSProperties = {
         borderTopLeftRadius: theme.borders.radius200,
         borderTopRightRadius: theme.borders.radius200,
@@ -78,11 +78,11 @@ export default function Button({
                         'color': 'rgba(2,16,43,0.20)',
                         ':hover': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                         ':focus': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                     },
                 },

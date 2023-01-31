@@ -1,13 +1,10 @@
 import React, { useCallback, useState, useContext } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
 import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
-import { IThemedStyleProps } from '@/theme'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import { useHistory } from 'react-router-dom'
 import PasswordForm from '@user/components/PasswordForm'
 import { IChangePasswordSchema } from '@user/schemas/user'
@@ -23,23 +20,25 @@ import CopyToClipboard from 'react-copy-to-clipboard'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
 import { useFetchSystemVersion } from '@/domain/setting/hooks/useSettings'
+import { IThemedStyleProps } from '@starwhale/ui/theme'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import IconFont from '../IconFont'
 import Logo from './Logo'
 import Avatar from '../Avatar'
 
 const useHeaderStyles = createUseStyles({
-    headerWrapper: {
+    headerWrapper: (props: IThemedStyleProps) => ({
         padding: '0 20px 0 0',
         height: `${headerHeight}px`,
         width: '100%',
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
-        color: 'var(--color-contentPrimary)',
-        backgroundColor: 'var(--color-brandBgNav)',
+        color: props.theme.colors.contentPrimary,
+        backgroundColor: props.theme.brandBgNav,
         position: 'relative',
         zIndex: 10,
-    },
+    }),
 })
 
 const useStyles = createUseStyles({
@@ -115,7 +114,7 @@ const useStyles = createUseStyles({
         gap: '10px',
         height: '32px',
         color: props.theme.colors.contentPrimary,
-        backgroundColor: 'var(--color-brandMenuItemBackground)',
+        backgroundColor: props.theme.brandMenuItemBackground,
     }),
     userWrapper: {
         'position': 'relative',
@@ -198,7 +197,7 @@ const useStyles = createUseStyles({
         'color': props.theme.colors.contentPrimary,
         'borderRadius': '4px',
         '&:hover': {
-            backgroundColor: 'var(--color-brandMenuItemBackground)',
+            backgroundColor: props.theme.brandMenuItemBackground,
         },
     }),
     userSignedIn: {
@@ -236,15 +235,15 @@ const useStyles = createUseStyles({
         lineHeight: '12px',
         color: 'rgba(2,16,43,0.60)',
     },
-    roundWrapper: {
+    roundWrapper: (props: IThemedStyleProps) => ({
         borderRadius: '50%',
-        backgroundColor: 'var(--color-brandWhite)',
+        backgroundColor: props.theme.brandWhite,
         width: '30px',
         height: '30px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-    },
+    }),
     divider: {
         height: '1px',
         width: '100%',
@@ -262,9 +261,8 @@ const useStyles = createUseStyles({
 })
 
 export default function Header() {
-    const [css, theme] = useStyletron()
-    const themeType = useCurrentThemeType()
-    const styles = useStyles({ theme, themeType })
+    const [css, theme] = themedUseStyletron()
+    const styles = useStyles({ theme })
     const headerStyles = useHeaderStyles({ theme })
     const ctx = useContext(SidebarContext)
     // eslint-disable-next-line react-hooks/exhaustive-deps

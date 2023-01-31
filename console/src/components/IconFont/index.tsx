@@ -7,6 +7,7 @@ import emptySvg from '@/assets/empty.svg'
 import emptyChartSvg from '@/assets/empty-chart.svg'
 import searchEmptySvg from '@/assets/search-empty.svg'
 import googleSvg from '@/assets/fonts/google.svg'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 type IconTypesT =
     | 'arrow2_down'
@@ -87,11 +88,13 @@ const hijacked = {
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
+    const [, theme] = themedUseStyletron()
+
     const colors = {
-        gray: 'var(--color-brandFontTip)',
-        white: 'var(--color-brandFontWhite)',
-        white2: 'var(--color-brandUserIcon)',
-        primary: 'var(--color-brandPrimary)',
+        gray: theme.brandFontTip,
+        white: theme.brandFontWhite,
+        white2: theme.brandUserIcon,
+        primary: theme.brandPrimary,
     }
 
     return (
