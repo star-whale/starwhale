@@ -1,4 +1,4 @@
-import { Select, SIZE } from 'baseui/select'
+import Select from '@starwhale/ui/Select'
 import React from 'react'
 import { useFetchUsers } from '@user/hooks/useUser'
 
@@ -15,7 +15,6 @@ export default function UserSelector({ value, onChange, ignoreIds }: IUserSelect
 
     return (
         <Select
-            size={SIZE.compact}
             clearable={false}
             required
             isLoading={users.isFetching}

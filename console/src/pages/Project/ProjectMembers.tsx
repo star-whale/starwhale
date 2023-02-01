@@ -5,7 +5,7 @@ import Button from '@/components/Button'
 import Card from '@/components/Card'
 import IconFont from '@/components/IconFont'
 import { SIZE as ButtonSize } from 'baseui/button'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
+import { QueryInput } from '@starwhale/ui/Input'
 import Table from '@/components/Table'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -39,7 +39,6 @@ export default function ProjectMembers() {
             extra={
                 <WithCurrentAuth id='member.create'>
                     <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
                         size={ButtonSize.compact}
                         onClick={() => {
                             setShowAddMember(true)

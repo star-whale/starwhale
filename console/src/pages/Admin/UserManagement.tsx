@@ -7,7 +7,7 @@ import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFetchUsers } from '@user/hooks/useUser'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
+import { QueryInput } from '@starwhale/ui/Input'
 import { useStyletron } from 'baseui'
 import { IUserSchema } from '@user/schemas/user'
 import { changeUserState, createUser, changeUserPasswd } from '@user/services/user'
@@ -92,14 +92,7 @@ export default function UserManagement() {
     }
 
     return (
-        <Card
-            title={t('Manage Users')}
-            extra={
-                <Button startEnhancer={<IconFont type='add' kind='white' />} onClick={() => setShowAddUser(true)}>
-                    {t('Add User')}
-                </Button>
-            }
-        >
+        <Card title={t('Manage Users')} extra={<Button onClick={() => setShowAddUser(true)}>{t('Add User')}</Button>}>
             <div className={css({ marginBottom: '20px', width: '280px' })}>
                 <QueryInput
                     onChange={(val: string) => {

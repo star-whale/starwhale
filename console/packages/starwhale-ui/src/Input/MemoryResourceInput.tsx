@@ -1,6 +1,6 @@
 import { Input, InputProps } from 'baseui/input'
-import { Select } from 'baseui/select'
 import React, { useRef } from 'react'
+import Select from '../Select'
 
 interface IMemoryResourceInputProps {
     value?: string

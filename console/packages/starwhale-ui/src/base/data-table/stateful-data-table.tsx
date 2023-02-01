@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Search } from 'baseui/icon'
 import { SIZE as INPUT_SIZES } from 'baseui/input'
-import Input from '@/components/Input'
+import Input from '../../Input'
 import { useStyletron } from 'baseui'
 import _ from 'lodash'
 import { DataTable } from './data-custom-table'
@@ -14,7 +14,6 @@ import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
-import { ITableState } from './store'
 import Button from '@starwhale/ui/Button'
 
 export function QueryInput(props: any) {

@@ -1,4 +1,4 @@
-import { Select, SelectProps, SIZE } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
 import { listDevices } from '../services/system'
@@ -6,7 +6,7 @@ import { listDevices } from '../services/system'
 export interface IDeviceSelectorProps {
     value?: string
     onChange?: (newValue: string) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
 }
 
@@ -51,7 +51,6 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
 
     return (
         <Select
-            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             isLoading={devicesInfo.isFetching}

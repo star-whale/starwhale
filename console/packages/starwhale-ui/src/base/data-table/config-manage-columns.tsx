@@ -141,12 +141,6 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         setValue(props.view)
     }, [props.view])
 
-    // useDeepEffect(() => {
-    //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
-    //     props.onApply?.(selectedIds, pinnedIds, sortedIds)
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [selectedIds, sortedIds, pinnedIds])
-
     return (
         <div ref={ref} className='inherit-height'>
             {!props.isInline && (

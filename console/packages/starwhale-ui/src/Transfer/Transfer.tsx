@@ -8,6 +8,7 @@ import IconFont from '../IconFont'
 import Input from '../Input'
 import TransferList from './TransferList'
 import useUnSortedSelection from '../utils/useUnsortedSelection'
+import { BusyPlaceholder } from '../BusyLoaderWrapper'
 
 const useStyles = createUseStyles({
     transfer: {
@@ -189,7 +190,7 @@ export default function Transfer({
                                             paddingLeft: theme.sizing.scale500,
                                         })}
                                     >
-                                        <Search size='18px' />
+                                        <IconFont type='search' kind='gray' />
                                     </div>
                                 )
                             },
@@ -232,6 +233,7 @@ export default function Transfer({
                 </div>
                 <TransferList
                     title='Visible Columns'
+                    emptyMessage={() => <BusyPlaceholder />}
                     columns={$rightFilteredColumns}
                     isDragable={isDragable}
                     operators={{

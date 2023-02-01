@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { StyledDropdownListItem } from 'baseui/select'
-import Select from '@/components/Select'
+import Select from '@starwhale/ui/Select'
 import { StyledList, StyledEmptyState, OptionListProps } from 'baseui/menu'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'

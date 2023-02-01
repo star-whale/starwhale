@@ -29,12 +29,12 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
             },
             ClearIcon: {
                 style: {
-                    'width': '18px',
-                    'height': '18px',
-                    'fill': 'rgba(2,16,43,0.20)',
-                    'color': 'rgba(2,16,43,0.20)',
+                    'width': '20px !important',
+                    'height': '20px !important',
+                    'fill': 'rgba(2,16,43,0.20)  !important',
+                    'color': 'rgba(2,16,43,0.20)  !important',
                     ':hover': {
-                        fill: 'rgba(2,16,43,0.40)',
+                        fill: 'rgba(2,16,43,0.40)  !important',
                     },
                 },
             },

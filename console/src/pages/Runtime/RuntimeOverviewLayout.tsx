@@ -9,15 +9,14 @@ import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Accordion from '@/components/Accordion'
 import { Panel } from 'baseui/accordion'
-import Button from '@/components/Button'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
-import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
 import { ConfirmButton } from '@/components/Modal/confirm'
 import { toaster } from 'baseui/toast'
+import { Button } from '@starwhale/ui'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -214,8 +213,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                             )}
                             {runtimeVersionId && (
                                 <Button
-                                    as='withIcon'
-                                    startEnhancer={() => <IconFont type='runtime' />}
+                                    icon='runtime'
                                     onClick={() =>
                                         history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)
                                     }

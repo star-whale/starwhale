@@ -18,7 +18,7 @@ import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersi
 import Input from '@/components/Input'
 import Editor from '@monaco-editor/react'
 import yaml from 'js-yaml'
-import Toggle from '@/components/Select/Toggle'
+import Toggle from '@starwhale/ui/Select/Toggle'
 import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
@@ -377,16 +377,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <DatasetVersionSelector projectId={projectId} datasetId={datasetId} autoSelected />
                     </FormItem>
                 )}
-                {/* <div className='fac'>
-                    <Button
-                        size='compact'
-                        type='button'
-                        onClick={handleAddDataset}
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                    >
-                        Add
-                    </Button>
-                </div> */}
             </div>
             {/* <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>

@@ -47,6 +47,13 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                     TabHighlight: {
                         style: {
                             backgroundColor: theme.brandPrimary,
+                            height: '4px',
+                            bottom: '4px',
+                        },
+                    },
+                    TabBorder: {
+                        style: {
+                            height: '1px',
                         },
                     },
                 },

@@ -1,4 +1,4 @@
-import { Select, SelectProps, SIZE } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useState, useEffect } from 'react'
 
@@ -6,7 +6,7 @@ export interface IDeviceSelectorProps {
     data: Array<any>
     value?: string
     onChange?: (newValue: string) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
 }
 
@@ -40,7 +40,6 @@ export default function ResourceSelector({ data, value, onChange, overrides, dis
 
     return (
         <Select
-            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             options={$options}

@@ -11,7 +11,7 @@ import { useFetchProjects } from '@project/hooks/useFetchProjects'
 import IconFont from '@/components/IconFont'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useStyletron } from 'baseui'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
+import { QueryInput } from '@starwhale/ui/Input'
 import cn from 'classnames'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { StatefulTooltip } from 'baseui/tooltip'
@@ -422,7 +422,6 @@ export default function ProjectListCard() {
             titleIcon={undefined}
             extra={
                 <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
                     size={ButtonSize.compact}
                     onClick={() => {
                         setEditProject(undefined)

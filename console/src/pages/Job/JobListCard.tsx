@@ -48,7 +48,6 @@ export default function JobListCard() {
                 title={t('Jobs')}
                 extra={
                     <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
                         size={ButtonSize.compact}
                         onClick={() => {
                             history.push('new_job')

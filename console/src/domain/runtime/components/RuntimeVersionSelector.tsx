@@ -1,5 +1,5 @@
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { Select, SelectProps } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
@@ -10,7 +10,7 @@ export interface IRuntimeVersionSelectorProps {
     runtimeId?: string
     value?: string
     onChange?: (newValue: string) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
     autoSelected?: boolean
 }
@@ -73,7 +73,6 @@ export default function RuntimeVersionSelector({
 
     return (
         <Select
-            size='compact'
             disabled={disabled}
             overrides={overrides}
             isLoading={runtimeVersionsInfo.isFetching}

@@ -1,2 +1,3 @@
 export { default } from './Select'
-export { SIZE } from 'baseui/select'
+export * from './Select'
+export * from 'baseui/select'

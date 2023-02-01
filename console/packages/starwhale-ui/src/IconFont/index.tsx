@@ -73,6 +73,7 @@ export type IconTypesT =
     | 'a-Addbelow'
     | 'arrow2'
     | 'filter'
+    | 'error'
     | 'edit'
 
 interface IIconFontProps {

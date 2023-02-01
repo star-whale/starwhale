@@ -1,12 +1,12 @@
+import { Select, ISelectProps } from '@starwhale/ui/Select'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
-import { Select, SelectProps } from 'baseui/select'
 import React from 'react'
 
 export interface IMultiTagsProps {
     value?: string[]
     placeholder?: string
     onChange?: (newValue: string[]) => void
-    getValueLabel?: SelectProps['getValueLabel']
+    getValueLabel?: ISelectProps['getValueLabel']
 }
 
 export default function MultiTags({ value, placeholder, onChange, getValueLabel }: IMultiTagsProps) {

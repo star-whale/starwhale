@@ -1,5 +1,5 @@
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { Select, SelectProps } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useQuery, UseQueryResult } from 'react-query'
@@ -13,7 +13,7 @@ export interface IModelVersionSelectorProps {
     modelId?: string
     value?: string
     onChange?: (newValue: string, item: IModelVersionSchema) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
     autoSelected?: boolean
 }
@@ -105,7 +105,6 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
 
         return (
             <Select
-                size='compact'
                 disabled={disabled}
                 overrides={overrides}
                 isLoading={isFetching}

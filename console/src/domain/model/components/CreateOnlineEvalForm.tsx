@@ -11,7 +11,7 @@ import { ICreateOnlineEvalSchema } from '@model/schemas/model'
 import { createUseStyles } from 'react-jss'
 import FlatResourceSelector, { Dict } from '@/domain/setting/components/FlatResourceSelector'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
-import Toggle from '@/components/Select/Toggle'
+import Toggle from '@starwhale/ui/Select/Toggle'
 
 interface ICreateOnlineEvalProps {
     modelId: string
