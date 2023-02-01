@@ -40,7 +40,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         const api = useQuery(
             `listModelVersions:${projectId}:${modelId}:${keyword}`,
             () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
-            { enabled: !!modelId }
+            { enabled: !!modelId, refetchOnWindowFocus: false }
         )
         const { data, isSuccess, isFetching } = api
 

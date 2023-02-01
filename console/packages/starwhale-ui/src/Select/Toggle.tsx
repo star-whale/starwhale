@@ -1,7 +1,8 @@
 /* eslint-disable react/no-unused-prop-types */
 import React from 'react'
-import { Checkbox, STYLE_TYPE, CheckboxOverrides } from 'baseui/checkbox'
+import { STYLE_TYPE, CheckboxOverrides } from 'baseui/checkbox'
 import { mergeOverrides } from '../utils'
+import Checkbox from '../Checkbox'
 
 export interface IToggleProps {
     value?: boolean

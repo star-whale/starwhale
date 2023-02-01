@@ -11,7 +11,7 @@ import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { Button } from '@starwhale/ui'
 import { usePage } from '@/hooks/usePage'
 import qs from 'qs'
-import Checkbox from '@/components/Checkbox'
+import Checkbox from '@starwhale/ui/Checkbox'
 import { STYLE_TYPE } from 'baseui/checkbox'
 import { createUseStyles } from 'react-jss'
 import { useQueryArgs } from '@starwhale/core'
@@ -30,8 +30,10 @@ const useStyles = createUseStyles({
         background: '#EBF1FF',
         borderRadius: '12px',
         padding: '3px 10px',
-        top: '5px',
-        right: '30px',
+        top: 'calc(50% - 9px)',
+        right: '28px',
+        fontSize: '12px',
+        lineHeight: '12px',
     },
 })
 

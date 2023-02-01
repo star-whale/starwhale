@@ -14,6 +14,21 @@ export default function Checkbox({ size = 16, children, ...props }: ICheckBoxPro
             Root: {
                 style: {
                     alignItems: 'center',
+                    width: '39px',
+                    height: '16px',
+                },
+            },
+            Toggle: {
+                style: {
+                    backgroundColor: '#FFF',
+                    width: '14px',
+                    height: '14px',
+                },
+            },
+            ToggleTrack: {
+                style: {
+                    backgroundColor: props.checked ? '#2B65D9' : 'rgba(2,16,43,0.20)',
+                    width: '39px',
                 },
             },
             Checkmark: {

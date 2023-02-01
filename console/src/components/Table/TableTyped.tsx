@@ -34,19 +34,17 @@ const useStyles = createUseStyles({
             whiteSpace: 'nowrap',
         },
         '& .table-row': {
-            '&:hover': {
-                // backgroundColor: '#EFEEF5 ',
-            },
+            '&:hover': {},
         },
         '& .table-columns-pinned': {
             backgroundColor: '#FFF',
         },
         '& .table-row--hovering': {
-            backgroundColor: '#EFEEF5',
+            backgroundColor: '#EBF1FF',
         },
         // this rule for override the default style of cell
         '& .table-row--hovering .column-cell > *': {
-            backgroundColor: '#EFEEF5 !important',
+            backgroundColor: '#EBF1FF !important',
         },
     },
     tableCompareable: {

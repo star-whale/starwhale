@@ -24,8 +24,11 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                 overrides={{
                     TableBodyRow: {
                         style: {
-                            cursor: 'pointer',
-                            borderRadius: '4px',
+                            'cursor': 'pointer',
+                            'borderRadius': '4px',
+                            ':hover': {
+                                backgroundColor: '#EBF1FF',
+                            },
                         },
                         props: {
                             // eslint-disable-next-line
@@ -60,6 +63,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             paddingLeft: '20px',
                             paddingRight: '20px',
                             lineHeight: '44px',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            borderBottomColor: '#EEF1F6',
                         },
                     },
                     ...overrides,
