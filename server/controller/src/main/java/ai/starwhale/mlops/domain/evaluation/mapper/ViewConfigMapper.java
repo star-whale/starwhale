@@ -17,14 +17,22 @@
 package ai.starwhale.mlops.domain.evaluation.mapper;
 
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface ViewConfigMapper {
 
+    @Select("select id, config_name, project_id, owner_id, content, created_time, modified_time from view_config"
+            + " where config_name = #{name}"
+            + " and owner_id = #{userId}"
+            + " and project_id = #{projectId}")
     ViewConfigEntity findViewConfig(@Param("userId") Long userId, @Param("projectId") Long projectId,
             @Param("name") String name);
 
+    @Insert("replace  into view_config(config_name, project_id, owner_id, content)"
+            + " values (#{configName}, #{projectId}, #{ownerId}, #{content})")
     int createViewConfig(ViewConfigEntity entity);
 }

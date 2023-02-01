@@ -1,10 +1,11 @@
 import os
 
-import numpy as np
 import torch
+import gradio
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale import PipelineHandler, multi_classification
+from starwhale import Text, PipelineHandler, multi_classification
+from starwhale.api.service import api
 
 from .model import TextClassificationModel
 
@@ -27,8 +28,8 @@ class TextClassificationHandler(PipelineHandler):
         tensor = torch.tensor(self.vocab(ngrams)).to(self.device)
         output = self.model(tensor, torch.tensor([0]).to(self.device))
         pred_value = output.argmax(1).item()
-        pr_matrix = np.exp(output.tolist()).tolist()
-        return pred_value, pr_matrix[0]
+        pr_matrix = torch.nn.Softmax(dim=1)(output)
+        return pred_value, pr_matrix[0].tolist()
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -57,3 +58,15 @@ class TextClassificationHandler(PipelineHandler):
         vocab_path = _ROOT_DIR + "/models/vocab.i"
         vocab = torch.load(vocab_path)
         return vocab
+
+    @api(
+        gradio.Text(label="input"),
+        gradio.Label(),
+        examples=[
+            "Fears for T N pension after talks Unions representing workers at Turner Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul.",
+            'E-mail scam targets police chief Wiltshire Police warns about "phishing" after its fraud squad chief was targeted.',
+        ],
+    )
+    def online_eval(self, content: str):
+        _, prob = self.ppl(Text(content))
+        return {_LABEL_NAMES[i]: p for i, p in enumerate(prob)}

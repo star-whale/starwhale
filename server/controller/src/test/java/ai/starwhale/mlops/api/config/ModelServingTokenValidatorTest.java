@@ -27,7 +27,6 @@ import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
-import java.util.Date;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -39,4 +39,7 @@ public class ModelServingRequest implements Serializable {
     @Deprecated
     @JsonProperty("ttlInSeconds")
     private long ttlInSeconds;
+
+    @JsonProperty("spec")
+    private String spec;
 }

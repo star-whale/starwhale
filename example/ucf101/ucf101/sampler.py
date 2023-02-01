@@ -4,7 +4,7 @@ import numpy as np
 
 
 class RandomSampling(object):
-    def __init__(self, num=16, interval=2, speed=[1.0, 1.0], seed=0):
+    def __init__(self, num=16, interval=2, speed=(1.0, 1.0), seed=0):
         assert num > 0, "at least sampling 1 frame"
         self.num = num
         self.interval = interval if type(interval) == list else [interval]
@@ -25,7 +25,9 @@ class RandomSampling(object):
         frame_range = (self.num - 1) * random_interval
         clip_start = self.rng.uniform(0, (range_max - 1) - frame_range)
         clip_end = clip_start + frame_range
-        return np.linspace(clip_start, clip_end, self.num).astype(dtype=np.int).tolist()
+        return (
+            np.linspace(clip_start, clip_end, self.num).astype(dtype=np.int64).tolist()
+        )
 
 
 class SequentialSampling(object):

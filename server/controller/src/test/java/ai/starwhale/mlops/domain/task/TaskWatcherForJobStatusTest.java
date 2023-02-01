@@ -36,7 +36,6 @@ import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
-import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

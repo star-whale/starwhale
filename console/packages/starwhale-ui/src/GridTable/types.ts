@@ -6,6 +6,7 @@ export interface ITableProps {
     batchActions?: Types.BatchActionT[]
     rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps
+    onSave?: (props: any) => void
     onColumnSave?: (props: any) => void
     onSelectionChange?: (rows: RowT[]) => void
     filterable?: boolean
@@ -14,6 +15,8 @@ export interface ITableProps {
     compareable?: boolean
     isLoading?: boolean
     viewable?: boolean
+    queryable?: boolean
+    selectable?: boolean
     id?: string
     data: any[]
     columns: any[]

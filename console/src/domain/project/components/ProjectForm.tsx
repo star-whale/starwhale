@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { createForm } from '@/components/Form'
-import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
@@ -11,6 +10,7 @@ import { Textarea } from 'baseui/textarea'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { IUserSchema } from '@user/schemas/user'
 import { createUseStyles } from 'react-jss'
+import Input from '@starwhale/ui/Input'
 import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
@@ -174,7 +174,19 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                 <Visibility />
             </FormItem>
             <FormItem name='description' key='description' label={t('Description')}>
-                <Textarea />
+                <Textarea
+                    overrides={{
+                        // @ts-ignore
+                        Root: {
+                            style: {
+                                borderTopWidth: '1px',
+                                borderBottomWidth: '1px',
+                                borderLeftWidth: '1px',
+                                borderRightWidth: '1px',
+                            },
+                        },
+                    }}
+                />
             </FormItem>
             <FormItem key='submit'>
                 <div style={{ display: 'flex' }}>

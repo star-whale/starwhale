@@ -37,7 +37,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
     const { datasetVersion, setDatasetVersion } = useDatasetVersion()
-    const { query } = useQueryArgs()
+    const { query, updateQuery } = useQueryArgs()
     const [page] = usePage()
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
@@ -63,7 +63,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const params = useMemo(() => {
         return { pageNum: 1, pageSize: 1 }
     }, [])
-    const datastore = useQueryDatasetList(datasetVersion?.indexTable, params, true)
+    const { columnInfo: datastore } = useQueryDatasetList(datasetVersion?.indexTable, params, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -233,7 +233,15 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                                 </Button>
                             )}
                         </div>
-                        {datasetVersionId && <Search fields={datastore.data?.columnTypes ?? []} />}
+                        {datasetVersionId && (
+                            <Search
+                                fields={datastore.data?.columnTypes ?? []}
+                                value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
+                                onChange={(items) => {
+                                    updateQuery({ filter: items.filter((v) => v.value) as any })
+                                }}
+                            />
+                        )}
                         {datasetVersionId && <BaseNavTabs navItems={navItems} />}
                         <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                             {children}

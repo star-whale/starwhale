@@ -9,7 +9,8 @@ module.exports = {
                 "tutorials/ag_news",
                 "tutorials/cifar10",
                 "tutorials/pfp",
-                "tutorials/nmt"
+                "tutorials/nmt",
+                "tutorials/ucf101"
             ],
             "Fundamentals": [
                 "fundamentals/concepts",
@@ -38,6 +39,7 @@ module.exports = {
                     items: [
                         "guides/config/standalone_config",
                         "guides/config/swignore",
+                        "guides/config/server_admin",
                     ]
                 },
                 {

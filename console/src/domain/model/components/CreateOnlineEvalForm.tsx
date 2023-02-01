@@ -3,12 +3,15 @@ import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import RuntimeSelector from '@runtime/components/RuntimeSelector'
 import RuntimeVersionSelector from '@runtime/components/RuntimeVersionSelector'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import ModelSelector from '@model/components/ModelSelector'
 import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { ICreateOnlineEvalSchema } from '@model/schemas/model'
 import { createUseStyles } from 'react-jss'
+import FlatResourceSelector, { Dict } from '@/domain/setting/components/FlatResourceSelector'
+import { ISystemResourcePool } from '@/domain/setting/schemas/system'
+import Toggle from '@/components/Select/Toggle'
 
 interface ICreateOnlineEvalProps {
     modelId: string
@@ -16,7 +19,8 @@ interface ICreateOnlineEvalProps {
     runtimeId: string
     runtimeVersionUrl: string
     resourcePool: string
-    ttl: number
+    advance: boolean
+    resourceAmount: Dict<string>
 }
 
 export interface ICreateOnlineEvalFormProps {
@@ -48,14 +52,30 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
 
     const styles = useStyles()
     const [t] = useTranslation()
+    const history = useHistory()
 
     const [modelId, setModelId] = useState($modelId)
     const [runtimeId, setRuntimeId] = useState('')
+    const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
+    const [showAdvanced, setShowAdvanced] = useState(false)
 
-    const handleValuesChange = useCallback((_changes, values_) => {
-        if (values_.modelId) setModelId(values_.modelId)
-        if (values_.runtimeId) setRuntimeId(values_.runtimeId)
-    }, [])
+    const handleValuesChange = useCallback(
+        (changes, values) => {
+            if (values.modelId) setModelId(values.modelId)
+            if (values.runtimeId) setRuntimeId(values.runtimeId)
+            setShowAdvanced(values.advance)
+            if (!values.advance || 'resourcePool' in changes) {
+                // empty the resource amounts when no advance or resource pool changes
+                form.resetFields(['resourceAmount'])
+            }
+
+            // update uri if model version changed
+            if ('modelVersionUrl' in changes) {
+                history.push(`/projects/${projectId}/online_eval/${modelId}/${changes.modelVersionUrl}`)
+            }
+        },
+        [form, history, modelId, projectId]
+    )
 
     const handleSubmit = useCallback(
         (props) => {
@@ -63,7 +83,8 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
                 modelVersionUrl: props.modelVersionUrl,
                 runtimeVersionUrl: props.runtimeVersionUrl,
                 resourcePool: props.resourcePool,
-                ttlInSeconds: +props.ttl,
+                // TODO: add spec
+                spec: '',
             })
         },
         [onSubmit]
@@ -92,12 +113,42 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
                         <RuntimeVersionSelector projectId={projectId} runtimeId={runtimeId} autoSelected />
                     </FormItem>
                 )}
-            </div>
-            <div className={styles.row3}>
-                <FormItem label={t('Resource Pool')} name='resourcePool' required>
-                    <ResourcePoolSelector autoSelected />
+                <FormItem label={t('online eval.advance')} name='advance'>
+                    <Toggle />
                 </FormItem>
             </div>
+            {showAdvanced && (
+                <>
+                    <div className={styles.row3}>
+                        <FormItem label={t('Resource Pool')} name='resourcePool' required>
+                            <ResourcePoolSelector autoSelected onChangeItem={setResourcePool} />
+                        </FormItem>
+                    </div>
+                    <div className={styles.row3}>
+                        <FormItem
+                            label={t('Resource Amount')}
+                            name='resourceAmount'
+                            validators={[
+                                (_, resourceAmount) => {
+                                    // eslint-disable-next-line no-restricted-syntax,guard-for-in
+                                    for (const k in resourceAmount) {
+                                        const v: string = resourceAmount[k]
+                                        if (Number.isNaN(Number(v))) {
+                                            return Promise.reject(Error(`${k} is not a valid number`))
+                                        }
+                                    }
+                                    return Promise.resolve()
+                                },
+                            ]}
+                        >
+                            <FlatResourceSelector
+                                resourceTypes={resourcePool?.resources || []}
+                                className={styles.row3}
+                            />
+                        </FormItem>
+                    </div>
+                </>
+            )}
         </Form>
     )
 }

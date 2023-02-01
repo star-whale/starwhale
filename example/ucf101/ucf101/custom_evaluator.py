@@ -29,7 +29,6 @@ root_dir = Path(__file__).parent.parent
 
 
 def ppl_post(output: torch.Tensor) -> t.Tuple[t.List[str], t.List[float]]:
-    output = output.squeeze()
     pred_value = output.argmax(-1).flatten().tolist()
     probability_matrix = np.exp(output.tolist()).tolist()
     return [str(p) for p in pred_value], probability_matrix

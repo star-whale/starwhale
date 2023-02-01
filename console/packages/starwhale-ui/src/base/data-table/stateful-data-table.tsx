@@ -1,6 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
-
-import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Search } from 'baseui/icon'
 import { SIZE as INPUT_SIZES } from 'baseui/input'
 import Input from '@/components/Input'
@@ -15,6 +13,9 @@ import FilterOperateMenu from './filter-operate-menu'
 import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
+import ConfigQuery from './config-query'
+import { ITableState } from './store'
+import Button from '@starwhale/ui/Button'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -66,18 +67,23 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const columnable = props.columnable === undefined ? true : props.columnable
     const viewable = props.viewable === undefined ? true : props.viewable
     const compareable = props.viewable === undefined ? true : props.compareable
+    const queryable = props.viewable === undefined ? true : props.queryable
+    const selectable = props.selectable === undefined ? true : props.selectable
+
     const { useStore } = props
     const store = useStore()
 
     const { columns } = props
-    const { pinnedIds = [], selectedIds = [] }: ConfigT = store.currentView || {}
+    const isFullyLoaded = store.isInit
+    const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
         // if (!columnable) return columns
+        if (!isFullyLoaded) return columns
 
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
-        return selectedIds
+        return ids
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
                 return {
@@ -85,7 +91,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
                 }
             }) as ColumnT[]
-    }, [columns, columnable, pinnedIds, selectedIds])
+    }, [columns, columnable, pinnedIds, ids, isFullyLoaded])
 
     const $filters = React.useMemo(() => {
         return (
@@ -102,14 +108,18 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const handleApply = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        (selectedIds, pinnedIds, sortedIds) => {
-            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, sortedIds)
+        (selectedIds, pinnedIds, ids) => {
+            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, ids)
         },
         [store]
     )
     const handleSave = useCallback(
-        (view) => {
-            store.onShowViewModel(true, view)
+        async (view) => {
+            if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
+            else {
+                store.onViewUpdate(view)
+                props.onSave?.(view)
+            }
         },
         [store]
     )
@@ -130,26 +140,20 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         [store]
     )
 
-    const handleFilterSave = useCallback(
-        (filters) => {
-            store.onShowViewModel(true, {
-                ...store.currentView,
-                filters,
-            })
+    const handeQuerySet = useCallback(
+        (items) => {
+            store.onCurrentViewQueriesChange(items)
         },
         [store]
     )
 
-    const handleFilterSaveAs = useCallback(
-        (filters) => {
-            store.onShowViewModel(true, {
-                ...store.currentView,
-                id: undefined,
-                filters,
-            })
-        },
-        [store]
-    )
+    // changed status must be after all the store changes(after api success)
+    const changed = useMemo(() => {
+        const view = store.views.find((v) => v.id === store.currentView?.id)
+        if (!view && store.currentView?.id === 'all') return false
+        if (_.isEqual(view, store.currentView)) return false
+        return true
+    }, [store.currentView, store.views])
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
@@ -161,14 +165,12 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     return (
         <StatefulContainer
-            batchActions={props.batchActions}
             // @ts-ignore
             columns={$columns}
             initialSortIndex={props.initialSortIndex}
             initialSortDirection={props.initialSortDirection}
             onIncludedRowsChange={props.onIncludedRowsChange}
             onRowHighlightChange={props.onRowHighlightChange}
-            onSelectionChange={props.onSelectionChange}
             resizableColumnWidths={props.resizableColumnWidths}
             rows={props.rows}
             rowActions={props.rowActions}
@@ -185,18 +187,12 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             }: StatefulContainerPropsT['children']) => (
                 <>
                     <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
-                        <div
-                            ref={headlineRef}
-                            className={css({
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            })}
-                        >
+                        <div ref={headlineRef}>
                             <div
-                                className='flex-row-center mb-20 g-20'
+                                className='flex-row-left mb-20 g-20'
                                 style={{
-                                    gridTemplateColumns: '1fr auto 1fr',
                                     display: 'grid',
+                                    gridTemplateColumns: '280px auto auto',
                                 }}
                             >
                                 {viewable && (
@@ -213,25 +209,44 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                         columns={props.columns}
                                         rows={props.rows}
                                         onFilterSet={handeFilterSet}
-                                        onSave={handleFilterSave}
-                                        onSaveAs={handleFilterSaveAs}
                                     />
                                 )}
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
-                            </div>
 
-                            {columnable && !$rowSelectedIds.size && (
-                                <div className='flex-row-center mb-20'>
-                                    <ConfigManageColumns
-                                        view={store.currentView}
-                                        columns={props.columns}
-                                        onApply={handleApply}
-                                        onSave={handleSave}
-                                        onSaveAs={handleSaveAs}
-                                    />
-                                </div>
-                            )}
+                                {changed && store.currentView?.id && (
+                                    <div>
+                                        <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
+                                        <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
+                                    </div>
+                                )}
+                            </div>
+                            <div
+                                style={{
+                                    gridTemplateColumns: '1fr auto',
+                                    display: 'grid',
+                                }}
+                            >
+                                {queryable && (
+                                    <div className='table-config-query' style={{ flex: 1 }}>
+                                        <ConfigQuery
+                                            value={store.currentView?.queries ?? []}
+                                            columns={props.columns}
+                                            onChange={handeQuerySet}
+                                        />
+                                    </div>
+                                )}
+
+                                {columnable && !$rowSelectedIds.size && (
+                                    <div className='table-config-column flex-row-center mb-20'>
+                                        <ConfigManageColumns
+                                            view={store.currentView}
+                                            columns={props.columns}
+                                            onApply={handleApply}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -243,8 +258,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         {$columns.length > 0 && (
                             <DataTable
                                 useStore={props.useStore}
-                                batchActions={props.batchActions}
                                 columns={$columns}
+                                selectable={selectable}
                                 rawColumns={props.columns}
                                 emptyMessage={props.emptyMessage}
                                 filters={$filtersEnabled}

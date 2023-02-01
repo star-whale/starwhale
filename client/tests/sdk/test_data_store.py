@@ -2,6 +2,7 @@ import os
 import json
 import time
 import unittest
+import concurrent.futures
 from typing import Dict, List
 from unittest.mock import Mock, patch
 
@@ -169,6 +170,49 @@ class TestBasicFunctions(BaseTestCase):
             ],
             list(data_store._scan_parquet_file(path, keep_none=True)),
             "keep none",
+        )
+
+    def test_only_one_end_inclusive(self) -> None:
+        path = os.path.join(self.datastore_root, "base-10.parquet")
+        data_store._write_parquet_file(
+            path,
+            pa.Table.from_pydict(
+                {
+                    "a": [0],
+                    "b": ["x"],
+                    "c": [10],
+                    "-": [None],
+                    "~c": [False],
+                },
+                metadata={
+                    "schema": str(
+                        data_store.TableSchema(
+                            "a",
+                            [
+                                data_store.ColumnSchema("a", data_store.INT64),
+                                data_store.ColumnSchema("b", data_store.STRING),
+                                data_store.ColumnSchema("c", data_store.INT64),
+                                data_store.ColumnSchema("-", data_store.BOOL),
+                                data_store.ColumnSchema("~c", data_store.BOOL),
+                            ],
+                        )
+                    )
+                },
+            ),
+        )
+        self.assertEqual(
+            1,
+            len(
+                list(
+                    data_store._scan_parquet_file(
+                        path,
+                        start=0,
+                        end=0,
+                        end_inclusive=True,
+                    )
+                )
+            ),
+            "end inclusive and end is max",
         )
 
     def test_merge_scan(self) -> None:
@@ -1227,6 +1271,45 @@ class TestLocalDataStore(BaseTestCase):
             ],
             list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "composite",
+        )
+
+    def test_data_store_update_table_with_multithread(self) -> None:
+        ds = data_store.LocalDataStore(self.datastore_root)
+
+        def ds_update(index: int) -> bool:
+            for i in range(100 * (index - 1), 100 * index):
+                ds.update_table(
+                    "project/a_b/eval/test-m",
+                    data_store.TableSchema(
+                        "k",
+                        [
+                            data_store.ColumnSchema("k", data_store.INT64),
+                            data_store.ColumnSchema("a", data_store.STRING),
+                            data_store.ColumnSchema("b", data_store.STRING),
+                        ],
+                    ),
+                    [{"k": i, "a": "0", "b": "0"}],
+                )
+            return True
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+            futures = [pool.submit(ds_update(index=index)) for index in range(0, 5)]
+            results = [
+                future.result for future in concurrent.futures.as_completed(futures)
+            ]
+
+        assert all(results)
+
+        self.assertEqual(
+            500,
+            len(
+                list(
+                    ds.scan_tables(
+                        [data_store.TableDesc("project/a_b/eval/test-m", None, False)]
+                    )
+                )
+            ),
+            "length check",
         )
 
     def test_data_store_scan(self) -> None:

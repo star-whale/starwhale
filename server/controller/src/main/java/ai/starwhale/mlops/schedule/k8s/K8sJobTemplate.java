@@ -115,7 +115,12 @@ public class K8sJobTemplate {
         return job;
     }
 
-    public V1StatefulSet renderModelServingOrch(Map<String, String> envs, String image, String name) {
+    public V1StatefulSet renderModelServingOrch(
+            String name,
+            String image,
+            Map<String, String> envs,
+            ResourceOverwriteSpec resource
+    ) {
         var ss = Yaml.loadAs(this.modelServingJobTemplate, V1StatefulSet.class);
         Objects.requireNonNull(ss.getMetadata());
 
@@ -143,6 +148,7 @@ public class K8sJobTemplate {
         // add readiness probe
         var readiness = new V1Probe();
         cos.setReadinessProbe(readiness);
+        cos.setResourceOverwriteSpec(resource);
         readiness.failureThreshold(3);
         var httpGet = new V1HTTPGetAction();
         readiness.httpGet(httpGet);

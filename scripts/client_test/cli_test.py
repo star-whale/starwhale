@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures._base import Future
 
 from cmds.eval_cmd import Evaluation
+from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
@@ -273,16 +274,14 @@ class TestCli:
             self.build_runtime(rt["workdir"])
 
         for name, expl in EXAMPLES.items():
-            p = subprocess.Popen(
+            logger.info(f"preparing data for {expl}")
+            rc = subprocess.call(
                 ["make", "CN=1", "prepare-data"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
                 cwd=expl["workdir"],
             )
-            with p.stdout:  # type: ignore
-                for line in iter(p.stdout.readline, b""):  # type: ignore
-                    logging.info("got line from subprocess: %r", line)
-            assert not p.wait()
+            if rc != 0:
+                logger.error(f"prepare data for {expl} failed")
+                raise
 
         for name, expl in EXAMPLES.items():
             workdir_ = expl["workdir"]
@@ -365,6 +364,17 @@ class TestCli:
             workdir_ = expl["workdir"]
             self.build_model(str(workdir_))
 
+    def smoke_commands(self) -> None:
+        commands = [
+            "timeout 2 swcli --help",
+            "swcli --version",
+        ]
+
+        for cmd in commands:
+            _code, _err = invoke(cmd.split())
+            if _code != 0:
+                raise RuntimeError(f"cmd[{cmd}] run failed, err: {_err}, code: {_code}")
+
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(
@@ -385,3 +395,5 @@ if __name__ == "__main__":
             test_cli.debug()
         else:
             test_cli.test_expl(expl_name=example)
+
+        test_cli.smoke_commands()

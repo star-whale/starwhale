@@ -22,7 +22,7 @@ dependencies:
       - torchtext
       - torchaudio
       - pycocotools
-  - requirements-sw-lock.txt
+  - requirements.txt
 environment:
   arch: noarch
   os: ubuntu:20.04

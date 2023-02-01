@@ -5,7 +5,7 @@ import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 // eslint-disable-next-line import/no-cycle
-import { ConfigT, SortDirectionsT } from './types'
+import { ConfigT, QueryT, SortDirectionsT } from './types'
 // eslint-disable-next-line import/no-cycle
 import { FilterOperateSelectorValueT } from './filter-operate-selector'
 
@@ -17,6 +17,7 @@ export interface ITableStateInitState {
     key: string
     setRawConfigs: (obj: Record<string, any>) => void
     getRawConfigs: (state?: ITableState) => typeof rawInitialState
+    getRawIfChangedConfigs: (state?: ITableState) => typeof rawIfChangedInitialState
 }
 export interface IViewState {
     views: ConfigT[]
@@ -31,7 +32,8 @@ export interface ICurrentViewState {
     currentView: ConfigT
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
-    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) => void
+    onCurrentViewQueriesChange: (queries: QueryT[]) => void
+    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) => void
     onCurrentViewColumnsPin: (columnId: string, bool?: boolean) => void
 }
 export interface IViewInteractiveState {
@@ -60,8 +62,16 @@ const rawInitialState: Partial<ITableState> = {
     views: [],
     defaultView: {},
     currentView: {},
-    viewEditing: {},
-    viewModelShow: false,
+    // viewEditing: {},
+    // viewModelShow: false,
+    rowSelectedIds: [],
+}
+
+const rawIfChangedInitialState: Partial<ITableState> = {
+    key: 'table',
+    views: [],
+    defaultView: {},
+    currentView: {},
     rowSelectedIds: [],
 }
 
@@ -130,17 +140,18 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => ({
     currentView: {},
     onCurrentViewFiltersChange: (filters) => set({ currentView: { ...get().currentView, filters } }),
-    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) =>
-        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, sortedIds } }),
+    onCurrentViewQueriesChange: (queries) => set({ currentView: { ...get().currentView, queries } }),
+    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
+        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids } }),
     onCurrentViewColumnsPin: (columnId: string, pined = false) => {
-        const { pinnedIds = [], selectedIds = [] } = get().currentView
+        const { pinnedIds = [], ids = [] } = get().currentView
         const $pinnedIds = new Set(pinnedIds)
         if (pined) {
             $pinnedIds.add(columnId)
         } else {
             $pinnedIds.delete(columnId)
         }
-        const sortedMergeSelectedIds = Array.from(selectedIds).sort((v1, v2) => {
+        const sortedMergeSelectedIds = Array.from(ids).sort((v1, v2) => {
             const index1 = $pinnedIds.has(v1) ? 1 : -1
             const index2 = $pinnedIds.has(v2) ? 1 : -1
             return index2 - index1
@@ -150,7 +161,7 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             currentView: {
                 ...get().currentView,
                 pinnedIds: Array.from($pinnedIds),
-                selectedIds: sortedMergeSelectedIds,
+                ids: sortedMergeSelectedIds,
             },
         })
     },
@@ -182,6 +193,7 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
             ..._.pick(obj, Object.keys(rawInitialState)),
         }),
     getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
+    getRawIfChangedConfigs: (state) => _.pick(state ?? get(), Object.keys(rawIfChangedInitialState)),
 })
 
 export interface IRowState {

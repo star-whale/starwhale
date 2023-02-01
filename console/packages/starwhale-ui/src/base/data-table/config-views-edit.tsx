@@ -6,8 +6,8 @@ import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
 import { ColumnT, ConfigT } from './types'
 import ConfigManageColumns from './config-manage-columns'
 import Input from '../../Input'
-import { CategoricalFilter } from './filter-operate-menu'
 import Select from '../../Select'
+import ConfigQuery from './config-query'
 
 type ViewListPropsT = {
     view: ConfigT
@@ -19,6 +19,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     // const [t] = useTranslation()
     const [name, setName] = React.useState(props.view?.name ?? '')
     const [sortBy, setSortBy] = React.useState(props.view?.sortBy ?? '')
+    const [queries, setQueries] = React.useState(props.view?.queries ?? [])
     const $keys = React.useMemo(() => {
         return props.columns.map((column) => {
             return {
@@ -35,16 +36,19 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     React.useImperativeHandle(
         ref,
         () => ({
-            getView: () => ({
-                ...props.view,
-                name,
-                filters: (filterRef.current as any).getCategories(),
-                sortBy,
-                sortDirection,
-                ...(columnRef.current as any).getConfig(),
-            }),
+            getView: () => {
+                return {
+                    ...props.view,
+                    ...(columnRef.current as any).getConfig(),
+                    // filters: (filterRef.current as any).getCategories(),
+                    name,
+                    queries,
+                    sortBy,
+                    sortDirection,
+                }
+            },
         }),
-        [name, filterRef, columnRef, sortBy, sortDirection, props.view]
+        [name, filterRef, columnRef, sortBy, sortDirection, props.view, queries]
     )
 
     return (
@@ -60,13 +64,14 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 <LabelSmall>View Name *</LabelSmall>
                 <Input required value={name} onChange={(event) => setName((event.target as HTMLInputElement).value)} />
             </div>
-            <CategoricalFilter
+            {/* <CategoricalFilter
                 ref={filterRef}
                 isInline
                 columns={props.columns}
                 rows={props.rows}
                 filters={props.view?.filters ?? []}
-            />
+            /> */}
+            <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
             <ConfigManageColumns ref={columnRef} isInline view={props.view} columns={props.columns ?? []} />
             <div
                 className={css({

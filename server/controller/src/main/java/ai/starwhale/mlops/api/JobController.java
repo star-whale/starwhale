@@ -38,7 +38,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
-import io.kubernetes.client.openapi.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -201,7 +200,8 @@ public class JobController implements JobApi {
                 projectUrl,
                 request.getModelVersionUrl(),
                 request.getRuntimeVersionUrl(),
-                request.getResourcePool()
+                request.getResourcePool(),
+                request.getSpec()
         );
 
         return ResponseEntity.ok(Code.success.asResponse(resp));

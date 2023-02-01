@@ -714,7 +714,8 @@ def _scan_parquet_file(
 
     for i in range(f.num_row_groups):
         stats = f.metadata.row_group(i).column(key_index).statistics
-        if (end is not None and stats.min >= end) or (
+        _end_check: Callable = lambda x, y: x > y if end_inclusive else x >= y
+        if (end is not None and _end_check(stats.min, end)) or (
             start is not None and stats.max < start
         ):
             continue
@@ -725,7 +726,6 @@ def _scan_parquet_file(
         n_cols = len(names)
         for j in range(n_rows):
             key = types[0].deserialize(table[0][j].as_py())
-            _end_check: Callable = lambda x, y: x > y if end_inclusive else x >= y
             if (start is not None and key < start) or (
                 end is not None and _end_check(key, end)
             ):
@@ -1085,6 +1085,7 @@ class LocalDataStore:
         self.root_path = root_path
         self.name_pattern = re.compile(r"^[A-Za-z0-9-_/: ]+$")
         self.tables: Dict[str, MemoryTable] = {}
+        self.lock = threading.Lock()
 
     def update_table(
         self,
@@ -1102,16 +1103,7 @@ class LocalDataStore:
                     raise RuntimeError(
                         f"invalid column name {k}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
                     )
-        table = self.tables.get(table_name, None)
-        if table is None:
-            table_path = _get_table_path(self.root_path, table_name)
-            if _get_table_files(table_path):
-                table_schema = _read_table_schema(table_path)
-                table_schema.merge(schema)
-            else:
-                table_schema = schema
-            table = MemoryTable(table_name, table_schema)
-            self.tables[table_name] = table
+        table = self._get_table(table_name, schema)
         if schema.key_column != table.schema.key_column:
             raise RuntimeError(
                 f"invalid key column, expected {table.schema.key_column}, actual {schema.key_column}"
@@ -1127,6 +1119,20 @@ class LocalDataStore:
                 table.delete([key])
             else:
                 table.insert(r)
+
+    def _get_table(self, table_name: str, schema: TableSchema) -> MemoryTable:
+        with self.lock:
+            table = self.tables.get(table_name, None)
+            if table is None:
+                table_path = _get_table_path(self.root_path, table_name)
+                if _get_table_files(table_path):
+                    table_schema = _read_table_schema(table_path)
+                    table_schema.merge(schema)
+                else:
+                    table_schema = schema
+                table = MemoryTable(table_name, table_schema)
+                self.tables[table_name] = table
+        return table
 
     def scan_tables(
         self,

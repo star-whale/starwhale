@@ -42,16 +42,13 @@ public interface ModelServingMapper {
             "runtime_version_id",
             "resource_pool",
             "last_visit_time",
+            "spec",
     };
     String TABLE = "model_serving_info";
 
     @InsertProvider(value = SqlProviderAdapter.class, method = "insert")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(ModelServingEntity entity);
-
-    @InsertProvider(value = SqlProviderAdapter.class, method = "insertIgnore")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void insertIgnore(ModelServingEntity entity);
 
     @Select("select * from " + TABLE + " where id=#{id}")
     ModelServingEntity find(long id);
@@ -79,14 +76,6 @@ public interface ModelServingMapper {
                     INTO_VALUES(values);
                 }
             }.toString();
-        }
-
-        public String insertIgnore() {
-            var values = Arrays.stream(COLUMNS)
-                    .map(i -> "#{" + CaseUtils.toCamelCase(i, false, '_') + "}")
-                    .toArray(String[]::new);
-            return String.format("insert ignore into %s(%s) values (%s)",
-                    TABLE, String.join(", ", COLUMNS), String.join(", ", values));
         }
 
         public String listByConditions(

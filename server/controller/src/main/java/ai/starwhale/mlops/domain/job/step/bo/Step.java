@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.job.step.bo;
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
 import lombok.AllArgsConstructor;

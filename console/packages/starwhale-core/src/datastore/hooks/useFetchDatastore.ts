@@ -64,7 +64,7 @@ export function useQueryDatasetList(
 
     const recordQuery = useMemo(() => {
         const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
-        const filter = options?.filter ? column.toQuery(options?.filter) : undefined
+        const filter = options?.filter && options?.filter.length > 0 ? column.toQuery(options?.filter) : undefined
         const raw = {
             tableName,
             start,
@@ -75,7 +75,7 @@ export function useQueryDatasetList(
         return filter ? { ...raw, filter } : raw
     }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName])
 
-    const recordInfo = useQueryDatastore(recordQuery)
+    const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 
     React.useEffect(() => {
         if (tableName) {
@@ -89,7 +89,10 @@ export function useQueryDatasetList(
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recordQuery])
+    }, [recordQuery.tableName])
 
-    return recordInfo
+    return {
+        columnInfo,
+        recordInfo,
+    }
 }

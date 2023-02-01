@@ -2,6 +2,7 @@
 /* @ts-ignore */
 import _ from 'lodash'
 
+// @ts-ignore
 export { useOverrides, mergeOverrides } from 'baseui/helpers/overrides'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
