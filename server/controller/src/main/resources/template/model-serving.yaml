@@ -16,7 +16,6 @@ spec:
       containers:
       - name: 'worker'
         image: 'docker.io/library/busybox'
-        imagePullPolicy: IfNotPresent
         args:
         - serve
         volumeMounts:
