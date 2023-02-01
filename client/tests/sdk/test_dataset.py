@@ -185,8 +185,9 @@ class MNISTBuildWithIDExecutor(SWDSBinBuildExecutor):
 def iter_mnist_user_raw_item_with_id() -> t.Generator[
     t.Tuple[t.Any, t.Any, t.Any], None, None
 ]:
-    for data, annotations in iter_mnist_user_raw_item():
-        yield f"mnist-link-{data.data_type.display_name}", data, annotations
+    for data in iter_mnist_user_raw_item():
+        image_ = data["image"]
+        yield f"mnist-link-{image_.display_name}", data
 
 
 def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
@@ -200,19 +201,22 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
         offset = 16
 
         for i in range(0, min(data_number, label_number)):
-            _data = Link(
-                uri=str(_mnist_data_path.absolute()),
-                offset=offset,
-                size=image_size,
-                data_type=GrayscaleImage(display_name=f"{i}", shape=(height, width, 1)),
-                with_local_fs_data=True,
-            )
             _label = struct.unpack(">B", label_file.read(1))[0]
             _local_link = Link(
                 uri=_mnist_label_path,
                 with_local_fs_data=True,
             )
-            yield _data, {
+            yield {
+                "image": GrayscaleImage(
+                    display_name=f"{i}",
+                    shape=(height, width, 1),
+                    link=Link(
+                        uri=str(_mnist_data_path.absolute()),
+                        offset=offset,
+                        size=image_size,
+                        with_local_fs_data=True,
+                    ),
+                ),
                 "label": _label,
                 "link": _local_link,
                 "list_link": [_local_link],
@@ -514,6 +518,36 @@ class TestDatasetBuildExecutor(BaseTestCase):
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
         self.data_file_sign = blake2b_file(_mnist_data_path)
         self.label_file_sign = blake2b_file(_mnist_label_path)
+
+    def test_user_raw_with_id_function_handler(self) -> None:
+        _cls = create_generic_cls(iter_mnist_user_raw_item_with_id)
+        assert issubclass(_cls, SWDSBinBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="332211",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 10
+
+    def test_user_raw_function_handler(self) -> None:
+        _cls = create_generic_cls(iter_mnist_user_raw_item)
+        assert issubclass(_cls, SWDSBinBuildExecutor)
+        with _cls(
+            dataset_name="mnist",
+            dataset_version="332211",
+            project_name="self",
+            workdir=Path(self.workdir),
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 10
 
     def test_swds_bin_with_id_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_swds_bin_item_with_id)

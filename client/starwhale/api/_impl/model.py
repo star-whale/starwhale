@@ -80,7 +80,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
         ppl_batch_size: int = 1,
-        ignore_annotations: bool = False,
+        ignore_dataset_data: bool = False,
         ignore_error: bool = False,
         flush_result: bool = False,
     ) -> None:
@@ -89,7 +89,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.context: Context = context_holder.context
 
         # TODO: add args for compare result and label directly
-        self.ignore_ds_data = ignore_annotations
+        self.ignore_dataset_data = ignore_dataset_data
         self.ignore_error = ignore_error
         self.flush_result = flush_result
 
@@ -296,16 +296,17 @@ class PipelineHandler(metaclass=ABCMeta):
                         }
                     )
 
-                    artifacts = TabularDatasetRow.artifacts_of_data(_data)
-                    for at in artifacts:
-                        if isinstance(at.fp, bytes) and at.link:
-                            at.clear_bytes()
+                    if not self.ignore_dataset_data:
+                        artifacts = TabularDatasetRow.artifacts_of_data(_data)
+                        for at in artifacts:
+                            if isinstance(at.fp, bytes) and at.link:
+                                at.clear_bytes()
 
                     result_storage.save(
                         data_id=_idx_with_ds,
                         index=_idx,
                         result=_result,
-                        ds_data={} if self.ignore_ds_data else _data,
+                        ds_data={} if self.ignore_dataset_data else _data,
                     )
 
         if self.flush_result:

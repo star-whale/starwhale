@@ -39,7 +39,7 @@ class DataRow:
         return f"{self.index}"
 
     def __repr__(self) -> str:
-        return f"index:{self.index}, content:{self.data}"
+        return f"index:{self.index}, data:{self.data}"
 
     def __iter__(self) -> t.Iterator:
         return iter((self.index, self.data))
