@@ -1,5 +1,6 @@
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { Select, SelectProps, SIZE } from 'baseui/select'
+import Select from '@starwhale/ui/Select'
+import { SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'

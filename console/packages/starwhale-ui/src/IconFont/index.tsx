@@ -11,7 +11,7 @@ import googleSvg from './svg/google.svg'
 import invalidFile from './svg/invalid-file.svg'
 import { themedUseStyletron } from '../theme/styletron'
 
-type IconTypesT =
+export type IconTypesT =
     | 'arrow2_down'
     | 'arrow2_right'
     | 'clear2'

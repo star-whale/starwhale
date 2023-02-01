@@ -2,12 +2,14 @@ import React from 'react'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
 import { mergeOverrides } from '../utils'
 import { themedUseStyletron } from '../theme/styletron'
+import IconFont, { IconTypesT } from '../IconFont'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent' | 'withIcon'
     kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
+    icon?: IconTypesT
 }
 
 export default function Button({
@@ -15,6 +17,7 @@ export default function Button({
     size = 'compact',
     kind = 'primary',
     as = 'button',
+    icon,
     children,
     ...props
 }: IButtonProps) {
@@ -43,6 +46,11 @@ export default function Button({
         props.overrides
     )
 
+    if (icon && !props.startEnhancer) {
+        props.startEnhancer = () => <IconFont type={icon} size={13} />
+        as = 'withIcon'
+    }
+
     if (as === 'link') {
         overrides = mergeOverrides(
             {
@@ -59,7 +67,7 @@ export default function Button({
                         'marginLeft': '0',
                         'marginRight': '0',
                         'backgroundColor': 'transparent',
-                        'color': '#2B65D9',
+                        'color': theme.colors.buttonPrimaryFill,
                         ':hover': {
                             backgroundColor: 'transparent',
                         },
@@ -95,15 +103,15 @@ export default function Button({
                 BaseButton: {
                     style: {
                         ...defaultStyles,
-                        'backgroundColor': '#F4F5F7',
-                        'color': 'rgba(2,16,43,0.60)',
+                        'backgroundColor': '#EBF1FF',
+                        'color': theme.colors.buttonPrimaryFill,
                         ':hover': {
                             backgroundColor: '#F0F4FF',
-                            color: '#5181E0',
+                            color: theme.colors.buttonPrimaryHover,
                         },
                         ':active': {
                             backgroundColor: '#F0F4FF',
-                            color: '#1C4CAD',
+                            color: theme.colors.buttonPrimaryActive,
                         },
                     },
                 },

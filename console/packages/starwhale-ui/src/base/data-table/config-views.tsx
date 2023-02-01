@@ -110,19 +110,25 @@ function ConfigViews(props: PropsT) {
                 animate
                 autoFocus
                 overrides={{
+                    DialogContainer: {
+                        style: {
+                            height: '100vh',
+                        },
+                    },
                     Dialog: {
                         style: {
                             width: '700px',
                             display: 'flex',
                             flexDirection: 'column',
                             minHeight: '640px',
-                            maxHeight: 'calc(100vh - 100px)',
+                            maxHeight: 'calc(100% - 100px)',
                         },
                     },
                 }}
             >
                 <ModalHeader>{!store.viewEditing?.id ? t('Add a New View') : t('Edit View')}</ModalHeader>
                 <ModalBody
+                    className='inherit-height'
                     style={{
                         flex: '1',
                         display: 'flex',

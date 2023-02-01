@@ -3,7 +3,7 @@ import { ComponentStory, ComponentMeta } from '@storybook/react'
 import Input from '@starwhale/ui/Input'
 
 export default {
-    title: 'Components/Input/Input',
+    title: 'Components/Input',
     component: Input,
     argTypes: {},
 } as ComponentMeta<typeof Input>

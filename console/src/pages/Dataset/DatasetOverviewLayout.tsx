@@ -10,7 +10,6 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
 import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
-import IconFont from '@/components/IconFont'
 import { Panel } from 'baseui/accordion'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
@@ -224,9 +223,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                             )}
                             {datasetVersionId && (
                                 <Button
-                                    // as='withIcon'
-                                    kind='primary'
-                                    startEnhancer={() => <IconFont type='runtime' />}
+                                    icon='runtime'
                                     onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
                                 >
                                     {t('History')}

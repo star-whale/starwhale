@@ -2,31 +2,6 @@ import type { Theme, Primitives } from 'baseui'
 import color from 'color'
 import { createTheme, LightTheme } from 'baseui'
 
-// export type SWThemeT = Theme & {
-//     brandPrimary: string
-//     brandPrimaryHover: string
-//     brandFontPrimary: string
-//     brandBgNav: string
-//     brandBgNavTitle: string
-//     brandBgNavBorder: string
-//     brandBgNavFont: string
-//     brandBgNavFontGray: string
-//     brandBgUser: string
-//     brandBgSecondary: string
-//     brandBgSecondary4: string
-//     brandBgUserFont: string
-//     brandTableHeaderBackground: string
-//     brandLink: string
-//     brandRootBackground: string
-//     brandLoginBackground: string
-//     brandFontTip: string
-//     brandFontWhite: string
-//     brandFontNote: string
-//     brandWhite: string
-//     brandUserIcon: string
-//     brandMenuItemBackground: string
-// }
-
 export type BaseThemeType = 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
 
@@ -80,6 +55,8 @@ const overrides = {
         buttonSecondarySelectedFill: '#1C4CAD',
         buttonSecondaryHover: '#F0F4FF',
         buttonSecondaryActive: '#F0F4FF;',
+        buttonDisabledFill: '#EBF1FF',
+        buttonDisabledText: color(customPrimaryColors.primary).alpha(0.3).toString(),
         borderSelected: customPrimaryColors.primary,
         tickFillSelected: customPrimaryColors.primary,
         tickFillSelectedHover: customPrimaryColors.primary,

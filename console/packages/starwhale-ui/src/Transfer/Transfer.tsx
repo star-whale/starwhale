@@ -26,11 +26,11 @@ const useStyles = createUseStyles({
         },
         '& .transfer-list': {
             flex: 1,
-            borderRadius: '4px',
             display: 'flex',
             overflow: 'hidden',
         },
         '& .transfer-list-content': {
+            borderRadius: '4px',
             border: '1px solid #CFD7E6',
             flex: '1',
             display: 'flex',
@@ -175,7 +175,7 @@ export default function Transfer({
     }, [rightOperators, value, onChange])
 
     return (
-        <div className={styles.transfer}>
+        <div className={`${styles.transfer} inherit-height`}>
             {isSearchable && (
                 <div className='query'>
                     <Input
@@ -203,10 +203,30 @@ export default function Transfer({
             <div className='list'>
                 <TransferList columns={$leftFilteredColumns} operators={leftOperators} />
                 <div className='transfer-list-toolbar'>
-                    <Button disabled={leftOperators?.selectedIds?.length === 0} onClick={handleToRight}>
+                    <Button
+                        disabled={leftOperators?.selectedIds?.length === 0}
+                        onClick={handleToRight}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    height: '40px',
+                                },
+                            },
+                        }}
+                    >
                         <IconFont type='arrow_right' />
                     </Button>
-                    <Button disabled={rightOperators?.selectedIds?.length === 0} onClick={handleToLeft}>
+                    <Button
+                        disabled={rightOperators?.selectedIds?.length === 0}
+                        onClick={handleToLeft}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    height: '40px',
+                                },
+                            },
+                        }}
+                    >
                         <IconFont type='arrow_left' />
                     </Button>
                 </div>
