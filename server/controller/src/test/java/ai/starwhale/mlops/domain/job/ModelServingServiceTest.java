@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
@@ -141,6 +142,8 @@ public class ModelServingServiceTest {
         when(runtimeDao.getRuntimeVersion("8")).thenReturn(runtimeVer);
         var modelVer = ModelVersionEntity.builder().id(9L).build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
+        when(systemSettingService.queryResourcePool("default")).thenReturn(
+                ResourcePool.builder().nodeSelector(Map.of("foo", "bar")).build());
 
         var spec = "---\n"
                 + "resources:\n"
@@ -171,7 +174,8 @@ public class ModelServingServiceTest {
                 "model-serving-7",
                 "img",
                 expectedEnvs,
-                expectedResource);
+                expectedResource,
+                Map.of("foo", "bar"));
 
         verify(k8sClient).deployService(any());
     }
