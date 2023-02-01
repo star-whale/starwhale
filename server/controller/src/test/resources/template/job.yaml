@@ -11,7 +11,6 @@ spec:
       restartPolicy: Never
       initContainers:
         - name: data-provider
-          imagePullPolicy: IfNotPresent
           image: ghcr.io/star-whale/base:latest
           volumeMounts:
             - mountPath: /opt/starwhale
@@ -31,7 +30,6 @@ spec:
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'
-          imagePullPolicy: IfNotPresent
           args:
             - ppl
           volumeMounts:
