@@ -10,6 +10,7 @@ import typing as t
 import tempfile
 import threading
 from http import HTTPStatus
+from types import TracebackType
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
@@ -71,6 +72,7 @@ from starwhale.core.dataset.tabular import (
 )
 from starwhale.api._impl.dataset.loader import DataRow
 from starwhale.api._impl.dataset.builder import (
+    BinWriter,
     RowWriter,
     _data_magic,
     _header_size,
@@ -186,8 +188,8 @@ def iter_mnist_user_raw_item_with_id() -> t.Generator[
     t.Tuple[t.Any, t.Any, t.Any], None, None
 ]:
     for data in iter_mnist_user_raw_item():
-        image_ = data["image"]
-        yield f"mnist-link-{image_.display_name}", data
+        image_ = data[0]["image"]
+        yield f"mnist-link-{image_.display_name}", data[0]
 
 
 def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
@@ -206,22 +208,25 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
                 uri=_mnist_label_path,
                 with_local_fs_data=True,
             )
-            yield {
-                "image": GrayscaleImage(
-                    display_name=f"{i}",
-                    shape=(height, width, 1),
-                    link=Link(
-                        uri=str(_mnist_data_path.absolute()),
-                        offset=offset,
-                        size=image_size,
-                        with_local_fs_data=True,
+            yield (
+                {
+                    "image": GrayscaleImage(
+                        display_name=f"{i}",
+                        shape=(height, width, 1),
+                        link=Link(
+                            uri=str(_mnist_data_path.absolute()),
+                            offset=offset,
+                            size=image_size,
+                            with_local_fs_data=True,
+                        ),
                     ),
-                ),
-                "label": _label,
-                "link": _local_link,
-                "list_link": [_local_link],
-                "dict_link": {"key": _local_link},
-            }
+                    "original_data": Binary(fp=_mnist_data_path.absolute()),
+                    "label": _label,
+                    "link": _local_link,
+                    "list_link": [_local_link],
+                    "dict_link": {"key": _local_link},
+                },
+            )
             offset += image_size
 
 
@@ -507,6 +512,31 @@ class TestDatasetCopy(BaseTestCase):
         assert bbox.width == 3 and bbox.height == 4
 
 
+class MockBinWriter:
+    def __init__(self) -> None:
+        self.total_bin_size = 0
+
+    def write_row(self, row: TabularDatasetRow) -> None:
+        """
+        Find large bytes or local fs file in row data. Convert them to accessible link
+        """
+        print("write_row")
+
+    def flush(self) -> None:
+        print("flush")
+
+    def __enter__(self) -> BinWriter:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        print("exit")
+
+
 class TestDatasetBuildExecutor(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -529,6 +559,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             workdir=Path(self.workdir),
             alignment_bytes_size=64,
             volume_bytes_size=100,
+            bin_writer=MockBinWriter(),
         ) as e:
             summary = e.make_swds()
 
@@ -955,7 +986,6 @@ class TestDatasetType(TestCase):
     def test_link_standalone(self, m_boto3: MagicMock) -> None:
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-            data_type=Image(display_name="test"),
         )
         as_type = link.astype()
         assert as_type["type"] == "link"
@@ -981,7 +1011,6 @@ class TestDatasetType(TestCase):
     def test_link_cloud(self, rm: Mocker) -> None:
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-            data_type=Image(display_name="test"),
         )
 
         rm.request(
@@ -1005,6 +1034,10 @@ class TestDatasetType(TestCase):
         content = link.to_bytes(
             "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
         )
+        assert content == raw_content
+
+        link2 = Link(uri="http://127.0.0.1:9001/signed_url")
+        content = link2.to_bytes()
         assert content == raw_content
 
 

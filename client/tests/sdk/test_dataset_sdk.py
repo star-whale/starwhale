@@ -103,7 +103,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.append((i, {"data": Binary(), "label": i}))
         assert len(ds) == size
 
-        ds.append({"data": Binary(), "label": 1})
+        ds.append(({"data": Binary(), "label": 1},))
 
         with self.assertRaises(TypeError):
             ds.append(1)

@@ -299,8 +299,8 @@ class PipelineHandler(metaclass=ABCMeta):
                     if not self.ignore_dataset_data:
                         artifacts = TabularDatasetRow.artifacts_of_data(_data)
                         for at in artifacts:
-                            if isinstance(at.fp, bytes) and at.link:
-                                at.clear_bytes()
+                            if at.link:
+                                at.clear_cache()
 
                     result_storage.save(
                         data_id=_idx_with_ds,

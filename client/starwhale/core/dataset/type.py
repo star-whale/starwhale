@@ -240,9 +240,12 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         return self.fetch_data(encoding)
 
     def clear_bytes(self) -> None:
-        self._bytes = bytes()
+        self.clear_cache()
         if isinstance(self.fp, (bytes, io.IOBase)):
             self.fp = ""
+
+    def clear_cache(self) -> None:
+        self._bytes = bytes()
 
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self._bytes:
