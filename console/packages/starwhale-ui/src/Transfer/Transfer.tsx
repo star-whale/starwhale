@@ -201,7 +201,7 @@ export default function Transfer({
                 </div>
             )}
             <div className='list'>
-                <TransferList columns={$leftFilteredColumns} operators={leftOperators} />
+                <TransferList columns={$leftFilteredColumns} operators={leftOperators} title='Invisible Columns' />
                 <div className='transfer-list-toolbar'>
                     <Button
                         disabled={leftOperators?.selectedIds?.length === 0}
@@ -231,6 +231,7 @@ export default function Transfer({
                     </Button>
                 </div>
                 <TransferList
+                    title='Visible Columns'
                     columns={$rightFilteredColumns}
                     isDragable={isDragable}
                     operators={{

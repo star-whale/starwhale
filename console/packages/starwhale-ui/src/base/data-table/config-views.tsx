@@ -163,7 +163,7 @@ function ConfigViews(props: PropsT) {
                             store.onShowViewModel(false, null)
                         }}
                     >
-                        Apply
+                        Save
                     </Button>
                 </ModalFooter>
             </Modal>
@@ -196,7 +196,7 @@ function ConfigViews(props: PropsT) {
                             setIsManageViewOpen(false)
                         }}
                     >
-                        Apply
+                        Save
                     </Button>
                 </ModalFooter>
             </Modal>

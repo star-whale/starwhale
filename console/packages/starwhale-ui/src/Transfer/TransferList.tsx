@@ -52,6 +52,7 @@ type TransferListPropsT = {
         handlePinOne: (id: string) => void
     }
     columns: ColumnT[]
+    title?: string
 }
 
 export default TransferList
@@ -221,7 +222,6 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
 
     return (
         <div className={classNames(styles.transferList, 'transfer-list')}>
-            {/* All columns edit */}
             <div className='transfer-list-content'>
                 <div className='transfer-list-content-header'>
                     <Checkbox
@@ -230,7 +230,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                             (e.target as any)?.checked ? handleSelectMany($data.map((v) => v.key)) : handleSelectNone()
                         }
                     />
-                    <LabelSmall>All columns</LabelSmall>
+                    <LabelSmall>{props.title}</LabelSmall>
                     <span
                         style={{
                             marginLeft: '-5px',
