@@ -14,7 +14,6 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import IconFont from '@/components/IconFont'
 import { TextLink } from '@/components/Link'
 
 export default function JobListCard() {

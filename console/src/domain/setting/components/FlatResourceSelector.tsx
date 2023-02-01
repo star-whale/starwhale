@@ -1,4 +1,4 @@
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 import useTranslation from '@/hooks/useTranslation'
 import React, { FormEvent, useCallback, useMemo, useState } from 'react'
 import { floor } from 'lodash'

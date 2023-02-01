@@ -18,7 +18,7 @@ import FilterShell from './filter-shell'
 import { matchesQuery, splitByQuery } from './text-search'
 import { Tag, KIND as TAG_KIND, VARIANT as TAG_VARIANT } from 'baseui/tag'
 import { Popover, PLACEMENT } from 'baseui/popover'
-import IconFont from "@/components/IconFont";
+import IconFont from '../../IconFont'
 
 type OptionsT = SharedColumnOptionsT<string>
 

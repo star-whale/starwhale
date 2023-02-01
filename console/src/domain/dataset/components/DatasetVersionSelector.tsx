@@ -73,7 +73,6 @@ export default function DatasetVersionSelector({
 
     return (
         <Select
-            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetVersionsInfo.isFetching}

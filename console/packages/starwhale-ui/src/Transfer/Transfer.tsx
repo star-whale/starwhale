@@ -1,5 +1,4 @@
 import { useStyletron } from 'baseui'
-import { Search } from 'baseui/icon'
 import React, { useCallback, useMemo } from 'react'
 import { createUseStyles } from 'react-jss'
 import { ColumnT } from '../base/data-table/types'

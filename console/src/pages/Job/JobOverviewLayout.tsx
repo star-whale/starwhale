@@ -8,7 +8,7 @@ import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import Card from '@/components/Card'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import IconFont from '../../components/IconFont/index'
+import IconFont from '@starwhale/ui/IconFont'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IJobLayoutProps {

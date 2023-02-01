@@ -1,7 +1,7 @@
 import React from 'react'
 // eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner, SIZE } from 'baseui/spinner'
-import IconFont from '../IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 
 interface IBusyPlaceholderProps {
     type?: 'spinner' | 'loading' | 'notfound' | 'empty' | 'center'

@@ -4,7 +4,7 @@ import { DragStartEvent, PanelSaveEvent, SectionAddEvent } from '@starwhale/core
 import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '@starwhale/core/types'
 import WidgetPlugin from '@starwhale/core/widget/WidgetPlugin'
 import { ReactSortable } from 'react-sortablejs'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent } from '@starwhale/core/events/common'

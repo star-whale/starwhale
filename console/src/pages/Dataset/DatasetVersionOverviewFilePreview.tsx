@@ -4,7 +4,7 @@ import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
-import IconFont from '../../components/IconFont/index'
+import IconFont from '@starwhale/ui/IconFont'
 import { DatasetObject } from '../../domain/dataset/sdk'
 import { RAW_COLORS } from '../../components/Viewer/utils'
 

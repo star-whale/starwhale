@@ -6,7 +6,7 @@ import { INewUserSchema } from '@user/schemas/user'
 import { RadioGroup, Radio } from 'baseui/radio'
 import { shouldBeEqual, minLength } from '@/components/Form/validators'
 import { passwordMinLength } from '@/consts'
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 
 export interface INewUserFormProps {
     onSubmit: (data: INewUserSchema) => Promise<void>

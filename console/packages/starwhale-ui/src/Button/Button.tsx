@@ -47,7 +47,9 @@ export default function Button({
     )
 
     if (icon && !props.startEnhancer) {
+        // eslint-disable-next-line no-param-reassign
         props.startEnhancer = () => <IconFont type={icon} size={13} />
+        // eslint-disable-next-line no-param-reassign
         as = 'withIcon'
     }
 

@@ -9,7 +9,7 @@ import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { createUseStyles } from 'react-jss'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import { StatefulTooltip } from 'baseui/tooltip'
 import TextLink from './Link/TextLink'
 

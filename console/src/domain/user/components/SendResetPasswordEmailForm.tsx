@@ -2,9 +2,9 @@ import React from 'react'
 import { Button } from 'baseui/button'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 
 interface ISendEmailFormProps {
     email: string

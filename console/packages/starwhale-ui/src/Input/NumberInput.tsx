@@ -1,5 +1,6 @@
-import { Input, InputProps, SIZE } from 'baseui/input'
+import { InputProps, SIZE } from 'baseui/input'
 import React from 'react'
+import Input from './Input'
 
 export interface INumberInputProps {
     value?: number

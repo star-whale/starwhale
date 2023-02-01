@@ -6,7 +6,7 @@ import { Input } from 'baseui/input'
 import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import Button from '@/components/Button'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import { useAuth } from '@/api/Auth'
 import LoginLayout from './LoginLayout'
 

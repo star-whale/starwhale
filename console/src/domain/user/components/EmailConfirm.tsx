@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import Button from '@/components/Button'
 
 export interface IEmailConfirmProps {

@@ -1,7 +1,7 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 
 export default function SettingsSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
