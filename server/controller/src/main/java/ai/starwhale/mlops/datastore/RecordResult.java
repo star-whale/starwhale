@@ -16,30 +16,15 @@
 
 package ai.starwhale.mlops.datastore;
 
-import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class DataStoreQueryRequest {
+public class RecordResult {
 
-    private String tableName;
-    private long timestamp;
-    private Map<String, String> columns;
-    private List<OrderByDesc> orderBy;
-    private boolean descending;
-    private TableQueryFilter filter;
-    @Builder.Default
-    private int start = -1;
-    @Builder.Default
-    private int limit = -1;
-    private boolean keepNone;
-    private boolean rawResult;
-    private boolean ignoreNonExistingTable;
+    private Object key;
+    private boolean deleted;
+    private Map<String, Object> values;
 }

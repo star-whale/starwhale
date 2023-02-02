@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.datastore.MemoryTable.RecordResult;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -38,6 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +49,8 @@ import org.springframework.util.unit.DataSize;
 @Slf4j
 @Component
 public class DataStore {
+
+    private static final Pattern COLUMN_NAME_PATTERN = Pattern.compile("^[\\p{Alnum}-_/: ]*$");
 
     private static final String PATH_SEPARATOR = "_._";
 
@@ -136,6 +138,16 @@ public class DataStore {
     public void update(String tableName,
             TableSchemaDesc schema,
             List<Map<String, Object>> records) {
+        if (schema != null && schema.getColumnSchemaList() != null) {
+            for (var col : schema.getColumnSchemaList()) {
+                if (col.getName() != null && !COLUMN_NAME_PATTERN.matcher(col.getName()).matches()) {
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                            "invalid column name " + col.getName()
+                                    + ". only alphabets, digits, hyphen(-), underscore(_), "
+                                    + "slash(/), colon(:), and space are allowed.");
+                }
+            }
+        }
         var table = this.getTable(tableName, true, true);
         //noinspection ConstantConditions
         table.lock();
@@ -165,7 +177,7 @@ public class DataStore {
             int limitCount = req.getLimit();
             if (limitCount > QUERY_LIMIT) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "limit must be less or equal to " + QUERY_LIMIT + ". request=" + req);
+                        "limit must be less or equal to " + QUERY_LIMIT + ". request=" + req);
             }
             if (limitCount < 0) {
                 limitCount = QUERY_LIMIT;
@@ -173,7 +185,12 @@ public class DataStore {
             var schema = table.getSchema();
             var columns = this.getColumnAliases(schema, req.getColumns());
             var results = new ArrayList<RecordResult>();
+            var timestamp = req.getTimestamp() * 1000;
+            if (timestamp == 0) {
+                timestamp = System.currentTimeMillis();
+            }
             var iterator = table.query(
+                    timestamp,
                     columns,
                     req.getOrderBy(),
                     req.getFilter(),
@@ -197,6 +214,7 @@ public class DataStore {
             }
             var columnTypeMap = schema.getColumnTypeMapping(columns);
             var records = results.stream()
+                    .filter(r -> !r.isDeleted())
                     .map(r -> DataStore.encodeRecord(columnTypeMap, r.getValues(), req.isRawResult()))
                     .collect(Collectors.toList());
             return new RecordList(columnTypeMap, records, lastKey);
@@ -231,6 +249,7 @@ public class DataStore {
             class TableMeta {
 
                 String tableName;
+                long timestamp;
                 MemoryTable table;
                 TableSchema schema;
                 Map<String, String> columns;
@@ -238,9 +257,18 @@ public class DataStore {
                 boolean keepNone;
             }
 
+            var currentTimestamp = System.currentTimeMillis();
+
             var tables = req.getTables().stream().map(info -> {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
+                if (info.getTimestamp() > 0) {
+                    ret.timestamp = info.getTimestamp() * 1000;
+                } else if (req.getTimestamp() > 0) {
+                    ret.timestamp = req.getTimestamp() * 1000;
+                } else {
+                    ret.timestamp = currentTimestamp;
+                }
                 ret.table = this.getTable(info.getTableName(), req.isIgnoreNonExistingTable(), false);
                 if (ret.table == null) {
                     return null;
@@ -308,7 +336,8 @@ public class DataStore {
             for (var table : tables) {
                 var r = new TableRecords();
                 r.meta = table;
-                r.iterator = table.table.scan(table.columns,
+                r.iterator = table.table.scan(table.timestamp,
+                        table.columns,
                         req.getStart(),
                         req.isStartInclusive(),
                         req.getEnd(),
@@ -324,16 +353,23 @@ public class DataStore {
             List<Map<String, Object>> ret = new ArrayList<>();
             while (!records.isEmpty() && ret.size() < limit) {
                 lastKey = Collections.min(records, (a, b) -> {
-                    @SuppressWarnings("rawtypes") var x = (Comparable) a.record.key;
-                    @SuppressWarnings("rawtypes") var y = (Comparable) b.record.key;
+                    @SuppressWarnings("rawtypes") var x = (Comparable) a.record.getKey();
+                    @SuppressWarnings("rawtypes") var y = (Comparable) b.record.getKey();
                     //noinspection unchecked
                     return x.compareTo(y);
                 }).record.getKey();
-                var record = new HashMap<String, Object>();
+                Map<String, Object> record = null;
                 for (var r : records) {
                     if (r.record.getKey().equals(lastKey)) {
-                        record.putAll(
-                                DataStore.encodeRecord(r.meta.columnTypeMap, r.record.values, req.isRawResult()));
+                        if (r.record.isDeleted()) {
+                            record = null;
+                        } else {
+                            if (record == null) {
+                                record = new HashMap<>();
+                            }
+                            record.putAll(DataStore.encodeRecord(r.meta.columnTypeMap, r.record.getValues(),
+                                    req.isRawResult()));
+                        }
                         if (r.iterator.hasNext()) {
                             r.record = r.iterator.next();
                         } else {
@@ -341,10 +377,12 @@ public class DataStore {
                         }
                     }
                 }
-                if (!req.isKeepNone()) {
-                    record.entrySet().removeIf(x -> x.getValue() == null);
+                if (record != null) {
+                    if (!req.isKeepNone()) {
+                        record.entrySet().removeIf(x -> x.getValue() == null);
+                    }
+                    ret.add(record);
                 }
-                ret.add(record);
                 records.removeIf(r -> r.record == null);
             }
             return new RecordList(columnTypeMap, ret, (String) keyColumnType.encode(lastKey, false));

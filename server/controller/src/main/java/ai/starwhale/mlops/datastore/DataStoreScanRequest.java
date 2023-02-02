@@ -36,12 +36,14 @@ public class DataStoreScanRequest {
     public static class TableInfo {
 
         private String tableName;
+        private long timestamp;
         private String columnPrefix;
         private Map<String, String> columns;
         private boolean keepNone;
     }
 
     private List<TableInfo> tables;
+    private long timestamp;
     private String start;
     @Builder.Default
     private boolean startInclusive = true;

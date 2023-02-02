@@ -113,9 +113,9 @@ public class TableSchemaTest {
         var newSchema = new TableSchema(this.schema);
         assertThat("same", newSchema, equalTo(this.schema));
         newSchema.merge(new TableSchemaDesc(
-                "k",
-                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
+                        "k",
+                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                                ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
         assertThat("independent", newSchema, not(equalTo(this.schema)));
     }
 
@@ -152,35 +152,40 @@ public class TableSchemaTest {
 
         assertThrows(SwValidationException.class,
                 () -> this.schema.merge(new TableSchemaDesc("k",
-                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("a").type("STRING").build()))),
+                                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                                        ColumnSchemaDesc.builder().name("a").type("STRING").build()))),
                 "conflicting type 2");
 
         var diff = this.schema.merge(new TableSchemaDesc("k", List.of(
-                ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
+                        ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
         assertThat("new column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2)));
         assertThat("new column", diff,
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2)));
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2)));
 
         diff = this.schema.merge(
                 new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())));
         assertThat("new unknown column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
         assertThat("new unknown column",
                 diff,
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
 
         diff = this.schema.merge(
                 new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("k").type("UNKNOWN").build())));
         assertThat("merge unknown to existing", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
@@ -189,7 +194,8 @@ public class TableSchemaTest {
         diff = this.schema.merge(
                 new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())));
         assertThat("merge unknown to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
@@ -198,13 +204,15 @@ public class TableSchemaTest {
         diff = this.schema.merge(
                 new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("INT32").build())));
         assertThat("merge other to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3)));
         assertThat("merge other to unknown",
                 diff,
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3)));
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3)));
 
         var listColumnSchema = ColumnSchemaDesc.builder()
                 .name("l")
@@ -220,7 +228,8 @@ public class TableSchemaTest {
                                 .elementType(ColumnSchemaDesc.builder().type("INT32").build())
                                 .build())));
         assertThat("merge list to list", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3),
@@ -228,10 +237,11 @@ public class TableSchemaTest {
         assertThat("merge list to list", diff, empty());
 
         diff = this.schema.merge(new TableSchemaDesc(null,
-                List.of(ColumnSchemaDesc.builder().name("y").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("z").type("BYTES").build())));
+                        List.of(ColumnSchemaDesc.builder().name("y").type("STRING").build(),
+                                ColumnSchemaDesc.builder().name("z").type("BYTES").build())));
         assertThat("merge multiple", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3),
@@ -240,15 +250,16 @@ public class TableSchemaTest {
                         new ColumnSchema(ColumnSchemaDesc.builder().name("z").type("BYTES").build(), 6)));
         assertThat("merge multiple",
                 diff,
-                containsInAnyOrder(new ColumnSchema(ColumnSchemaDesc.builder().name("y").type("STRING").build(), 5),
+                containsInAnyOrder(
+                        new ColumnSchema(ColumnSchemaDesc.builder().name("y").type("STRING").build(), 5),
                         new ColumnSchema(ColumnSchemaDesc.builder().name("z").type("BYTES").build(), 6)));
     }
 
     @Test
     public void testGetColumnTypeMapping() {
         this.schema.merge(new TableSchemaDesc("k",
-                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
+                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                                ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
 
         assertThat("all",
                 this.schema.getColumnTypeMapping(),
