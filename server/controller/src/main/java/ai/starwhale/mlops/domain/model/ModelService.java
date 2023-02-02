@@ -602,7 +602,8 @@ public class ModelService {
                 filePath = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), path);
                 break;
             case MODEL:
-                filePath = storagePathCoordinator.allocateCommonModelPoolPath(projectUrl, signature);
+                var project = projectManager.getProject(projectUrl);
+                filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getProjectName(), signature);
                 break;
             case SRC_TAR:
                 this.pullSrcTar(name,
