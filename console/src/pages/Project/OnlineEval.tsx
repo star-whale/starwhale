@@ -65,11 +65,7 @@ export default function OnlineEval() {
             if (!formRef.current) return
             const values = formRef.current.getFieldsValue()
 
-            if (
-                values.modelVersionUrl === undefined ||
-                values.runtimeVersionUrl === undefined ||
-                values.resourcePool === undefined
-            ) {
+            if (values.modelVersionUrl === undefined || values.runtimeVersionUrl === undefined) {
                 toaster.negative('Please fill in all fields', {})
                 await Promise.reject(new Error('no runtime version'))
                 return
@@ -92,7 +88,7 @@ export default function OnlineEval() {
                 const resp = await axios.post(`/api/v1/project/${projectId}/serving`, {
                     modelVersionUrl: values.modelVersionUrl,
                     runtimeVersionUrl: values.runtimeVersionUrl,
-                    resourcePool: values.resourcePool,
+                    resourcePool: values.resourcePool ?? null,
                     spec: spec.resources.length > 0 ? yaml.dump(spec) : '',
                 })
 
