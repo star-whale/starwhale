@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -42,9 +43,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface EvaluationApi {
 
     @Operation(summary = "List Evaluation Summary Attributes")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/project/{projectUrl}/evaluation/view/attribute")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/evaluation/view/attribute",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(
             @Valid @PathVariable("projectUrl") String projectUrl
@@ -52,9 +54,10 @@ public interface EvaluationApi {
 
 
     @Operation(summary = "Get View Config")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/project/{projectUrl}/evaluation/view/config")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/evaluation/view/config",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ConfigVo>> getViewConfig(
             @Valid @PathVariable(value = "projectUrl") String projectUrl,
@@ -62,9 +65,10 @@ public interface EvaluationApi {
     );
 
     @Operation(summary = "Create or Update View Config")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/evaluation/view/config")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/evaluation/view/config",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
             @Valid @PathVariable("projectUrl") String projectUrl,
@@ -72,9 +76,10 @@ public interface EvaluationApi {
     );
 
     @Operation(summary = "List Evaluation Summary")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/project/{projectUrl}/evaluation")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/evaluation",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(
             @Valid @PathVariable("projectUrl") String projectUrl,

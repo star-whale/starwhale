@@ -23,13 +23,12 @@ import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -46,12 +45,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface ProjectApi {
 
     @Operation(summary = "Get the list of projects")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "ok",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVo>>> listProject(
             @RequestParam(value = "projectName", required = false) String projectName,
@@ -62,47 +59,49 @@ public interface ProjectApi {
 
 
     @Operation(summary = "Create or Recover a new project")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createProject(
             @Valid @RequestBody CreateProjectRequest createProjectRequest);
 
 
     @Operation(summary = "Delete a project by Url")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(
+            value = "/project/{projectUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(
             @Valid @PathVariable("projectUrl") String projectUrl);
 
     @Operation(summary = "Recover a project")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectId}/recover")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectId}/recover",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverProject(
             @Valid @PathVariable("projectId") String projectId);
 
 
     @Operation(summary = "Get a project by Url", description = "Returns a single project object.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "ok.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ProjectVo.class)))})
-    @GetMapping(value = "/project/{projectUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ProjectVo>> getProjectByUrl(
             @PathVariable("projectUrl") String projectUrl);
 
 
     @Operation(summary = "Modify project information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> updateProject(
             @PathVariable("projectUrl") String projectId,
@@ -110,18 +109,20 @@ public interface ProjectApi {
 
 
     @Operation(summary = "List project roles")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/project/{projectUrl}/role")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/role",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<ProjectRoleVo>>> listProjectRole(
             @PathVariable("projectUrl") String projectUrl
     );
 
     @Operation(summary = "Grant project role to a user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/role")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/role",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> addProjectRole(
             @PathVariable("projectUrl") String projectUrl,
@@ -130,9 +131,10 @@ public interface ProjectApi {
     );
 
     @Operation(summary = "Delete a project role")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}/role/{projectRoleId}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(
+            value = "/project/{projectUrl}/role/{projectRoleId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteProjectRole(
             @PathVariable("projectUrl") String projectUrl,
@@ -140,9 +142,10 @@ public interface ProjectApi {
     );
 
     @Operation(summary = "Modify a project role")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/role/{projectRoleId}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/role/{projectRoleId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> modifyProjectRole(
             @PathVariable("projectUrl") String projectUrl,

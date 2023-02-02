@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -42,14 +43,14 @@ import org.springframework.web.multipart.MultipartFile;
 public interface PanelApi {
     @Operation(summary = "Install a plugin", description = "Upload a tarball and install as panel plugin")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/panel/plugin", produces = {"application/json"})
+    @PostMapping(value = "/panel/plugin", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> installPlugin(
             @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file);
 
     @Operation(summary = "Uninstall a plugin", description = "Uninstall plugin by id")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/panel/plugin/{id}", produces = {"application/json"})
+    @DeleteMapping(value = "/panel/plugin/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> uninstallPlugin(
             @Parameter(in = ParameterIn.PATH, description = "Plugin id", schema = @Schema())
@@ -59,13 +60,13 @@ public interface PanelApi {
 
     @Operation(summary = "List all plugins", description = "List all plugins")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/panel/plugin", produces = {"application/json"})
+    @GetMapping(value = "/panel/plugin", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<PanelPluginVo>>> pluginList();
 
     @Operation(summary = "Get panel setting", description = "Get panel setting by project and key")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/panel/setting/{project_id}/{key}", produces = {"application/json"})
+    @GetMapping(value = "/panel/setting/{project_id}/{key}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> getPanelSetting(
             @Parameter(in = ParameterIn.PATH, description = "Project id", schema = @Schema())
@@ -79,7 +80,7 @@ public interface PanelApi {
 
     @Operation(summary = "Save panel setting", description = "Save panel setting by project and key")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/panel/setting/{project_id}/{key}", produces = {"application/json"})
+    @PostMapping(value = "/panel/setting/{project_id}/{key}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> setPanelSetting(
             @Parameter(in = ParameterIn.PATH, description = "Project id", schema = @Schema())

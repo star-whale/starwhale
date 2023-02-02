@@ -28,12 +28,12 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -51,12 +51,10 @@ public interface JobApi {
 
 
     @Operation(summary = "Get the list of jobs")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "ok",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project/{projectUrl}/job")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(
             @Parameter(
@@ -71,17 +69,10 @@ public interface JobApi {
 
 
     @Operation(summary = "Job information")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = JobVo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<JobVo>> findJob(
             @Parameter(
@@ -96,12 +87,10 @@ public interface JobApi {
 
 
     @Operation(summary = "Get the list of tasks")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "ok",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/task",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(
             @Parameter(
@@ -120,9 +109,10 @@ public interface JobApi {
             @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
     @Operation(summary = "Create a new job")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/job")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/job",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createJob(
             @Parameter(
@@ -134,9 +124,10 @@ public interface JobApi {
             @Valid @RequestBody JobRequest jobRequest);
 
     @Operation(summary = "Job Action")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/{action}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/{action}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> action(
             @Parameter(
@@ -159,17 +150,10 @@ public interface JobApi {
                     String action);
 
     @Operation(summary = "Job Evaluation Result")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/result",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Object>> getJobResult(
             @Parameter(
@@ -183,17 +167,10 @@ public interface JobApi {
                     String jobUrl);
 
     @Operation(summary = "Set Job Comment")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = String.class)))
-            })
-    @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyJobComment(
             @Parameter(
@@ -212,17 +189,10 @@ public interface JobApi {
             @Valid @RequestBody JobModifyRequest jobRequest);
 
     @Operation(summary = "DAG of Job")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Graph.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/dag",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Graph>> getJobDag(
             @Parameter(
@@ -236,43 +206,30 @@ public interface JobApi {
                     String jobUrl);
 
     @Operation(summary = "Remove job")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = String.class)))
-            })
-    @DeleteMapping(value = "/project/{projectUrl}/job/{jobUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> removeJob(
             @Valid @PathVariable("projectUrl") String projectUrl,
             @Valid @PathVariable("jobUrl") String jobUrl);
 
     @Operation(summary = "Recover job")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = String.class)))
-            })
-    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/recover")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/recover",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverJob(
             @Valid @PathVariable("projectUrl") String projectUrl,
             @Valid @PathVariable("jobUrl") String jobUrl);
 
     @Operation(summary = "Create a new model serving job")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/serving")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/serving",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<ModelServingVo>> createModelServing(
             @Parameter(

@@ -32,7 +32,6 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -67,7 +66,9 @@ public interface DatasetApi {
             description = "Select a historical version of the dataset and revert the latest version of the current "
                     + "dataset to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/revert")
+    @PostMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/revert",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
             @Parameter(
@@ -87,7 +88,9 @@ public interface DatasetApi {
 
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
+    @DeleteMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteDataset(
             @Parameter(
@@ -102,8 +105,9 @@ public interface DatasetApi {
 
     @Operation(summary = "Recover a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/recover",
-            produces = {"application/json"})
+    @PutMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/recover",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverDataset(
             @Parameter(
@@ -118,17 +122,10 @@ public interface DatasetApi {
 
     @Operation(summary = "Get the information of a dataset",
             description = "Return the information of the latest version of the current dataset")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = DatasetInfoVo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<DatasetInfoVo>> getDatasetInfo(
             @Parameter(
@@ -148,12 +145,15 @@ public interface DatasetApi {
             @RequestParam(value = "versionUrl", required = false)
             String versionUrl);
 
-    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(
             @Parameter(in = ParameterIn.PATH,
-                description = "Project url",
-                schema = @Schema())
+                    description = "Project url",
+                    schema = @Schema())
             @PathVariable("projectUrl")
             String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
@@ -166,17 +166,10 @@ public interface DatasetApi {
             DataConsumptionRequest dataRangeRequest);
 
     @Operation(summary = "Get the list of the dataset versions")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVo>>> listDatasetVersion(
             @Parameter(
@@ -219,7 +212,7 @@ public interface DatasetApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/dataset/{datasetName}/version/{versionName}/file",
-            produces = {"application/json"})
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<UploadResult>> uploadDs(
             @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadId,
@@ -285,7 +278,9 @@ public interface DatasetApi {
             description = "add|remove|set tags"
     )
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag")
+    @PutMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageDatasetTag(
             @Parameter(
@@ -303,17 +298,10 @@ public interface DatasetApi {
             @Valid @RequestBody DatasetTagRequest datasetTagRequest);
 
     @Operation(summary = "Get the list of the datasets")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/dataset")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/dataset",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVo>>> listDataset(
             @Parameter(
@@ -346,7 +334,7 @@ public interface DatasetApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}",
-            produces = {"application/json"},
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE,
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headDataset(

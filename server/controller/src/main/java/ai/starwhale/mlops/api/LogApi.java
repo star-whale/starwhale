@@ -20,12 +20,12 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,17 +36,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface LogApi {
 
     @Operation(summary = "list the log files of a task")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = List.class)))
-            })
-    @GetMapping(value = "/log/offline/{taskId}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/log/offline/{taskId}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     ResponseEntity<ResponseMessage<List<String>>> offlineLogs(
             @Parameter(
                     in = ParameterIn.PATH,
@@ -56,17 +49,10 @@ public interface LogApi {
                     Long taskId);
 
     @Operation(summary = "Get the list of device types")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "plain/text",
-                                    schema = @Schema(implementation = String.class)))
-            })
-    @GetMapping(value = "/log/offline/{taskId}/{fileName}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/log/offline/{taskId}/{fileName}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     ResponseEntity<String> logContent(
             @Parameter(
                     in = ParameterIn.PATH,

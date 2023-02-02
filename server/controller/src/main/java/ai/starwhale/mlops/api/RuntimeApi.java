@@ -29,7 +29,6 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -53,22 +52,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "SWRuntime")
+@Tag(name = "Runtime")
 @Validated
 public interface RuntimeApi {
 
     @Operation(summary = "Get the list of runtimes")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/runtime")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/runtime",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(
             @Parameter(
@@ -98,9 +90,9 @@ public interface RuntimeApi {
                     "Select a historical version of the runtime and revert the latest version of the current runtime"
                             + " to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/revert",
-            produces = {"application/json"},
-            consumes = {"application/json"})
+    @PostMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/revert",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
             @Parameter(
@@ -120,8 +112,9 @@ public interface RuntimeApi {
 
     @Operation(summary = "Delete a runtime")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}",
-            produces = {"application/json"})
+    @DeleteMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteRuntime(
             @Parameter(
@@ -136,8 +129,9 @@ public interface RuntimeApi {
 
     @Operation(summary = "Recover a runtime")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/recover",
-            produces = {"application/json"})
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/recover",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverRuntime(
             @Parameter(
@@ -150,8 +144,10 @@ public interface RuntimeApi {
 
     @Operation(summary = "Get the information of a runtime",
             description = "Return the information of the latest version of the current runtime")
-    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}",
-            produces = {"application/json"})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(
             @Parameter(
@@ -165,7 +161,9 @@ public interface RuntimeApi {
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}")
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyRuntime(
             @Parameter(
@@ -181,7 +179,9 @@ public interface RuntimeApi {
 
     @Operation(summary = "Manage tag of the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag")
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageRuntimeTag(
             @Parameter(
@@ -197,8 +197,10 @@ public interface RuntimeApi {
 
 
     @Operation(summary = "Get the list of the runtime versions")
-    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version",
-            produces = {"application/json"})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVo>>> listRuntimeVersion(
             @Parameter(
@@ -242,8 +244,8 @@ public interface RuntimeApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file",
-            produces = {"application/json"},
-            consumes = {"multipart/form-data"})
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> upload(
             @Parameter(
@@ -282,9 +284,10 @@ public interface RuntimeApi {
 
     @Operation(summary = "head for runtime info ",
             description = "head for runtime info")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}",
-            produces = {"application/json"},
+            produces = MediaType.APPLICATION_JSON_VALUE,
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headRuntime(
