@@ -551,17 +551,18 @@ public class ModelServiceTest {
                     String.valueOf(manifestContent.getBytes().length)));
 
         // case 4: pull model file
-        var responseForModel = new MockHttpServletResponse();
-        var modelPath = "sw/controller/project/1/model/iiiiii";
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("1"), eq("iiiiii"))).willReturn(modelPath);
+        var modelPath = "sw/controller/project/foo/model/iiiiii";
+        given(projectManager.getProject("1")).willReturn(ProjectEntity.builder().projectName("foo").build());
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("foo"), eq("iiiiii"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willThrow(IOException.class);
+        var responseForModel = new MockHttpServletResponse();
         assertThrows(SwProcessException.class,
                 () -> service.pull(
                     FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "1", "m1", "v3",
                     responseForModel));
 
-        modelPath = "sw/controller/project/1/model/uuuuuuuuuu";
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("1"), eq("uuuuuuuuuu"))).willReturn(modelPath);
+        modelPath = "sw/controller/project/foo/model/uuuuuuuuuu";
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("foo"), eq("uuuuuuuuuu"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willReturn(
                 new LengthAbleInputStream(new ByteArrayInputStream(new byte[100]), 100));
         service.pull(
