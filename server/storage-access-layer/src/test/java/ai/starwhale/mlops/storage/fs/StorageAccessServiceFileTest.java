@@ -39,7 +39,8 @@ public class StorageAccessServiceFileTest {
 
     @BeforeEach
     public void setUp() {
-        this.service = new StorageAccessServiceFile(this.rootDir.getAbsolutePath(), "http://localhost:8082");
+        this.service = new StorageAccessServiceFile(
+                new FsConfig(this.rootDir.getAbsolutePath(), "http://localhost:8082"));
     }
 
     @Test

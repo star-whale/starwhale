@@ -37,12 +37,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.compress.utils.BoundedInputStream;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
-@Component
-@ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
 public class StorageAccessServiceFile implements StorageAccessService {
 
     private final File rootDir;
@@ -50,13 +45,11 @@ public class StorageAccessServiceFile implements StorageAccessService {
     private final String serviceProvider;
 
     /**
-     * @param rootDir         the root for the storage file
-     * @param serviceProvider the service who is serving the pre-signed url
+     * @param fsConfig fsConfig
      */
-    public StorageAccessServiceFile(@Value("${sw.storage.fs-config.root-dir}") String rootDir,
-            @Value("${sw.storage.fs-config.service-provider}") String serviceProvider) {
-        this.rootDir = new File(rootDir);
-        this.serviceProvider = serviceProvider;
+    public StorageAccessServiceFile(FsConfig fsConfig) {
+        this.rootDir = new File(fsConfig.getRootDir());
+        this.serviceProvider = fsConfig.getServiceProvider();
         if (!this.rootDir.exists()) {
             throw new IllegalArgumentException(rootDir + " does not exist");
         }

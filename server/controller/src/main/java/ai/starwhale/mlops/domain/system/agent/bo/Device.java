@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.node;
+package ai.starwhale.mlops.domain.system.agent.bo;
 
 import java.util.Objects;
 import lombok.AllArgsConstructor;

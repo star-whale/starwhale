@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.report.req;
+package ai.starwhale.mlops.storage.fs;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,10 +25,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TaskLog {
+public class FsConfig {
 
-    private String readerId;
+    /**
+     * the root for the storage file
+     */
+    private String rootDir;
 
-    private String log;
-
+    /**
+     * the service who is serving the pre-signed url
+     */
+    private String serviceProvider;
 }

@@ -11,7 +11,6 @@
 
   <modules>
     <module>controller</module>
-    <module>controller-sdk</module>
     <module>storage-access-layer</module>
   </modules>
 
@@ -62,12 +61,7 @@
         <scope>import</scope>
         <type>pom</type>
       </dependency>
-      <!-- star whale -->
-      <dependency>
-        <groupId>ai.starwhale</groupId>
-        <artifactId>starwhale-controller-sdk</artifactId>
-        <version>${starwhale.version}</version>
-      </dependency>
+      <!-- star-whale -->
       <dependency>
         <groupId>ai.starwhale</groupId>
         <artifactId>storage-access-layer</artifactId>

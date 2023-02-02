@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.fs.FsConfig;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
@@ -85,7 +86,7 @@ public class StorageAccessServiceTest {
 
     @Test
     public void testFile() throws Exception {
-        this.run(new StorageAccessServiceFile(this.rootDir.getAbsolutePath(), ""));
+        this.run(new StorageAccessServiceFile(new FsConfig(this.rootDir.getAbsolutePath(), "")));
     }
 
     @Test

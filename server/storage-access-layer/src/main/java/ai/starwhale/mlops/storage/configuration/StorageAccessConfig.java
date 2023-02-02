@@ -18,6 +18,11 @@ package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.autofit.aliyun.CompatibleStorageAccessServiceBuilderAliyun;
+import ai.starwhale.mlops.storage.autofit.fs.CompatibleStorageAccessServiceBuilderFs;
+import ai.starwhale.mlops.storage.autofit.minio.CompatibleStorageAccessServiceBuilderMinio;
+import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceBuilderS3;
+import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,6 +33,32 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(StorageProperties.class)
 public class StorageAccessConfig {
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderFs compatibleStorageAccessServiceBuilderFs() {
+        return new CompatibleStorageAccessServiceBuilderFs();
+    }
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderAliyun compatibleStorageAccessServiceBuilderAliyun() {
+        return new CompatibleStorageAccessServiceBuilderAliyun();
+    }
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderMinio compatibleStorageAccessServiceBuilderMinio() {
+        return new CompatibleStorageAccessServiceBuilderMinio();
+    }
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderS3 compatibleStorageAccessServiceBuilderS3() {
+        return new CompatibleStorageAccessServiceBuilderS3();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
+    public StorageAccessService fs(StorageProperties storageProperties) {
+        return new StorageAccessServiceFile(storageProperties.getFsConfig());
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3")

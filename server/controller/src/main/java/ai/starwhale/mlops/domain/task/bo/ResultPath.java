@@ -14,45 +14,44 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.bo;
+package ai.starwhale.mlops.domain.task.bo;
 
-import ai.starwhale.mlops.domain.swds.index.SwdsDataLocation;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * the storage unit of one data set
- */
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class DatasetBlock {
+@NoArgsConstructor
+public class ResultPath {
+
+    String root;
 
     /**
-     * the offset to the original SWDS
+     * the dir that contains execution result , no hierarchy ,flat
      */
-    Long id;
+    String resultDir;
 
     /**
-     * how many batches does this block contains
+     * the dir of logs , no hierarchy ,flat
      */
-    @JsonProperty("batch")
-    int batchAmount;
+    String logDir;
 
-    /**
-     * location of labels in this block
-     */
-    @JsonProperty("label")
-    SwdsDataLocation locationLabel;
+    static final String DIR_RESULT = "/result";
 
-    /**
-     * location of inputs in this block
-     */
-    @JsonProperty("data")
-    SwdsDataLocation locationInput;
+    static final String DIR_LOG = "/logs";
 
+    public ResultPath(String rootPath) {
+        this.root = rootPath;
+        this.resultDir = DIR_RESULT;
+        this.logDir = DIR_LOG;
+    }
+
+    public String resultDir() {
+        return this.root + resultDir;
+    }
+
+    public String logDir() {
+        return this.root + logDir;
+    }
 }

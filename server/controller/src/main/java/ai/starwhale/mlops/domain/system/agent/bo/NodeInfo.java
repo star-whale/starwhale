@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.system.agent.bo;
 
-import ai.starwhale.mlops.domain.node.Device;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
