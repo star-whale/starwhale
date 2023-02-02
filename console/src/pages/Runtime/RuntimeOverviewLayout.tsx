@@ -194,8 +194,8 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
             >
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            {runtimeVersionId && (
+                        {runtimeVersionId && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                 <div style={{ width: '280px' }}>
                                     <RuntimeVersionSelector
                                         projectId={projectId}
@@ -210,8 +210,6 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                                         }
                                     />
                                 </div>
-                            )}
-                            {runtimeVersionId && (
                                 <Button
                                     icon='runtime'
                                     onClick={() =>
@@ -220,12 +218,14 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                                 >
                                     {t('History')}
                                 </Button>
-                            )}
-                        </div>
-                        {runtimeVersionId && <BaseNavTabs navItems={navItems} />}
-                        <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
-                            {children}
-                        </div>
+                            </div>
+                        )}
+                        {runtimeVersionId && (
+                            <div style={{ marginBottom: '10px' }}>
+                                <BaseNavTabs navItems={navItems} />{' '}
+                            </div>
+                        )}
+                        <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
                     </div>
                 </Panel>
             </Accordion>

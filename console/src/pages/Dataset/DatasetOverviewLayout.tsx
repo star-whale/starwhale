@@ -4,13 +4,10 @@ import React, { useEffect, useMemo } from 'react'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { formatTimestampDateTime } from '@/utils/datetime'
-import Accordion from '@/components/Accordion'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { useFetchDatasetVersion } from '@/domain/dataset/hooks/useFetchDatasetVersion'
 import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
-import { Panel } from 'baseui/accordion'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
@@ -78,59 +75,6 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         return items
     }, [datasetId, projectId, dataset, t])
 
-    const info = React.useMemo(() => {
-        const items = [
-            {
-                label: t('Version Name'),
-                value: dataset?.versionName ?? '',
-            },
-            {
-                label: t('Version Tag'),
-                value: dataset?.versionTag ?? '',
-            },
-            {
-                label: t('Created'),
-                value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
-            },
-        ]
-        return (
-            <div
-                style={{
-                    fontSize: '14px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-                    gap: '12px',
-                }}
-            >
-                {items.map((v) => (
-                    <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
-                        <div
-                            style={{
-                                lineHeight: '24px',
-                                borderRadius: '4px',
-                                color: 'rgba(2,16,43,0.60)',
-                            }}
-                        >
-                            {v?.label}:
-                        </div>
-                        <div> {v?.value}</div>
-                    </div>
-                ))}
-            </div>
-        )
-    }, [dataset, t])
-
-    const header = useMemo(
-        () => (
-            <div className='mb-20'>
-                <Accordion accordion>
-                    <Panel title={t('Overview')}>{info}</Panel>
-                </Accordion>
-            </div>
-        ),
-        [info, t]
-    )
-
     const pageParams = useMemo(() => {
         return { ...page, ...query }
     }, [page, query])
@@ -188,64 +132,50 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     }, [projectId, datasetId, history, t])
 
     return (
-        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} extra={extra}>
-            <Accordion
-                accordion
-                overrides={{
-                    ToggleIcon: () => <></>,
-                    ContentAnimationContainer: {
-                        style: {
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                        },
-                    },
-                }}
-            >
-                <Panel title={t('Version and Files')} expanded>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            {datasetVersionId && (
-                                <div style={{ width: '300px' }}>
-                                    <DatasetVersionSelector
-                                        projectId={projectId}
-                                        datasetId={datasetId}
-                                        value={datasetVersionId}
-                                        onChange={(v) =>
-                                            history.push(
-                                                `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                    pageParams
-                                                )}`
-                                            )
-                                        }
-                                    />
-                                </div>
-                            )}
-                            {datasetVersionId && (
-                                <Button
-                                    icon='runtime'
-                                    onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
-                                >
-                                    {t('History')}
-                                </Button>
-                            )}
-                        </div>
-                        {datasetVersionId && (
-                            <Search
-                                fields={datastore.data?.columnTypes ?? []}
-                                value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
-                                onChange={(items) => {
-                                    updateQuery({ filter: items.filter((v) => v.value) as any })
-                                }}
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {datasetVersionId && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                        <div style={{ width: '300px' }}>
+                            <DatasetVersionSelector
+                                projectId={projectId}
+                                datasetId={datasetId}
+                                value={datasetVersionId}
+                                onChange={(v) =>
+                                    history.push(
+                                        `/projects/${projectId}/datasets/${datasetId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                            pageParams
+                                        )}`
+                                    )
+                                }
                             />
-                        )}
-                        {datasetVersionId && <BaseNavTabs navItems={navItems} />}
-                        <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
-                            {children}
                         </div>
+                        <Button
+                            icon='runtime'
+                            onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
+                        >
+                            {t('History')}
+                        </Button>
                     </div>
-                </Panel>
-            </Accordion>
+                )}
+                {datasetVersionId && (
+                    <div style={{ marginBottom: '10px' }}>
+                        <Search
+                            fields={datastore.data?.columnTypes ?? []}
+                            value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
+                            onChange={(items) => {
+                                updateQuery({ filter: items.filter((v) => v.value) as any })
+                            }}
+                        />
+                    </div>
+                )}
+                {datasetVersionId && (
+                    <div style={{ marginBottom: '20px' }}>
+                        <BaseNavTabs navItems={navItems} />
+                    </div>
+                )}
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+            </div>
         </BaseSubLayout>
     )
 }
