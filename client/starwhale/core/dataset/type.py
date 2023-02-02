@@ -659,14 +659,19 @@ class Text(BaseArtifact, SwObject):
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
+        self.link_to_content(encoding)
         return self.content.encode(encoding or self.encoding)
 
     def to_numpy(self) -> numpy.ndarray:
         return numpy.array(self.to_str(), dtype=self.dtype)
 
-    def to_str(self) -> str:
+    def to_str(self, encoding: str = "") -> str:
+        self.link_to_content(encoding)
         return self.content
 
+    def link_to_content(self, encoding: str = "") -> None:
+        if not self.content and self.link:
+            self.content = str(self.link.to_bytes(self.owner), encoding or self.encoding)
 
 # TODO: support tensorflow transform
 # https://cocodataset.org/#format-data
