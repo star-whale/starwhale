@@ -249,7 +249,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self.__cache_bytes:
             return self.__cache_bytes
-        if isinstance(self.fp, bytes):
+        if self.fp and isinstance(self.fp, bytes):
             self.__cache_bytes = self.fp
             return self.__cache_bytes
         elif self.fp and isinstance(self.fp, (str, Path)):
@@ -659,13 +659,21 @@ class Text(BaseArtifact, SwObject):
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
+        self.link_to_content(encoding)
         return self.content.encode(encoding or self.encoding)
 
     def to_numpy(self) -> numpy.ndarray:
         return numpy.array(self.to_str(), dtype=self.dtype)
 
-    def to_str(self) -> str:
+    def to_str(self, encoding: str = "") -> str:
+        self.link_to_content(encoding)
         return self.content
+
+    def link_to_content(self, encoding: str = "") -> None:
+        if not self.content and self.link:
+            self.content = str(
+                self.link.to_bytes(self.owner), encoding or self.encoding
+            )
 
 
 # TODO: support tensorflow transform
