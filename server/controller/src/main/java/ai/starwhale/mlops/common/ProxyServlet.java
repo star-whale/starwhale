@@ -21,6 +21,7 @@ import static ai.starwhale.mlops.domain.job.ModelServingService.MODEL_SERVICE_PR
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import java.io.IOException;
+import java.net.NoRouteToHostException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -76,7 +77,7 @@ public class ProxyServlet extends HttpServlet {
         try {
             var response = httpClient.execute(host, request);
             generateResponse(response, res);
-        } catch (UnknownHostException | HttpHostConnectException e) {
+        } catch (UnknownHostException | NoRouteToHostException | HttpHostConnectException e) {
             // return 502 if host or port is unavailable
             res.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }

@@ -45,6 +45,7 @@ import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -88,6 +90,7 @@ public class ModelServingService {
 
     private final long maxTtlSec;
     private final long minTtlSec;
+    private final Map<Long, Boolean> availableWorkloads;
 
     public static final String MODEL_SERVICE_PREFIX = "model-serving";
     private static final Pattern modelServingNamePattern = Pattern.compile(MODEL_SERVICE_PREFIX + "-(\\d+)");
@@ -126,6 +129,41 @@ public class ModelServingService {
         this.idConverter = idConverter;
         this.maxTtlSec = maxTtlSec;
         this.minTtlSec = minTtlSec;
+
+        availableWorkloads = new ConcurrentHashMap<>();
+        this.k8sClient.watchStatefulSet(new ResourceEventHandler<>() {
+            private Long getServiceId(V1StatefulSet ss) {
+                if (ss.getMetadata() == null || ss.getMetadata().getName() == null) {
+                    return null;
+                }
+                return getServiceIdFromName(ss.getMetadata().getName());
+            }
+
+            @Override
+            public void onAdd(V1StatefulSet ss) {
+                var id = getServiceId(ss);
+                if (id == null) {
+                    return;
+                }
+                availableWorkloads.put(id, true);
+            }
+
+            @Override
+            public void onUpdate(V1StatefulSet oldObj, V1StatefulSet newObj) {
+                // we do not care about the update event, do nothing
+            }
+
+            @Override
+            public void onDelete(V1StatefulSet ss, boolean deletedFinalStateUnknown) {
+                var id = getServiceId(ss);
+                if (id == null) {
+                    return;
+                }
+                // this stateful set may be deleted by another reason,
+                // so we need to do the deletion both in this event and in the deleteStatefulSet function call
+                availableWorkloads.remove(id);
+            }
+        }, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
     }
 
     public ModelServingVo create(
@@ -211,6 +249,12 @@ public class ModelServingService {
             ModelServingSpec modelServingSpec,
             String resourcePool
     ) throws ApiException {
+        // fast path
+        if (availableWorkloads.get(id) != null) {
+            // already exists
+            return;
+        }
+
         var name = getServiceName(id);
 
         // TODO: refactor image generation
@@ -435,6 +479,11 @@ public class ModelServingService {
     }
 
     private void deleteStatefulSet(String name) {
+        // mark deleted
+        var id = getServiceIdFromName(name);
+        if (id != null) {
+            availableWorkloads.remove(id);
+        }
         try {
             k8sClient.deleteStatefulSet(name);
         } catch (ApiException e) {

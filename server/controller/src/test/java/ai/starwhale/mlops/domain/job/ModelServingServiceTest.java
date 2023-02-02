@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -48,6 +49,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
@@ -60,6 +62,7 @@ import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -152,7 +155,7 @@ public class ModelServingServiceTest {
                 + "  limit: 8.0\n";
 
         var ss = new V1StatefulSet();
-        ss.metadata(new V1ObjectMeta());
+        ss.metadata(new V1ObjectMeta().name("model-serving-7"));
         when(k8sClient.deployStatefulSet(any())).thenReturn(ss);
         svc.create("2", "9", "8", resourcePool, spec);
 
@@ -178,6 +181,27 @@ public class ModelServingServiceTest {
                 Map.of("foo", "bar"));
 
         verify(k8sClient).deployService(any());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<ResourceEventHandler<V1StatefulSet>> ac = ArgumentCaptor.forClass(ResourceEventHandler.class);
+        var expectedSelector = K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel);
+        verify(k8sClient).watchStatefulSet(ac.capture(), eq(expectedSelector));
+        Assertions.assertEquals(1, ac.getAllValues().size());
+
+        var eventHandler = ac.getAllValues().get(0);
+        // trigger the event handler in model serving service
+        eventHandler.onAdd(ss);
+        // create again and there should be no k8s api calls
+        reset(k8sClient);
+        when(k8sClient.deployStatefulSet(any())).thenReturn(ss);
+        svc.create("2", "9", "8", resourcePool, spec);
+        verify(k8sClient, times(0)).deployService(any());
+
+        // delete the workload
+        eventHandler.onDelete(ss, false);
+        svc.create("2", "9", "8", resourcePool, spec);
+        // call the k8s creation api
+        verify(k8sClient, times(1)).deployService(any());
     }
 
 

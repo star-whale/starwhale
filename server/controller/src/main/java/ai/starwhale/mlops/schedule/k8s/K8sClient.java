@@ -149,6 +149,16 @@ public class K8sClient {
         informerFactory.startAllRegisteredInformers();
     }
 
+    public void watchStatefulSet(ResourceEventHandler<V1StatefulSet> eventH, String selector) {
+        SharedIndexInformer<V1StatefulSet> jobInformer = informerFactory.sharedIndexInformerFor(
+                (CallGeneratorParams params) -> appsV1Api.listNamespacedStatefulSetCall(ns, null, null, null, null,
+                        selector, null, params.resourceVersion, null, params.timeoutSeconds, params.watch, null),
+                V1StatefulSet.class,
+                V1StatefulSetList.class);
+        jobInformer.addEventHandler(eventH);
+        informerFactory.startAllRegisteredInformers();
+    }
+
     public String logOfJob(String selector, List<String> containers) throws ApiException, IOException {
         V1Pod pod = podOfJob(selector);
         return logOfPod(pod, containers);
