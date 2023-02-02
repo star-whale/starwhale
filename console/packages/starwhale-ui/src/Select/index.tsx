@@ -1,3 +1,3 @@
-export { default } from './Select'
+export { Select as default } from './Select'
 export * from './Select'
-export * from 'baseui/select'
+export * from './Toggle'

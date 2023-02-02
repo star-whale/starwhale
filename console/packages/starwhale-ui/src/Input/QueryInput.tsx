@@ -1,6 +1,6 @@
 import { themedUseStyletron } from '../theme/styletron'
 import React from 'react'
-import Input from './Input'
+import { Input } from './Input'
 import IconFont from '../IconFont'
 
 export function QueryInput(props: any) {

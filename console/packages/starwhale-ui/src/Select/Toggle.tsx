@@ -12,7 +12,7 @@ export interface IToggleProps {
     style?: React.CSSProperties
 }
 
-export default function Toggle({ value, onChange, disabled, ...props }: IToggleProps) {
+export function Toggle({ value, onChange, disabled, ...props }: IToggleProps) {
     const overrides = mergeOverrides(
         {
             Toggle: {

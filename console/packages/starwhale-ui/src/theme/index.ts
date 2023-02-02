@@ -1,6 +1,7 @@
 import type { Theme, Primitives } from 'baseui'
 import color from 'color'
 import { createTheme, LightTheme } from 'baseui'
+import { Borders, Colors, Typography } from 'baseui/styles'
 
 export type BaseThemeType = 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
@@ -49,7 +50,11 @@ const primitives: Partial<Primitives> = {
     primaryFontFamily: 'Source Sans Pro',
 }
 
-const overrides = {
+const overrides: {
+    colors: Partial<Colors>
+    typography: Partial<Typography>
+    borders: Partial<Borders>
+} = {
     colors: {
         primary: customPrimaryColors.primary,
         accent: customPrimaryColors.primary,
@@ -73,14 +78,17 @@ const overrides = {
         buttonDisabledText: color(customPrimaryColors.primary).alpha(0.3).toString(),
         // ----------- others -----------
         borderSelected: customPrimaryColors.primary,
+        tickBorder: customPrimaryColors.dividerSecondary,
+        tickFill: customPrimaryColors.fill,
+        tickFillActive: customPrimaryColors.fill,
         tickFillSelected: customPrimaryColors.primary,
         tickFillSelectedHover: customPrimaryColors.primary,
+        tickFillSelectedHoverActive: customPrimaryColors.primary,
         inputFillError: customPrimaryColors.fill,
         inputBorder: customPrimaryColors.dividerSecondary,
         inputFill: customPrimaryColors.fill,
         inputFillActive: customPrimaryColors.fill,
         inputBorderError: customPrimaryColors.error,
-        borderFocus: customPrimaryColors.primary,
         toastInfoText: customPrimaryColors.tips,
         toastInfoBackground: customPrimaryColors.tipsBackground,
         toastPositiveText: customPrimaryColors.success,
@@ -99,6 +107,7 @@ const overrides = {
         notificationNegativeBackground: customPrimaryColors.errorBackground,
     },
     typography: {
+        // @ts-ignore
         font250: {
             lineHeight: '14px',
         },

@@ -324,12 +324,11 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                                 'height': '20px',
                                                 'textDecoration': 'none',
                                                 'color': 'gray !important',
-                                                'paddingLeft': '10px',
+                                                'paddingLeft': '8px',
                                                 'paddingRight': '10px',
                                                 ':hover span': {
                                                     color: ' #5181E0  !important',
                                                 },
-
                                                 ':hover': {
                                                     backgroundColor: '#F0F4FF',
                                                 },

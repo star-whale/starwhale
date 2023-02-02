@@ -8,7 +8,7 @@ interface IMemoryResourceInputProps {
     overrides?: InputProps['overrides']
 }
 
-export default function MemoryResourceInput({ value, onChange, overrides }: IMemoryResourceInputProps) {
+export function MemoryResourceInput({ value, onChange, overrides }: IMemoryResourceInputProps) {
     const unitRef = useRef('Mi')
     const vRef = useRef<number | undefined>(undefined)
     if (value) {

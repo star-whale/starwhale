@@ -4,7 +4,7 @@ import { StyledLink } from 'baseui/link'
 import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
 import { ConfigT } from './types'
-import Toggle from '../../Select/Toggle'
+import { Toggle } from '../../Select'
 import { themedUseStyletron } from '../../theme/styletron'
 
 type ViewListPropsT = {

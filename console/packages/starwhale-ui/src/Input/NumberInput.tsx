@@ -1,6 +1,6 @@
 import { InputProps, SIZE } from 'baseui/input'
 import React from 'react'
-import Input from './Input'
+import { Input } from './Input'
 
 export interface INumberInputProps {
     value?: number
@@ -14,7 +14,7 @@ export interface INumberInputProps {
     size?: keyof typeof SIZE
 }
 
-export default function NumberInput({
+export function NumberInput({
     value,
     onChange,
     min,

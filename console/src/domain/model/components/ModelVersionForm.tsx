@@ -4,7 +4,7 @@ import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
-import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
+import { RadioGroup, Radio, ALIGN } from '@starwhale/ui/Radio'
 import { ICreateModelVersionSchema, IModelVersionSchema } from '../schemas/modelVersion'
 
 const { Form, FormItem } = createForm<ICreateModelVersionSchema>()

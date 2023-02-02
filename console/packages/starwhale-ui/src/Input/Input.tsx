@@ -8,7 +8,7 @@ export interface IInputProps extends InputProps {
     size?: keyof typeof SIZE
 }
 
-export default function Input({ size = 'compact', ...props }: IInputProps) {
+export function Input({ size = 'compact', ...props }: IInputProps) {
     const overrides = mergeOverrides(
         {
             Root: {

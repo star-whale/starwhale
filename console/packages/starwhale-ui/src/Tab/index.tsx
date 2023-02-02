@@ -1,2 +1,3 @@
+export { SpaceTabs as default } from './SpaceTabs'
 export * from './SpaceTabs'
-export * from 'baseui/tabs'
+export { Tab } from 'baseui/tabs'

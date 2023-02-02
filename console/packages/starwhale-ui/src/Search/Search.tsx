@@ -24,6 +24,7 @@ export const useStyles = createUseStyles({
             height: '4px !important',
         },
         'flexGrow': '0',
+        'overflowY': 'hidden',
     },
     filters: {
         'position': 'relative',
