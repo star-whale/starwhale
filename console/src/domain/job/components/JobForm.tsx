@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
@@ -398,16 +397,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button
-                        size={SIZE.compact}
-                        kind={KIND.secondary}
-                        type='button'
+                        kind='secondary'
                         onClick={() => {
                             history.goBack()
                         }}
                     >
                         {t('Cancel')}
                     </Button>
-                    <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(job, values)}>
+                    <Button isLoading={loading} disabled={!isModified(job, values)}>
                         {t('submit')}
                     </Button>
                 </div>

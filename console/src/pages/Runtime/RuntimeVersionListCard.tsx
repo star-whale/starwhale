@@ -72,7 +72,7 @@ export default function RuntimeVersionListCard() {
                                 <WithCurrentAuth id='runtime.version.revert'>
                                     <Button
                                         size='mini'
-                                        as='link'
+                                        kind='tertiary'
                                         key={runtime.id}
                                         onClick={() => handleRevert(runtime)}
                                     >

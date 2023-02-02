@@ -119,6 +119,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const extra = useMemo(() => {
         return (
             <ConfirmButton
+                as='negative'
                 title={t('dataset.remove.confirm')}
                 onClick={async () => {
                     await removeDataset(projectId, datasetId)
@@ -152,6 +153,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                         </div>
                         <Button
                             icon='runtime'
+                            kind='tertiary'
                             onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
                         >
                             {t('History')}

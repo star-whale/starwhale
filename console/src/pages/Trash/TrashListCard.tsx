@@ -66,7 +66,7 @@ export default function TrashListCard() {
                             trash.retentionTime && formatTimestampDateTime(trash.retentionTime),
                             <>
                                 <ConfirmButton
-                                    as='link'
+                                    as='negative'
                                     title={t('trash.remove.confirm')}
                                     onClick={async () => {
                                         await removeTrash(projectId, trash.id)
@@ -78,7 +78,7 @@ export default function TrashListCard() {
                                 </ConfirmButton>
                                 &nbsp;&nbsp;
                                 <ConfirmButton
-                                    as='link'
+                                    kind='tertiary'
                                     title={t('trash.restore.confirm')}
                                     onClick={async () => {
                                         await recoverTrash(projectId, trash.id)

@@ -86,7 +86,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 <div className={styles.rowValue}>{[project.owner?.name, project.name].join('/')}</div>
                 <div className={styles.rowEnd}>
                     <WithAuth role={role} id='project.update'>
-                        <Button onClick={() => onEdit?.()} icon='edit'>
+                        <Button onClick={() => onEdit?.()} icon='edit' kind='tertiary'>
                             {t('Edit')}
                         </Button>
                     </WithAuth>
@@ -119,7 +119,11 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 <div className={styles.rowKey}>{t('Member')}: </div>
                 <div className={styles.rowEnd}>
                     <WithAuth role={role} id='member.update'>
-                        <Button onClick={() => history.push(`/projects/${project.id}/members`)} icon='a-managemember'>
+                        <Button
+                            onClick={() => history.push(`/projects/${project.id}/members`)}
+                            icon='a-managemember'
+                            kind='tertiary'
+                        >
                             {t('Manage Member')}
                         </Button>
                     </WithAuth>

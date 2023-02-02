@@ -302,7 +302,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
                             <div className={styles.delete}>
                                 <ConfirmButton
-                                    as='link'
+                                    as='negative'
                                     key={project?.id}
                                     title={
                                         <div>

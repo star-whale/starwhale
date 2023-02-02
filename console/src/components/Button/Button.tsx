@@ -4,7 +4,7 @@ import { mergeOverrides } from '@/utils/baseui'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IButtonProps extends ButtonProps {
-    as?: 'link' | 'button' | 'transparent' | 'withIcon'
+    as?: 'link' | 'button' | 'transparent'
     kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
@@ -89,31 +89,6 @@ export default function Button({
                         ':focus': {
                             backgroundColor: 'transparent',
                             color: theme.brandPrimaryHover,
-                        },
-                    },
-                },
-            },
-            props.overrides
-        )
-    } else if (as === 'withIcon') {
-        overrides = mergeOverrides(
-            {
-                BaseButton: {
-                    style: {
-                        'borderTopLeftRadius': theme.borders.radius200,
-                        'borderTopRightRadius': theme.borders.radius200,
-                        'borderBottomLeftRadius': theme.borders.radius200,
-                        'borderBottomRightRadius': theme.borders.radius200,
-                        'width': isFull ? '100%' : 'auto',
-                        'backgroundColor': '#F4F5F7',
-                        'color': 'rgba(2,16,43,0.60)',
-                        ':hover': {
-                            backgroundColor: '#F0F4FF',
-                            color: '#5181E0',
-                        },
-                        ':active': {
-                            backgroundColor: '#F0F4FF',
-                            color: '#1C4CAD',
                         },
                     },
                 },

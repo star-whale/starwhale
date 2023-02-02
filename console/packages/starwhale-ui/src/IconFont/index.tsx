@@ -75,6 +75,9 @@ export type IconTypesT =
     | 'filter'
     | 'error'
     | 'edit'
+    | 'info'
+    | 'item-reduce'
+    | 'delete'
 
 interface IIconFontProps {
     style?: React.CSSProperties

@@ -124,7 +124,6 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
         <Card
             style={{
                 fontSize: '16px',
-                background: theme.brandBgSecondary4,
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}

@@ -5,7 +5,7 @@ import { themedUseStyletron } from '../theme/styletron'
 import IconFont, { IconTypesT } from '../IconFont'
 
 export interface IButtonProps extends ButtonProps {
-    as?: 'link' | 'button' | 'transparent' | 'withIcon'
+    as?: 'link' | 'transparent' | 'negative'
     kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
@@ -42,6 +42,11 @@ export default function Button({
                     width: isFull ? '100%' : 'auto',
                 },
             },
+            StartEnhancer: {
+                style: {
+                    marginRight: '5px',
+                },
+            },
         },
         props.overrides
     )
@@ -49,8 +54,6 @@ export default function Button({
     if (icon && !props.startEnhancer) {
         // eslint-disable-next-line no-param-reassign
         props.startEnhancer = () => <IconFont type={icon} size={13} />
-        // eslint-disable-next-line no-param-reassign
-        as = 'withIcon'
     }
 
     if (as === 'link') {
@@ -99,21 +102,19 @@ export default function Button({
             },
             props.overrides
         )
-    } else if (as === 'withIcon') {
+    } else if (as === 'negative') {
         overrides = mergeOverrides(
             {
                 BaseButton: {
                     style: {
                         ...defaultStyles,
-                        'backgroundColor': '#EBF1FF',
-                        'color': theme.colors.buttonPrimaryFill,
+                        'backgroundColor': '#FFEBEB',
+                        'color': ' #CC3D3D',
                         ':hover': {
-                            backgroundColor: '#F0F4FF',
-                            color: theme.colors.buttonPrimaryHover,
+                            backgroundColor: '#FFDBDB',
                         },
-                        ':active': {
-                            backgroundColor: '#F0F4FF',
-                            color: theme.colors.buttonPrimaryActive,
+                        ':focus': {
+                            backgroundColor: '#FFCCCC',
                         },
                     },
                 },

@@ -84,7 +84,7 @@ export default function ProjectMembers() {
                         user.createdTime && formatTimestampDateTime(user.createdTime),
                         <WithCurrentAuth id='member.delete' key={id}>
                             <ConfirmButton
-                                as='link'
+                                as='negative'
                                 key={id}
                                 title={t('Remove Project Role Confirm')}
                                 onClick={async () => {

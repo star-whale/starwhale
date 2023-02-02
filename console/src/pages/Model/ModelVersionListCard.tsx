@@ -9,7 +9,7 @@ import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@/components/Button'
@@ -20,6 +20,7 @@ import { TextLink } from '@/components/Link'
 export default function ModelVersionListCard() {
     const [page] = usePage()
     const { modelId, projectId } = useParams<{ modelId: string; projectId: string }>()
+    const history = useHistory()
 
     const modelsInfo = useFetchModelVersions(projectId, modelId, page)
     const [isCreateModelVersionOpen, setIsCreateModelVersionOpen] = useState(false)
@@ -64,7 +65,7 @@ export default function ModelVersionListCard() {
                                 {i ? (
                                     <WithCurrentAuth id='model.version.revert'>
                                         <Button
-                                            as='link'
+                                            kind='tertiary'
                                             size='mini'
                                             key={model.id}
                                             onClick={() => handleAction(model.id)}
@@ -78,12 +79,14 @@ export default function ModelVersionListCard() {
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
                                 &nbsp;&nbsp;
-                                <TextLink
-                                    key={model.id}
-                                    to={`/projects/${projectId}/online_eval/${modelId}/${model.id}`}
+                                <Button
+                                    kind='tertiary'
+                                    onClick={() =>
+                                        history.push(`/projects/${projectId}/online_eval/${modelId}/${model.id}`)
+                                    }
                                 >
                                     {t('online eval')}
-                                </TextLink>
+                                </Button>
                             </>,
                         ]
                     }) ?? []

@@ -24,9 +24,7 @@ function CopyToClipboard({
                 toaster.positive(successContent ?? t('Copied'), { autoHideDuration: showSuccessDelay })
             }}
         >
-            <Button size='mini' as='link'>
-                {t('Copy Link')}{' '}
-            </Button>
+            <Button kind='tertiary'>{t('Copy Link')} </Button>
         </Copy>
     )
 }

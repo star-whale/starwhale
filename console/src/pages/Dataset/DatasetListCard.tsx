@@ -9,13 +9,15 @@ import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
+import { Button } from '@starwhale/ui'
 
 export default function DatasetListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ datasetId: string; projectId: string }>()
+    const history = useHistory()
 
     const datasetsInfo = useFetchDatasets(projectId, page)
     const [isCreateDatasetOpen, setIsCreateDatasetOpen] = useState(false)
@@ -46,9 +48,13 @@ export default function DatasetListCard() {
                             dataset.version?.alias,
                             dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
-                            <TextLink key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}/versions`}>
+                            <Button
+                                key='version-history'
+                                kind='tertiary'
+                                onClick={() => history.push(`/projects/${projectId}/datasets/${dataset.id}/versions`)}
+                            >
                                 {t('Version History')}
-                            </TextLink>,
+                            </Button>,
                         ]
                     }) ?? []
                 }

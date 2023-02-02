@@ -108,7 +108,7 @@ export default function UserManagement() {
                         user.createdTime && formatTimestampDateTime(user.createdTime),
                         <div key={user.id}>
                             <ConfirmButton
-                                as='link'
+                                kind='tertiary'
                                 title={user.isEnabled ? t('Disable User Confirm') : t('Enable User Confirm')}
                                 onClick={() => changUserState(user.id, !user.isEnabled)}
                                 disabled={user.id === currentUser?.id}
@@ -116,7 +116,7 @@ export default function UserManagement() {
                                 {user.isEnabled ? t('Disable User') : t('Enable User')}
                             </ConfirmButton>
                             &nbsp; &nbsp;
-                            <Button as='link' onClick={() => setModifyingUser(user)}>
+                            <Button kind='tertiary' onClick={() => setModifyingUser(user)}>
                                 {t('Change Password')}
                             </Button>
                         </div>,

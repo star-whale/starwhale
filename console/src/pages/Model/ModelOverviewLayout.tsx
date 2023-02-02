@@ -120,6 +120,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const extra = useMemo(() => {
         return (
             <ConfirmButton
+                as='negative'
                 title={t('model.remove.confirm')}
                 onClick={async () => {
                     await removeModel(projectId, modelId)
@@ -213,7 +214,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     },
                                 },
                             }}
-                            as='withIcon'
+                            kind='tertiary'
                             startEnhancer={() => <IconFont type='runtime' />}
                             onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}
                         >

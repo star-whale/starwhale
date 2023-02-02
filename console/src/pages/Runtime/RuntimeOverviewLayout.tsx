@@ -165,6 +165,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
     const extra = useMemo(() => {
         return (
             <ConfirmButton
+                as='negative'
                 title={t('runtime.remove.confirm')}
                 onClick={async () => {
                     await removeRuntime(projectId, runtimeId)
@@ -212,6 +213,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                                 </div>
                                 <Button
                                     icon='runtime'
+                                    kind='tertiary'
                                     onClick={() =>
                                         history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)
                                     }
