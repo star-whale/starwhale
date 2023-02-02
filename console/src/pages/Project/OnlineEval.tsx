@@ -106,7 +106,7 @@ export default function OnlineEval() {
                                 resolve(null)
                             })
                             .catch(() => {
-                                setTimeout(check, 2000)
+                                setTimeout(check, 1000)
                             })
                     }
                     check()
