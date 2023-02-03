@@ -431,7 +431,7 @@ Congratulations, we have finished the whole example! From now on, we can update 
 * **Copy the model we built before to the cloud instance**
 
 ```console
-(pytorch_text) $ swcli model copy text_cls/version/gzstmmztmyyt cloud://pre-k8s/project/1
+(pytorch_text) $ swcli model copy text_cls/version/gzstmmztmyyt cloud://pre-k8s/project/starwhale
 🚧 start to copy local/project/self/model/text_cls/version/gzstmmztmyyt -> http://console.pre.intra.starwhale.ai/project/1...
   🎳 upload gzstmmztmyytmztfgbqtmntfn43gqoi.swmp ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:16 196.7 MB 10.6 MB/s
 👏 copy done.
@@ -440,7 +440,7 @@ Congratulations, we have finished the whole example! From now on, we can update 
 * **Copy the dataset we built before to the cloud instance**
 
 ```console
-(pytorch_text) $ swcli dataset copy ag_news/version/me3tkzdgga4t cloud://pre-k8s/project/1
+(pytorch_text) $ swcli dataset copy ag_news/version/me3tkzdgga4t cloud://pre-k8s/project/starwhale
     🚧 start to copy local/project/self/dataset/ag_news/version/me3tkzdgga4t -> http://console.pre.intra.starwhale.ai/project/1...
     ⬆ _manifest.yaml         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 1.2 kB   ?
 ⬆ data_ubyte_0.swds_bin  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 2.0 MB   ?
@@ -453,7 +453,7 @@ Congratulations, we have finished the whole example! From now on, we can update 
 * **Copy the runtime we built before to the cloud instance**
 
 ```console
-(pytorch_text) $ swcli runtime copy pytorch_text/version/hbtdqnztmy2d cloud://pre-k8s/project/1
+(pytorch_text) $ swcli runtime copy pytorch_text/version/hbtdqnztmy2d cloud://pre-k8s/project/starwhale
 🚧 start to copy local/project/self/runtime/pytorch_text/version/hbtdqnztmy2d -> http://console.pre.intra.starwhale.ai/project/1...
   🎳 upload hbtdqnztmy2dky3cmqzdazjymn4dqzi.swrt ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 20.5 kB ?
 👏 copy done.

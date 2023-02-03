@@ -122,12 +122,12 @@ swcli model info speech_commands_m5/version/latest
 swcli instance login --username ${username} --token ${token}  http://${instance-address} --alias prod
 # 将本地默认instance改为standalone
 swcli instance select local
-#上传model到prod instance中id为1的project中
-swcli model copy speech_commands_m5/version/latest cloud://prod/project/1
-#上传dataset到prod instance中id为1的project中
-swcli dataset copy speech_commands_validation/version/latest cloud://prod/project/1
-#上传runtime到prod instance中id为1的project中
-swcli runtime copy pytorch/version/latest cloud://prod/project/1
+#上传model到prod instance中name为starwhale的project中
+swcli model copy speech_commands_m5/version/latest cloud://prod/project/starwhale
+#上传dataset到prod instance中name为starwhale的project中
+swcli dataset copy speech_commands_validation/version/latest cloud://prod/project/starwhale
+#上传runtime到prod instance中name为starwhale的project中
+swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 ```
 
 然后，可以在终端中执行`swcli ui prod`命令，可以拉起浏览器并进入prod instance的web页面中，接着进入相关project，创建评测任务即可。
