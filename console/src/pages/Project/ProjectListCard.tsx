@@ -304,15 +304,13 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                 <ConfirmButton
                                     as='negative'
                                     key={project?.id}
-                                    title={
-                                        <div>
-                                            <p>{t('Confirm Remove Project?')}</p>
-                                            <LabelMedium>
-                                                {t(
-                                                    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
-                                                )}
-                                            </LabelMedium>
-                                        </div>
+                                    title={t('Confirm Remove Project?')}
+                                    content={
+                                        <LabelMedium>
+                                            {t(
+                                                'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
+                                            )}
+                                        </LabelMedium>
                                     }
                                     overrides={{
                                         BaseButton: {
