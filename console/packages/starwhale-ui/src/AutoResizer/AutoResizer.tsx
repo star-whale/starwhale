@@ -31,4 +31,4 @@ const AutoResizer = ({ className, width, height, children, onResize }: any) => {
     )
 }
 
-export default AutoResizer
+export { AutoResizer }

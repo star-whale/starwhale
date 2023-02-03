@@ -7,7 +7,7 @@ export interface IAccordionProps extends Partial<AccordionProps> {
 }
 
 /* eslint-disable react/jsx-props-no-spreading */
-export default function Accordion({ children, ...props }: IAccordionProps) {
+export function Accordion({ children, ...props }: IAccordionProps) {
     const overrides = mergeOverrides(
         {
             PanelContainer: {

@@ -6,7 +6,7 @@ import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatas
 import { useProject } from '@/domain/project/hooks/useProject'
 import Table from '@/components/Table'
 import { Panel } from 'baseui/accordion'
-import Accordion from '@/components/Accordion'
+import Accordion from '@starwhale/ui/Accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router'

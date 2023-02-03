@@ -7,7 +7,7 @@ import { Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
 import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
-import Accordion from '@/components/Accordion'
+import Accordion from '@starwhale/ui/Accordion'
 import TaskListCard from './TaskListCard'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 

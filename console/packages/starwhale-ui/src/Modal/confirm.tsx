@@ -1,7 +1,8 @@
 import React, { useState, useContext, useRef } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
-import { Button, IButtonProps, IconFont } from '@starwhale/ui'
-import { expandMargin, expandPadding } from '@starwhale/ui/utils'
+import { Button, IButtonProps } from '../Button'
+import IconFont from '../IconFont'
+import { expandMargin, expandPadding } from '../utils'
 
 export interface IConfirmCtxProviderProps {
     children?: React.ReactNode

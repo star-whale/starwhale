@@ -1,4 +1,4 @@
-import IconFont from '@starwhale/ui/IconFont'
+import IconFont from '../IconFont'
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { useStyletron } from 'styletron-react'
@@ -20,7 +20,7 @@ export type GridResizerPropsT = {
     isResizeable?: boolean
 }
 
-function GridResizer({
+export function GridResizer({
     left,
     right,
     gridLayout = gridDefaultLayout,
@@ -124,7 +124,6 @@ function GridResizer({
         </div>
     )
 }
-export default GridResizer
 
 export type ResizeBarPropsT = {
     resizeRef: React.RefObject<any>

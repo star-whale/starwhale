@@ -18,11 +18,10 @@ import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import GridResizer from '@/components/AutoResizer/GridResizer'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
-import { Button } from '@starwhale/ui'
+import { Button, GridResizer } from '@starwhale/ui'
 
 const page = { pageNum: 1, pageSize: 1000 }
 
