@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import DeepTheme from '@starwhale/ui/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
-import { ConfirmCtxProvider } from '@/components/Modal/confirm'
+import { ConfirmCtxProvider } from '@starwhale/ui/Modal'
 import Routes from './routes'
 import { AuthProvider } from './api/Auth'
 

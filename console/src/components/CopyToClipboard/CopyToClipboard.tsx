@@ -1,5 +1,5 @@
 import React from 'react'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import Copy from 'react-copy-to-clipboard'
 import { toaster } from 'baseui/toast'

@@ -5,7 +5,7 @@ import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '@starwhale/c
 import WidgetPlugin from '@starwhale/core/widget/WidgetPlugin'
 import { ReactSortable } from 'react-sortablejs'
 import IconFont from '@starwhale/ui/IconFont'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent } from '@starwhale/core/events/common'
 import { WithCurrentAuth } from '@/api/WithAuth'

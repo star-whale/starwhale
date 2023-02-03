@@ -10,7 +10,7 @@ import { getToken } from '@/api'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { useModel } from '@/domain/model/hooks/useModel'
 import Editor, { DiffEditor, EditorProps } from '@monaco-editor/react'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import AutoResizer from '@/components/AutoResizer/AutoResizer'
 import Select from '@starwhale/ui/Select'
 // @ts-ignore

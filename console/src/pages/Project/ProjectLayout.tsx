@@ -4,7 +4,7 @@ import { useQuery } from 'react-query'
 import { Redirect, useParams } from 'react-router-dom'
 import { fetchProject } from '@project/services/project'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { toaster } from 'baseui/toast'
 
 export interface IProjectLayoutProps {

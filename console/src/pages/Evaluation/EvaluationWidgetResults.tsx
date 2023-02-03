@@ -1,6 +1,6 @@
 import React from 'react'
 import Card from '@/components/Card'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'

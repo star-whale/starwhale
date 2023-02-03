@@ -11,7 +11,7 @@ import { recoverTrash, removeTrash } from '@/domain/trash/services/trash'
 import Table from '@/components/Table'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { getReadableStorageQuantityStr } from '@/utils'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 
 export default function TrashListCard() {

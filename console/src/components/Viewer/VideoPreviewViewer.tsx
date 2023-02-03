@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 import ZoomWrapper from './ZoomWrapper'
 import _, { reject } from 'lodash'

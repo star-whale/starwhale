@@ -15,7 +15,7 @@ import Search from '@starwhale/ui/Search'
 import { useQueryDatasetList } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { Button } from '@starwhale/ui'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
 

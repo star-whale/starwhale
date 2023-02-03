@@ -14,7 +14,7 @@ import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSe
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { Button } from '@starwhale/ui'
 

@@ -2,8 +2,8 @@ import React from 'react'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
-// @FIXME move to ui
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { expandPadding } from '@starwhale/ui/utils'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 
 const COLUMN_OPTIONS = [
     { label: 'Rename', type: 'rename' },
@@ -72,8 +72,8 @@ export default function SectionPopover({ onOptionSelect }) {
                                                             textAlign: 'left',
                                                             justifyContent: 'flex-start',
                                                             margin: '-8px -16px',
-                                                            padding: '8px 16px',
                                                             height: '36px',
+                                                            ...expandPadding('8px', '16px', '8px', '16px'),
                                                         },
                                                     },
                                                 }}

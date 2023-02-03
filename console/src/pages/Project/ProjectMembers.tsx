@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useFetchProjectMembers } from '@project/hooks/useFetchProjectMembers'
 import { useParams } from 'react-router-dom'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import Card from '@/components/Card'
 import { SIZE as ButtonSize } from 'baseui/button'
 import { QueryInput } from '@starwhale/ui/Input'
@@ -15,7 +15,7 @@ import { changeProjectRole, addProjectRole, removeProjectRole } from '@project/s
 import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import MemberAddForm from '@project/components/MemberAddForm'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ProjectMembers() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Card from '@/components/Card'
 import Table from '@/components/Table'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
@@ -17,7 +17,7 @@ import Input, { QueryInput } from '@starwhale/ui/Input'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import PasswordForm from '@user/components/PasswordForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 
 interface IPasswordResultProps {
     title: string

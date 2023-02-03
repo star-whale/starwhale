@@ -10,7 +10,7 @@ import { LabelSmall } from 'baseui/typography'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')

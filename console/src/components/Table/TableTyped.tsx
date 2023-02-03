@@ -22,7 +22,7 @@ import { IStore } from '@starwhale/ui/base/data-table/store'
 import { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 const useStyles = createUseStyles({

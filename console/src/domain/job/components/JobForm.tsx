@@ -19,7 +19,7 @@ import yaml from 'js-yaml'
 import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
 import IconFont from '@starwhale/ui/IconFont'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import ResourceSelector from '@/domain/setting/components/ResourceSelector'
 import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
@@ -397,6 +397,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     <div style={{ flexGrow: 1 }} />
                     <Button
                         kind='secondary'
+                        type='button'
                         onClick={() => {
                             history.goBack()
                         }}

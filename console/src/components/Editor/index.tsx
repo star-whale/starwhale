@@ -8,7 +8,7 @@ import { useProject } from '@/domain/project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { tablesOfEvaluation } from '@starwhale/core'
 import { useParams } from 'react-router'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 
 registerWidgets()

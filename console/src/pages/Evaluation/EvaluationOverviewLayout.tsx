@@ -8,7 +8,7 @@ import { doJobAction, fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface IJobLayoutProps {
