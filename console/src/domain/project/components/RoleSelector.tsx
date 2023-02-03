@@ -1,4 +1,4 @@
-import { Select, SIZE } from 'baseui/select'
+import Select from '@starwhale/ui/Select'
 import React from 'react'
 import { useFetchRoleList } from '@project/hooks/useFetchRoleList'
 
@@ -12,7 +12,6 @@ export default function RoleSelector({ value, onChange }: IRoleSelectorProps) {
 
     return (
         <Select
-            size={SIZE.compact}
             clearable={false}
             isLoading={roles.isFetching}
             options={(roles.data ?? []).map((role) => {

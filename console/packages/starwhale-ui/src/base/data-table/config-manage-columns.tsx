@@ -2,17 +2,17 @@ import React, { useRef, useEffect, useImperativeHandle, useState } from 'react'
 import { SHAPE, SIZE } from 'baseui/button'
 import { useStyletron } from 'baseui'
 import { Drawer } from 'baseui/drawer'
-import Button from '@/components/Button'
 import { useDrawer } from '@/hooks/useDrawer'
-import IconFont from '@/components/IconFont'
 import { expandBorderRadius } from '@/utils'
 import type { ColumnT, ConfigT } from './types'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Transfer } from '@starwhale/ui/Transfer'
+import Button from '@starwhale/ui/Button'
 
 const useStyles = createUseStyles({
     transfer: {
+        'height': '100%',
         '& .header': {
             display: 'flex',
             flexDirection: 'column',
@@ -20,15 +20,15 @@ const useStyles = createUseStyles({
             lineHeight: '56px',
         },
         '& .header--inline': {
-            borderTop: '1px solid #EEF1F6',
             paddingLeft: 0,
-            marginTop: '20px',
             fontWeight: 'bold',
+            color: '#02102B',
         },
         '& .header--drawer': {
             borderBottom: '1px solid #EEF1F6',
             paddingLeft: '20px',
             marginBottom: '20px',
+            color: '#02102B',
         },
         '& .body': {
             display: 'flex',
@@ -41,6 +41,10 @@ const useStyles = createUseStyles({
         '& .body--inline': {
             paddingLeft: 0,
             paddingRight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            height: 'calc(100% - 76px)',
         },
     },
 })
@@ -77,7 +81,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         // eslint-disable-next-line react/no-unused-prop-types
         ({ children }: { children: React.ReactNode }) => {
             return props.isInline ? (
-                <div className={styles.transfer}>{children}</div>
+                <div className={`${styles.transfer} inherit-height`}>{children}</div>
             ) : (
                 <Drawer
                     size={`${314 * 2 + 52 + 20 * 2}px`}
@@ -136,29 +140,13 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
         setValue(props.view)
     }, [props.view])
 
-    // useDeepEffect(() => {
-    //     console.log('onApply', selectedIds, pinnedIds, sortedIds)
-    //     props.onApply?.(selectedIds, pinnedIds, sortedIds)
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [selectedIds, sortedIds, pinnedIds])
-
     return (
-        <div ref={ref}>
+        <div ref={ref} className='inherit-height'>
             {!props.isInline && (
                 <Button
                     onClick={() => setIsOpen(!isOpen)}
-                    shape={SHAPE.pill}
-                    size={SIZE.compact}
-                    as='withIcon'
-                    startEnhancer={() => (
-                        <IconFont
-                            type='setting'
-                            style={{
-                                marginRight: '-5px',
-                                marginTop: 'px',
-                            }}
-                        />
-                    )}
+                    icon='setting'
+                    kind='tertiary'
                     overrides={{
                         BaseButton: {
                             style: {
@@ -173,7 +161,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
             )}
             <Wrapper>
                 <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>Manage Columns</div>
-                <div className={cn('body', props.isInline ? 'body--inline' : '')}>
+                <div className={cn('body', props.isInline ? 'body--inline' : '', 'inherit-height')}>
                     <Transfer
                         columns={columns}
                         isDragable

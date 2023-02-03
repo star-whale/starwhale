@@ -7,7 +7,7 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import Accordion from '@/components/Accordion'
+import Accordion from '@starwhale/ui/Accordion'
 import { Panel } from 'baseui/accordion'
 
 export interface IRuntimeLayoutProps {

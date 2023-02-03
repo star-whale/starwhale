@@ -1,4 +1,4 @@
-import { Select, SIZE } from 'baseui/select'
+import Select from '@starwhale/ui/Select'
 import React, { useEffect } from 'react'
 import { useFetchSystemResourcePool } from '@/domain/setting/hooks/useSettings'
 import { ISystemResourcePool } from '../schemas/system'
@@ -41,7 +41,6 @@ export default function ResourcePoolSelector({
 
     return (
         <Select
-            size={SIZE.compact}
             clearable={false}
             required
             isLoading={pools.isFetching}

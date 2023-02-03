@@ -23,15 +23,13 @@ body {
 a:-webkit-any-link {
   color: -webkit-link;
   cursor: pointer;
-  // text-decoration: none;
 }
 
 ::-webkit-scrollbar {
   height: 8px;
   width: 8px;
-  background: rgba(2,16,43,0.12);
   border-radius: 4px;
-  cursor: pointer !important;
+  background: transparent;
 }
  
 ::-webkit-scrollbar-track {
@@ -42,8 +40,7 @@ a:-webkit-any-link {
   background: rgba(2,16,43,0.12);
   border-radius: 4px;
   width: 8px;
-  cursor: pointer;
-  // outline: 1px solid slategrey;
+  cursor: pointer !important;
 }
 
 code {
@@ -275,4 +272,11 @@ table { border-collapse: separate; }
       }
     }
   }
+}
+
+.inherit-height {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  flex-direction: column;
 }

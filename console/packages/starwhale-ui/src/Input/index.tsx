@@ -1,3 +1,4 @@
-export { default } from './Input'
+export { Input as default } from './Input'
+export * from './Input'
 export * from './NumberInput'
-export { SIZE } from 'baseui/input'
+export * from './QueryInput'

@@ -1,6 +1,6 @@
 import React from 'react'
 import LoginLayout from './LoginLayout'
-import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 
 export default function Pending({ style }: { style?: React.CSSProperties }) {
     return (

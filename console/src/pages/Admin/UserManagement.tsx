@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import Card from '@/components/Card'
-import IconFont from '@/components/IconFont'
 import Table from '@/components/Table'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFetchUsers } from '@user/hooks/useUser'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
 import { useStyletron } from 'baseui'
 import { IUserSchema } from '@user/schemas/user'
 import { changeUserState, createUser, changeUserPasswd } from '@user/services/user'
@@ -15,11 +13,11 @@ import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import NewUserForm from '@user/components/NewUserForm'
 import generatePassword from '@/utils/passwordGenerator'
-import Input from '@/components/Input'
+import Input, { QueryInput } from '@starwhale/ui/Input'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import PasswordForm from '@user/components/PasswordForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 
 interface IPasswordResultProps {
     title: string
@@ -92,14 +90,7 @@ export default function UserManagement() {
     }
 
     return (
-        <Card
-            title={t('Manage Users')}
-            extra={
-                <Button startEnhancer={<IconFont type='add' kind='white' />} onClick={() => setShowAddUser(true)}>
-                    {t('Add User')}
-                </Button>
-            }
-        >
+        <Card title={t('Manage Users')} extra={<Button onClick={() => setShowAddUser(true)}>{t('Add User')}</Button>}>
             <div className={css({ marginBottom: '20px', width: '280px' })}>
                 <QueryInput
                     onChange={(val: string) => {
@@ -117,7 +108,7 @@ export default function UserManagement() {
                         user.createdTime && formatTimestampDateTime(user.createdTime),
                         <div key={user.id}>
                             <ConfirmButton
-                                as='link'
+                                kind='tertiary'
                                 title={user.isEnabled ? t('Disable User Confirm') : t('Enable User Confirm')}
                                 onClick={() => changUserState(user.id, !user.isEnabled)}
                                 disabled={user.id === currentUser?.id}
@@ -125,7 +116,7 @@ export default function UserManagement() {
                                 {user.isEnabled ? t('Disable User') : t('Enable User')}
                             </ConfirmButton>
                             &nbsp; &nbsp;
-                            <Button as='link' onClick={() => setModifyingUser(user)}>
+                            <Button kind='tertiary' onClick={() => setModifyingUser(user)}>
                                 {t('Change Password')}
                             </Button>
                         </div>,

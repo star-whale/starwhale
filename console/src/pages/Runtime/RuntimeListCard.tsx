@@ -4,13 +4,15 @@ import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
+import { Button } from '@starwhale/ui'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
+    const history = useHistory()
     const { projectId } = useParams<{ runtimeId: string; projectId: string }>()
 
     const runtimesInfo = useFetchRuntimes(projectId, page)
@@ -44,9 +46,13 @@ export default function RuntimeListCard() {
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
-                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
+                            <Button
+                                key='version-history'
+                                kind='tertiary'
+                                onClick={() => history.push(`/projects/${projectId}/runtimes/${runtime.id}`)}
+                            >
                                 {t('Version History')}
-                            </TextLink>,
+                            </Button>,
                         ]
                     }) ?? []
                 }

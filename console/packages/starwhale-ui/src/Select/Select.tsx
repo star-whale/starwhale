@@ -1,13 +1,16 @@
 import { Select as BaseSelect, SelectProps, SIZE } from 'baseui/select'
 import React from 'react'
+import IconFont from '../IconFont'
 import { mergeOverrides } from '../utils'
+
+export { SIZE } from 'baseui/select'
 
 export interface ISelectProps extends SelectProps {
     overrides?: SelectProps['overrides']
     size?: keyof typeof SIZE
 }
 
-export default function Select({ size = 'compact', ...props }: ISelectProps) {
+export function Select({ size = 'compact', ...props }: ISelectProps) {
     const overrides = mergeOverrides(
         {
             ControlContainer: {
@@ -20,6 +23,18 @@ export default function Select({ size = 'compact', ...props }: ISelectProps) {
                         borderColor: '#799EE8',
                     },
                 },
+            },
+            SelectArrow: ({ $isOpen }) => {
+                return (
+                    <IconFont
+                        type='arrow_down'
+                        kind='gray'
+                        style={{
+                            transform: $isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                        }}
+                    />
+                )
             },
         },
         props.overrides

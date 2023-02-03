@@ -1,7 +1,8 @@
 import React, { useState, useContext, useRef } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
-import useTranslation from '@/hooks/useTranslation'
-import { Button, IButtonProps } from '@starwhale/ui'
+import { Button, IButtonProps } from '../Button'
+import IconFont from '../IconFont'
+import { expandMargin, expandPadding } from '../utils'
 
 export interface IConfirmCtxProviderProps {
     children?: React.ReactNode
@@ -23,7 +24,6 @@ const ConfirmCtx = React.createContext<IConfirmCtxProps>({
 })
 
 const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
-    const [t] = useTranslation()
     const [showModal, setShowModal] = useState(false)
     const [showProps, setShowProps] = useState<IShowProps>({})
     const resolver: React.MutableRefObject<(ok: boolean) => void> = useRef(() => {})
@@ -40,30 +40,52 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
         <ConfirmCtx.Provider value={{ show }}>
             {children}
             <Modal closeable={false} isOpen={showModal}>
-                <ModalHeader>{showProps?.title}</ModalHeader>
-                <ModalBody>{showProps?.content}</ModalBody>
-                <ModalFooter>
-                    <div style={{ display: 'flex' }}>
+                <ModalHeader
+                    $style={{
+                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        fontSize: '16px',
+                    }}
+                >
+                    <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={16} />
+                    {showProps?.title}
+                </ModalHeader>
+                <ModalBody
+                    $style={{
+                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        fontSize: '16px',
+                    }}
+                >
+                    {showProps?.content}
+                </ModalBody>
+                <ModalFooter
+                    $style={{
+                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        ...expandPadding('0', '0', '0', '0'),
+                        fontSize: '16px',
+                    }}
+                >
+                    <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: '1fr 79px 79px' }}>
                         <div style={{ flexGrow: 1 }} />
                         <Button
-                            size='compact'
+                            size='default'
+                            isFull
                             kind='secondary'
                             onClick={() => {
                                 resolver.current(false)
                                 setShowModal(false)
                             }}
                         >
-                            {t('Cancel')}
+                            No
                         </Button>
-                        &nbsp;&nbsp;
                         <Button
-                            size='compact'
+                            size='default'
+                            isFull
                             onClick={() => {
                                 resolver.current(true)
                                 setShowModal(false)
                             }}
                         >
-                            {t('Continue')}
+                            Yes
                         </Button>
                     </div>
                 </ModalFooter>

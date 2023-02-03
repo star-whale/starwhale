@@ -4,7 +4,8 @@ import { Provider as StyletronProvider } from 'styletron-react'
 import { BaseProvider } from 'baseui'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter } from 'react-router-dom'
-import themes from '@/theme'
+import DeepTheme from '@starwhale/ui/theme'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { ToasterContainer } from 'baseui/toast'
 import { createUseStyles } from 'react-jss'
 
@@ -15,28 +16,21 @@ const queryClient = new QueryClient()
 
 const useStyles = createUseStyles({
     root: ({ theme }) => ({
-        color: 'var(--color-contentPrimary)',
-        ...Object.entries(theme.colors).reduce((p, [k, v]) => {
-            return {
-                ...p,
-                [`--color-${k}`]: v,
-            }
-        }, {}),
+        color: theme.colors.contentPrimary,
     }),
 })
 
 const Story = ({ storyFn }) => storyFn()
 
 const ThemeDecorator = (storyFn) => {
-    const themeType = 'deep'
-    const theme = themes[themeType]
+    const [, theme] = themedUseStyletron()
     const styles = useStyles({ theme })
 
     return (
         <React.StrictMode>
             <QueryClientProvider client={queryClient}>
                 <StyletronProvider value={engine}>
-                    <BaseProvider theme={theme}>
+                    <BaseProvider theme={DeepTheme}>
                         <ToasterContainer autoHideDuration={3000} />
                         <BrowserRouter>
                             <div className={styles.root}>

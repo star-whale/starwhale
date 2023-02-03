@@ -5,10 +5,8 @@ import { ICreateJobSchema } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams } from 'react-router-dom'
-import IconFont from '@/components/IconFont'
 import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
@@ -20,10 +18,10 @@ import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import GridResizer from '@/components/AutoResizer/GridResizer'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
+import { Button, GridResizer } from '@starwhale/ui'
 
 const page = { pageNum: 1, pageSize: 1000 }
 
@@ -206,14 +204,7 @@ export default function EvaluationListCard() {
             }}
             extra={
                 <WithCurrentAuth id='evaluation.create'>
-                    <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                        size={ButtonSize.compact}
-                        onClick={() => {
-                            history.push('new_job')
-                        }}
-                        isLoading={evaluationsInfo.isLoading}
-                    >
+                    <Button onClick={() => history.push('new_job')} isLoading={evaluationsInfo.isLoading}>
                         {t('create')}
                     </Button>
                 </WithCurrentAuth>

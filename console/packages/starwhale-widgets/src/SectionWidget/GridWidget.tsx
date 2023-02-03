@@ -1,7 +1,7 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Subscription } from 'rxjs'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
 import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'

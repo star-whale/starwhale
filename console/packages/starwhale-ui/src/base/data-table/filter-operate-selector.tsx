@@ -1,7 +1,6 @@
-import { SelectProps } from 'baseui/select'
 import React from 'react'
 import Input from '../../Input'
-import Select from '../../Select'
+import Select, { ISelectProps } from '../../Select'
 // eslint-disable-next-line
 import { ColumnT, FilterTypes } from './types'
 
@@ -9,7 +8,7 @@ export interface IFilterOperateSelectorProps {
     columns: ColumnT[]
     value?: FilterOperateSelectorValueT
     onChange?: (newValue: FilterOperateSelectorValueT) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
 }
 

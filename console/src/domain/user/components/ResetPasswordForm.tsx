@@ -1,9 +1,9 @@
 import React from 'react'
 import { createForm } from '@/components/Form'
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { shouldBeEqual, minLength } from '@/components/Form/validators'
 import { passwordMinLength } from '@/consts'
 

@@ -12,7 +12,7 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import useTranslation from '../../hooks/useTranslation'
 import { ILabel, ILabels } from './types'
 import useResizeObserver from '../../hooks/window/useResizeObserver'
-import BusyLoaderWrapper from '../BusyLoaderWrapper/BusyLoaderWrapper'
+import BusyLoaderWrapper from '@starwhale/ui/BusyLoaderWrapper/BusyLoaderWrapper'
 
 export interface ILabelsProps {
     style?: React.CSSProperties
@@ -50,7 +50,7 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
     const columns = [
         StringColumn({
             title: t('Label'),
-            mapDataToValue: (data: ILabel) => data.id,
+            mapDataToValue: (data: ILabel) => data.id ?? '',
         }),
         CustomColumn({
             title: t('Precision'),

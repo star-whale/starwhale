@@ -1,5 +1,5 @@
 import React from 'react'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import {
     ArtifactType,
     DatasetObject,

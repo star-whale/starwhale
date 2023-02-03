@@ -52,6 +52,8 @@ type TransferListPropsT = {
         handlePinOne: (id: string) => void
     }
     columns: ColumnT[]
+    title?: string
+    emptyMessage?: React.ReactNode
 }
 
 export default TransferList
@@ -221,7 +223,6 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
 
     return (
         <div className={classNames(styles.transferList, 'transfer-list')}>
-            {/* All columns edit */}
             <div className='transfer-list-content'>
                 <div className='transfer-list-content-header'>
                     <Checkbox
@@ -230,7 +231,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                             (e.target as any)?.checked ? handleSelectMany($data.map((v) => v.key)) : handleSelectNone()
                         }
                     />
-                    <LabelSmall>All columns</LabelSmall>
+                    <LabelSmall>{props.title}</LabelSmall>
                     <span
                         style={{
                             marginLeft: '-5px',
@@ -240,7 +241,9 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                         ({selectedIds.length}/{$data.length})
                     </span>
                 </div>
-                <div className='transfer-list-content-body'>{List}</div>
+                <div className='transfer-list-content-body'>
+                    {ids.length === 0 && props.emptyMessage ? props.emptyMessage : List}
+                </div>
             </div>
         </div>
     )

@@ -1,5 +1,4 @@
 import React from 'react'
-import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -7,7 +6,7 @@ import User from '@/domain/user/components/User'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
@@ -30,75 +29,73 @@ export default function RuntimeVersionListCard() {
     )
 
     return (
-        <Card title={t('runtime versions')}>
-            <Table
-                isLoading={runtimesInfo.isLoading}
-                columns={[
-                    t('Runtime Version'),
-                    // {
-                    //     type: 'tags',
-                    //     title: t('Tag'),
-                    //     minWidth: 200,
-                    //     onAsyncChange: async (value: any, columnIndex: number, rowIndex: number) => {
-                    //         const data = runtimesInfo.data?.list?.[rowIndex]
-                    //         try {
-                    //             await updateRuntimeVersion(projectId, runtimeId, data?.id as string, { tag: value })
-                    //             await runtimesInfo.refetch()
-                    //         } catch (e) {
-                    //             // console.error(e)
-                    //         }
-                    //     },
-                    //     mapDataToValue: (item: any) => {
-                    //         // tag index
-                    //         return item[1] ?? ''
-                    //     },
-                    // },
-                    // t('Tag'),
-                    t('Created'),
-                    t('Owner'),
-                    t('Action'),
-                ]}
-                data={
-                    runtimesInfo.data?.list.map((runtime, i) => {
-                        return [
-                            <TextLink
-                                key={runtime.id}
-                                to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
-                            >
-                                {runtime.name}
-                            </TextLink>,
-                            runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
-                            runtime.owner && <User user={runtime.owner} />,
-                            <>
-                                {i ? (
-                                    <WithCurrentAuth id='runtime.version.revert'>
-                                        <Button
-                                            size='mini'
-                                            as='link'
-                                            key={runtime.id}
-                                            onClick={() => handleRevert(runtime)}
-                                        >
-                                            {t('Revert')}
-                                        </Button>
-                                    </WithCurrentAuth>
-                                ) : null}
-                                &nbsp;&nbsp;
-                                <CopyToClipboard
-                                    content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
-                                />
-                            </>,
-                        ]
-                    }) ?? []
-                }
-                paginationProps={{
-                    start: runtimesInfo.data?.pageNum,
-                    count: runtimesInfo.data?.pageSize,
-                    total: runtimesInfo.data?.total,
-                    afterPageChange: () => {
-                        runtimesInfo.refetch()
-                    },
-                }}
-            />
-        </Card>
+        <Table
+            isLoading={runtimesInfo.isLoading}
+            columns={[
+                t('Runtime Version'),
+                // {
+                //     type: 'tags',
+                //     title: t('Tag'),
+                //     minWidth: 200,
+                //     onAsyncChange: async (value: any, columnIndex: number, rowIndex: number) => {
+                //         const data = runtimesInfo.data?.list?.[rowIndex]
+                //         try {
+                //             await updateRuntimeVersion(projectId, runtimeId, data?.id as string, { tag: value })
+                //             await runtimesInfo.refetch()
+                //         } catch (e) {
+                //             // console.error(e)
+                //         }
+                //     },
+                //     mapDataToValue: (item: any) => {
+                //         // tag index
+                //         return item[1] ?? ''
+                //     },
+                // },
+                // t('Tag'),
+                t('Created'),
+                t('Owner'),
+                t('Action'),
+            ]}
+            data={
+                runtimesInfo.data?.list.map((runtime, i) => {
+                    return [
+                        <TextLink
+                            key={runtime.id}
+                            to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
+                        >
+                            {runtime.name}
+                        </TextLink>,
+                        runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
+                        runtime.owner && <User user={runtime.owner} />,
+                        <>
+                            {i ? (
+                                <WithCurrentAuth id='runtime.version.revert'>
+                                    <Button
+                                        size='mini'
+                                        kind='tertiary'
+                                        key={runtime.id}
+                                        onClick={() => handleRevert(runtime)}
+                                    >
+                                        {t('Revert')}
+                                    </Button>
+                                </WithCurrentAuth>
+                            ) : null}
+                            &nbsp;&nbsp;
+                            <CopyToClipboard
+                                content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
+                            />
+                        </>,
+                    ]
+                }) ?? []
+            }
+            paginationProps={{
+                start: runtimesInfo.data?.pageNum,
+                count: runtimesInfo.data?.pageSize,
+                total: runtimesInfo.data?.total,
+                afterPageChange: () => {
+                    runtimesInfo.refetch()
+                },
+            }}
+        />
     )
 }

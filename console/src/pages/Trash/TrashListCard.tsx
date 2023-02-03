@@ -4,14 +4,14 @@ import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchTrashs } from '@/domain/trash/hooks/useFetchTrashs'
 import { useStyletron } from 'baseui'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
+import { QueryInput } from '@starwhale/ui/Input'
 import { ITrashSchema } from '@/domain/trash/schemas/trash'
 import { useParams } from 'react-router'
 import { recoverTrash, removeTrash } from '@/domain/trash/services/trash'
 import Table from '@/components/Table'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { getReadableStorageQuantityStr } from '@/utils'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 
 export default function TrashListCard() {
@@ -66,7 +66,7 @@ export default function TrashListCard() {
                             trash.retentionTime && formatTimestampDateTime(trash.retentionTime),
                             <>
                                 <ConfirmButton
-                                    as='link'
+                                    as='negative'
                                     title={t('trash.remove.confirm')}
                                     onClick={async () => {
                                         await removeTrash(projectId, trash.id)
@@ -78,7 +78,7 @@ export default function TrashListCard() {
                                 </ConfirmButton>
                                 &nbsp;&nbsp;
                                 <ConfirmButton
-                                    as='link'
+                                    kind='tertiary'
                                     title={t('trash.restore.confirm')}
                                     onClick={async () => {
                                         await recoverTrash(projectId, trash.id)

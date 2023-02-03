@@ -68,7 +68,7 @@ export default function BaseLayout({
                     }}
                 >
                     {(breadcrumbItems || extra) && (
-                        <div style={{ marginBottom: 27, display: 'flex', alignItems: 'center' }}>
+                        <div style={{ marginBottom: 13, display: 'flex', alignItems: 'center' }}>
                             {breadcrumbItems && (
                                 <div style={{ flexShrink: 0 }}>
                                     <Breadcrumbs
@@ -94,7 +94,7 @@ export default function BaseLayout({
                                                     role='button'
                                                     tabIndex={0}
                                                     style={{
-                                                        fontSize: '13px',
+                                                        fontSize: '14px',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 6,

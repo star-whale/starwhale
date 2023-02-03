@@ -1,18 +1,20 @@
-import { BaseThemeType } from '@/theme'
-import { useThemeDetector } from './useThemeDetector'
-import { useThemeType } from './useThemeType'
+import { BaseThemeType } from '@starwhale/ui/theme'
+// import { useThemeDetector } from './useThemeDetector'
+// import { useThemeType } from './useThemeType'
 
 export const useCurrentThemeType = (): BaseThemeType => {
-    const { themeType } = useThemeType()
+    // const { themeType } = useThemeType()
 
-    const systemIsDark = useThemeDetector()
+    // const systemIsDark = useThemeDetector()
 
-    if (themeType === 'followTheSystem') {
-        if (systemIsDark) {
-            return 'dark'
-        }
-        return 'light'
-    }
+    // if (themeType === 'followTheSystem') {
+    //     if (systemIsDark) {
+    //         return 'dark'
+    //     }
+    //     return 'light'
+    // }
 
-    return themeType
+    // return themeType
+
+    return 'deep'
 }

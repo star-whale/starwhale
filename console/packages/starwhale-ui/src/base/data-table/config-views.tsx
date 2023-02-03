@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { StyledDropdownListItem } from 'baseui/select'
-import Select from '@/components/Select'
+import Select from '@starwhale/ui/Select'
 import { StyledList, StyledEmptyState, OptionListProps } from 'baseui/menu'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'
@@ -110,17 +110,34 @@ function ConfigViews(props: PropsT) {
                 animate
                 autoFocus
                 overrides={{
+                    DialogContainer: {
+                        style: {
+                            height: '100vh',
+                        },
+                    },
                     Dialog: {
                         style: {
                             width: '700px',
                             display: 'flex',
                             flexDirection: 'column',
+                            minHeight: '640px',
+                            maxHeight: 'calc(100% - 100px)',
                         },
                     },
                 }}
             >
                 <ModalHeader>{!store.viewEditing?.id ? t('Add a New View') : t('Edit View')}</ModalHeader>
-                <ModalBody style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <ModalBody
+                    className='inherit-height'
+                    style={{
+                        flex: '1',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px',
+                        overflow: 'auto',
+                        paddingRight: '12px',
+                    }}
+                >
                     <ViewsEdit
                         ref={viewRef}
                         view={store.viewEditing}
@@ -146,7 +163,7 @@ function ConfigViews(props: PropsT) {
                             store.onShowViewModel(false, null)
                         }}
                     >
-                        Apply
+                        Save
                     </Button>
                 </ModalFooter>
             </Modal>
@@ -179,7 +196,7 @@ function ConfigViews(props: PropsT) {
                             setIsManageViewOpen(false)
                         }}
                     >
-                        Apply
+                        Save
                     </Button>
                 </ModalFooter>
             </Modal>
@@ -256,7 +273,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
 
     return (
         <StyledList
-            ref={ref}
+            ref={ref as any}
             $style={{
                 maxHeight: '60vh',
             }}

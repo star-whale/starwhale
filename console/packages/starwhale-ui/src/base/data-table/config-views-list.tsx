@@ -3,9 +3,9 @@ import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { StyledLink } from 'baseui/link'
 import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
-import { useStyletron } from 'baseui'
 import { ConfigT } from './types'
-import Toggle from '../../Select/Toggle'
+import { Toggle } from '../../Select'
+import { themedUseStyletron } from '../../theme/styletron'
 
 type ViewListPropsT = {
     views: ConfigT[]
@@ -13,7 +13,7 @@ type ViewListPropsT = {
 }
 function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
     const [t] = useTranslation()
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
     const [views, setViews] = React.useState(
         props.views.map((v) => ({
             ...v,
@@ -88,7 +88,7 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                 },
                 TableHeadCell: {
                     style: {
-                        backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                        backgroundColor: theme.brandTableHeaderBackground,
                         fontWeight: 'bold',
                         borderBottomWidth: 0,
                         fontSize: '14px',

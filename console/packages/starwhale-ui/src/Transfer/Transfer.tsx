@@ -1,5 +1,4 @@
 import { useStyletron } from 'baseui'
-import { Search } from 'baseui/icon'
 import React, { useCallback, useMemo } from 'react'
 import { createUseStyles } from 'react-jss'
 import { ColumnT } from '../base/data-table/types'
@@ -8,6 +7,7 @@ import IconFont from '../IconFont'
 import Input from '../Input'
 import TransferList from './TransferList'
 import useUnSortedSelection from '../utils/useUnsortedSelection'
+import { BusyPlaceholder } from '../BusyLoaderWrapper'
 
 const useStyles = createUseStyles({
     transfer: {
@@ -26,11 +26,11 @@ const useStyles = createUseStyles({
         },
         '& .transfer-list': {
             flex: 1,
-            borderRadius: '4px',
             display: 'flex',
             overflow: 'hidden',
         },
         '& .transfer-list-content': {
+            borderRadius: '4px',
             border: '1px solid #CFD7E6',
             flex: '1',
             display: 'flex',
@@ -175,7 +175,7 @@ export default function Transfer({
     }, [rightOperators, value, onChange])
 
     return (
-        <div className={styles.transfer}>
+        <div className={`${styles.transfer} inherit-height`}>
             {isSearchable && (
                 <div className='query'>
                     <Input
@@ -189,7 +189,7 @@ export default function Transfer({
                                             paddingLeft: theme.sizing.scale500,
                                         })}
                                     >
-                                        <Search size='18px' />
+                                        <IconFont type='search' kind='gray' />
                                     </div>
                                 )
                             },
@@ -201,16 +201,38 @@ export default function Transfer({
                 </div>
             )}
             <div className='list'>
-                <TransferList columns={$leftFilteredColumns} operators={leftOperators} />
+                <TransferList columns={$leftFilteredColumns} operators={leftOperators} title='Invisible Columns' />
                 <div className='transfer-list-toolbar'>
-                    <Button disabled={leftOperators?.selectedIds?.length === 0} onClick={handleToRight}>
+                    <Button
+                        disabled={leftOperators?.selectedIds?.length === 0}
+                        onClick={handleToRight}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    height: '40px',
+                                },
+                            },
+                        }}
+                    >
                         <IconFont type='arrow_right' />
                     </Button>
-                    <Button disabled={rightOperators?.selectedIds?.length === 0} onClick={handleToLeft}>
+                    <Button
+                        disabled={rightOperators?.selectedIds?.length === 0}
+                        onClick={handleToLeft}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    height: '40px',
+                                },
+                            },
+                        }}
+                    >
                         <IconFont type='arrow_left' />
                     </Button>
                 </div>
                 <TransferList
+                    title='Visible Columns'
+                    emptyMessage={() => <BusyPlaceholder />}
                     columns={$rightFilteredColumns}
                     isDragable={isDragable}
                     operators={{

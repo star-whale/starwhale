@@ -11,11 +11,11 @@ import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { Button } from '@starwhale/ui'
 import { usePage } from '@/hooks/usePage'
 import qs from 'qs'
-import Checkbox from '@/components/Checkbox'
+import Checkbox from '@starwhale/ui/Checkbox'
 import { STYLE_TYPE } from 'baseui/checkbox'
 import { createUseStyles } from 'react-jss'
 import { useQueryArgs } from '@starwhale/core'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVersion'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
@@ -30,8 +30,10 @@ const useStyles = createUseStyles({
         background: '#EBF1FF',
         borderRadius: '12px',
         padding: '3px 10px',
-        top: '5px',
-        right: '30px',
+        top: 'calc(50% - 9px)',
+        right: '28px',
+        fontSize: '12px',
+        lineHeight: '12px',
     },
 })
 
@@ -118,6 +120,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const extra = useMemo(() => {
         return (
             <ConfirmButton
+                as='negative'
                 title={t('model.remove.confirm')}
                 onClick={async () => {
                     await removeModel(projectId, modelId)
@@ -211,7 +214,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     },
                                 },
                             }}
-                            as='withIcon'
+                            kind='tertiary'
                             startEnhancer={() => <IconFont type='runtime' />}
                             onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}
                         >

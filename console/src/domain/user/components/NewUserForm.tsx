@@ -3,10 +3,10 @@ import { Button } from 'baseui/button'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import { INewUserSchema } from '@user/schemas/user'
-import { RadioGroup, Radio } from 'baseui/radio'
+import { RadioGroup, Radio } from '@starwhale/ui/Radio'
 import { shouldBeEqual, minLength } from '@/components/Form/validators'
 import { passwordMinLength } from '@/consts'
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 
 export interface INewUserFormProps {
     onSubmit: (data: INewUserSchema) => Promise<void>

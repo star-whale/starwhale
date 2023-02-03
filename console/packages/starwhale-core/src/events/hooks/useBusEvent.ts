@@ -9,7 +9,7 @@ export function useBusEvent<T extends BusEvent>(eventBus: EventBus, eventType: B
     const [event, setEvent] = useState<T | undefined>()
 
     useEffect(() => {
-        const sub = eventBus.subscribe(eventType, setEvent)
+        const sub = eventBus.subscribe(eventType, setEvent as any)
         return () => sub.unsubscribe()
     }, [eventBus, eventType])
 

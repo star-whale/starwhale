@@ -6,17 +6,16 @@ import { ICreateProjectSchema } from '@project/schemas/project'
 import { fetchProject, changeProject } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
-import IconFont from '@/components/IconFont'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { useHistory } from 'react-router-dom'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { createUseStyles } from 'react-jss'
 import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMembers'
-import Button from '@/components/Button'
 import { useQuery } from 'react-query'
 import Avatar from '@/components/Avatar'
 import WithAuth from '@/api/WithAuth'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { Button } from '@starwhale/ui'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -87,11 +86,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 <div className={styles.rowValue}>{[project.owner?.name, project.name].join('/')}</div>
                 <div className={styles.rowEnd}>
                     <WithAuth role={role} id='project.update'>
-                        <Button
-                            onClick={() => onEdit?.()}
-                            as='withIcon'
-                            startEnhancer={() => <IconFont type='edit' size={13} />}
-                        >
+                        <Button onClick={() => onEdit?.()} icon='edit' kind='tertiary'>
                             {t('Edit')}
                         </Button>
                     </WithAuth>
@@ -126,8 +121,8 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     <WithAuth role={role} id='member.update'>
                         <Button
                             onClick={() => history.push(`/projects/${project.id}/members`)}
-                            as='withIcon'
-                            startEnhancer={() => <IconFont type='a-managemember' size={13} />}
+                            icon='a-managemember'
+                            kind='tertiary'
                         >
                             {t('Manage Member')}
                         </Button>

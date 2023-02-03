@@ -2,32 +2,30 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
 import ModelVersionSelector, { IDataSelectorRef } from '@/domain/model/components/ModelVersionSelector'
 import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
-import NumberInput from '@/components/Input/NumberInput'
+import Input, { NumberInput } from '@starwhale/ui/Input'
 import _ from 'lodash'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
 import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
-import Input from '@/components/Input'
 import Editor from '@monaco-editor/react'
 import yaml from 'js-yaml'
-import Toggle from '@/components/Select/Toggle'
 import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
-import IconFont from '@/components/IconFont'
-import Button from '@/components/Button'
+import IconFont from '@starwhale/ui/IconFont'
+import Button from '@starwhale/ui/Button'
 import ResourceSelector from '@/domain/setting/components/ResourceSelector'
 import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
 
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
+import { Toggle } from '@starwhale/ui/Select'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -377,16 +375,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <DatasetVersionSelector projectId={projectId} datasetId={datasetId} autoSelected />
                     </FormItem>
                 )}
-                {/* <div className='fac'>
-                    <Button
-                        size='compact'
-                        type='button'
-                        onClick={handleAddDataset}
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                    >
-                        Add
-                    </Button>
-                </div> */}
             </div>
             {/* <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
@@ -408,8 +396,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button
-                        size={SIZE.compact}
-                        kind={KIND.secondary}
+                        kind='secondary'
                         type='button'
                         onClick={() => {
                             history.goBack()
@@ -417,7 +404,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         {t('Cancel')}
                     </Button>
-                    <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(job, values)}>
+                    <Button isLoading={loading} disabled={!isModified(job, values)}>
                         {t('submit')}
                     </Button>
                 </div>

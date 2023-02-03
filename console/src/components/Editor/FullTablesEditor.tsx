@@ -4,7 +4,7 @@ import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useDatastoreTablesByPrefix, WidgetStoreState } from '@starwhale/core'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { withEditorRegister } from '.'
 

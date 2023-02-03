@@ -5,7 +5,6 @@ import BaseLink, { ILinkProps } from './Link'
 
 const useLinkStyles = createUseStyles({
     link: {
-        // display: 'inline-block',
         textDecoration: 'none',
         flex: 1,
         width: '100%',

@@ -33,8 +33,8 @@ Secondary.args = {
 export const ButtonWithIcon = Template.bind({})
 ButtonWithIcon.args = {
     size: 'compact',
-    as: 'withIcon',
-    startEnhancer: () => <IconFont type='runtime' />,
+    kind: 'tertiary',
+    icon: 'runtime',
     children: 'Button',
 }
 

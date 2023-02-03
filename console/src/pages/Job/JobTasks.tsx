@@ -7,8 +7,9 @@ import { Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
 import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
-import Accordion from '@/components/Accordion'
+import Accordion from '@starwhale/ui/Accordion'
 import TaskListCard from './TaskListCard'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IScrollProps {
     scrollTop: number
@@ -18,6 +19,7 @@ export interface IScrollProps {
 
 export default function JobTasks() {
     const [t] = useTranslation()
+    const [, theme] = themedUseStyletron()
     const [follow, setFollow] = useState(true)
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
@@ -160,7 +162,7 @@ export default function JobTasks() {
                                         height: '800px',
                                         paddingBottom: '0px',
                                         paddingTop: '0px',
-                                        backgroundColor: 'var(--color-brandBgSecondary)',
+                                        backgroundColor: theme.brandBgSecondary,
                                     },
                                 },
                             }}

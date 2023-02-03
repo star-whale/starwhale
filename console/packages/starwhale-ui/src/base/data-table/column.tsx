@@ -6,7 +6,7 @@ import { useStyletron } from 'baseui'
 import type { ColumnT } from './types.js'
 import _ from 'lodash'
 import cn from 'classnames'
-import Checkbox from '@/components/Checkbox'
+import Checkbox from '../../Checkbox'
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     return {

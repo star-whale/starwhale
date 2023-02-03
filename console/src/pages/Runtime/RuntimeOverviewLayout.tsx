@@ -7,17 +7,16 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime, removeRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import Accordion from '@/components/Accordion'
+import Accordion from '@starwhale/ui/Accordion'
 import { Panel } from 'baseui/accordion'
-import Button from '@/components/Button'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
-import IconFont from '@/components/IconFont'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
 import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/hooks/useRuntimeVersion'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
+import { Button } from '@starwhale/ui'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -166,6 +165,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
     const extra = useMemo(() => {
         return (
             <ConfirmButton
+                as='negative'
                 title={t('runtime.remove.confirm')}
                 onClick={async () => {
                     await removeRuntime(projectId, runtimeId)
@@ -195,8 +195,8 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
             >
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            {runtimeVersionId && (
+                        {runtimeVersionId && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                 <div style={{ width: '280px' }}>
                                     <RuntimeVersionSelector
                                         projectId={projectId}
@@ -211,23 +211,23 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                                         }
                                     />
                                 </div>
-                            )}
-                            {runtimeVersionId && (
                                 <Button
-                                    as='withIcon'
-                                    startEnhancer={() => <IconFont type='runtime' />}
+                                    icon='runtime'
+                                    kind='tertiary'
                                     onClick={() =>
                                         history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)
                                     }
                                 >
                                     {t('History')}
                                 </Button>
-                            )}
-                        </div>
-                        {runtimeVersionId && <BaseNavTabs navItems={navItems} />}
-                        <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>
-                            {children}
-                        </div>
+                            </div>
+                        )}
+                        {runtimeVersionId && (
+                            <div style={{ marginBottom: '10px' }}>
+                                <BaseNavTabs navItems={navItems} />{' '}
+                            </div>
+                        )}
+                        <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
                     </div>
                 </Panel>
             </Accordion>

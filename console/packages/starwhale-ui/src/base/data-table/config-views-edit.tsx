@@ -2,7 +2,7 @@ import React from 'react'
 import { useStyletron } from 'baseui'
 import { LabelSmall } from 'baseui/typography'
 import { SORT_DIRECTIONS } from '@starwhale/ui/base/data-table/constants'
-import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
+import { RadioGroup, Radio, ALIGN } from '../../Radio'
 import { ColumnT, ConfigT } from './types'
 import ConfigManageColumns from './config-manage-columns'
 import Input from '../../Input'
@@ -62,7 +62,13 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 })}
             >
                 <LabelSmall>View Name *</LabelSmall>
-                <Input required value={name} onChange={(event) => setName((event.target as HTMLInputElement).value)} />
+                <Input
+                    placeholder='input text'
+                    required
+                    clearable
+                    value={name}
+                    onChange={(event) => setName((event.target as HTMLInputElement).value)}
+                />
             </div>
             {/* <CategoricalFilter
                 ref={filterRef}
@@ -71,8 +77,19 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 rows={props.rows}
                 filters={props.view?.filters ?? []}
             /> */}
-            <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
-            <ConfigManageColumns ref={columnRef} isInline view={props.view} columns={props.columns ?? []} />
+            <div
+                className={css({
+                    display: 'flex',
+                    gap: '10px',
+                    flexDirection: 'column',
+                })}
+            >
+                <LabelSmall>Add Filter</LabelSmall>
+                <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
+            </div>
+            <div className='inherit-height'>
+                <ConfigManageColumns ref={columnRef} isInline view={props.view} columns={props.columns ?? []} />
+            </div>
             <div
                 className={css({
                     display: 'flex',

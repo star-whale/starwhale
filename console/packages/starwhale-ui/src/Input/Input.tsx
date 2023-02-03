@@ -8,7 +8,7 @@ export interface IInputProps extends InputProps {
     size?: keyof typeof SIZE
 }
 
-export default function Input({ size = 'compact', ...props }: IInputProps) {
+export function Input({ size = 'compact', ...props }: IInputProps) {
     const overrides = mergeOverrides(
         {
             Root: {
@@ -21,6 +21,20 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
                     'paddingRight': '0px',
                     ':hover': {
                         borderColor: '#799EE8',
+                    },
+                    ':focus': {
+                        backgroundColor: '#fff',
+                    },
+                },
+            },
+            ClearIcon: {
+                style: {
+                    'width': '20px !important',
+                    'height': '20px !important',
+                    'fill': 'rgba(2,16,43,0.20)  !important',
+                    'color': 'rgba(2,16,43,0.20)  !important',
+                    ':hover': {
+                        fill: 'rgba(2,16,43,0.40)  !important',
                     },
                 },
             },

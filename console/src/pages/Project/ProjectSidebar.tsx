@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { useParams } from 'react-router-dom'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()

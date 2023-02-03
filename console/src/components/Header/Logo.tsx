@@ -5,10 +5,10 @@ import smallLogoImg from '@/assets/logo_small_en_white.svg'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 import normalLogoGrayImg from '@/assets/logo_normal_en_gray.svg'
 import normalLogoBlueImg from '@/assets/logo_normal_en_blue.png'
-import { IComposedComponentProps } from '@/theme'
 import { createUseStyles } from 'react-jss'
 import classNames from 'classnames'
 import { sidebarFoldedWidth, sidebarExpandedWidth, headerHeight } from '@/consts'
+import { IComposedComponentProps } from '@starwhale/ui/theme'
 
 const useLogoStyles = createUseStyles({
     logoWrapper: {

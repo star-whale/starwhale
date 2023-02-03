@@ -4,7 +4,7 @@ import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
-import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
+import { RadioGroup, Radio, ALIGN } from '@starwhale/ui/Radio'
 import { ICreateDatasetVersionSchema, IDatasetVersionSchema } from '../schemas/datasetVersion'
 
 const { Form, FormItem } = createForm<ICreateDatasetVersionSchema>()

@@ -1,4 +1,4 @@
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { getRocAucConfig } from '@/components/Indicator/utils'
 import { useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import React from 'react'

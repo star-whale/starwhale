@@ -5,7 +5,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { Spinner } from 'baseui/spinner'
 import { Link } from 'react-router-dom'
 import { durationToStr } from '@/utils/datetime'
-import IconFont from '../IconFont/index'
+import IconFont from '@starwhale/ui/IconFont'
 import './index.scss'
 
 enum Status {
