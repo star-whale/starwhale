@@ -18,7 +18,7 @@ const useLinkStyles = createUseStyles({
 
 export type ILinkProps = {
     to: string
-    tooltip?: StatefulTooltipProps
+    tooltip?: StatefulTooltipProps | Pick<StatefulTooltipProps, 'content' | 'placement'>
     children: React.ReactNode
     style?: React.CSSProperties
     className?: string

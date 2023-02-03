@@ -111,7 +111,7 @@
     "styletron-standard": "^3.1.0",
     "ts-auto-mock": "^3.5.0",
     "tsconfig-paths-webpack-plugin": "^3.5.2",
-    "typescript": "4.6.4",
+    "typescript": "4.5.3",
     "uuid": "^8.3.2",
     "vite": "^3.0.4",
     "vite-plugin-multi-pages": "^0.0.8",
@@ -122,7 +122,8 @@
     "xterm-addon-fit": "^0.5.0",
     "xterm-addon-web-links": "^0.4.0",
     "yarn": "^1.22.19",
-    "zustand": "v4.1.1"
+    "zustand": "v4.1.1",
+    "webpack": ">=4.43.0 <6.0.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p ./tsconfig.json",

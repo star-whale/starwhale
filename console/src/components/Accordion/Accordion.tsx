@@ -2,7 +2,7 @@ import React from 'react'
 import { Accordion as BaseAccordion, type AccordionProps } from 'baseui/accordion'
 import { mergeOverrides } from '@/utils/baseui'
 
-export interface IAccordionProps extends AccordionProps {
+export interface IAccordionProps extends Partial<AccordionProps> {
     className?: string
 }
 

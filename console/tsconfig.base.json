@@ -11,6 +11,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "strictFunctionTypes": false,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
     "moduleResolution": "node",
@@ -34,10 +35,10 @@
     "packages"
   ],
   "exclude": [
-    "src/stories",
+    "baseui/**",
+    "node_modules/**",
+    "**/stories/**",
     "**/iconfont.js",
-    "baseui/helpers/overrides",
-    "**/node_modules/**",
     "**/__generated__/**",
     "**/__tests__/**",
     "**/build/**",

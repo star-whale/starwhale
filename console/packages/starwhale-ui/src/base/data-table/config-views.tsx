@@ -273,7 +273,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
 
     return (
         <StyledList
-            ref={ref}
+            ref={ref as any}
             $style={{
                 maxHeight: '60vh',
             }}

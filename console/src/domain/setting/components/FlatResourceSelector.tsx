@@ -125,7 +125,7 @@ export default function FlatResourceSelector({ resourceTypes, className, value, 
                                 placeholder={i.defaults}
                                 startEnhancer={() => <span>{i.name.toUpperCase()}</span>}
                                 endEnhancer={() => <span>{i.unit}</span>}
-                                onChange={_onChange(i.name)}
+                                onChange={_onChange(i.name) as any}
                             />
                         )}
                     </div>

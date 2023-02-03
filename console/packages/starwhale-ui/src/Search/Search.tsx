@@ -3,9 +3,7 @@ import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
 import _ from 'lodash'
-// eslint-disable-next-line import/no-cycle
 import FilterRenderer from './FilterRenderer'
-// eslint-disable-next-line import/no-cycle
 import { ValueT } from './types'
 import IconFont from '../IconFont'
 
@@ -26,35 +24,11 @@ export const useStyles = createUseStyles({
         'flexGrow': '0',
         'overflowY': 'hidden',
     },
-    filters: {
-        'position': 'relative',
-        'display': 'inline-flex',
-        'flexWrap': 'nowrap',
-        'gap': '1px',
-        'cursor': 'pointer',
-        'width': 'auto',
-        'height': '22px',
-        '&:hover $label': {
-            backgroundColor: '#EDF3FF',
-        },
-    },
     startIcon: {
         width: '34px',
         display: 'grid',
         placeItems: 'center',
         marginRight: '-10px',
-    },
-    label: {
-        height: '22px',
-        lineHeight: '22px',
-        padding: '0 8px',
-        background: '#EEF1F6',
-        borderRadius: '4px',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        overflow: ' hidden',
-        display: 'flex',
-        alignItems: 'center',
     },
 })
 

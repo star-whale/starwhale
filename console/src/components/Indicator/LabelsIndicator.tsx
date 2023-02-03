@@ -50,7 +50,7 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
     const columns = [
         StringColumn({
             title: t('Label'),
-            mapDataToValue: (data: ILabel) => data.id,
+            mapDataToValue: (data: ILabel) => data.id ?? '',
         }),
         CustomColumn({
             title: t('Precision'),

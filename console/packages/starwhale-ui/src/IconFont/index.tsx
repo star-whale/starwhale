@@ -77,7 +77,18 @@ export type IconTypesT =
     | 'edit'
     | 'info'
     | 'item-reduce'
+    | 'item-add'
+    | 'emptyChart'
+    | 'download'
+    | 'searchEmpty'
+    | 'empty'
+    | 'reset'
     | 'delete'
+    | 'a-passwordresets'
+    | 'file'
+    | 'file2'
+    | 'check'
+    | 'invalidFile'
 
 interface IIconFontProps {
     style?: React.CSSProperties

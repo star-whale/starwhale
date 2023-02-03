@@ -16,7 +16,7 @@ export default function Button({
     isFull = false,
     size = 'compact',
     kind = 'primary',
-    as = 'button',
+    as,
     icon,
     children,
     ...props

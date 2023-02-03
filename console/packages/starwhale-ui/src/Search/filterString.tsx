@@ -1,7 +1,5 @@
-import { FilterTypeOperators, KIND } from './constants'
-// eslint-disable-next-line import/no-cycle
 import Filter from './filter'
-import { FilterT } from './types'
+import { FilterT, FilterTypeOperators, KIND } from './types'
 
 function FilterString(): FilterT {
     return Filter({

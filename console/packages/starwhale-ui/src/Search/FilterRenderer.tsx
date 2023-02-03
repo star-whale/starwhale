@@ -2,13 +2,37 @@ import { ColumnFilterModel, DataTypeT } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
-// eslint-disable-next-line import/no-cycle
 import { FilterPropsT, ValueT } from './types'
-// eslint-disable-next-line import/no-cycle
-import { useStyles } from './Search'
 import IconFont from '../IconFont'
-// eslint-disable-next-line import/no-cycle
 import { dataStoreToFilter } from './utils'
+import { createUseStyles } from 'react-jss'
+
+export const useStyles = createUseStyles({
+    filters: {
+        'position': 'relative',
+        'display': 'inline-flex',
+        'flexWrap': 'nowrap',
+        'gap': '1px',
+        'cursor': 'pointer',
+        'width': 'auto',
+        'height': '22px',
+        '&:hover $label': {
+            backgroundColor: '#EDF3FF',
+        },
+    },
+    label: {
+        height: '22px',
+        lineHeight: '22px',
+        padding: '0 8px',
+        background: '#EEF1F6',
+        borderRadius: '4px',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        overflow: ' hidden',
+        display: 'flex',
+        alignItems: 'center',
+    },
+})
 
 // @ts-ignore
 const containsNode = (parent, child) => {

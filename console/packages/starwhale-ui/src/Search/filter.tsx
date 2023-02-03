@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react'
 import { StatefulMenu } from 'baseui/menu'
 import { PLACEMENT, Popover } from 'baseui/popover'
-import { FilterT } from './types'
-// eslint-disable-next-line import/no-cycle
-import { useStyles } from './Search'
-// eslint-disable-next-line import/no-cycle
-import { Operators } from './utils'
+import { FilterT, Operators } from './types'
+import { createUseStyles } from 'react-jss'
 
 const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
 
+export const useStyles = createUseStyles({
+    label: {
+        height: '22px',
+        lineHeight: '22px',
+        padding: '0 8px',
+        background: '#EEF1F6',
+        borderRadius: '4px',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        overflow: ' hidden',
+        display: 'flex',
+        alignItems: 'center',
+    },
+})
 function PopoverContainer(props: {
     onItemSelect?: (props: { item: { label: string; type: string } }) => void
     options: any[]
