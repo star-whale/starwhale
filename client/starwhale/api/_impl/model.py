@@ -10,7 +10,6 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
-import loguru
 import jsonlines
 
 from starwhale import URI
@@ -28,6 +27,9 @@ from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetInfo
+
+if t.TYPE_CHECKING:
+    import loguru
 
 
 class _LogType:

@@ -11,6 +11,7 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pyfakefs.fake_filesystem_unittest import Patcher
 
+from starwhale import version
 from starwhale.utils import (
     load_dotenv,
     gen_uniq_version,
@@ -91,6 +92,12 @@ def test_gen_uniq_version() -> None:
     assert len(set(len_versions)) == 1
     short_versions = [v[:5] for v in versions]
     assert len(set(short_versions)) >= cnt * 0.99
+
+
+def test_version() -> None:
+    v = version.STARWHALE_VERSION
+    assert v != ""
+    assert os.environ["SW_VERSION"] == v
 
 
 class TestRetry(TestCase):

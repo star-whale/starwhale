@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 import typing as t
 from abc import abstractmethod
 from dataclasses import dataclass
 
 from rich import console
-from textual import events
 from rich.text import Text
 from rich.style import Style
 from rich.table import box, Table
 from textual.app import Reactive
-from textual.widget import Widget, RenderableType
+from textual.widget import Widget
 
 from starwhale.utils import (
     Order,
@@ -22,6 +23,11 @@ from starwhale.core.eval.view import JobTermView
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.runtime.view import RuntimeTermView
+
+if t.TYPE_CHECKING:
+    from textual import events
+    from textual.widget import RenderableType
+
 
 default_project = f"{STANDALONE_INSTANCE}/{DEFAULT_PROJECT}"
 
