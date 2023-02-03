@@ -192,7 +192,7 @@ export default function DatasetVersionFiles() {
                     overrides: {
                         TableHeadCell: {
                             style: {
-                                backgroundColor:  theme.brandTableHeaderBackground,
+                                backgroundColor: theme.brandTableHeaderBackground,
                                 borderBottomWidth: '0',
                                 fontWeight: 'bold',
                                 fontSize: '14px',
