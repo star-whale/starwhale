@@ -65,7 +65,8 @@ class BundleCopy(CloudRequestMixed):
         force: bool = False,
         **kw: t.Any,
     ) -> None:
-        self.src_uri = Resource(src_uri, typ=ResourceType[typ]).to_uri()
+        self.src_resource = Resource(src_uri, typ=ResourceType[typ])
+        self.src_uri = self.src_resource.to_uri()
         if self.src_uri.instance_type == InstanceType.CLOUD:
             p = kw.get("dest_local_project_uri")
             project = p and Project(p) or None
@@ -73,9 +74,8 @@ class BundleCopy(CloudRequestMixed):
         else:
             project = None
 
-        self.dest_uri = Resource(
-            dest_uri, typ=ResourceType[typ], project=project
-        ).to_uri()
+        self.dest_resource = Resource(dest_uri, typ=ResourceType[typ], project=project)
+        self.dest_uri = self.dest_resource.to_uri()
 
         self.typ = typ
         self.force = force

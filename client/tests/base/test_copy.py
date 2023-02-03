@@ -438,6 +438,11 @@ class TestBundleCopy(TestCase):
     def test_dataset_copy_c2l(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/myproject",
+            json={"data": {"id": 1, "name": "myproject"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}",
             json={"message": "existed"},
@@ -610,6 +615,12 @@ class TestBundleCopy(TestCase):
             },
         ]
 
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist",
+            json={"data": {"id": 1, "name": "mnist"}},
+        )
+
         for case in cases:
             head_request = rm.request(
                 HTTPMethod.HEAD,
@@ -722,6 +733,11 @@ class TestBundleCopy(TestCase):
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
     def test_upload_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/project",
+            json={"data": {"id": 1, "name": "project"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde",
             json={"message": "already existed"},
@@ -764,6 +780,11 @@ class TestBundleCopy(TestCase):
     def test_download_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         hash_name1 = "bfa8805ddc2d43df098e43832c24e494ad"
         hash_name2 = "f954056e4324495ae5bec4e8e5e6d18f1b"
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/1",
+            json={"data": {"id": 1, "name": "project"}},
+        )
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest",
