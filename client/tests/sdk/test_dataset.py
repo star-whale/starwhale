@@ -77,9 +77,9 @@ from starwhale.api._impl.dataset.builder import (
     _data_magic,
     _header_size,
     _header_magic,
+    BuildExecutor,
     _header_struct,
     create_generic_cls,
-    SWDSBinBuildExecutor,
 )
 
 from .test_base import BaseTestCase
@@ -166,7 +166,7 @@ def iter_mnist_swds_bin_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
             }
 
 
-class MNISTBuildExecutor(SWDSBinBuildExecutor):
+class MNISTBuildExecutor(BuildExecutor):
     def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
         return {
             "int": 1,
@@ -179,7 +179,7 @@ class MNISTBuildExecutor(SWDSBinBuildExecutor):
         return iter_mnist_swds_bin_item()
 
 
-class MNISTBuildWithIDExecutor(SWDSBinBuildExecutor):
+class MNISTBuildWithIDExecutor(BuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
         return iter_mnist_swds_bin_item_with_id()
 
@@ -330,7 +330,7 @@ class TestDatasetCopy(BaseTestCase):
                         {"name": "as_mask", "type": "BOOL"},
                         {"name": "mask_uri", "type": "STRING"},
                         {"name": "fp", "type": "STRING"},
-                        {"name": "_bytes", "type": "BYTES"},
+                        {"name": "_BaseArtifact__cache_bytes", "type": "BYTES"},
                         {"name": "_type", "type": "STRING"},
                         {"name": "display_name", "type": "STRING"},
                         {"name": "_mime_type", "type": "STRING"},
@@ -344,6 +344,7 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "attributes": [
                                 {"name": "_type", "type": "STRING"},
+                                {"name": "owner", "type": "UNKNOWN"},
                                 {"name": "uri", "type": "STRING"},
                                 {"name": "scheme", "type": "STRING"},
                                 {"name": "offset", "type": "INT64"},
@@ -414,6 +415,7 @@ class TestDatasetCopy(BaseTestCase):
                             "type": "OBJECT",
                             "pythonType": "starwhale.core.dataset.type.Text",
                             "attributes": [
+                                {"name": "_BaseArtifact__cache_bytes", "type": "BYTES"},
                                 {
                                     "name": "link",
                                     "type": "OBJECT",
@@ -423,7 +425,7 @@ class TestDatasetCopy(BaseTestCase):
                                         {"name": "offset", "type": "INT64"},
                                         {"name": "size", "type": "INT64"},
                                     ],
-                                }
+                                },
                             ],
                         },
                         {"type": "STRING", "name": "data_origin"},
@@ -445,6 +447,7 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "id": "idx-0",
                             "data/text": {
+                                "_BaseArtifact__cache_bytes": "",
                                 "link": {
                                     "offset": "0000000000000080",
                                     "size": "0000000000000006",
@@ -551,7 +554,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
     def test_user_raw_with_id_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_user_raw_item_with_id)
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="332211",
@@ -567,7 +570,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
     def test_user_raw_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_user_raw_item)
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="332211",
@@ -582,7 +585,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
     def test_swds_bin_with_id_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_swds_bin_item_with_id)
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="112233",
@@ -597,7 +600,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
     def test_swds_bin_function_handler(self) -> None:
         _cls = create_generic_cls(iter_mnist_swds_bin_item)
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="112233",
@@ -617,7 +620,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
 
         list_f = lambda: [{"d": b"1", "a": 1}, {"d": b"2", "a": 2}, {"d": b"2", "a": 2}]
         _cls = create_generic_cls(list_f)  # type: ignore
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="112233",
@@ -633,7 +636,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             yield {"d": b"1", "a": 1}
 
         _cls = create_generic_cls(_gen_only_one)
-        assert issubclass(_cls, SWDSBinBuildExecutor)
+        assert issubclass(_cls, BuildExecutor)
         with _cls(
             dataset_name="mnist",
             dataset_version="112233",
@@ -986,6 +989,7 @@ class TestDatasetType(TestCase):
     def test_link_standalone(self, m_boto3: MagicMock) -> None:
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
+            owner="mnist/version/latest",
         )
         as_type = link.astype()
         assert as_type["type"] == "link"
@@ -1004,13 +1008,14 @@ class TestDatasetType(TestCase):
             }
         )
 
-        content = link.to_bytes("mnist/version/latest")
+        content = link.to_bytes()
         assert content == raw_content
 
     @Mocker()
     def test_link_cloud(self, rm: Mocker) -> None:
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
+            owner="http://127.0.0.1:8081/project/test/dataset/mnist/version/latest",
         )
 
         rm.request(
@@ -1031,9 +1036,7 @@ class TestDatasetType(TestCase):
             content=raw_content,
         )
 
-        content = link.to_bytes(
-            "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
-        )
+        content = link.to_bytes()
         assert content == raw_content
 
         link2 = Link(uri="http://127.0.0.1:9001/signed_url")
@@ -1508,7 +1511,7 @@ class TestTabularDataset(TestCase):
 
 
 class TestRowWriter(BaseTestCase):
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
     def test_update(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
 
@@ -1532,11 +1535,11 @@ class TestRowWriter(BaseTestCase):
         rw.update(DataRow(index=3, data={"data": Binary(b"test"), "label": 3}))
         assert rw._builder is not None
         assert rw.daemon
-        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+        assert isinstance(rw._builder, BuildExecutor)
         assert m_make_swds.call_count == 1
 
     @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
     def test_update_exception(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
 
@@ -1641,7 +1644,7 @@ class TestRowWriter(BaseTestCase):
             rw.update(DataRow(index=i, data={"data": Binary(b"test"), "label": i}))
         rw.close()
 
-        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+        assert isinstance(rw._builder, BuildExecutor)
         assert rw._queue.qsize() == 0
         assert rw.summary.rows == size
 
@@ -1680,7 +1683,7 @@ class TestRowWriter(BaseTestCase):
         files = list(data_dir.iterdir())
         assert len(files) == 0
 
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
     def test_append_swds_bin(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(
             dataset_name="mnist",
@@ -1688,7 +1691,7 @@ class TestRowWriter(BaseTestCase):
             append=True,
             append_from_version="abcdefg",
         )
-        assert isinstance(rw._builder, SWDSBinBuildExecutor)
+        assert isinstance(rw._builder, BuildExecutor)
 
     def test_flush(self) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")

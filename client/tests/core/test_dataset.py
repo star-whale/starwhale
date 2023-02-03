@@ -59,7 +59,7 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
+    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
     def test_function_handler_make_swds(self, m_swds_bin: MagicMock) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
@@ -393,6 +393,7 @@ class TestJsonDict(TestCase):
                             "_type": data_store.STRING,
                             "uri": data_store.STRING,
                             "scheme": data_store.STRING,
+                            "owner": data_store.UNKNOWN,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "with_local_fs_data": data_store.BOOL,

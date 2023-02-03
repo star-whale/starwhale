@@ -175,12 +175,11 @@ class TabularDatasetRow(ASDictMixin):
     @classmethod
     def artifacts_of_data(cls, content: t.Dict) -> t.List[BaseArtifact]:
         artifacts = []
-        for _, v in content.items():
+        for v in content.values():
             if isinstance(v, dict):
                 artifacts.extend(cls.artifacts_of_data(v))
-            if not isinstance(v, BaseArtifact):
-                continue
-            artifacts.append(v)
+            elif isinstance(v, BaseArtifact):
+                artifacts.append(v)
         return artifacts
 
     def artifacts(self) -> t.List[BaseArtifact]:

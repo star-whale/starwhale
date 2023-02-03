@@ -26,7 +26,6 @@ from starwhale.api.dataset import (
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
-    SWDSBinBuildExecutor,
 )
 from starwhale.api.evaluation import Evaluation
 from starwhale.core.dataset.tabular import get_dataset_consumption
@@ -53,8 +52,7 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
-    "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "SWDSBinBuildExecutor",
+    "BuildExecutor",
     "Binary",
     "Text",
     "Line",

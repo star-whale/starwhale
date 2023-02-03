@@ -2,7 +2,7 @@ import struct
 import typing as t
 from pathlib import Path
 
-from starwhale import Link, GrayscaleImage, SWDSBinBuildExecutor
+from starwhale import Link, BuildExecutor, GrayscaleImage
 
 _TItem = t.Generator[t.Dict[str, t.Any], None, None]
 
@@ -33,7 +33,7 @@ def iter_swds_bin_item() -> _TItem:
             }
 
 
-class DatasetProcessExecutor(SWDSBinBuildExecutor):
+class DatasetProcessExecutor(BuildExecutor):
     def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
         return {"all_labels": list(range(0, 10))}
 
@@ -69,12 +69,12 @@ def iter_user_raw_item() -> _TItem:
             offset += image_size
 
 
-class RawDatasetProcessExecutor(SWDSBinBuildExecutor):
+class RawDatasetProcessExecutor(BuildExecutor):
     def iter_item(self) -> _TItem:
         return iter_user_raw_item()
 
 
-class LinkRawDatasetProcessExecutor(SWDSBinBuildExecutor):
+class LinkRawDatasetProcessExecutor(BuildExecutor):
     _endpoint = "10.131.0.1:9000"
     _bucket = "users"
 

@@ -21,7 +21,6 @@ from ._impl.dataset import (
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
-    SWDSBinBuildExecutor,
 )
 
 # TODO: add dataset build/push/list/info api
@@ -36,8 +35,7 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
-    "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "SWDSBinBuildExecutor",
+    "BuildExecutor",
     "Binary",
     "Text",
     "Line",

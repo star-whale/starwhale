@@ -32,7 +32,6 @@ from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
-D_BIN_TO_LINK_THRESHOLD = 0  # all binary are stored to bin
 
 
 @unique
@@ -208,7 +207,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         link: t.Optional[Link] = None,
     ) -> None:
         self.fp = str(fp) if isinstance(fp, Path) else fp
-        self._bytes: bytes = self.fp if isinstance(self.fp, bytes) else bytes()
+        self.__cache_bytes: bytes = self.fp if isinstance(self.fp, bytes) else bytes()
         self._type = ArtifactType(type).value
 
         _fpath = str(fp) if isinstance(fp, (Path, str)) and fp else ""
@@ -245,26 +244,27 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             self.fp = ""
 
     def clear_cache(self) -> None:
-        self._bytes = bytes()
+        self.__cache_bytes = bytes()
 
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
-        if self._bytes:
-            return self._bytes
+        if self.__cache_bytes:
+            return self.__cache_bytes
         if isinstance(self.fp, bytes):
-            self._bytes = self.fp
-            return self._bytes
+            self.__cache_bytes = self.fp
+            return self.__cache_bytes
         elif self.fp and isinstance(self.fp, (str, Path)):
-            self._bytes = Path(self.fp).read_bytes()
-            return self._bytes
+            self.__cache_bytes = Path(self.fp).read_bytes()
+            return self.__cache_bytes
         elif isinstance(self.fp, io.IOBase):
             _pos = self.fp.tell()
             _content = self.fp.read()
             self.fp.seek(_pos)
-            self._bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
-            return self._bytes
+            self.__cache_bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+            return self.__cache_bytes
         elif self.owner and self.link:
-            self._bytes = self.link.to_bytes(self.owner)
-            return self._bytes
+            self.link.owner = self.owner
+            self.__cache_bytes = self.link.to_bytes()
+            return self.__cache_bytes
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
@@ -307,7 +307,7 @@ class Binary(BaseArtifact, SwObject):
         fp: _TArtifactFP = b"",
         mime_type: MIMEType = MIMEType.UNDEFINED,
         dtype: t.Type = numpy.bytes_,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         super().__init__(
             fp,
@@ -316,7 +316,7 @@ class Binary(BaseArtifact, SwObject):
             (),
             mime_type,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
     def to_numpy(self) -> numpy.ndarray:
@@ -333,7 +333,7 @@ class Image(BaseArtifact, SwObject):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         self.as_mask = as_mask
         self.mask_uri = mask_uri
@@ -344,7 +344,7 @@ class Image(BaseArtifact, SwObject):
             shape=shape or (None, None, 3),
             mime_type=mime_type,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
     def _do_validate(self) -> None:
@@ -389,7 +389,7 @@ class GrayscaleImage(Image):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None, None)
         super().__init__(
@@ -400,7 +400,7 @@ class GrayscaleImage(Image):
             as_mask=as_mask,
             mask_uri=mask_uri,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
 
@@ -412,7 +412,7 @@ class Audio(BaseArtifact, SwObject):
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Type = numpy.float64,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None,)
         super().__init__(
@@ -422,7 +422,7 @@ class Audio(BaseArtifact, SwObject):
             shape,
             mime_type,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
     def _do_validate(self) -> None:
@@ -460,7 +460,7 @@ class Video(BaseArtifact, SwObject):
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Type = numpy.uint8,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None,)
         super().__init__(
@@ -470,7 +470,7 @@ class Video(BaseArtifact, SwObject):
             shape,
             mime_type,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
     # TODO： support to_tensor methods
@@ -643,7 +643,7 @@ class Text(BaseArtifact, SwObject):
         self,
         content: str = "",
         encoding: str = DEFAULT_ENCODING,
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         # TODO: add encoding validate
         self.content = content
@@ -655,7 +655,7 @@ class Text(BaseArtifact, SwObject):
             mime_type=MIMEType.PLAIN,
             encoding=encoding,
             dtype=numpy.str_,
-            **kwargs,
+            link=link,
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
@@ -731,9 +731,11 @@ class Link(ASDictMixin, SwObject):
         offset: int = FilePosition.START.value,
         size: int = -1,
         with_local_fs_data: bool = False,
+        owner: t.Optional[t.Union[str, URI]] = None,
         **kwargs: t.Any,
     ) -> None:
         self._type = "link"
+        self.owner = owner.raw if (owner and isinstance(owner, URI)) else owner
         self.uri = (str(uri)).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
@@ -778,7 +780,7 @@ class Link(ASDictMixin, SwObject):
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, with localFS data:{self.with_local_fs_data}"
 
     @http_retry
-    def to_bytes(self, owner: t.Optional[t.Union[str, URI]] = None) -> bytes:
+    def to_bytes(self) -> bytes:
         # TODO: cache store
         from .store import ObjectStore
 
@@ -787,7 +789,7 @@ class Link(ASDictMixin, SwObject):
             self.offset or 0,
             self.size + self.offset - 1 if self.size else sys.maxsize,
         )
-        store = ObjectStore.get_store(self, owner)
+        store = ObjectStore.get_store(self, self.owner)
         with store.backend._make_file(
             key_compose=key_compose, bucket=store.bucket
         ) as f:

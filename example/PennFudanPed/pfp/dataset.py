@@ -11,12 +11,12 @@ from starwhale import (
     Image,
     MIMEType,
     BoundingBox,
+    BuildExecutor,
     COCOObjectAnnotation,
-    SWDSBinBuildExecutor,
 )
 
 
-class PFPDatasetBuildExecutor(SWDSBinBuildExecutor):
+class PFPDatasetBuildExecutor(BuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]

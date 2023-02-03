@@ -879,13 +879,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(head) == 2
         assert head[0]["index"] == "0"
         assert head[1]["index"] == "1"
-        assert not head[0]["data"]["data"]._bytes
-        assert not head[1]["data"]["data"]._bytes
+        assert not head[0]["data"]["data"]._BaseArtifact__cache_bytes
+        assert not head[1]["data"]["data"]._BaseArtifact__cache_bytes
 
         head = ds.head(n=2, show_raw_data=True)
         assert len(head) == 2
-        assert head[0]["data"]["data"]._bytes == b"data-0"
-        assert head[1]["data"]["data"]._bytes == b"data-1"
+        assert head[0]["data"]["data"].to_bytes() == b"data-0"
+        assert head[1]["data"]["data"].to_bytes() == b"data-1"
 
     @Mocker()
     def test_copy(self, rm: Mocker) -> None:

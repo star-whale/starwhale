@@ -30,7 +30,6 @@ from starwhale.core.dataset.type import (
     DatasetSummary,
     D_ALIGNMENT_SIZE,
     D_FILE_VOLUME_SIZE,
-    D_BIN_TO_LINK_THRESHOLD,
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
@@ -70,7 +69,7 @@ class BinWriter(Protocol):
         ...
 
 
-class FragmentBinWriter:
+class SWDSBinWriter:
 
     """
     bin format:
@@ -102,15 +101,13 @@ class FragmentBinWriter:
         tabular_dataset: TabularDataset,
         alignment_bytes_size: int = D_ALIGNMENT_SIZE,
         volume_bytes_size: int = D_FILE_VOLUME_SIZE,
-        bin2link_threshold: int = D_BIN_TO_LINK_THRESHOLD,
     ) -> None:
         self.tabular_dataset = tabular_dataset
         self.work_dir = work_dir
         self.data_output_dir = data_output_dir
         self.volume_bytes_size = volume_bytes_size
-        self.bin2link_threshold = bin2link_threshold
         self.alignment_bytes_size = alignment_bytes_size
-        self.ds_copy_candidates: t.Dict[str, FragmentBinWriter._SrcPathSpec] = {}
+        self.ds_copy_candidates: t.Dict[str, SWDSBinWriter._SrcPathSpec] = {}
         self.wrote_size = 0
         _, bin_writer_path = tempfile.mkstemp(
             prefix="bin-writer-", dir=str(self.work_dir.absolute())
@@ -121,7 +118,7 @@ class FragmentBinWriter:
         self._to_update_rows: t.List[TabularDatasetRow] = []
         self._lock = threading.Lock()
 
-    def __enter__(self) -> FragmentBinWriter:
+    def __enter__(self) -> SWDSBinWriter:
         return self
 
     def __exit__(
@@ -146,8 +143,8 @@ class FragmentBinWriter:
                     v.link.uri = self._copy_file(v.link.uri, False)
                 if (
                     not v.link
+                    and v.fp
                     and (isinstance(v.fp, bytes) or isinstance(v.fp, io.IOBase))
-                    and len(v.to_bytes()) > self.bin2link_threshold
                 ):
                     artifacts_with_bin = True
                     _bin_section = self._write(v.to_bytes())
@@ -188,7 +185,7 @@ class FragmentBinWriter:
             self.tabular_dataset.put(row)
         self._to_update_rows.clear()
 
-    def _write(self, data: bytes) -> FragmentBinWriter._BinSection:
+    def _write(self, data: bytes) -> SWDSBinWriter._BinSection:
         size = len(data)
         crc = crc32(data)  # TODO: crc is right?
         start = self.dwriter.tell()
@@ -199,7 +196,7 @@ class FragmentBinWriter:
         )
         _padding = b"\0" * padding_size
         self.dwriter.write(_header + data + _padding)
-        _bin_section = FragmentBinWriter._BinSection(
+        _bin_section = SWDSBinWriter._BinSection(
             offset=start,
             size=_header_size + size + padding_size,
             raw_data_offset=start + _header_size,
@@ -291,7 +288,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         if bin_writer:
             self.bin_writer = bin_writer
         else:
-            self.bin_writer = FragmentBinWriter(
+            self.bin_writer = SWDSBinWriter(
                 self.data_tmpdir,
                 self.data_output_dir,
                 self.tabular_dataset,
@@ -402,24 +399,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         return idx, row
 
 
-class SWDSBinBuildExecutor(BaseBuildExecutor):
-    """
-    SWDSBinBuildExecutor builds swds_bin format dataset.
-
-    swds_bin format:
-        header_magic    uint32  I
-        crc             uint32  I
-        _reserved       uint64  Q
-        size            uint32  I
-        padding_size    uint32  I
-        header_version  uint32  I
-        data_magic      uint32  I --> above 32 bytes
-        data bytes...
-        padding bytes...        --> default 4K padding
-    """
-
-    # TODO: add more docstring for class
-
+class BuildExecutor(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
         increased_rows = 0
         with self.bin_writer as bw:
@@ -445,9 +425,6 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             data_byte_size=self.bin_writer.total_bin_size,
         )
         return self._merge_forked_summary(summary)
-
-
-BuildExecutor = SWDSBinBuildExecutor
 
 
 def create_generic_cls(
