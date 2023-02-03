@@ -45,8 +45,8 @@ helm delete starwhale
 
 | Name             | Description                                                                                                                                                                                 | Default Value |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `image.registry` | image registry, you can find Starwhale docker images in docker.io or ghcr.io.                                                                                                               | `ghcr.io`     |
-| `image.org`      | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io) or some custom org name in other registries | `star-whale`  |
+| `image.registry` | image registry, you can find Starwhale docker images in docker.io or ghcr.io or docker-registry.starwhale.cn. For users in the mainland of China, please use docker-registry.starwhale.cn registry. | `ghcr.io`|
+| `image.org`| image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io and docker-registry.starwhale.cn) or some custom org name in other registries | `star-whale`  |
 
 ### 6.2 Starwhale parameters
 
@@ -83,6 +83,13 @@ In minikube mode, you can easy to build an all-in-one starwhale. Run command exa
 
 ```bash
 helm upgrade --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --set minikube.enabled=true
+```
+
+For users in the mainland of China, please use the following command:
+
+```bash
+export SWNAME=starwhale SWNS=starwhale
+helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio --set image.registry=docker-registry.starwhale.cn --set minio.global.imageRegistry=docker-registry.starwhale.cn --set mysql.global.imageRegistry=docker-registry.starwhale.cn
 ```
 
 ### 6.5 dev mode
