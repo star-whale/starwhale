@@ -27,10 +27,10 @@ const useStyles = createUseStyles({
             backgroundColor: '#FFF',
         },
         '& .table-row--hovering': {
-            backgroundColor: '#EFEEF5',
+            backgroundColor: '#EBF1FF',
         },
         '& .table-row--hovering .column-cell > *': {
-            backgroundColor: '#EFEEF5 !important',
+            backgroundColor: '#EBF1FF !important',
         },
     },
     tableCompareable: {

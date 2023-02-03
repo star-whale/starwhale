@@ -3,7 +3,9 @@ import _ from 'lodash'
 import React from 'react'
 import { JSONTree } from 'react-json-tree'
 import { createUseStyles } from 'react-jss'
-import IconFont from '../IconFont/index'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { IThemedStyleProps } from '@starwhale/ui/theme'
+import { IconFont } from '@starwhale/ui'
 
 const useStyles = createUseStyles({
     summaryRoot: {
@@ -15,16 +17,16 @@ const useStyles = createUseStyles({
         lineHeight: '24px',
         alignItems: 'center',
     },
-    summaryLi: {
+    summaryLi: (props: IThemedStyleProps) => ({
         'borderRadius': '4px',
         'paddingLeft': '43px',
         'gap': 12,
         'display': 'flex',
         '&:before': {
             content: '"o"',
-            color: 'var(--color-brandFontNote)',
+            color: props.theme.brandFontNote,
         },
-    },
+    }),
 })
 
 export interface ISummaryIndicatorProps {
@@ -33,46 +35,8 @@ export interface ISummaryIndicatorProps {
 }
 
 export default function SummaryIndicator({ data, isTreeView = false }: ISummaryIndicatorProps) {
-    const styles = useStyles({})
-    // const $labelRender = useCallback(([key]) => {
-    //     return (
-    //         <div
-    //             key={key}
-    //             style={{
-    //                 backgroundColor: '#F0F4FF',
-    //                 borderRadius: '4px',
-    //                 padding: '0 24px',
-    //                 gap: 12,
-    //                 display: 'flex',
-    //                 lineHeight: '24px',
-    //             }}
-    //         >
-    //             <p
-    //                 style={{
-    //                     color: 'rgba(2,16,43,0.60)',
-    //                 }}
-    //             >
-    //                 {key}
-    //             </p>
-    //         </div>
-    //     )
-    // }, [])
-
-    // const $valueRenderer = useCallback((raw) => {
-    //     return (
-    //         <span
-    //             style={{
-    //                 backgroundColor: '#F0F4FF',
-    //                 borderRadius: '4px',
-    //                 padding: '0 24px',
-    //                 gap: 12,
-    //                 lineHeight: '24px',
-    //             }}
-    //         >
-    //             {raw}
-    //         </span>
-    //     )
-    // }, [])
+    const [, theme] = themedUseStyletron()
+    const styles = useStyles({ theme })
 
     if (!_.isObject(data)) {
         return (

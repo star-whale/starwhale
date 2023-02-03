@@ -3,8 +3,8 @@ import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
-import Select from '@/components/Select'
-import { RadioGroup, Radio } from 'baseui/radio'
+import Select from '@starwhale/ui/Select'
+import { RadioGroup, Radio } from '@starwhale/ui/Radio'
 import { FormControl } from 'baseui/form-control'
 import { Textarea } from 'baseui/textarea'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -73,7 +73,7 @@ const Visibility = ({ value, onChange }: IVisibilityProps) => {
                     onChange?.(e.target.value)
                 }}
             >
-                <Radio value={visPublic.name}> {t('Public')}</Radio>
+                <Radio value={visPublic.name}>{t('Public')}</Radio>
                 <Radio value={visPrivate.name}>{t('Private')}</Radio>
             </RadioGroup>
         </FormControl>

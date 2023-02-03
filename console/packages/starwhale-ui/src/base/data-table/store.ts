@@ -4,9 +4,7 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
-// eslint-disable-next-line import/no-cycle
 import { ConfigT, QueryT, SortDirectionsT } from './types'
-// eslint-disable-next-line import/no-cycle
 import { FilterOperateSelectorValueT } from './filter-operate-selector'
 
 // eslint-disable-next-line prefer-template

@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 import Plot from 'react-plotly.js'
 import _ from 'lodash'
 
-import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
+import BusyLoaderWrapper from '@starwhale/ui/BusyLoaderWrapper/BusyLoaderWrapper'
 
 import { IPlotlyVisualizerProps } from './types'
 

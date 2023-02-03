@@ -7,9 +7,9 @@ import { IDatasetDetailSchema } from '@/domain/dataset/schemas/dataset'
 import { IDatasetVersionDetailSchema } from '@/domain/dataset/schemas/datasetVersion'
 import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
-import { ThemeType } from '@/theme'
 import { Role } from '@/api/const'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
+import { ThemeType } from '@starwhale/ui/theme'
 
 const initialState = {
     token: undefined as string | undefined,

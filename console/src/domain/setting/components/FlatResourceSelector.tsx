@@ -1,4 +1,4 @@
-import Input from '@/components/Input'
+import Input from '@starwhale/ui/Input'
 import useTranslation from '@/hooks/useTranslation'
 import React, { FormEvent, useCallback, useMemo, useState } from 'react'
 import { floor } from 'lodash'
@@ -125,7 +125,7 @@ export default function FlatResourceSelector({ resourceTypes, className, value, 
                                 placeholder={i.defaults}
                                 startEnhancer={() => <span>{i.name.toUpperCase()}</span>}
                                 endEnhancer={() => <span>{i.unit}</span>}
-                                onChange={_onChange(i.name)}
+                                onChange={_onChange(i.name) as any}
                             />
                         )}
                     </div>

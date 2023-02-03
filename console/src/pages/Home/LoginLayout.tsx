@@ -1,7 +1,7 @@
 import React from 'react'
-import { useStyletron } from 'baseui'
 import bg from '@/assets/bg.jpg'
 import BaseLayout from '../BaseLayout'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface ILoginLayoutProps {
     children: React.ReactNode
@@ -9,7 +9,7 @@ export interface ILoginLayoutProps {
 }
 
 export default function LoginLayout({ children, style }: ILoginLayoutProps) {
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
 
     return (
         <BaseLayout
@@ -17,7 +17,7 @@ export default function LoginLayout({ children, style }: ILoginLayoutProps) {
                 height: '100%',
             }}
             style={{
-                backgroundColor: 'var(--color-brandLoginBackground)',
+                backgroundColor: theme.brandLoginBackground,
                 backgroundImage: `url(${bg})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',

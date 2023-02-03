@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 
 const { Form, FormItem } = createForm<{ name: string }>()
 

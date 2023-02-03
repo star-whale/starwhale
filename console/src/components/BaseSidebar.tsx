@@ -1,17 +1,15 @@
-/* eslint-disable react/no-unused-prop-types */
-
 import { Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
 import { useLocation, useHistory } from 'react-router-dom'
 import useSidebarWidth from '@/hooks/useSidebarWidth'
-import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { createUseStyles } from 'react-jss'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import { StatefulTooltip } from 'baseui/tooltip'
 import TextLink from './Link/TextLink'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -53,7 +51,6 @@ const useBaseSideBarStyles = createUseStyles({
 
 export interface IComposedSidebarProps {
     style?: React.CSSProperties
-    navStyle?: React.CSSProperties
 }
 
 export interface INavItem {
@@ -81,7 +78,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
-    const [, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
     const styles = useBaseSideBarStyles({ theme })
 
     const history = useHistory()
@@ -141,8 +138,6 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             ctx.setExpanded(true)
         }
     }, [ctx])
-
-    const [css] = useStyletron()
 
     return (
         <div
@@ -246,7 +241,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                 items={baseuiNavItems}
                 onChange={({ event, item }) => {
                     event.preventDefault()
-                    history.push(item.itemId)
+                    if (item.itemId) history.push(item.itemId)
                 }}
             />
             <div
@@ -272,7 +267,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                         alignItems: 'center',
                     }}
                 >
-                    {ctx.expanded ? <IconFont type='fold' /> : <IconFont type='unfold' />}
+                    <IconFont type={ctx.expanded ? 'fold' : 'unfold'} />
                 </div>
             </div>
         </div>

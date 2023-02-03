@@ -1,19 +1,18 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useCallback } from 'react'
 import classNames from 'classnames'
-import { useStyletron } from 'baseui'
 import { Skeleton } from 'baseui/skeleton'
 import { createUseStyles } from 'react-jss'
-import { IThemedStyleProps } from '@/theme'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import Text from '@/components/Text'
 import type { IconType } from 'react-icons/lib'
+import { IThemedStyleProps } from '@starwhale/ui/theme'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import styles from './index.module.scss'
 
 const useStyles = createUseStyles({
     card: (props: IThemedStyleProps) => {
         const linkStyle = {
-            color: 'var(--color-brandLink)',
+            color: props.theme.brandLink,
         }
 
         return {
@@ -83,11 +82,9 @@ export default function Card({
         c = <Skeleton rows={3} animation />
     }
 
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
 
-    const themeType = useCurrentThemeType()
-
-    const dynamicStyles = useStyles({ theme, themeType })
+    const dynamicStyles = useStyles({ theme })
 
     return (
         <div
@@ -115,7 +112,7 @@ export default function Card({
                     className={styles.cardHeadWrapper}
                     style={{
                         ...headStyle,
-                        color: 'var(--color-brandFontPrimary)',
+                        color: theme.brandFontPrimary,
                         borderBottomWidth: 0,
                     }}
                 >

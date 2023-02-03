@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useCallback } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { Tag } from 'baseui/tag'

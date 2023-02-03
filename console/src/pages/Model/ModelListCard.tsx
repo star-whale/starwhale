@@ -9,13 +9,15 @@ import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import Table from '@/components/Table'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
+import { Button } from '@starwhale/ui'
 
 export default function ModelListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ modelId: string; projectId: string }>()
+    const history = useHistory()
 
     const modelsInfo = useFetchModels(projectId, page)
     const [isCreateModelOpen, setIsCreateModelOpen] = useState(false)
@@ -43,13 +45,19 @@ export default function ModelListCard() {
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             <>
-                                <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
+                                <Button
+                                    kind='tertiary'
+                                    onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
+                                >
                                     {t('Version History')}
-                                </TextLink>
+                                </Button>
                                 &nbsp;&nbsp;
-                                <TextLink key={model.id} to={`/projects/${projectId}/online_eval/${model.id}`}>
+                                <Button
+                                    kind='tertiary'
+                                    onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
+                                >
                                     {t('online eval')}
-                                </TextLink>
+                                </Button>
                             </>,
                         ]
                     }) ?? []

@@ -8,18 +8,18 @@ import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE as ButtonSize } from 'baseui/button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useFetchProjects } from '@project/hooks/useFetchProjects'
-import IconFont from '@/components/IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useStyletron } from 'baseui'
-import { QueryInput } from '@starwhale/ui/base/data-table/stateful-data-table'
+import { QueryInput } from '@starwhale/ui/Input'
 import cn from 'classnames'
-import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { LabelMedium } from 'baseui/typography'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
@@ -302,7 +302,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
                             <div className={styles.delete}>
                                 <ConfirmButton
-                                    as='link'
+                                    as='negative'
                                     key={project?.id}
                                     title={
                                         <div>
@@ -324,12 +324,11 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                                 'height': '20px',
                                                 'textDecoration': 'none',
                                                 'color': 'gray !important',
-                                                'paddingLeft': '10px',
+                                                'paddingLeft': '8px',
                                                 'paddingRight': '10px',
                                                 ':hover span': {
                                                     color: ' #5181E0  !important',
                                                 },
-
                                                 ':hover': {
                                                     backgroundColor: '#F0F4FF',
                                                 },
@@ -422,7 +421,6 @@ export default function ProjectListCard() {
             titleIcon={undefined}
             extra={
                 <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
                     size={ButtonSize.compact}
                     onClick={() => {
                         setEditProject(undefined)

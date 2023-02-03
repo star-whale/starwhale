@@ -9,14 +9,15 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
-import { Tabs, Tab } from 'baseui/tabs'
-import IconFont from '@/components/IconFont/index'
+import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
 import { DatasetObject, parseDataSrc, TYPES } from '@/domain/dataset/sdk'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -100,39 +101,7 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
                 padding: '0px',
             }}
         >
-            <Tabs
-                overrides={{
-                    TabBar: {
-                        style: {
-                            display: 'flex',
-                            gap: '0',
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
-                        },
-                    },
-                    TabContent: {
-                        style: {
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
-                        },
-                    },
-                    Tab: {
-                        style: ({ $active }) => ({
-                            flex: 1,
-                            textAlign: 'center',
-                            border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
-                            color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
-                            marginLeft: '0',
-                            marginRight: '0',
-                            paddingTop: '6px',
-                            paddingBottom: '9px',
-                            height: '32px',
-                            width: '40px',
-                        }),
-                    },
-                }}
+            <SpaceTabs
                 onChange={({ activeKey: activeKeyNew }) => {
                     onChange(activeKeyNew as string)
                 }}
@@ -140,7 +109,7 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
             >
                 <Tab title={<IconFont type='grid' />} key={LAYOUT.GRID} />
                 <Tab title={<IconFont type='view' />} key={LAYOUT.LIST} />
-            </Tabs>
+            </SpaceTabs>
         </div>
     )
 }
@@ -151,6 +120,7 @@ export default function DatasetVersionFiles() {
         datasetId: string
         datasetVersionId: string
     }>()
+    const [, theme] = themedUseStyletron()
     // @FIXME layoutParam missing when build
     const layoutParam = useSearchParam('layout') as string
     const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '0')
@@ -222,7 +192,7 @@ export default function DatasetVersionFiles() {
                     overrides: {
                         TableHeadCell: {
                             style: {
-                                backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                                backgroundColor:  theme.brandTableHeaderBackground,
                                 borderBottomWidth: '0',
                                 fontWeight: 'bold',
                                 fontSize: '14px',
@@ -324,7 +294,7 @@ export default function DatasetVersionFiles() {
                     },
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            backgroundColor: theme.brandTableHeaderBackground,
                             fontWeight: 'bold',
                             borderBottomWidth: 0,
                             fontSize: '14px',
@@ -364,7 +334,7 @@ export default function DatasetVersionFiles() {
                 })}
             </TableBuilder>
         )
-    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page])
+    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
 
     return (
         <div className={styles.wrapper}>

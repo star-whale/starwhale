@@ -3,9 +3,6 @@ import UserManagement from '@/pages/Admin/UserManagement'
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import { IThemedStyleProps } from '@/theme'
-import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
 import ProjectMembers from '@/pages/Project/ProjectMembers'
@@ -29,8 +26,10 @@ import ProjectRuntimes from '@/pages/Project/Runtimes'
 import ProjectEvaluations from '@/pages/Project/Evaluations'
 import EvaluationOverviewLayout from '@/pages/Evaluation/EvaluationOverviewLayout'
 import Header from '@/components/Header'
+import { IThemedStyleProps } from '@starwhale/ui/theme'
 import LoginLayout from '@/pages/Home/LoginLayout'
 import ResetPassword from '@/pages/Home/ResetPassword'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import CenterLayout from './pages/CenterLayout'
 import ProjectOverview from './pages/Project/Overview'
 import Pending from './pages/Home/Pending'
@@ -61,20 +60,19 @@ const useStyles = createUseStyles({
         height: '100vh',
         width: '100vw',
         position: 'relative',
-        color: 'var(--color-contentPrimary)',
-        ...Object.entries(theme.colors).reduce((p, [k, v]) => {
-            return {
-                ...p,
-                [`--color-${k}`]: v,
-            }
-        }, {}),
+        color: theme.colors.contentPrimary,
+        // ...Object.entries(theme.colors).reduce((p, [k, v]) => {
+        //     return {
+        //         ...p,
+        //         [`--color-${k}`]: v,
+        //     }
+        // }, {}),
     }),
 })
 
 const Routes = () => {
-    const themeType = useCurrentThemeType()
-    const [, theme] = useStyletron()
-    const styles = useStyles({ theme, themeType })
+    const [, theme] = themedUseStyletron()
+    const styles = useStyles({ theme })
     const { token } = useAuth()
 
     if (!token) {

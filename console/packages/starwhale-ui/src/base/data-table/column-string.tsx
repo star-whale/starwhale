@@ -8,7 +8,6 @@ import Column from './column'
 import { COLUMNS } from './constants'
 import { HighlightCellText } from './text-search'
 import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
-import { Value } from 'baseui/select'
 
 type OptionsT = {
     lineClamp?: number

@@ -1,5 +1,4 @@
 import React, { Context, createContext, useContext } from 'react'
-// eslint-disable-next-line  import/no-cycle
 import { createCustomStore } from '../store/store'
 import { EventBus } from '../events/types'
 

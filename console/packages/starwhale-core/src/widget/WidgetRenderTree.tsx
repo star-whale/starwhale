@@ -15,7 +15,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
-import { WidgetProps } from '../types'
+import { WidgetProps, WidgetTreeNode } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
 import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
@@ -179,7 +179,7 @@ export function WidgetRenderTree() {
     }, [projectId, store, key, eventBus])
 
     const Nodes = useMemo(() => {
-        return tree.map((node, i) => (
+        return tree.map((node: WidgetTreeNode, i: number) => (
             <WrapedWidgetNode key={node.id} id={node.id} type={node.type} path={[i]} childWidgets={node.children} />
         ))
     }, [tree])

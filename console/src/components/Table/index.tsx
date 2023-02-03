@@ -4,13 +4,15 @@ import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { BusyPlaceholder } from '@starwhale/ui'
 
 export interface ITableProps extends BaseTableProps {
     paginationProps?: IPaginationProps
 }
 
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
+    const [, theme] = themedUseStyletron()
     const [page, setPage] = usePage()
 
     return (
@@ -22,8 +24,11 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                 overrides={{
                     TableBodyRow: {
                         style: {
-                            cursor: 'pointer',
-                            borderRadius: '4px',
+                            'cursor': 'pointer',
+                            'borderRadius': '4px',
+                            ':hover': {
+                                backgroundColor: '#EBF1FF',
+                            },
                         },
                         props: {
                             // eslint-disable-next-line
@@ -35,7 +40,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     // @ts-ignore
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                            backgroundColor: theme.brandTableHeaderBackground,
                             fontWeight: 'bold',
                             borderBottomWidth: 0,
                             fontSize: 14,
@@ -58,6 +63,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             paddingLeft: '20px',
                             paddingRight: '20px',
                             lineHeight: '44px',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            borderBottomColor: '#EEF1F6',
                         },
                     },
                     ...overrides,

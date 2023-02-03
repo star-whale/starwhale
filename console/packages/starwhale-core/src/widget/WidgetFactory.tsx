@@ -1,5 +1,4 @@
 import { WidgetGroupType, WidgetType } from '../types'
-// eslint-disable-next-line import/no-cycle
 import WidgetPlugin from './WidgetPlugin'
 import { generateId } from '../utils/generators'
 

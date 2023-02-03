@@ -119,7 +119,8 @@ public class K8sJobTemplate {
             String name,
             String image,
             Map<String, String> envs,
-            ResourceOverwriteSpec resource
+            ResourceOverwriteSpec resource,
+            Map<String, String> nodeSelectors
     ) {
         var ss = Yaml.loadAs(this.modelServingJobTemplate, V1StatefulSet.class);
         Objects.requireNonNull(ss.getMetadata());
@@ -161,7 +162,7 @@ public class K8sJobTemplate {
 
         var podSpec = spec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec);
-        patchPodSpec("Always", containerSpecMap, null, podSpec);
+        patchPodSpec("Always", containerSpecMap, nodeSelectors, podSpec);
         patchPipCacheVolume(ss.getSpec().getTemplate().getSpec().getVolumes());
         addDeviceInfoLabel(spec.getTemplate(), containerSpecMap);
 

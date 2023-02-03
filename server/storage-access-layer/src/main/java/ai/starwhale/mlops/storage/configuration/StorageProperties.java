@@ -16,11 +16,13 @@
 
 package ai.starwhale.mlops.storage.configuration;
 
+import ai.starwhale.mlops.storage.fs.FsConfig;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 @Data
 @AllArgsConstructor
@@ -30,6 +32,11 @@ public class StorageProperties {
 
     String type;
     String pathPrefix;
+
+    @NestedConfigurationProperty
     S3Config s3Config;
+
+    @NestedConfigurationProperty
+    FsConfig fsConfig;
 
 }

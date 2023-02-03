@@ -139,6 +139,7 @@ export default function WidgetFormModal({
                     <Button
                         size='compact'
                         kind='secondary'
+                        type='button'
                         onClick={() => {
                             setisPanelModalOpen(false)
                         }}

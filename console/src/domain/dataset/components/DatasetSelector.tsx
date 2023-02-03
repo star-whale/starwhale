@@ -1,4 +1,4 @@
-import { Select, SelectProps, SIZE } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
@@ -8,7 +8,7 @@ export interface IDatasetSelectorProps {
     projectId: string
     value?: string
     onChange?: (newValue: string) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
 }
 
@@ -42,7 +42,6 @@ export default function DatasetSelector({ projectId, value, onChange, overrides,
 
     return (
         <Select
-            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetsInfo.isFetching}

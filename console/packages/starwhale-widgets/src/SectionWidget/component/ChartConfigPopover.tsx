@@ -3,7 +3,7 @@ import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
 // @FIXME move to ui
-import { ConfirmButton } from '@/components/Modal/confirm'
+import { ConfirmButton } from '@starwhale/ui/Modal'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 
 const COLUMN_OPTIONS = [

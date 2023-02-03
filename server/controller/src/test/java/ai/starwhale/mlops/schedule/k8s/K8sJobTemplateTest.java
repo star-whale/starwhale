@@ -153,8 +153,9 @@ public class K8sJobTemplateTest {
         var envs = Map.of("foo", "bar");
         var rr = RuntimeResource.builder().type("CPU").request(7f).limit(8f).build();
         var resourceOverwriteSpec = new ResourceOverwriteSpec(List.of(rr));
-        var ss = k8sJobTemplate.renderModelServingOrch(name, "img", envs, resourceOverwriteSpec);
+        var ss = k8sJobTemplate.renderModelServingOrch(name, "img", envs, resourceOverwriteSpec, Map.of("foo", "bar"));
         assertThat(ss.getMetadata().getName(), is(name));
+        assertThat(ss.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("foo", "bar")));
         var mainContainer = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(mainContainer.getImage(), is("img"));
         assertThat(mainContainer.getEnv(), is(List.of(new V1EnvVar().name("foo").value("bar"))));
@@ -163,6 +164,6 @@ public class K8sJobTemplateTest {
         assertThat(containerResources.getLimits(), is(Map.of("CPU", new Quantity("8.0"))));
 
         // no exception is ok
-        k8sJobTemplate.renderModelServingOrch(name, "img", envs, null);
+        k8sJobTemplate.renderModelServingOrch(name, "img", envs, null, null);
     }
 }

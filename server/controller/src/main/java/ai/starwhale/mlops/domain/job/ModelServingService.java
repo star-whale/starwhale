@@ -191,7 +191,7 @@ public class ModelServingService {
         log.info("Model serving job has been created. ID={}", id);
 
         try {
-            deploy(runtime, model, projectId.toString(), user, id, modelServingSpec);
+            deploy(runtime, model, projectId.toString(), user, id, modelServingSpec, resourcePool);
         } catch (ApiException e) {
             log.error(e.getResponseBody(), e);
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
@@ -208,7 +208,8 @@ public class ModelServingService {
             String project,
             User owner,
             long id,
-            ModelServingSpec modelServingSpec
+            ModelServingSpec modelServingSpec,
+            String resourcePool
     ) throws ApiException {
         var name = getServiceName(id);
 
@@ -244,7 +245,9 @@ public class ModelServingService {
         if (modelServingSpec != null && modelServingSpec.getResources() != null) {
             resourceOverwriteSpec = new ResourceOverwriteSpec(modelServingSpec.getResources());
         }
-        var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec);
+
+        var nodeSelectors = systemSettingService.queryResourcePool(resourcePool).getNodeSelector();
+        var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec, nodeSelectors);
         try {
             ss = k8sClient.deployStatefulSet(ss);
         } catch (ApiException e) {

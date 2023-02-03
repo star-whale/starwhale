@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import useGlobalState from '@/hooks/global'
-import { ThemeType } from '@/theme'
+import { ThemeType } from '@starwhale/ui/theme'
 
 export const useThemeType = () => {
     const [themeType, setThemeType_] = useGlobalState('themeType')

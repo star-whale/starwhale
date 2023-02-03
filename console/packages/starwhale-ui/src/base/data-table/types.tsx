@@ -2,9 +2,7 @@
 
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import * as React from 'react'
-
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
-// eslint-disable-next-line import/no-cycle
 import { IStore } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null

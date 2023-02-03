@@ -15,16 +15,15 @@ import {
     Types,
 } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
-// import useResizeObserver from '@/hooks/window/useResizeObserver'
 import CategoricalTagsColumn from '@starwhale/ui/base/data-table/column-categorical-tags'
 import { areEqual } from 'react-window'
 import type { RowT } from '@starwhale/ui/base/data-table/types'
 import { IStore } from '@starwhale/ui/base/data-table/store'
 import { useEffect } from 'react'
-import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 const useStyles = createUseStyles({
     table: {
@@ -35,19 +34,17 @@ const useStyles = createUseStyles({
             whiteSpace: 'nowrap',
         },
         '& .table-row': {
-            '&:hover': {
-                // backgroundColor: '#EFEEF5 ',
-            },
+            '&:hover': {},
         },
         '& .table-columns-pinned': {
             backgroundColor: '#FFF',
         },
         '& .table-row--hovering': {
-            backgroundColor: '#EFEEF5',
+            backgroundColor: '#EBF1FF',
         },
         // this rule for override the default style of cell
         '& .table-row--hovering .column-cell > *': {
-            backgroundColor: '#EFEEF5 !important',
+            backgroundColor: '#EBF1FF !important',
         },
     },
     tableCompareable: {
@@ -109,7 +106,6 @@ export function TableTyped({
             return {
                 ...column,
                 fillWidth: false,
-                // maxWidth: 200,
             }
         }
 
@@ -204,7 +200,7 @@ export function TableTyped({
         }
     }, [$columns])
 
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
     const styles = useStyles({ theme })
 
     return (
@@ -245,7 +241,7 @@ export function TableTyped({
                         },
                         TableHeadCell: {
                             style: {
-                                backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                                backgroundColor: theme.brandTableHeaderBackground,
                                 fontWeight: 'bold',
                                 borderBottomWidth: 0,
                                 fontSize: 14,

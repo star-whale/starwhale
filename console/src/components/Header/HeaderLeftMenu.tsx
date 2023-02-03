@@ -9,7 +9,7 @@ import ProjectFrom from '@project/components/ProjectForm'
 import { createProject } from '@project/services/project'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import { useHistory } from 'react-router-dom'
-import IconFont from '../IconFont'
+import IconFont from '@starwhale/ui/IconFont'
 
 export default function HeaderLeftMenu() {
     const [t] = useTranslation()

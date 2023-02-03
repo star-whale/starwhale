@@ -31,7 +31,6 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -63,17 +62,10 @@ import org.springframework.web.multipart.MultipartFile;
 public interface ModelApi {
 
     @Operation(summary = "Get the list of models")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/model")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/model",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
             @Parameter(
@@ -107,7 +99,9 @@ public interface ModelApi {
                     "Select a historical version of the model and revert the latest version of the current model to "
                             + "this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/revert")
+    @PostMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/revert",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
             @Parameter(
@@ -128,7 +122,9 @@ public interface ModelApi {
 
     @Operation(summary = "Delete a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}")
+    @DeleteMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteModel(
             @Parameter(
@@ -143,8 +139,9 @@ public interface ModelApi {
 
     @Operation(summary = "Recover a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/recover",
-            produces = {"application/json"})
+    @PutMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/recover",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverModel(
             @Parameter(
@@ -159,17 +156,10 @@ public interface ModelApi {
 
     @Operation(summary = "Model information",
             description = "Return the file information in the model package of the latest version of the current model")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ModelInfoVo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
             @Parameter(
@@ -192,17 +182,10 @@ public interface ModelApi {
 
     @Operation(summary = "Model Diff information",
             description = "Return the diff information between the base version and the compare version")
-    @ApiResponses(value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = ModelInfoVo.class))
-            )
-    })
-    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/diff")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/diff",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
             @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
@@ -221,17 +204,10 @@ public interface ModelApi {
             String compareVersion);
 
     @Operation(summary = "Get the list of model versions")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "ok",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageInfo.class)))
-            })
-    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/version",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
             @Parameter(
@@ -266,7 +242,9 @@ public interface ModelApi {
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}")
+    @PutMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyModel(
             @Parameter(
@@ -285,7 +263,9 @@ public interface ModelApi {
 
     @Operation(summary = "Manage tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag")
+    @PutMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageModelTag(
             @Parameter(
@@ -308,7 +288,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/model/{modelName}/version/{versionName}/file",
-            produces = {"application/json"})
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<Object>> upload(
             @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileDesc fileDesc,
@@ -354,7 +334,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
-            produces = {"application/json"},
+            produces = MediaType.APPLICATION_JSON_VALUE,
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headModel(

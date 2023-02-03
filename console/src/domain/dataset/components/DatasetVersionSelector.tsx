@@ -1,5 +1,5 @@
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { Select, SelectProps, SIZE } from 'baseui/select'
+import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
@@ -10,7 +10,7 @@ export interface IDatasetVersionSelectorProps {
     datasetId: string
     value?: string
     onChange?: (newValue: string) => void
-    overrides?: SelectProps['overrides']
+    overrides?: ISelectProps['overrides']
     disabled?: boolean
     autoSelected?: boolean
 }
@@ -73,7 +73,6 @@ export default function DatasetVersionSelector({
 
     return (
         <Select
-            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetVersionsInfo.isFetching}

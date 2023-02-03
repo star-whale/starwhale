@@ -1,5 +1,5 @@
 import React from 'react'
-import Button from '@/components/Button'
+import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import Copy from 'react-copy-to-clipboard'
 import { toaster } from 'baseui/toast'
@@ -24,9 +24,7 @@ function CopyToClipboard({
                 toaster.positive(successContent ?? t('Copied'), { autoHideDuration: showSuccessDelay })
             }}
         >
-            <Button size='mini' as='link'>
-                {t('Copy Link')}{' '}
-            </Button>
+            <Button kind='tertiary'>{t('Copy Link')} </Button>
         </Copy>
     )
 }

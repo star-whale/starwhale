@@ -8,7 +8,8 @@ import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import Card from '@/components/Card'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import IconFont from '../../components/IconFont/index'
+import IconFont from '@starwhale/ui/IconFont'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -19,6 +20,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
+    const [, theme] = themedUseStyletron()
 
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
@@ -122,7 +124,6 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
         <Card
             style={{
                 fontSize: '16px',
-                background: 'var(--color-brandBgSecondary4)',
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}
@@ -137,7 +138,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
                     <div
                         style={{
                             // flexBasis: '130px',
-                            background: 'var(--color-brandBgSecondary)',
+                            background: theme.brandBgSecondary,
                             lineHeight: '24px',
                             padding: '0 12px',
                             borderRadius: '4px',

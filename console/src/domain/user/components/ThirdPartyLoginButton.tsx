@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
-import Button from '@/components/Button'
-import IconFont from '@/components/IconFont'
+import Button from '@starwhale/ui/Button'
+import IconFont from '@starwhale/ui/IconFont'
 import useTranslation from '@/hooks/useTranslation'
 
 export interface IThirdPartyLoginButtonProps {

@@ -20,12 +20,11 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.trash.TrashVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -39,13 +38,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Validated
 public interface TrashApi {
 
-    @Operation(summary = "Get the list of trash")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "ok",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project/{projectUrl}/trash")
+
+    @Operation(summary = "Get the list of trash",
+            description = "List all types of trashes, such as models datasets runtimes and evaluations")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/trash",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<PageInfo<TrashVo>>> listTrash(
             @PathVariable(value = "projectUrl") String projectUrl,
@@ -56,20 +55,25 @@ public interface TrashApi {
             @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
 
-    @Operation(summary = "Recover trash by id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/trash/{trashId}")
+    @Operation(summary = "Restore trash by id.",
+            description = "Restore a trash to its original type and move it out of the recycle bin."
+    )
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/trash/{trashId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> recoverTrash(
             @PathVariable(value = "projectUrl") String projectUrl,
             @PathVariable(value = "trashId") Long trashId
     );
 
-    @Operation(summary = "Delete trash")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectUrl}/trash/{trashId}")
+    @Operation(summary = "Delete trash by id.",
+            description = "Move a trash out of the recycle bin. This operation cannot be resumed.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(
+            value = "/project/{projectUrl}/trash/{trashId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteTrash(
             @PathVariable(value = "projectUrl") String projectUrl,

@@ -1,24 +1,27 @@
 import React from 'react'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
-import { useStyletron } from 'baseui'
 import { mergeOverrides } from '../utils'
+import { themedUseStyletron } from '../theme/styletron'
+import IconFont, { IconTypesT } from '../IconFont'
 
 export interface IButtonProps extends ButtonProps {
-    as?: 'link' | 'button' | 'transparent' | 'withIcon'
+    as?: 'link' | 'transparent' | 'negative'
     kind?: keyof typeof KIND
     isFull?: boolean
     className?: string
+    icon?: IconTypesT
 }
 
 export default function Button({
     isFull = false,
     size = 'compact',
     kind = 'primary',
-    as = 'button',
+    as,
+    icon,
     children,
     ...props
 }: IButtonProps) {
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
     const defaultStyles: React.CSSProperties = {
         borderTopLeftRadius: theme.borders.radius200,
         borderTopRightRadius: theme.borders.radius200,
@@ -39,9 +42,19 @@ export default function Button({
                     width: isFull ? '100%' : 'auto',
                 },
             },
+            StartEnhancer: {
+                style: {
+                    marginRight: '5px',
+                },
+            },
         },
         props.overrides
     )
+
+    if (icon && !props.startEnhancer) {
+        // eslint-disable-next-line no-param-reassign
+        props.startEnhancer = () => <IconFont type={icon} size={13} />
+    }
 
     if (as === 'link') {
         overrides = mergeOverrides(
@@ -59,7 +72,7 @@ export default function Button({
                         'marginLeft': '0',
                         'marginRight': '0',
                         'backgroundColor': 'transparent',
-                        'color': '#2B65D9',
+                        'color': theme.colors.buttonPrimaryFill,
                         ':hover': {
                             backgroundColor: 'transparent',
                         },
@@ -78,32 +91,30 @@ export default function Button({
                         'color': 'rgba(2,16,43,0.20)',
                         ':hover': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                         ':focus': {
                             backgroundColor: 'transparent',
-                            color: 'var(--color-brandPrimaryHover)',
+                            color: theme.brandPrimaryHover,
                         },
                     },
                 },
             },
             props.overrides
         )
-    } else if (as === 'withIcon') {
+    } else if (as === 'negative') {
         overrides = mergeOverrides(
             {
                 BaseButton: {
                     style: {
                         ...defaultStyles,
-                        'backgroundColor': '#F4F5F7',
-                        'color': 'rgba(2,16,43,0.60)',
+                        'backgroundColor': '#FFEBEB',
+                        'color': ' #CC3D3D',
                         ':hover': {
-                            backgroundColor: '#F0F4FF',
-                            color: '#5181E0',
+                            backgroundColor: '#FFDBDB',
                         },
-                        ':active': {
-                            backgroundColor: '#F0F4FF',
-                            color: '#1C4CAD',
+                        ':focus': {
+                            backgroundColor: '#FFCCCC',
                         },
                     },
                 },

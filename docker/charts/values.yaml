@@ -12,7 +12,6 @@ image:
     repo: "starwhale"
   server:
     repo: "server"
-  pullPolicy: IfNotPresent
 
 mysql:
   enabled: true
