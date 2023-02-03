@@ -38,8 +38,8 @@ helm delete starwhale
 
 |字段|描述|默认值|
 |---|---|-----|
-| `image.registry` | 镜像Registry, Starwhale镜像会发布在 docker.io 和 ghcr.io上| `ghcr.io`|
-| `image.org`      | 镜像的org名字： [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io)、[star-whale](https://github.com/orgs/star-whale)(ghcr.io) 或者其他在私有registry上定义的镜像org名字 | `star-whale`  |
+| `image.registry` | 镜像Registry, Starwhale镜像会发布在 docker.io, ghcr.io和docker-registry.starwhale.cn上，中国大陆网络推荐使用docker-registry.starwhale.cn镜像源 | `ghcr.io`|
+| `image.org`      | 镜像的org名字： [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io)、[star-whale](https://github.com/orgs/star-whale)(ghcr.io和docker-registry.starwhale.cn) 或者其他在私有registry上定义的镜像org名字 | `star-whale`  |
 
 ### 6.2 Starwhale参数
 
@@ -79,9 +79,15 @@ helm delete starwhale
 使用minikube模式，可以在单机环境使用minikube安装一个all-in-one的Starwhale，方便进行本地开发、调试。安装命令如下：
 
 ```bash
-export SWNAME=starwhale
-export SWNS=starwhale
+export SWNAME=starwhale SWNS=starwhale
 helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio
+```
+
+若在中国大陆网络环境，推荐使用如下命令：
+
+```bash
+export SWNAME=starwhale SWNS=starwhale
+helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio --set image.registry=docker-registry.starwhale.cn --set minio.global.imageRegistry=docker-registry.starwhale.cn --set mysql.global.imageRegistry=docker-registry.starwhale.cn
 ```
 
 ### 6.5 开发模式
