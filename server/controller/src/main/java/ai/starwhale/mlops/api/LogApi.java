@@ -39,7 +39,7 @@ public interface LogApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/log/offline/{taskId}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ResponseMessage<List<String>>> offlineLogs(
             @Parameter(
                     in = ParameterIn.PATH,
@@ -52,7 +52,7 @@ public interface LogApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/log/offline/{taskId}/{fileName}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<String> logContent(
             @Parameter(
                     in = ParameterIn.PATH,

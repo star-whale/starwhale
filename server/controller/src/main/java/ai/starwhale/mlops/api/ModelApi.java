@@ -65,7 +65,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/model",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
             @Parameter(
@@ -101,7 +101,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/revert",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
             @Parameter(
@@ -124,7 +124,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(
             value = "/project/{projectUrl}/model/{modelUrl}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteModel(
             @Parameter(
@@ -141,7 +141,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/recover",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverModel(
             @Parameter(
@@ -159,7 +159,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/model/{modelUrl}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
             @Parameter(
@@ -185,7 +185,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/diff",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
             @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
@@ -207,7 +207,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
             @Parameter(
@@ -244,7 +244,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyModel(
             @Parameter(
@@ -265,7 +265,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageModelTag(
             @Parameter(
@@ -288,7 +288,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/model/{modelName}/version/{versionName}/file",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<Object>> upload(
             @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileDesc fileDesc,
@@ -334,7 +334,7 @@ public interface ModelApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE,
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headModel(

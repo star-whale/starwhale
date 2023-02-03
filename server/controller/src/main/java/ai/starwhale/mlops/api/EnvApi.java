@@ -36,6 +36,6 @@ public interface EnvApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/runtime/device",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ResponseMessage<List<DeviceVo>>> listDevice();
 }

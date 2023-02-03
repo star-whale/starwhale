@@ -38,7 +38,7 @@ public interface ObjectStoreApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/obj-store/{path}/{expTimeMillis}",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     void getObjectContent(
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("path") String path,

@@ -46,7 +46,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/evaluation/view/attribute",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(
             @Valid @PathVariable("projectUrl") String projectUrl
@@ -57,7 +57,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/evaluation/view/config",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ConfigVo>> getViewConfig(
             @Valid @PathVariable(value = "projectUrl") String projectUrl,
@@ -68,7 +68,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = "/project/{projectUrl}/evaluation/view/config",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
             @Valid @PathVariable("projectUrl") String projectUrl,
@@ -79,7 +79,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/project/{projectUrl}/evaluation",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(
             @Valid @PathVariable("projectUrl") String projectUrl,
