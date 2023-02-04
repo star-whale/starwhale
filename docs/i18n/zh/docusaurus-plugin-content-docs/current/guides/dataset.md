@@ -19,7 +19,7 @@ title: Starwhale Dataset-数据集
 ### 1.2 核心功能
 
 - **高效加载**：数据集原始文件存储在OSS或NAS等外部存储上，使用时按需加载，不需要数据落盘。
-- **简单构建**：支持swds-bin、user-raw和remote-link三种数据格式，通过编写简单的Python代码（非必须），少量的dataset.yaml（非必须）后，执行swcli dataset build 命令就能完成数据集的构建。
+- **简单构建**：支持swds-bin、user-raw和remote-link三种数据格式，通过编写简单的Python代码，少量的dataset.yaml（非必须）后，执行swcli dataset build 命令就能完成数据集的构建。
 - **版本管理**：可以进行版本追踪、数据追加等操作，并通过内部抽象的ObjectStore，避免数据重复存储。
 - **数据集分发**：通过copy命令，实现standalone instance和cloud instance双向的数据集分享。
 - **数据可视化**：Cloud Instance的Web界面中可以对数据集提供多维度、多类型的数据呈现。
@@ -101,7 +101,7 @@ Starwhale Dataset 对数据集格式的定义，根据实际使用场景，有�
 
 ### 3.2 使用示例
 
-#### 3.3 最简示例
+#### 3.2.1 最简示例
 
 ```yaml
 name: helloworld
@@ -110,7 +110,7 @@ handler: dataset:ExampleProcessExecutor
 
 helloworld的数据集，使用dataset.yaml目录中dataset.py文件中的 `ExampleProcessExecutor` 类进行数据构建。
 
-#### 3.4 MNIST数据集构建示例
+#### 3.2.2 MNIST数据集构建示例
 
 ```yaml
 name: mnist
@@ -124,7 +124,7 @@ attr:
   data_mime_type: "x/grayscale"
 ```
 
-#### 3.5 handler为generator function的例子
+#### 3.2.3 handler为generator function的例子
 
 dataset.yaml 内容：
 
