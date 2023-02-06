@@ -1,5 +1,4 @@
 import io
-from pprint import pprint
 
 from PIL import Image as PILImage
 from PIL import ImageDraw

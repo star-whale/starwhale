@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PIL import Image as PILImage
 
-from starwhale import Link, Image, MIMEType
+from starwhale import Image, MIMEType
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data" / "fgvc-aircraft-2013b" / "data"
