@@ -6,6 +6,7 @@ import _ from 'lodash'
 import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import IconFont from '../IconFont'
+import { LabelSmall } from 'baseui/typography'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -21,6 +22,7 @@ export const useStyles = createUseStyles({
         '&::-webkit-scrollbar': {
             height: '4px !important',
         },
+
         'flexGrow': '0',
         'overflowY': 'hidden',
     },
@@ -71,6 +73,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             return (
                 <FilterRenderer
                     key={[index, item.property].join('-')}
+                    index={index}
                     value={item}
                     isEditing={isEditing}
                     isDisabled={false}
@@ -99,6 +102,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
         tmps.push(
             <FilterRenderer
                 key={count.current}
+                index={-1}
                 value={{}}
                 isEditing={isEditing}
                 isDisabled={false}
@@ -146,6 +150,11 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             <div className={styles.startIcon}>
                 <IconFont type='filter' size={12} kind='gray' />
             </div>
+            {!isEditing && items.length === 0 && (
+                <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute', left: '37px' }}>
+                    Search and Filter
+                </LabelSmall>
+            )}
             {filters}
         </div>
     )
