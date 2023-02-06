@@ -200,6 +200,7 @@ export type FilterT = {
     renderField?: React.FC<FilterRenderPropsT>
     renderFieldValue?: React.FC<FilterRenderPropsT>
     renderOperator?: React.FC<FilterRenderPropsT>
+    renderValue?: React.ForwardedRef<FilterRenderPropsT>
 }
 
 export type OperatorT = {
