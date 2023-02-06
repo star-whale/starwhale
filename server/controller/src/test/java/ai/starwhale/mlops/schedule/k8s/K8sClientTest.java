@@ -40,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -147,6 +148,18 @@ public class K8sClientTest {
                 eq(V1NodeList.class))).thenReturn(nodeInformer);
         ResourceEventHandler<V1Node> evh = mock(ResourceEventHandler.class);
         k8sClient.watchNode(evh);
+        verify(nodeInformer).addEventHandler(evh);
+        verify(informerFactory).startAllRegisteredInformers();
+    }
+
+    @Test
+    public void testWatchStatefulSet() {
+        SharedIndexInformer<V1StatefulSet> nodeInformer = mock(SharedIndexInformer.class);
+        when(informerFactory.sharedIndexInformerFor(any(),
+                eq(V1StatefulSet.class),
+                eq(V1StatefulSetList.class))).thenReturn(nodeInformer);
+        ResourceEventHandler<V1StatefulSet> evh = mock(ResourceEventHandler.class);
+        k8sClient.watchStatefulSet(evh, "selector");
         verify(nodeInformer).addEventHandler(evh);
         verify(informerFactory).startAllRegisteredInformers();
     }

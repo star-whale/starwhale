@@ -98,13 +98,18 @@ export default function OnlineEval() {
                 window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}/run/`
 
                 await new Promise((resolve) => {
-                    const id = setInterval(() => {
-                        axios.get(resp.data?.baseUri).then(() => {
-                            setIsLoading(false)
-                            clearInterval(id)
-                            resolve(null)
-                        })
-                    }, 2000)
+                    const check = () => {
+                        axios
+                            .get(resp.data?.baseUri)
+                            .then(() => {
+                                setIsLoading(false)
+                                resolve(null)
+                            })
+                            .catch(() => {
+                                setTimeout(check, 1000)
+                            })
+                    }
+                    check()
                 })
             } catch (e) {
                 setIsLoading(false)

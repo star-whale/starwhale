@@ -150,9 +150,11 @@ public class K8sJobTemplate {
         var readiness = new V1Probe();
         cos.setReadinessProbe(readiness);
         cos.setResourceOverwriteSpec(resource);
-        readiness.failureThreshold(3);
+        readiness.failureThreshold(60);
         var httpGet = new V1HTTPGetAction();
         readiness.httpGet(httpGet);
+        readiness.initialDelaySeconds(5);
+        readiness.periodSeconds(1);
         httpGet.path("/");
         httpGet.port(new IntOrString(ONLINE_EVAL_PORT_IN_POD));
         httpGet.scheme("HTTP");
