@@ -28,8 +28,8 @@ export default function Button({
         borderBottomLeftRadius: theme.borders.radius200,
         borderBottomRightRadius: theme.borders.radius200,
         lineHeight: '14px',
-        paddingTop: '9px',
-        paddingBottom: '9px',
+        paddingTop: kind === 'tertiary' ? '5px' : '9px',
+        paddingBottom: kind === 'tertiary' ? '5px' : '9px',
         paddingLeft: '9px',
         paddingRight: '9px',
     }

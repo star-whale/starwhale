@@ -214,7 +214,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     },
                                 },
                             }}
-                            kind='tertiary'
+                            kind='secondary'
                             startEnhancer={() => <IconFont type='runtime' />}
                             onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}
                         >
