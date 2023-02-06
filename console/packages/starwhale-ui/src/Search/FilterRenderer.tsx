@@ -77,18 +77,23 @@ export default function FilterRenderer({
         })
     }, [$columns])
 
-    const { FilterOperator, FilterField } = useMemo(() => {
+    const { FilterOperator, FilterField, FilterValue } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
         const filter = dataStoreToFilter(field?.type as DataTypeT)()
         return {
             filter,
             FilterOperator: filter.renderOperator,
             FilterField: filter.renderField,
+            FilterValue: filter.renderValue,
         }
     }, [property, $columns])
 
-    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
-        setValue((event.target as any)?.value)
+    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement> | any) => {
+        if (typeof event === 'object' && 'target' in event) {
+            setValue((event.target as any).value)
+        } else {
+            setValue(event ?? 0)
+        }
     }
 
     const handleReset = () => {
@@ -263,6 +268,9 @@ export default function FilterRenderer({
                     inputRef={inputRef as any}
                     value={value}
                     onChange={handleInputChange}
+                    overrides={{
+                        Input: FilterValue as any,
+                    }}
                     $style={{ width: '100%', height: '100%' }}
                 />
             </div>

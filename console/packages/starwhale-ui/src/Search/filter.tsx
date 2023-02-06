@@ -44,7 +44,6 @@ function PopoverContainer(props: {
             autoFocus
             placement={PLACEMENT.bottomLeft}
             isOpen={isOpen}
-            ignoreBoundary
             mountNode={props.mountNode}
             content={() => (
                 <StatefulMenu
@@ -57,7 +56,12 @@ function PopoverContainer(props: {
                     }}
                     overrides={{
                         List: {
-                            style: { minHeight: '150px', minWidth: '150px', maxHeight: '500px', overflow: 'auto' },
+                            style: {
+                                minHeight: '150px',
+                                minWidth: '150px',
+                                maxHeight: '500px',
+                                overflow: 'auto',
+                            },
                         },
                     }}
                 />
@@ -110,6 +114,7 @@ function Filter(options: FilterT): FilterT {
                 </PopoverContainer>
             )
         },
+        renderValue: options?.renderValue ?? undefined,
         // renderFieldValue: options?.renderFieldValue ?? <></>,
     }
 }

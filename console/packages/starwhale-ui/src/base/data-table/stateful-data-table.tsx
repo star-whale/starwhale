@@ -15,6 +15,7 @@ import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
 import Button from '@starwhale/ui/Button'
+import classNames from 'classnames'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -185,14 +186,27 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 textQuery,
             }: StatefulContainerPropsT['children']) => (
                 <>
-                    <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
-                        <div ref={headlineRef}>
+                    <div
+                        data-type='table-toolbar'
+                        className={css({
+                            height:
+                                viewable || filterable || searchable || queryable || columnable
+                                    ? `${headlineHeight}px`
+                                    : '0',
+                        })}
+                    >
+                        <div ref={headlineRef} className='flex-row-left g-20'>
                             <div
-                                className='flex-row-left mb-20 g-20'
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'minmax(1fr 280px) auto auto',
-                                }}
+                                className={classNames(
+                                    'flex-row-left g-20 ',
+                                    css({
+                                        'display': 'grid',
+                                        'gridTemplateColumns': 'minmax(1fr 280px) auto auto',
+                                        ':first-child': {
+                                            marginBottom: '20px',
+                                        },
+                                    })
+                                )}
                             >
                                 {viewable && (
                                     <ConfigViews
@@ -213,7 +227,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
 
-                                {changed && store.currentView?.id && (
+                                {viewable && changed && store.currentView?.id && (
                                     <div>
                                         <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
                                         <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
@@ -221,11 +235,13 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 )}
                             </div>
                             <div
-                                style={{
-                                    gridTemplateColumns: 'minmax(200px,1fr) auto',
-                                    display: 'grid',
-                                    paddingBottom: '20px',
-                                }}
+                                className={classNames(
+                                    css({
+                                        gridTemplateColumns: 'minmax(200px,1fr) auto',
+                                        display: 'grid',
+                                        marginBottom: queryable && columnable ? '20px' : '0px',
+                                    })
+                                )}
                             >
                                 {queryable && (
                                     <div className='table-config-query' style={{ flex: 1 }}>
@@ -252,7 +268,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                     <div
                         data-type='table-wrapper'
-                        style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}
+                        style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)`, marginTop: '20px' }}
                     >
                         {/* @ts-ignore */}
                         {$columns.length > 0 && (
