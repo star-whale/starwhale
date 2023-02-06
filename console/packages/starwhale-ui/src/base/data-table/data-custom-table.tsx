@@ -475,13 +475,16 @@ function Header(props: HeaderProps) {
                         }}
                         className={css({
                             // @ts-ignore
-                            'backgroundColor': isResizingThisColumn ? theme.colors.contentPrimary : null,
+                            'backgroundColor':
+                                isResizingThisColumn || props.hoverIndex === props.index
+                                    ? theme.brandTableHeaderResizer
+                                    : null,
                             'cursor': 'ew-resize',
                             'position': 'absolute',
                             'height': '100%',
-                            'width': '3px',
+                            'width': '2px',
                             ':hover': {
-                                backgroundColor: theme.colors.contentPrimary,
+                                backgroundColor: theme.brandTableHeaderResizer,
                             },
                         })}
                         style={{
@@ -491,7 +494,7 @@ function Header(props: HeaderProps) {
                         {isResizingThisColumn && (
                             <div
                                 className={css({
-                                    backgroundColor: theme.colors.contentPrimary,
+                                    backgroundColor: theme.brandTableHeaderResizer,
                                     position: 'absolute',
                                     height: `${props.tableHeight}px`,
                                     right: '1px',

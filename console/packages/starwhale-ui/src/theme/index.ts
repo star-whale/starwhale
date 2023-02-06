@@ -26,7 +26,7 @@ const customPrimaryColors = {
     backgroundNav: ' #122A59',
     backgroundNavFixed: ' #1D3973',
     dividerPrimary: ' #EEF1F6',
-    dividerSecondary: '  #CFD7E6',
+    dividerSecondary: '#CFD7E6',
     fontPrimay: '#02102B',
     fontNote: color('#02102B').alpha(0.6).toString(),
     fontTip: color('#02102B').alpha(0.4).toString(),
@@ -147,6 +147,8 @@ const SWTheme = {
     brandUserIcon: customPrimaryColors.backgroundSecondary,
     brandMenuItemBackground: customPrimaryColors.backgroundHover,
     brandTableHeaderBackground: '#F3F5F9',
+    brandTableHeaderBackgroundHover: color(customPrimaryColors.dividerSecondary).alpha(0.3).toString(),
+    brandTableHeaderResizer: customPrimaryColors.dividerSecondary,
 }
 export type SWThemeT = typeof SWTheme
 

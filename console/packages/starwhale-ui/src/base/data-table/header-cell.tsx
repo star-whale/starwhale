@@ -100,7 +100,9 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     whiteSpace: 'nowrap',
                     outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
                     outlineOffset: '-3px',
-                    backgroundColor: theme.brandTableHeaderBackground,
+                    backgroundColor: props.isHovered
+                        ? theme.brandTableHeaderBackgroundHover
+                        : theme.brandTableHeaderBackground,
                     fontWeight: 'bold',
                     borderBottomWidth: 0,
                     fontSize: '14px',
@@ -109,9 +111,9 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     paddingBottom: '15px',
                     paddingLeft: props.index === 0 ? '20px' : '12px',
                     paddingRight: '12px',
-                    borderRight: props.isFocus ? '1px dashed #2B65D9' : undefined,
-                    borderLeft: props.isFocus ? '1px dashed #2B65D9' : undefined,
-                    borderTop: props.isFocus ? '1px dashed #2B65D9' : undefined,
+                    borderRight: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
+                    borderLeft: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
+                    borderTop: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                 })
             )}
             title={props.title}
