@@ -27,7 +27,11 @@ from starwhale.api._impl.job import context_holder
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.api._impl.dataset import Dataset
-from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetInfo
+from starwhale.core.dataset.tabular import (
+    TabularDataset,
+    TabularDatasetRow,
+    TabularDatasetInfo,
+)
 
 
 class _LogType:
@@ -76,7 +80,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
         ppl_batch_size: int = 1,
-        ignore_annotations: bool = False,
+        ignore_dataset_data: bool = False,
         ignore_error: bool = False,
         flush_result: bool = False,
     ) -> None:
@@ -85,7 +89,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.context: Context = context_holder.context
 
         # TODO: add args for compare result and label directly
-        self.ignore_annotations = ignore_annotations
+        self.ignore_dataset_data = ignore_dataset_data
         self.ignore_error = ignore_error
         self.flush_result = flush_result
 
@@ -248,7 +252,6 @@ class PipelineHandler(metaclass=ABCMeta):
                     if self._is_ppl_batch():
                         _results = self.ppl(
                             [row.data for row in rows],
-                            annotations=[row.annotations for row in rows],
                             index=[row.index for row in rows],
                             index_with_dataset=[
                                 f"{_uri.object}{join_str}{row.index}" for row in rows
@@ -259,7 +262,6 @@ class PipelineHandler(metaclass=ABCMeta):
                         _results = [
                             self.ppl(
                                 rows[0].data,
-                                annotations=rows[0].annotations,
                                 index=rows[0].index,
                                 index_with_dataset=f"{_uri.object}{join_str}{rows[0].index}",
                                 dataset_info=dataset_info,
@@ -276,7 +278,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     _exception = None
 
-                for (_idx, _data, _annotations), _result in zip(rows, _results):
+                for (_idx, _data), _result in zip(rows, _results):
                     cnt += 1
                     _idx_with_ds = f"{_uri.object}{join_str}{_idx}"
 
@@ -294,11 +296,17 @@ class PipelineHandler(metaclass=ABCMeta):
                         }
                     )
 
+                    if not self.ignore_dataset_data:
+                        artifacts = TabularDatasetRow.artifacts_of_data(_data)
+                        for at in artifacts:
+                            if at.link:
+                                at.clear_cache()
+
                     result_storage.save(
                         data_id=_idx_with_ds,
                         index=_idx,
                         result=_result,
-                        annotations={} if self.ignore_annotations else _annotations,
+                        ds_data={} if self.ignore_dataset_data else _data,
                     )
 
         if self.flush_result:

@@ -209,9 +209,11 @@ class UCF101PipelineHandler(PipelineHandler):
         )
 
     @torch.no_grad()
-    def ppl(self, videos: t.List[Video], **kw: t.Any) -> t.Any:
+    def ppl(self, data_batch: t.List[dict], **kw: t.Any) -> t.Any:
         _frames_tensor = ppl_pre(
-            videos=videos, sampler=self.sampler, transforms=self.transforms
+            videos=[data["video"] for data in data_batch],
+            sampler=self.sampler,
+            transforms=self.transforms,
         )
         output = self.model(_frames_tensor)
         return ppl_post(output)
@@ -225,7 +227,7 @@ class UCF101PipelineHandler(PipelineHandler):
     def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["label"])
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
         return label, result, pr

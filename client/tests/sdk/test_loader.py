@@ -8,33 +8,29 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale import MIMEType, get_data_loader
+from starwhale import get_data_loader
 from starwhale.utils import config
 from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
+from starwhale.base.type import URIType, DataOriginType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
-from starwhale.core.dataset.type import Link, Image, ArtifactType, DatasetSummary
+from starwhale.core.dataset.type import Link, Image, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import (
+    ObjectStore,
     S3Connection,
     DatasetStorage,
     SignedUrlBackend,
     LocalFSStorageBackend,
 )
-from starwhale.api._impl.data_store import SwObject, RemoteDataStore
+from starwhale.api._impl.data_store import RemoteDataStore
 from starwhale.core.dataset.tabular import (
     StandaloneTDSC,
     TabularDatasetRow,
     get_dataset_consumption,
 )
-from starwhale.api._impl.dataset.loader import (
-    DataRow,
-    DataLoader,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
-)
+from starwhale.api._impl.dataset.loader import DataRow, DataLoader
 
 
 class TestDataLoader(TestCase):
@@ -85,24 +81,26 @@ class TestDataLoader(TestCase):
 
         consumption = get_dataset_consumption(self.dataset_uri, session_id="1")
         loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
-        assert isinstance(loader, UserRawDataLoader)
+        assert isinstance(loader, DataLoader)
         assert isinstance(loader.session_consumption, StandaloneTDSC)
 
         fname = "data"
         m_scan.return_value = [
             TabularDatasetRow(
-                id="path/0",
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=16,
-                data_size=784,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.UNDEFINED,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "image": GrayscaleImage(
+                        link=Link(
+                            fname,
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 0,
                 },
+                data_origin=DataOriginType.NEW,
+                id="path/0",
             )
         ]
 
@@ -112,44 +110,43 @@ class TestDataLoader(TestCase):
         ensure_dir(data_dir)
         shutil.copy(raw_data_fpath, str(data_dir / fname))
 
-        assert loader._stores == {}
+        ObjectStore._stores = {}
 
         rows = list(loader)
         assert len(rows) == 1
 
-        _idx, _data, _annotations = rows[0]
+        _idx, _data = rows[0]
         assert _idx == "path/0"
-        assert _annotations["label"] == 0
+        assert _data["label"] == 0
 
-        assert len(_data.to_bytes()) == 28 * 28
-        assert isinstance(_data, Image)
+        assert len(_data["image"].to_bytes()) == 28 * 28
+        assert isinstance(_data["image"], Image)
 
-        assert loader.kind == DataFormatType.USER_RAW
-        assert list(loader._stores.keys()) == [
+        assert list(ObjectStore._stores.keys()) == [
             "local/project/self/dataset/mnist/version/1122334455667788."
         ]
-        assert loader._stores[
+        assert ObjectStore._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].bucket == str(data_dir)
         assert (
-            loader._stores[
+            ObjectStore._stores[
                 "local/project/self/dataset/mnist/version/1122334455667788."
             ].backend.kind
             == SWDSBackendType.LocalFS
         )
-        assert not loader._stores[
+        assert not ObjectStore._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
         loader = get_data_loader("mnist/version/1122334455667788")
-        assert isinstance(loader, UserRawDataLoader)
+        assert isinstance(loader, DataLoader)
         assert loader.session_consumption is None
         rows = list(loader)
         assert len(rows) == 1
 
-        _idx, _, _annotations = rows[0]
+        _idx, _data = rows[0]
         assert _idx == "path/0"
-        assert _annotations["label"] == 0
+        assert _data["label"] == 0
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.store.boto3.resource")
@@ -205,77 +202,68 @@ class TestDataLoader(TestCase):
 
             consumption = get_dataset_consumption(self.dataset_uri, session_id="2")
             loader = get_data_loader(self.dataset_uri, session_consumption=consumption)
-            assert isinstance(loader, UserRawDataLoader)
+            assert isinstance(loader, DataLoader)
             assert isinstance(loader.session_consumption, StandaloneTDSC)
             assert loader.session_consumption._todo_queue.qsize() == 1
-            assert loader.kind == DataFormatType.USER_RAW
 
             version = "1122334455667788"
 
             m_scan.return_value = [
                 TabularDatasetRow(
+                    data={
+                        "image": GrayscaleImage(
+                            link=Link(
+                                f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}",
+                                offset=16,
+                                size=784,
+                            )
+                        ),
+                        "label": 0,
+                    },
+                    data_origin=DataOriginType.NEW,
                     id=0,
-                    object_store_type=ObjectStoreType.REMOTE,
-                    data_link=Link(
-                        f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}"
-                    ),
-                    data_offset=16,
-                    data_size=784,
-                    annotations={"label": 0},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.USER_RAW,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
-                    },
                 ),
                 TabularDatasetRow(
+                    data={
+                        "image": GrayscaleImage(
+                            link=Link(
+                                f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}",
+                                offset=16,
+                                size=784,
+                            )
+                        ),
+                        "label": 1,
+                    },
+                    data_origin=DataOriginType.NEW,
                     id=1,
-                    object_store_type=ObjectStoreType.REMOTE,
-                    data_link=Link(
-                        f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}"
-                    ),
-                    data_offset=16,
-                    data_size=784,
-                    annotations={"label": 1},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.USER_RAW,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
-                    },
                 ),
                 TabularDatasetRow(
+                    data={
+                        "image": GrayscaleImage(
+                            link=Link(
+                                f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}",
+                                offset=16,
+                                size=784,
+                            )
+                        ),
+                        "label": 1,
+                    },
+                    data_origin=DataOriginType.NEW,
                     id=2,
-                    object_store_type=ObjectStoreType.REMOTE,
-                    data_link=Link(
-                        f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}"
-                    ),
-                    data_offset=16,
-                    data_size=784,
-                    annotations={"label": 1},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.USER_RAW,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
-                    },
                 ),
                 TabularDatasetRow(
-                    id=3,
-                    object_store_type=ObjectStoreType.REMOTE,
-                    data_link=Link(
-                        f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}"
-                    ),
-                    data_offset=16,
-                    data_size=784,
-                    annotations={"label": 1},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.USER_RAW,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": GrayscaleImage(
+                            link=Link(
+                                f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}",
+                                offset=16,
+                                size=784,
+                            )
+                        ),
+                        "label": 1,
                     },
+                    data_origin=DataOriginType.NEW,
+                    id=3,
                 ),
             ]
 
@@ -297,35 +285,34 @@ class TestDataLoader(TestCase):
                 }
             )
 
-            assert loader.kind == DataFormatType.USER_RAW
-            assert loader._stores == {}
+            ObjectStore._stores = {}
 
             rows = list(loader)
             assert len(rows) == 4
 
-            _idx, _data, _annotations = rows[0]
+            _idx, _data = rows[0]
             assert _idx == 0
-            assert _annotations["label"] == 0
-            assert isinstance(_data, Image)
+            assert _data["label"] == 0
+            assert isinstance(_data["image"], Image)
 
-            assert len(_data.to_bytes()) == 28 * 28
-            assert isinstance(_data.to_bytes(), bytes)
-            assert len(loader._stores) == 4
+            assert len(_data["image"].to_bytes()) == 28 * 28
+            assert isinstance(_data["image"].to_bytes(), bytes)
+            assert len(ObjectStore._stores) == 4
             assert (
-                loader._stores[
+                ObjectStore._stores[
                     "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1/starwhale/"
                 ].backend.kind
                 == SWDSBackendType.S3
             )
             assert (
-                loader._stores[
+                ObjectStore._stores[
                     "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1:9000/starwhale/"
                 ].bucket
                 == "starwhale"
             )
 
             loader = get_data_loader(self.dataset_uri)
-            assert isinstance(loader, UserRawDataLoader)
+            assert isinstance(loader, DataLoader)
             assert loader.session_consumption is None
             assert len(list(loader)) == 4
 
@@ -354,8 +341,7 @@ class TestDataLoader(TestCase):
         os.environ[SWEnv.instance_token] = "123"
         consumption = get_dataset_consumption(self.dataset_uri, session_id="5")
         loader = get_data_loader(dataset_uri, session_consumption=consumption)
-        assert isinstance(loader, SWDSBinDataLoader)
-        assert loader.kind == DataFormatType.SWDS_BIN
+        assert isinstance(loader, DataLoader)
         assert isinstance(loader.session_consumption, StandaloneTDSC)
         assert isinstance(
             loader.tabular_dataset._ds_wrapper._data_store, RemoteDataStore
@@ -364,30 +350,22 @@ class TestDataLoader(TestCase):
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
             TabularDatasetRow(
-                id=0,
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "image": GrayscaleImage(
+                        link=Link(
+                            fname,
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 0,
                 },
+                data_origin=DataOriginType.NEW,
+                id=0,
             )
         ]
-        os.environ.update(
-            {
-                "SW_S3_BUCKET": "starwhale",
-                "SW_S3_ENDPOINT": "starwhale.mock:9000",
-                "SW_S3_ACCESS_KEY": "foo",
-                "SW_S3_SECRET": "bar",
-            }
-        )
 
         with open(os.path.join(self.swds_dir, fname), "rb") as f:
             swds_content = f.read(-1)
@@ -402,34 +380,34 @@ class TestDataLoader(TestCase):
             content=swds_content,
         )
 
-        assert loader._stores == {}
+        ObjectStore._stores = {}
 
         rows = list(loader)
         assert len(rows) == 1
-        _idx, _data, _annotations = rows[0]
+        _idx, _data = rows[0]
         assert _idx == 0
-        assert _annotations["label"] == 0
+        assert _data["label"] == 0
 
-        assert len(_data.to_bytes()) == 10 * 28 * 28
-        assert isinstance(_data, Image)
+        assert len(_data["image"].to_bytes()) == 28 * 28
+        assert isinstance(_data["image"], Image)
 
-        assert list(loader._stores.keys()) == [
+        assert list(ObjectStore._stores.keys()) == [
             "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
         ]
-        backend = loader._stores[
+        backend = ObjectStore._stores[
             "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
         ].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
         assert (
-            loader._stores[
+            ObjectStore._stores[
                 "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
             ].bucket
             == ""
         )
         assert (
-            loader._stores[
+            ObjectStore._stores[
                 "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
             ].key_prefix
             == ""
@@ -440,80 +418,77 @@ class TestDataLoader(TestCase):
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_swds_bin_local_fs(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
-            include_user_raw=False,
-            include_link=False,
             rows=2,
             increased_rows=2,
         )
         loader = get_data_loader(self.dataset_uri)
-        assert isinstance(loader, SWDSBinDataLoader)
-        assert loader.kind == DataFormatType.SWDS_BIN
+        assert isinstance(loader, DataLoader)
 
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
             TabularDatasetRow(
-                id=0,
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "image": GrayscaleImage(
+                        link=Link(
+                            fname,
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 0,
                 },
+                data_origin=DataOriginType.NEW,
+                id=0,
             ),
             TabularDatasetRow(
-                id=1,
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 1},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "image": GrayscaleImage(
+                        link=Link(
+                            fname,
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 1,
                 },
+                data_origin=DataOriginType.NEW,
+                id=1,
             ),
         ]
 
         data_dir = DatasetStorage(self.dataset_uri).data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
-        assert loader._stores == {}
+        ObjectStore._stores = {}
 
         rows = list(loader)
         assert len(rows) == 2
 
-        _idx, _data, _annotations = rows[0]
+        _idx, _data = rows[0]
 
         assert _idx == 0
-        assert _annotations["label"] == 0
+        assert _data["label"] == 0
 
-        assert isinstance(_data, Image)
-        assert len(_data.to_bytes()) == 7840
-        assert isinstance(_data.to_bytes(), bytes)
+        assert isinstance(_data["image"], Image)
+        assert len(_data["image"].to_bytes()) == 784
+        assert isinstance(_data["image"].to_bytes(), bytes)
 
-        assert list(loader._stores.keys()) == [
+        assert list(ObjectStore._stores.keys()) == [
             "local/project/self/dataset/mnist/version/1122334455667788."
         ]
-        backend = loader._stores[
+        backend = ObjectStore._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
-        assert loader._stores[
+        assert ObjectStore._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].bucket == str(data_dir)
-        assert not loader._stores[
+        assert not ObjectStore._stores[
             "local/project/self/dataset/mnist/version/1122334455667788."
         ].key_prefix
 
@@ -546,69 +521,101 @@ class TestDataLoader(TestCase):
             [
                 TabularDatasetRow(
                     id="a",
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link("l11"),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": Link("l1")},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": Image(
+                            link=Link(
+                                "l11",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
+                        "label": Image(
+                            link=Link(
+                                "l1",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
                     },
+                    data_origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="b",
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link("l12"),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": Link("l2")},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": Image(
+                            link=Link(
+                                "l12",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
+                        "label": Image(
+                            link=Link(
+                                "l2",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
                     },
+                    data_origin=DataOriginType.NEW,
                 ),
             ],
             [
                 TabularDatasetRow(
                     id="c",
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link("l13"),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": Link("l3")},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": Image(
+                            link=Link(
+                                "l13",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
+                        "label": Image(
+                            link=Link(
+                                "l3",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
                     },
+                    data_origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="d",
-                    object_store_type=ObjectStoreType.LOCAL,
-                    data_link=Link("l14"),
-                    data_offset=32,
-                    data_size=784,
-                    _swds_bin_offset=0,
-                    _swds_bin_size=8160,
-                    annotations={"label": Link("l4")},
-                    data_origin=DataOriginType.NEW,
-                    data_format=DataFormatType.SWDS_BIN,
-                    data_type={
-                        "type": ArtifactType.Image.value,
-                        "mime_type": MIMEType.GRAYSCALE.value,
+                    data={
+                        "image": Image(
+                            link=Link(
+                                "l14",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
+                        "label": Image(
+                            link=Link(
+                                "l4",
+                                offset=32,
+                                size=784,
+                                _swds_bin_offset=0,
+                                _swds_bin_size=8160,
+                            )
+                        ),
                     },
+                    data_origin=DataOriginType.NEW,
                 ),
             ],
         ]
@@ -635,64 +642,47 @@ class TestDataLoader(TestCase):
             dataset_uri, start="a", end="d", session_consumption=tdsc
         )
         _label_uris_map = {}
-        for _, data, annotations in loader:
-            self.assertEqual(raw_content, data.to_bytes())
-            _label_uris_map[annotations["label"].uri] = annotations["label"]._signed_uri
+        for _, data in loader:
+            self.assertEqual(raw_content, data["image"].to_bytes())
+            _label_uris_map[data["label"].link.uri] = data["label"].link._signed_uri
+            _label_uris_map[data["image"].link.uri] = data["image"].link._signed_uri
             self.assertEqual(
-                annotations["label"]._signed_uri,
-                _uri_dict.get(annotations["label"].uri),
+                data["label"].link._signed_uri,
+                _uri_dict.get(data["label"].link.uri),
+            )
+            self.assertEqual(
+                data["image"].link._signed_uri,
+                _uri_dict.get(data["image"].link.uri),
             )
 
-        self.assertEqual(req_get_file.call_count, 4)
-        self.assertEqual(len(_label_uris_map), 4)
+        self.assertEqual(req_get_file.call_count, 8)
+        self.assertEqual(len(_label_uris_map), 8)
 
     def test_data_row(self) -> None:
-        dr = DataRow(index=1, data=Image(), annotations={"label": 1})
-        index, data, annotations = dr
+        dr = DataRow(index=1, data={"data": Image(), "label": 1})
+        index, data = dr
         assert index == 1
-        assert isinstance(data, Image)
-        assert annotations == {"label": 1}
+        assert isinstance(data["data"], Image)
+        assert data["label"] == 1
         assert dr[0] == 1
-        assert len(dr) == 3
+        assert len(dr) == 2
 
-        dr_another = DataRow(index=2, data=Image(), annotations={"label": 2})
+        dr_another = DataRow(index=2, data={"data": Image(), "label": 2})
         assert dr < dr_another
         assert dr != dr_another
 
-        dr_third = DataRow(index=1, data=Image(fp=b""), annotations={"label": 10})
+        dr_third = DataRow(index=1, data={"data": Image(fp=b""), "label": 10})
         assert dr >= dr_third
-
-        dr_none = DataRow(index=1, data=None, annotations={})
-        assert dr_none.data is None
 
     def test_data_row_exceptions(self) -> None:
         with self.assertRaises(TypeError):
-            DataRow(index=b"", data=Image(), annotations={})  # type: ignore
+            DataRow(index=b"", data=Image(), content={})  # type: ignore
 
         with self.assertRaises(TypeError):
-            DataRow(index=1, data=b"", annotations={})  # type: ignore
+            DataRow(index=1, data=b"", content={})  # type: ignore
 
         with self.assertRaises(TypeError):
-            DataRow(index=1, data=Image(), annotations=1)  # type: ignore
-
-    def test_travel_link(self) -> None:
-        class _SW(SwObject):
-            def __init__(self) -> None:
-                self.link = Link()
-
-        objs = {
-            "link": Link(),
-            "dict": {
-                "link": Link(),
-            },
-            "list": [Link(), Link()],
-            "tuple": (Link(),),
-            "list_complex": [[Link()], (Link()), {"link": Link()}],
-            "sw_object": _SW(),
-        }
-
-        links = DataLoader._travel_link(objs)
-        assert len(links) == 9
+            DataRow(index=1, data=Image(), content=1)  # type: ignore
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
@@ -706,12 +696,16 @@ class TestDataLoader(TestCase):
         m_scan.return_value = [
             TabularDatasetRow(
                 id=i,
-                data_link=Link(fname),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": i},
+                data={
+                    "l": Link(
+                        fname,
+                        offset=32,
+                        size=784,
+                        _swds_bin_offset=0,
+                        _swds_bin_size=8160,
+                    ),
+                    "label": i,
+                },
             )
             for i in range(0, rows_cnt)
         ]
@@ -766,12 +760,18 @@ class TestDataLoader(TestCase):
         m_scan.return_value = [
             TabularDatasetRow(
                 id=0,
-                data_link=Link("not-found"),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 0},
+                data={
+                    "l": Image(
+                        link=Link(
+                            "not-found",
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 0,
+                },
             )
         ]
         loader = get_data_loader(self.dataset_uri)

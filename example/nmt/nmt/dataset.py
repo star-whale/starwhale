@@ -17,6 +17,7 @@ class NMTDatasetBuildExecutor(BuildExecutor):
                     continue
 
                 _data, _label, *_ = line.split("\t")
-                data = Text(normalize_str(_data), encoding="utf-8")
-                annotations = {"label": normalize_str(_label)}
-                yield data, annotations
+                yield {
+                    "english": Text(normalize_str(_data), encoding="utf-8"),
+                    "french": Text(normalize_str(_label), encoding="utf-8"),
+                }

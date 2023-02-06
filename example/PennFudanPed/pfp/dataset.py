@@ -11,12 +11,12 @@ from starwhale import (
     Image,
     MIMEType,
     BoundingBox,
+    BuildExecutor,
     COCOObjectAnnotation,
-    UserRawBuildExecutor,
 )
 
 
-class PFPDatasetBuildExecutor(UserRawBuildExecutor):
+class PFPDatasetBuildExecutor(BuildExecutor):
     def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
@@ -28,17 +28,28 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
             data_fpath = root_dir / data_fname
             height, width = self._get_image_shape(data_fpath)
             coco_annotations = self._make_coco_annotations(mask_fpath, data_fname)
-            annotations = {
-                "mask": Link(
-                    mask_fpath,
-                    size=mask_fpath.stat().st_size,
+            img = Image(
+                display_name=name,
+                mime_type=MIMEType.PNG,
+                shape=(height, width, 3),
+                link=Link(
+                    data_fpath,
+                    size=data_fpath.stat().st_size,
                     with_local_fs_data=True,
-                    data_type=Image(
-                        display_name=name,
-                        mime_type=MIMEType.PNG,
-                        shape=(height, width, 3),
-                        as_mask=True,
-                        mask_uri=name,
+                ),
+            )
+            yield data_fname, {
+                "image": img,
+                "mask": Image(
+                    display_name=name,
+                    mime_type=MIMEType.PNG,
+                    shape=(height, width, 3),
+                    as_mask=True,
+                    mask_uri=name,
+                    link=Link(
+                        mask_fpath,
+                        size=mask_fpath.stat().st_size,
+                        with_local_fs_data=True,
                     ),
                 ),
                 "image_id": data_fname,
@@ -48,17 +59,6 @@ class PFPDatasetBuildExecutor(UserRawBuildExecutor):
                 "object_nums": len(coco_annotations),
                 "annotations": coco_annotations,
             }
-            data = Link(
-                data_fpath,
-                size=data_fpath.stat().st_size,
-                with_local_fs_data=True,
-                data_type=Image(
-                    display_name=name,
-                    mime_type=MIMEType.PNG,
-                    shape=(height, width, 3),
-                ),
-            )
-            yield data_fname, data, annotations
 
     def _get_image_shape(self, fpath: Path) -> t.Tuple[int, int]:
         with PILImage.open(str(fpath)) as f:

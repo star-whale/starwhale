@@ -9,9 +9,9 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class SimplePipeline(PipelineHandler):
-    def ppl(self, text: Text, **kw):
+    def ppl(self, data: dict, **kw):
         return (
-            text.content,
+            data["txt"].content,
             numpy.exp([random.uniform(-10, 1) for i in range(0, 100)]).tolist(),
         )
 
@@ -25,7 +25,7 @@ class SimplePipeline(PipelineHandler):
     def cmp(self, ppl_result: PPLResultIterator):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["label"])
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
         return label, result, pr

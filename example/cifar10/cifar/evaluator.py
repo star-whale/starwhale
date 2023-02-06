@@ -21,8 +21,8 @@ class CIFAR10Inference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def ppl(self, img: Image, **kw):
-        data_tensor = self._pre(img)
+    def ppl(self, data: dict, **kw):
+        data_tensor = self._pre(data["image"])
         output = self.model(data_tensor)
         return self._post(output)
 
@@ -36,7 +36,7 @@ class CIFAR10Inference(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
+            label.append(_data["ds_data"]["label"])
             result.extend(_data["result"][0])
             pr.extend(_data["result"][1])
         return label, result, pr

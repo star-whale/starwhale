@@ -23,7 +23,7 @@ class UCFDatasetBuildExecutor(BuildExecutor):
                         mime_type=MIMEType.AVI,
                     )
 
-                    annotations = {
+                    yield f"{label}_{video_sub_path}", {
+                        "video": data,
                         "label": label,
                     }
-                    yield f"{label}_{video_sub_path}", data, annotations

@@ -66,9 +66,9 @@ class TorchIterableDataset(IterableDataset):
         _t = self.transform
         for row in self.dataset:
             if self.drop_index:
-                yield _t(row.data), _t(row.annotations)
+                yield _t(row.data)
             else:
-                yield _t(row.index), _t(row.data), _t(row.annotations)
+                yield _t(row.index), _t(row.data)
 
     def __len__(self) -> int:
         return len(self.dataset)

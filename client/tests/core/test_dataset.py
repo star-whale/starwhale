@@ -21,13 +21,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import (
-    URIType,
-    BundleType,
-    DataFormatType,
-    DataOriginType,
-    ObjectStoreType,
-)
+from starwhale.base.type import URIType, BundleType, DataOriginType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
@@ -38,9 +32,9 @@ from starwhale.core.dataset.type import (
     Polygon,
     JsonDict,
     MIMEType,
-    ArtifactType,
     DatasetConfig,
     DatasetSummary,
+    GrayscaleImage,
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
@@ -65,11 +59,8 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.api._impl.dataset.builder.UserRawBuildExecutor.make_swds")
-    @patch("starwhale.api._impl.dataset.builder.SWDSBinBuildExecutor.make_swds")
-    def test_function_handler_make_swds(
-        self, m_swds_bin: MagicMock, m_user_raw: MagicMock
-    ) -> None:
+    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
+    def test_function_handler_make_swds(self, m_swds_bin: MagicMock) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
@@ -80,18 +71,11 @@ class StandaloneDatasetTestCase(TestCase):
             sd._call_make_swds(swds_config)
 
         def _iter_swds_bin_item() -> t.Generator:
-            yield b"", {}
-
-        def _iter_user_raw_item() -> t.Generator:
-            yield Link(""), {}
+            yield {"bytes": b"", "link": Link("")}
 
         swds_config.handler = _iter_swds_bin_item
         sd._call_make_swds(swds_config)
         assert m_swds_bin.call_count == 1
-
-        swds_config.handler = _iter_user_raw_item
-        sd._call_make_swds(swds_config)
-        assert m_user_raw.call_count == 1
 
     @patch("starwhale.core.dataset.cli.import_object")
     def test_build_only_cli(self, m_import: MagicMock) -> None:
@@ -302,59 +286,56 @@ class StandaloneDatasetTestCase(TestCase):
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
     @patch("starwhale.core.dataset.store.LocalFSStorageBackend._make_file")
-    @patch("starwhale.api._impl.dataset.loader.SWDSBinDataLoader._read_data")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_head(
         self,
         m_scan: MagicMock,
         m_summary: MagicMock,
-        m_read: MagicMock,
         m_makefile: MagicMock,
     ) -> None:
         m_summary.return_value = DatasetSummary(
-            include_user_raw=False,
-            include_link=False,
             rows=2,
             increased_rows=2,
         )
-        content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
-        m_read.return_value = content, len(content)
-        m_makefile.return_value = io.BytesIO(b"123")
         m_scan.return_value = [
             TabularDatasetRow(
                 id="label-0",
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link("123"),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 0},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "img": GrayscaleImage(
+                        link=Link(
+                            "123",
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 0,
                 },
+                data_origin=DataOriginType.NEW,
             ),
             TabularDatasetRow(
                 id="label-1",
-                object_store_type=ObjectStoreType.LOCAL,
-                data_link=Link("456"),
-                data_offset=32,
-                data_size=784,
-                _swds_bin_offset=0,
-                _swds_bin_size=8160,
-                annotations={"label": 1},
-                data_origin=DataOriginType.NEW,
-                data_format=DataFormatType.SWDS_BIN,
-                data_type={
-                    "type": ArtifactType.Image.value,
-                    "mime_type": MIMEType.GRAYSCALE.value,
+                data={
+                    "img": GrayscaleImage(
+                        link=Link(
+                            "456",
+                            offset=32,
+                            size=784,
+                            _swds_bin_offset=0,
+                            _swds_bin_size=8160,
+                        )
+                    ),
+                    "label": 1,
                 },
+                data_origin=DataOriginType.NEW,
             ),
         ]
+        content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
+        while len(content) < 784:
+            content = content + content
+        m_makefile.side_effect = [io.BytesIO(content), io.BytesIO(content)]
 
         dataset_uri = "mnist/version/version"
         ds = Dataset.get_dataset(URI(dataset_uri, expected_type=URIType.DATASET))
@@ -363,15 +344,11 @@ class StandaloneDatasetTestCase(TestCase):
         assert len(results) == 0
 
         results = ds.head(1, show_raw_data=True)
-        assert results[0]["index"] == 0
-        assert results[0]["annotations"]["label"] == 0
-        assert results[0]["data"]["id"] == "label-0"
-        assert results[0]["data"]["type"] == {
-            "type": "image",
-            "mime_type": "x/grayscale",
-        }
-        assert results[0]["data"]["raw"] == content
-        assert results[0]["data"]["size"] == len(content)
+        assert results[0]["id"] == 0
+        assert results[0]["index"] == "label-0"
+        assert results[0]["data"]["label"] == 0
+        assert results[0]["data"]["img"].mime_type == MIMEType.GRAYSCALE
+        assert len(results[0]["data"]["img"].to_bytes()) == 784
         assert len(results) == 1
 
         results = ds.head(5, show_raw_data=True)
@@ -416,12 +393,15 @@ class TestJsonDict(TestCase):
                             "_type": data_store.STRING,
                             "uri": data_store.STRING,
                             "scheme": data_store.STRING,
+                            "owner": data_store.UNKNOWN,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
-                            "data_type": data_store.UNKNOWN,
                             "with_local_fs_data": data_store.BOOL,
                             "_local_fs_uri": data_store.STRING,
                             "_signed_uri": data_store.STRING,
+                            "extra_info": data_store.SwMapType(
+                                data_store.UNKNOWN, data_store.UNKNOWN
+                            ),
                         },
                     ),
                     "e": data_store.SwTupleType(data_store.STRING),

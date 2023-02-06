@@ -29,14 +29,17 @@ def build_ds():
                 ds.append(
                     (
                         f"{category}/{_name}",
-                        Link(
-                            uri=f"{PATH_ROOT}/{DATA_PATH}/{category}/{_name}",
-                            data_type=Image(
-                                display_name=_name, mime_type=MIMEType.JPEG
+                        {
+                            "label": category,
+                            "image": Image(
+                                display_name=_name,
+                                mime_type=MIMEType.JPEG,
+                                link=Link(
+                                    uri=f"{PATH_ROOT}/{DATA_PATH}/{category}/{_name}",
+                                    with_local_fs_data=False,
+                                ),
                             ),
-                            with_local_fs_data=False,
-                        ),
-                        {"label": category},
+                        },
                     )
                 )
     ds.commit()

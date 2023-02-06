@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import React from 'react'
 import Button from '@starwhale/ui/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
@@ -102,11 +103,13 @@ const useStyles = createUseStyles({
 
 export default function DatasetVersionFilePreview({
     datasets,
+    preview,
     fileId,
     isFullscreen = false,
     setIsFullscreen = () => {},
 }: {
     datasets: DatasetObject[]
+    preview: any
     fileId: string
     isFullscreen?: boolean
     setIsFullscreen?: any
@@ -116,19 +119,19 @@ export default function DatasetVersionFilePreview({
         if (!row) return undefined
         return row
     }, [datasets, fileId])
-
+    const previewData = preview
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
 
     const Panel = React.useMemo(() => {
-        if (data && data?.cocos?.length > 0) {
+        if (previewData && previewData?.cocos?.length > 0) {
             return (
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 <TabControl
                     value={activeKey}
                     onChange={setActiveKey}
-                    data={data}
+                    data={previewData}
                     hiddenLabels={hiddenLabels}
                     setHiddenLabels={setHiddenLabels}
                 />
@@ -138,7 +141,7 @@ export default function DatasetVersionFilePreview({
 
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return <Summary data={data?.summary ?? {}} />
-    }, [data, activeKey, setHiddenLabels, hiddenLabels])
+    }, [previewData, data, activeKey, setHiddenLabels, hiddenLabels])
 
     if (!isFullscreen) return <></>
 
@@ -180,7 +183,7 @@ export default function DatasetVersionFilePreview({
                             </div>
                         )}
 
-                        <DatasetViewer dataset={data} isZoom hiddenLabels={hiddenLabels} />
+                        <DatasetViewer dataset={previewData} isZoom hiddenLabels={hiddenLabels} />
                     </div>
                 </div>
             </ModalBody>
@@ -299,9 +302,9 @@ function TabControl({
                     })}
                 </div>
             </Tab>
-            <Tab title={`Categories(${data?.getCOCOCategories().length})`}>
+            <Tab title={`Categories(${data?.cocoCats.length})`}>
                 <div>
-                    {data?.getCOCOCategories().map((v) => {
+                    {data?.cocoCats.map((v) => {
                         return (
                             <div key={v} className={styles.cocoAnnotation}>
                                 {v}
@@ -318,14 +321,16 @@ function Summary({ data }: { data: Record<string, any> }) {
 
     return (
         <div>
-            {Object.entries(data).map(([key, value]) => {
-                return (
-                    <div className={styles.summary} key={key}>
-                        <span className={styles.summaryLabel}>{key}</span>
-                        <span className={styles.summaryValue}>{value}</span>
-                    </div>
-                )
-            })}
+            {Object.entries(data)
+                .filter(([, value]) => !_.isObject(value))
+                .map(([key, value]) => {
+                    return (
+                        <div className={styles.summary} key={key}>
+                            <span className={styles.summaryLabel}>{key}</span>
+                            <span className={styles.summaryValue}>{value}</span>
+                        </div>
+                    )
+                })}
         </div>
     )
 }

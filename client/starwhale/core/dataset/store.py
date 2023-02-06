@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 import boto3
 import requests
+from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
@@ -30,7 +31,7 @@ from starwhale.utils.fs import (
     FilePosition,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.store import BaseStorage
 from starwhale.utils.error import (
@@ -323,6 +324,9 @@ class S3Connection:
 
 
 class ObjectStore:
+    _store_lock = threading.Lock()
+    _stores: t.Dict[str, ObjectStore] = {}
+
     def __init__(
         self,
         backend: str,
@@ -387,6 +391,36 @@ class ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
         return cls(backend=SWDSBackendType.SignedUrl, dataset_uri=dataset_uri)
+
+    @classmethod
+    def get_store(
+        cls, link: Link, owner: t.Optional[t.Union[str, URI]] = None
+    ) -> ObjectStore:
+        with cls._store_lock:
+            _up = urlparse(link.uri)
+            _parts = _up.path.lstrip("/").split("/", 1)
+            _cache_key = link.uri.replace(_parts[-1], "")
+            _k = f"{owner}.{_cache_key}"
+            _store = cls._stores.get(_k)
+            if _store:
+                return _store
+            if not owner:
+                _store = ObjectStore.from_data_link_uri(link)
+                cls._stores[_k] = _store
+                return _store
+            if isinstance(owner, str):
+                owner = URI(owner, expected_type=URIType.DATASET)
+            if owner.instance_type == InstanceType.CLOUD:
+                _store = ObjectStore.to_signed_http_backend(owner)
+            else:
+                if link.scheme and link.scheme != "fs":
+                    _store = ObjectStore.from_data_link_uri(link)
+                else:
+                    _store = ObjectStore.from_dataset_uri(owner)
+
+            logger.debug(f"new store backend created for key: {_k}")
+            cls._stores[_k] = _store
+            return _store
 
 
 class StorageBackend(metaclass=ABCMeta):

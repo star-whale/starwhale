@@ -37,7 +37,7 @@ from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
-from starwhale.core.dataset.type import Link, JsonDict
+from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 
@@ -98,30 +98,18 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
 
-    ANNOTATION_PREFIX = "annotation/"
+    DATA_PREFIX = "data/"
 
     def __init__(
         self,
         id: t.Union[str, int],
-        data_link: Link,
-        data_format: DataFormatType = DataFormatType.SWDS_BIN,
-        object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
-        data_offset: int = 0,
-        data_size: int = 0,
         data_origin: DataOriginType = DataOriginType.NEW,
-        data_type: t.Optional[t.Dict[str, t.Any]] = None,
-        annotations: t.Optional[t.Dict[str, t.Any]] = None,
+        data: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.data_link = data_link
-        self.data_format = data_format
-        self.data_offset = data_offset
-        self.data_size = data_size
         self.data_origin = data_origin
-        self.object_store_type = object_store_type
-        self.data_type = data_type or {}
-        self.annotations = annotations or {}
+        self.data = data or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
@@ -131,34 +119,22 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        data_link: Link,
-        data_format: str = DataFormatType.SWDS_BIN.value,
-        object_store_type: str = ObjectStoreType.LOCAL.value,
-        data_offset: int = 0,
-        data_size: int = 0,
         data_origin: str = DataOriginType.NEW.value,
-        data_type: str = "",
         **kw: t.Any,
     ) -> TabularDatasetRow:
-        _annotations = {}
+        _content = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if k.startswith(cls.ANNOTATION_PREFIX):
-                _, name = k.split(cls.ANNOTATION_PREFIX, 1)
-                _annotations[name] = JsonDict.to_data(v)
+            if k.startswith(cls.DATA_PREFIX):
+                _, name = k.split(cls.DATA_PREFIX, 1)
+                _content[name] = JsonDict.to_data(v)
             else:
                 _extra_kw[k] = v
 
         return cls(
             id=id,
-            data_link=data_link,
-            data_format=DataFormatType(data_format),
-            object_store_type=ObjectStoreType(object_store_type),
-            data_offset=data_offset,
-            data_size=data_size,
             data_origin=DataOriginType(data_origin),
-            data_type=json.loads(data_type),
-            annotations=_annotations,
+            data=_content,
             **_extra_kw,
         )
 
@@ -177,47 +153,37 @@ class TabularDatasetRow(ASDictMixin):
         if self.id == "":
             raise FieldTypeOrValueError("id is empty")
 
-        if not isinstance(self.annotations, dict) or not self.annotations:
-            raise FieldTypeOrValueError("no annotations field")
-
-        # TODO: add annotation items type check
-
-        if not self.data_link:
-            raise FieldTypeOrValueError("no raw_data_link field")
-
-        if not isinstance(self.data_format, DataFormatType):
-            raise NoSupportError(f"data format: {self.data_format}")
+        if not isinstance(self.data, dict) or not self.data:
+            raise FieldTypeOrValueError("no data field")
 
         if not isinstance(self.data_origin, DataOriginType):
             raise NoSupportError(f"data origin: {self.data_origin}")
 
-        if not isinstance(self.object_store_type, ObjectStoreType):
-            raise NoSupportError(f"object store {self.object_store_type}")
-
     def __str__(self) -> str:
-        return f"row-{self.id}, data-{self.data_link}, origin-[{self.data_origin}]"
+        return f"row-{self.id}"
 
     def __repr__(self) -> str:
-        return (
-            f"row-{self.id}, data-{self.data_link}(offset:{self.data_offset}, size:{self.data_size},"
-            f"format:{self.data_format}, meta type:{self.data_type}), "
-            f"origin-[{self.data_origin}], object store-{self.object_store_type}"
-        )
+        return f"row-{self.id}" f"{self.data} "
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
-        d = super().asdict(
-            ignore_keys=ignore_keys
-            or ["annotations", "extra_kw", "data_type", "data_link"]
-        )
+        d = super().asdict(ignore_keys=ignore_keys or ["data", "extra_kw"])
         d.update(_do_asdict_convert(self.extra_kw))
-        for k, v in self.annotations.items():
-            d[f"{self.ANNOTATION_PREFIX}{k}"] = JsonDict.from_data(v)
-        # TODO: use data_store SwObject to store data_type
-        d["data_type"] = json.dumps(
-            _do_asdict_convert(self.data_type), separators=(",", ":")
-        )
-        d["data_link"] = self.data_link
+        for k, v in self.data.items():
+            d[f"{self.DATA_PREFIX}{k}"] = JsonDict.from_data(v)
         return d
+
+    @classmethod
+    def artifacts_of_data(cls, content: t.Dict) -> t.List[BaseArtifact]:
+        artifacts = []
+        for v in content.values():
+            if isinstance(v, dict):
+                artifacts.extend(cls.artifacts_of_data(v))
+            elif isinstance(v, BaseArtifact):
+                artifacts.append(v)
+        return artifacts
+
+    def artifacts(self) -> t.List[BaseArtifact]:
+        return TabularDatasetRow.artifacts_of_data(self.data)
 
 
 _TDType = t.TypeVar("_TDType", bound="TabularDataset")

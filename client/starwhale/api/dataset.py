@@ -20,11 +20,7 @@ from ._impl.dataset import (
     get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
     COCOObjectAnnotation,
-    SWDSBinBuildExecutor,
-    UserRawBuildExecutor,
 )
 
 # TODO: add dataset build/push/list/info api
@@ -39,11 +35,7 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
-    "BuildExecutor",  # SWDSBinBuildExecutor alias
-    "UserRawBuildExecutor",
-    "SWDSBinBuildExecutor",
-    "SWDSBinDataLoader",
-    "UserRawDataLoader",
+    "BuildExecutor",
     "Binary",
     "Text",
     "Line",

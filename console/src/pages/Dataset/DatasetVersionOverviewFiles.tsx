@@ -9,7 +9,6 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
-import { getReadableStorageQuantityStr } from '@/utils'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
@@ -132,6 +131,7 @@ export default function DatasetVersionFiles() {
     const { datasetVersion } = useDatasetVersion()
 
     const [preview, setPreview] = React.useState('')
+    const [fileId, setfileId] = React.useState('')
     const { query } = useQueryArgs()
 
     const $page = React.useMemo(() => {
@@ -185,87 +185,79 @@ export default function DatasetVersionFiles() {
         const { summary = {} } = datasets?.[0] ?? {}
 
         const rowAction = [
-            {
-                label: 'data',
-                overrides: {
-                    TableHeadCell: {
-                        style: {
-                            backgroundColor: theme.brandTableHeaderBackground,
-                            borderBottomWidth: '0',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            lineHeight: '14px',
+            ...Object.entries(summary)
+                .filter(([key]) => !key.toString().startsWith('_'))
+                .map(([key]) => ({
+                    label: key,
+                    overrides: {
+                        TableHeadCell: {
+                            style: {
+                                backgroundColor: theme.brandTableHeaderBackground,
+                                borderBottomWidth: '0',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                                lineHeight: '14px',
+                            },
+                        },
+                        TableBodyCell: {
+                            style: {
+                                verticalAlign: 'middle',
+                                paddingTop: '4px',
+                                paddingBottom: '4px',
+                                position: 'relative',
+                            },
                         },
                     },
-                    TableBodyCell: {
-                        style: {
-                            verticalAlign: 'middle',
-                            paddingTop: '4px',
-                            paddingBottom: '4px',
-                            position: 'relative',
-                        },
-                    },
-                },
-                renderItem: (row: any) => {
-                    let wrapperStyle = {}
+                    renderItem: (row: any) => {
+                        let wrapperStyle = {}
 
-                    switch (row.data._type) {
-                        case TYPES.IMAGE:
-                            wrapperStyle = {
-                                minWidth: '90px',
-                                height: '90px',
-                                textAlign: 'center',
-                            }
-                            break
-                        case TYPES.AUDIO:
-                            wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
-                            break
-                        case TYPES.VIDEO:
-                            wrapperStyle = { maxWidth: '300px' }
-                            break
-                        default:
-                        case TYPES.TEXT:
-                            wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
-                            break
-                    }
+                        switch (row.data._type) {
+                            case TYPES.IMAGE:
+                                wrapperStyle = {
+                                    minWidth: '90px',
+                                    height: '90px',
+                                    textAlign: 'center',
+                                }
+                                break
+                            case TYPES.AUDIO:
+                                wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
+                                break
+                            case TYPES.VIDEO:
+                                wrapperStyle = { maxWidth: '300px' }
+                                break
+                            default:
+                            case TYPES.TEXT:
+                                wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
+                                break
+                        }
 
-                    return (
-                        <div className={styles.tableCell} style={wrapperStyle}>
-                            <DatasetViewer dataset={row} />
-                            <div
-                                className={styles.cardFullscreen}
-                                role='button'
-                                tabIndex={0}
-                                onClick={() => {
-                                    setIsFullscreen(true)
-                                    setPreview(row.id)
-                                    history.push(
-                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
-                                            {
-                                                ...$page,
-                                                layout: layoutKey,
-                                            }
-                                        )}`
-                                    )
-                                }}
-                            >
-                                <IconFont type='fullscreen' />
+                        return (
+                            <div className={styles.tableCell} style={wrapperStyle}>
+                                <DatasetViewer dataset={row?.summary?.[key]} />
+                                <div
+                                    className={styles.cardFullscreen}
+                                    role='button'
+                                    tabIndex={0}
+                                    onClick={() => {
+                                        setIsFullscreen(true)
+                                        setPreview(row?.summary?.[key])
+                                        setfileId(row?.id)
+                                        history.push(
+                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                                                {
+                                                    ...$page,
+                                                    layout: layoutKey,
+                                                }
+                                            )}`
+                                        )
+                                    }}
+                                >
+                                    <IconFont type='fullscreen' />
+                                </div>
                             </div>
-                        </div>
-                    )
-                },
-            },
-            {
-                label: 'size',
-                renderItem: (row: any) =>
-                    Number.isNaN(Number(row.size)) ? '-' : getReadableStorageQuantityStr(Number(row.size)),
-            },
-            ...Object.entries(summary).map(([key]) => ({
-                label: key,
-                renderItem: (row: any) => {
-                    return <div className={styles.tableCell}>{row?.summary?.[key]}</div>
-                },
-            })),
+                        )
+                    },
+                })),
         ]
 
         if (layoutKey === LAYOUT.GRID) {
@@ -406,7 +398,8 @@ export default function DatasetVersionFiles() {
             {preview && (
                 <DatasetVersionFilePreview
                     datasets={datasets}
-                    fileId={preview}
+                    preview={preview}
+                    fileId={fileId}
                     isFullscreen={isFullscreen}
                     setIsFullscreen={setIsFullscreen}
                 />

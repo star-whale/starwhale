@@ -2,7 +2,7 @@ import csv
 import typing as t
 from pathlib import Path
 
-from starwhale import Text, BuildExecutor
+from starwhale import BuildExecutor
 
 
 class AGNewsBuildExecutor(BuildExecutor):
@@ -13,6 +13,8 @@ class AGNewsBuildExecutor(BuildExecutor):
             for row in csv.reader(f, delimiter=",", quotechar='"'):
                 # The class labels start from 1 in this dataset
                 # https://huggingface.co/datasets/ag_news#default-1
-                annotations = {"label": int(row[0]) - 1}
                 data = " ".join(row[1:])
-                yield Text(content=data), annotations
+                yield {
+                    "text": data,
+                    "label": int(row[0]) - 1,
+                }

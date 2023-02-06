@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import base64
 import typing as t
 from abc import ABCMeta
@@ -11,7 +12,6 @@ from functools import partial
 from urllib.parse import urlparse
 
 import numpy
-import requests
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
@@ -21,7 +21,6 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
-from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
     NoSupportError,
@@ -205,8 +204,10 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Any = numpy.int8,
         encoding: str = "",
+        link: t.Optional[Link] = None,
     ) -> None:
         self.fp = str(fp) if isinstance(fp, Path) else fp
+        self.__cache_bytes: bytes = self.fp if isinstance(self.fp, bytes) else bytes()
         self._type = ArtifactType(type).value
 
         _fpath = str(fp) if isinstance(fp, (Path, str)) and fp else ""
@@ -215,7 +216,9 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         self.shape = list(shape) if shape else shape
         self._dtype_name: str = numpy.dtype(dtype).name
         self.encoding = encoding
+        self.link = link
         self._do_validate()
+        self.owner: t.Optional[t.Union[str, URI]] = None
 
     def _do_validate(self) -> None:
         ...
@@ -232,50 +235,36 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def mime_type(self) -> MIMEType:
         return MIMEType(self._mime_type)
 
-    @classmethod
-    def reflect(cls, raw_data: bytes, data_type: t.Dict[str, t.Any]) -> BaseArtifact:
-        if not isinstance(raw_data, bytes):
-            raise NoSupportError(f"raw data type({type(raw_data)}) is not bytes")
-
-        # TODO: support data_type reflect
-        dtype = data_type.get("type")
-        mime_type = MIMEType(data_type.get("mime_type", MIMEType.UNDEFINED))
-        shape = data_type.get("shape", [])
-        encoding = data_type.get("encoding", "")
-        display_name = data_type.get("display_name", "")
-
-        if dtype == ArtifactType.Text.value:
-            _encoding = encoding or Text.DEFAULT_ENCODING
-            return Text(content=raw_data.decode(_encoding), encoding=_encoding)
-        elif dtype == ArtifactType.Image.value:
-            return Image(
-                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
-            )
-        elif dtype == ArtifactType.Audio.value:
-            return Audio(
-                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
-            )
-        elif dtype == ArtifactType.Video.value:
-            return Video(
-                raw_data, mime_type=mime_type, shape=shape, display_name=display_name
-            )
-        elif not dtype or dtype == ArtifactType.Binary.value:
-            return Binary(raw_data)
-        elif dtype == ArtifactType.Link.value:
-            return cls.reflect(raw_data, data_type["data_type"])
-        else:
-            raise NoSupportError(f"Artifact reflect error: {data_type}")
-
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
+        return self.fetch_data(encoding)
+
+    def clear_bytes(self) -> None:
+        self.clear_cache()
+        if isinstance(self.fp, (bytes, io.IOBase)):
+            self.fp = ""
+
+    def clear_cache(self) -> None:
+        self.__cache_bytes = bytes()
+
+    def fetch_data(self, encoding: str = "utf-8") -> bytes:
+        if self.__cache_bytes:
+            return self.__cache_bytes
         if isinstance(self.fp, bytes):
-            return self.fp
-        elif isinstance(self.fp, (str, Path)):
-            return Path(self.fp).read_bytes()
+            self.__cache_bytes = self.fp
+            return self.__cache_bytes
+        elif self.fp and isinstance(self.fp, (str, Path)):
+            self.__cache_bytes = Path(self.fp).read_bytes()
+            return self.__cache_bytes
         elif isinstance(self.fp, io.IOBase):
             _pos = self.fp.tell()
             _content = self.fp.read()
             self.fp.seek(_pos)
-            return _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+            self.__cache_bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
+            return self.__cache_bytes
+        elif self.owner and self.link:
+            self.link.owner = self.owner
+            self.__cache_bytes = self.link.to_bytes()
+            return self.__cache_bytes
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
@@ -318,8 +307,17 @@ class Binary(BaseArtifact, SwObject):
         fp: _TArtifactFP = b"",
         mime_type: MIMEType = MIMEType.UNDEFINED,
         dtype: t.Type = numpy.bytes_,
+        link: t.Optional[Link] = None,
     ) -> None:
-        super().__init__(fp, ArtifactType.Binary, "", (), mime_type, dtype=dtype)
+        super().__init__(
+            fp,
+            ArtifactType.Binary,
+            "",
+            (),
+            mime_type,
+            dtype=dtype,
+            link=link,
+        )
 
     def to_numpy(self) -> numpy.ndarray:
         return numpy.array(self.to_bytes(), dtype=self.dtype)
@@ -335,6 +333,7 @@ class Image(BaseArtifact, SwObject):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
+        link: t.Optional[Link] = None,
     ) -> None:
         self.as_mask = as_mask
         self.mask_uri = mask_uri
@@ -345,6 +344,7 @@ class Image(BaseArtifact, SwObject):
             shape=shape or (None, None, 3),
             mime_type=mime_type,
             dtype=dtype,
+            link=link,
         )
 
     def _do_validate(self) -> None:
@@ -389,6 +389,7 @@ class GrayscaleImage(Image):
         as_mask: bool = False,
         mask_uri: str = "",
         dtype: t.Type = numpy.uint8,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None, None)
         super().__init__(
@@ -399,6 +400,7 @@ class GrayscaleImage(Image):
             as_mask=as_mask,
             mask_uri=mask_uri,
             dtype=dtype,
+            link=link,
         )
 
 
@@ -410,10 +412,17 @@ class Audio(BaseArtifact, SwObject):
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Type = numpy.float64,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None,)
         super().__init__(
-            fp, ArtifactType.Audio, display_name, shape, mime_type, dtype=dtype
+            fp,
+            ArtifactType.Audio,
+            display_name,
+            shape,
+            mime_type,
+            dtype=dtype,
+            link=link,
         )
 
     def _do_validate(self) -> None:
@@ -451,10 +460,17 @@ class Video(BaseArtifact, SwObject):
         shape: t.Optional[_TShape] = None,
         mime_type: t.Optional[MIMEType] = None,
         dtype: t.Type = numpy.uint8,
+        link: t.Optional[Link] = None,
     ) -> None:
         shape = shape or (None,)
         super().__init__(
-            fp, ArtifactType.Video, display_name, shape, mime_type, dtype=dtype
+            fp,
+            ArtifactType.Video,
+            display_name,
+            shape,
+            mime_type,
+            dtype=dtype,
+            link=link,
         )
 
     # TODO： support to_tensor methods
@@ -623,7 +639,12 @@ class Polygon(ASDictMixin, SwObject):
 class Text(BaseArtifact, SwObject):
     DEFAULT_ENCODING = "utf-8"
 
-    def __init__(self, content: str = "", encoding: str = DEFAULT_ENCODING) -> None:
+    def __init__(
+        self,
+        content: str = "",
+        encoding: str = DEFAULT_ENCODING,
+        link: t.Optional[Link] = None,
+    ) -> None:
         # TODO: add encoding validate
         self.content = content
         super().__init__(
@@ -634,6 +655,7 @@ class Text(BaseArtifact, SwObject):
             mime_type=MIMEType.PLAIN,
             encoding=encoding,
             dtype=numpy.str_,
+            link=link,
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
@@ -708,21 +730,23 @@ class Link(ASDictMixin, SwObject):
         uri: t.Union[str, Path] = "",
         offset: int = FilePosition.START.value,
         size: int = -1,
-        data_type: t.Optional[BaseArtifact] = None,
         with_local_fs_data: bool = False,
+        owner: t.Optional[t.Union[str, URI]] = None,
+        **kwargs: t.Any,
     ) -> None:
         self._type = "link"
+        self.owner = owner.raw if (owner and isinstance(owner, URI)) else owner
         self.uri = (str(uri)).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
         self.offset = offset
         self.size = size
-        self.data_type = data_type
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
         self._signed_uri = ""
 
         self.do_validate()
+        self.extra_info = kwargs
 
     @property
     def local_fs_uri(self) -> str:
@@ -747,49 +771,29 @@ class Link(ASDictMixin, SwObject):
     def astype(self) -> t.Dict[str, t.Any]:
         return {
             "type": self._type,
-            "data_type": self.data_type.astype() if self.data_type else {},
         }
 
     def __str__(self) -> str:
         return f"Link {self.uri}"
 
     def __repr__(self) -> str:
-        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, data type:{self.data_type}, with localFS data:{self.with_local_fs_data}"
+        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, with localFS data:{self.with_local_fs_data}"
 
     @http_retry
-    def to_bytes(self, dataset_uri: t.Union[str, URI]) -> bytes:
+    def to_bytes(self) -> bytes:
+        # TODO: cache store
         from .store import ObjectStore
 
-        if self.signed_uri:
-            r = requests.get(self.signed_uri, timeout=10)
-            return r.content
-        # TODO: auto inject dataset_uri in the loader process
-        if isinstance(dataset_uri, str):
-            dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
-
-        if dataset_uri.instance_type == InstanceType.CLOUD:
-            key_compose = self, 0, 0
-            store = ObjectStore.to_signed_http_backend(dataset_uri)
-        else:
-            if self.scheme:
-                key_compose = (
-                    Link(self.local_fs_uri) if self.local_fs_uri else self,
-                    0,
-                    0,
-                )
-                store = ObjectStore.from_data_link_uri(key_compose[0])
-            else:
-                key_compose = (
-                    Link(self.local_fs_uri) if self.local_fs_uri else self,
-                    0,
-                    -2,
-                )
-                store = ObjectStore.from_dataset_uri(dataset_uri)
-
+        key_compose = (
+            Link(self.local_fs_uri) if self.local_fs_uri else self,
+            self.offset or 0,
+            self.size + self.offset - 1 if self.size else sys.maxsize,
+        )
+        store = ObjectStore.get_store(self, self.owner)
         with store.backend._make_file(
             key_compose=key_compose, bucket=store.bucket
         ) as f:
-            return f.read(-1)  # type: ignore
+            return f.read(self.size)  # type: ignore
 
 
 class DatasetSummary(ASDictMixin):
@@ -798,27 +802,20 @@ class DatasetSummary(ASDictMixin):
         rows: int = 0,
         increased_rows: int = 0,
         data_byte_size: int = 0,
-        include_link: bool = False,
-        include_user_raw: bool = False,
-        annotations: t.Optional[t.List[str]] = None,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
         self.increased_rows = increased_rows
         self.unchanged_rows = rows - increased_rows
         self.data_byte_size = data_byte_size
-        self.include_link = include_link
-        self.include_user_raw = include_user_raw
-        self.annotations = annotations or []
 
     def __str__(self) -> str:
-        return f"Dataset Summary: rows({self.rows}), include user-raw({self.include_user_raw}), include link({self.include_link})"
+        return f"Dataset Summary: rows({self.rows})"
 
     def __repr__(self) -> str:
         return (
             f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
-            f"include user-raw({self.include_user_raw}), include link({self.include_link}),"
-            f"size(data:{self.data_byte_size}, annotations: {self.annotations})"
+            f"size(data:{self.data_byte_size})"
         )
 
 
