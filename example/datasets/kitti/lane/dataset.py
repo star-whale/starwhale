@@ -1,5 +1,6 @@
 import requests
-from starwhale import Link, Image, Text, Binary, dataset  # noqa: F401
+
+from starwhale import Link, Text, Image, Binary, dataset  # noqa: F401
 from starwhale.utils.retry import http_retry
 
 PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/kitti/lane/data_road"
@@ -25,19 +26,29 @@ def build_ds():
                 name_parts = f_name.split("_")
                 name_head = name_parts[0]
                 data = {
-                    "label_text": Text(link=Link(f"{PATH_ROOT}/training/calib/{calib_name}")),
+                    "label_text": Text(
+                        link=Link(f"{PATH_ROOT}/training/calib/{calib_name}")
+                    ),
                     "label_road_pic": Image(
-                        link=Link(f"{PATH_ROOT}/training/gt_image_2/{name_head}_road_{name_parts[1]}"),
-                        as_mask=True),
+                        link=Link(
+                            f"{PATH_ROOT}/training/gt_image_2/{name_head}_road_{name_parts[1]}"
+                        ),
+                        as_mask=True,
+                    ),
                     "image": Image(link=Link(f"{PATH_ROOT}/training/image_2/{f_name}")),
                 }
                 if name_head == "um":
                     # add lane pic
-                    data.update({
-                        "label_lane_pic": Image(
-                            link=Link(f"{PATH_ROOT}/training/gt_image_2/{name_head}_lane_{name_parts[1]}"),
-                            as_mask=True)
-                    })
+                    data.update(
+                        {
+                            "label_lane_pic": Image(
+                                link=Link(
+                                    f"{PATH_ROOT}/training/gt_image_2/{name_head}_lane_{name_parts[1]}"
+                                ),
+                                as_mask=True,
+                            )
+                        }
+                    )
                 ds.append(data)
 
     ds.commit()

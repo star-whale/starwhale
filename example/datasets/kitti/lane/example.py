@@ -12,7 +12,9 @@ image = row.data["image"]
 label_road_pic = row.data["label_road_pic"]
 label_lane_pic = row.data["label_lane_pic"]
 label = row.data["label_text"]
-with PILImage.open(io.BytesIO(image.to_bytes())) as img2,PILImage.open(io.BytesIO(label_road_pic.to_bytes())) as img3,PILImage.open(io.BytesIO(label_lane_pic.to_bytes())) as img4:
+with PILImage.open(io.BytesIO(image.to_bytes())) as img2, PILImage.open(
+    io.BytesIO(label_road_pic.to_bytes())
+) as img3, PILImage.open(io.BytesIO(label_lane_pic.to_bytes())) as img4:
     draw = ImageDraw.Draw(img2)
     draw.text((28, 36), label.to_str("ISO-8859-1"), fill="red")
     img2.show()

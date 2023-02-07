@@ -671,7 +671,10 @@ class Text(BaseArtifact, SwObject):
 
     def link_to_content(self, encoding: str = "") -> None:
         if not self.content and self.link:
-            self.content = str(self.link.to_bytes(self.owner), encoding or self.encoding)
+            self.content = str(
+                self.link.to_bytes(), encoding or self.encoding
+            )
+
 
 # TODO: support tensorflow transform
 # https://cocodataset.org/#format-data
