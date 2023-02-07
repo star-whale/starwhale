@@ -38,10 +38,6 @@ spec:
             - mountPath: /opt/starwhale
               name: data
           env:
-            - name: SW_PYPI_INDEX_URL
-              value: https://pypi.doubanio.com/simple/
-            - name: SW_PYPI_TRUSTED_HOST
-              value: pypi.doubanio.com
             - name: SW_PIP_CACHE_DIR
               value: /root/.cache/pip
       volumes:
