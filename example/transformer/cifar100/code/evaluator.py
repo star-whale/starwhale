@@ -2,10 +2,9 @@ import io
 from pathlib import Path
 
 from PIL import Image as PILImage
-
-from starwhale import Image, PipelineHandler, multi_classification
-
 from transformers import ViTImageProcessor, ViTForImageClassification
+
+from starwhale import PipelineHandler, multi_classification
 
 ROOTDIR = Path(__file__).parent.parent
 
@@ -13,8 +12,10 @@ ROOTDIR = Path(__file__).parent.parent
 class CIFAR100Inference(PipelineHandler):
     def __init__(self) -> None:
         super().__init__()
-        self.feature_extractor = ViTImageProcessor.from_pretrained(str(ROOTDIR / "models" ))
-        self.model = ViTForImageClassification.from_pretrained(str(ROOTDIR / "models" ))
+        self.feature_extractor = ViTImageProcessor.from_pretrained(
+            str(ROOTDIR / "models")
+        )
+        self.model = ViTForImageClassification.from_pretrained(str(ROOTDIR / "models"))
 
     def ppl(self, data: dict, **kw):
         with PILImage.open(io.BytesIO(data.pop("image").to_bytes())) as img:
