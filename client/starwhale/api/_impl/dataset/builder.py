@@ -139,6 +139,7 @@ class SWDSBinWriter:
             for v in artifacts:
                 if not v.link and isinstance(v.fp, (str, Path)):
                     v.link = Link(v.fp, with_local_fs_data=True)
+                    v.fp = ""
                 if v.link and v.link.with_local_fs_data:
                     v.link.uri = self._copy_file(v.link.uri, False)
                 if (

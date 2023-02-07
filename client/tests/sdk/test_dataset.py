@@ -580,6 +580,11 @@ class TestDatasetBuildExecutor(BaseTestCase):
             volume_bytes_size=100,
         ) as e:
             summary = e.make_swds()
+            scan = e.tabular_dataset.scan()
+            for row in scan:
+                assert isinstance(row.data.get("original_data"), Binary)
+                assert not row.data.get("original_data").fp
+                assert row.data.get("original_data").link.uri
 
         assert summary.rows == 10
 
