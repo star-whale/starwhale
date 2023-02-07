@@ -265,6 +265,8 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             self.link.owner = self.owner
             self.__cache_bytes = self.link.to_bytes()
             return self.__cache_bytes
+        elif not self.fp and isinstance(self.fp, bytes):
+            return self.fp
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
@@ -671,9 +673,7 @@ class Text(BaseArtifact, SwObject):
 
     def link_to_content(self, encoding: str = "") -> None:
         if not self.content and self.link:
-            self.content = str(
-                self.link.to_bytes(self.owner), encoding or self.encoding
-            )
+            self.content = str(self.link.to_bytes(), encoding or self.encoding)
 
 
 # TODO: support tensorflow transform
