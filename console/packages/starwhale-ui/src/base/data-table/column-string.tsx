@@ -57,7 +57,9 @@ function StringColumn(options: OptionsT): StringColumnT {
         sortFn: function (a, b) {
             return a.localeCompare(b)
         },
-        textQueryFilter: function (textQuery, data) {
+        textQueryFilter: function (textQuery = '', data = '') {
+            if (!data) return false
+
             return data.toLowerCase().includes(textQuery.toLowerCase())
         },
         title: options.title,

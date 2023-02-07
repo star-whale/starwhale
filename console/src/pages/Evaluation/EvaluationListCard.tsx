@@ -38,6 +38,12 @@ export default function EvaluationListCard() {
     const store = useEvaluationStore()
     const [options, setOptions] = useState<any>({
         ...page,
+        orderBy: [
+            {
+                columnName: 'sys/id',
+                descending: true,
+            },
+        ],
         filter: store.currentView.queries,
     })
 

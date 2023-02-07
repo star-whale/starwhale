@@ -11,6 +11,7 @@ const useMainStyles = createUseStyles({
         justifyContent: 'space-between',
         position: 'relative',
         flex: '1',
+        height: '100vh',
     },
     mainContentWrapper: {
         overflowY: 'auto',
@@ -28,7 +29,6 @@ const useMainStyles = createUseStyles({
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,
-        // paddingBottom: '30px',
     },
 })
 

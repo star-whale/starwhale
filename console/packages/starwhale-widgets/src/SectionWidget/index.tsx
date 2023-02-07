@@ -85,7 +85,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { title = '', isExpaned = false, layoutConfig, layout } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
-    const len = React.Children.count(children)
+    const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
 

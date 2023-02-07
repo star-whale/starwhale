@@ -9,6 +9,8 @@ export function matchesQuery(text: string, query: string): boolean {
 }
 
 export function splitByQuery(text: string, query: string): string[] {
+    if (!text) return []
+
     const start = text.toLowerCase().indexOf(query.toLowerCase())
 
     // query not found
