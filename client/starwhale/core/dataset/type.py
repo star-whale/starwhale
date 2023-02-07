@@ -329,23 +329,24 @@ class NumpyBinary(BaseArtifact, SwObject):
         fp: _TArtifactFP,
         dtype: t.Type,
         shape: t.Optional[_TShape],
-        **kwargs: t.Any,
+        link: t.Optional[Link] = None,
     ) -> None:
         super().__init__(
             fp=fp,
             type=ArtifactType.Binary,
             shape=shape,
             dtype=dtype,
-            **kwargs,
+            link=link,
         )
 
     def to_numpy(self) -> numpy.ndarray:
-        return numpy.frombuffer(self.to_bytes(), dtype=self.dtype).reshape(self.shape)
+        return numpy.frombuffer(self.to_bytes(), dtype=self.dtype).reshape(self.shape)  # type: ignore
 
     def to_tensor(self) -> t.Any:
         from starwhale.integrations.pytorch import convert_numpy_to_tensor
 
         return convert_numpy_to_tensor(self.to_numpy())
+
 
 class Image(BaseArtifact, SwObject):
     def __init__(
