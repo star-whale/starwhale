@@ -195,11 +195,13 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<Object>> upload(
-            FileDesc fileDesc, String signature, Long uploadId,
             String projectUrl, String modelUrl, String versionUrl,
             MultipartFile file, ModelUploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwmp(modelUrl + ":" + versionUrl);
+        FileDesc fileDesc = uploadRequest.getDesc();
+        String signature = uploadRequest.getSignature();
+        Long uploadId = uploadRequest.getUploadId();
         switch (uploadRequest.getPhase()) {
             case MANIFEST:
                 return ResponseEntity.ok(Code.success.asResponse(

@@ -1,6 +1,5 @@
 import os
 import typing as t
-from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
 from concurrent.futures import wait, ThreadPoolExecutor
@@ -45,8 +44,6 @@ _query_param_map = {
     URIType.MODEL: "swmp",
     URIType.RUNTIME: "runtime",
 }
-
-_UPLOAD_ID_KEY = "X-SW-UPLOAD-ID"
 
 
 class _UploadPhase:
@@ -267,9 +264,8 @@ class BundleCopy(CloudRequestMixed):
                 dest_path=fd.path,
                 instance_uri=self.src_uri,
                 params={
-                    # for ds download
                     "desc": fd.file_desc.name,
-                    "name": fd.name,
+                    "partName": fd.name,
                     "signature": fd.signature,
                 },
                 progress=progress,
@@ -317,10 +313,10 @@ class BundleCopy(CloudRequestMixed):
             url_path=url_path,
             file_path=manifest_path,
             instance_uri=self.dest_uri,
-            headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
             fields={
                 self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
+                "desc": FileDesc.MANIFEST.name,
                 "project": self.dest_uri.project,
                 "force": "1" if self.force else "0",
             },
@@ -339,15 +335,11 @@ class BundleCopy(CloudRequestMixed):
         existed_files: t.Optional[t.List] = None,
     ) -> None:
         existed_files = existed_files or []
-        _headers = {_UPLOAD_ID_KEY: str(upload_id)}
 
         # TODO: add retry deco
         def _upload_blob(_tid: TaskID, fd: FileNode) -> None:
             if not fd.path.exists():
                 raise NotFoundError(f"{fd.path} not found")
-            _upload_headers = deepcopy(_headers)
-            _upload_headers["X-SW-UPLOAD-TYPE"] = fd.file_desc.name
-            _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = fd.signature
 
             if progress is not None:
                 progress.update(_tid, visible=True)
@@ -358,9 +350,12 @@ class BundleCopy(CloudRequestMixed):
                 instance_uri=self.dest_uri,
                 fields={
                     self.field_flag: self.field_value,
+                    "uploadId": upload_id,
+                    "partName": fd.name,
+                    "signature": fd.signature,
+                    "desc": fd.file_desc.name,
                     "phase": _UploadPhase.BLOB,
                 },
-                headers=_upload_headers,
                 use_raise=True,
                 progress=progress,
                 task_id=_tid,
@@ -380,7 +375,6 @@ class BundleCopy(CloudRequestMixed):
                     visible=False,
                 )
             _p_map[_tid] = _f
-
         with ThreadPoolExecutor(
             max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
         ) as executor:
@@ -399,11 +393,11 @@ class BundleCopy(CloudRequestMixed):
             path=url_path,
             method=HTTPMethod.POST,
             instance_uri=self.dest_uri,
-            headers={_UPLOAD_ID_KEY: str(upload_id)},
             data={
                 self.field_flag: self.field_value,
                 "project": self.dest_uri.project,
                 "phase": phase,
+                "uploadId": upload_id,
             },
             use_raise=True,
             disable_default_content_type=True,

@@ -45,7 +45,7 @@ class DatasetCopy(BundleCopy):
             _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
             yield FileNode(
                 path=_path,
-                name=os.path.basename(_path),
+                name=_hash,
                 size=_size,
                 file_desc=FileDesc.DATA,
                 signature=_hash,
@@ -79,7 +79,7 @@ class DatasetCopy(BundleCopy):
                 path=_dest,
                 signature=_hash,
                 size=_size,
-                name=_hash[: DatasetStorage.short_sign_cnt],
+                name=_hash,
                 file_desc=FileDesc.DATA,
             )
 

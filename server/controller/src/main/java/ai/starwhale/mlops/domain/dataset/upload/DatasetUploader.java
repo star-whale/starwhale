@@ -119,7 +119,7 @@ public class DatasetUploader {
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public void cancel(String uploadId) {
+    public void cancel(Long uploadId) {
         final DatasetVersionWithMeta swDatasetVersionEntityWithMeta = getDatasetVersion(uploadId);
         datasetVersionMapper.delete(swDatasetVersionEntityWithMeta.getDatasetVersion().getId());
         hotDatasetHolder.cancel(uploadId);
@@ -145,7 +145,7 @@ public class DatasetUploader {
         }
     }
 
-    public void uploadBody(String uploadId, MultipartFile file, String uri) {
+    public void uploadBody(Long uploadId, MultipartFile file, String uri) {
         final DatasetVersionWithMeta swDatasetVersionWithMeta = getDatasetVersion(uploadId);
         String filename = file.getOriginalFilename();
         try (InputStream inputStream = file.getInputStream()) {
@@ -187,7 +187,7 @@ public class DatasetUploader {
         return digest.equals(uploadedFileBlake2bs.get(filename));
     }
 
-    DatasetVersionWithMeta getDatasetVersion(String uploadId) {
+    DatasetVersionWithMeta getDatasetVersion(Long uploadId) {
         final Optional<DatasetVersionWithMeta> swDatasetVersionEntityOpt = hotDatasetHolder.of(uploadId);
         return swDatasetVersionEntityOpt
                 .orElseThrow(
@@ -212,7 +212,7 @@ public class DatasetUploader {
     }
 
     @Transactional
-    public String create(String yamlContent, String fileName, DatasetUploadRequest uploadRequest) {
+    public Long create(String yamlContent, String fileName, DatasetUploadRequest uploadRequest) {
         Manifest manifest;
         try {
             manifest = yamlMapper.readValue(yamlContent, Manifest.class);
@@ -284,7 +284,7 @@ public class DatasetUploader {
 
         hotDatasetHolder.manifest(DatasetVersion.fromEntity(datasetEntity, datasetVersionEntity));
 
-        return datasetVersionEntity.getVersionName();
+        return datasetVersionEntity.getId();
     }
 
     private DatasetVersionEntity from(String projectName, DatasetEntity datasetEntity, Manifest manifest) {
@@ -320,7 +320,7 @@ public class DatasetUploader {
         return currentUserDetail.getIdTableKey();
     }
 
-    public void end(String uploadId) {
+    public void end(Long uploadId) {
         final DatasetVersionWithMeta datasetVersionWithMeta = getDatasetVersion(uploadId);
         datasetVersionMapper.updateStatus(datasetVersionWithMeta.getDatasetVersion().getId(),
                 DatasetVersion.STATUS_AVAILABLE);

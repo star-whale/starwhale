@@ -29,6 +29,6 @@ import lombok.experimental.SuperBuilder;
 public class UploadResult {
 
     @JsonProperty("upload_id")
-    String uploadId;
+    Long uploadId;
 
 }

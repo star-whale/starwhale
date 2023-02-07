@@ -204,26 +204,31 @@ public class ModelControllerTest {
     public void testUpload() {
         var request = new ModelUploadRequest();
         request.setPhase(UploadPhase.MANIFEST);
+        request.setUploadId(1L);
+        request.setDesc(FileDesc.MANIFEST);
+        request.setSignature("");
         var resp = controller.upload(
-                FileDesc.MANIFEST, "", 1L, "p1", "m1", "v1", null, request);
+                "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         request.setPhase(UploadPhase.BLOB);
+        request.setDesc(FileDesc.SRC_TAR);
         resp = controller.upload(
-                FileDesc.SRC_TAR, "", 1L, "p1", "m1", "v1", null, request);
+                "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
+        request.setDesc(FileDesc.MODEL);
         resp = controller.upload(
-                FileDesc.MODEL, "qwerty", 1L, "p1", "m1", "v1", null, request);
+                "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         request.setPhase(UploadPhase.CANCEL);
         assertThrows(StarwhaleApiException.class, () -> controller.upload(
-                null, "", 1L, "p1", "m1", "v1", null, request));
+                "p1", "m1", "v1", null, request));
 
         request.setPhase(UploadPhase.END);
         controller.upload(
-                null, "", 1L, "p1", "m1", "v1", null, request);
+                "p1", "m1", "v1", null, request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 

@@ -477,7 +477,7 @@ public class ModelService {
                     .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
         }
         return ModelUploadResult.builder()
-                .uploadId(modelVersionEntity.getId().toString())
+                .uploadId(modelVersionEntity.getId())
                 .existed(existed)
                 .build();
     }
@@ -579,6 +579,7 @@ public class ModelService {
                         // update correct attributes
                         name = Objects.isNull(name) ? file.getName() : name;
                         path = Objects.isNull(path) ? file.getPath() : path;
+                        signature = Objects.isNull(signature) ? file.getSignature() : signature;
                         break;
                     }
                 }

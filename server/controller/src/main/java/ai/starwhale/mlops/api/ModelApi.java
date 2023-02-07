@@ -50,7 +50,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -291,9 +290,6 @@ public interface ModelApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<Object>> upload(
-            @RequestHeader(name = "X-SW-UPLOAD-TYPE", required = false) FileDesc fileDesc,
-            @RequestHeader(name = "X-SW-UPLOAD-OBJECT-HASH", required = false) String signature,
-            @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) Long uploadId,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project url",
@@ -317,7 +313,7 @@ public interface ModelApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
             @RequestParam(name = "desc", required = false) FileDesc fileDesc,
-            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "partName", required = false) String name,
             @RequestParam(name = "path", required = false) String path,
             @RequestParam(name = "signature", required = false) String signature,
             @PathVariable("projectUrl") String projectUrl,

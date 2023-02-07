@@ -232,12 +232,12 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=MANIFEST&name=_manifest.yaml&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
             json={"resources": []},
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=SRC_TAR&name=src.tar&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=SRC_TAR&partName=src.tar&signature=",
             content=b"mnist model content",
         )
         # m_load_yaml.return_value = {"resources": []}
@@ -440,14 +440,14 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=MANIFEST&name=_manifest.yaml&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
             json={
                 "signature": [],
             },
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=SRC_TAR&name=archive.swds_meta&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=SRC_TAR&partName=archive.swds_meta&signature=",
             content=b"mnist dataset content",
         )
         rm.request(
@@ -627,7 +627,7 @@ class TestBundleCopy(TestCase):
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
             ).do()
             assert head_request.call_count == 1
-            assert upload_request.call_count == 3
+            assert upload_request.call_count == 2
 
         # TODO: support the flowing case
         with self.assertRaises(NoMockAddress):
