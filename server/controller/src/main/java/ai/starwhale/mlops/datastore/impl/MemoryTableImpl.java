@@ -126,7 +126,7 @@ public class MemoryTableImpl implements MemoryTable {
                     this.recordMap.put(record.get(this.schema.getKeyColumn()), record);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
         }
     }

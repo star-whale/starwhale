@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.common;
 
+import ai.starwhale.mlops.storage.NopCloserInputStream;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -148,7 +149,8 @@ public final class TarFileUtil {
                 if (entry.isDirectory()) {
                     continue;
                 }
-                func.apply(entry.getName(), entry.getSize(), archive);
+                var is = new NopCloserInputStream(archive);
+                func.apply(entry.getName(), entry.getSize(), is);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
