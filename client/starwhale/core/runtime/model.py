@@ -664,6 +664,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
+        include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> str:
@@ -676,6 +677,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             no_cache,
             stdout,
             include_editable,
+            include_local_wheel,
             emit_pip_options,
             env_use_shell,
         )
@@ -764,6 +766,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_prefix_path = kw.get("env_prefix_path", "")
         env_use_shell = kw.get("env_use_shell", False)
         include_editable = kw.get("include_editable", False)
+        include_local_wheel = kw.get("include_local_wheel", False)
 
         if not disable_env_lock:
             console.print(
@@ -778,6 +781,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 no_cache=no_cache,
                 stdout=False,
                 include_editable=include_editable,
+                include_local_wheel=include_local_wheel,
                 env_use_shell=env_use_shell,
             )
             # try getting starwhale version
@@ -1269,6 +1273,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
+        include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> str:
@@ -1282,6 +1287,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         :param no_cache: invalid all pkgs installed
         :param stdout: just print the lock info into stdout without saving lock file
         :param include_editable: include the editable pkg (only for venv)
+        :param include_local_wheel: include local wheel pkg (only for venv)
         :param emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
         :param env_use_shell: automatically detect env in current shell session
         :return: the lock file content
@@ -1342,7 +1348,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             pybin = os.path.join(str(prefix_path), "bin", "python3")
             console.print(f":cat_face: use {pybin} to freeze requirements...")
             pip_freeze_by_pybin(
-                pybin, temp_lock_path, include_editable, emit_pip_options
+                py_bin=pybin,
+                lock_fpath=temp_lock_path,
+                include_editable=include_editable,
+                emit_options=emit_pip_options,
+                include_local_wheel=include_local_wheel,
             )
         else:
             raise NoSupportError(f"lock {mode} environment")
