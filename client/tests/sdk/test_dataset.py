@@ -55,8 +55,9 @@ from starwhale.core.dataset.type import (
     ClassLabel,
     BoundingBox,
     ArtifactType,
+    BoundingBox3D,
     GrayscaleImage,
-    COCOObjectAnnotation, BoundingBox3D,
+    COCOObjectAnnotation,
 )
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
@@ -938,9 +939,12 @@ class TestDatasetType(TestCase):
         assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
         _bout = bbox.to_bytes()
         assert isinstance(_bout, bytes)
-        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(BoundingBox3D.SHAPE)
-        assert numpy.array_equal(_array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64))
-
+        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(
+            BoundingBox3D.SHAPE
+        )
+        assert numpy.array_equal(
+            _array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64)
+        )
 
     def test_text(self) -> None:
         text = Text("test")

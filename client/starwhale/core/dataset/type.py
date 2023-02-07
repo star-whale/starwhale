@@ -551,9 +551,7 @@ class BoundingBox(ASDictMixin, SwObject):
 class BoundingBox3D(ASDictMixin, SwObject):
     SHAPE = 2, 4
 
-    def __init__(
-        self, bbox_a: BoundingBox, bbox_b: BoundingBox
-    ) -> None:
+    def __init__(self, bbox_a: BoundingBox, bbox_b: BoundingBox) -> None:
         self._type = "bounding_box3D"
         self.bbox_a = bbox_a
         self.bbox_b = bbox_b
@@ -566,7 +564,7 @@ class BoundingBox3D(ASDictMixin, SwObject):
     def dtype(self) -> numpy.dtype:
         return numpy.dtype(numpy.float64)
 
-    def to_list(self) -> t.List[float]:
+    def to_list(self) -> t.List[t.List[float]]:
         return [self.bbox_a.to_list(), self.bbox_b.to_list()]
 
     def to_numpy(self) -> numpy.ndarray:

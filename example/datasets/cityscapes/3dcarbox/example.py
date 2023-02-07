@@ -2,7 +2,7 @@ import io
 
 import matplotlib.pyplot as plt
 from PIL import Image as PILImage
-from PIL import ImageDraw, ImageEnhance
+from PIL import ImageDraw
 
 from starwhale import dataset
 
@@ -20,6 +20,7 @@ def draw_bbox(draw, bbox_view_):
         fill=None,
         outline="red",
     )
+
 
 fig, ax = plt.subplots(
     1, 2, figsize=(25, 10), gridspec_kw={"wspace": 0.1, "hspace": 0.1}

@@ -1,6 +1,13 @@
 import requests
 
-from starwhale import Link, Image, BoundingBox, dataset, BoundingBox3D, MIMEType  # noqa: F401
+from starwhale import (  # noqa: F401
+    Link,
+    Image,
+    dataset,
+    MIMEType,
+    BoundingBox,
+    BoundingBox3D,
+)
 from starwhale.utils.retry import http_retry
 
 PATH_ROOT = "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/cityscapes"
@@ -42,13 +49,17 @@ def build_ds():
             name = _name.replace(SUFFIX_ANNO, "")
             anno["right_image_8bit"] = Image(
                 display_name=name,
-                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH_RIGHT}/{dir_name}/{name}{SUFFIX_DATA_RIGHT}"),
+                link=Link(
+                    uri=f"{PATH_ROOT}/{DATA_PATH_RIGHT}/{dir_name}/{name}{SUFFIX_DATA_RIGHT}"
+                ),
                 mime_type=MIMEType.JPEG,
                 shape=(anno["imgHeight"], anno["imgWidth"]),
             )
             anno["left_image_8bit"] = Image(
                 display_name=name,
-                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH_LEFT}/{dir_name}/{name}{SUFFIX_DATA_LEFT}"),
+                link=Link(
+                    uri=f"{PATH_ROOT}/{DATA_PATH_LEFT}/{dir_name}/{name}{SUFFIX_DATA_LEFT}"
+                ),
                 mime_type=MIMEType.JPEG,
                 shape=(anno["imgHeight"], anno["imgWidth"]),
             )
