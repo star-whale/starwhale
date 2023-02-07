@@ -138,7 +138,10 @@ class SWDSBinWriter:
             artifacts_with_bin = False
             for v in artifacts:
                 if not v.link and isinstance(v.fp, (str, Path)):
+                    # convert user local file path to Starwhale link
                     v.link = Link(v.fp, with_local_fs_data=True)
+                    #  BaseArtifact reads from BaseArtifact.fp prior to any other sources like link
+                    #  When BaseArtifact.fp is user local file path , it is unreliable and should be removed.
                     v.fp = ""
                 if v.link and v.link.with_local_fs_data:
                     v.link.uri = self._copy_file(v.link.uri, False)
