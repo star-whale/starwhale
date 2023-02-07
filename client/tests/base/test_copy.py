@@ -232,22 +232,12 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=MANIFEST&name=_manifest.yaml&signature=",
             json={"resources": []},
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.SRC_TAR.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "src.tar",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=SRC_TAR&name=src.tar&signature=",
             content=b"mnist model content",
         )
         # m_load_yaml.return_value = {"resources": []}
@@ -450,15 +440,15 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=MANIFEST&name=_manifest.yaml&signature=",
             json={
                 "signature": [],
             },
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=SRC_TAR&name=archive.swds_meta&signature=",
+            content=b"mnist dataset content",
         )
         rm.request(
             HTTPMethod.POST,

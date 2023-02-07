@@ -235,8 +235,8 @@ public interface DatasetApi {
             @PathVariable(name = "projectUrl") String projectUrl,
             @PathVariable(name = "datasetUrl") String datasetUrl,
             @PathVariable(name = "versionUrl") String versionUrl,
-            @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified")
-            @RequestParam(name = "part_name", required = false) String partName,
+            @Parameter(name = "signature", description = "optional, _manifest.yaml is used if not specified")
+            @RequestParam(name = "signature", required = false) String partName,
             HttpServletResponse httpResponse);
 
     @Operation(summary = "Pull Dataset uri file contents",

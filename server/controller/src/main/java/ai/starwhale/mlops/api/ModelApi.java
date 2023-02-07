@@ -316,10 +316,10 @@ public interface ModelApi {
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
-            @RequestHeader(name = "X-SW-DOWNLOAD-TYPE", required = false) FileDesc fileDesc,
-            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-NAME", required = false) String name,
-            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-PATH", required = false) String path,
-            @RequestHeader(name = "X-SW-DOWNLOAD-OBJECT-HASH", required = false) String signature,
+            @RequestParam(name = "desc", required = false) FileDesc fileDesc,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "path", required = false) String path,
+            @RequestParam(name = "signature", required = false) String signature,
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is not invalid.")

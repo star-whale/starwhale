@@ -266,14 +266,11 @@ class BundleCopy(CloudRequestMixed):
                 url_path=self._get_remote_instance_rc_url(),
                 dest_path=fd.path,
                 instance_uri=self.src_uri,
-                headers={
-                    "X-SW-DOWNLOAD-TYPE": fd.file_desc.name,
-                    "X-SW-DOWNLOAD-OBJECT-NAME": fd.name,
-                    "X-SW-DOWNLOAD-OBJECT-HASH": fd.signature,
-                },
                 params={
                     # for ds download
-                    "part_name": fd.signature,
+                    "desc": fd.file_desc.name,
+                    "name": fd.name,
+                    "signature": fd.signature,
                 },
                 progress=progress,
                 task_id=_tid,
