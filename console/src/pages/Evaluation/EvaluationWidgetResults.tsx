@@ -9,7 +9,7 @@ import { Panel } from 'baseui/accordion'
 import Accordion from '@starwhale/ui/Accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 
 const PAGE_TABLE_SIZE = 100
 
