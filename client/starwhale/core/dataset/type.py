@@ -328,7 +328,7 @@ class NumpyBinary(BaseArtifact, SwObject):
         self,
         fp: _TArtifactFP,
         dtype: t.Type,
-        shape: t.Optional[_TShape],
+        shape: _TShape,
         link: t.Optional[Link] = None,
     ) -> None:
         super().__init__(
