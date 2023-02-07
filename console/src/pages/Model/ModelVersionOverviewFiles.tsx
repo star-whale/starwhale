@@ -16,7 +16,7 @@ import Select from '@starwhale/ui/Select'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { useLocalStorage } from 'react-use'
 import { useQueryArgs } from '@starwhale/core'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 
