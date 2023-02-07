@@ -10,7 +10,6 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
-import loguru
 import jsonlines
 
 from starwhale import URI
@@ -32,6 +31,9 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetRow,
     TabularDatasetInfo,
 )
+
+if t.TYPE_CHECKING:
+    import loguru
 
 
 class _LogType:

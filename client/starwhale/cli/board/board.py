@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import typing as t
 
 import click
-from textual import events
 from textual.app import App
-from textual.widget import Widget, RenderableType
 from textual.widgets import Header, ScrollView
 
 from starwhale.base.uri import URI
 
 from .widgets import Jobs, Models, Datasets, Runtimes
 from .project_tree import ProjectTree, ProjectClick
+
+if t.TYPE_CHECKING:
+    from textual import events
+    from textual.widget import Widget, RenderableType
 
 
 class Dashboard(App):

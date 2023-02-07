@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import typing as t
 from dataclasses import dataclass
 
 import rich.repr
-from textual import events
 from rich.text import Text
-from textual._types import MessageTarget
-from textual.widget import Style, Message, RenderableType
-from textual.widgets import NodeID, TreeNode, TreeClick, TreeControl
+from textual.widget import Style, Message
+from textual.widgets import TreeControl
 
 from starwhale.base.uri import URI
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import Project
+
+if t.TYPE_CHECKING:
+    from textual import events
+    from textual._types import MessageTarget
+    from textual.widget import RenderableType
+    from textual.widgets import NodeID, TreeNode, TreeClick
 
 
 @dataclass

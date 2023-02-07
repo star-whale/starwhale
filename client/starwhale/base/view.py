@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import json
 import typing as t
@@ -8,7 +10,6 @@ from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
 from rich.pretty import Pretty
-from rich.console import RenderableType
 
 from starwhale.utils import (
     Order,
@@ -23,6 +24,9 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
+
+if t.TYPE_CHECKING:
+    from rich.console import RenderableType
 
 
 class BaseTermView(SWCliConfigMixed):

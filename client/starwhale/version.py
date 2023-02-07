@@ -2,8 +2,8 @@ import os
 
 try:
     from importlib.metadata import version
-except ImportError:
-    from importlib_metadata import version
+except ImportError:  # pragma: no cover
+    from importlib_metadata import version  # pragma: no cover
 
 
 STARWHALE_VERSION: str = version("starwhale")  # type: ignore
