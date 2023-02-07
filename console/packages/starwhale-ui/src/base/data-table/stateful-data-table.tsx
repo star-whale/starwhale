@@ -198,10 +198,10 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         <div ref={headlineRef} className='flex-row-left g-20'>
                             <div
                                 className={classNames(
-                                    'flex-row-left g-20 ',
+                                    'g-20 ',
                                     css({
                                         'display': 'grid',
-                                        'gridTemplateColumns': 'minmax(1fr 280px) auto auto',
+                                        'gridTemplateColumns': 'minmax(200px, 280px) auto auto',
                                         ':first-child': {
                                             marginBottom: '20px',
                                         },
@@ -227,7 +227,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
 
-                                {viewable && changed && store.currentView?.id && (
+                                {viewable && changed && store.currentView?.id && !$rowSelectedIds.size && (
                                     <div>
                                         <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
                                         <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
