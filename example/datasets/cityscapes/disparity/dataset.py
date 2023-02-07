@@ -45,19 +45,25 @@ def build_ds():
             name = _name.replace(SUFFIX_MASK, "")
             right_image = Image(
                 display_name=name,
-                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH_RIGHT}/{dir_name}/{name}{SUFFIX_DATA_RIGHT}"),
+                link=Link(
+                    uri=f"{PATH_ROOT}/{DATA_PATH_RIGHT}/{dir_name}/{name}{SUFFIX_DATA_RIGHT}"
+                ),
                 mime_type=MIMEType.JPEG,
             )
             left_image = Image(
                 display_name=name,
-                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH_LEFT}/{dir_name}/{name}{SUFFIX_DATA_LEFT}"),
+                link=Link(
+                    uri=f"{PATH_ROOT}/{DATA_PATH_LEFT}/{dir_name}/{name}{SUFFIX_DATA_LEFT}"
+                ),
                 mime_type=MIMEType.JPEG,
             )
-            ds.append({
-                "left_image_8bit": left_image,
-                "right_image_8bit": right_image,
-                "disparity_mask": disparity_mask,
-            })
+            ds.append(
+                {
+                    "left_image_8bit": left_image,
+                    "right_image_8bit": right_image,
+                    "disparity_mask": disparity_mask,
+                }
+            )
 
     ds.commit()
     load_ds = dataset(ds.uri)
