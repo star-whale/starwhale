@@ -549,6 +549,10 @@ class BoundingBox(ASDictMixin, SwObject):
 
 
 class BoundingBox3D(ASDictMixin, SwObject):
+    """
+    This is a 3d bounding box viewer helper class for two-dimensional UI. Two BoundingBox are needed to show it.
+    """
+
     SHAPE = 2, 4
 
     def __init__(self, bbox_a: BoundingBox, bbox_b: BoundingBox) -> None:
