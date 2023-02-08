@@ -43,7 +43,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -63,12 +63,12 @@ public class EvaluationServiceTest {
     public void setUp() {
         UserService userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder().id(1L).build());
-        ProjectManager projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1"))).willReturn(1L);
+        ProjectService projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1"))).willReturn(1L);
 
         service = new EvaluationService(
                 userService,
-                projectManager,
+                projectService,
                 jobDao = mock(JobDao.class),
                 viewConfigMapper = mock(ViewConfigMapper.class),
                 new IdConverter(),

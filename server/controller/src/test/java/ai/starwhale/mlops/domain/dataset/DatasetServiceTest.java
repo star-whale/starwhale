@@ -57,8 +57,8 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -84,7 +84,7 @@ public class DatasetServiceTest {
     private DatasetVoConverter datasetConvertor;
     private DatasetVersionVoConverter versionConvertor;
     private StorageService storageService;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private DatasetDao datasetDao;
     private UserService userService;
     private DsFileGetter dsFileGetter;
@@ -126,10 +126,10 @@ public class DatasetServiceTest {
         userService = mock(UserService.class);
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).idTableKey(1L).build());
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         datasetDao = mock(DatasetDao.class);
 
@@ -140,7 +140,7 @@ public class DatasetServiceTest {
         trashService = mock(TrashService.class);
 
         service = new DatasetService(
-                projectManager,
+                projectService,
                 datasetMapper,
                 datasetVersionMapper,
                 datasetConvertor,
@@ -338,8 +338,8 @@ public class DatasetServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.getProject(same("1")))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.findProject(same("1")))
+                .willReturn(Project.builder().id(1L).build());
         given(datasetMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
 

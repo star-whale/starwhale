@@ -30,7 +30,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
@@ -75,7 +75,7 @@ import org.springframework.stereotype.Service;
 public class ModelServingService {
     private final ModelServingMapper modelServingMapper;
     private final UserService userService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final ModelDao modelDao;
     private final RuntimeDao runtimeDao;
     private final K8sClient k8sClient;
@@ -98,7 +98,7 @@ public class ModelServingService {
     public ModelServingService(
             ModelServingMapper modelServingMapper,
             RuntimeDao runtimeDao,
-            ProjectManager projectManager,
+            ProjectService projectService,
             ModelDao modelDao,
             UserService userService,
             K8sClient k8sClient,
@@ -115,7 +115,7 @@ public class ModelServingService {
     ) {
         this.modelServingMapper = modelServingMapper;
         this.runtimeDao = runtimeDao;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.modelDao = modelDao;
         this.userService = userService;
         this.k8sClient = k8sClient;
@@ -174,7 +174,7 @@ public class ModelServingService {
             String spec
     ) {
         User user = userService.currentUserDetail();
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectService.getProjectId(projectUrl);
         var runtime = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
         var model = modelDao.getModelVersion(modelVersionUrl);
 

@@ -29,7 +29,7 @@ import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
@@ -58,19 +58,19 @@ public class TrashService {
 
     private final TrashMapper trashMapper;
     private final UserMapper userMapper;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
     private final JobDao jobDao;
     private final IdConverter idConvertor;
 
-    public TrashService(TrashMapper trashMapper, UserMapper userMapper, ProjectManager projectManager,
-                        ModelDao modelDao, DatasetDao datasetDao,
-                        RuntimeDao runtimeDao, JobDao jobDao, IdConverter idConvertor) {
+    public TrashService(TrashMapper trashMapper, UserMapper userMapper, ProjectService projectService,
+            ModelDao modelDao, DatasetDao datasetDao,
+            RuntimeDao runtimeDao, JobDao jobDao, IdConverter idConvertor) {
         this.trashMapper = trashMapper;
         this.userMapper = userMapper;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
@@ -79,7 +79,7 @@ public class TrashService {
     }
 
     public PageInfo<TrashVo> listTrash(TrashQuery query, PageParams pageParams, OrderParams orderParams) {
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long operatorId = null;
         if (StrUtil.isNotEmpty(query.getOperator())) {
             if (idConvertor.isId(query.getOperator())) {
@@ -102,7 +102,7 @@ public class TrashService {
         if (trashPo == null) {
             throw new SwValidationException(ValidSubject.TRASH, "Can not find trash.");
         }
-        if (!trashPo.getProjectId().equals(projectManager.getProjectId(projectUrl))) {
+        if (!trashPo.getProjectId().equals(projectService.getProjectId(projectUrl))) {
             throw new SwValidationException(ValidSubject.TRASH, "Project is not match.");
         }
         try {
@@ -122,7 +122,7 @@ public class TrashService {
         if (trashPo == null) {
             throw new SwValidationException(ValidSubject.TRASH, "Can not find trash.");
         }
-        if (!trashPo.getProjectId().equals(projectManager.getProjectId(projectUrl))) {
+        if (!trashPo.getProjectId().equals(projectService.getProjectId(projectUrl))) {
             throw new SwValidationException(ValidSubject.TRASH, "Project is not match.");
         }
         return trashMapper.delete(trashId) > 0;

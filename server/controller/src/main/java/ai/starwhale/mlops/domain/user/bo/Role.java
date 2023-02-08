@@ -39,9 +39,15 @@ public class Role implements GrantedAuthority {
 
     public static final String NAME_OWNER = "Owner";
 
+    public static final String CODE_OWNER = "OWNER";
+
     public static final String NAME_MAINTAINER = "Maintainer";
 
+    public static final String CODE_MAINTAINER = "MAINTAINER";
+
     public static final String NAME_GUEST = "Guest";
+
+    public static final String CODE_GUEST = "GUEST";
 
     @Override
     public boolean equals(Object o) {

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.project.mapper;
 
-import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectMemberEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.apache.ibatis.annotations.Delete;
@@ -28,14 +28,14 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 @Mapper
-public interface ProjectRoleMapper {
+public interface ProjectMemberMapper {
 
     String COLUMNS = "id,user_id,role_id,project_id,created_time,modified_time";
 
     @Insert("replace into user_role_rel (user_id, role_id, project_id)"
             + " values (#{userId}, #{roleId}, #{projectId})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    int insert(@NotNull ProjectRoleEntity projectRole);
+    int insert(@NotNull ProjectMemberEntity projectRole);
 
     @Insert("replace into user_role_rel (user_id, role_id, project_id)"
             + " values (#{userId}, (select id from user_role_info where role_name=#{roleName}), #{projectId})")
@@ -54,15 +54,15 @@ public interface ProjectRoleMapper {
     @Select("select " + COLUMNS + " from user_role_rel"
             + " where user_id = #{userId}"
             + " and project_id = #{projectId}")
-    ProjectRoleEntity findByUserAndProject(@NotNull @Param("userId") Long userId,
+    ProjectMemberEntity findByUserAndProject(@NotNull @Param("userId") Long userId,
             @NotNull @Param("projectId") Long projectId);
 
     @Select("select " + COLUMNS + " from user_role_rel"
             + " where project_id = #{projectId}")
-    List<ProjectRoleEntity> listByProject(@NotNull @Param("projectId") Long projectId);
+    List<ProjectMemberEntity> listByProject(@NotNull @Param("projectId") Long projectId);
 
     @Select("select " + COLUMNS + " from user_role_rel"
             + " where user_id = #{userId}")
-    List<ProjectRoleEntity> listByUser(@NotNull @Param("userId") Long userId);
+    List<ProjectMemberEntity> listByUser(@NotNull @Param("userId") Long userId);
 
 }

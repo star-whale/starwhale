@@ -47,8 +47,8 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.MetaInfo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -112,7 +112,7 @@ public class ModelService {
     private final StorageAccessService storageAccessService;
     private final StorageService storageService;
     private final UserService userService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final ModelDao modelDao;
     private final HotJobHolder jobHolder;
 
@@ -126,8 +126,8 @@ public class ModelService {
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, ModelVoConverter modelVoConverter,
             ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
             ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
-            UserService userService, ProjectManager projectManager, HotJobHolder jobHolder,
-                        TrashService trashService, YAMLMapper yamlMapper) {
+            UserService userService, ProjectService projectService, HotJobHolder jobHolder,
+            TrashService trashService, YAMLMapper yamlMapper) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -139,13 +139,13 @@ public class ModelService {
         this.storageAccessService = storageAccessService;
         this.storageService = storageService;
         this.userService = userService;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.jobHolder = jobHolder;
         this.trashService = trashService;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
-                projectManager,
+                projectService,
                 modelDao,
                 modelDao
         );
@@ -154,7 +154,7 @@ public class ModelService {
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
         List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
@@ -168,7 +168,7 @@ public class ModelService {
     public Boolean deleteModel(ModelQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getModelUrl());
         Trash trash = Trash.builder()
-                .projectId(projectManager.getProjectId(query.getProjectUrl()))
+                .projectId(projectService.getProjectId(query.getProjectUrl()))
                 .objectId(bundleManager.getBundleId(bundleUrl))
                 .type(Type.MODEL)
                 .build();
@@ -182,9 +182,8 @@ public class ModelService {
     }
 
     public List<ModelInfoVo> listModelInfo(String project, String name) {
-
+        Long projectId = projectService.getProjectId(project);
         if (StringUtils.hasText(name)) {
-            Long projectId = projectManager.getProjectId(project);
             ModelEntity model = modelMapper.findByName(name, projectId, false);
             if (model == null) {
                 throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the model with name " + name);
@@ -192,8 +191,7 @@ public class ModelService {
             return listModelInfoOfModel(model);
         }
 
-        ProjectEntity projectEntity = projectManager.getProject(project);
-        List<ModelEntity> entities = modelMapper.list(projectEntity.getId(), null, null, null);
+        List<ModelEntity> entities = modelMapper.list(projectId, null, null, null);
         if (entities == null || entities.isEmpty()) {
             return List.of();
         }
@@ -378,17 +376,17 @@ public class ModelService {
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
         Long projectId = null;
-        ProjectEntity projectEntity = null;
+        Project project = null;
         if (!StrUtil.isEmpty(uploadRequest.getProject())) {
-            projectEntity = projectManager.getProject(uploadRequest.getProject());
-            projectId = projectEntity.getId();
+            project = projectService.findProject(uploadRequest.getProject());
+            projectId = project.getId();
         }
         ModelEntity entity = modelMapper.findByName(uploadRequest.name(), projectId, true);
         if (null == entity) {
             //create
             if (projectId == null) {
-                projectEntity = projectManager.getProject(uploadRequest.getProject());
-                projectId = projectEntity.getId();
+                project = projectService.findProject(uploadRequest.getProject());
+                projectId = project.getId();
             }
             entity = ModelEntity.builder().isDeleted(0)
                 .ownerId(getOwner())
@@ -493,10 +491,10 @@ public class ModelService {
                     HttpStatus.BAD_REQUEST
             );
         }
-        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
+        Long projectId = projectService.getProjectId(uploadRequest.getProject());
 
         String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                projectEntity.getId(), signature);
+                projectId, signature);
 
         try {
             storageAccessService.put(modelPath, modelFile.getInputStream());
@@ -605,7 +603,7 @@ public class ModelService {
                 filePath = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), path);
                 break;
             case MODEL:
-                var project = projectManager.getProject(projectUrl);
+                var project = projectService.findProject(projectUrl);
                 filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getId(), signature);
                 break;
             case SRC_TAR:

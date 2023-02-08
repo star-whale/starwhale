@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProjectRoleEntity extends BaseEntity {
+public class ProjectMemberEntity extends BaseEntity {
 
     private Long id;
 
