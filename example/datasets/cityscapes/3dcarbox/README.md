@@ -2,9 +2,9 @@
 title: The `cityscapes_3dcarbox` Dataset
 ---
 
-## The Cityscapes Dataset (fine) Description
+## The Cityscapes 3D Dataset Description
 
-- [Homepage](https://www.cityscapes-dataset.com/examples/#fine-annotations)
+- [Homepage](https://arxiv.org/abs/2006.07864)
 
 ## The `cityscapes_3dcarbox` dataset Structure
 
