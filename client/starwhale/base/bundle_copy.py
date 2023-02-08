@@ -265,7 +265,7 @@ class BundleCopy(CloudRequestMixed):
                 instance_uri=self.src_uri,
                 params={
                     "desc": fd.file_desc.name,
-                    "part_name": fd.name,
+                    "partName": fd.name,
                     "signature": fd.signature,
                 },
                 progress=progress,
@@ -416,9 +416,9 @@ class BundleCopy(CloudRequestMixed):
             workdir=workdir,
             url_path=url_path,
         )
-        upload_id: str = res_data.get("upload_id", "")
+        upload_id: str = res_data.get("uploadId", "")
         if not upload_id:
-            raise Exception("upload_id is empty")
+            raise Exception("upload id is empty")
         exists_files: list = res_data.get("existed", [])
         try:
             self._do_ubd_datastore()
