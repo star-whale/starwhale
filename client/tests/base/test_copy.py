@@ -627,7 +627,7 @@ class TestBundleCopy(TestCase):
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
             ).do()
             assert head_request.call_count == 1
-            assert upload_request.call_count == 2
+            assert upload_request.call_count == 3
 
         # TODO: support the flowing case
         with self.assertRaises(NoMockAddress):

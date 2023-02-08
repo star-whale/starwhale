@@ -265,7 +265,7 @@ class BundleCopy(CloudRequestMixed):
                 instance_uri=self.src_uri,
                 params={
                     "desc": fd.file_desc.name,
-                    "partName": fd.name,
+                    "part_name": fd.name,
                     "signature": fd.signature,
                 },
                 progress=progress,
@@ -343,18 +343,17 @@ class BundleCopy(CloudRequestMixed):
 
             if progress is not None:
                 progress.update(_tid, visible=True)
-
             self.do_multipart_upload_file(
                 url_path=url_path,
                 file_path=fd.path,
                 instance_uri=self.dest_uri,
-                fields={
+                params={
                     self.field_flag: self.field_value,
+                    "phase": _UploadPhase.BLOB,
                     "uploadId": upload_id,
                     "partName": fd.name,
                     "signature": fd.signature,
                     "desc": fd.file_desc.name,
-                    "phase": _UploadPhase.BLOB,
                 },
                 use_raise=True,
                 progress=progress,
@@ -382,6 +381,7 @@ class BundleCopy(CloudRequestMixed):
                 executor.submit(_upload_blob, _tid, _file_desc)
                 for _tid, _file_desc in _p_map.items()
             ]
+            # TODO throw errors
             wait(futures)
 
     def _do_ubd_datastore(self) -> None:
