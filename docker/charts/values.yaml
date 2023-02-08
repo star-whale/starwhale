@@ -172,9 +172,9 @@ ingress:
 mirror:
   pypi:
     enabled: true
-    indexUrl: "http://10.131.0.1:3141/root/pypi-douban/+simple/"
+    indexUrl: "https://mirrors.aliyun.com/pypi/simple/"
     extraIndexUrl: "https://pypi.tuna.tsinghua.edu.cn/simple/"
-    trustedHost: "10.131.0.1 pypi.tuna.tsinghua.edu.cn"
+    trustedHost: "mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn"
 
 devMode:
   # Automatically create PV when enabled
