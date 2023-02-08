@@ -74,8 +74,15 @@ class BundleCopy(CloudRequestMixed):
         else:
             project = None
 
-        self.dest_resource = Resource(dest_uri, typ=ResourceType[typ], project=project)
-        self.dest_uri = self.dest_resource.to_uri()
+        try:
+            self.dest_uri = Resource(
+                dest_uri, typ=ResourceType[typ], project=project
+            ).to_uri()
+        except Exception as e:
+            if str(e).startswith("invalid uri"):
+                self.dest_uri = Project(dest_uri).to_uri()
+            else:
+                raise
 
         self.typ = typ
         self.force = force

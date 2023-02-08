@@ -367,6 +367,10 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
             swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist
 
         \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project without 'cloud://' prefix
+            swcli runtime cp mnist-local/version/latest pre-k8s/project/mnist
+
+        \b
         - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
             swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
     """
