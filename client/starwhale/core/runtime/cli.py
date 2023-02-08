@@ -407,11 +407,13 @@ def _activate(uri: str, path: str) -> None:
 @runtime_cmd.command("lock")
 @click.argument("target_dir", default=".")
 @click.option(
+    "-f",
     "--yaml-name",
     default=DefaultYAMLName.RUNTIME,
     help=f"Runtime YAML file name, default is {DefaultYAMLName.RUNTIME}",
 )
 @click.option(
+    "-dai",
     "--disable-auto-inject",
     is_flag=True,
     help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
@@ -428,16 +430,27 @@ def _activate(uri: str, path: str) -> None:
 @optgroup.option(  # type: ignore
     "-s", "--env-use-shell", is_flag=True, default=False, help="use current shell"
 )
-@click.option("--stdout", is_flag=True, help="Output lock file content to the stdout")
 @click.option(
+    "-so", "--stdout", is_flag=True, help="Output lock file content to the stdout"
+)
+@click.option(
+    "-ie",
     "--include-editable",
     is_flag=True,
     help="Include editable packages, only for venv mode",
 )
 @click.option(
+    "-epo",
     "--emit-pip-options",
     is_flag=True,
     help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+)
+@click.option(
+    "-nc",
+    "--no-cache",
+    is_flag=True,
+    help="Invalid the cached(installed) packages in the isolate env when env-lock is enabled, \
+    only for auto-generated environments",
 )
 def _lock(
     target_dir: str,
@@ -449,6 +462,7 @@ def _lock(
     stdout: bool,
     include_editable: bool,
     emit_pip_options: bool,
+    no_cache: bool,
 ) -> None:
     """
     [Only Standalone]Lock Python venv or conda environment
@@ -462,6 +476,7 @@ def _lock(
         env_name,
         env_prefix_path,
         disable_auto_inject,
+        no_cache,
         stdout,
         include_editable,
         emit_pip_options,
