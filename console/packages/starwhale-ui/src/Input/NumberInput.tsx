@@ -4,7 +4,7 @@ import { Input } from './Input'
 
 export interface INumberInputProps extends Omit<InputProps, 'onChange'> {
     value?: number
-    onChange?: (value: number) => void
+    onChange?: (value?: number) => void
     min?: number
     max?: number
     step?: number
@@ -27,7 +27,7 @@ export function NumberInput({
 }: INumberInputProps) {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.value) {
-            onChange?.(0)
+            onChange?.()
             return
         }
         const value_ = type === 'float' ? parseFloat(event.target.value) : parseInt(event.target.value, 10)
