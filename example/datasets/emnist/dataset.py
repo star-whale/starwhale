@@ -32,8 +32,11 @@ def _do_iter_item(fname):
         for i in range(0, min(data_number, label_number)):
             _data = data_file.read(image_size)
             _label = struct.unpack(">B", label_file.read(1))[0]
-            yield GrayscaleImage(
-                _data,
-                display_name=f"{i}",
-                shape=(height, width),
-            ), {"label": _label}
+            yield {
+                "image": GrayscaleImage(
+                    _data,
+                    display_name=f"{i}",
+                    shape=(height, width),
+                ),
+                "label": _label,
+            }

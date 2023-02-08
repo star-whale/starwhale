@@ -25,9 +25,8 @@ ds_name = "gtsrb/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
-    draw_bbox(draw, annotations["bbox"])
-    draw.text((0, 0), annotations["class"], fill="blue")
+    draw_bbox(draw, data["bbox"])
+    draw.text((0, 0), data["class"], fill="blue")
     img.show()

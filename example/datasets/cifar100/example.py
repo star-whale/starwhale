@@ -1,13 +1,19 @@
+import io
+
+from PIL import Image as PILImage
+
 from starwhale import URI, URIType, get_data_loader
 
 
 def main():
     uri = URI("cifar100-test/version/latest", expected_type=URIType.DATASET)
-    for idx, data, annotations in get_data_loader(uri, 0, 10):
+    for idx, data in get_data_loader(uri, 0, 10):
+        with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
+            img.show()
         print(
-            f"[{idx}] data:{data.type.name}-{data.mime_type}-{data.display_name}, annotations: "
-            f"fine({annotations['coarse_label_name']}[{annotations['coarse_label']}]), "
-            f"coarse({annotations['fine_label_name']}[{annotations['fine_label']}])"
+            f"other data: "
+            f"fine({data['coarse_label_name']}[{data['coarse_label']}]), "
+            f"coarse({data['fine_label_name']}[{data['fine_label']}])"
         )
 
 

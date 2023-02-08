@@ -11,12 +11,11 @@ ds_name = "culane/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
-    io.BytesIO(annotations["mask"].to_bytes(ds_name))
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img, PILImage.open(
+    io.BytesIO(data["mask"].to_bytes())
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
-    for line in annotations["lines"]:
+    for line in data["lines"]:
         draw.line(
             [item for sublist in line.to_list() for item in sublist],
             width=3,

@@ -10,9 +10,9 @@ title: The `lfw` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
-    - `identity`: the identity for the persion
+- `data` of type dict:
+    - `image`: `starwhale.Image`
+    - `identity`: the identity for the person
 
 ## Build `lfw` Dataset locally
 

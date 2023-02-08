@@ -138,18 +138,17 @@ def build_ds():
             "right_mouse": Point(float(right_mouth_x), float(right_mouth_y)),
             "nose": Point(float(nose_x), float(nose_y)),
         }
+        data.get(img)["image"] = Image(
+            display_name=img,
+            mime_type=MIMEType.JPEG,
+            link=Link(f"{PATH_ROOT}/{IMG_PATH}/{img}"),
+        )
 
-    for img, anno in data.items():
-        print(f"processing {img}")
+    for img_id, data in data.items():
         ds.append(
             (
-                img,
-                Link(
-                    uri=f"{PATH_ROOT}/{IMG_PATH}/{img}",
-                    data_type=Image(display_name=img, mime_type=MIMEType.JPEG),
-                    with_local_fs_data=False,
-                ),
-                anno,
+                img_id,
+                data,
             )
         )
     ds.commit()

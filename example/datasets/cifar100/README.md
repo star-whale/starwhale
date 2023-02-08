@@ -11,8 +11,8 @@ title: CIFAR100 Dataset
 
 ### Data Fields
 
-- data: `starwhale.Image` type, 32*32 PNG Image, 3 channels
-- annotations:
+- data:
+  - image: `starwhale.Image` type, 32*32 PNG Image, 3 channels
   - fine_label: int, 0-99
   - find_label_name: str, the class to which it belongs
   - coarse_label: int, 0-19

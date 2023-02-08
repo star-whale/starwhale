@@ -10,8 +10,8 @@ title: The `gtsrb` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `bbox`: `starwhale.BoundingBox` the bbox for the sign
     - `class`: the class for the sign
 

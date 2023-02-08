@@ -10,12 +10,12 @@ title: The `cityscapes_fine` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type `dict`:
-    - `color_mask`: of type `starwhale.Link`
-    - `instance_mask`: of type `starwhale.Link`
-    - `label_mask`: of type `starwhale.Link`
-    - `polygons`: of type `starwhale.Link`
+- `data` of type `dict`:
+    - `image`: of type `starwhale.Image`
+    - `color_mask`: of type `starwhale.Image`
+    - `instance_mask`: of type `starwhale.Image`
+    - `label_mask`: of type `starwhale.Image`
+    - `polygons`: of type `dict`
       - `objects`: `list`
         - `label`: the `label` in annotation file
         - `polygon` `starwhale.Polygon` starwhale viewable representation for `polygon` in annotation file

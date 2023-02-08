@@ -12,7 +12,8 @@ title: The `sbd` Dataset
 
 - `data`: `starwhale.Image` loaded as bytes array
 - `annotations` of type dict:
-    - `boundaries`: the boundaries for the objects of type `bytes`
+    - `image`: `starwhale.Image`
+    - `boundaries`: `starwhale.Binary` the boundaries for the objects of type `bytes`
     - `shape`: the shape for the image of type `tuple`
 
 ## Build `sbd` Dataset locally

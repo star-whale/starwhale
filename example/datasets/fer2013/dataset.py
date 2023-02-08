@@ -27,12 +27,14 @@ def build_ds():
         _data = bytes([int(t) for t in data_str.strip('"').split()])
         ds.append(
             (
-                GrayscaleImage(
-                    _data,
-                    display_name=label,
-                    shape=(48, 48),
-                ),
-                {"label": label},
+                {
+                    "image": GrayscaleImage(
+                        _data,
+                        display_name=label,
+                        shape=(48, 48),
+                    ),
+                    "label": label,
+                },
             )
         )
 

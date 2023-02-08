@@ -10,8 +10,8 @@ title: The `country211` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `label`: the label for the image
 
 ## Build `country211` Dataset locally

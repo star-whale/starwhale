@@ -10,8 +10,8 @@ title: The `dtd` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `labels`: the labels for the image
 
 ## Build `dtd` Dataset locally

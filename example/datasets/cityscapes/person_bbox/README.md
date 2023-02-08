@@ -10,8 +10,8 @@ title: The `city_person` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type `dict`:
+- `data` of type `dict`:
+    - `image`: `starwhale.Image`
     - `objects`: of type `list`, `objects` in annotation file
       - `bbox`: `starwhale.BoundingBox` starwhale viewable representation for `bbox` in annotation file
       - `bboxVis`: `starwhale.BoundingBox` starwhale viewable representation for `bboxVis` in annotation file

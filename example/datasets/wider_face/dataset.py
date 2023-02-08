@@ -24,14 +24,14 @@ def build_ds():
                 ds.append(
                     (
                         current_img,
-                        Link(
-                            uri=f"{PATH_ROOT}/{DATA_PATH}/{current_img}",
-                            data_type=Image(
-                                display_name=current_img, mime_type=MIMEType.JPEG
+                        {
+                            "image": Image(
+                                link=Link(uri=f"{PATH_ROOT}/{DATA_PATH}/{current_img}"),
+                                display_name=current_img,
+                                mime_type=MIMEType.JPEG,
                             ),
-                            with_local_fs_data=False,
-                        ),
-                        {"faces": image_annos},
+                            "faces": image_annos,
+                        },
                     )
                 )
             current_img = line

@@ -10,8 +10,8 @@ title: The `wider_face` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `faces`: list
       - `bbox`: `starwhale.BoundingBox` starwhale viewable representation for bounding box in `wider_face_train_bbx_gt.txt`
       - `blur`: blur value in `wider_face_train_bbx_gt.txt`

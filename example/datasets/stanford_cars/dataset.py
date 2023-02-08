@@ -26,14 +26,12 @@ def build_ds():
             ds.append(
                 (
                     relative_im_path,
-                    Link(
-                        uri=f"{PATH_ROOT}/{relative_im_path}",
-                        data_type=Image(
-                            display_name=relative_im_path, mime_type=MIMEType.JPEG
-                        ),
-                        with_local_fs_data=False,
-                    ),
                     {
+                        "image": Image(
+                            link=Link(uri=f"{PATH_ROOT}/{relative_im_path}"),
+                            display_name=relative_im_path,
+                            mime_type=MIMEType.JPEG,
+                        ),
                         "label": clzz,
                         "bbox": BoundingBox(
                             bbox_x1, bbox_y1, bbox_x2 - bbox_x1, bbox_y2 - bbox_y1
