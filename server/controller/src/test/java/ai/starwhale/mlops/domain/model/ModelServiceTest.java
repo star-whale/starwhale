@@ -62,8 +62,8 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -104,7 +104,7 @@ public class ModelServiceTest {
     private StorageAccessService storageAccessService;
     private StorageService storageService;
     private UserService userService;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private ModelDao modelDao;
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
@@ -146,10 +146,10 @@ public class ModelServiceTest {
         userService = mock(UserService.class);
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).idTableKey(1L).build());
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
@@ -168,7 +168,7 @@ public class ModelServiceTest {
                 storageAccessService,
                 storageService,
                 userService,
-                projectManager,
+                projectService,
                 jobHolder,
                 trashService,
                 yamlMapper);
@@ -275,8 +275,8 @@ public class ModelServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.getProject(same("1")))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.findProject(same("1")))
+                .willReturn(Project.builder().id(1L).build());
         given(modelMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(ModelEntity.builder().id(1L).build()));
 
@@ -391,8 +391,8 @@ public class ModelServiceTest {
 
     @Test
     public void testUpload() throws IOException {
-        given(projectManager.getProject(anyString()))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.findProject(anyString()))
+                .willReturn(Project.builder().id(1L).build());
         given(modelMapper.findByName(anyString(), same(1L), any()))
                 .willReturn(ModelEntity.builder().id(1L).build());
         given(modelVersionMapper.findByNameAndModelId(anyString(), same(1L)))
@@ -552,7 +552,7 @@ public class ModelServiceTest {
 
         // case 4: pull model file
         var modelPath = "sw/controller/project/foo/model/iiiiii";
-        given(projectManager.getProject("1")).willReturn(ProjectEntity.builder().projectName("foo").build());
+        given(projectService.findProject("1")).willReturn(Project.builder().name("foo").build());
         given(storagePathCoordinator.allocateCommonModelPoolPath(eq("foo"), eq("iiiiii"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willThrow(IOException.class);
         var responseForModel = new MockHttpServletResponse();

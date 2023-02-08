@@ -37,8 +37,8 @@ import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
@@ -96,7 +96,7 @@ public class RuntimeService {
     private final RuntimeMapper runtimeMapper;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final RuntimeConverter runtimeConvertor;
     private final RuntimeVersionConverter versionConvertor;
     private final RuntimeDao runtimeDao;
@@ -112,7 +112,7 @@ public class RuntimeService {
     private BundleManager bundleManager;
 
     public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
-            StorageService storageService, ProjectManager projectManager,
+            StorageService storageService, ProjectService projectService,
             @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConverter runtimeConvertor,
             RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
             StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
@@ -121,7 +121,7 @@ public class RuntimeService {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.yamlMapper = yamlMapper;
         this.runtimeConvertor = runtimeConvertor;
         this.versionConvertor = versionConvertor;
@@ -136,7 +136,7 @@ public class RuntimeService {
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
-                projectManager,
+                projectService,
                 runtimeDao,
                 runtimeDao
         );
@@ -144,7 +144,7 @@ public class RuntimeService {
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
+        Long projectId = projectService.getProjectId(runtimeQuery.getProjectUrl());
         Long userId = userService.getUserId(runtimeQuery.getOwner());
         List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), userId, null);
 
@@ -164,7 +164,7 @@ public class RuntimeService {
     public Boolean deleteRuntime(RuntimeQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl());
         Trash trash = Trash.builder()
-                .projectId(projectManager.getProjectId(query.getProjectUrl()))
+                .projectId(projectService.getProjectId(query.getProjectUrl()))
                 .objectId(bundleManager.getBundleId(bundleUrl))
                 .type(Type.RUNTIME)
                 .build();
@@ -286,7 +286,7 @@ public class RuntimeService {
 
     public List<RuntimeInfoVo> listRuntimeInfo(String project, String name) {
         if (StringUtils.hasText(name)) {
-            Long projectId = projectManager.getProjectId(project);
+            Long projectId = projectService.getProjectId(project);
             RuntimeEntity rt = runtimeMapper.findByName(name, projectId, false);
             if (rt == null) {
                 throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the runtime with name " + name);
@@ -294,8 +294,8 @@ public class RuntimeService {
             return runtimeInfoOfRuntime(rt);
         }
 
-        ProjectEntity projectEntity = projectManager.getProject(project);
-        List<RuntimeEntity> runtimeEntities = runtimeMapper.list(projectEntity.getId(), null, null, null);
+        Long projectId = projectService.getProjectId(project);
+        List<RuntimeEntity> runtimeEntities = runtimeMapper.list(projectId, null, null, null);
         if (runtimeEntities == null || runtimeEntities.isEmpty()) {
             return List.of();
         }
@@ -325,15 +325,14 @@ public class RuntimeService {
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
-        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
-        Long projectId = projectEntity.getId();
+        Project project = projectService.findProject(uploadRequest.getProject());
+        Long projectId = project.getId();
         RuntimeEntity entity = runtimeMapper.findByName(uploadRequest.name(), projectId, true);
         if (null == entity) {
             //create
-            projectEntity = projectManager.getProject(uploadRequest.getProject());
             entity = RuntimeEntity.builder().isDeleted(0)
                     .ownerId(userService.currentUserDetail().getId())
-                    .projectId(null == projectEntity ? null : projectEntity.getId())
+                    .projectId(projectId)
                     .runtimeName(uploadRequest.name())
                     .build();
             runtimeMapper.insert(entity);
@@ -365,7 +364,7 @@ public class RuntimeService {
         log.debug("Runtime version checked time use {}", System.currentTimeMillis() - startTime);
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
-                : storagePathCoordinator.allocateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(),
+                : storagePathCoordinator.allocateRuntimePath(project.getName(), uploadRequest.name(),
                         uploadRequest.version());
 
         try (final InputStream inputStream = dsFile.getInputStream()) {

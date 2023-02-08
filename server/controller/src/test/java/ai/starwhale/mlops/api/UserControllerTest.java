@@ -19,7 +19,6 @@ package ai.starwhale.mlops.api;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -32,7 +31,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
@@ -45,6 +44,7 @@ import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.member.ProjectMemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -64,12 +64,15 @@ public class UserControllerTest {
 
     private ProjectService projectService;
 
+    private ProjectMemberService projectMemberService;
+
     private JwtTokenUtil jwtTokenUtil;
 
     @BeforeEach
     public void setUp() {
         jwtTokenUtil = mock(JwtTokenUtil.class);
         projectService = mock(ProjectService.class);
+        projectMemberService = mock(ProjectMemberService.class);
         userService = mock(UserService.class);
         given(userService.currentUser())
                 .willReturn(UserVo.builder().id("1").name("current").build());
@@ -81,7 +84,7 @@ public class UserControllerTest {
                 .willReturn(true);
 
         IdConverter idConvertor = new IdConverter();
-        controller = new UserController(userService, projectService, idConvertor, jwtTokenUtil);
+        controller = new UserController(userService, projectService, projectMemberService, idConvertor, jwtTokenUtil);
     }
 
     @Test
@@ -139,21 +142,14 @@ public class UserControllerTest {
 
     @Test
     public void testGetCurrentUserRoles() {
-        given(userService.listCurrentUserRoles(same("p1")))
-                .willReturn(List.of(ProjectRoleVo.builder().id("1").build()));
+        given(userService.listCurrentUserRoles())
+                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
 
-        var resp = controller.getCurrentUserRoles("p1");
+        var resp = controller.getCurrentUserRoles();
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
                 is(iterableWithSize(1))
-        ));
-
-        resp = controller.getCurrentUserRoles("p2");
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(emptyIterable())
         ));
     }
 
@@ -197,7 +193,7 @@ public class UserControllerTest {
 
     @Test
     public void testAddUserSystemRole() {
-        given(projectService.addProjectRole(same("0"), same(1L), same(1L)))
+        given(projectMemberService.addProjectMember(same("0"), same(1L), same(1L)))
                 .willReturn(true);
 
         UserRoleAddRequest request = new UserRoleAddRequest();
@@ -220,7 +216,7 @@ public class UserControllerTest {
 
     @Test
     public void testUpdateUserSystemRole() {
-        given(projectService.modifyProjectRole(same("0"), same(1L), same(1L)))
+        given(projectMemberService.modifyProjectMember(same("0"), same(1L), same(1L)))
                 .willReturn(true);
 
         UserRoleUpdateRequest request = new UserRoleUpdateRequest();
@@ -239,7 +235,7 @@ public class UserControllerTest {
 
     @Test
     public void testDeleteUserSystemRole() {
-        given(projectService.deleteProjectRole(same("0"), same(1L)))
+        given(projectMemberService.deleteProjectMember(same("0"), same(1L)))
                 .willReturn(true);
 
         UserRoleDeleteRequest request = new UserRoleDeleteRequest();
@@ -268,7 +264,7 @@ public class UserControllerTest {
 
     @Test
     public void testListSystemRoles() {
-        given(userService.listSystemRoles())
+        given(projectMemberService.listSystemMembers())
                 .willReturn(List.of(SystemRoleVo.builder().id("1").build()));
 
         var resp = controller.listSystemRoles();

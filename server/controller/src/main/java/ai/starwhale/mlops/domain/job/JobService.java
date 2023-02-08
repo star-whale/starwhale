@@ -33,7 +33,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelDao;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -81,7 +81,7 @@ public class JobService {
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
-    private final ProjectManager projectManager;
+    private final ProjectDao projectDao;
     private final JobDao jobDao;
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
@@ -91,18 +91,18 @@ public class JobService {
     private final TrashService trashService;
 
     public JobService(TaskMapper taskMapper, JobConverter jobConvertor,
-                      JobBoConverter jobBoConverter, RuntimeDao runtimeDao,
-                      JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-                      ProjectManager projectManager, JobDao jobDao, JobLoader jobLoader, ModelDao modelDao,
-                      ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
-                      UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
+            JobBoConverter jobBoConverter, RuntimeDao runtimeDao,
+            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
+            ProjectDao projectDao, JobDao jobDao, JobLoader jobLoader, ModelDao modelDao,
+            ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
+            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
         this.runtimeDao = runtimeDao;
         this.jobSpliterator = jobSpliterator;
         this.hotJobHolder = hotJobHolder;
-        this.projectManager = projectManager;
+        this.projectDao = projectDao;
         this.jobDao = jobDao;
         this.jobLoader = jobLoader;
         this.modelDao = modelDao;
@@ -116,7 +116,7 @@ public class JobService {
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectDao.getProjectId(projectUrl);
         List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
@@ -144,7 +144,7 @@ public class JobService {
     public Boolean removeJob(String projectUrl, String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
         Trash trash = Trash.builder()
-                .projectId(projectManager.getProjectId(projectUrl))
+                .projectId(projectDao.getProjectId(projectUrl))
                 .objectId(jobId)
                 .type(Type.EVALUATION)
                 .build();
@@ -163,7 +163,7 @@ public class JobService {
             String stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
-        var project = projectManager.getProject(projectUrl);
+        var project = projectDao.getProject(projectUrl);
         var runtimeVersion = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
         var runtime = runtimeDao.getRuntime(runtimeVersion.getRuntimeId());
         var modelVersion = modelDao.getModelVersion(modelVersionUrl);
