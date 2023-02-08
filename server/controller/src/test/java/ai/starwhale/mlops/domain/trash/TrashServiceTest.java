@@ -37,7 +37,7 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
@@ -59,7 +59,7 @@ public class TrashServiceTest {
 
     private TrashMapper trashMapper;
     private UserMapper userMapper;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private ModelDao modelDao;
     private DatasetDao datasetDao;
     private RuntimeDao runtimeDao;
@@ -69,7 +69,7 @@ public class TrashServiceTest {
     public void setUp() {
         trashMapper = mock(TrashMapper.class);
         userMapper = mock(UserMapper.class);
-        projectManager = mock(ProjectManager.class);
+        projectService = mock(ProjectService.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
         runtimeDao = mock(RuntimeDao.class);
@@ -77,11 +77,11 @@ public class TrashServiceTest {
 
         service = new TrashService(trashMapper,
                 userMapper,
-                projectManager,
+                projectService,
                 modelDao,
                 datasetDao,
                 runtimeDao,
-            jobDao,
+                jobDao,
                 new IdConverter());
     }
 
@@ -90,7 +90,7 @@ public class TrashServiceTest {
     public void testListTrash() {
         UserEntity starwhale = UserEntity.builder().id(1L).userName("starwhale").build();
         UserEntity test = UserEntity.builder().id(2L).userName("test").build();
-        given(projectManager.getProjectId(same("1")))
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
         given(userMapper.findByName(same("starwhale")))
                 .willReturn(starwhale);
@@ -184,9 +184,9 @@ public class TrashServiceTest {
 
     @Test
     public void testRecover() {
-        given(projectManager.getProjectId(same("1")))
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         given(trashMapper.find(same(1L)))
                 .willReturn(TrashPo.builder()
@@ -270,7 +270,7 @@ public class TrashServiceTest {
 
     @Test
     public void testDelete() {
-        given(projectManager.getProjectId(same("1")))
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
         given(trashMapper.find(same(1L)))
                 .willReturn(TrashPo.builder().projectId(1L).build());

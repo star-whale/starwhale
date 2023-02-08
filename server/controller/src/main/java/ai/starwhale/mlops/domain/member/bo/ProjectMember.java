@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.user;
+package ai.starwhale.mlops.domain.member.bo;
 
-
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
-import io.swagger.v3.oas.annotations.media.Schema;
+import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.user.bo.Role;
+import ai.starwhale.mlops.domain.user.bo.User;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.validation.annotation.Validated;
+import lombok.NoArgsConstructor;
 
-@Data
 @Builder
-@Schema(description = "Project Role object", title = "Role")
-@Validated
-public class ProjectRoleVo {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ProjectMember {
 
-    private String id;
+    private Long id;
 
-    private UserVo user;
+    private Project project;
 
-    private ProjectVo project;
+    private User user;
 
-    private RoleVo role;
-
-    public static ProjectRoleVo empty() {
-        return new ProjectRoleVo("", UserVo.empty(), ProjectVo.empty(), RoleVo.empty());
-    }
+    private Role role;
 }

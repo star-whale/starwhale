@@ -49,8 +49,8 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
@@ -93,7 +93,7 @@ public class RuntimeServiceTest {
     private RuntimeMapper runtimeMapper;
     private RuntimeVersionMapper runtimeVersionMapper;
     private StorageService storageService;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private RuntimeConverter runtimeConvertor;
     private RuntimeVersionConverter versionConvertor;
     private RuntimeDao runtimeDao;
@@ -140,10 +140,10 @@ public class RuntimeServiceTest {
         userService = mock(UserService.class);
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).idTableKey(1L).build());
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
@@ -156,7 +156,7 @@ public class RuntimeServiceTest {
                 runtimeMapper,
                 runtimeVersionMapper,
                 storageService,
-                projectManager,
+                projectService,
                 yamlMapper,
                 runtimeConvertor,
                 versionConvertor,
@@ -270,8 +270,8 @@ public class RuntimeServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.getProject(same("1")))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.getProjectId(same("1")))
+                .willReturn(1L);
         given(runtimeMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
@@ -379,8 +379,8 @@ public class RuntimeServiceTest {
 
     @Test
     public void testUpload() {
-        given(projectManager.getProject(anyString()))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.findProject(anyString()))
+                .willReturn(Project.builder().id(1L).build());
         given(runtimeMapper.findByName(anyString(), same(1L), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
         given(runtimeVersionMapper.findByNameAndRuntimeId(anyString(), same(1L)))

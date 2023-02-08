@@ -51,7 +51,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectDao;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -83,7 +83,7 @@ public class JobServiceTest {
     private ResultQuerier resultQuerier;
     private StoragePathCoordinator storagePathCoordinator;
     private UserService userService;
-    private ProjectManager projectManager;
+    private ProjectDao projectDao;
     private JobDao jobDao;
     private ModelDao modelDao;
     private DatasetDao datasetDao;
@@ -102,8 +102,8 @@ public class JobServiceTest {
         resultQuerier = mock(ResultQuerier.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
         userService = mock(UserService.class);
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectDao = mock(ProjectDao.class);
+        given(projectDao.getProjectId(same("1")))
                 .willReturn(1L);
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
@@ -119,7 +119,7 @@ public class JobServiceTest {
 
         service = new JobService(
                 taskMapper, jobConverter, jobBoConverter, runtimeDao, jobSpliterator,
-                hotJobHolder, projectManager, jobDao, jobLoader, modelDao,
+                hotJobHolder, projectDao, jobDao, jobLoader, modelDao,
                 resultQuerier, datasetDao, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
                 trashService);
     }
@@ -190,7 +190,7 @@ public class JobServiceTest {
     public void testCreateJob() {
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());
-        given(projectManager.getProject(anyString()))
+        given(projectDao.getProject(anyString()))
                 .willReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
         given(runtimeDao.getRuntimeVersion(same("2")))
                 .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());

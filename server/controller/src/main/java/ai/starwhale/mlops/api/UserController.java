@@ -18,7 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
@@ -32,6 +32,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.member.ProjectMemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -55,14 +56,18 @@ public class UserController implements UserApi {
 
     private final ProjectService projectService;
 
+    private final ProjectMemberService projectMemberService;
+
     private final IdConverter idConvertor;
 
     private final JwtTokenUtil jwtTokenUtil;
 
     public UserController(UserService userService, ProjectService projectService,
+            ProjectMemberService projectMemberService,
             IdConverter idConvertor, JwtTokenUtil jwtTokenUtil) {
         this.userService = userService;
         this.projectService = projectService;
+        this.projectMemberService = projectMemberService;
         this.idConvertor = idConvertor;
         this.jwtTokenUtil = jwtTokenUtil;
     }
@@ -94,8 +99,8 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<ProjectRoleVo>>> getCurrentUserRoles(String projectUrl) {
-        List<ProjectRoleVo> vos = userService.listCurrentUserRoles(projectUrl);
+    public ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> getCurrentUserRoles() {
+        List<ProjectMemberVo> vos = userService.listCurrentUserRoles();
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
@@ -135,7 +140,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectService.addProjectRole("0", idConvertor.revert(userRoleAddRequest.getUserId()),
+        Boolean res = projectMemberService.addProjectMember("0", idConvertor.revert(userRoleAddRequest.getUserId()),
                 idConvertor.revert(userRoleAddRequest.getRoleId()));
         if (!res) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.USER, "Add user role failed."),
@@ -152,7 +157,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectService.modifyProjectRole("0", idConvertor.revert(systemRoleId),
+        Boolean res = projectMemberService.modifyProjectMember("0", idConvertor.revert(systemRoleId),
                 idConvertor.revert(
                         userRoleUpdateRequest.getRoleId()));
         if (!res) {
@@ -171,7 +176,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectService.deleteProjectRole("0", idConvertor.revert(systemRoleId));
+        Boolean res = projectMemberService.deleteProjectMember("0", idConvertor.revert(systemRoleId));
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.USER, "Delete user role failed."),
@@ -187,7 +192,7 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<ResponseMessage<List<SystemRoleVo>>> listSystemRoles() {
-        return ResponseEntity.ok(Code.success.asResponse(userService.listSystemRoles()));
+        return ResponseEntity.ok(Code.success.asResponse(projectMemberService.listSystemMembers()));
     }
 
     @Override
