@@ -251,7 +251,7 @@ class TestDatasetCopy(BaseTestCase):
         rm.request(
             HTTPMethod.POST,
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
-            json={"data": {"upload_id": 1}},
+            json={"data": {"uploadId": 1}},
         )
         rm.request(
             HTTPMethod.HEAD,
