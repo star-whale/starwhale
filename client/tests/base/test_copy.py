@@ -397,7 +397,7 @@ class TestBundleCopy(TestCase):
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
                 headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
-                json={"data": {"upload_id": "123"}},
+                json={"data": {"uploadId": "123"}},
             )
             ModelCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.MODEL
@@ -621,7 +621,7 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
-                json={"data": {"upload_id": 1}},
+                json={"data": {"uploadId": 1}},
             )
             DatasetCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
@@ -640,7 +640,7 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}/file",
-                json={"data": {"upload_id": 1}},
+                json={"data": {"uploadId": 1}},
             )
             BundleCopy(
                 src_uri="mnist/v1",
@@ -736,7 +736,7 @@ class TestBundleCopy(TestCase):
         rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde/file",
-            json={"data": {"upload_id": 1}},
+            json={"data": {"uploadId": 1}},
         )
 
         dataset_dir = (
