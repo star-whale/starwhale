@@ -161,8 +161,6 @@ dependencies:
   - files:
       - dest: bin/prepare.sh
         name: prepare
-        post: bash bin/prepare.sh
-        pre: ls bin/prepare.sh
         src: scripts/prepare.sh
   - requirements-sw-lock.txt
 environment:
@@ -211,15 +209,13 @@ dependencies:
     - test.whl
 ```
 
-包含文件、库等，会一同进行打包，并按照设置放置到特定位置，并支持pre和post两个hook，可以执行一些命令。通常应用在Runtime中包含一些非Python的包时使用。
+包含文件、库等，会一同进行打包，并按照设置放置到特定位置。通常应用在Runtime中包含一些非Python的包时使用。
 
 ```yaml
 dependencies:
   - files:
       - dest: bin/prepare.sh       # 目标位置。若是相对路径，则存放在 workdir/export/[conda/venv] 目录的相对位置。若是绝对路径，当在docker环境中restore runtime，则按照预期拷贝到目标目录；非docker环境restore runtime，则存放在workdir/export/[conda/venv] 目录的相对位置。workdir是restore runtime时解压的目标目录。
         name: prepare              # required
-        post: bash bin/prepare.sh  # 拷贝资源之后执行的命令, optional
-        pre: ls bin/prepare.sh   # 拷贝之前执行的命令，optional
         src: scripts/prepare.sh  # 相对runtime.yaml所在目录（workdir）的相对路径，支持文件或目录，若目录则会递归拷贝，required
 ```
 
