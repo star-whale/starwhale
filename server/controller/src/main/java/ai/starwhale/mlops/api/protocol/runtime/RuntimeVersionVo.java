@@ -33,6 +33,9 @@ public class RuntimeVersionVo implements Serializable {
     @JsonProperty("id")
     private String id;
 
+    @JsonProperty("runtimeId")
+    private String runtimeId;
+
     @JsonProperty("name")
     private String name;
 
