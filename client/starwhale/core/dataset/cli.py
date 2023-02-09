@@ -265,6 +265,10 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
             swcli dataset cp mnist-local/version/latest cloud://pre-k8s/project/mnist
 
         \b
+        - copy standalone instance(local) default project(self)'s mnist-local dataset to cloud instance(pre-k8s) mnist project without 'cloud://' prefix
+            swcli dataset cp mnist-local/version/latest pre-k8s/project/mnist
+
+        \b
         - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
             swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
     """

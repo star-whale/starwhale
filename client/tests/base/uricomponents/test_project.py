@@ -3,6 +3,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.exceptions import UriTooShortException
 
 
 class MockInstance:
@@ -32,3 +33,43 @@ class TestProject(TestCase):
         p = Project(uri="https://foo.com/project/bar/dataset/mnist/version/baz")
         assert p.name == "bar"
         assert p.path == "dataset/mnist/version/baz"
+
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_parse_from_full_uri(self, load_conf: MagicMock) -> None:
+        load_conf.return_value = {
+            "instances": {"foo": {"uri": "https://foo.com"}, "local": {"uri": "local"}}
+        }
+
+        tests = {
+            "https://foo.com/project/myproject/dataset/mnist": "myproject",
+            "cloud://foo/project/myproject/dataset/mnist": "myproject",
+            "foo/project/myproject/dataset/mnist": "myproject",
+        }
+
+        for uri, project in tests.items():
+            p = Project.parse_from_full_uri(uri, ignore_rc_type=False)
+            assert p.name == project
+
+        p = Project.parse_from_full_uri(
+            "foo/project/myproject/mnist", ignore_rc_type=True
+        )
+        assert p.name == "myproject"
+
+    def test_parse_from_full_uri_exceptions(self) -> None:
+        tests = (
+            "foo//project/myproject/dataset/mnist",
+            "https://foo.com/project/myproject/dataset//mnist",
+        )
+
+        for uri in tests:
+            with self.assertRaisesRegex(Exception, "wrong format uri"):
+                Project.parse_from_full_uri(uri, ignore_rc_type=False)
+
+        tests = (
+            "http://foo.com/project/self",
+            "foo/project/self",
+            "cloud://foo/project/self",
+        )
+        for uri in tests:
+            with self.assertRaises(UriTooShortException):
+                Project.parse_from_full_uri(uri, ignore_rc_type=True)

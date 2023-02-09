@@ -109,7 +109,8 @@ class DatasetCopy(BundleCopy):
             name=self.bundle_name,
             version=self.bundle_version,
             project=self._get_remote_project_name(
-                self.dest_resource.project.instance.to_uri(), self.dest_uri.project
+                self.dest_uri,
+                self.dest_uri.project,
             ),
             instance_name=self.dest_uri.instance,
         ) as remote:

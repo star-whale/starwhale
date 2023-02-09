@@ -137,7 +137,17 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -147,7 +157,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": "mnist",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -163,6 +173,16 @@ class TestBundleCopy(TestCase):
             {
                 "src_uri": f"mnist/{version[:5]}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -341,17 +361,32 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
                 "src_uri": f"local/project/self/model/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/model/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
                 "src_uri": "mnist",
                 "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": "mnist",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_model": "mnist",
             },
             {
@@ -361,7 +396,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": f"mnist/version/{version[:5]}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
@@ -560,17 +595,27 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
-                "src_uri": f"local/project/self/dataset/mnist/version/{version}",
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": "mnist",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
                 "src_uri": "mnist",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
@@ -580,7 +625,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": f"mnist/version/{version[:5]}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
@@ -591,6 +636,16 @@ class TestBundleCopy(TestCase):
             {
                 "src_uri": "mnist/v1",
                 "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "pre-bare/project/mnist/mnist-new-alias",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist/mnist-new-alias",
                 "dest_dataset": "mnist-new-alias",
             },
             {

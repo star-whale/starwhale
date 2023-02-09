@@ -19,18 +19,27 @@ def _find_alias_by_url(url: str) -> Tuple[str, str]:
     """parse url and return instance alias and path from url"""
     if not url:
         return _get_default_instance_alias(), ""
-    if url.startswith("local/"):
-        return "local", url[len("local") :]
     p = urlparse(url)
-    # use host as alias when url starts with cloud
-    if p.scheme == "cloud":
-        return p.netloc, p.path
 
-    ins_url = "://".join([p.scheme, p.netloc])
-    hits = [name for (name, conf) in _get_instances().items() if conf["uri"] == ins_url]
-    if len(hits) == 1:
-        return hits[0], p.path
-    raise NoMatchException(url, hits)
+    inst_uri_map = {name: conf["uri"] for name, conf in _get_instances().items()}
+    inst_names = list(inst_uri_map.keys())
+
+    # use host as alias when url starts with cloud or non-scheme
+    if p.scheme == "cloud":
+        if p.netloc not in inst_uri_map:
+            raise NoMatchException(p.netloc, inst_names)
+        return p.netloc, p.path
+    elif p.scheme == "":
+        netloc, path = url.split("/", 1)
+        if netloc not in inst_uri_map:
+            raise NoMatchException(netloc, inst_names)
+        return netloc, path
+    else:
+        ins_url = "://".join([p.scheme, p.netloc])
+        hits = [name for name, uri in inst_uri_map.items() if uri == ins_url]
+        if len(hits) == 1:
+            return hits[0], p.path
+        raise NoMatchException(url, hits)
 
 
 def _check_alias_exists(alias: str) -> None:
