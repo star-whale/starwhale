@@ -7,7 +7,6 @@ import time
 import base64
 import struct
 import typing as t
-import tempfile
 import threading
 from http import HTTPStatus
 from types import TracebackType
@@ -139,11 +138,11 @@ def iter_complex_annotations_swds() -> _TGenItem:
 
 def iter_mnist_swds_bin_item_with_id() -> _TGenItem:
     for data in iter_mnist_swds_bin_item():
-        disp_name = data["data"].display_name
-        yield f"mnist-{disp_name}", data
+        display_name = data["data"].display_name
+        yield f"mnist-{display_name}", data
 
 
-def iter_mnist_swds_bin_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+def iter_mnist_swds_bin_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
     with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
         "rb"
     ) as label_file:
@@ -176,24 +175,24 @@ class MNISTBuildExecutor(BuildExecutor):
             "list_dict": [{"a": 1}, {"b": 2}],
         }
 
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Dict[str, t.Any], None, None]:
         return iter_mnist_swds_bin_item()
 
 
 class MNISTBuildWithIDExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         return iter_mnist_swds_bin_item_with_id()
 
 
 def iter_mnist_user_raw_item_with_id() -> t.Generator[
-    t.Tuple[t.Any, t.Any, t.Any], None, None
+    t.Tuple[t.Any, t.Any], None, None
 ]:
     for data in iter_mnist_user_raw_item():
-        image_ = data[0]["image"]
-        yield f"mnist-link-{image_.display_name}", data[0]
+        image_ = data["image"]
+        yield f"mnist-link-{image_.display_name}", data
 
 
-def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+def iter_mnist_user_raw_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
     with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
         "rb"
     ) as label_file:
@@ -209,25 +208,23 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
                 uri=_mnist_label_path,
                 with_local_fs_data=True,
             )
-            yield (
-                {
-                    "image": GrayscaleImage(
-                        display_name=f"{i}",
-                        shape=(height, width, 1),
-                        link=Link(
-                            uri=str(_mnist_data_path.absolute()),
-                            offset=offset,
-                            size=image_size,
-                            with_local_fs_data=True,
-                        ),
+            yield {
+                "image": GrayscaleImage(
+                    display_name=f"{i}",
+                    shape=(height, width, 1),
+                    link=Link(
+                        uri=str(_mnist_data_path.absolute()),
+                        offset=offset,
+                        size=image_size,
+                        with_local_fs_data=True,
                     ),
-                    "original_data": Binary(fp=_mnist_data_path.absolute()),
-                    "label": _label,
-                    "link": _local_link,
-                    "list_link": [_local_link],
-                    "dict_link": {"key": _local_link},
-                },
-            )
+                ),
+                "original_data": Binary(fp=_mnist_data_path.absolute()),
+                "label": _label,
+                "link": _local_link,
+                "list_link": [_local_link],
+                "dict_link": {"key": _local_link},
+            }
             offset += image_size
 
 
@@ -1567,8 +1564,18 @@ class TestTabularDataset(TestCase):
 
 
 class TestRowWriter(BaseTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._original_cwd = os.getcwd()
+        os.chdir(self.local_storage)
+
+    def tearDown(self) -> None:
+        if hasattr(self, "_original_cwd"):
+            os.chdir(self._original_cwd)
+        super().tearDown()
+
     @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_update(self, m_make_swds: MagicMock) -> None:
+    def test_row_update(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
 
         assert rw._builder is None
@@ -1673,21 +1680,16 @@ class TestRowWriter(BaseTestCase):
         assert items[0].index == 1
 
     def test_close(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            rw = RowWriter(
-                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
-            )
-            rw.update(DataRow(index=1, data={"data": Binary(b"test"), "label": 1}))
-            rw.close()
-            assert not rw.is_alive()
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw.update(DataRow(index=1, data={"data": Binary(b"test"), "label": 1}))
+        rw.close()
+        assert not rw.is_alive()
 
-            with RowWriter(
-                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
-            ) as context_rw:
-                context_rw.update(
-                    DataRow(index=1, data={"data": Binary(b"test"), "label": 1})
-                )
-            assert not rw.is_alive()
+        with RowWriter(dataset_name="mnist", dataset_version="123456") as context_rw:
+            context_rw.update(
+                DataRow(index=1, data={"data": Binary(b"test"), "label": 1})
+            )
+        assert not rw.is_alive()
 
     def test_make_swds_bin(self) -> None:
         workdir = Path(self.local_storage) / ".user" / "workdir"
