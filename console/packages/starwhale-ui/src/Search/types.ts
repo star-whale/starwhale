@@ -188,7 +188,7 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
     onChange?: (newValue?: string) => void
     options?: any[]
     mountNode?: HTMLElement
-    innerRef?: React.RefObject<any>
+    inputRef?: React.RefObject<any>
 }
 
 export type FilterT = {

@@ -41,8 +41,8 @@ export function useExportDatastore(query?: QueryTableRequest, enable = true) {
 export function useQueryDatasetList(
     tableName?: string,
     options?: IListQuerySchema & {
-        filter: any[]
-        query: QueryTableRequest
+        filter?: any[]
+        query?: QueryTableRequest
     },
     rawResult = false
 ) {

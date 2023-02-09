@@ -276,7 +276,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                         <IconFont
                             type='more'
                             style={{
-                                display: props.isHovered && !props.compareable ? 'block' : 'none',
+                                visibility: props.isHovered && !props.compareable ? 'visible' : 'hidden',
                             }}
                         />
                     </div>

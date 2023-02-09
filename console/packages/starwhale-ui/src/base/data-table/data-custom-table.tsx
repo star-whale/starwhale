@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
-import { useStyletron } from 'baseui'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
 import cn from 'classnames'
 import { SORT_DIRECTIONS } from './constants'
@@ -10,6 +9,7 @@ import MeasureColumnWidths from './measure-column-widths'
 import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from './types'
 import { LocaleContext } from './locales'
 import { IStore } from './store'
+import { themedUseStyletron } from '../../theme/styletron'
 
 const HEADER_ROW_HEIGHT = 44
 const IS_BROWSER = true
@@ -74,7 +74,7 @@ type CellPlacementPropsT = {
 const sum = (ns) => ns.reduce((s, n) => s + n, 0)
 
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
-    const [css, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
 
     const column = React.useMemo(() => data.columns[columnIndex] ?? null, [data.columns, columnIndex])
     const { row, rowCount, rowData } = React.useMemo(() => {
@@ -345,7 +345,7 @@ type HeaderProps = {
     tableHeight: number
 }
 function Header(props: HeaderProps) {
-    const [css, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
     const [startResizePos, setStartResizePos] = React.useState(0)
     const [endResizePos, setEndResizePos] = React.useState(0)
     // flowlint-next-line unclear-type:off
@@ -509,7 +509,7 @@ function Header(props: HeaderProps) {
     )
 }
 function Headers({ width }: { width: number }) {
-    const [css, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
@@ -702,7 +702,7 @@ function Headers({ width }: { width: number }) {
 }
 // @ts-ignore
 function LoadingOrEmptyMessage(props) {
-    const [css, theme] = useStyletron()
+    const [css, theme] = themedUseStyletron()
     return (
         <div
             className={css({
@@ -808,7 +808,7 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
 InnerTableElement.displayName = 'InnerTableElement'
 // @ts-ignore
 function MeasureScrollbarWidth(props) {
-    const [css] = useStyletron()
+    const [css] = themedUseStyletron()
     const outerRef = React.useRef()
     const innerRef = React.useRef()
     React.useEffect(() => {
@@ -862,7 +862,7 @@ export function DataTable({
     controlRef,
     useStore,
 }: DataTablePropsT) {
-    const [, theme] = useStyletron()
+    const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
 
     // TODO remove this

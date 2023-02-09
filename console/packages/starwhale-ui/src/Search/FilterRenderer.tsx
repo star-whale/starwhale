@@ -10,12 +10,13 @@ import { createUseStyles } from 'react-jss'
 export const useStyles = createUseStyles({
     filters: {
         'position': 'relative',
-        'display': 'inline-flex',
+        'display': 'flex',
         'flexWrap': 'nowrap',
         'gap': '1px',
         'cursor': 'pointer',
         'width': 'auto',
         'height': '22px',
+        'lineHeight': '22px',
         '&:hover $label': {
             backgroundColor: '#EDF3FF',
         },
@@ -37,6 +38,11 @@ export const useStyles = createUseStyles({
 // @ts-ignore
 const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
+}
+
+const isValueExist = (value: any) => {
+    if (value === 0) return true
+    return !!value
 }
 
 export default function FilterRenderer({
@@ -68,14 +74,18 @@ export default function FilterRenderer({
     }, [column])
 
     const $fieldOptions = React.useMemo(() => {
-        return $columns.map((tmp) => {
-            return {
-                id: tmp.path,
-                type: tmp.path,
-                label: tmp.label,
-            }
-        })
-    }, [$columns])
+        return $columns
+            .filter((tmp) => {
+                return tmp.label.match(value)
+            })
+            .map((tmp) => {
+                return {
+                    id: tmp.path,
+                    type: tmp.path,
+                    label: tmp.label,
+                }
+            })
+    }, [$columns, value])
 
     const { FilterOperator, FilterField, FilterValue } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
@@ -92,7 +102,7 @@ export default function FilterRenderer({
         if (typeof event === 'object' && 'target' in event) {
             setValue((event.target as any).value)
         } else {
-            setValue(event ?? 0)
+            setValue(event ?? '')
         }
     }
 
@@ -105,14 +115,15 @@ export default function FilterRenderer({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        // console.log(event.keyCode, removing && !value, value, op, property)
+        const valueExists = isValueExist(value)
+
         switch (event.keyCode) {
             case 27:
                 handleReset()
                 break
             case 9: // tab
             case 13: // enter
-                if (value && op && property) {
+                if (valueExists && op && property) {
                     const newValues = {
                         value,
                         op,
@@ -126,7 +137,7 @@ export default function FilterRenderer({
             case 8: // backspace
                 event.stopPropagation()
 
-                if (removing && !value) {
+                if (removing && !valueExists) {
                     // first remove op
                     if (op) {
                         setOp(undefined)
@@ -134,11 +145,11 @@ export default function FilterRenderer({
                     }
                     // second remove property
                     if (property) setProperty(undefined)
-                    // third trigger remove all
                     setRemoving(false)
-                    onChange?.(undefined)
+                    // remove prev item when there is no label value to delete
+                    if (!op && !property && !valueExists) onChange?.(undefined)
                 }
-                if (!value) {
+                if (!valueExists) {
                     setRemoving(true)
                 }
                 break
@@ -160,8 +171,11 @@ export default function FilterRenderer({
     useClickAway(ref, (e) => {
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
+        if (containsNode(document.querySelector('.filter-popover'), e.target)) return
+
         handleReset()
     })
+
     // keep focus when editing
     useEffect(() => {
         if (editing && op) {
@@ -190,10 +204,10 @@ export default function FilterRenderer({
     return (
         // @ts-ignore
         <div
+            className={styles.filters}
             ref={ref}
             role='button'
             tabIndex={0}
-            className={styles.filters}
             // @ts-ignore
             onKeyDown={handleKeyDown}
             onClick={handleFocus}
@@ -203,10 +217,13 @@ export default function FilterRenderer({
                 <FilterField
                     isEditing={editing && !property}
                     value={property as any}
-                    onChange={(item: any) => setProperty(item)}
+                    onChange={(item: any) => {
+                        setProperty(item)
+                        setValue(undefined)
+                        inputRef.current?.focus()
+                    }}
                     options={$fieldOptions}
-                    mountNode={rest.containerRef?.current ?? document.body}
-                    innerRef={fieldDropdownRef}
+                    inputRef={inputRef as any}
                 />
             )}
             {FilterOperator && (
@@ -215,15 +232,13 @@ export default function FilterRenderer({
                     value={op as any}
                     onChange={(item: any) => {
                         setOp(item)
+                        setValue(undefined)
                         inputRef.current?.focus()
                     }}
-                    innerRef={opDropdownRef}
-                    mountNode={rest.containerRef?.current ?? document.body}
+                    inputRef={inputRef as any}
                 />
             )}
-            {/* <FilterValue isEditing={editing} value={values.value} onChange={(e) => setValue(event.target.value)} /> */}
-
-            {!editing && value && (
+            {!editing && isValueExist(value) && (
                 <div className={styles.label} title={value}>
                     {value}
                     <div
@@ -252,6 +267,7 @@ export default function FilterRenderer({
                 </div>
             )}
             <div
+                className='autosize-input'
                 style={{
                     minWidth: editing ? '100px' : 0,
                     display: 'inline-block',
@@ -260,7 +276,7 @@ export default function FilterRenderer({
                     flex: 1,
                     flexBasis: editing ? '100px' : 0,
                     width: editing ? '100%' : 0,
-                    height: editing ? '100%' : 0,
+                    height: '100%',
                 }}
             >
                 {/* @ts-ignore */}
