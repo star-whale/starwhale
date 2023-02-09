@@ -157,6 +157,7 @@ public class JobService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
+    @Transactional
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,

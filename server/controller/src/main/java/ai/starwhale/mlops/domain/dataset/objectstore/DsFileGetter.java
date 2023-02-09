@@ -23,7 +23,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.StorageUri;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +84,7 @@ public class DsFileGetter {
         }
         StorageAccessService storageAccessService =
                 storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
-        String path = checkPath(datasetId, uri, storageAccessService);
+        String path = checkPath(datasetId, storageUri);
         try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
                 offset, size) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
@@ -102,7 +101,7 @@ public class DsFileGetter {
             return uri;
         }
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);
-        String path = checkPath(datasetId, uri, storageAccessService);
+        String path = checkPath(datasetId, storageUri);
         try {
             return storageAccessService.signedUrl(path, expTimeMillis);
         } catch (IOException e) {
@@ -110,25 +109,13 @@ public class DsFileGetter {
         }
     }
 
-    private String checkPath(Long datasetId, String uri, StorageAccessService storageAccessService) {
-        String path;
-        try {
-            path = new StorageUri(uri).getPathAfterBucket();
-        } catch (URISyntaxException e) {
-            log.error("malformed uri {}", uri, e);
-            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
+    private String checkPath(Long datasetId, StorageUri uri) {
+        String path = uri.getPathAfterBucket();
+        if (StringUtils.hasText(uri.getSchema())) {
+            return path;
         }
-        StorageObjectInfo objectInfo;
-        try {
-            objectInfo = storageAccessService.head(path);
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
-        }
-        if (!objectInfo.isExists()) {
-            DatasetVersionEntity versionById = datasetVersionMapper.find(datasetId);
-            path = StringUtils.trimTrailingCharacter(versionById.getStoragePath(), '/') + "/"
-                    + StringUtils.trimLeadingCharacter(path, '/');
-        }
-        return path;
+        DatasetVersionEntity versionById = datasetVersionMapper.find(datasetId);
+        return StringUtils.trimTrailingCharacter(versionById.getStoragePath(), '/') + "/"
+                + StringUtils.trimLeadingCharacter(path, '/');
     }
 }

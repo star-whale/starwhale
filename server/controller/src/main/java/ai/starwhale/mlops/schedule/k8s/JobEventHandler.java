@@ -67,13 +67,15 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         //one task one k8s job
         if (null != status.getFailed()) {
             taskStatus = TaskStatus.FAIL;
-            log.debug("job status changed for {} is failed {}", jobName(newObj), status);
+            log.error("job status changed for {} is failed {}", jobName(newObj), status);
+            log.error("job failed with spec:\n{} \nmetadata\n{}", newObj.getSpec().toString(),
+                    newObj.getMetadata().toString());
         } else if (null != status.getActive()) {
             taskStatus = TaskStatus.RUNNING;
-            log.debug("job status changed for {} is running {}", jobName(newObj), status);
+            log.info("job status changed for {} is running {}", jobName(newObj), status);
         } else if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
-            log.debug("job status changed for {} is success  {}", jobName(newObj), status);
+            log.info("job status changed for {} is success  {}", jobName(newObj), status);
         } else {
             taskStatus = TaskStatus.UNKNOWN;
             log.warn("job status changed for {} is unknown {}", jobName(newObj), status);

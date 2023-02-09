@@ -1,10 +1,4 @@
 api_version: 1.1
-configs:
-  conda:
-    channels:
-      - conda-forge
-  docker:
-    image: ghcr.io/star-whale/runtime/pytorch
 dependencies:
   - pip:
       - Pillow
@@ -18,6 +12,7 @@ dependencies:
       - pycocotools
   - requirements.txt
 environment:
+  python: "3.10"
   arch: noarch
   os: ubuntu:20.04
 mode: venv
