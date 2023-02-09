@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import RuntimeSelector from '@runtime/components/RuntimeSelector'
@@ -12,6 +12,7 @@ import { createUseStyles } from 'react-jss'
 import FlatResourceSelector, { Dict } from '@/domain/setting/components/FlatResourceSelector'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
 import { Toggle } from '@starwhale/ui/Select'
+import { useFetchRuntimeVersionSuggestion } from '@runtime/hooks/useFetchRuntimeVersionSuggestion'
 
 interface ICreateOnlineEvalProps {
     modelId: string
@@ -58,6 +59,16 @@ function CreateOnlineEvalForm({ onSubmit }: ICreateOnlineEvalFormProps, formRef:
     const [runtimeId, setRuntimeId] = useState('')
     const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
     const [showAdvanced, setShowAdvanced] = useState(false)
+
+    // get runtime suggestion
+    const runtimes = useFetchRuntimeVersionSuggestion(projectId, $modelVersionId).data?.runtimes
+    useEffect(() => {
+        if (runtimes !== undefined && runtimes?.length !== 0) {
+            const { id, runtimeId: $runtimeId } = runtimes[0]
+            form.setFieldsValue({ runtimeId: $runtimeId, runtimeVersionUrl: id })
+            setRuntimeId($runtimeId)
+        }
+    }, [form, runtimes])
 
     const handleValuesChange = useCallback(
         (changes, values) => {
