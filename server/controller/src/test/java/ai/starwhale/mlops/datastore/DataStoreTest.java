@@ -32,6 +32,7 @@ import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -292,6 +294,45 @@ public class DataStoreTest {
                 .tableName(tableNonExist).ignoreNonExistingTable(true).build());
         assertThat("result of non exist table", recordList.getColumnTypeMap().isEmpty());
         assertThat("result of non exist table", recordList.getRecords().isEmpty());
+    }
+
+    @Test
+    public void testQueryMultipleTimesForBytes() {
+        this.dataStore.update("t1",
+                new TableSchemaDesc("k",
+                    List.of(
+                        ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("BYTES").build()
+                    )),
+                List.of(
+                    Map.of("k", "0", "a", "Nw=="),
+                    Map.of("k", "1", "a", "OA==")
+                )
+        );
+        class EncodeString implements BiFunction<String, Boolean, Object> {
+            @Override
+            public Object apply(String str, Boolean rawResult) {
+                return ColumnTypeScalar.BYTES.encode(
+                    ByteBuffer.wrap((str).getBytes(StandardCharsets.UTF_8)), rawResult);
+            }
+        }
+
+        var encodeString = new EncodeString();
+        var testParams = new boolean[]{true, false, true, false, true, false};
+        for (boolean rawResult : testParams) {
+            var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
+                    .tableName("t1")
+                    .columns(Map.of("a", "a"))
+                    .rawResult(rawResult)
+                    .build()).getRecords();
+            assertThat(recordList,
+                    is(List.of(
+                        Map.of("a", encodeString.apply("7", rawResult)),
+                        Map.of("a", encodeString.apply("8", rawResult))
+                    ))
+            );
+        }
+
     }
 
     @Test
