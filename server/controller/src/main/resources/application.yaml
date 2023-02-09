@@ -12,11 +12,13 @@ spring:
       static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
+  docker:
+    registry: ${SW_DOCKER_REGISTRY_URL:docker-registry.starwhale.cn}
   runtime:
     pypi:
-      index-url: ${SW_PYPI_INDEX_URL:}
-      extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:}
-      trusted-host: ${SW_PYPI_TRUSTED_HOST:}
+      index-url: ${SW_PYPI_INDEX_URL:abcd}
+      extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:12}
+      trusted-host: ${SW_PYPI_TRUSTED_HOST:c}
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starwhale}

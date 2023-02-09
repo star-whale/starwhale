@@ -24,24 +24,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ConfigurationProperties(prefix = "sw.runtime")
-public class RunTimeProperties {
+@ConfigurationProperties(prefix = "sw.docker")
+public class DockerSetting {
 
-    String imageDefault;
-    Pypi pypi;
+    String registry;
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Pypi {
-
-        String indexUrl;
-        String extraIndexUrl;
-        String trustedHost;
-
-        public static Pypi empty() {
-            return new Pypi("", "", "");
-        }
+    public static DockerSetting empty() {
+        return new DockerSetting("");
     }
 
 }
