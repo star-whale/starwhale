@@ -182,42 +182,40 @@ public class DatasetControllerTest {
 
     @Test
     public void testUploadDs() {
+        given(datasetUploader.create(anyString(), anyString(), any(DatasetUploadRequest.class)))
+                .willAnswer((Answer<Long>) invocation -> 1L);
+
+        DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
+        uploadRequest.setUploadId(1L);
+        uploadRequest.setPhase(UploadPhase.MANIFEST);
+
         MultipartFile file = new MockMultipartFile("dsFile", "originalName", null,
                 "file_content".getBytes());
-        given(datasetUploader.create(anyString(), anyString(), any(DatasetUploadRequest.class)))
-                .willAnswer((Answer<String>) invocation -> {
-                    String yamlContent = invocation.getArgument(0);
-                    String fileName = invocation.getArgument(1);
-                    DatasetUploadRequest request = invocation.getArgument(2);
-                    return String.format("%s-%s-%s-%s",
-                            yamlContent, fileName, request.getProject(), request.getSwds());
-                });
-        DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
-        uploadRequest.setPhase(UploadPhase.MANIFEST);
-        var resp = controller.uploadDs("upload1", "", "p1", "d1", "v1", file, uploadRequest);
+        var resp = controller.uploadDs(
+                "p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
-                hasProperty("uploadId", is("file_content-originalName-p1-d1:v1"))
+                hasProperty("uploadId", is(1L))
         ));
 
         uploadRequest.setPhase(UploadPhase.BLOB);
-        resp = controller.uploadDs("upload1", "", "p1", "d1", "v1", file, uploadRequest);
+        resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is("upload1")));
+                hasProperty("uploadId", is(1L)));
 
         uploadRequest.setPhase(UploadPhase.CANCEL);
-        resp = controller.uploadDs("upload1", "", "p1", "d1", "v1", file, uploadRequest);
+        resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is("upload1")));
+                hasProperty("uploadId", is(1L)));
 
         uploadRequest.setPhase(UploadPhase.END);
-        resp = controller.uploadDs("upload1", "", "p1", "d1", "v1", file, uploadRequest);
+        resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is("upload1")));
+                hasProperty("uploadId", is(1L)));
     }
 
     @Test

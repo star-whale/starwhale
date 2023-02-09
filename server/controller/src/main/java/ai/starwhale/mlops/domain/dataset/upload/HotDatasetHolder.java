@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class HotDatasetHolder {
 
-    Map<String, DatasetVersionWithMeta> datasetHolder;
+    Map<Long, DatasetVersionWithMeta> datasetHolder;
 
     final DatasetVersionWithMetaConverter datasetVersionWithMetaConverter;
 
@@ -36,19 +36,19 @@ public class HotDatasetHolder {
     }
 
     public void manifest(DatasetVersion datasetVersion) {
-        datasetHolder.put(datasetVersion.getVersionName(),
+        datasetHolder.put(datasetVersion.getId(),
                 datasetVersionWithMetaConverter.from(datasetVersion));
     }
 
-    public void cancel(String datasetId) {
+    public void cancel(Long datasetId) {
         datasetHolder.remove(datasetId);
     }
 
-    public void end(String datasetId) {
+    public void end(Long datasetId) {
         datasetHolder.remove(datasetId);
     }
 
-    public Optional<DatasetVersionWithMeta> of(String id) {
+    public Optional<DatasetVersionWithMeta> of(Long id) {
         return Optional.ofNullable(datasetHolder.get(id));
     }
 

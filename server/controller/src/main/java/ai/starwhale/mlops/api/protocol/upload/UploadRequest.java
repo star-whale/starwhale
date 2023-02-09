@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.upload;
 
+import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +26,12 @@ import org.springframework.validation.annotation.Validated;
 public abstract class UploadRequest {
 
     protected static final String SEPARATOR = ":";
+
+    Long uploadId;
+    String partName;
+    String signature;
+    String uri;
+    FileDesc desc;
 
     @NotNull
     UploadPhase phase;
