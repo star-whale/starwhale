@@ -52,6 +52,12 @@ class TestEvaluation(BaseTestCase):
     @Mocker()
     def test_exception_close(self, request_mock: Mocker) -> None:
         request_mock.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/test",
+            json={"data": {"id": 1, "name": "self"}},
+        )
+
+        request_mock.request(
             HTTPMethod.POST,
             url="http://1.1.1.1/api/v1/datastore/updateTable",
             status_code=400,

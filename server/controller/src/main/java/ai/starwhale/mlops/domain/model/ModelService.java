@@ -422,7 +422,7 @@ public class ModelService {
         log.debug("model version checked time use {}", System.currentTimeMillis() - startTime);
         // upload to storage
         final String modelPackagePath = entityExists ? modelVersionEntity.getStoragePath()
-                : storagePathCoordinator.allocateModelPath(projectEntity.getProjectName(), uploadRequest.name(),
+                : storagePathCoordinator.allocateModelPath(projectId, uploadRequest.name(),
                 uploadRequest.version());
         String manifestContent = "";
         Set<String> existed = new HashSet<>();
@@ -437,7 +437,7 @@ public class ModelService {
                     continue;
                 }
                 String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                        uploadRequest.getProject(), file.getSignature());
+                        projectId, file.getSignature());
                 var model = storageAccessService.list(modelPath).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(model)) {
                     existed.add(file.getSignature());
@@ -493,8 +493,10 @@ public class ModelService {
                     HttpStatus.BAD_REQUEST
             );
         }
+        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
+
         String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                uploadRequest.getProject(), signature);
+                projectEntity.getId(), signature);
 
         try {
             storageAccessService.put(modelPath, modelFile.getInputStream());
@@ -564,30 +566,30 @@ public class ModelService {
         if (null == modelVersionEntity) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Model version not found");
         }
-        if (fileDesc == null) {
-            if (!StringUtils.hasText(name) && !StringUtils.hasText(path)) {
-                throw new SwValidationException(ValidSubject.MODEL,
-                    "at least one of name or path is not null when download");
-            }
-            // read from manifest
-            try {
-                var metaInfo = yamlMapper.readValue(modelVersionEntity.getManifest(), MetaInfo.class);
-                // get file type by path
-                for (MetaInfo.Resource file : metaInfo.getResources()) {
-                    if (file.getPath().equals(path) || file.getName().equals(name)) {
-                        fileDesc = file.getDesc();
-                        // update correct attributes
-                        name = Objects.isNull(name) ? file.getName() : name;
-                        path = Objects.isNull(path) ? file.getPath() : path;
-                        signature = Objects.isNull(signature) ? file.getSignature() : signature;
-                        break;
-                    }
-                }
 
-            } catch (JsonProcessingException e) {
-                throw new SwValidationException(ValidSubject.MODEL, "parse manifest error:" + e.getMessage());
-            }
+        if (!StringUtils.hasText(name) && !StringUtils.hasText(path)) {
+            throw new SwValidationException(ValidSubject.MODEL,
+                "at least one of name or path is not null when download");
         }
+        // read from manifest
+        try {
+            var metaInfo = yamlMapper.readValue(modelVersionEntity.getManifest(), MetaInfo.class);
+            // get file type by path
+            for (MetaInfo.Resource file : metaInfo.getResources()) {
+                if (file.getPath().equals(path) || file.getName().equals(name)) {
+                    fileDesc = file.getDesc();
+                    // update correct attributes
+                    name = Objects.isNull(name) ? file.getName() : name;
+                    path = Objects.isNull(path) ? file.getPath() : path;
+                    signature = Objects.isNull(signature) ? file.getSignature() : signature;
+                    break;
+                }
+            }
+
+        } catch (JsonProcessingException e) {
+            throw new SwValidationException(ValidSubject.MODEL, "parse manifest error:" + e.getMessage());
+        }
+
         if (fileDesc == null) {
             throw new SwValidationException(ValidSubject.MODEL,
                     String.format("can't find file:%s(path:%s) from model package", name, path));
@@ -604,7 +606,7 @@ public class ModelService {
                 break;
             case MODEL:
                 var project = projectManager.getProject(projectUrl);
-                filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getProjectName(), signature);
+                filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getId(), signature);
                 break;
             case SRC_TAR:
                 this.pullSrcTar(name,

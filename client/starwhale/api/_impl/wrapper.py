@@ -84,13 +84,20 @@ class Evaluation(Logger):
 
         self.eval_id = eval_id
         self.project = project
+        self.instance = instance
         self._results_table_name = self._get_datastore_table_name("results")
-        self._summary_table_name = f"project/{self.project}/eval/summary"
+        self._summary_table_name = data_store.gen_table_name(
+            project=self.project, table="eval/summary", instance_uri=self.instance
+        )
         self._data_store = data_store.get_data_store(instance_uri=instance)
         self._init_writers([self._results_table_name, self._summary_table_name])
 
-    def _get_datastore_table_name(self, table_name: str) -> str:
-        return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
+    def _get_datastore_table_name(self, name: str) -> str:
+        return data_store.gen_table_name(
+            project=self.project,
+            table=f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}",
+            instance_uri=self.instance,
+        )
 
     def log_result(
         self,
@@ -184,8 +191,10 @@ class Dataset(Logger):
         self.dataset_id = dataset_id
         self.project = project
         self._kind = kind
-        self._table_name = (
-            f"project/{self.project}/dataset/{self.dataset_id}/{kind.value}"
+        self._table_name = data_store.gen_table_name(
+            project=project,
+            table=f"dataset/{self.dataset_id}/{kind.value}",
+            instance_uri=instance_name,
         )
         self._data_store = data_store.get_data_store(instance_name, token)
         self._init_writers([self._table_name])
