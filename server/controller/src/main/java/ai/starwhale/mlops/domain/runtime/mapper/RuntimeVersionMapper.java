@@ -33,8 +33,9 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface RuntimeVersionMapper {
 
-    String COLUMNS = "id, version_order, runtime_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, image, created_time, modified_time";
+    String COLUMNS = "runtime_version.id, version_order, runtime_id, runtime_version.owner_id,"
+            + " version_name, version_tag, version_meta,"
+            + " storage_path, image, runtime_version.created_time, runtime_version.modified_time";
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
@@ -84,6 +85,9 @@ public interface RuntimeVersionMapper {
     RuntimeVersionEntity findByVersionOrder(@Param("versionOrder") Long versionOrder,
             @Param("runtimeId") Long runtimeId);
 
+    @SelectProvider(value = RuntimeVersionProvider.class, method = "findLatestByProjectIdSql")
+    List<RuntimeVersionEntity> findLatestByProjectId(@Param("projectId") Long projectId, @Param("limit") Integer limit);
+
     class RuntimeVersionProvider {
 
         public String listSql(@Param("runtimeId") Long runtimeId,
@@ -129,6 +133,16 @@ public interface RuntimeVersionMapper {
                     WHERE("where id = #{id}");
                 }
             }.toString();
+        }
+
+        public String findLatestByProjectIdSql(Long projectId, Integer limit) {
+            var ret = "select " + COLUMNS + " from runtime_version left join runtime_info on runtime_info.id ="
+                    + " runtime_version.runtime_id where runtime_info.project_id = #{projectId}"
+                    + " order by runtime_version.modified_time desc";
+            if (limit != null) {
+                ret += " limit " + limit;
+            }
+            return ret;
         }
     }
 }
