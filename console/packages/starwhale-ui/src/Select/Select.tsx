@@ -24,6 +24,13 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
                     },
                 },
             },
+            DropdownListItem: {
+                style: {
+                    ':hover': {
+                        backgroundColor: '#EBF1FF',
+                    },
+                },
+            },
             SelectArrow: ({ $isOpen }) => {
                 return (
                     <IconFont
