@@ -29,6 +29,9 @@ const useStyles = createUseStyles({
         '& .table-row--hovering': {
             backgroundColor: '#EBF1FF',
         },
+        '& .table-row--hovering .table-cell': {
+            backgroundColor: '#EBF1FF !important',
+        },
         '& .table-row--hovering .column-cell > *': {
             backgroundColor: '#EBF1FF !important',
         },

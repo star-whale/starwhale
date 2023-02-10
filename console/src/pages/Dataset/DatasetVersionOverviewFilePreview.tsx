@@ -268,9 +268,9 @@ function TabControl({
                             </Button>
                         </div>
                     </div>
-                    {data?.cocos?.map((coco) => {
+                    {data?.cocos?.map((coco, index) => {
                         return (
-                            <div className={styles.cocoAnnotation} key={coco.id}>
+                            <div className={styles.cocoAnnotation} key={index}>
                                 <div
                                     className={styles.cocoAnnotationColor}
                                     style={{

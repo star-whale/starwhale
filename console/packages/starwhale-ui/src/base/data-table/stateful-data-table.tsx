@@ -189,13 +189,11 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     <div
                         data-type='table-toolbar'
                         className={css({
-                            height:
-                                viewable || filterable || searchable || queryable || columnable
-                                    ? `${headlineHeight}px`
-                                    : '0',
+                            height: `${headlineHeight}px`,
+                            display: viewable || filterable || searchable || queryable || columnable ? 'block' : 'none',
                         })}
                     >
-                        <div ref={headlineRef} className='flex-row-left g-20'>
+                        <div ref={headlineRef} className='flex-row-left g-20' style={{ paddingBottom: '20px' }}>
                             <div
                                 className={classNames(
                                     'g-20 ',
@@ -268,7 +266,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                     <div
                         data-type='table-wrapper'
-                        style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)`, marginTop: '20px' }}
+                        style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}
                     >
                         {/* @ts-ignore */}
                         {$columns.length > 0 && (
