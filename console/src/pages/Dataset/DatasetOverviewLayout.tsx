@@ -153,7 +153,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                         </div>
                         <Button
                             icon='runtime'
-                            kind='tertiary'
+                            kind='secondary'
                             onClick={() => history.push(`/projects/${projectId}/datasets/${datasetId}`)}
                         >
                             {t('History')}

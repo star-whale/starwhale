@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { durationToStr } from '@/utils/datetime'
 import IconFont from '@starwhale/ui/IconFont'
 import './index.scss'
+import { ErrorBoundary } from '@starwhale/ui/ErrorBoundary'
 
 enum Status {
     CREATED = 'CREATED',
@@ -136,119 +137,128 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                 right: 0,
             }}
         >
-            <TransformWrapper wheel={{ disabled: true }} limitToBounds={false} maxScale={1.2} minScale={0.8}>
-                {({ zoomIn, zoomOut, resetTransform }) => (
-                    <>
-                        <div className='flow-tools' style={{ top: rect.height + 200 }}>
-                            <button type='button' onClick={() => zoomIn()}>
-                                +
-                            </button>
-                            <button type='button' onClick={() => zoomOut()}>
-                                -
-                            </button>
-                            <button type='button' onClick={() => resetTransform()}>
-                                x
-                            </button>
-                        </div>
-                        <TransformComponent>
-                            <Canvas
-                                fit
-                                ref={ref}
-                                maxHeight={rect.height + 200}
-                                maxWidth={rect.width}
-                                zoomable={false}
-                                nodes={$nodes}
-                                edges={$edges}
-                                direction='RIGHT'
-                                defaultPosition={CanvasPosition.LEFT}
-                                onLayoutChange={(layout) => {
-                                    if (
-                                        rect.width !== layout.width &&
-                                        rect.height !== layout.height &&
-                                        rect.width > 0 &&
-                                        rect.height > 0
-                                    ) {
-                                        setRect({
-                                            width: layout.width ?? CANVAS_DEFAULT_SIZE,
-                                            height: layout.height ?? CANVAS_DEFAULT_SIZE,
-                                        })
-                                    }
-                                }}
-                                node={
-                                    <Node
-                                        className='node'
-                                        width={200}
-                                        height={80}
-                                        style={{
-                                            stroke: '#1a192b',
-                                            fill: 'transparent',
-                                            strokeWidth: 0,
-                                            border: '0px',
-                                        }}
-                                        label={<Label style={{ fill: 'transparent' }} />}
-                                        port={
-                                            <Port
-                                                className='port'
-                                                style={{ fill: '#b1b1b7', stroke: 'white' }}
-                                                rx={10}
-                                                ry={10}
-                                            />
+            <ErrorBoundary>
+                <TransformWrapper wheel={{ disabled: true }} limitToBounds={false} maxScale={1.2} minScale={0.8}>
+                    {({ zoomIn, zoomOut, resetTransform }) => (
+                        <>
+                            <div className='flow-tools' style={{ top: rect.height + 200 }}>
+                                <button type='button' onClick={() => zoomIn()}>
+                                    +
+                                </button>
+                                <button type='button' onClick={() => zoomOut()}>
+                                    -
+                                </button>
+                                <button type='button' onClick={() => resetTransform()}>
+                                    x
+                                </button>
+                            </div>
+                            <TransformComponent>
+                                <Canvas
+                                    fit
+                                    ref={ref}
+                                    maxHeight={rect.height + 200}
+                                    maxWidth={rect.width}
+                                    zoomable={false}
+                                    nodes={$nodes}
+                                    edges={$edges}
+                                    direction='RIGHT'
+                                    defaultPosition={CanvasPosition.LEFT}
+                                    onLayoutChange={(layout) => {
+                                        if (
+                                            rect.width !== layout.width &&
+                                            rect.height !== layout.height &&
+                                            rect.width > 0 &&
+                                            rect.height > 0
+                                        ) {
+                                            setRect({
+                                                width: layout.width ?? CANVAS_DEFAULT_SIZE,
+                                                height: layout.height ?? CANVAS_DEFAULT_SIZE,
+                                            })
                                         }
-                                    >
-                                        {(event) => {
-                                            const data = event.node?.data
-                                            const conf = getStatusMap(data?.content?.status)
-
-                                            let content: JobT | StepT | TaskT | undefined
-                                            let sectionContent = ''
-
-                                            if (data?.type === Type.JOB) {
-                                                content = data.content as JobT
-                                                sectionContent = [content.jobType].join(' ')
-                                            } else if (data?.type === Type.STEP) {
-                                                content = data.content as StepT
-                                                sectionContent = [content.name].join(' ')
-                                            } else if (data?.type === Type.TASK) {
-                                                content = data.content as TaskT
-                                                sectionContent = [content.type, content.name, content.agentIp].join(' ')
+                                    }}
+                                    node={
+                                        <Node
+                                            className='node'
+                                            width={200}
+                                            height={80}
+                                            style={{
+                                                stroke: '#1a192b',
+                                                fill: 'transparent',
+                                                strokeWidth: 0,
+                                                border: '0px',
+                                            }}
+                                            label={<Label style={{ fill: 'transparent' }} />}
+                                            port={
+                                                <Port
+                                                    className='port'
+                                                    style={{ fill: '#b1b1b7', stroke: 'white' }}
+                                                    rx={10}
+                                                    ry={10}
+                                                />
                                             }
+                                        >
+                                            {(event) => {
+                                                const data = event.node?.data
+                                                const conf = getStatusMap(data?.content?.status)
 
-                                            const sectionTime =
-                                                content && content?.startTime > 0 && content?.finishTime > 0
-                                                    ? durationToStr(content?.finishTime - content?.startTime)
-                                                    : ''
+                                                let content: JobT | StepT | TaskT | undefined
+                                                let sectionContent = ''
 
-                                            return (
-                                                <foreignObject height={event.height} width={event.width} x={0} y={0}>
-                                                    <Link to={`tasks?id=${data?.entityId}`}>
-                                                        <div className='flow-card'>
-                                                            <div className='flow-title'>
-                                                                {data?.type} {content?.status}
+                                                if (data?.type === Type.JOB) {
+                                                    content = data.content as JobT
+                                                    sectionContent = [content.jobType].join(' ')
+                                                } else if (data?.type === Type.STEP) {
+                                                    content = data.content as StepT
+                                                    sectionContent = [content.name].join(' ')
+                                                } else if (data?.type === Type.TASK) {
+                                                    content = data.content as TaskT
+                                                    sectionContent = [content.type, content.name, content.agentIp].join(
+                                                        ' '
+                                                    )
+                                                }
+
+                                                const sectionTime =
+                                                    content && content?.startTime > 0 && content?.finishTime > 0
+                                                        ? durationToStr(content?.finishTime - content?.startTime)
+                                                        : ''
+
+                                                return (
+                                                    <foreignObject
+                                                        height={event.height}
+                                                        width={event.width}
+                                                        x={0}
+                                                        y={0}
+                                                    >
+                                                        <Link to={`tasks?id=${data?.entityId}`}>
+                                                            <div className='flow-card'>
+                                                                <div className='flow-title'>
+                                                                    {data?.type} {content?.status}
+                                                                </div>
+                                                                {conf.icon ?? ''}
+                                                                <div className='flow-content'>{sectionContent}</div>
+                                                                <div className='flow-time'>{sectionTime}</div>
                                                             </div>
-                                                            {conf.icon ?? ''}
-                                                            <div className='flow-content'>{sectionContent}</div>
-                                                            <div className='flow-time'>{sectionTime}</div>
-                                                        </div>
-                                                    </Link>
-                                                    {/* <div className='flow-card'>
+                                                        </Link>
+                                                        {/* <div className='flow-card'>
                                                             <div className='flow-title'>{data?.type}</div>
                                                         </div> */}
-                                                </foreignObject>
-                                            )
-                                        }}
-                                    </Node>
-                                }
-                                arrow={<MarkerArrow className='marker' />}
-                                edge={(edge) => {
-                                    const node = nodes.find((v: any) => v.id === edge.source)
-                                    const conf = getStatusMap(node?.data?.content)
-                                    return <Edge className={`edge ${conf?.edge?.className}`} />
-                                }}
-                            />
-                        </TransformComponent>
-                    </>
-                )}
-            </TransformWrapper>
+                                                    </foreignObject>
+                                                )
+                                            }}
+                                        </Node>
+                                    }
+                                    arrow={<MarkerArrow className='marker' />}
+                                    edge={(edge) => {
+                                        const node = nodes.find((v: any) => v.id === edge.source)
+                                        const conf = getStatusMap(node?.data?.content)
+                                        return <Edge className={`edge ${conf?.edge?.className}`} />
+                                    }}
+                                />
+                            </TransformComponent>
+                        </>
+                    )}
+                </TransformWrapper>
+            </ErrorBoundary>
         </div>
     )
 }

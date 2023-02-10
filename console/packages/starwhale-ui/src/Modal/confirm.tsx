@@ -42,7 +42,7 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
             <Modal closeable={false} isOpen={showModal}>
                 <ModalHeader
                     $style={{
-                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        ...expandMargin('30px', '30px', '10px', '30px'),
                         fontSize: '16px',
                     }}
                 >
@@ -51,7 +51,7 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
                 </ModalHeader>
                 <ModalBody
                     $style={{
-                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        ...expandMargin('10px', '30px', '10px', '30px'),
                         fontSize: '16px',
                     }}
                 >

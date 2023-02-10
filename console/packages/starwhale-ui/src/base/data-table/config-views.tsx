@@ -120,8 +120,9 @@ function ConfigViews(props: PropsT) {
                             width: '700px',
                             display: 'flex',
                             flexDirection: 'column',
-                            minHeight: '640px',
+                            // minHeight: '640px',
                             maxHeight: 'calc(100% - 100px)',
+                            overflow: 'hidden',
                         },
                     },
                 }}

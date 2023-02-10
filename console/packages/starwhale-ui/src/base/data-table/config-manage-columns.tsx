@@ -11,6 +11,9 @@ import { Transfer } from '@starwhale/ui/Transfer'
 import Button from '@starwhale/ui/Button'
 
 const useStyles = createUseStyles({
+    transferWrapper: {
+        height: '100%',
+    },
     transfer: {
         'height': '100%',
         '& .header': {
@@ -141,7 +144,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
     }, [props.view])
 
     return (
-        <div ref={ref} className='inherit-height'>
+        <div ref={ref} className={cn(styles.transferWrapper, 'inherit-height')}>
             {!props.isInline && (
                 <Button
                     onClick={() => setIsOpen(!isOpen)}

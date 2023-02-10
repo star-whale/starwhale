@@ -32,7 +32,7 @@ import ResetPassword from '@/pages/Home/ResetPassword'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import CenterLayout from '@/pages/CenterLayout'
 import ProjectOverview from '@/pages/Project/Overview'
-import Pending from '@/pages/Home/Pending'
+import Pending, { NoneBackgroundPending } from '@/pages/Home/Pending'
 import { useAuth } from '@/api/Auth'
 import DatasetVersionOverview from '@/pages/Dataset/DatasetVersionOverview'
 import DatasetVersionOverviewMeta from '@/pages/Dataset/DatasetVersionOverviewMeta'
@@ -97,7 +97,7 @@ const Routes = () => {
     }
 
     return (
-        <React.Suspense fallback={<Pending style={{ backgroundImage: 'none' }} />}>
+        <React.Suspense fallback={<NoneBackgroundPending />}>
             <BrowserRouter>
                 <div className={styles.root}>
                     <Route>

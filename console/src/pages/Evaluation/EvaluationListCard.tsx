@@ -23,8 +23,6 @@ import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
 import { Button, GridResizer } from '@starwhale/ui'
 
-const page = { pageNum: 1, pageSize: 1000 }
-
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
@@ -36,10 +34,31 @@ export default function EvaluationListCard() {
         return tableNameOfSummary(project?.name as string)
     }, [project])
     const store = useEvaluationStore()
-    const [options, setOptions] = useState<any>({
-        ...page,
-        filter: store.currentView.queries,
-    })
+
+    const options = React.useMemo(() => {
+        const sorts = store.currentView?.sortBy
+            ? [
+                  {
+                      columnName: store.currentView?.sortBy,
+                      descending: store.currentView?.sortDirection === 'DESC',
+                  },
+              ]
+            : []
+
+        sorts.push({
+            columnName: 'sys/id',
+            descending: true,
+        })
+
+        return {
+            pageNum: 1,
+            pageSize: 1000,
+            query: {
+                orderBy: sorts,
+            },
+            filter: store.currentView.queries,
+        }
+    }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
 
     const { columnInfo, recordInfo: evaluationsInfo } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
@@ -112,19 +131,6 @@ export default function EvaluationListCard() {
     }, [store.rowSelectedIds, evaluationsInfo.data?.records])
 
     React.useEffect(() => {
-        const unsub = useEvaluationStore.subscribe(
-            (state: ITableState) => state.currentView.queries ?? [],
-            (queries: any[]) => {
-                setOptions((o: any) => ({
-                    ...o,
-                    filter: queries,
-                }))
-            }
-        )
-        return unsub
-    }, [store])
-
-    React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
             (state: ITableState) => state.rowSelectedIds,
             (state: any[]) => store.onSelectMany(state)
@@ -141,6 +147,14 @@ export default function EvaluationListCard() {
         toaster.positive('Successfully saved', {})
         return {}
     }
+
+    const $rawConfig = React.useMemo(() => {
+        try {
+            return JSON.parse(evaluationViewConfig.data?.content, undefined)
+        } catch (e) {
+            return undefined
+        }
+    }, [evaluationViewConfig.data?.content])
 
     React.useEffect(() => {
         const unsub = useEvaluationStore.subscribe(
@@ -173,7 +187,7 @@ export default function EvaluationListCard() {
 
     // sync api to local
     React.useEffect(() => {
-        if (evaluationViewConfig.isSuccess && evaluationViewConfig.data) {
+        if (evaluationViewConfig.isSuccess && $rawConfig) {
             let apiState
             try {
                 apiState = JSON.parse(evaluationViewConfig.data?.content, undefined)

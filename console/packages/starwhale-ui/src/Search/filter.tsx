@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { StatefulMenu } from 'baseui/menu'
 import { PLACEMENT, Popover } from 'baseui/popover'
 import { FilterT, Operators } from './types'
 import { createUseStyles } from 'react-jss'
+import { StatefulFilterMenu } from './StatefulFilterMenu'
 
 const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
 
@@ -18,15 +18,21 @@ export const useStyles = createUseStyles({
         overflow: ' hidden',
         display: 'flex',
         alignItems: 'center',
+        position: 'relative',
+    },
+    labelEmpty: {
+        display: 'flex',
+        height: '22px',
+        lineHeight: '22px',
+        position: 'relative',
     },
 })
 function PopoverContainer(props: {
     onItemSelect?: (props: { item: { label: string; type: string } }) => void
     options: any[]
     isOpen: boolean
-    mountNode?: HTMLElement
     children: React.ReactNode
-    innerRef?: React.RefObject<HTMLElement>
+    inputRef?: React.RefObject<HTMLInputElement>
     value?: any
 }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -40,15 +46,19 @@ function PopoverContainer(props: {
 
     return (
         <Popover
-            returnFocus
-            autoFocus
             placement={PLACEMENT.bottomLeft}
             isOpen={isOpen}
-            ignoreBoundary
-            mountNode={props.mountNode}
+            overrides={{
+                Body: {
+                    style: {
+                        marginTop: '32px',
+                    },
+                },
+            }}
             content={() => (
-                <StatefulMenu
-                    rootRef={props.innerRef}
+                <StatefulFilterMenu
+                    // @ts-ignore cascade keydown event with input
+                    keyboardControlNode={props.inputRef}
                     items={props.options}
                     onItemSelect={(args) => {
                         // @ts-ignore
@@ -57,14 +67,22 @@ function PopoverContainer(props: {
                     }}
                     overrides={{
                         List: {
-                            style: { minHeight: '150px', minWidth: '150px', maxHeight: '500px', overflow: 'auto' },
+                            props: {
+                                className: 'filter-popover',
+                            },
+                            style: {
+                                minHeight: '150px',
+                                minWidth: '150px',
+                                maxHeight: '500px',
+                                // overflow: 'auto',
+                            },
                         },
                     }}
                 />
             )}
         >
             <p
-                className={props.children ? styles.label : ''}
+                className={props.children ? styles.label : styles.labelEmpty}
                 title={typeof props.value === 'string' ? props.value : ''}
             >
                 {props.children}
@@ -110,6 +128,7 @@ function Filter(options: FilterT): FilterT {
                 </PopoverContainer>
             )
         },
+        renderValue: options?.renderValue ?? undefined,
         // renderFieldValue: options?.renderFieldValue ?? <></>,
     }
 }

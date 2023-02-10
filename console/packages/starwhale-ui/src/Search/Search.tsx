@@ -6,15 +6,14 @@ import _ from 'lodash'
 import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import IconFont from '../IconFont'
+import { LabelSmall } from 'baseui/typography'
 
 export const useStyles = createUseStyles({
     searchBar: {
         'display': 'flex',
         'border': '1px solid #CFD7E6',
-        'gap': '10px',
         'height': '32px',
         'lineHeight': '20px',
-        'overflowX': 'auto',
         'alignItems': 'center',
         'padding': '4px',
         'borderRadius': '4px',
@@ -22,19 +21,44 @@ export const useStyles = createUseStyles({
             height: '4px !important',
         },
         'flexGrow': '0',
+        '&:hover': {
+            borderColor: '#799EE8 !important',
+        },
+        'overflowX': 'auto',
         'overflowY': 'hidden',
+    },
+    filters: {
+        display: 'flex',
+        gap: '10px',
+        height: '32px',
+        lineHeight: '20px',
+        alignItems: 'center',
+        flexGrow: '1',
     },
     startIcon: {
         width: '34px',
         display: 'grid',
         placeItems: 'center',
-        marginRight: '-10px',
+        flexShrink: 0,
+    },
+    placeholder: {
+        'position': 'relative',
+        'display': 'flex',
+        'width': 0,
+        'alignItems': 'center',
+        '& > div': {
+            width: '150px',
+        },
     },
 })
 
 // @ts-ignore
 const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
+}
+const isValueExist = (value: any) => {
+    if (value === 0) return true
+    return !!value
 }
 
 export interface ISearchProps {
@@ -57,6 +81,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
+        if (containsNode(document.querySelector('.filter-popover'), e.target)) return
         setIsEditing(false)
     })
 
@@ -88,7 +113,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
                         } else {
                             newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
                         }
-                        newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value)
+                        newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
                         setItems(newItems)
                         onChange?.(newItems)
                         setEditingItem({ index: -1, value: {} })
@@ -118,7 +143,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
                     } else {
                         newItems.push(newValue)
                     }
-                    newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && tmp.value)
+                    newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
                     setItems(newItems)
                     onChange?.(newItems)
                 }}
@@ -146,7 +171,14 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             <div className={styles.startIcon}>
                 <IconFont type='filter' size={12} kind='gray' />
             </div>
-            {filters}
+            <div className={styles.placeholder}>
+                {!isEditing && items.length === 0 && (
+                    <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute' }}>
+                        Search and Filter
+                    </LabelSmall>
+                )}
+            </div>
+            <div className={styles.filters}>{filters}</div>
         </div>
     )
 }
