@@ -18,6 +18,8 @@ import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
+import { StyledTab } from 'baseui/tabs'
+import { StatefulTooltip } from 'baseui/tooltip'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -94,6 +96,16 @@ enum LAYOUT {
     LIST = '0',
 }
 
+function TabOverride({ children, ...rest }: any) {
+    return (
+        <StatefulTooltip placement='top' content={rest.id === LAYOUT.GRID ? 'Grid View' : 'List View'} showArrow>
+            <StyledTab {...rest}>
+                <div>{children}</div>
+            </StyledTab>
+        </StatefulTooltip>
+    )
+}
+
 function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
     return (
         <div
@@ -106,6 +118,11 @@ function LayoutControl({ value, onChange = () => {} }: { value: string; onChange
                     onChange(activeKeyNew as string)
                 }}
                 activeKey={value}
+                overrides={{
+                    Tab: {
+                        component: TabOverride,
+                    },
+                }}
             >
                 <Tab title={<IconFont type='grid' />} key={LAYOUT.GRID} />
                 <Tab title={<IconFont type='view' />} key={LAYOUT.LIST} />
