@@ -7,6 +7,7 @@ export interface ITableProps {
     rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps
     onSave?: (props: any) => void
+    onChange?: (state: ITableState, prevState: ITableState) => void
     onColumnSave?: (props: any) => void
     onSelectionChange?: (rows: RowT[]) => void
     filterable?: boolean

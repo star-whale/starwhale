@@ -148,12 +148,13 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     )
 
     // changed status must be after all the store changes(after api success)
+    const prefVersion = useRef(store.version)
     const changed = useMemo(() => {
-        const view = store.views.find((v) => v.id === store.currentView?.id)
-        if (!view && store.currentView?.id === 'all') return false
-        if (_.isEqual(view, store.currentView)) return false
-        return true
-    }, [store.currentView, store.views])
+        if (store.version > prefVersion.current) {
+            return true
+        }
+        return false
+    }, [store.currentView, store.version])
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
@@ -225,9 +226,15 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
 
-                                {viewable && changed && store.currentView?.id && !$rowSelectedIds.size && (
+                                {viewable && changed && !$rowSelectedIds.size && (
                                     <div>
-                                        <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
+                                        {store.currentView?.id !== 'all' && (
+                                            <>
+                                                <Button onClick={() => handleSave(store.currentView)}>Save</Button>
+                                                &nbsp;&nbsp;
+                                            </>
+                                        )}
+
                                         <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
                                     </div>
                                 )}

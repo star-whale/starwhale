@@ -9,6 +9,7 @@ import { StoreProvider, useTableContext } from './StoreContext'
 import Pagination from './Pagination'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
 import { StatefulDataTable } from '../base/data-table'
+import { stateSelector } from '../base/data-table/store'
 
 const useStyles = createUseStyles({
     table: {
@@ -63,6 +64,7 @@ function GridTable({
     selectable = false,
     viewable = false,
     onSave,
+    onChange = () => {},
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const api = useTableContext()
@@ -84,6 +86,11 @@ function GridTable({
 
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
+
+    React.useEffect(() => {
+        const unsub = api.subscribe(stateSelector, onChange)
+        return unsub
+    }, [api, onChange])
 
     return (
         <>

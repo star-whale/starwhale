@@ -13,6 +13,7 @@ const getId = (str: string) => str + '-' + uuid().substring(0, 8)
 export interface ITableStateInitState {
     isInit: boolean
     key: string
+    initStore: (obj: Record<string, any>) => void
     setRawConfigs: (obj: Record<string, any>) => void
     getRawConfigs: (state?: ITableState) => typeof rawInitialState
     getRawIfChangedConfigs: (state?: ITableState) => typeof rawIfChangedInitialState
@@ -164,7 +165,9 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
         })
     },
     onCurrentViewSort: (key, direction) =>
-        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction } }),
+        set({
+            currentView: { ...get().currentView, sortBy: key, sortDirection: direction },
+        }),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -186,6 +189,11 @@ const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, g
 const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get, store) => ({
     isInit: false,
     key: 'table',
+    initStore: (obj: Record<string, any>) =>
+        set({
+            ..._.pick(obj, Object.keys(rawInitialState)),
+            isInit: true,
+        }),
     setRawConfigs: (obj: Record<string, any>) =>
         set({
             ..._.pick(obj, Object.keys(rawInitialState)),
@@ -296,3 +304,7 @@ export const useEvaluationCompareStore = createCustomStore('compare', {
         compareShowDiffOnly: false,
     },
 })
+
+const stateSelector = (state: ITableState) => state
+
+export { stateSelector }
