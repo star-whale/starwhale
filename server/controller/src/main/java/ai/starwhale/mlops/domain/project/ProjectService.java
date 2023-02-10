@@ -176,7 +176,7 @@ public class ProjectService implements ProjectAccessor {
     public Long createProject(Project project) {
         Assert.notNull(project.getName(), "Project name must not be null");
         if (existProject(project.getName(), project.getOwner().getId())) {
-            //项目存在且未被删除
+            //project exists and has not been deleted
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT,
                             String.format("Project %s already exists", project.getName())),
