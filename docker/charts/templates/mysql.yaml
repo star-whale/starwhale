@@ -1,0 +1,156 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "chart.mysql.labels" . | nindent 4 }}
+
+spec:
+  selector:
+    matchLabels: {{ include "chart.mysql.labels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: {{ include "chart.mysql.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: volume-permissions
+          image: "{{ .Values.mysql.initImage }}"
+          command:
+            - /bin/bash
+            - -ec
+            - chown -R 1001:1001 /bitnami/mysql
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/mysql
+      containers:
+        - name: mysql
+          image: "{{ .Values.mysql.image }}"
+          volumeMounts:
+            - mountPath: /bitnami/mysql
+              name: data
+            - mountPath: /opt/bitnami/mysql/conf/my.cnf
+              name: config
+              subPath: my.cnf
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.auth.username }}
+            - name: MYSQL_PASSWORD
+              value: {{ .Values.mysql.auth.password }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.auth.database }}
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.mysql.auth.rootPassword }}
+          ports:
+            - name: mysql-api
+              containerPort: {{ .Values.mysql.ports.api }}
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -ec
+                - mysqladmin status -uroot -p"${MYSQL_ROOT_PASSWORD}"
+          startupProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -ec
+                - mysqladmin status -uroot -p"${MYSQL_ROOT_PASSWORD}"
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -ec
+                - mysqladmin status -uroot -p"${MYSQL_ROOT_PASSWORD}"
+          {{- if .Values.mysql.resources }}
+          resources: {{- toYaml .Values.mysql.resources | nindent 12 }}
+          {{- end }}
+      securityContext:
+        fsGroup: 1001
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mysql
+        - name: config
+          configMap:
+            name: mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "chart.mysql.labels" . | nindent 4 }}
+spec:
+  type: "ClusterIP"
+  ports:
+    - name: mysql-api
+      port: {{ .Values.mysql.ports.api }}
+      targetPort: mysql-api
+      protocol: TCP
+  selector: {{ include "chart.mysql.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.mysql.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ include "common.names.fullname" . }}-mysql
+  volumeMode: Filesystem
+  volumeName: {{ include "common.names.fullname" . }}-pv-mysql
+  resources:
+    requests:
+      storage: {{ .Values.mysql.persistence.size | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.mysql.labels" . | nindent 4 }}
+data:
+  my.cnf: |-
+
+    [mysqld]
+    default_authentication_plugin=mysql_native_password
+    skip-name-resolve
+    explicit_defaults_for_timestamp
+    basedir=/opt/bitnami/mysql
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+    port=3306
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    datadir=/bitnami/mysql/data
+    tmpdir=/opt/bitnami/mysql/tmp
+    max_allowed_packet=16M
+    bind-address=*
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+    log-error=/opt/bitnami/mysql/logs/mysqld.log
+    character-set-server=UTF8
+    collation-server=utf8_general_ci
+    slow_query_log=0
+    slow_query_log_file=/opt/bitnami/mysql/logs/mysqld.log
+    long_query_time=10.0
+
+    [client]
+    port=3306
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    default-character-set=UTF8
+    plugin_dir=/opt/bitnami/mysql/lib/plugin
+
+    [manager]
+    port=3306
+    socket=/opt/bitnami/mysql/tmp/mysql.sock
+    pid-file=/opt/bitnami/mysql/tmp/mysqld.pid
+
+{{- end}}

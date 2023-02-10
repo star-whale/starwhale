@@ -1,11 +1,4 @@
-nameOverride: ""
-fullnameOverride: ""
-commonLabels: {}
-commonAnnotations: {}
-
 image:
-  #registry: "docker.io"
-  #org: "starwhaleai"
   registry: "ghcr.io"
   org: "star-whale"
   base:
@@ -15,30 +8,24 @@ image:
 
 mysql:
   enabled: true
-  architecture: standalone
+  initImage: docker.io/bitnami/bitnami-shell:11-debian-11-r6
+  image: docker.io/bitnami/mysql:8.0.29-debian-10-r2
   auth:
     rootPassword: root
     username: starwhale
     password: starwhale
     database: starwhale
-  volumePermissions:
-    enabled: true
-  primary:
-    service:
-      port: 3306
-    persistence:
-      enabled: true
-      # can not dynamically render when devMode.createPV=true
-      # see: https://github.com/helm/helm/issues/2492
-      storageClass: local-storage-mysql
-      size: 8Gi
-    resources:
-      limits:
-        cpu: 2000m
-        memory: 4Gi
-      requests:
-        cpu: 500m
-        memory: 250Mi
+  ports:
+    api: 3306
+  persistence:
+    size: 8Gi
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 250Mi
 
 externalMySQL:
   host: localhost
@@ -47,56 +34,22 @@ externalMySQL:
   password: ""
   database: starwhale
 
-nexus3:
-  enabled: false
-  nexusPort: 8081
-  # ingress:
-  #   hostname: nexus.pre.intra.starwhale.ai
-
-# todo self define hostname
-nexus-repository-manager:
-  nexus:
-    nexusPort: 8081
-    # hostAliases:
-    #   - nexus.pre.intra.starwhale.ai
-    env:
-      - name: NEXUS_SECURITY_RANDOMPASSWORD
-        value: "false"
-    resources:
-      limits:
-        cpu: 2000m
-        memory: 4Gi
-      requests:
-        cpu: 500m
-        memory: 250Mi
-  ingress:
-    enabled: true
-    # annotations:
-    #   kubernetes.io/ingress.class: nginx
-    #   hostname: nexus.pre.intra.starwhale.ai
-    path: /
-  persistence:
-    enabled: true
-    storageSize: 50Gi
-
 minio:
   enabled: true
-  containerPorts:
+  initImage: docker.io/bitnami/bitnami-shell:11-debian-11-r6
+  image: docker.io/bitnami/minio:2022.6.20-debian-11-r0
+  ports:
     api: 9000
     console: 9001
   ingress:
     enabled: true
-    hostname: minio.pre.intra.starwhale.ai
+    host: minio.pre.intra.starwhale.ai
     ingressClassName: nginx
-  mode: standalone
   auth:
     rootUser: minioadmin
     rootPassword: minioadmin
-  volumePermissions:
-    enabled: true
   defaultBuckets: starwhale
   persistence:
-    storageClass: local-storage-minio
     size: 50Gi
   resources:
     limits:
@@ -106,14 +59,14 @@ minio:
       cpu: 500m
       memory: 250Mi
 
-externalS3OSS:
+externalOSS:
   host: localhost
   port: 9000
   accessKey: ""
   secretKey: ""
   defaultBuckets: starwhale
   region: "local"
-  type: "s3" # supported type: s3, aliyun
+  type: "s3" # supported type: s3, minio and aliyun
 
 controller:
   taskSplitSize: 2
@@ -125,6 +78,11 @@ controller:
     username: starwhale
     password: abcd1234
   containerPort: 8082
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    host: console.pre.intra.starwhale.ai
+    path: /
 
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
@@ -134,13 +92,9 @@ nodeSelector:
 
 minikube:
   enabled: false
-  agentHostPath: "/var/starwhale"
-  gpuEnabled: false
   pv:
     storage: 100Gi
     rootPath: "/var/starwhale/local-storage"
-  hostname:
-    controller: console.minikube.local
 
 resources:
   controller:
@@ -162,12 +116,6 @@ serviceAccount:
   name: ""
   automountServiceAccountToken: false
   customServiceAccount: foobarbaz
-
-ingress:
-  enabled: true
-  ingressClassName: nginx
-  host: console.pre.intra.starwhale.ai
-  path: /
 
 mirror:
   pypi:

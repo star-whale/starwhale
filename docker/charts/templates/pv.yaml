@@ -20,7 +20,7 @@
 {{ end }}
 
 {{ if .Values.mysql.enabled }}
-{{ include "chart.createPV" (merge (dict "backend" "mysql" "storage" .Values.mysql.primary.persistence.size) $params) }}
+{{ include "chart.createPV" (merge (dict "backend" "mysql" "storage" .Values.mysql.persistence.size) $params) }}
 {{ end }}
 
 {{ end }}

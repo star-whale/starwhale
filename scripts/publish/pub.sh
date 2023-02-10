@@ -92,16 +92,19 @@ deploy() {
   helm upgrade --install ${SWNAME//./-} . -n $SWNS --create-namespace \
     --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
     --set image.tag=$SERVER_RELEASE_VERSION \
+    --set mirror.pypi.enabled=true \
     --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
     --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
     --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
+    --set mysql.image=docker-registry.starwhale.cn/bitnami/mysql:8.0.29-debian-10-r2 \
+    --set mysql.initImage=docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6 \
+    --set minio.initImage=docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6 \
+    --set minio.image=docker-registry.starwhale.cn/bitnami/minio:2022.6.20-debian-11-r0 \
     --set devMode.createPV.enabled=true \
     --set devMode.createPV.host=host005-bj01 \
     --set devMode.createPV.rootPath=/mnt/data/starwhale/$SWNS/$SWNAME \
-    --set mysql.primary.persistence.storageClass=${SWNAME//./-}-mysql \
-    --set minio.persistence.storageClass=${SWNAME//./-}-minio \
-    --set minio.ingress.hostname=${SWNAME//./-}-minio.pre.intra.starwhale.ai \
-    --set ingress.host=${SWNAME//./-}.pre.intra.starwhale.ai
+    --set minio.ingress.host=${SWNAME//./-}-minio.pre.intra.starwhale.ai \
+    --set controller.ingress.host=${SWNAME//./-}.pre.intra.starwhale.ai
   popd
 }
 

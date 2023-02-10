@@ -165,14 +165,13 @@ start_starwhale() {
   pushd ../../docker/charts
   helm upgrade --install $SWNAME --namespace $SWNS --create-namespace \
   --set resources.controller.requests.cpu=700m \
-  --set mysql.resources.primary.requests.cpu=300m \
-  --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
+  --set mysql.resources.requests.cpu=300m \
   --set minio.resources.requests.cpu=200m \
-  --set minio.persistence.storageClass=$SWNAME-minio \
   --set controller.taskSplitSize=1 \
   --set minikube.enabled=true \
   --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
   --set image.tag=$PYPI_RELEASE_VERSION \
+  --set mirror.pypi.enabled=true \
   --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
   --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
   --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
@@ -189,18 +188,14 @@ check_controller_service() {
                     break
             else
               echo "controller is starting"
-              kubectl get pods --namespace $SWNS
-              kubectl get svc --namespace $SWNS
-  #            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
-  #            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
-  #            if [[ "$ready" == "Running" ]]; then
-  #              name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
-  #              kubectl describe pod $name --namespace starwhale
-  #            fi
+              kubectl -n $SWNS get svc
+              kubectl -n $SWNS get pods
+              kubectl -n $SWNS describe deployments/controller
+              kubectl -n $SWNS logs --tail 10 deployments/controller
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-starwhale-controller $PORT_CONTROLLER:$PORT_CONTROLLER &
+    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER &
 }
 
 client_test() {
