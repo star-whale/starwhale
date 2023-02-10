@@ -46,7 +46,7 @@ public class DockerImage {
     public DockerImage(String imageNameFull) {
         Matcher matcher = PATTERN_IMAGE_FULL.matcher(imageNameFull);
         if (!matcher.matches()) {
-            this.registry = null;
+            this.registry = "";
             this.image = imageNameFull;
         } else {
             String candidateRegistry = matcher.group(1);
@@ -54,7 +54,7 @@ public class DockerImage {
                 this.registry = candidateRegistry;
                 image = matcher.group(2);
             } else {
-                this.registry = null;
+                this.registry = "";
                 this.image = imageNameFull;
             }
 
@@ -71,7 +71,7 @@ public class DockerImage {
 
     public String resolve(String newRegistry) {
         if (!StringUtils.hasText(newRegistry)) {
-            return image;
+            newRegistry = this.registry;
         }
         return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
     }
