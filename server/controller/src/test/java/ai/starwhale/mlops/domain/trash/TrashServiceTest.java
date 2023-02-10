@@ -44,9 +44,8 @@ import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
 import ai.starwhale.mlops.domain.trash.mapper.TrashMapper;
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
+import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.mapper.UserMapper;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.Date;
 import java.util.List;
@@ -56,9 +55,8 @@ import org.junit.jupiter.api.Test;
 public class TrashServiceTest {
 
     private TrashService service;
-
     private TrashMapper trashMapper;
-    private UserMapper userMapper;
+    private UserService userService;
     private ProjectService projectService;
     private ModelDao modelDao;
     private DatasetDao datasetDao;
@@ -68,7 +66,7 @@ public class TrashServiceTest {
     @BeforeEach
     public void setUp() {
         trashMapper = mock(TrashMapper.class);
-        userMapper = mock(UserMapper.class);
+        userService = mock(UserService.class);
         projectService = mock(ProjectService.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
@@ -76,7 +74,7 @@ public class TrashServiceTest {
         jobDao = mock(JobDao.class);
 
         service = new TrashService(trashMapper,
-                userMapper,
+                userService,
                 projectService,
                 modelDao,
                 datasetDao,
@@ -88,15 +86,15 @@ public class TrashServiceTest {
 
     @Test
     public void testListTrash() {
-        UserEntity starwhale = UserEntity.builder().id(1L).userName("starwhale").build();
-        UserEntity test = UserEntity.builder().id(2L).userName("test").build();
+        User starwhale = User.builder().id(1L).name("starwhale").build();
+        User test = User.builder().id(2L).name("test").build();
         given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(userMapper.findByName(same("starwhale")))
+        given(userService.getUserId(same("starwhale")))
+                .willReturn(1L);
+        given(userService.loadUserById(same(1L)))
                 .willReturn(starwhale);
-        given(userMapper.find(same(1L)))
-                .willReturn(starwhale);
-        given(userMapper.find(same(2L)))
+        given(userService.loadUserById(same(2L)))
                 .willReturn(test);
         given(trashMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(
