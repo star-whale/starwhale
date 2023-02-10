@@ -35,9 +35,8 @@ import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
 import ai.starwhale.mlops.domain.trash.mapper.TrashMapper;
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
+import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.mapper.UserMapper;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -57,7 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TrashService {
 
     private final TrashMapper trashMapper;
-    private final UserMapper userMapper;
+    private final UserService userService;
     private final ProjectService projectService;
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
@@ -65,11 +64,11 @@ public class TrashService {
     private final JobDao jobDao;
     private final IdConverter idConvertor;
 
-    public TrashService(TrashMapper trashMapper, UserMapper userMapper, ProjectService projectService,
+    public TrashService(TrashMapper trashMapper, UserService userService, ProjectService projectService,
             ModelDao modelDao, DatasetDao datasetDao,
             RuntimeDao runtimeDao, JobDao jobDao, IdConverter idConvertor) {
         this.trashMapper = trashMapper;
-        this.userMapper = userMapper;
+        this.userService = userService;
         this.projectService = projectService;
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
@@ -85,10 +84,7 @@ public class TrashService {
             if (idConvertor.isId(query.getOperator())) {
                 operatorId = idConvertor.revert(query.getOperator());
             } else {
-                UserEntity user = userMapper.findByName(query.getOperator());
-                if (user != null) {
-                    operatorId = user.getId();
-                }
+                projectId = userService.getUserId(query.getOperator());
             }
         }
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -175,7 +171,7 @@ public class TrashService {
     }
 
     private TrashVo toTrashVo(TrashPo trashPo) {
-        UserEntity operator = userMapper.find(trashPo.getOperatorId());
+        User operator = userService.loadUserById(trashPo.getOperatorId());
         if (operator == null) {
             throw new SwProcessException(ErrorType.DB, "Can not find operator. " + trashPo.getOperatorId());
         }
@@ -184,7 +180,7 @@ public class TrashService {
                 .type(trashPo.getTrashType())
                 .name(trashPo.getTrashName())
                 .size(trashPo.getSize())
-                .trashedBy(operator.getUserName())
+                .trashedBy(operator.getName())
                 .lastUpdatedTime(trashPo.getUpdatedTime().getTime())
                 .trashedTime(trashPo.getCreatedTime().getTime())
                 .retentionTime(trashPo.getRetention().getTime())
