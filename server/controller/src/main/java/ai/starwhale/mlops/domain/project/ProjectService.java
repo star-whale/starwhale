@@ -162,6 +162,11 @@ public class ProjectService implements ProjectAccessor {
         });
     }
 
+    public List<Project> listProjects(String projectName, Long userId, String order) {
+        List<ProjectEntity> list = projectMapper.list(projectName, userId, order);
+        return list.stream().map(this::toProject).collect(Collectors.toList());
+    }
+
     private List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
         return projectMapper.list(projectName, userId, null);
     }

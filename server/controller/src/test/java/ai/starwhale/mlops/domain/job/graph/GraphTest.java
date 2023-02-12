@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.graph;
+package ai.starwhale.mlops.domain.job.graph;
 
 import org.junit.jupiter.api.Test;
 

@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
@@ -159,6 +160,21 @@ public class RuntimeService {
             vo.setOwner(userService.findUserById(rt.getOwnerId()));
             return vo;
         });
+    }
+
+    public Runtime findRuntime(Long runtimeId) {
+        RuntimeEntity entity = runtimeDao.getRuntime(runtimeId);
+        return Runtime.fromEntity(entity);
+    }
+
+    public RuntimeVersion findRuntimeVersion(String versioUrl) {
+        RuntimeVersionEntity entity = runtimeDao.getRuntimeVersion(versioUrl);
+        return RuntimeVersion.fromEntity(entity);
+    }
+
+    public RuntimeVersion findRuntimeVersion(Long versionId) {
+        RuntimeVersionEntity entity = (RuntimeVersionEntity) runtimeDao.findVersionById(versionId);
+        return RuntimeVersion.fromEntity(entity);
     }
 
     public Boolean deleteRuntime(RuntimeQuery query) {

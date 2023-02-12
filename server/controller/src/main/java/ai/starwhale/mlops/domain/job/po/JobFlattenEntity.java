@@ -42,9 +42,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
+import ai.starwhale.mlops.domain.model.bo.ModelVersion;
+import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.user.bo.User;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
@@ -72,7 +72,7 @@ public class JobFlattenEntity {
     @JsonProperty(ProjectIdColumn)
     private Long projectId;
 
-    private ProjectEntity project;
+    private Project project;
 
     @JsonProperty(ModelVersionIdColumn)
     private Long modelVersionId;
@@ -83,7 +83,7 @@ public class JobFlattenEntity {
     @JsonProperty(ModelVersionColumn)
     private String modelVersionValue;
 
-    private ModelVersionEntity modelVersion;
+    private ModelVersion modelVersion;
 
     @JsonProperty(OwnerIdColumn)
     private Long ownerId;
@@ -91,7 +91,7 @@ public class JobFlattenEntity {
     @JsonProperty(OwnerNameColumn)
     private String ownerName;
 
-    private UserEntity owner;
+    private User owner;
 
     @JsonProperty(CreatedTimeColumn)
     private Date createdTime;
