@@ -154,6 +154,10 @@ public class DatasetService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
+    public DatasetVersion findDatasetVersion(String versionUrl) {
+        return datasetDao.getDatasetVersion(versionUrl);
+    }
+
     public DatasetInfoVo getDatasetInfo(DatasetQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl());
         Long datasetId = bundleManager.getBundleId(bundleUrl);

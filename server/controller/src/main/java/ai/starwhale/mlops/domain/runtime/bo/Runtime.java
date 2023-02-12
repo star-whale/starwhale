@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.bo;
 
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,4 +36,12 @@ public class Runtime {
 
     private Long projectId;
 
+    public static Runtime fromEntity(RuntimeEntity entity) {
+        return Runtime.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .ownerId(entity.getOwnerId())
+                .projectId(entity.getProjectId())
+                .build();
+    }
 }

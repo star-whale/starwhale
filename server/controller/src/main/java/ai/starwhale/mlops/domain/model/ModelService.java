@@ -164,6 +164,21 @@ public class ModelService {
         });
     }
 
+    public Model findModel(Long modelId) {
+        ModelEntity entity = modelDao.getModel(modelId);
+        return Model.fromEntity(entity);
+    }
+
+    public ModelVersion findModelVersion(String versioUrl) {
+        ModelVersionEntity modelVersion = modelDao.getModelVersion(versioUrl);
+        return ModelVersion.fromEntity(modelVersion);
+    }
+
+    public ModelVersion findModelVersion(Long versionId) {
+        ModelVersionEntity entity = (ModelVersionEntity) modelDao.findVersionById(versionId);
+        return ModelVersion.fromEntity(entity);
+    }
+
     @Transactional
     public Boolean deleteModel(ModelQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getModelUrl());

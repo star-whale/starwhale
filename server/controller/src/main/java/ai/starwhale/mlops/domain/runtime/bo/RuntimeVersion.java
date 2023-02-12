@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.bo;
 
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,7 +26,18 @@ public class RuntimeVersion {
 
     private Long id;
 
+    private Long runtimeId;
+
     private String versionName;
 
     private String versionTag;
+
+    public static RuntimeVersion fromEntity(RuntimeVersionEntity entity) {
+        return RuntimeVersion.builder()
+                .id(entity.getId())
+                .runtimeId(entity.getRuntimeId())
+                .versionName(entity.getVersionName())
+                .versionTag(entity.getVersionTag())
+                .build();
+    }
 }
