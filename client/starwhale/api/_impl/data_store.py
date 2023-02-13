@@ -1413,7 +1413,11 @@ def table_name_generator(project: Union[str, int], table: str) -> str:
 
 def gen_table_name(project: Union[str, int], table: str, instance_uri: str = "") -> str:
     _instance_uri = instance_uri or os.getenv(SWEnv.instance_uri)
-    if _instance_uri is None or _instance_uri == STANDALONE_INSTANCE or type(project) == int:
+    if (
+        _instance_uri is None
+        or _instance_uri == STANDALONE_INSTANCE
+        or type(project) == int
+    ):
         return table_name_generator(project, table)
     else:
         return table_name_generator(
