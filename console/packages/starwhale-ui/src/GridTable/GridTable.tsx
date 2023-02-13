@@ -92,6 +92,8 @@ function GridTable({
         return unsub
     }, [api, onChange])
 
+    // console.log('store', store)
+
     return (
         <>
             <div

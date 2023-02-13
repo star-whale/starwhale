@@ -14,8 +14,9 @@ import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
 import ConfigQuery from './config-query'
-import Button from '@starwhale/ui/Button'
+import Button from '../../Button'
 import classNames from 'classnames'
+import { themedUseStyletron } from '../../theme/styletron'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -55,7 +56,7 @@ export function QueryInput(props: any) {
 }
 
 export function StatefulDataTable(props: StatefulDataTablePropsT) {
-    const [css, theme] = useStyletron()
+    const [css] = themedUseStyletron()
     const headlineRef = React.useRef(null)
     const [headlineHeight, setHeadlineHeight] = React.useState(64)
     useResizeObserver(headlineRef, (entries) => {
@@ -78,12 +79,10 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
-        // if (!columnable) return columns
-        if (!isFullyLoaded) return columns
-
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
+        const columnIds = isFullyLoaded ? ids : columns.map((c) => c.key)
 
-        return ids
+        return columnIds
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
                 return {

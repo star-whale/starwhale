@@ -191,6 +191,11 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
     return false
 }
 
+// const CellPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPropsT, unknown>(
+//     CellPlacement,
+//     compareCellPlacement
+// )
+
 // @ts-ignore
 const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPropsT, unknown>(
     // @ts-ignore

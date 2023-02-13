@@ -2,7 +2,7 @@ import React from 'react'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
-import { expandPadding } from '@starwhale/ui/utils'
+import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 
 const COLUMN_OPTIONS = [
@@ -71,9 +71,9 @@ export default function SectionPopover({ onOptionSelect }) {
                                                             width: 'calc(100% + 32px)',
                                                             textAlign: 'left',
                                                             justifyContent: 'flex-start',
-                                                            margin: '-8px -16px',
                                                             height: '36px',
                                                             ...expandPadding('8px', '16px', '8px', '16px'),
+                                                            ...expandMargin('-8px', '-16px', '-8px', '-16px'),
                                                         },
                                                     },
                                                 }}
