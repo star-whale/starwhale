@@ -18,10 +18,12 @@ package ai.starwhale.mlops.domain.runtime;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -217,6 +219,42 @@ public class RuntimeServiceTest {
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
                 hasProperty("list", hasItem(hasProperty("id", is("2"))))
         ));
+    }
+
+    @Test
+    public void testFindBo() {
+        RuntimeEntity r1 = RuntimeEntity.builder().id(1L).runtimeName("rt1").build();
+        RuntimeVersionEntity v1 = RuntimeVersionEntity.builder()
+                .id(2L)
+                .runtimeId(3L)
+                .versionName("rt1")
+                .ownerId(1L)
+                .versionMeta("test_meta")
+                .build();
+        given(runtimeDao.getRuntime(same(1L)))
+                .willReturn(r1);
+        given(runtimeDao.getRuntimeVersion(same("v1")))
+                .willReturn(v1);
+        given(runtimeDao.findVersionById(same(2L)))
+                .willReturn(v1);
+
+        var res = service.findRuntime(1L);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("id", is(1L)),
+                hasProperty("name", is("rt1"))
+        ));
+
+        var res1 = service.findRuntimeVersion(2L);
+        assertThat(res1, allOf(
+                notNullValue(),
+                hasProperty("id", is(v1.getId())),
+                hasProperty("runtimeId", is(v1.getRuntimeId())),
+                hasProperty("versionName", is(v1.getVersionName()))
+        ));
+
+        var res2 = service.findRuntimeVersion("v1");
+        assertThat(res2, equalTo(res1));
     }
 
     @Test
