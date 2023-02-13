@@ -133,7 +133,9 @@ public class ColumnTypeScalar extends ColumnType {
                     || this == STRING) {
                 return value.toString();
             } else if (this == BYTES) {
-                return StandardCharsets.UTF_8.decode((ByteBuffer) value).toString();
+                return StandardCharsets.UTF_8.decode(
+                        ((ByteBuffer) value).duplicate()
+                ).toString();
             }
         } else {
             if (this == BOOL) {
@@ -153,8 +155,9 @@ public class ColumnTypeScalar extends ColumnType {
             } else if (this == STRING) {
                 return value;
             } else if (this == BYTES) {
-                var base64 = Base64.getEncoder().encode(((ByteBuffer) value).duplicate());
-                return StandardCharsets.UTF_8.decode(base64).toString();
+                return StandardCharsets.UTF_8.decode(
+                        Base64.getEncoder().encode(((ByteBuffer) value).duplicate())
+                ).toString();
             }
         }
         throw new IllegalArgumentException("invalid type " + this);
