@@ -29,6 +29,7 @@ export interface IViewState {
 }
 export interface ICurrentViewState {
     currentView: ConfigT
+    onCurrentViewSaved: () => void
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
     onCurrentViewQueriesChange: (queries: QueryT[]) => void
@@ -89,6 +90,9 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
         ),
     onViewAdd: (view) => set({ views: [...get().views, view] }),
     onViewUpdate: (view) => {
+        //
+        view.updated = false
+        //
         const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
 
         // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
@@ -135,40 +139,43 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
     getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
 })
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => ({
-    currentView: {},
-    onCurrentViewFiltersChange: (filters) => set({ currentView: { ...get().currentView, filters } }),
-    onCurrentViewQueriesChange: (queries) => set({ currentView: { ...get().currentView, queries } }),
-    onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
-        set({ currentView: { ...get().currentView, selectedIds, pinnedIds, ids } }),
-    onCurrentViewColumnsPin: (columnId: string, pined = false) => {
-        const { pinnedIds = [], ids = [] } = get().currentView
-        const $pinnedIds = new Set(pinnedIds)
-        if (pined) {
-            $pinnedIds.add(columnId)
-        } else {
-            $pinnedIds.delete(columnId)
-        }
-        const sortedMergeSelectedIds = Array.from(ids).sort((v1, v2) => {
-            const index1 = $pinnedIds.has(v1) ? 1 : -1
-            const index2 = $pinnedIds.has(v2) ? 1 : -1
-            return index2 - index1
-        })
-
+const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
+    const update = (updateAttrs: Partial<ConfigT>) => {
+        const curr = get().currentView
         set({
             currentView: {
-                ...get().currentView,
-                pinnedIds: Array.from($pinnedIds),
-                ids: sortedMergeSelectedIds,
+                ...curr,
+                ...updateAttrs,
+                updated: true,
             },
         })
-    },
-    onCurrentViewSort: (key, direction) =>
-        set({
-            currentView: { ...get().currentView, sortBy: key, sortDirection: direction },
-        }),
-})
+    }
+
+    return {
+        currentView: {},
+        onCurrentViewSaved: () => update({ updated: false }),
+        onCurrentViewFiltersChange: (filters) => update({ filters }),
+        onCurrentViewQueriesChange: (queries) => update({ queries }),
+        onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
+            update({ selectedIds, pinnedIds, ids }),
+        onCurrentViewColumnsPin: (columnId: string, pined = false) => {
+            const { pinnedIds = [], ids = [] } = get().currentView
+            const $pinnedIds = new Set(pinnedIds)
+            if (pined) {
+                $pinnedIds.add(columnId)
+            } else {
+                $pinnedIds.delete(columnId)
+            }
+            const sortedMergeSelectedIds = Array.from(ids).sort((v1, v2) => {
+                const index1 = $pinnedIds.has(v1) ? 1 : -1
+                const index2 = $pinnedIds.has(v2) ? 1 : -1
+                return index2 - index1
+            })
+            update({ pinnedIds: Array.from($pinnedIds), ids: sortedMergeSelectedIds })
+        },
+        onCurrentViewSort: (key, direction) => update({ sortBy: key, sortDirection: direction }),
+    }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, get, store) => ({

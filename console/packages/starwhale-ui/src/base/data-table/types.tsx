@@ -112,6 +112,7 @@ export type QueryT = {
 }
 
 export type ConfigT = {
+    updated?: boolean
     updatedTime?: number
     id?: string
     def?: boolean

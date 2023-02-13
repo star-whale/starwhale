@@ -113,21 +113,19 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         },
         [store]
     )
-    const handleSave = useCallback(
-        async (view) => {
-            if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
-            else {
-                store.onViewUpdate(view)
-                props.onSave?.(view)
-            }
-        },
-        [store]
-    )
+    const handleSave = async (view: ConfigT) => {
+        if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
+        else {
+            store.onViewUpdate(view)
+            await props.onSave?.(view)
+        }
+    }
     const handleSaveAs = useCallback(
         (view) => {
             store.onShowViewModel(true, {
                 ...view,
                 id: undefined,
+                updated: false,
             })
         },
         [store]
@@ -148,13 +146,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     )
 
     // changed status must be after all the store changes(after api success)
-    const prefVersion = useRef(store.version)
-    const changed = useMemo(() => {
-        if (store.version > prefVersion.current) {
-            return true
-        }
-        return false
-    }, [store.currentView, store.version])
+    const changed = store.currentView.updated
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])

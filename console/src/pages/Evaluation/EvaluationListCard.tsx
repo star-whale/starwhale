@@ -145,9 +145,9 @@ export default function EvaluationListCard() {
     const doChange = async (state: ITableState, prevState: ITableState) => {
         if (!$ready) return
 
-        console.log('save to api ?', store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))
+        // console.log('save to api ?', store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))
         if (!_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))) {
-            console.log('saved', store.getRawConfigs().currentView)
+            // console.log('saved', store.getRawConfigs().currentView)
             await setEvaluationViewConfig(projectId, {
                 name: 'evaluation',
                 content: JSON.stringify(store.getRawConfigs(), null),
