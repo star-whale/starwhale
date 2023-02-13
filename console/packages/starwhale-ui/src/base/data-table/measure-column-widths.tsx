@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
-import HeaderCell from './header-cell'
+import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
 
 const IS_BROWSER = true

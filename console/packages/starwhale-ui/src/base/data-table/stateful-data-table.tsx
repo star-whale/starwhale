@@ -146,6 +146,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     // changed status must be after all the store changes(after api success)
     const changed = store.currentView.updated
+    console.log(changed)
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])

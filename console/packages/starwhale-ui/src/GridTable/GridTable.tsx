@@ -41,8 +41,8 @@ const useStyles = createUseStyles({
         '& .table-cell--last': {},
     },
     tablePinnable: {
-        '& .table-columns-pinned .table-row .table-cell:last-child': {
-            borderRight: '1px solid rgb(207, 215, 230); ',
+        '& .table-columns-pinned': {
+            borderRight: '1px solid rgb(207, 215, 230)',
         },
         '& .table-headers-pinned > div:last-child': {
             borderRight: '1px solid rgb(207, 215, 230)',

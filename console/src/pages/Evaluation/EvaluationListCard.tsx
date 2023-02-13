@@ -75,20 +75,21 @@ export default function EvaluationListCard() {
     const $columns = useDatastoreColumns(columnInfo?.data?.columnTypes)
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
-            if (column.key === 'id')
+            if (column.key === 'sys/id')
                 return CustomColumn({
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
-                    mapDataToValue: (item: any) => item.id,
+                    mapDataToValue: (item: any) => item['sys/id'],
                     // @ts-ignore
                     renderCell: (props: any) => {
                         const { data } = props ?? {}
                         if (!data) return <></>
+                        const id = data['sys/id']
 
                         return (
-                            <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-                                {`${data.id}`}
+                            <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
+                                {id}
                             </TextLink>
                         )
                     },

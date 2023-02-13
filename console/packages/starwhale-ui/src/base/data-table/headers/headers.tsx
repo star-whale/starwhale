@@ -1,0 +1,202 @@
+import React, { useCallback } from 'react'
+import { Tooltip, PLACEMENT } from 'baseui/tooltip'
+import cn from 'classnames'
+import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
+import type { ColumnT, SortDirectionsT } from '../types'
+import { LocaleContext } from '../locales'
+import { themedUseStyletron } from '../../../theme/styletron'
+
+const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
+
+export default function Headers({ width }: { width: number }) {
+    const [css, theme] = themedUseStyletron()
+    const locale = React.useContext(LocaleContext)
+    const ctx = React.useContext(HeaderContext)
+    const [resizeIndex, setResizeIndex] = React.useState(-1)
+
+    const $columns = React.useMemo(
+        () =>
+            ctx.columns.map((v, index) => ({
+                ...v,
+                index,
+            })),
+        [ctx.columns]
+    )
+
+    const store = ctx.useStore()
+
+    const headerRender = useCallback(
+        (column: ColumnT & { index: number }) => {
+            const activeFilter = null
+            const columnIndex = column.index
+
+            const handleNoSelect = () => {
+                store.onNoSelect(column.key as string)
+            }
+
+            const handleFocus = () => {
+                store.onCompareUpdate({
+                    comparePinnedKey: column.key as string,
+                })
+            }
+            const handlePin = (index: number, bool: boolean) => {
+                store.onCurrentViewColumnsPin(column.key as string, bool)
+            }
+
+            // @ts-ignore
+            const handleSort = (index: number, direction: SortDirectionsT) => {
+                store.onCurrentViewSort(column.key as string, direction)
+            }
+
+            const isFoucs = column.key === store.compare?.comparePinnedKey
+            const isPin = !!column.pin
+
+            return (
+                <Tooltip
+                    key={columnIndex}
+                    placement={PLACEMENT.bottomLeft}
+                    isOpen={ctx.columnHighlightIndex === columnIndex && Boolean(activeFilter)}
+                    content={() => {
+                        return (
+                            <div>
+                                <p
+                                    className={css({
+                                        ...theme.typography.font100,
+                                        color: theme.colors.contentInversePrimary,
+                                    })}
+                                >
+                                    {locale.datatable.filterAppliedTo} {column.title}
+                                </p>
+                            </div>
+                        )
+                    }}
+                >
+                    <div
+                        className={css({
+                            ...theme.borders.border200,
+                            backgroundColor: theme.colors.backgroundPrimary,
+                            borderTop: 'none',
+                            borderBottom: 'none',
+                            borderRight: 'none',
+                            borderLeft: 'none',
+                            boxSizing: 'border-box',
+                            display: 'flex',
+                            height: `${HEADER_ROW_HEIGHT}px`,
+                        })}
+                        style={{ width: ctx.widths[columnIndex] }}
+                    >
+                        <Header
+                            columnTitle={column.title}
+                            hoverIndex={ctx.columnHighlightIndex}
+                            index={columnIndex}
+                            isSortable={column.sortable}
+                            isSelectable={ctx.isSelectable}
+                            isSelectedAll={ctx.isSelectedAll}
+                            isSelectedIndeterminate={ctx.isSelectedIndeterminate}
+                            onMouseEnter={ctx.onMouseEnter}
+                            onMouseLeave={ctx.onMouseLeave}
+                            onResize={ctx.onResize}
+                            onResizeIndexChange={setResizeIndex}
+                            onSelectMany={ctx.onSelectMany}
+                            onSelectNone={ctx.onSelectNone}
+                            onNoSelect={handleNoSelect}
+                            onPin={handlePin}
+                            isFocus={isFoucs}
+                            isPin={isPin}
+                            onFocus={handleFocus}
+                            onSort={handleSort}
+                            resizableColumnWidths={ctx.resizableColumnWidths}
+                            compareable={ctx.compareable}
+                            resizeIndex={resizeIndex}
+                            resizeMinWidth={ctx.measuredWidths[columnIndex]}
+                            resizeMaxWidth={column.maxWidth || Infinity}
+                            sortIndex={ctx.sortIndex}
+                            sortDirection={ctx.sortDirection}
+                            tableHeight={ctx.tableHeight}
+                        />
+                    </div>
+                </Tooltip>
+            )
+        },
+        [store, ctx, setResizeIndex, resizeIndex, css, locale, theme]
+    )
+
+    const headersLeft = React.useMemo(() => {
+        return $columns.filter((v) => v.pin === 'LEFT').map(headerRender)
+    }, [$columns, headerRender])
+
+    const headersLeftWidth = React.useMemo(() => {
+        return sum($columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0)))
+    }, [$columns, ctx.widths])
+
+    const headers = React.useMemo(() => {
+        return $columns.filter((v) => v.pin !== 'LEFT').map(headerRender)
+    }, [$columns, headerRender])
+
+    return (
+        <div
+            className={cn(
+                'table-headers-wrapper',
+                css({
+                    position: 'sticky',
+                    top: 0,
+                    left: 0,
+                    display: 'flex',
+                    zIndex: 2,
+                    backgroundColor: '#F3F5F9',
+                    overflow: 'hidden',
+                })
+            )}
+            style={{
+                width,
+            }}
+        >
+            <div
+                className='table-headers-pinned'
+                style={{
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 50,
+                    borderLeftWidth: '0',
+                    overflow: 'visible',
+                    breakInside: 'avoid',
+                    display: 'flex',
+                    height: HEADER_ROW_HEIGHT,
+                }}
+            >
+                {headersLeft}
+            </div>
+
+            {headers.length > 0 && (
+                <>
+                    <div
+                        className='table-headers'
+                        style={{
+                            width: '100%',
+                            position: 'absolute',
+                            left: 0,
+                            marginLeft: headersLeftWidth,
+                            transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                breakInside: 'avoid',
+                                width: 'fit-content',
+                                height: HEADER_ROW_HEIGHT,
+                            }}
+                        >
+                            {headers}
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            flex: '1',
+                        }}
+                    />
+                </>
+            )}
+        </div>
+    )
+}
