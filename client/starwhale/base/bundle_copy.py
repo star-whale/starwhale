@@ -320,7 +320,7 @@ class BundleCopy(CloudRequestMixed):
             url_path=url_path,
             file_path=manifest_path,
             instance_uri=self.dest_uri,
-            fields={
+            params={
                 self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
                 "desc": FileDesc.MANIFEST.name,
