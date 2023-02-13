@@ -212,6 +212,8 @@ client_test() {
   pushd ../
   python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip
   if ! in_github_action; then
+    unset http_proxy
+    unset https_proxy
     bash scripts/client_test/cli_test.sh all
   else
     if ! bash scripts/client_test/cli_test.sh simple; then
