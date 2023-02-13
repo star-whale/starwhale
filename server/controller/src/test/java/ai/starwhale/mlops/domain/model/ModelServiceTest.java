@@ -18,10 +18,12 @@ package ai.starwhale.mlops.domain.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -222,6 +224,45 @@ public class ModelServiceTest {
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
                 hasProperty("list", hasItem(hasProperty("id", is("2"))))
         ));
+    }
+
+    @Test
+    public void testFindBo() {
+        ModelEntity m1 = ModelEntity.builder().id(1L).modelName("model1").build();
+        ModelVersionEntity v1 = ModelVersionEntity.builder()
+                .id(2L)
+                .modelId(3L)
+                .versionName("v1")
+                .modelName("model1")
+                .ownerId(1L)
+                .versionMeta("test_meta")
+                .build();
+        given(modelDao.getModel(same(1L)))
+                .willReturn(m1);
+        given(modelDao.getModelVersion(same("v1")))
+                .willReturn(v1);
+        given(modelDao.findVersionById(same(2L)))
+                .willReturn(v1);
+
+        var res = service.findModel(1L);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("id", is(1L)),
+                hasProperty("name", is("model1"))
+        ));
+
+        var res1 = service.findModelVersion(2L);
+        assertThat(res1, allOf(
+                notNullValue(),
+                hasProperty("id", is(v1.getId())),
+                hasProperty("modelId", is(v1.getModelId())),
+                hasProperty("name", is(v1.getVersionName())),
+                hasProperty("ownerId", is(v1.getOwnerId())),
+                hasProperty("meta", is(v1.getVersionMeta()))
+        ));
+
+        var res2 = service.findModelVersion("v1");
+        assertThat(res2, equalTo(res1));
     }
 
     @Test
