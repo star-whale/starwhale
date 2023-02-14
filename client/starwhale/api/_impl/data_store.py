@@ -1438,7 +1438,7 @@ def _get_remote_project_id(instance_uri: str, project: Union[str, int]) -> Any:
         timeout=60,
     )
     resp.raise_for_status()
-    return resp.json().get("data", {}).get("id")
+    return resp.json().get("data", {})["id"]
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
