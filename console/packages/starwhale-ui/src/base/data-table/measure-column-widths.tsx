@@ -7,7 +7,7 @@ import type { ColumnT, RowT } from './types'
 const IS_BROWSER = true
 const emptyFunction = () => {}
 
-function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout }) {
+function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout, isQueryInline }) {
     const [css] = useStyletron()
 
     const ref = useRef()
@@ -53,6 +53,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                         key={`measure-${i}`}
                         value={column.mapDataToValue(rows[rowIndex].data)}
                         isSelectable={isSelectable}
+                        isQueryInline={isQueryInline}
                         isMeasured
                         sortable={column.sortable}
                         x={0}
@@ -67,6 +68,7 @@ type MeasureColumnWidthsPropsT = {
     columns: ColumnT[]
     // if selectable, measure the first column with checkbox included
     isSelectable: boolean
+    isQueryInline: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
 }
@@ -100,6 +102,7 @@ export default function MeasureColumnWidths({
     columns,
     rows,
     isSelectable,
+    isQueryInline,
     onWidthsChange,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
@@ -155,6 +158,7 @@ export default function MeasureColumnWidths({
                     column={column}
                     rows={rows}
                     isSelectable={isSelectable && i === 0}
+                    isQueryInline={isQueryInline && i === 0}
                     onLayout={handleDimensionsChange}
                     columnIndex={i}
                     sampleIndexes={sampleIndexes}

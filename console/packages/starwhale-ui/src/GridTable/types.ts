@@ -18,6 +18,7 @@ export interface ITableProps {
     viewable?: boolean
     queryable?: boolean
     selectable?: boolean
+    queryinline?: boolean
     id?: string
     data: any[]
     columns: any[]

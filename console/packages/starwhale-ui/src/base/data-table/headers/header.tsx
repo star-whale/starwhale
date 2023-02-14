@@ -15,6 +15,7 @@ export type HeaderContextT = {
     loadingMessage: string | React.ComponentType<any>
     isScrollingX: boolean
     isSelectable: boolean
+    isQueryInline: boolean
     isSelectedAll: boolean
     isSelectedIndeterminate: boolean
     measuredWidths: number[]
@@ -49,6 +50,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     isScrollingX: false,
     isSelectable: false,
     isSelectedAll: false,
+    isQueryInline: false,
     isSelectedIndeterminate: false,
     measuredWidths: [],
     onMouseEnter: () => {},
@@ -77,7 +79,9 @@ type HeaderProps = {
     hoverIndex: number
     index: number
     isSortable: boolean
+    querySlot: React.ReactNode
     isSelectable: boolean
+    isQueryInline: boolean
     isSelectedAll: boolean
     isSelectedIndeterminate: boolean
     onMouseEnter: (num: number) => void
@@ -207,6 +211,8 @@ function Header(props: HeaderProps) {
                 onFocus={props.onFocus}
                 sortDirection={props.sortIndex === props.index ? props.sortDirection : null}
                 title={props.columnTitle}
+                isQueryInline={props.isQueryInline && props.index === 0}
+                querySlot={props.querySlot}
             />
             {props.resizableColumnWidths && (
                 <div

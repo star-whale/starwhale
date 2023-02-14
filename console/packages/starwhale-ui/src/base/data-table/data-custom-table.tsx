@@ -53,6 +53,7 @@ export function DataTable({
     onSort,
     resizableColumnWidths = false,
     compareable = false,
+    queryinline = false,
     rows: allRows,
     rowActions = [],
     rowHeight = 44,
@@ -278,6 +279,7 @@ export function DataTable({
         rowHeightAtIndex,
     ])
     const isSelectable = selectable
+    const isQueryInline = queryinline
 
     const isSelectedAll = React.useMemo(() => {
         if (!selectedRowIds) {
@@ -376,6 +378,7 @@ export function DataTable({
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
             rowHighlightIndex,
             isRowSelected,
+            isQueryInline,
             isSelectable,
             onRowMouseEnter: handleRowMouseEnter,
             onSelectOne: handleSelectOne,
@@ -389,6 +392,7 @@ export function DataTable({
         // columnHighlightIndex,
         isRowSelected,
         isSelectable,
+        isQueryInline,
         rowHighlightIndex,
         rows,
         columns,
@@ -403,6 +407,7 @@ export function DataTable({
                 columns={columns}
                 rows={rows}
                 isSelectable={isSelectable}
+                isQueryInline={isQueryInline}
                 onWidthsChange={handleWidthsChange}
             />
             <MeasureScrollbarWidth onWidthChange={(w) => setBrowserScrollbarWidth(w)} />
@@ -424,6 +429,7 @@ export function DataTable({
                             isSelectable,
                             isSelectedAll,
                             isSelectedIndeterminate,
+                            isQueryInline,
                             measuredWidths,
                             onMouseEnter: handleColumnHeaderMouseEnter,
                             onMouseLeave: handleColumnHeaderMouseLeave,

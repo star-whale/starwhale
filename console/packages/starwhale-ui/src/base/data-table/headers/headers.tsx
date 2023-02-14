@@ -5,6 +5,7 @@ import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from '../locales'
 import { themedUseStyletron } from '../../../theme/styletron'
+import { useConfigQuery } from '../config-query'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
@@ -25,9 +26,13 @@ export default function Headers({ width }: { width: number }) {
 
     const store = ctx.useStore()
 
+    const { renderConfigQueryInline } = useConfigQuery(ctx.useStore, {
+        columns: ctx.columns,
+        queryable: ctx.isQueryInline,
+    })
+
     const headerRender = useCallback(
-        (column: ColumnT & { index: number }) => {
-            const activeFilter = null
+        (column: ColumnT & { index: number }, index) => {
             const columnIndex = column.index
 
             const handleNoSelect = () => {
@@ -55,21 +60,20 @@ export default function Headers({ width }: { width: number }) {
                 <Tooltip
                     key={columnIndex}
                     placement={PLACEMENT.bottomLeft}
-                    isOpen={ctx.columnHighlightIndex === columnIndex && Boolean(activeFilter)}
-                    content={() => {
-                        return (
-                            <div>
-                                <p
-                                    className={css({
-                                        ...theme.typography.font100,
-                                        color: theme.colors.contentInversePrimary,
-                                    })}
-                                >
-                                    {locale.datatable.filterAppliedTo} {column.title}
-                                </p>
-                            </div>
-                        )
-                    }}
+                    // content={() => {
+                    //     return (
+                    //         <div>
+                    //             <p
+                    //                 className={css({
+                    //                     ...theme.typography.font100,
+                    //                     color: theme.colors.contentInversePrimary,
+                    //                 })}
+                    //             >
+                    //                 {locale.datatable.filterAppliedTo} {column.title}
+                    //             </p>
+                    //         </div>
+                    //     )
+                    // }}
                 >
                     <div
                         className={css({
@@ -93,6 +97,8 @@ export default function Headers({ width }: { width: number }) {
                             isSelectable={ctx.isSelectable}
                             isSelectedAll={ctx.isSelectedAll}
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
+                            isQueryInline={ctx.isQueryInline}
+                            querySlot={renderConfigQueryInline({ width })}
                             onMouseEnter={ctx.onMouseEnter}
                             onMouseLeave={ctx.onMouseLeave}
                             onResize={ctx.onResize}

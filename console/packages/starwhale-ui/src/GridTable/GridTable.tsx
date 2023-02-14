@@ -63,6 +63,7 @@ function GridTable({
     compareable = false,
     selectable = false,
     viewable = false,
+    queryinline = false,
     onSave,
     onChange = () => {},
 }: ITableProps) {
@@ -106,6 +107,7 @@ function GridTable({
                     resizableColumnWidths
                     initialFilters={$filters}
                     searchable={searchable}
+                    queryinline={queryinline}
                     filterable={filterable}
                     queryable={queryable}
                     columnable={columnable}

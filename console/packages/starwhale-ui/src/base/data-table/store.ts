@@ -313,5 +313,6 @@ export const useEvaluationCompareStore = createCustomStore('compare', {
 })
 
 const stateSelector = (state: ITableState) => state
+const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []
 
-export { stateSelector }
+export { stateSelector, currentQueriesSelector }

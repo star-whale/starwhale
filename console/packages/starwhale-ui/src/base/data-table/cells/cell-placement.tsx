@@ -29,22 +29,25 @@ export type CellPlacementPropsT = {
 
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = themedUseStyletron()
+    const { textQuery, isSelectable, isQueryInline, isRowSelected, onRowMouseEnter, onSelectOne, rows, columns } = data
 
-    const column = React.useMemo(() => data.columns[columnIndex] ?? null, [data.columns, columnIndex])
+    const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
     const { row, rowCount, rowData } = React.useMemo(() => {
-        const rowTmp = data.rows[rowIndex]
-        const rowCountTmp = data.rows.length
+        const rowTmp = rows[rowIndex]
+        const rowCountTmp = rows.length
         return {
             row: rowTmp,
             rowCount: rowCountTmp,
             rowData: rowTmp?.data ?? {},
         }
-    }, [data.rows, rowIndex])
-    // eslint-disable-next-line
+    }, [rows, rowIndex])
     const Cell = React.useMemo(() => column.renderCell ?? null, [column])
-    // eslint-disable-next-line
     const value = React.useMemo(() => column.mapDataToValue(rowData), [column, rowData])
-    const isSelected = React.useMemo(() => data.isRowSelected(data.rows[rowIndex]?.id), [data, rowIndex])
+    const isSelected = React.useMemo(() => isRowSelected(row.id), [row])
+    const onSelect = React.useMemo(
+        () => (isSelectable && columnIndex === 0 ? () => onSelectOne(row) : undefined),
+        [isSelectable, onSelectOne, columnIndex, row]
+    )
 
     // console.log('CellPlacement', columnIndex, rowIndex, value)
     return (
@@ -79,23 +82,20 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 })
             )}
             style={style}
-            onMouseEnter={() => {
-                data.onRowMouseEnter(rowIndex)
-            }}
-            onMouseLeave={() => {
-                data.onRowMouseEnter(-1)
-            }}
+            onMouseEnter={() => onRowMouseEnter(rowIndex)}
+            onMouseLeave={() => onRowMouseEnter(-1)}
         >
             <Cell
                 value={value}
                 data={rowData}
-                onSelect={data.isSelectable && columnIndex === 0 ? () => data.onSelectOne(row) : undefined}
+                onSelect={onSelect}
                 onAsyncChange={async (v: any) => {
                     const cellData = data?.columns[columnIndex]
                     await cellData?.onAsyncChange?.(v, columnIndex, rowIndex)
                 }}
                 isSelected={isSelected}
-                textQuery={data.textQuery}
+                isQueryInline={isQueryInline && columnIndex === 0}
+                textQuery={textQuery}
                 x={columnIndex}
                 y={rowIndex}
             />

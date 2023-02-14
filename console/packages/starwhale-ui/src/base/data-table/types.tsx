@@ -156,6 +156,7 @@ export type StatefulDataTablePropsT = {
     compareable?: boolean
     queryable?: boolean
     selectable?: boolean
+    queryinline?: boolean
     controlRef?: ControlRefT
     useStore: IStore
 }

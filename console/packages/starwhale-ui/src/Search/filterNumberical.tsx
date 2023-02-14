@@ -13,6 +13,7 @@ function FilterNumberical(): FilterT {
                 <NumberInput
                     {...props}
                     inputRef={ref}
+                    type='float'
                     overrides={{
                         Root: {
                             style: {
