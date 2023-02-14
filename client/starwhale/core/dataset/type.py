@@ -646,7 +646,7 @@ class Text(BaseArtifact, SwObject):
         link: t.Optional[Link] = None,
     ) -> None:
         # TODO: add encoding validate
-        self.content = content
+        self._content = content
         super().__init__(
             fp=b"",
             type=ArtifactType.Text,
@@ -658,20 +658,26 @@ class Text(BaseArtifact, SwObject):
             link=link,
         )
 
+    @property
+    def content(self) -> str:
+        if not self._content:
+            self._content = self.link_to_content()
+        return self._content
+
     def to_bytes(self, encoding: str = "") -> bytes:
-        self.link_to_content(encoding)
         return self.content.encode(encoding or self.encoding)
 
     def to_numpy(self) -> numpy.ndarray:
         return numpy.array(self.to_str(), dtype=self.dtype)
 
-    def to_str(self, encoding: str = "") -> str:
-        self.link_to_content(encoding)
+    def to_str(self) -> str:
         return self.content
 
-    def link_to_content(self, encoding: str = "") -> None:
-        if not self.content and self.link:
-            self.content = str(self.link.to_bytes(), encoding or self.encoding)
+    def link_to_content(self, encoding: str = "") -> str:
+        if self.link:
+            return str(self.link.to_bytes(), encoding or self.encoding)
+        else:
+            return ""
 
 
 # TODO: support tensorflow transform

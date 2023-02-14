@@ -925,7 +925,7 @@ class TestDatasetType(TestCase):
         _asdict = json.loads(json.dumps(text.asdict()))
         assert text.to_bytes() == b"test"
         assert "fp" not in _asdict
-        assert _asdict["content"] == "test"
+        assert _asdict["_content"] == "test"
         assert _asdict["_type"] == "text"
         assert _asdict["_mime_type"] == MIMEType.PLAIN.value
         assert text.to_str() == "test"
