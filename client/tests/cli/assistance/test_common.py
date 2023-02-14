@@ -76,10 +76,10 @@ class TestPeriodicRunner(unittest.TestCase):
         def f() -> None:
             counter[0] += 1
 
-        runner = common.PeriodicRunner("runner", f, 0.4)
+        runner = common.PeriodicRunner("runner", f, 2)
         try:
             runner.start()
-            time.sleep(1)
+            time.sleep(5)
             runner.stop()
             runner.join()
             self.assertEqual(2, counter[0])
