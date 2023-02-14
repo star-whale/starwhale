@@ -551,6 +551,8 @@ class BoundingBox(ASDictMixin, SwObject):
 class BoundingBox3D(ASDictMixin, SwObject):
     """
     This is a 3d bounding box viewer helper class for two-dimensional UI. Two BoundingBox are needed to show it.
+    bbox_a: the box that is facing user on the two-dimensional UI
+    bbox_b: the box that is facing bbox_a on the two-dimensional UI
     """
 
     SHAPE = 2, 4

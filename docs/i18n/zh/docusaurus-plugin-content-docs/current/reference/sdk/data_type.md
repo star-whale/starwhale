@@ -587,3 +587,20 @@ class LinkType(Enum):
     S3 = "s3"
     UNDEFINED = "undefined"
 ```
+
+## 14. starwhale.BoundingBox3D
+
+提供在二维界面上绘制3D边界框的能力，需要前后两个边界框的`BoundingBox`信息`bbox_a`, `bbox_b`。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/4d240d0c8ec1e7d7c98746ebbd814d2647fb16af/client/starwhale/core/dataset/type.py#L551)。
+
+```python
+BoundingBox3D(
+    bbox_a: BoundingBox,
+    bbox_b: BoundingBox,
+)
+
+```
+
+|参数| 说明                |
+|---|-------------------|
+|`bbox_a`| 在二维UI上，3D框靠近用户的一面 |
+|`bbox_b`| 在二维UI上，3D框远离用户的一面        |
