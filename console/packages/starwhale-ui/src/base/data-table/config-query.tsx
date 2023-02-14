@@ -35,7 +35,9 @@ function ConfigQueryInline(props: PropsT & { width: number }) {
                         Body: {
                             style: {
                                 width: `${props.width}px`,
-                                marginLeft: '-20px',
+                                /* tricky here: to make sure popover to align with rows, if cell
+                                 changes ,this should be reset */
+                                marginLeft: '-12px',
                                 zIndex: '2 !important',
                             },
                         },

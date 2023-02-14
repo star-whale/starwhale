@@ -73,7 +73,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                     paddingBottom: '0',
                     display: 'flex',
                     alignItems: 'center',
-                    paddingLeft: columnIndex === 0 ? '20px' : '12px',
+                    paddingLeft: '12px',
                     paddingRight: '12px',
                     textOverflow: 'ellipsis',
                     overflow: 'hidden',
