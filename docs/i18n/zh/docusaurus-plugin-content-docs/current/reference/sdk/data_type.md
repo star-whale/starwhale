@@ -587,3 +587,17 @@ class LinkType(Enum):
     S3 = "s3"
     UNDEFINED = "undefined"
 ```
+
+## 15. starwhale.NumpyBinary
+
+在构建`Dataset`的时候，用户可以使`NumpyBinary`来存储`ndarray`，以提高starwhale的存储效率。`fp`为`ndarray`在本地的存储路径，或者`bytes`，`dtype`是`numpy`的`dtype`，`shape`为`ndarray`的形状，`link`可以作为`fp`的备选输入。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/02ed82a406ef403416a6faf67f41341e68c38acd/client/starwhale/core/dataset/type.py#L326)。
+
+```python
+NumpyBinary(
+   self,
+   fp: _TArtifactFP,
+   dtype: t.Type,
+   shape: _TShape,
+   link: t.Optional[Link] = None,
+)
+```
