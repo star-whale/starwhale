@@ -261,7 +261,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             self.fp.seek(_pos)
             self.__cache_bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
             return self.__cache_bytes
-        elif self.owner and self.link:
+        elif self.link:
             self.link.owner = self.owner
             self.__cache_bytes = self.link.to_bytes()
             return self.__cache_bytes
@@ -661,19 +661,13 @@ class Text(BaseArtifact, SwObject):
         )
 
     def to_bytes(self, encoding: str = "") -> bytes:
-        self.link_to_content(encoding)
         return self.content.encode(encoding or self.encoding)
 
     def to_numpy(self) -> numpy.ndarray:
         return numpy.array(self.to_str(), dtype=self.dtype)
 
-    def to_str(self, encoding: str = "") -> str:
-        self.link_to_content(encoding)
+    def to_str(self) -> str:
         return self.content
-
-    def link_to_content(self, encoding: str = "") -> None:
-        if not self.content and self.link:
-            self.content = str(self.link.to_bytes(), encoding or self.encoding)
 
 
 # TODO: support tensorflow transform
