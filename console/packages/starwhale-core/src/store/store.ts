@@ -23,7 +23,7 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                         set(
                             produce((state) => {
                                 const nodes = _.get(get(), paths)
-                                console.log(get(), nodes, paths)
+                                // console.log(get(), nodes, paths)
 
                                 const ordered = newOrderList
                                     .map((item) => nodes.find((v: any) => v?.id === item.id))
@@ -36,7 +36,7 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                             produce((state) => {
                                 const rawConfig = _.get(get(), paths) ?? {}
                                 _.set(state, paths, _.merge({}, rawConfig, config))
-                                console.log('onConfigChange', state, paths, rawConfig, config)
+                                // console.log('onConfigChange', state, paths, rawConfig, config)
                             })
                         ),
                     onWidgetChange: (id: string, widgets: WidgetConfig) =>

@@ -5,14 +5,14 @@ import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
-import IconFont from '../../IconFont'
+import IconFont from '../../../IconFont'
 import cn from 'classnames'
-import { SortDirectionsT } from './types'
-import { SORT_DIRECTIONS } from './constants'
-import Button from '../../Button'
-import { LocaleContext } from './locales'
-import Checkbox from '../../Checkbox'
-import { themedUseStyletron } from '../../theme/styletron'
+import { SortDirectionsT } from '../types'
+import { SORT_DIRECTIONS } from '../constants'
+import Button from '../../../Button'
+import { LocaleContext } from '../locales'
+import Checkbox from '../../../Checkbox'
+import { themedUseStyletron } from '../../../theme/styletron'
 
 type HeaderCellPropsT = {
     index: number
@@ -20,6 +20,7 @@ type HeaderCellPropsT = {
     isMeasured?: boolean
     isSelectable: boolean
     isSelectedAll: boolean
+    isQueryInline: boolean
     isSelectedIndeterminate: boolean
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
@@ -35,6 +36,7 @@ type HeaderCellPropsT = {
     sortDirection: SortDirectionsT
     title: string
     compareable?: boolean
+    querySlot?: React.ReactNode
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -89,7 +91,6 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 css({
                     ...theme.typography.font350,
                     alignItems: 'center',
-                    // backgroundColor,
                     boxSizing: 'border-box',
                     color: theme.colors.contentPrimary,
                     cursor: props.sortable ? 'pointer' : undefined,
@@ -98,7 +99,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     height: '100%',
                     flexWrap: 'nowrap',
                     whiteSpace: 'nowrap',
-                    outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
+                    // outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
                     outlineOffset: '-3px',
                     backgroundColor: props.isHovered
                         ? theme.brandTableHeaderBackgroundHover
@@ -106,10 +107,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     fontWeight: 'bold',
                     borderBottomWidth: 0,
                     fontSize: '14px',
-                    lineHeight: '16px',
-                    paddingTop: '15px',
-                    paddingBottom: '15px',
-                    paddingLeft: props.index === 0 ? '20px' : '12px',
+                    lineHeight: '26px',
+                    paddingTop: '10px',
+                    paddingBottom: '10px',
+                    paddingLeft: '12px',
                     paddingRight: '12px',
                     borderRight: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                     borderLeft: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
@@ -117,28 +118,14 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 })
             )}
             title={props.title}
-            // @ts-ignore
-            onMouseEnter={props.onMouseEnter}
-            // @ts-ignore
-            onMouseLeave={props.onMouseLeave}
-            onKeyUp={(event) => {
-                if (event.key === 'Enter' && props.sortable) {
-                    props.onSort(
-                        props.index,
-                        props.sortDirection === SORT_DIRECTIONS.ASC ? SORT_DIRECTIONS.DESC : SORT_DIRECTIONS.ASC
-                    )
-                }
-            }}
-            // onClick={(event) => {
-            // Avoid column sort if select-all checkbox click.
-            // @ts-ignore
-            // if (checkboxRef.current && checkboxRef.current.contains(event.target)) {
-            //     return
-            // }
-            // }}
+            onMouseEnter={props.onMouseEnter as any}
+            onMouseLeave={props.onMouseLeave as any}
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
+            {props.isQueryInline && (
+                <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
+            )}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox

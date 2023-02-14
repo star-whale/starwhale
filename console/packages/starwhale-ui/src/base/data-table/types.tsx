@@ -112,6 +112,7 @@ export type QueryT = {
 }
 
 export type ConfigT = {
+    updated?: boolean
     updatedTime?: number
     id?: string
     def?: boolean
@@ -155,6 +156,7 @@ export type StatefulDataTablePropsT = {
     compareable?: boolean
     queryable?: boolean
     selectable?: boolean
+    queryinline?: boolean
     controlRef?: ControlRefT
     useStore: IStore
 }

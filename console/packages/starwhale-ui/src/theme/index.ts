@@ -105,6 +105,7 @@ const overrides: {
         notificationWarningBackground: customPrimaryColors.warningBackground,
         notificationNegativeText: customPrimaryColors.error,
         notificationNegativeBackground: customPrimaryColors.errorBackground,
+        menuFillHover: customPrimaryColors.backgroundPrimary,
     },
     typography: {
         // @ts-ignore
