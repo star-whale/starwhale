@@ -21,7 +21,6 @@ import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
-import { LabelMedium } from 'baseui/typography'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 type IProjectCardProps = {

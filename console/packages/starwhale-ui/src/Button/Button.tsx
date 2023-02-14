@@ -14,7 +14,7 @@ export interface IButtonProps extends ButtonProps {
 
 function Button(
     { isFull = false, size = 'compact', kind = 'primary', as, icon, children, ...props }: IButtonProps,
-    ref
+    ref: React.Ref<HTMLButtonElement>
 ) {
     const [, theme] = themedUseStyletron()
     const defaultStyles: React.CSSProperties = {
