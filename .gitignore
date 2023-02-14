@@ -1,5 +1,5 @@
-# Compiled class file
 *.class
+# Compiled class file
 **.iml
 *.py[c|o]
 *.pb.go
@@ -55,6 +55,8 @@ example/nmt/data/
 example/speech_command/data/
 example/speech_command/models/
 example/datasets/*/data
+/.starwhale/
+example/runtime/pytorch/requirements-sw-lock.txt
 
 # UI
 node_modules

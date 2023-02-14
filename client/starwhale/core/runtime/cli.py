@@ -151,6 +151,9 @@ def _quickstart(
     "-ie", "--include-editable", is_flag=True, help="Include editable packages"
 )
 @click.option(
+    "-ilw", "--include-local-wheel", is_flag=True, help="Include local wheel packages"
+)
+@click.option(
     "-del",
     "--disable-env-lock",
     is_flag=True,
@@ -186,6 +189,7 @@ def _build(
     runtime_yaml: str,
     gen_all_bundles: bool,
     include_editable: bool,
+    include_local_wheel: bool,
     disable_env_lock: bool,
     no_cache: bool,
     env_prefix_path: str,
@@ -198,6 +202,7 @@ def _build(
         yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
+        include_local_wheel=include_local_wheel,
         disable_env_lock=disable_env_lock,
         no_cache=no_cache,
         env_prefix_path=env_prefix_path,
@@ -444,6 +449,12 @@ def _activate(uri: str, path: str) -> None:
     help="Include editable packages, only for venv mode",
 )
 @click.option(
+    "-ilw",
+    "--include-local-wheel",
+    is_flag=True,
+    help="Include local wheel packages, only for venv mode",
+)
+@click.option(
     "-epo",
     "--emit-pip-options",
     is_flag=True,
@@ -465,6 +476,7 @@ def _lock(
     env_use_shell: bool,
     stdout: bool,
     include_editable: bool,
+    include_local_wheel: bool,
     emit_pip_options: bool,
     no_cache: bool,
 ) -> None:
@@ -483,6 +495,7 @@ def _lock(
         no_cache,
         stdout,
         include_editable,
+        include_local_wheel,
         emit_pip_options,
         env_use_shell,
     )
