@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.exception.SwValidationException;
-import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -28,9 +27,6 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class ColumnSchema {
 
-    private static final Pattern COLUMN_NAME_PATTERN =
-            Pattern.compile("^[\\p{Alnum}-_/: ]*$");
-
     private final String name;
     private final ColumnType type;
     private final int index;
@@ -40,11 +36,6 @@ public class ColumnSchema {
         if (this.name == null) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "column name should not be null");
-        }
-        if (!ColumnSchema.COLUMN_NAME_PATTERN.matcher(this.name).matches()) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "invalid column name " + this.name + ". only alphabets, digits, hyphen(-), underscore(_), "
-                            + "slash(/), colon(:), and space are allowed.");
         }
         if (schema.getType() == null) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,

@@ -16,12 +16,19 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.ColumnTypeObject;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.api.InitContext;
@@ -32,6 +39,8 @@ import org.apache.parquet.schema.MessageType;
 
 @Slf4j
 public class SwReadSupport extends ReadSupport<Map<String, Object>> {
+
+    public static final String PARQUET_SCHEMA_KEY = "parquet_schema";
 
     public static final String SCHEMA_KEY = "sw_schema";
 
@@ -55,14 +64,28 @@ public class SwReadSupport extends ReadSupport<Map<String, Object>> {
         if (tableMetaStr == null) {
             throw new SwProcessException(ErrorType.DATASTORE, "no table meta data found");
         }
+        var parquetSchemaStr = metadata.get(PARQUET_SCHEMA_KEY);
         configuration.set(SCHEMA_KEY, schemaStr);
         configuration.set(META_DATA_KEY, tableMetaStr);
-        TableSchema schema = TableSchema.fromJsonString(schemaStr);
+        Map<String, ColumnType> schema;
+        if (parquetSchemaStr != null) {
+            try {
+                schema = new ObjectMapper()
+                        .readValue(parquetSchemaStr, new TypeReference<List<ColumnSchemaDesc>>() {
+                        })
+                        .stream()
+                        .collect(Collectors.toMap(ColumnSchemaDesc::getName, ColumnType::fromColumnSchemaDesc));
+            } catch (JsonProcessingException e) {
+                throw new SwProcessException(ErrorType.DATASTORE, "failed to parse parquet schema", e);
+            }
+        } else {
+            schema = TableSchema.fromJsonString(schemaStr).getColumnTypeMapping();
+        }
         var record = new AtomicReference<Map<String, Object>>();
         //noinspection unchecked
         var converter = ColumnTypeObject.getObjectConverter(
                 v -> record.set((Map<String, Object>) v),
-                schema.getColumnTypeMapping());
+                schema);
         return new RecordMaterializer<>() {
             @Override
             public Map<String, Object> getCurrentRecord() {

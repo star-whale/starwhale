@@ -19,8 +19,6 @@ package ai.starwhale.mlops.datastore;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 public interface MemoryTable {
 
@@ -30,21 +28,15 @@ public interface MemoryTable {
 
     void update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
-    @Data
-    @AllArgsConstructor
-    class RecordResult {
-
-        Object key;
-        Map<String, Object> values;
-    }
-
-    Iterator<RecordResult> query(Map<String, String> columns,
+    Iterator<RecordResult> query(long timestamp,
+            Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
             boolean keepNone,
             boolean rawResult);
 
     Iterator<RecordResult> scan(
+            long timestamp,
             Map<String, String> columns,
             String start,
             boolean startInclusive,
