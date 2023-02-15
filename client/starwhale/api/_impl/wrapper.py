@@ -85,12 +85,10 @@ class Evaluation(Logger):
         self.eval_id = eval_id
         self.project = project
         self.instance = instance
-        self._results_table_name = self._get_datastore_table_name("results")
-        self._summary_table_name = data_store.gen_table_name(
-            project=self.project, table="eval/summary", instance_uri=self.instance
-        )
+        self._results_table_name = None
+        self._summary_table_name = None
         self._data_store = data_store.get_data_store(instance_uri=instance)
-        self._init_writers([self._results_table_name, self._summary_table_name])
+        self._init_writers([])
 
     def _get_datastore_table_name(self, name: str) -> str:
         return data_store.gen_table_name(
@@ -109,6 +107,9 @@ class Evaluation(Logger):
         record = {"id": data_id, "result": _serialize(result) if serialize else result}
         for k, v in kwargs.items():
             record[k.lower()] = _serialize(v) if serialize else v
+
+        if not self._results_table_name:
+            self._results_table_name = self._get_datastore_table_name("results")
         self._log(self._results_table_name, record)
 
     def log_metrics(
@@ -124,6 +125,11 @@ class Evaluation(Logger):
         else:
             for k, v in kwargs.items():
                 record[k.lower()] = v
+
+        if not self._summary_table_name:
+            self._summary_table_name = data_store.gen_table_name(
+                project=self.project, table="eval/summary", instance_uri=self.instance
+            )
         self._log(self._summary_table_name, record)
 
     def log(self, table_name: str, **kwargs: Any) -> None:
