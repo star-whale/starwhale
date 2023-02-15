@@ -51,6 +51,16 @@ public class Project {
         return isDeleted ? 1 : 0;
     }
 
+    public static Project system() {
+        return Project.builder()
+                .id(0L)
+                .name("SYSTEM")
+                .privacy(Privacy.PUBLIC)
+                .isDeleted(false)
+                .isDefault(false)
+                .build();
+    }
+
     public enum Privacy {
         PUBLIC(1),
         PRIVATE(0);

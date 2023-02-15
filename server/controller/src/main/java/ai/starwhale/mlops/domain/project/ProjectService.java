@@ -18,11 +18,15 @@ package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
+import ai.starwhale.mlops.api.protocol.user.RoleVo;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.member.ProjectMemberService;
+import ai.starwhale.mlops.domain.member.MemberService;
+import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -64,7 +68,7 @@ public class ProjectService implements ProjectAccessor {
 
     private final ProjectDao projectDao;
 
-    private final ProjectMemberService projectMemberService;
+    private final MemberService memberService;
 
     private final IdConverter idConvertor;
 
@@ -74,12 +78,12 @@ public class ProjectService implements ProjectAccessor {
 
     public ProjectService(ProjectMapper projectMapper,
             ProjectDao projectDao,
-            ProjectMemberService projectMemberService,
+            MemberService memberService,
             IdConverter idConvertor,
             UserService userService) {
         this.projectMapper = projectMapper;
         this.projectDao = projectDao;
-        this.projectMemberService = projectMemberService;
+        this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.userService = userService;
     }
@@ -101,9 +105,9 @@ public class ProjectService implements ProjectAccessor {
                 .privacy(Privacy.fromValue(entity.getPrivacy()))
                 .createdTime(entity.getCreatedTime())
                 .description(entity.getProjectDescription())
-                .isDefault(entity.getIsDefault() == 1)
-                .isDeleted(entity.getIsDeleted() == 1)
-                .owner(userService.loadUserById(entity.getOwnerId()))
+                .isDefault(Objects.equals(entity.getIsDefault(), 1))
+                .isDeleted(Objects.equals(entity.getIsDeleted(), 1))
+                .owner(entity.getOwnerId() == null ? null : userService.loadUserById(entity.getOwnerId()))
                 .build();
     }
 
@@ -131,7 +135,7 @@ public class ProjectService implements ProjectAccessor {
     public PageInfo<ProjectVo> listProject(String projectName, PageParams pageParams, OrderParams orderParams,
             User user) {
         Long userId = user.getId();
-        List<Role> sysRoles = userService.getProjectRolesOfUser(user, "0");
+        List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
         for (Role sysRole : sysRoles) {
             if (sysRole.getAuthority().equals("OWNER")) {
                 userId = null;
@@ -196,7 +200,7 @@ public class ProjectService implements ProjectAccessor {
                 .isDefault(project.isDefault() ? 1 : 0)
                 .build();
         projectMapper.insert(entity);
-        projectMemberService.addProjectMember(entity.getId(), entity.getOwnerId(), Role.NAME_OWNER);
+        memberService.addProjectMember(entity.getId(), entity.getOwnerId(), Role.NAME_OWNER);
         log.info("Project has been created. ID={}, NAME={}", entity.getId(), entity.getProjectName());
         return entity.getId();
     }
@@ -227,8 +231,8 @@ public class ProjectService implements ProjectAccessor {
 
     @Transactional
     public Long recoverProject(String projectUrl) {
-        String projectName = null;
-        Long ownerId = null;
+        String projectName;
+        Long ownerId;
         Long id;
         if (idConvertor.isId(projectUrl)) {
             id = idConvertor.revert(projectUrl);
@@ -371,4 +375,19 @@ public class ProjectService implements ProjectAccessor {
         void set(ProjectObjectCounts obj, Integer count);
     }
 
+    public List<ProjectMemberVo> listProjectMembersInProject(String projectUrl) {
+        Project project = findProject(projectUrl);
+        List<ProjectMember> members = memberService.listProjectMembersInProject(project.getId());
+        return members.stream().map(member -> ProjectMemberVo.builder()
+                .id(idConvertor.convert(member.getId()))
+                .project(ProjectVo.fromBo(project, idConvertor))
+                .user(UserVo.from(userService.loadUserById(member.getUserId()), idConvertor))
+                .role(RoleVo.fromBo(userService.findRole(member.getRoleId()), idConvertor))
+                .build()).collect(Collectors.toList());
+    }
+
+    public Boolean addProjectMember(String projectUrl, Long userId, Long roleId) {
+        Long projectId = getProjectId(projectUrl);
+        return memberService.addProjectMember(projectId, userId, roleId);
+    }
 }

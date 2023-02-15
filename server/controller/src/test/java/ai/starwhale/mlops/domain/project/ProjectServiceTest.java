@@ -33,7 +33,7 @@ import static org.mockito.BDDMockito.mock;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.member.ProjectMemberService;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -57,7 +57,7 @@ public class ProjectServiceTest {
 
     private ProjectDao projectDao;
 
-    private ProjectMemberService projectMemberService;
+    private MemberService memberService;
 
     @BeforeEach
     public void setUp() {
@@ -106,12 +106,12 @@ public class ProjectServiceTest {
                 .build());
         given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
 
-        projectMemberService = mock(ProjectMemberService.class);
+        memberService = mock(MemberService.class);
 
         IdConverter idConvertor = new IdConverter();
         service = new ProjectService(projectMapper,
                 projectDao,
-                projectMemberService,
+                memberService,
                 idConvertor,
                 userService);
     }

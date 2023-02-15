@@ -16,9 +16,7 @@
 
 package ai.starwhale.mlops.domain.member.bo;
 
-import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.user.bo.Role;
-import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.domain.project.po.ProjectMemberEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,9 +30,18 @@ public class ProjectMember {
 
     private Long id;
 
-    private Project project;
+    private Long projectId;
 
-    private User user;
+    private Long userId;
 
-    private Role role;
+    private Long roleId;
+
+    public static ProjectMember fromEntity(ProjectMemberEntity entity) {
+        return ProjectMember.builder()
+                .id(entity.getId())
+                .projectId(entity.getProjectId())
+                .userId(entity.getUserId())
+                .roleId(entity.getRoleId())
+                .build();
+    }
 }

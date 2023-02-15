@@ -47,7 +47,8 @@ public class ProjectDao implements ProjectAccessor {
                     .projectName("SYSTEM")
                     .projectDescription("System")
                     .privacy(1)
-                    .ownerId(0L)
+                    .isDefault(0)
+                    .isDeleted(0)
                     .build();
         }
         return projectMapper.find(projectId);

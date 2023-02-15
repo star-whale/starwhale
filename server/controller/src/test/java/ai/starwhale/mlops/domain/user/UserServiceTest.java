@@ -35,9 +35,8 @@ import static org.mockito.BDDMockito.mock;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
-import ai.starwhale.mlops.domain.member.ProjectMemberService;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
-import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.user.bo.Role;
@@ -63,8 +62,7 @@ public class UserServiceTest {
     private UserService service;
     private UserMapper userMapper;
     private RoleMapper roleMapper;
-    private ProjectMemberService projectMemberService;
-    private ProjectService projectService;
+    private MemberService memberService;
 
     @BeforeEach
     public void setUp() {
@@ -99,21 +97,11 @@ public class UserServiceTest {
         given(roleMapper.find(same(2L))).willReturn(maintainer);
         given(roleMapper.find(same(3L))).willReturn(guest);
 
-        projectMemberService = mock(ProjectMemberService.class);
-        projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("0"))).willReturn(0L);
-        given(projectService.getProjectId(same("1"))).willReturn(1L);
-        given(projectService.getProjectId(same("2"))).willReturn(2L);
-        given(projectService.getProjectId(same("3"))).willReturn(3L);
-
-        given(projectService.findProject("0")).willReturn(Project.builder().id(0L).build());
-        given(projectService.findProject("1")).willReturn(Project.builder().id(1L).build());
-        given(projectService.findProject("2")).willReturn(Project.builder().id(2L).build());
-        given(projectService.findProject("3")).willReturn(Project.builder().id(3L).build());
+        memberService = mock(MemberService.class);
 
         SaltGenerator saltGenerator = mock(SaltGenerator.class);
         given(saltGenerator.salt()).willReturn("salt");
-        service = new UserService(userMapper, roleMapper, projectService, projectMemberService,
+        service = new UserService(userMapper, roleMapper, memberService,
                 new IdConverter(), saltGenerator);
 
         User current = User.builder().id(1L).name("current").active(true).build();
@@ -139,28 +127,19 @@ public class UserServiceTest {
 
     @Test
     public void testCurrentUser() {
-        given(projectMemberService.listProjectMembersOfUser(same(1L)))
+        given(memberService.listProjectMembersOfUser(same(1L)))
                 .willReturn(List.of(
                         ProjectMember.builder()
-                                .project(Project.builder().id(0L).build())
-                                .role(Role.builder()
-                                        .roleName(Role.NAME_OWNER)
-                                        .roleCode(Role.NAME_OWNER)
-                                        .build())
+                                .projectId(0L)
+                                .roleId(1L)
                                 .build(),
                         ProjectMember.builder()
-                                .project(Project.builder().id(1L).build())
-                                .role(Role.builder()
-                                        .roleName(Role.NAME_MAINTAINER)
-                                        .roleCode(Role.NAME_MAINTAINER)
-                                        .build())
+                                .projectId(1L)
+                                .roleId(2L)
                                 .build(),
                         ProjectMember.builder()
-                                .project(Project.builder().id(2L).build())
-                                .role(Role.builder()
-                                        .roleName(Role.NAME_GUEST)
-                                        .roleCode(Role.NAME_GUEST)
-                                        .build())
+                                .projectId(2L)
+                                .roleId(3L)
                                 .build()
                 ));
         var res = service.currentUser();
@@ -169,10 +148,10 @@ public class UserServiceTest {
                 hasProperty("id", is("1")),
                 hasProperty("name", is("current")),
                 hasProperty("isEnabled", is(true)),
-                hasProperty("systemRole", is(Role.NAME_OWNER)),
+                hasProperty("systemRole", is(Role.CODE_OWNER)),
                 hasProperty("projectRoles", allOf(
-                        hasEntry("1", Role.NAME_MAINTAINER),
-                        hasEntry("2", Role.NAME_GUEST)
+                        hasEntry("1", Role.CODE_MAINTAINER),
+                        hasEntry("2", Role.CODE_GUEST)
                 ))
         ));
     }
@@ -220,62 +199,79 @@ public class UserServiceTest {
 
     @Test
     public void testGetProjectRolesOfUser() {
-        given(projectMemberService.getUserRoleInProject(same(1L), same(1L)))
-                .willReturn(Role.builder().roleName(Role.NAME_OWNER).build());
-        given(projectMemberService.getUserRoleInProject(same(2L), same(2L)))
-                .willReturn(Role.builder().roleName(Role.NAME_GUEST).build());
-        given(projectService.findProject(same("3")))
-                .willReturn(Project.builder().id(3L).privacy(Privacy.PUBLIC).build());
+        given(memberService.getUserMemberInProject(same(1L), same(1L)))
+                .willReturn(ProjectMember.builder().roleId(1L).build());
+        given(memberService.getUserMemberInProject(same(2L), same(2L)))
+                .willReturn(ProjectMember.builder().roleId(2L).build());
 
-        var res = service.getProjectRolesOfUser(User.builder().id(1L).build(), "1");
+        var res = service.getProjectRolesOfUser(User.builder().id(1L).build(),
+                Project.builder().id(1L).privacy(Privacy.PUBLIC).build());
         assertThat(res, allOf(
                 notNullValue(),
-                is(iterableWithSize(1)),
-                is(hasItem(hasProperty("roleName", is("Owner"))))
+                is(iterableWithSize(2)),
+                is(hasItem(hasProperty("roleName", is(Role.NAME_OWNER)))),
+                is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectRolesOfUser(User.builder().id(2L).build(), "2");
+        res = service.getProjectRolesOfUser(User.builder().id(2L).build(),
+                Project.builder().id(2L).privacy(Privacy.PRIVATE).build());
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
-                is(hasItem(hasProperty("roleName", is("Guest"))))
+                is(hasItem(hasProperty("roleName", is(Role.NAME_MAINTAINER))))
         ));
 
-        res = service.getProjectRolesOfUser(User.builder().id(2L).build(), "3");
+        res = service.getProjectRolesOfUser(User.builder().id(2L).build(),
+                Project.builder().id(3L).privacy(Privacy.PUBLIC).build());
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
-                is(hasItem(hasProperty("roleName", is("Guest"))))
+                is(hasItem(hasProperty("roleName", is(Role.NAME_GUEST))))
         ));
     }
 
     @Test
     public void testGetProjectsRolesOfUser() {
-        given(projectMemberService.getUserRoleInProject(same(1L), same(1L)))
-                .willReturn(Role.builder().roleName(Role.NAME_OWNER).roleCode(Role.CODE_OWNER).build());
-        given(projectMemberService.getUserRoleInProject(same(2L), same(2L)))
-                .willReturn(Role.builder().roleName(Role.NAME_GUEST).roleCode(Role.CODE_GUEST).build());
-        given(projectService.findProject(same("3")))
-                .willReturn(Project.builder().id(3L).privacy(Privacy.PUBLIC).build());
+        given(memberService.getUserMemberInProject(same(1L), same(1L)))
+                .willReturn(ProjectMember.builder().roleId(1L).build());
+        given(memberService.getUserMemberInProject(same(2L), same(2L)))
+                .willReturn(ProjectMember.builder().roleId(2L).build());
+        given(memberService.getUserMemberInProject(same(3L), same(1L)))
+                .willReturn(ProjectMember.builder().roleId(1L).build());
 
-        var res = service.getProjectsRolesOfUser(User.builder().id(1L).build(), Set.of("1"));
+        var res = service.getProjectsRolesOfUser(User.builder().id(1L).build(),
+                Set.of(Project.builder().id(1L).privacy(Privacy.PUBLIC).build()));
         assertThat(res, allOf(
                 notNullValue(),
-                is(iterableWithSize(1)),
-                is(hasItem(hasProperty("roleCode", is(Role.CODE_OWNER))))
+                is(iterableWithSize(2)),
+                is(hasItem(hasProperty("roleCode", is(Role.CODE_OWNER)))),
+                is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(), Set.of("2", "3"));
+        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(),
+                Set.of(Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
+                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()));
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(0))
+        ));
+
+        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(),
+                Set.of(Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
+                        Project.builder().id(3L).privacy(Privacy.PUBLIC).build()));
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
                 is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(), Set.of("3", "1"));
+        res = service.getProjectsRolesOfUser(User.builder().id(1L).build(),
+                Set.of(Project.builder().id(1L).privacy(Privacy.PRIVATE).build(),
+                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()));
         assertThat(res, allOf(
                 notNullValue(),
-                is(iterableWithSize(0))
+                is(iterableWithSize(1)),
+                is(hasItem(hasProperty("roleCode", is(Role.CODE_OWNER))))
         ));
     }
 
