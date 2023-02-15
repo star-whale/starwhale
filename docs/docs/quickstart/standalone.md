@@ -2,6 +2,10 @@
 title: Standalone Quickstart
 ---
 
+![Core Workflow](../img/standalone-core-workflow.gif)
+
+**This tutorial is also available as a [Colab Notebook](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb).**
+
 ## 1. Installing Starwhale
 
 Starwhale has three types of instances: Standalone, On-Premises, and Cloud Hosted. Starting with the standalone mode is ideal for quickly understanding and mastering Starwhale.
@@ -30,15 +34,7 @@ git clone https://github.com/star-whale/starwhale.git
 cd starwhale
 ```
 
-If [git-lfs](https://git-lfs.github.com/) has not been previously installed in the local environment(the command is `git lfs install`), you need to download the trained model file.
-
-```bash
-wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
-```
-
 We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
-
-![Core Workflow](../img/standalone-core-workflow.gif)
 
 ## 3. Building Runtime
 
@@ -50,7 +46,7 @@ Runtime example code are in the `example/runtime/pytorch` directory.
   swcli runtime build .
   ```
 
-- Check your local Starwhale Runtimes:
+- Check your local Starwhale Runtime:
 
   ```bash
   swcli runtime list
@@ -67,7 +63,7 @@ Model example code are in the `example/mnist` directory.
   swcli model build .
   ```
 
-- Check your local Starwhale Models.
+- Check your local Starwhale Model.
 
   ```bash
   swcli model list
@@ -106,13 +102,13 @@ Dataset example code are in the `example/mnist` directory.
 
 ## 6. Running an Evaluation Job
 
-- Create an evaluation job
+- Create an evaluation job:
 
  ```bash
  swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
  ```
 
-- Check the evaluation result
+- Check the evaluation result:
 
  ```bash
  swcli eval list
