@@ -276,7 +276,7 @@ class TestCli:
         for name, expl in EXAMPLES.items():
             logger.info(f"preparing data for {expl}")
             rc = subprocess.call(
-                ["make", "CN=1", "prepare-data"],
+                ["make", "CN=1", "prepare"],
                 cwd=expl["workdir"],
             )
             if rc != 0:
@@ -321,7 +321,7 @@ class TestCli:
         workdir_ = str(expl["workdir"])
 
         p = subprocess.Popen(
-            ["make", "prepare-data"],
+            ["make", "prepare"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=workdir_,
