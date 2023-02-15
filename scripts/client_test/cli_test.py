@@ -213,7 +213,7 @@ class TestCli:
             _job_id = self.evaluation_api.run(
                 model=_model_uri.full_uri,
                 datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
-                runtime=_rt_uri.full_uri if _rt_uri.full_uri else "",
+                runtime=_rt_uri.full_uri if _rt_uri.raw else "",
             )
             assert _job_id
             assert len(self.evaluation_api.list())
