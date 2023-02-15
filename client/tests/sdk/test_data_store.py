@@ -928,6 +928,15 @@ class TestBasicFunctions(BaseTestCase):
             ),
             "{}",
         )
+        self.assertEqual(
+            data_store.SwObjectType(
+                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
+            ),
+            data_store.SwObjectType(
+                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
+            ).merge(data_store.UNKNOWN),
+            "{}",
+        )
 
     def test_update_schema(self) -> None:
         self.assertEqual(

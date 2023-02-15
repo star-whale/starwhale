@@ -417,6 +417,8 @@ class SwObjectType(SwCompositeType):
         self.attrs = attrs
 
     def merge(self, type: SwType) -> SwType:
+        if type is UNKNOWN or self is type:
+            return self
         if isinstance(type, SwObjectType) and self.raw_type is type.raw_type:
             new_attrs: Dict[str, SwType] = {}
             for attr_name, attr_type in self.attrs.items():

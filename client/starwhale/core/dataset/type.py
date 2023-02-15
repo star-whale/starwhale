@@ -548,6 +548,48 @@ class BoundingBox(ASDictMixin, SwObject):
     __repr__ = __str__
 
 
+class BoundingBox3D(ASDictMixin, SwObject):
+    """
+    This is a 3d bounding box viewer helper class for two-dimensional UI. Two BoundingBox are needed to show it.
+    bbox_a: the box that is facing user on the two-dimensional UI
+    bbox_b: the box that is facing bbox_a on the two-dimensional UI
+    """
+
+    SHAPE = 2, 4
+
+    def __init__(self, bbox_a: BoundingBox, bbox_b: BoundingBox) -> None:
+        self._type = "bounding_box3D"
+        self.bbox_a = bbox_a
+        self.bbox_b = bbox_b
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return BoundingBox3D.SHAPE
+
+    @property
+    def dtype(self) -> numpy.dtype:
+        return numpy.dtype(numpy.float64)
+
+    def to_list(self) -> t.List[t.List[float]]:
+        return [self.bbox_a.to_list(), self.bbox_b.to_list()]
+
+    def to_numpy(self) -> numpy.ndarray:
+        return numpy.array(self.to_list(), self.dtype)
+
+    def to_bytes(self) -> bytes:
+        return self.to_numpy().tobytes()
+
+    def to_tensor(self) -> t.Any:
+        from starwhale.integrations.pytorch import convert_list_to_tensor
+
+        return convert_list_to_tensor(self.to_list())
+
+    def __str__(self) -> str:
+        return f"BoundingBox A: {str(self.bbox_a)} ; BoundingBox B: {str(self.bbox_b)} "
+
+    __repr__ = __str__
+
+
 class Line(ASDictMixin, SwObject):
     def __init__(self, points: t.List[Point]) -> None:
         self._type = "line"
