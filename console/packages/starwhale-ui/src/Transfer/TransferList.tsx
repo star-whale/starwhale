@@ -53,7 +53,7 @@ type TransferListPropsT = {
     }
     columns: ColumnT[]
     title?: string
-    emptyMessage?: React.ReactNode
+    emptyMessage?: () => React.ReactNode
 }
 
 export default TransferList
@@ -242,7 +242,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                     </span>
                 </div>
                 <div className='transfer-list-content-body'>
-                    {ids.length === 0 && props.emptyMessage ? props.emptyMessage : List}
+                    {ids.length === 0 && props.emptyMessage ? props.emptyMessage() : List}
                 </div>
             </div>
         </div>

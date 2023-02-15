@@ -61,6 +61,7 @@ const useStyles = createUseStyles({
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            flex: 1,
         },
         '& .transfer-list-content-ul': {
             overflow: 'auto',
@@ -232,7 +233,7 @@ export default function Transfer({
                 </div>
                 <TransferList
                     title='Visible Columns'
-                    emptyMessage={() => <BusyPlaceholder />}
+                    emptyMessage={() => <BusyPlaceholder type='empty' style={{ minHeight: '0' }} />}
                     columns={$rightFilteredColumns}
                     isDragable={isDragable}
                     operators={{

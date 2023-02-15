@@ -38,6 +38,10 @@ public class RunTimeProperties {
         String indexUrl;
         String extraIndexUrl;
         String trustedHost;
+
+        public static Pypi empty() {
+            return new Pypi("", "", "");
+        }
     }
 
 }

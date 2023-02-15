@@ -41,16 +41,18 @@ export function useExportDatastore(query?: QueryTableRequest, enable = true) {
 export function useQueryDatasetList(
     tableName?: string,
     options?: IListQuerySchema & {
-        filter?: any
+        filter?: any[]
+        query?: QueryTableRequest
     },
     rawResult = false
 ) {
-    const { start, limit } = React.useMemo(() => {
+    const { start, limit, query } = React.useMemo(() => {
         const { pageNum = 1, pageSize = 10 } = options || {}
 
         return {
             start: (pageNum - 1) * pageSize ?? 0,
             limit: pageSize ?? 0,
+            query: options?.query ?? {},
         }
     }, [options])
 
@@ -66,6 +68,7 @@ export function useQueryDatasetList(
         const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
         const filter = options?.filter && options?.filter.length > 0 ? column.toQuery(options?.filter) : undefined
         const raw = {
+            ...query,
             tableName,
             start,
             limit,
@@ -73,7 +76,7 @@ export function useQueryDatasetList(
             ignoreNonExistingTable: true,
         }
         return filter ? { ...raw, filter } : raw
-    }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName])
+    }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName, query])
 
     const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 

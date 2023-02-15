@@ -69,12 +69,14 @@ class CloudRequestMixed:
         url_path: str,
         instance_uri: URI,
         file_path: t.Union[str, Path],
-        fields: t.Dict[str, t.Any] = {},
-        headers: t.Dict[str, t.Any] = {},
+        fields: t.Optional[t.Dict[str, t.Any]] = None,
+        headers: t.Optional[t.Dict[str, t.Any]] = None,
         progress: t.Optional[Progress] = None,
         task_id: TaskID = TaskID(0),
         **kw: t.Any,
     ) -> requests.Response:
+        fields = fields or {}
+        headers = headers or {}
         # TODO: add progress bar and rich live
 
         def _progress_bar(monitor: MultipartEncoderMonitor) -> None:

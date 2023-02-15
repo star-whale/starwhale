@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,6 +63,7 @@ import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 
 /**
@@ -81,6 +83,11 @@ public class DatasetUploaderTest {
         HotDatasetHolder hotDatasetHolder = new HotDatasetHolder(datasetVersionWithMetaConverter);
         DatasetMapper datasetMapper = mock(DatasetMapper.class);
         DatasetVersionMapper datasetVersionMapper = mock(DatasetVersionMapper.class);
+        given(datasetVersionMapper.insert(any())).will((Answer<Integer>) invocation -> {
+            DatasetVersionEntity version = invocation.getArgument(0);
+            version.setId(1L);
+            return 1;
+        });
         StoragePathCoordinator storagePathCoordinator = new StoragePathCoordinator("/test");
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         UserService userService = mock(UserService.class);
@@ -105,7 +112,8 @@ public class DatasetUploaderTest {
 
         DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
         String dsName = "testds3";
-        String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
+        Long dsVersionId = 1L;
+        uploadRequest.setUploadId(dsVersionId);
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadBody(
@@ -121,7 +129,7 @@ public class DatasetUploaderTest {
 
         verify(storageAccessService).put(anyString(), any(byte[].class));
         verify(storageAccessService).put(anyString(), any(InputStream.class), anyLong());
-        verify(datasetVersionMapper).updateStatus(null, DatasetVersion.STATUS_AVAILABLE);
+        verify(datasetVersionMapper).updateStatus(1L, DatasetVersion.STATUS_AVAILABLE);
         verify(datasetVersionMapper).insert(any(DatasetVersionEntity.class));
         verify(datasetMapper).findByName(eq(dsName), anyLong(), any());
         verify(datasetMapper).insert(any(DatasetEntity.class));
@@ -129,7 +137,7 @@ public class DatasetUploaderTest {
         when(storageAccessService.list(anyString())).thenReturn(Stream.of("a", "b"));
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.cancel(dsVersionId);
-        verify(datasetVersionMapper).delete(null);
+        verify(datasetVersionMapper).delete(1L);
         verify(storageAccessService).list(anyString());
         verify(storageAccessService).delete("a");
         verify(storageAccessService).delete("b");
@@ -142,8 +150,9 @@ public class DatasetUploaderTest {
                 .versionName("testversion")
                 .status(DatasetVersion.STATUS_AVAILABLE)
                 .build();
-        when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
-        when(datasetVersionMapper.findByNameAndDatasetId(dsVersionId, 1L, true)).thenReturn(mockedEntity);
+        String dsVersion = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
+        when(datasetVersionMapper.findByNameAndDatasetId(dsVersion, 1L, true)).thenReturn(mockedEntity);
+        when(datasetVersionMapper.findByNameAndDatasetId(dsVersion, 1L, true)).thenReturn(mockedEntity);
         when(datasetVersionMapper.find(1L)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(
                 new LengthAbleInputStream(
@@ -153,7 +162,7 @@ public class DatasetUploaderTest {
         );
         when(datasetDao.findByNameForUpdate(anyString(), anyLong()))
                 .thenReturn(DatasetEntity.builder().id(1L).build());
-        when(datasetDao.findVersionByNameAndBundleId(dsVersionId, 1L))
+        when(datasetDao.findVersionByNameAndBundleId(dsVersion, 1L))
                 .thenReturn(mockedEntity);
         HttpServletResponse httpResponse = mock(HttpServletResponse.class);
         ServletOutputStream mockOutPutStream = new ServletOutputStream() {
@@ -175,7 +184,7 @@ public class DatasetUploaderTest {
 
         };
         when(httpResponse.getOutputStream()).thenReturn(mockOutPutStream);
-        datasetUploader.pull("project", dsName, dsVersionId, "index.jsonl", httpResponse);
+        datasetUploader.pull("project", dsName, dsVersion, "index.jsonl", httpResponse);
 
         Assertions.assertThrowsExactly(SwValidationException.class,
                 () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest));

@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.api.protocol.upload;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,7 +27,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class UploadResult {
 
-    @JsonProperty("upload_id")
-    String uploadId;
+    Long uploadId;
 
 }

@@ -7,7 +7,6 @@ import time
 import base64
 import struct
 import typing as t
-import tempfile
 import threading
 from http import HTTPStatus
 from types import TracebackType
@@ -57,6 +56,7 @@ from starwhale.core.dataset.type import (
     BoundingBox,
     NumpyBinary,
     ArtifactType,
+    BoundingBox3D,
     GrayscaleImage,
     COCOObjectAnnotation,
 )
@@ -83,6 +83,7 @@ from starwhale.api._impl.dataset.builder import (
     _header_struct,
     create_generic_cls,
 )
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .test_base import BaseTestCase
 
@@ -140,11 +141,11 @@ def iter_complex_annotations_swds() -> _TGenItem:
 
 def iter_mnist_swds_bin_item_with_id() -> _TGenItem:
     for data in iter_mnist_swds_bin_item():
-        disp_name = data["data"].display_name
-        yield f"mnist-{disp_name}", data
+        display_name = data["data"].display_name
+        yield f"mnist-{display_name}", data
 
 
-def iter_mnist_swds_bin_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+def iter_mnist_swds_bin_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
     with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
         "rb"
     ) as label_file:
@@ -177,24 +178,24 @@ class MNISTBuildExecutor(BuildExecutor):
             "list_dict": [{"a": 1}, {"b": 2}],
         }
 
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Dict[str, t.Any], None, None]:
         return iter_mnist_swds_bin_item()
 
 
 class MNISTBuildWithIDExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         return iter_mnist_swds_bin_item_with_id()
 
 
 def iter_mnist_user_raw_item_with_id() -> t.Generator[
-    t.Tuple[t.Any, t.Any, t.Any], None, None
+    t.Tuple[t.Any, t.Any], None, None
 ]:
     for data in iter_mnist_user_raw_item():
-        image_ = data[0]["image"]
-        yield f"mnist-link-{image_.display_name}", data[0]
+        image_ = data["image"]
+        yield f"mnist-link-{image_.display_name}", data
 
 
-def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+def iter_mnist_user_raw_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
     with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
         "rb"
     ) as label_file:
@@ -210,25 +211,23 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]
                 uri=_mnist_label_path,
                 with_local_fs_data=True,
             )
-            yield (
-                {
-                    "image": GrayscaleImage(
-                        display_name=f"{i}",
-                        shape=(height, width, 1),
-                        link=Link(
-                            uri=str(_mnist_data_path.absolute()),
-                            offset=offset,
-                            size=image_size,
-                            with_local_fs_data=True,
-                        ),
+            yield {
+                "image": GrayscaleImage(
+                    display_name=f"{i}",
+                    shape=(height, width, 1),
+                    link=Link(
+                        uri=str(_mnist_data_path.absolute()),
+                        offset=offset,
+                        size=image_size,
+                        with_local_fs_data=True,
                     ),
-                    "original_data": Binary(fp=_mnist_data_path.absolute()),
-                    "label": _label,
-                    "link": _local_link,
-                    "list_link": [_local_link],
-                    "dict_link": {"key": _local_link},
-                },
-            )
+                ),
+                "original_data": Binary(fp=_mnist_data_path.absolute()),
+                "label": _label,
+                "link": _local_link,
+                "list_link": [_local_link],
+                "dict_link": {"key": _local_link},
+            }
             offset += image_size
 
 
@@ -243,10 +242,16 @@ class TestDatasetCopy(BaseTestCase):
         dataset_name = "complex_annotations"
         dataset_version = "123"
         cloud_project = "project"
+
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/project",
+            json={"data": {"id": 1, "name": "project"}},
+        )
         rm.request(
             HTTPMethod.POST,
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
-            json={"data": {"upload_id": 1}},
+            json={"data": {"uploadId": 1}},
         )
         rm.request(
             HTTPMethod.HEAD,
@@ -386,6 +391,11 @@ class TestDatasetCopy(BaseTestCase):
         cloud_project = "project"
 
         rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/project",
+            json={"data": {"id": 1, "name": "project"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
             json={"message": "existed"},
@@ -516,6 +526,45 @@ class TestDatasetCopy(BaseTestCase):
         assert bbox.x == 2 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
 
+    @patch("os.environ", {})
+    @Mocker()
+    def test_get_remote_project(self, rm: Mocker) -> None:
+        instance_uri = "http://1.1.1.1:8182"
+        project = "1"
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/{project}",
+            json={"data": {"id": 1, "name": "starwhale"}},
+        )
+        remote_uri = f"{instance_uri}/project/1/dataset/ds_test/version/v1"
+
+        origin_conf = config.load_swcli_config().copy()
+        # patch config to pass instance alias check
+        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
+            origin_conf.update(
+                {
+                    "current_instance": "local",
+                    "instances": {
+                        "foo": {"uri": "http://1.1.1.1:8182"},
+                        "local": {"uri": "local"},
+                    },
+                }
+            )
+            mock_conf.return_value = origin_conf
+            dc = DatasetCopy(
+                src_uri=remote_uri,
+                dest_uri="",
+                dest_local_project_uri="self",
+                typ=URIType.DATASET,
+            )
+            remote_resource = Resource(remote_uri, typ=ResourceType[URIType.DATASET])
+            assert (
+                dc._get_remote_project_name(
+                    instance=remote_resource.project.instance.to_uri(), project="1"
+                )
+                == "starwhale"
+            )
+
 
 class MockBinWriter:
     def __init__(self) -> None:
@@ -582,6 +631,11 @@ class TestDatasetBuildExecutor(BaseTestCase):
             volume_bytes_size=100,
         ) as e:
             summary = e.make_swds()
+            scan = e.tabular_dataset.scan()
+            for row in scan:
+                assert isinstance(row.data.get("original_data"), Binary)
+                assert not row.data.get("original_data").fp
+                assert row.data.get("original_data").link.uri
 
         assert summary.rows == 10
 
@@ -929,12 +983,37 @@ class TestDatasetType(TestCase):
         _array = numpy.frombuffer(_bout, dtype=numpy.float64)
         assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
 
+    def test_bbox3d(self) -> None:
+        bbox_a = BoundingBox(1, 2, 3, 4)
+        bbox_b = BoundingBox(3, 4, 3, 4)
+        bbox = BoundingBox3D(bbox_a, bbox_b)
+        assert bbox.to_list() == [[1, 2, 3, 4], [3, 4, 3, 4]]
+        _asdict = json.loads(json.dumps(bbox.asdict()))
+        assert _asdict["_type"] == "bounding_box3D"
+        assert _asdict["bbox_a"]["x"] == 1
+        assert _asdict["bbox_a"]["y"] == 2
+        assert _asdict["bbox_a"]["width"] == 3
+        assert _asdict["bbox_a"]["height"] == 4
+        assert _asdict["bbox_b"]["x"] == 3
+        assert _asdict["bbox_b"]["y"] == 4
+        assert _asdict["bbox_b"]["width"] == 3
+        assert _asdict["bbox_b"]["height"] == 4
+        assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
+        _bout = bbox.to_bytes()
+        assert isinstance(_bout, bytes)
+        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(
+            BoundingBox3D.SHAPE
+        )
+        assert numpy.array_equal(
+            _array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64)
+        )
+
     def test_text(self) -> None:
         text = Text("test")
         _asdict = json.loads(json.dumps(text.asdict()))
         assert text.to_bytes() == b"test"
         assert "fp" not in _asdict
-        assert _asdict["content"] == "test"
+        assert _asdict["_content"] == "test"
         assert _asdict["_type"] == "text"
         assert _asdict["_mime_type"] == MIMEType.PLAIN.value
         assert text.to_str() == "test"
@@ -1019,6 +1098,9 @@ class TestDatasetType(TestCase):
 
         content = link.to_bytes()
         assert content == raw_content
+
+        b = Binary(link=link)
+        assert b.to_bytes() == raw_content
 
     @Mocker()
     def test_link_cloud(self, rm: Mocker) -> None:
@@ -1520,8 +1602,18 @@ class TestTabularDataset(TestCase):
 
 
 class TestRowWriter(BaseTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._original_cwd = os.getcwd()
+        os.chdir(self.local_storage)
+
+    def tearDown(self) -> None:
+        if hasattr(self, "_original_cwd"):
+            os.chdir(self._original_cwd)
+        super().tearDown()
+
     @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_update(self, m_make_swds: MagicMock) -> None:
+    def test_row_update(self, m_make_swds: MagicMock) -> None:
         rw = RowWriter(dataset_name="mnist", dataset_version="123456")
 
         assert rw._builder is None
@@ -1626,21 +1718,16 @@ class TestRowWriter(BaseTestCase):
         assert items[0].index == 1
 
     def test_close(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            rw = RowWriter(
-                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
-            )
-            rw.update(DataRow(index=1, data={"data": Binary(b"test"), "label": 1}))
-            rw.close()
-            assert not rw.is_alive()
+        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
+        rw.update(DataRow(index=1, data={"data": Binary(b"test"), "label": 1}))
+        rw.close()
+        assert not rw.is_alive()
 
-            with RowWriter(
-                dataset_name="mnist", dataset_version="123456", workdir=Path(tmpdirname)
-            ) as context_rw:
-                context_rw.update(
-                    DataRow(index=1, data={"data": Binary(b"test"), "label": 1})
-                )
-            assert not rw.is_alive()
+        with RowWriter(dataset_name="mnist", dataset_version="123456") as context_rw:
+            context_rw.update(
+                DataRow(index=1, data={"data": Binary(b"test"), "label": 1})
+            )
+        assert not rw.is_alive()
 
     def test_make_swds_bin(self) -> None:
         workdir = Path(self.local_storage) / ".user" / "workdir"

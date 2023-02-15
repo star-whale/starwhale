@@ -1,5 +1,4 @@
 import io
-from pprint import pprint
 
 from PIL import Image as PILImage
 from PIL import ImageDraw
@@ -28,10 +27,8 @@ def show():
     ds = dataset(ds_name)
     row = ds.fetch_one()
     data = row.data
-    annotations = row.annotations
-    pprint(annotations)
-    with PILImage.open(io.BytesIO(data.fp)) as img:
-        for obj in annotations["object"]:
+    with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
+        for obj in data["object"]:
             draw_bbox(img, obj["bbox_view"])
         img.show()
 

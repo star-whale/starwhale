@@ -40,6 +40,10 @@ from starwhale.core.dataset.tabular import (
 from .loader import DataRow, DataLoader, get_data_loader
 from .builder import RowWriter, BaseBuildExecutor
 
+if t.TYPE_CHECKING:
+    import tensorflow as tf
+    from torch.utils.data import Dataset as TorchDataset
+
 _DType = t.TypeVar("_DType", bound="Dataset")
 _ItemType = t.Union[str, int, slice]
 _HandlerType = t.Optional[t.Union[t.Callable, BaseBuildExecutor]]
@@ -501,7 +505,7 @@ class Dataset:
         transform: t.Optional[t.Callable] = None,
         drop_index: bool = True,
         skip_default_transform: bool = False,
-    ) -> t.Any:
+    ) -> TorchDataset:
         from starwhale.integrations.pytorch import TorchIterableDataset
 
         return TorchIterableDataset(
@@ -514,7 +518,7 @@ class Dataset:
     def to_tensorflow(
         self,
         drop_index: bool = True,
-    ) -> t.Any:
+    ) -> tf.data.Dataset:
         from starwhale.integrations.tensorflow import to_tf_dataset
 
         return to_tf_dataset(dataset=self, drop_index=drop_index)

@@ -12,15 +12,10 @@ export interface IButtonProps extends ButtonProps {
     icon?: IconTypesT
 }
 
-export default function Button({
-    isFull = false,
-    size = 'compact',
-    kind = 'primary',
-    as,
-    icon,
-    children,
-    ...props
-}: IButtonProps) {
+function Button(
+    { isFull = false, size = 'compact', kind = 'primary', as, icon, children, ...props }: IButtonProps,
+    ref: React.Ref<HTMLButtonElement>
+) {
     const [, theme] = themedUseStyletron()
     const defaultStyles: React.CSSProperties = {
         borderTopLeftRadius: theme.borders.radius200,
@@ -28,8 +23,8 @@ export default function Button({
         borderBottomLeftRadius: theme.borders.radius200,
         borderBottomRightRadius: theme.borders.radius200,
         lineHeight: '14px',
-        paddingTop: '9px',
-        paddingBottom: '9px',
+        paddingTop: kind === 'tertiary' ? '5px' : '9px',
+        paddingBottom: kind === 'tertiary' ? '5px' : '9px',
         paddingLeft: '9px',
         paddingRight: '9px',
     }
@@ -124,8 +119,13 @@ export default function Button({
     }
 
     return (
-        <BaseButton size={size} kind={kind} {...props} overrides={overrides}>
+        <BaseButton size={size} kind={kind} {...props} overrides={overrides} ref={ref}>
             {children}
         </BaseButton>
     )
 }
+
+const ForwardButton = React.forwardRef<HTMLButtonElement, IButtonProps>(Button)
+ForwardButton.displayName = 'Button'
+
+export default ForwardButton

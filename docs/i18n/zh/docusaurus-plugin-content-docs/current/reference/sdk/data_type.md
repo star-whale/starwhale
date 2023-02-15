@@ -43,7 +43,7 @@ def _make_coco_annotations(
     binary_mask_tensor = torch.as_tensor(binary_mask, dtype=torch.uint8)
     binary_mask_tensor = (
         binary_mask_tensor.permute(0, 2, 1).contiguous().permute(0, 2, 1)
-    )
+    )<<<<<<< sintel_main
 
     coco_annotations = []
     for i in range(0, len(object_ids)):
@@ -62,7 +62,7 @@ def _make_coco_annotations(
                 id=self.object_id,
                 image_id=image_id,
                 category_id=1,  # PennFudan Dataset only has one class-PASPersonStanding
-                segmentation=rle,
+                segmentation=rle,<<<<<<< sintel_main
                 area=_bbox.width * _bbox.height,
                 bbox=_bbox,
                 iscrowd=0,  # suppose all instances are not crowd
@@ -316,7 +316,7 @@ Text(
 )
 ```
 
-|参数|说明|
+|参数|说明|<<<<<<< sintel_main
 |---|---|
 |`content`|text内容|
 |`encoding`|text的编码格式|
@@ -587,6 +587,24 @@ class LinkType(Enum):
     S3 = "s3"
     UNDEFINED = "undefined"
 ```
+
+
+## 14. starwhale.BoundingBox3D
+
+提供在二维界面上绘制3D边界框的能力，需要前后两个边界框的`BoundingBox`信息`bbox_a`, `bbox_b`。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/4d240d0c8ec1e7d7c98746ebbd814d2647fb16af/client/starwhale/core/dataset/type.py#L551)。
+
+```python
+BoundingBox3D(
+    bbox_a: BoundingBox,
+    bbox_b: BoundingBox,
+)
+
+```
+
+|参数| 说明                |
+|---|-------------------|
+|`bbox_a`| 在二维UI上，3D框靠近用户的一面 |
+|`bbox_b`| 在二维UI上，3D框远离用户的一面        |
 
 ## 15. starwhale.NumpyBinary
 

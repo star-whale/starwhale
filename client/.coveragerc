@@ -9,6 +9,9 @@ exclude_lines =
   raise
   if __name__ == .__main__.:
   __all__
+  if t.TYPE_CHECKING:
+  if TYPE_CHECKING:
+  if typing.TYPE_CHECKING:
 
 [run]
 relative_files = True

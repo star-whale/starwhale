@@ -80,10 +80,18 @@ class Resource:
             self.project = project
         else:
             try:
-                self.project = Project.parse(uri, ignore_rc_type=typ is not None)
+                self.project = Project.parse_from_full_uri(
+                    uri, ignore_rc_type=typ is not None
+                )
                 uri = self.project.path
             except UriTooShortException:
                 self.project = Project()
+
+        if "://" in uri:
+            uri = uri.split("://", 1)[-1]
+
+        if "//" in uri:
+            raise Exception(f"wrong uri({uri}) format with '//'")
 
         parts = len(uri.split("/"))
         # 3 == len('mnist/version/latest'.split(/))
@@ -124,7 +132,7 @@ class Resource:
             self.version = parts[-1]
         else:
             if parts[1] != "version":
-                raise Exception(f"invalid uri {uri}")
+                raise Exception(f"invalid uri without version field: {uri}")
             self.name = parts[0]
             self.version = parts[-1]
 

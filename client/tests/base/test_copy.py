@@ -137,7 +137,17 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -147,7 +157,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": "mnist",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -163,6 +173,16 @@ class TestBundleCopy(TestCase):
             {
                 "src_uri": f"mnist/{version[:5]}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_runtime": "mnist",
+            },
+            {
+                "src_uri": f"mnist/{version[:5]}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_runtime": "mnist",
             },
             {
@@ -232,22 +252,12 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
             json={"resources": []},
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.SRC_TAR.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "src.tar",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=SRC_TAR&partName=src.tar&signature=",
             content=b"mnist model content",
         )
         # m_load_yaml.return_value = {"resources": []}
@@ -351,17 +361,32 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
                 "src_uri": f"local/project/self/model/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/model/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
                 "src_uri": "mnist",
                 "dest_uri": "cloud://pre-bare/project/mnist",
+                "dest_model": "mnist",
+            },
+            {
+                "src_uri": "mnist",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_model": "mnist",
             },
             {
@@ -371,7 +396,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": f"mnist/version/{version[:5]}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
             },
             {
@@ -407,7 +432,7 @@ class TestBundleCopy(TestCase):
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
                 headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
-                json={"data": {"upload_id": "123"}},
+                json={"data": {"uploadId": "123"}},
             )
             ModelCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.MODEL
@@ -438,6 +463,11 @@ class TestBundleCopy(TestCase):
     def test_dataset_copy_c2l(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/myproject",
+            json={"data": {"id": 1, "name": "myproject"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}",
             json={"message": "existed"},
@@ -445,15 +475,15 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?part_name=",
-            headers={
-                "X-SW-DOWNLOAD-TYPE": FileDesc.MANIFEST.name,
-                "X-SW-DOWNLOAD-OBJECT-NAME": "_manifest.yaml",
-                "X-SW-DOWNLOAD-OBJECT-HASH": "",
-            },
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
             json={
                 "signature": [],
             },
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=SRC_TAR&partName=archive.swds_meta&signature=",
+            content=b"mnist dataset content",
         )
         rm.request(
             HTTPMethod.POST,
@@ -565,17 +595,27 @@ class TestBundleCopy(TestCase):
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
-                "src_uri": f"local/project/self/dataset/mnist/version/{version}",
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "pre-bare/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": f"local/project/self/mnist/version/{version}",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist",
+                "dest_dataset": "mnist",
+            },
+            {
+                "src_uri": "mnist",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
                 "src_uri": "mnist",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
@@ -585,7 +625,7 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": f"mnist/version/{version[:5]}",
-                "dest_uri": "cloud://pre-bare/mnist",
+                "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_dataset": "mnist",
             },
             {
@@ -600,6 +640,16 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": "mnist/v1",
+                "dest_uri": "pre-bare/project/mnist/mnist-new-alias",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
+                "dest_uri": "http://1.1.1.1:8182/project/mnist/mnist-new-alias",
+                "dest_dataset": "mnist-new-alias",
+            },
+            {
+                "src_uri": "mnist/v1",
                 "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
                 "dest_dataset": "mnist-new-alias",
             },
@@ -609,6 +659,12 @@ class TestBundleCopy(TestCase):
                 "dest_dataset": "mnist-new-alias",
             },
         ]
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist",
+            json={"data": {"id": 1, "name": "mnist"}},
+        )
 
         for case in cases:
             head_request = rm.request(
@@ -620,7 +676,7 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
-                json={"data": {"upload_id": 1}},
+                json={"data": {"uploadId": 1}},
             )
             DatasetCopy(
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
@@ -639,7 +695,7 @@ class TestBundleCopy(TestCase):
             upload_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}/file",
-                json={"data": {"upload_id": 1}},
+                json={"data": {"uploadId": 1}},
             )
             BundleCopy(
                 src_uri="mnist/v1",
@@ -722,6 +778,11 @@ class TestBundleCopy(TestCase):
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
     def test_upload_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/project",
+            json={"data": {"id": 1, "name": "project"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde",
             json={"message": "already existed"},
@@ -730,7 +791,7 @@ class TestBundleCopy(TestCase):
         rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde/file",
-            json={"data": {"upload_id": 1}},
+            json={"data": {"uploadId": 1}},
         )
 
         dataset_dir = (
@@ -764,6 +825,11 @@ class TestBundleCopy(TestCase):
     def test_download_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
         hash_name1 = "bfa8805ddc2d43df098e43832c24e494ad"
         hash_name2 = "f954056e4324495ae5bec4e8e5e6d18f1b"
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/1",
+            json={"data": {"id": 1, "name": "project"}},
+        )
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest",

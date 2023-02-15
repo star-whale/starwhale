@@ -13,6 +13,7 @@ ds_name = "fer2013/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-show_image(np.frombuffer(data.fp, dtype=np.uint8).reshape(data.shape))
-print(row.annotations)
+show_image(
+    np.frombuffer(data["image"].to_bytes(), dtype=np.uint8).reshape(data["image"].shape)
+)
+print(data["label"])

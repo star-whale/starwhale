@@ -25,9 +25,8 @@ ds_name = "wider_face/version/latest"
 ds = dataset(ds_name)
 row = ds["0--Parade/0_Parade_marchingband_1_205.jpg"]
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
-    for face in annotations["faces"]:
+    for face in data["faces"]:
         draw_bbox(draw, face["bbox"])
     img.show()

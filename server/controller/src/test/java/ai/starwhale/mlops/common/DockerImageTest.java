@@ -120,20 +120,20 @@ public class DockerImageTest {
     @Test
     public void testOnlyNameConstructor() {
         DockerImage dockerImage = new DockerImage("star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
-        Assertions.assertEquals(new DockerImage(null, "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+        Assertions.assertEquals(new DockerImage("", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage(null, "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("", "star-whale/starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage(null, "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("", "star-whale/starwhale"), dockerImage);
 
     }
 
     @Test
     public void testResolve() {
-        Map<String, String> images = Map.of("", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+        Map<String, String> images = Map.of(
                 "docker.io", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
                 "docker.io/", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
                 "ghcr.io", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
@@ -160,6 +160,8 @@ public class DockerImageTest {
                         "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507")
                         .resolve(k)
         ));
+
+        images.forEach((k, v) -> Assertions.assertEquals(v, new DockerImage(v).resolve("")));
 
     }
 

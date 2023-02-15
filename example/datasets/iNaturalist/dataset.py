@@ -36,18 +36,15 @@ def build_ds():
         if cat.get("id"):
             cat.pop("id")
         img_file_name_ = img["file_name"]
+        cat["image"] = Image(
+            link=Link(uri=f"{PATH_ROOT}/{img_file_name_}"),
+            display_name=anno["image_id"],
+            mime_type=MIMEType.JPEG,
+            shape=(img["height"], img["width"]),
+        )
         ds.append(
             (
                 anno["image_id"],
-                Link(
-                    uri=f"{PATH_ROOT}/{img_file_name_}",
-                    data_type=Image(
-                        display_name=anno["image_id"],
-                        mime_type=MIMEType.JPEG,
-                        shape=(img["height"], img["width"]),
-                    ),
-                    with_local_fs_data=False,
-                ),
                 cat,
             )
         )

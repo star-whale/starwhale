@@ -11,9 +11,9 @@ title: The `emnist-digits-test` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.GrayscaleImage` type, 28*28 Grayscale Image
-- `annotations`:
-  - label: int, 0-9
+- `data`:
+  - `image`: `starwhale.GrayscaleImage` type, 28*28 Grayscale Image
+  - `label`: `int`, 0-9
 
 ### Web viewer
 

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.storage.aliyun;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
+import ai.starwhale.mlops.storage.NopCloserInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
@@ -76,7 +77,10 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     public void put(String path, InputStream inputStream, long size) throws IOException {
         var meta = new ObjectMetadata();
         meta.setContentLength(size);
-        this.ossClient.putObject(this.bucket, path, inputStream, meta);
+        // aliyun oss sdk will close the original input stream at the end
+        // https://github.com/aliyun/aliyun-oss-java-sdk/blob/10727ab9f79efa2a4f2c7fbec348e44c04dd6c42/src/main/java/com/aliyun/oss/common/comm/ServiceClient.java#L89
+        var is = new NopCloserInputStream(inputStream);
+        this.ossClient.putObject(this.bucket, path, is, meta);
     }
 
     @Override

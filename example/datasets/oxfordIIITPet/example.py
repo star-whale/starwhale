@@ -27,12 +27,13 @@ ds_name = "oxfordIIITPet/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
-    io.BytesIO(annotations["mask"].to_bytes(ds_name))
+image = data.pop("image")
+mask = data.pop("mask")
+with PILImage.open(io.BytesIO(image.to_bytes())) as img, PILImage.open(
+    io.BytesIO(mask.to_bytes())
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
-    pets = annotations["pets"]
+    pets = data["pets"]
     for pet in pets:
         draw_bbox(draw, pet.pop("bbox"))
 
@@ -40,6 +41,5 @@ with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
     msk = PILImage.fromarray(_npy)
     msk.putalpha(127)
     img.paste(msk, (0, 0), mask=msk)
-    annotations.pop("mask")
-    draw.text((28, 36), json.dumps(annotations, indent=2), fill="red")
+    draw.text((28, 36), json.dumps(data, indent=2), fill="red")
     img.show()

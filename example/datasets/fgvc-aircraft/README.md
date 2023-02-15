@@ -11,10 +11,8 @@ title: The FGVC-Aircraft Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` type, JPEG Image:
-  - `fp`: image bytes
-  - `shape`: image shape (width, height)
-- `annotations`:
+- `data`:
+  - `image`: `starwhale.Image`
   - `family`: String (such as 'Boeing 707')
 
 ### Web viewer

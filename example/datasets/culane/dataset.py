@@ -41,25 +41,28 @@ def do_iter_item():
             sw_lines = [to_sw_line(line.split()) for line in splitlines]
             if not sw_lines:
                 continue
-            annotation = {
-                "mask": Link(
-                    with_local_fs_data=False,
-                    data_type=Image(
-                        display_name=f"{name_no_suff}.png", mime_type=MIMEType.PNG
+            data = {
+                "image": Image(
+                    display_name=f_name_,
+                    mime_type=MIMEType.JPEG,
+                    link=Link(
+                        uri=f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{f_name_}",
                     ),
-                    uri=f"{PATH_ROOT}/{SEG_LABEL_PATH}/{dir_name_}/{name_no_suff}.png",
+                ),
+                "mask": Image(
+                    display_name=f"{name_no_suff}.png",
+                    mime_type=MIMEType.PNG,
+                    as_mask=True,
+                    link=Link(
+                        uri=f"{PATH_ROOT}/{SEG_LABEL_PATH}/{dir_name_}/{name_no_suff}.png",
+                    ),
                 ),
                 "lines": sw_lines,
             }
             ds.append(
                 (
                     f"{dir_name_}/{name_no_suff}",
-                    Link(
-                        uri=f"{PATH_ROOT}/{DATA_PATH}/{dir_name_}/{f_name_}",
-                        data_type=Image(display_name=f_name_, mime_type=MIMEType.JPEG),
-                        with_local_fs_data=False,
-                    ),
-                    annotation,
+                    data,
                 )
             )
     ds.commit()

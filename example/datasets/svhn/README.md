@@ -10,8 +10,8 @@ title: The `svhn` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `numbers`: list
       - `bbox`: `starwhale.BoundingBox`
       - `label`: `np.float` the label for the number in the bbox

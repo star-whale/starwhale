@@ -11,8 +11,8 @@ export function useDatastoreColumns(columnTypes: ColumnSchemaDesc[] = []): Colum
 
         columnTypes
             ?.sort((ca, cb) => {
-                if (ca.name === 'id') return -1
-                if (cb.name === 'id') return 1
+                if (ca.name === 'sys/id') return -1
+                if (cb.name === 'sys/id') return 1
                 if (ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
                     return ca.name.localeCompare(cb.name)
                 }

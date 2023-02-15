@@ -22,8 +22,6 @@ dependencies:
   - files:
       - dest: bin/prepare.sh
         name: prepare
-        post: bash bin/prepare.sh
-        pre: ls bin/prepare.sh
         src: scripts/prepare.sh
 environment:
   arch: noarch

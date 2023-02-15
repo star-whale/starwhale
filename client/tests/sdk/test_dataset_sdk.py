@@ -650,7 +650,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         upload_file_req = rm.request(
             HTTPMethod.POST,
             f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}/file",
-            json={"data": {"upload_id": "123"}},
+            json={"data": {"uploadId": "123"}},
         )
 
         _store = ds._Dataset__core_dataset.store  # type: ignore
@@ -907,7 +907,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         rm.request(
             HTTPMethod.POST,
             f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}/file",
-            json={"data": {"upload_id": "123"}},
+            json={"data": {"uploadId": "123"}},
         )
 
         ds.copy("cloud://test/project/self")

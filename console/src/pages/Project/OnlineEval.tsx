@@ -4,7 +4,7 @@ import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { getToken } from '@/api'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { fetchModel } from '@/domain/model/services/model'
 import { useQuery } from 'react-query'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
@@ -17,6 +17,7 @@ import yaml from 'js-yaml'
 import css from '@/assets/GradioWidget/es/style.css'
 // eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
+import qs from 'qs'
 
 declare global {
     interface Window {
@@ -128,14 +129,13 @@ export default function OnlineEval() {
                 return
             }
 
-            fetch(`/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file`, {
-                headers: {
-                    'Authorization': getToken(),
-                    'X-SW-DOWNLOAD-OBJECT-PATH': 'src/svc.json',
-                    'X-SW-DOWNLOAD-OBJECT-NAME': 'svc.json',
-                    'X-SW-DOWNLOAD-OBJECT-HASH': '',
-                },
-            })
+            fetch(
+                `/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file?${qs.stringify({
+                    Authorization: getToken(),
+                    partName: 'svc.json',
+                    signature: '',
+                })}`
+            )
                 .then((res) => res.json())
                 .then((data) => {
                     window.gradio_config = data

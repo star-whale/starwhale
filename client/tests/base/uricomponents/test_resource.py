@@ -48,7 +48,7 @@ class TestResource(TestCase):
         with self.assertRaises(Exception):
             Resource(uri="mnist/foo/bar", typ=ResourceType.dataset, project=p)
 
-    @patch("starwhale.base.uricomponents.resource.Project.parse")
+    @patch("starwhale.base.uricomponents.resource.Project.parse_from_full_uri")
     def test_with_full_uri(self, mock_parse: MagicMock) -> None:
         ins = mock_parse.return_value
         ins.path = "dataset/mnist/version/foo"
@@ -103,7 +103,7 @@ class TestResource(TestCase):
         assert r.to_uri().raw == "local/project/self/runtime/mnist/version/foo"
 
     @patch("starwhale.base.uricomponents.resource.glob")
-    @patch("starwhale.base.uricomponents.resource.Project.parse")
+    @patch("starwhale.base.uricomponents.resource.Project.parse_from_full_uri")
     def test_version_only_no_match(
         self, mock_parse: MagicMock, mock_glob: MagicMock
     ) -> None:
@@ -140,9 +140,13 @@ class TestResource(TestCase):
             "instances": {
                 "foo": {"uri": "https://foo.com"},
                 "bar": {"uri": "https://bar.com"},
+                "dev": {"uri": "http://127.0.0.1:8082"},
             },
         }
         tests = {
+            "http://127.0.0.1:8082/projects/1/models": Expect(
+                "dev", "1", ResourceType.model
+            ),
             "https://foo.com/projects/1/models": Expect("foo", "1", ResourceType.model),
             "https://foo.com/projects/2/runtimes": Expect(
                 "foo", "2", ResourceType.runtime
@@ -175,12 +179,15 @@ class TestResource(TestCase):
                 "local": {"uri": "local"},
             },
         }
-        p = Resource("local/project/self/mnist", typ=ResourceType.runtime)
-        assert p.name == "mnist"
-        assert p.project.name == "self"
-        assert p.instance.alias == "local"
 
-        p = Resource("cloud://bar/project/self/mnist", typ=ResourceType.runtime)
-        assert p.name == "mnist"
-        assert p.project.name == "self"
-        assert p.instance.alias == "bar"
+        tests = {
+            "bar/project/self/mnist": ("mnist", "self", "bar"),
+            "local/project/self/mnist": ("mnist", "self", "local"),
+            "cloud://bar/project/self/mnist": ("mnist", "self", "bar"),
+        }
+
+        for uri, expect in tests.items():
+            p = Resource(uri, typ=ResourceType.runtime)
+            assert p.name == expect[0]
+            assert p.project.name == expect[1]
+            assert p.instance.alias == expect[2]

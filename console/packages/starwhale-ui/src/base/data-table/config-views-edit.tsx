@@ -87,8 +87,17 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 <LabelSmall>Add Filter</LabelSmall>
                 <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
             </div>
-            <div className='inherit-height'>
-                <ConfigManageColumns ref={columnRef} isInline view={props.view} columns={props.columns ?? []} />
+            <div className='inherit-height' style={{ minHeight: '300px' }}>
+                <ConfigManageColumns
+                    ref={columnRef}
+                    isInline
+                    view={
+                        props.view ?? {
+                            ids: props.columns.map((column) => column.key),
+                        }
+                    }
+                    columns={props.columns ?? []}
+                />
             </div>
             <div
                 className={css({

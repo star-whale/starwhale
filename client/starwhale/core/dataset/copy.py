@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import copy
-from typing import Iterator
+from typing import Any, Iterator
 from pathlib import Path
 
 from rich.progress import Progress
@@ -11,10 +11,12 @@ from starwhale.utils import console, load_yaml, NoSupportError
 from starwhale.consts import (
     FileDesc,
     FileNode,
+    HTTPMethod,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
     ARCHIVED_SWDS_META_FNAME,
 )
+from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.bundle_copy import BundleCopy
 
@@ -43,7 +45,7 @@ class DatasetCopy(BundleCopy):
             _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
             yield FileNode(
                 path=_path,
-                name=os.path.basename(_path),
+                name=_hash,
                 size=_size,
                 file_desc=FileDesc.DATA,
                 signature=_hash,
@@ -77,7 +79,7 @@ class DatasetCopy(BundleCopy):
                 path=_dest,
                 signature=_hash,
                 size=_size,
-                name=_hash[: DatasetStorage.short_sign_cnt],
+                name=_hash,
                 file_desc=FileDesc.DATA,
             )
 
@@ -106,7 +108,10 @@ class DatasetCopy(BundleCopy):
         ) as local, TabularDataset(
             name=self.bundle_name,
             version=self.bundle_version,
-            project=self.dest_uri.project,
+            project=self._get_remote_project_name(
+                self.dest_uri,
+                self.dest_uri.project,
+            ),
             instance_name=self.dest_uri.instance,
         ) as remote:
             console.print(
@@ -128,7 +133,9 @@ class DatasetCopy(BundleCopy):
             ) as local, TabularDataset(
                 name=self.bundle_name,
                 version=self.bundle_version,
-                project=self.src_uri.project,
+                project=self._get_remote_project_name(
+                    self.src_resource.project.instance.to_uri(), self.src_uri.project
+                ),
                 instance_name=self.src_uri.instance,
             ) as remote:
                 console.print(
@@ -141,3 +148,13 @@ class DatasetCopy(BundleCopy):
                 local._info = copy.deepcopy(remote.info)
 
         super()._do_download_bundle_dir(progress)
+
+    def _get_remote_project_name(self, instance: URI, project: str) -> Any:
+        resp = self.do_http_request(
+            f"/project/{project}",
+            instance_uri=instance,
+            method=HTTPMethod.GET,
+            use_raise=True,
+        )
+
+        return resp.json().get("data", {}).get("name")

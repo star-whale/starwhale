@@ -58,3 +58,7 @@ class TestInstance(TestCase):
         ins = Instance(uri="local/baz/foo")
         assert ins.alias == "local"
         assert ins.path == "baz/foo"
+
+        ins = Instance(uri="foo/baz")
+        assert ins.alias == "foo"
+        assert ins.path == "baz"

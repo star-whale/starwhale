@@ -151,6 +151,9 @@ def _quickstart(
     "-ie", "--include-editable", is_flag=True, help="Include editable packages"
 )
 @click.option(
+    "-ilw", "--include-local-wheel", is_flag=True, help="Include local wheel packages"
+)
+@click.option(
     "-del",
     "--disable-env-lock",
     is_flag=True,
@@ -186,6 +189,7 @@ def _build(
     runtime_yaml: str,
     gen_all_bundles: bool,
     include_editable: bool,
+    include_local_wheel: bool,
     disable_env_lock: bool,
     no_cache: bool,
     env_prefix_path: str,
@@ -198,6 +202,7 @@ def _build(
         yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
+        include_local_wheel=include_local_wheel,
         disable_env_lock=disable_env_lock,
         no_cache=no_cache,
         env_prefix_path=env_prefix_path,
@@ -367,6 +372,10 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
             swcli runtime cp mnist-local/version/latest cloud://pre-k8s/project/mnist
 
         \b
+        - copy standalone instance(local) default project(self)'s mnist-local runtime to cloud instance(pre-k8s) mnist project without 'cloud://' prefix
+            swcli runtime cp mnist-local/version/latest pre-k8s/project/mnist
+
+        \b
         - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
             swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
     """
@@ -407,11 +416,13 @@ def _activate(uri: str, path: str) -> None:
 @runtime_cmd.command("lock")
 @click.argument("target_dir", default=".")
 @click.option(
+    "-f",
     "--yaml-name",
     default=DefaultYAMLName.RUNTIME,
     help=f"Runtime YAML file name, default is {DefaultYAMLName.RUNTIME}",
 )
 @click.option(
+    "-dai",
     "--disable-auto-inject",
     is_flag=True,
     help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
@@ -428,16 +439,33 @@ def _activate(uri: str, path: str) -> None:
 @optgroup.option(  # type: ignore
     "-s", "--env-use-shell", is_flag=True, default=False, help="use current shell"
 )
-@click.option("--stdout", is_flag=True, help="Output lock file content to the stdout")
 @click.option(
+    "-so", "--stdout", is_flag=True, help="Output lock file content to the stdout"
+)
+@click.option(
+    "-ie",
     "--include-editable",
     is_flag=True,
     help="Include editable packages, only for venv mode",
 )
 @click.option(
+    "-ilw",
+    "--include-local-wheel",
+    is_flag=True,
+    help="Include local wheel packages, only for venv mode",
+)
+@click.option(
+    "-epo",
     "--emit-pip-options",
     is_flag=True,
     help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+)
+@click.option(
+    "-nc",
+    "--no-cache",
+    is_flag=True,
+    help="Invalid the cached(installed) packages in the isolate env when env-lock is enabled, \
+    only for auto-generated environments",
 )
 def _lock(
     target_dir: str,
@@ -448,7 +476,9 @@ def _lock(
     env_use_shell: bool,
     stdout: bool,
     include_editable: bool,
+    include_local_wheel: bool,
     emit_pip_options: bool,
+    no_cache: bool,
 ) -> None:
     """
     [Only Standalone]Lock Python venv or conda environment
@@ -462,8 +492,10 @@ def _lock(
         env_name,
         env_prefix_path,
         disable_auto_inject,
+        no_cache,
         stdout,
         include_editable,
+        include_local_wheel,
         emit_pip_options,
         env_use_shell,
     )

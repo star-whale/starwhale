@@ -4,7 +4,11 @@ import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 
 export default function Pending({ style }: { style?: React.CSSProperties }) {
     return (
-        <LoginLayout style={style}>
+        <LoginLayout
+            style={{
+                ...style,
+            }}
+        >
             <div
                 style={{
                     display: 'flex',
@@ -25,5 +29,16 @@ export default function Pending({ style }: { style?: React.CSSProperties }) {
                 </div>
             </div>
         </LoginLayout>
+    )
+}
+
+export function NoneBackgroundPending() {
+    return (
+        <Pending
+            style={{
+                backgroundColor: 'none',
+                backgroundImage: 'none',
+            }}
+        />
     )
 }

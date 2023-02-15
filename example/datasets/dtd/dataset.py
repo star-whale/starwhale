@@ -23,12 +23,16 @@ def build_ds():
         ds.append(
             (
                 img_pth,
-                Link(
-                    uri=f"{PATH_ROOT}/{DATA_PATH}/{img_pth}",
-                    data_type=Image(display_name=img_pth, mime_type=MIMEType.JPEG),
-                    with_local_fs_data=False,
-                ),
-                {"labels": labels},
+                {
+                    "image": Image(
+                        display_name=img_pth,
+                        mime_type=MIMEType.JPEG,
+                        link=Link(
+                            uri=f"{PATH_ROOT}/{DATA_PATH}/{img_pth}",
+                        ),
+                    ),
+                    "labels": labels,
+                },
             )
         )
     ds.commit()

@@ -51,7 +51,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -215,8 +214,6 @@ public interface DatasetApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<UploadResult>> uploadDs(
-            @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadId,
-            @RequestHeader(name = "X-SW-UPLOAD-DATA-URI", required = false) String uri,
             @PathVariable(name = "projectUrl") String projectUrl,
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
             @PathVariable(name = "datasetName") String datasetName,
@@ -235,8 +232,8 @@ public interface DatasetApi {
             @PathVariable(name = "projectUrl") String projectUrl,
             @PathVariable(name = "datasetUrl") String datasetUrl,
             @PathVariable(name = "versionUrl") String versionUrl,
-            @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified")
-            @RequestParam(name = "part_name", required = false) String partName,
+            @Parameter(name = "partName", description = "optional, _manifest.yaml is used if not specified")
+            @RequestParam(name = "partName", required = false) String partName,
             HttpServletResponse httpResponse);
 
     @Operation(summary = "Pull Dataset uri file contents",

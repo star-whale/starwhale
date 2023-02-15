@@ -10,8 +10,8 @@ title: The `iNaturalist-val` Dataset
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+    - `image`: `starwhale.Image`
     - `latitude`: `float`,
     - `longitude`: `float`,
     - `name` : `str` category name,

@@ -19,7 +19,7 @@ update user_info set user_pwd='ee9533077d01d2d65a4efdb41129a91e', user_pwd_salt=
 ```yaml
 ---
 dockerSetting:
-  registry: "docker-registry.starwhale.ai"
+  registry: "docker-registry.starwhale.cn"
 resourcePoolSetting:
   - name: pool1
     nodeSelector:
@@ -80,7 +80,7 @@ Server下发的Tasks都是基于docker镜像实现的。如果你的网络不太
 ```yaml
 storageSetting:
   - type: s3
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required
@@ -89,7 +89,7 @@ storageSetting:
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
   - type: minio
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required
@@ -98,7 +98,7 @@ storageSetting:
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
   - type: aliyun
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required

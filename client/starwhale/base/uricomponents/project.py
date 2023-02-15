@@ -46,16 +46,23 @@ class Project:
         # TODO check if project exists for local and remote
 
     @classmethod
-    def parse(cls, uri: str, ignore_rc_type: bool) -> "Project":
+    def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
         """
         Parse project from full uri.
         we do not parse instance and project info from uri less than 5 parts.
-        we prefer that users use `dataset copy mnist -p project` rather than `dataset copy project/dataset/mnist`.
+        we prefer that users use `dataset copy mnist -dlp project` rather than `dataset copy project/dataset/mnist`.
         the second is difficult to write correctly at once and the semantics are not very clear.
         and the long uri usually copied from the website.
         """
-        # TODO ignore '//' if uri like https://foo.com/bar/xxx
-        parts = uri.split("/")
+        if "://" in uri:
+            no_schema_uri = uri.split("://", 1)[-1]
+        else:
+            no_schema_uri = uri
+
+        if "//" in no_schema_uri:
+            raise Exception(f"wrong format uri({uri}) with '//'")
+
+        parts = no_schema_uri.split("/")
         exp = len("local/project/self/dataset/mnist".split("/"))
         if ignore_rc_type:
             # ignore type in uri like dataset

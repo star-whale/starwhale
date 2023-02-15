@@ -43,12 +43,12 @@ def build_ds():
             ds.append(
                 (
                     name,
-                    Link(
-                        uri=f"{PATH_ROOT}/{name}",
-                        data_type=Image(display_name=name, mime_type=MIMEType.JPEG),
-                        with_local_fs_data=False,
-                    ),
                     {
+                        "image": Image(
+                            link=Link(uri=f"{PATH_ROOT}/{name}"),
+                            display_name=name,
+                            mime_type=MIMEType.JPEG,
+                        ),
                         "numbers": nums,
                     },
                 )

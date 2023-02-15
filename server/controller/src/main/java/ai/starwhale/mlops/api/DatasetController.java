@@ -170,11 +170,13 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<UploadResult>> uploadDs(String uploadId, String uri,
+    public ResponseEntity<ResponseMessage<UploadResult>> uploadDs(
             String projectUrl, String datasetUrl, String versionUrl,
             MultipartFile dsFile, DatasetUploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
+        Long uploadId = uploadRequest.getUploadId();
+        String uri = uploadRequest.getUri();
         switch (uploadRequest.getPhase()) {
             case MANIFEST:
                 String text;

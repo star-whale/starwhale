@@ -13,8 +13,10 @@ import FilterOperateMenu from './filter-operate-menu'
 import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
 import { useResizeObserver } from '../../utils/useResizeObserver'
-import ConfigQuery from './config-query'
-import Button from '@starwhale/ui/Button'
+import { useConfigQuery } from './config-query'
+import Button from '../../Button'
+import classNames from 'classnames'
+import { themedUseStyletron } from '../../theme/styletron'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -54,7 +56,7 @@ export function QueryInput(props: any) {
 }
 
 export function StatefulDataTable(props: StatefulDataTablePropsT) {
-    const [css, theme] = useStyletron()
+    const [css] = themedUseStyletron()
     const headlineRef = React.useRef(null)
     const [headlineHeight, setHeadlineHeight] = React.useState(64)
     useResizeObserver(headlineRef, (entries) => {
@@ -68,21 +70,20 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const compareable = props.viewable === undefined ? true : props.compareable
     const queryable = props.viewable === undefined ? true : props.queryable
     const selectable = props.selectable === undefined ? true : props.selectable
+    const queryinline = props.queryinline === undefined ? true : props.queryinline
 
     const { useStore } = props
     const store = useStore()
 
     const { columns } = props
+    // used by when view = all runs, panel table without config to show all columns
     const isFullyLoaded = store.isInit
     const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
-        // if (!columnable) return columns
-        if (!isFullyLoaded) return columns
-
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
-
-        return ids
+        const columnIds = isFullyLoaded ? ids : Array.from(new Set([...pinnedIds, ...columns.map((c) => c.key)]))
+        return columnIds
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
                 return {
@@ -112,21 +113,19 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         },
         [store]
     )
-    const handleSave = useCallback(
-        async (view) => {
-            if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
-            else {
-                store.onViewUpdate(view)
-                props.onSave?.(view)
-            }
-        },
-        [store]
-    )
+    const handleSave = async (view: ConfigT) => {
+        if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
+        else {
+            store.onViewUpdate(view)
+            await props.onSave?.(view)
+        }
+    }
     const handleSaveAs = useCallback(
         (view) => {
             store.onShowViewModel(true, {
                 ...view,
                 id: undefined,
+                updated: false,
             })
         },
         [store]
@@ -139,20 +138,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         [store]
     )
 
-    const handeQuerySet = useCallback(
-        (items) => {
-            store.onCurrentViewQueriesChange(items)
-        },
-        [store]
-    )
-
     // changed status must be after all the store changes(after api success)
-    const changed = useMemo(() => {
-        const view = store.views.find((v) => v.id === store.currentView?.id)
-        if (!view && store.currentView?.id === 'all') return false
-        if (_.isEqual(view, store.currentView)) return false
-        return true
-    }, [store.currentView, store.views])
+    const changed = store.currentView.updated
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
@@ -161,6 +148,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         const sortIndex = $columns.findIndex((c) => c.key === sortBy)
         return [sortIndex, sortDirection]
     }, [store, $columns])
+
+    const { renderConfigQuery } = useConfigQuery(useStore, { columns, queryable })
 
     return (
         <StatefulContainer
@@ -185,14 +174,25 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 textQuery,
             }: StatefulContainerPropsT['children']) => (
                 <>
-                    <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
-                        <div ref={headlineRef}>
+                    <div
+                        data-type='table-toolbar'
+                        className={css({
+                            height: `${headlineHeight}px`,
+                            display: viewable || filterable || searchable || queryable || columnable ? 'block' : 'none',
+                        })}
+                    >
+                        <div ref={headlineRef} className='flex-row-left g-20' style={{ paddingBottom: '20px' }}>
                             <div
-                                className='flex-row-left mb-20 g-20'
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'minmax(1fr 280px) auto auto',
-                                }}
+                                className={classNames(
+                                    'g-20 ',
+                                    css({
+                                        'display': 'grid',
+                                        'gridTemplateColumns': 'minmax(200px, 280px) auto auto',
+                                        ':first-child': {
+                                            marginBottom: '20px',
+                                        },
+                                    })
+                                )}
                             >
                                 {viewable && (
                                     <ConfigViews
@@ -213,29 +213,31 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
 
-                                {changed && store.currentView?.id && (
+                                {viewable && changed && !$rowSelectedIds.size && (
                                     <div>
-                                        <Button onClick={() => handleSave(store.currentView)}>Save</Button>&nbsp;&nbsp;
+                                        {store.currentView?.id !== 'all' && (
+                                            <>
+                                                <Button onClick={() => handleSave(store.currentView)}>Save</Button>
+                                                &nbsp;&nbsp;
+                                            </>
+                                        )}
+
                                         <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
                                     </div>
                                 )}
                             </div>
                             <div
-                                style={{
-                                    gridTemplateColumns: 'minmax(200px,1fr) auto',
-                                    display: 'grid',
-                                    paddingBottom: '20px',
-                                }}
-                            >
-                                {queryable && (
-                                    <div className='table-config-query' style={{ flex: 1 }}>
-                                        <ConfigQuery
-                                            value={store.currentView?.queries ?? []}
-                                            columns={props.columns}
-                                            onChange={handeQuerySet}
-                                        />
-                                    </div>
+                                className={classNames(
+                                    css({
+                                        gridTemplateColumns: 'minmax(200px,1fr) auto',
+                                        display: 'grid',
+                                        marginBottom: queryable && columnable ? '20px' : '0px',
+                                    })
                                 )}
+                            >
+                                <div className='table-config-query' style={{ flex: 1 }}>
+                                    {renderConfigQuery()}
+                                </div>
 
                                 {columnable && !$rowSelectedIds.size && (
                                     <div className='table-config-column flex-row-center'>
@@ -260,6 +262,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 useStore={props.useStore}
                                 columns={$columns}
                                 selectable={selectable}
+                                compareable={compareable}
+                                queryinline={queryinline}
                                 rawColumns={props.columns}
                                 emptyMessage={props.emptyMessage}
                                 filters={$filtersEnabled}
@@ -271,7 +275,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 onSelectNone={onSelectNone}
                                 onSelectOne={onSelectOne}
                                 resizableColumnWidths={resizableColumnWidths}
-                                compareable={compareable}
                                 rowHighlightIndex={rowHighlightIndex}
                                 rows={props.rows}
                                 rowActions={props.rowActions}

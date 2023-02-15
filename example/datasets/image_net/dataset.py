@@ -33,14 +33,14 @@ def do_iter_item():
             _obj["bbox_view"] = to_box_view(_obj["bndbox"])
         anno["annotation"]["object"] = obj
         size_ = anno["annotation"]["size"]
-        yield Link(
-            uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/image-net/ILSVRC/Data/CLS-LOC/val/{img_name}.JPEG",
-            data_type=Image(
-                display_name=img_name,
-                shape=(size_["depth"], size_["height"], size_["width"]),
+        anno["annotation"]["image"] = Image(
+            link=Link(
+                uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/image-net/ILSVRC/Data/CLS-LOC/val/{img_name}.JPEG",
             ),
-            with_local_fs_data=False,
-        ), anno["annotation"]
+            display_name=img_name,
+            shape=(size_["depth"], size_["height"], size_["width"]),
+        )
+        yield anno["annotation"]
 
 
 if __name__ == "__main__":

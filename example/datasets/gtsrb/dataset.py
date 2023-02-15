@@ -21,16 +21,15 @@ def build_ds():
             ds.append(
                 (
                     f"{dir}/{file_name}",
-                    Link(
-                        uri=f"{PATH_ROOT}/{dir}/{file_name}",
-                        data_type=Image(
+                    {
+                        "image": Image(
+                            link=Link(
+                                uri=f"{PATH_ROOT}/{dir}/{file_name}",
+                            ),
                             display_name=file_name,
                             mime_type=MIMEType.PPM,
                             shape=(int(w), int(h)),
                         ),
-                        with_local_fs_data=False,
-                    ),
-                    {
                         "class": clzz,
                         "bbox": BoundingBox(
                             int(xmin),

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: 'indexed-job'
+  name: "indexed-job"
   labels:
     owner: starwhale
 spec:
@@ -15,8 +15,8 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - name: 'worker'
-          image: 'docker.io/library/busybox'
+        - name: "worker"
+          image: "docker.io/library/busybox"
           args:
             - ppl
           volumeMounts:
@@ -25,10 +25,6 @@ spec:
             - mountPath: /opt/starwhale
               name: data
           env:
-            - name: SW_PYPI_INDEX_URL
-              value: https://pypi.doubanio.com/simple/
-            - name: SW_PYPI_TRUSTED_HOST
-              value: pypi.doubanio.com
             - name: SW_PIP_CACHE_DIR
               value: /root/.cache/pip
       volumes:
@@ -37,4 +33,4 @@ spec:
             path: /data
             type: DirectoryOrCreate
         - name: data
-          emptyDir: { }
+          emptyDir: {}

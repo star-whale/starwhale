@@ -14,11 +14,21 @@ import { DataTypes } from '@starwhale/core'
 import { GridTable } from '@starwhale/ui/GridTable'
 
 const useStyles = createUseStyles({
-    header: {
+    header: {},
+    headerTitle: {
+        fontWeight: 'bold',
         display: 'flex',
         alignItems: 'center',
-        height: '36px',
+    },
+    headerBar: {
         gap: 20,
+        height: '52px',
+        lineHeight: '1',
+        marginTop: '35px',
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        paddingBottom: '20px',
     },
     cellCompare: {
         position: 'absolute',
@@ -300,31 +310,33 @@ export default function EvaluationListCompare({
     return (
         <>
             <div className={styles.header}>
-                <LabelSmall $style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                <LabelSmall className={styles.headerTitle}>
                     {title} <span className={styles.compareCount}>{$columns.length}</span>
                 </LabelSmall>
-                <Checkbox
-                    checked={store.compare?.compareShowCellChanges}
-                    onChange={(e) => {
-                        store.onCompareUpdate({
-                            // @ts-ignore
-                            compareShowCellChanges: e.target.checked,
-                        })
-                    }}
-                >
-                    Show cell changes
-                </Checkbox>
-                <Checkbox
-                    checked={store.compare?.compareShowDiffOnly}
-                    onChange={(e) => {
-                        store.onCompareUpdate({
-                            // @ts-ignore
-                            compareShowDiffOnly: e.target.checked,
-                        })
-                    }}
-                >
-                    Rows with diff only
-                </Checkbox>
+                <div className={styles.headerBar}>
+                    <Checkbox
+                        checked={store.compare?.compareShowCellChanges}
+                        onChange={(e) => {
+                            store.onCompareUpdate({
+                                // @ts-ignore
+                                compareShowCellChanges: e.target.checked,
+                            })
+                        }}
+                    >
+                        Show cell changes
+                    </Checkbox>
+                    <Checkbox
+                        checked={store.compare?.compareShowDiffOnly}
+                        onChange={(e) => {
+                            store.onCompareUpdate({
+                                // @ts-ignore
+                                compareShowDiffOnly: e.target.checked,
+                            })
+                        }}
+                    >
+                        Rows with diff only
+                    </Checkbox>
+                </div>
             </div>
             <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
         </>

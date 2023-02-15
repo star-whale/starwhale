@@ -121,7 +121,7 @@ public class HotDatasetHolderTest {
                 .build();
         hotDatasetHolder.manifest(datasetVersion);
 
-        Optional<DatasetVersionWithMeta> swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
+        Optional<DatasetVersionWithMeta> swdsVersionWithMetaOpt = hotDatasetHolder.of(1L);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isPresent());
         DatasetVersionWithMeta datasetVersionWithMeta = swdsVersionWithMetaOpt.get();
         VersionMeta versionMeta = datasetVersionWithMeta.getVersionMeta();
@@ -184,13 +184,13 @@ public class HotDatasetHolderTest {
                         + "75b473b5b73987ab6254feb91a3ede674936637e3e4f25a72d",
                 signatureMap.get(0));
 
-        hotDatasetHolder.end(versionName);
-        swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
+        hotDatasetHolder.end(1L);
+        swdsVersionWithMetaOpt = hotDatasetHolder.of(1L);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isEmpty());
 
         hotDatasetHolder.manifest(datasetVersion);
-        hotDatasetHolder.cancel(versionName);
-        swdsVersionWithMetaOpt = hotDatasetHolder.of(versionName);
+        hotDatasetHolder.cancel(1L);
+        swdsVersionWithMetaOpt = hotDatasetHolder.of(1L);
         Assertions.assertTrue(swdsVersionWithMetaOpt.isEmpty());
 
     }

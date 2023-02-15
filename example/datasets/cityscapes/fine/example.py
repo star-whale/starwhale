@@ -22,25 +22,25 @@ ds_name = "cityscapes_fine/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
 data = row.data
-annotations = row.annotations
-with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
-    io.BytesIO(annotations["color_mask"].to_bytes(ds_name))
+img_bytes = data["image"].to_bytes()
+with PILImage.open(io.BytesIO(img_bytes)) as img, PILImage.open(
+    io.BytesIO(data["color_mask"].to_bytes(ds_name))
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
     msk.putalpha(60)
     img.paste(msk, (0, 0), mask=msk)
     ax[0][0].imshow(img)
 
-with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
-    io.BytesIO(annotations["instance_mask"].to_bytes(ds_name))
+with PILImage.open(io.BytesIO(img_bytes)) as img, PILImage.open(
+    io.BytesIO(data["instance_mask"].to_bytes(ds_name))
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
     msk.putalpha(60)
     img.paste(msk, (0, 0), mask=msk)
     ax[0][1].imshow(img)
 
-with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
-    io.BytesIO(annotations["label_mask"].to_bytes(ds_name))
+with PILImage.open(io.BytesIO(img_bytes)) as img, PILImage.open(
+    io.BytesIO(data["label_mask"].to_bytes(ds_name))
 ).convert("RGBA") as msk:
     draw = ImageDraw.Draw(img)
     enhancer = ImageEnhance.Brightness(msk)
@@ -49,9 +49,9 @@ with PILImage.open(io.BytesIO(data.fp)) as img, PILImage.open(
     img.paste(msk, (0, 0), mask=msk)
     ax[1][0].imshow(img)
 
-with PILImage.open(io.BytesIO(data.fp)) as img:
+with PILImage.open(io.BytesIO(img_bytes)) as img:
     draw = ImageDraw.Draw(img)
-    for obj in annotations["polygons"]["objects"]:
+    for obj in data["polygons"]["objects"]:
         draw_polygon(draw, obj["polygon"])
     ax[1][1].imshow(img)
 

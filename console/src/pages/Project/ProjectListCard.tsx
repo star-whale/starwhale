@@ -21,7 +21,6 @@ import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
-import { LabelMedium } from 'baseui/typography'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 
 type IProjectCardProps = {
@@ -304,16 +303,10 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                 <ConfirmButton
                                     as='negative'
                                     key={project?.id}
-                                    title={
-                                        <div>
-                                            <p>{t('Confirm Remove Project?')}</p>
-                                            <LabelMedium>
-                                                {t(
-                                                    'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
-                                                )}
-                                            </LabelMedium>
-                                        </div>
-                                    }
+                                    title={t('Confirm Remove Project?')}
+                                    content={t(
+                                        'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
+                                    )}
                                     overrides={{
                                         BaseButton: {
                                             style: {

@@ -3,6 +3,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
 import { Button, IButtonProps } from '../Button'
 import IconFont from '../IconFont'
 import { expandMargin, expandPadding } from '../utils'
+import { LabelMedium } from 'baseui/typography'
 
 export interface IConfirmCtxProviderProps {
     children?: React.ReactNode
@@ -39,20 +40,51 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
     return (
         <ConfirmCtx.Provider value={{ show }}>
             {children}
-            <Modal closeable={false} isOpen={showModal}>
+            <Modal
+                closeable={false}
+                isOpen={showModal}
+                overrides={{
+                    Close: {
+                        style: {
+                            color: 'rgba(2,16,43,0.20)',
+                        },
+                    },
+                }}
+            >
                 <ModalHeader
                     $style={{
-                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        ...expandMargin('30px', '30px', '10px', '30px'),
                         fontSize: '16px',
+                        lineHeight: '20px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
                     }}
                 >
-                    <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={16} />
-                    {showProps?.title}
+                    <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={20} />
+                    <LabelMedium
+                        style={{
+                            flex: 1,
+                        }}
+                    >
+                        {showProps?.title}
+                    </LabelMedium>
+                    <Button
+                        as='link'
+                        // @ts-ignore
+                        style={{ color: 'rgba(2,16,43,0.20)' }}
+                        onClick={() => {
+                            resolver.current(false)
+                            setShowModal(false)
+                        }}
+                    >
+                        <IconFont type='close' size={20} />
+                    </Button>
                 </ModalHeader>
                 <ModalBody
                     $style={{
-                        ...expandMargin('30px', '30px', '30px', '30px'),
-                        fontSize: '16px',
+                        ...expandMargin('0px', '30px', '0px', '58px'),
+                        fontSize: '14px',
+                        color: 'rgba(2,16,43,0.60);',
                     }}
                 >
                     {showProps?.content}

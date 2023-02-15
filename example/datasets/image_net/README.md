@@ -12,8 +12,8 @@ This dataset is built on [Image Net](https://image-net.org/challenges/LSVRC/inde
 
 ### Data Fields
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type dict:
+  - `image`: `starwhale.Image`
   - `annotation`: below xml is loaded as dict to `annotation`
 
 ```xml

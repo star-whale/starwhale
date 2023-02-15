@@ -19,7 +19,7 @@ You could customize system to make it easier to use by leverage of `System setti
 ```yaml
 ---
 dockerSetting:
-  registry: "docker-registry.starwhale.ai" 
+  registry: "docker-registry.starwhale.cn"
 resourcePoolSetting:
   - name: pool1
     nodeSelector:
@@ -40,10 +40,10 @@ resourcePoolSetting:
       - name: cpu
         max: 2
         min: 1
-        defaults: 
+        defaults:
 storageSetting:
   - type: s3
-    tokens: 
+    tokens:
       - bucket: starwhale
         ak: access_key
         sk: scret_key
@@ -52,7 +52,7 @@ storageSetting:
         hugeFileThreshold: 10485760
         hugeFilePartSize: 5242880
   - type: minio
-    tokens: 
+    tokens:
       - bucket: starwhale
         ak: access_key
         sk: scret_key
@@ -71,7 +71,7 @@ We offer a convenience to overwrite the registry of a runtime: Put the YAML belo
 
 ```yaml
 dockerSetting:
-  registry: "docker-registry.starwhale.ai"
+  registry: "docker-registry.starwhale.cn"
 ```
 
 The priority of the system setting is the highest. Fine-grained setting is not provided yet.
@@ -87,7 +87,7 @@ The `storageSetting` allows you to manage the storages the server could access.
 ```yaml
 storageSetting:
   - type: s3
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required
@@ -96,7 +96,7 @@ storageSetting:
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
   - type: minio
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required
@@ -105,7 +105,7 @@ storageSetting:
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
         hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
   - type: aliyun
-    tokens: 
+    tokens:
       - bucket: starwhale # required
         ak: access_key # required
         sk: scret_key # required

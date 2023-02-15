@@ -20,6 +20,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
+import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -34,6 +37,10 @@ public class SystemSettingServiceTest {
     static String YAML = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd.com\"\n"
+            + "pypiSetting:\n"
+            + "  indexUrl: \"url1\"\n"
+            + "  extraIndexUrl: \"url2\"\n"
+            + "  trustedHost: \"host1\"\n"
             + "resourcePoolSetting: []";
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
@@ -48,7 +55,8 @@ public class SystemSettingServiceTest {
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
         listener = mock(SystemSettingListener.class);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, List.of(listener));
+        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, List.of(listener),
+                new RunTimeProperties("", new Pypi("url1", "url2", "host1")), new DockerSetting("abcd.com"));
         systemSettingService.run();
     }
 
@@ -76,6 +84,22 @@ public class SystemSettingServiceTest {
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
+
+    @Test
+    public void testUnsetSetting() {
+        systemSettingService.updateSetting("--- {}");
+        Assertions.assertEquals("---\n"
+                + "dockerSetting:\n"
+                + "  registry: \"\"\n"
+                + "pypiSetting:\n"
+                + "  indexUrl: \"\"\n"
+                + "  extraIndexUrl: \"\"\n"
+                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
+        ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
+        Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
+    }
+
+
     @Test
     public void testQueryWithData() {
         Assertions.assertEquals(YAML, systemSettingService.querySetting().trim());
@@ -84,9 +108,16 @@ public class SystemSettingServiceTest {
     @Test
     public void testStartWithoutData() throws Exception {
         SystemSettingService systemSettingService =
-                new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class), List.of(listener));
+                new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class), List.of(listener),
+                        new RunTimeProperties("", new Pypi("", "", "")), new DockerSetting("abcd.com"));
         systemSettingService.run();
-        Assertions.assertEquals("--- {}", systemSettingService.querySetting().trim());
+        Assertions.assertEquals("---\n"
+                + "dockerSetting:\n"
+                + "  registry: \"abcd.com\"\n"
+                + "pypiSetting:\n"
+                + "  indexUrl: \"\"\n"
+                + "  extraIndexUrl: \"\"\n"
+                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }

@@ -12,8 +12,8 @@ title: The `celeba-align` Dataset
 
 The `celeba-align` dataset, doesn't include the `bbox` field which are for un-aligned images.
 
-- `data`: `starwhale.Image` loaded as bytes array
-- `annotations` of type dict:
+- `data` of type `dict`:
+    - `image`: `starwhale.Image`
     - `identity`: the identity for the image
     - `landmark`: the landmark for eyes/nose/mouse
     - other attrs
@@ -21,6 +21,7 @@ The `celeba-align` dataset, doesn't include the `bbox` field which are for un-al
 Sample data
 ```json
 {
+	'image': `starwhale.Image`,
 	'identity': '2929',
 	'five_o_clock_shadow': '-1',
 	'arched_eyebrows': '1',

@@ -15,15 +15,24 @@ export interface IToggleProps {
 export function Toggle({ value, onChange, disabled, ...props }: IToggleProps) {
     const overrides = mergeOverrides(
         {
+            Root: {
+                style: {
+                    width: '39px',
+                },
+            },
+
             Toggle: {
                 style: {
                     backgroundColor: '#FFF',
+                    width: '14px',
+                    height: '14px',
                 },
             },
             ToggleTrack: {
-                style: {
-                    backgroundColor: value ? '#2B65D9' : 'rgba(2,16,43,0.20)',
-                },
+                style: ({ $checked }: any) => ({
+                    backgroundColor: $checked ? '#2B65D9' : 'rgba(2,16,43,0.20)',
+                    width: '39px',
+                }),
             },
         },
         props.overrides

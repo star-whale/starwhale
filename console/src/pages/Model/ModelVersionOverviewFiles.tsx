@@ -16,9 +16,10 @@ import Select from '@starwhale/ui/Select'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { useLocalStorage } from 'react-use'
 import { useQueryArgs } from '@starwhale/core'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
+import qs from 'qs'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -147,16 +148,13 @@ export default function ModelVersionFiles() {
         if (sourceFile) {
             if (sourceFile.flag !== 'added') {
                 fetch(
-                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${modelVersion?.versionName}/file`,
-                    {
-                        // @ts-ignore
-                        headers: {
-                            'Authorization': getToken(),
-                            'X-SW-DOWNLOAD-OBJECT-PATH': sourceFile.path.join('/'),
-                            'X-SW-DOWNLOAD-OBJECT-NAME': sourceFile.name,
-                            'X-SW-DOWNLOAD-OBJECT-HASH': sourceFile.signature,
-                        },
-                    }
+                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${
+                        modelVersion?.versionName
+                    }/file?${qs.stringify({
+                        Authorization: getToken(),
+                        partName: sourceFile.name,
+                        signature: sourceFile.signature,
+                    })}`
                 ).then(async (res) => {
                     if (isText(sourceFile) && res.ok) {
                         const text = await res.text()
@@ -171,16 +169,13 @@ export default function ModelVersionFiles() {
             if (!query.compare) return
             if (sourceFile.flag !== 'deleted') {
                 fetch(
-                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${compareVersionInfo.data?.versionName}/file`,
-                    {
-                        // @ts-ignore
-                        headers: {
-                            'Authorization': getToken(),
-                            'X-SW-DOWNLOAD-OBJECT-PATH': sourceFile.path.join('/'),
-                            'X-SW-DOWNLOAD-OBJECT-NAME': sourceFile.name,
-                            'X-SW-DOWNLOAD-OBJECT-HASH': sourceFile.signature,
-                        },
-                    }
+                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${
+                        compareVersionInfo.data?.versionName
+                    }/file?${qs.stringify({
+                        Authorization: getToken(),
+                        partName: sourceFile.name,
+                        signature: sourceFile.signature,
+                    })}`
                 ).then(async (res) => {
                     if (isText(sourceFile) && res.ok) {
                         const text = await res.text()
