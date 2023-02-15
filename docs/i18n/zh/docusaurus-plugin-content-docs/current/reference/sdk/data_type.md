@@ -588,7 +588,6 @@ class LinkType(Enum):
     UNDEFINED = "undefined"
 ```
 
-
 ## 14. starwhale.BoundingBox3D
 
 提供在二维界面上绘制3D边界框的能力，需要前后两个边界框的`BoundingBox`信息`bbox_a`, `bbox_b`。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/4d240d0c8ec1e7d7c98746ebbd814d2647fb16af/client/starwhale/core/dataset/type.py#L551)。
