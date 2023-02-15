@@ -68,8 +68,9 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (null != status.getFailed()) {
             taskStatus = TaskStatus.FAIL;
             log.error("job status changed for {} is failed {}", jobName(newObj), status);
-            log.error("job failed with spec:\n{} \nmetadata\n{}", newObj.getSpec().toString(),
-                    newObj.getMetadata().toString());
+            String spec = null != newObj.getSpec() ? newObj.getSpec().toString() : null;
+            String metadata = null != newObj.getMetadata() ? newObj.getMetadata().toString() : null;
+            log.error("job failed with spec:\n{} \njob failed with metadata:\n{}", spec, metadata);
         } else if (null != status.getActive()) {
             taskStatus = TaskStatus.RUNNING;
             log.info("job status changed for {} is running {}", jobName(newObj), status);
