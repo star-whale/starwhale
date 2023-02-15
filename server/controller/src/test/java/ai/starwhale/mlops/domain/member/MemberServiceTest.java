@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.member;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -29,48 +30,23 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMemberMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectMemberEntity;
-import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.domain.user.bo.Role;
-import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ProjectMemberServiceTest {
+public class MemberServiceTest {
 
-    private ProjectMemberService service;
+    private MemberService service;
 
     private ProjectMemberMapper projectMemberMapper;
-
-    private UserService userService;
-
-    private ProjectService projectService;
 
     @BeforeEach
     public void setUp() {
         projectMemberMapper = mock(ProjectMemberMapper.class);
-        userService = mock(UserService.class);
-        given(userService.loadUserById(same(1L)))
-                .willReturn(User.builder().id(1L).name("starwhale").build());
-        given(userService.loadUserById(same(2L)))
-                .willReturn(User.builder().id(2L).name("guest").build());
-        given(userService.findRole(same(1L)))
-                .willReturn(Role.builder().roleName(Role.NAME_OWNER).build());
-        given(userService.findRole(same(2L)))
-                .willReturn(Role.builder().roleName(Role.NAME_MAINTAINER).build());
-        projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("p1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("2")))
-                .willReturn(2L);
-        service = new ProjectMemberService(projectMemberMapper, userService, projectService, new IdConverter());
+        service = new MemberService(projectMemberMapper);
     }
 
     @Test
@@ -92,20 +68,21 @@ public class ProjectMemberServiceTest {
         given(projectMemberMapper.listByProject(same(2L)))
                 .willReturn(Collections.emptyList());
 
-        var res = service.listProjectMembers("1");
+        var res = service.listProjectMembersInProject(1L);
         assertThat(res, allOf(
                 notNullValue(),
-                hasSize(2)
+                is(iterableWithSize(2)),
+                hasItem(allOf(
+                        hasProperty("id", is(1L)),
+                        hasProperty("projectId", is(1L)),
+                        hasProperty("userId", is(1L)),
+                        hasProperty("roleId", is(1L))
+                ))
         ));
-        res = service.listProjectMembers("p1");
+        res = service.listProjectMembersInProject(2L);
         assertThat(res, allOf(
                 notNullValue(),
-                hasSize(2)
-        ));
-        res = service.listProjectMembers("2");
-        assertThat(res, allOf(
-                notNullValue(),
-                hasSize(0)
+                is(iterableWithSize(0))
         ));
     }
 
@@ -142,9 +119,6 @@ public class ProjectMemberServiceTest {
         var res = service.addProjectMember(1L, 1L, 1L);
         assertThat(res, is(true));
 
-        res = service.addProjectMember("1", 1L, 1L);
-        assertThat(res, is(true));
-
         given(projectMemberMapper.insertByRoleName(any(), any(), any())).willReturn(1);
         res = service.addProjectMember(1L, 1L, "Owner");
         assertThat(res, is(true));
@@ -155,34 +129,21 @@ public class ProjectMemberServiceTest {
     public void testModifyProjectMember() {
         given(projectMemberMapper.updateRole(same(1L), any()))
                 .willReturn(1);
-        var res = service.modifyProjectMember("", 1L, 2L);
+        var res = service.modifyProjectMember(1L, 2L);
         assertThat(res, is(true));
 
-        res = service.modifyProjectMember("", 2L, 2L);
+        res = service.modifyProjectMember(2L, 2L);
         assertThat(res, is(false));
     }
 
     @Test
     public void testDeleteProjectMember() {
         given(projectMemberMapper.delete(same(1L))).willReturn(1);
-        var res = service.deleteProjectMember("", 1L);
+        var res = service.deleteProjectMember(1L);
         assertThat(res, is(true));
 
-        res = service.deleteProjectMember("", 2L);
+        res = service.deleteProjectMember(2L);
         assertThat(res, is(false));
-    }
-
-    @Test
-    public void testListSystemMembers() {
-        given(projectMemberMapper.listByProject(same(0L)))
-                .willReturn(List.of(ProjectMemberEntity.builder().id(1L).build(),
-                        ProjectMemberEntity.builder().id(2L).build()));
-
-        var res = service.listSystemMembers();
-        assertThat(res, allOf(
-                notNullValue(),
-                is(iterableWithSize(2))
-        ));
     }
 
     @Test
@@ -209,13 +170,13 @@ public class ProjectMemberServiceTest {
         given(projectMemberMapper.findByUserAndProject(same(1L), same(1L)))
                 .willReturn(ProjectMemberEntity.builder().roleId(1L).build());
 
-        var res = service.getUserRoleInProject(1L, 1L);
+        var res = service.getUserMemberInProject(1L, 1L);
         assertThat(res, allOf(
                 notNullValue(),
-                is(hasProperty("roleName", is(Role.NAME_OWNER)))
+                is(hasProperty("roleId", is(1L)))
         ));
 
-        res = service.getUserRoleInProject(2L, 1L);
+        res = service.getUserMemberInProject(2L, 1L);
         assertThat(res, allOf(
                 nullValue()
         ));

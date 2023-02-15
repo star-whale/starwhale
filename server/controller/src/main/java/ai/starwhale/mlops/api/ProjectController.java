@@ -25,7 +25,7 @@ import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.member.ProjectMemberService;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
@@ -51,15 +51,15 @@ public class ProjectController implements ProjectApi {
 
     private final UserService userService;
 
-    private final ProjectMemberService projectMemberService;
+    private final MemberService memberService;
 
     private final IdConverter idConvertor;
 
     public ProjectController(ProjectService projectService, UserService userService,
-            ProjectMemberService projectMemberService, IdConverter idConvertor) {
+            MemberService memberService, IdConverter idConvertor) {
         this.projectService = projectService;
         this.userService = userService;
-        this.projectMemberService = projectMemberService;
+        this.memberService = memberService;
         this.idConvertor = idConvertor;
     }
 
@@ -140,14 +140,14 @@ public class ProjectController implements ProjectApi {
 
     @Override
     public ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> listProjectRole(String projectUrl) {
-        List<ProjectMemberVo> vos = projectMemberService.listProjectMembers(projectUrl);
+        List<ProjectMemberVo> vos = projectService.listProjectMembersInProject(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> addProjectRole(String projectUrl, String userId,
             String roleId) {
-        Boolean res = projectMemberService.addProjectMember(projectUrl, idConvertor.revert(userId),
+        Boolean res = projectService.addProjectMember(projectUrl, idConvertor.revert(userId),
                 idConvertor.revert(roleId));
         if (!res) {
             throw new StarwhaleApiException(
@@ -160,7 +160,7 @@ public class ProjectController implements ProjectApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteProjectRole(String projectUrl,
             String projectRoleId) {
-        Boolean res = projectMemberService.deleteProjectMember(projectUrl, idConvertor.revert(projectRoleId));
+        Boolean res = memberService.deleteProjectMember(idConvertor.revert(projectRoleId));
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Delete project role failed."),
@@ -172,7 +172,7 @@ public class ProjectController implements ProjectApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyProjectRole(String projectUrl,
             String projectRoleId, String roleId) {
-        Boolean res = projectMemberService.modifyProjectMember(projectUrl, idConvertor.revert(projectRoleId),
+        Boolean res = memberService.modifyProjectMember(idConvertor.revert(projectRoleId),
                 idConvertor.revert(roleId));
         if (!res) {
             throw new StarwhaleApiException(

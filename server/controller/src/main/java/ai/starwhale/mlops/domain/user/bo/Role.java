@@ -55,10 +55,8 @@ public class Role implements GrantedAuthority {
             return true;
         }
         if (o instanceof Role) {
-            Role r = (Role) o;
-            return r.getAuthority().equals(((Role) o).getAuthority());
+            return getAuthority().equals(((Role) o).getAuthority());
         }
         return false;
     }
-
 }

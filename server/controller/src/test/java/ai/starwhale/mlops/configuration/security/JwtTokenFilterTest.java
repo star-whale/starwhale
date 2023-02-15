@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -48,6 +49,8 @@ public class JwtTokenFilterTest {
     JwtTokenFilter jwtTokenFilter;
     JwtTokenUtil jwtTokenUtil;
     UserService userService;
+
+    ProjectService projectService;
     List<JwtClaimValidator> jwtClaimValidators;
 
     MockedStatic<HttpUtil> httpUtilMockedStatic;
@@ -61,7 +64,7 @@ public class JwtTokenFilterTest {
         JwtClaimValidator jwtClaimValidator = mock(JwtClaimValidator.class);
         doThrow(SwValidationException.class).when(jwtClaimValidator).validClaims(claims);
         jwtClaimValidators = List.of(jwtClaimValidator);
-        jwtTokenFilter = new JwtTokenFilter(jwtTokenUtil, userService, jwtClaimValidators);
+        jwtTokenFilter = new JwtTokenFilter(jwtTokenUtil, userService, projectService, jwtClaimValidators);
         httpUtilMockedStatic = mockStatic(HttpUtil.class);
     }
 

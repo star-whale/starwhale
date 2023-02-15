@@ -19,7 +19,6 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
@@ -218,7 +217,7 @@ public interface UserApi {
             value = "/role",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<SystemRoleVo>>> listSystemRoles();
+    ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> listSystemRoles();
 
     @Operation(summary = "List role enums")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

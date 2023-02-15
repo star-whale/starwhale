@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -84,9 +85,9 @@ public class JobRepo {
     private final ObjectMapper objectMapper;
 
     public JobRepo(DataStore store,
-            ProjectService projectService,
-            ModelService modelService,
-            UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
+            @Lazy ProjectService projectService,
+            @Lazy ModelService modelService,
+            @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
         this.store = store;
         this.projectService = projectService;
         this.modelService = modelService;

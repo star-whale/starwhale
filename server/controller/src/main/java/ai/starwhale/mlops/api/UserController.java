@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
@@ -32,7 +31,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.member.ProjectMemberService;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -56,18 +55,18 @@ public class UserController implements UserApi {
 
     private final ProjectService projectService;
 
-    private final ProjectMemberService projectMemberService;
+    private final MemberService memberService;
 
     private final IdConverter idConvertor;
 
     private final JwtTokenUtil jwtTokenUtil;
 
     public UserController(UserService userService, ProjectService projectService,
-            ProjectMemberService projectMemberService,
+            MemberService memberService,
             IdConverter idConvertor, JwtTokenUtil jwtTokenUtil) {
         this.userService = userService;
         this.projectService = projectService;
-        this.projectMemberService = projectMemberService;
+        this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.jwtTokenUtil = jwtTokenUtil;
     }
@@ -140,7 +139,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectMemberService.addProjectMember("0", idConvertor.revert(userRoleAddRequest.getUserId()),
+        Boolean res = memberService.addProjectMember(0L, idConvertor.revert(userRoleAddRequest.getUserId()),
                 idConvertor.revert(userRoleAddRequest.getRoleId()));
         if (!res) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.USER, "Add user role failed."),
@@ -157,7 +156,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectMemberService.modifyProjectMember("0", idConvertor.revert(systemRoleId),
+        Boolean res = memberService.modifyProjectMember(idConvertor.revert(systemRoleId),
                 idConvertor.revert(
                         userRoleUpdateRequest.getRoleId()));
         if (!res) {
@@ -176,7 +175,7 @@ public class UserController implements UserApi {
                     new SwAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
                     HttpStatus.FORBIDDEN);
         }
-        Boolean res = projectMemberService.deleteProjectMember("0", idConvertor.revert(systemRoleId));
+        Boolean res = memberService.deleteProjectMember(idConvertor.revert(systemRoleId));
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.USER, "Delete user role failed."),
@@ -191,8 +190,9 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<SystemRoleVo>>> listSystemRoles() {
-        return ResponseEntity.ok(Code.success.asResponse(projectMemberService.listSystemMembers()));
+    public ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> listSystemRoles() {
+        List<ProjectMemberVo> vos = projectService.listProjectMembersInProject("0");
+        return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
     @Override

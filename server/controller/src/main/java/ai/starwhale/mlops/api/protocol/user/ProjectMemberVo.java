@@ -18,8 +18,6 @@ package ai.starwhale.mlops.api.protocol.user;
 
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
-import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -41,14 +39,5 @@ public class ProjectMemberVo {
 
     public static ProjectMemberVo empty() {
         return new ProjectMemberVo("", UserVo.empty(), ProjectVo.empty(), RoleVo.empty());
-    }
-
-    public static ProjectMemberVo fromBo(ProjectMember bo, IdConverter idConverter) {
-        return ProjectMemberVo.builder()
-                .id(idConverter.convert(bo.getId()))
-                .project(ProjectVo.fromBo(bo.getProject(), idConverter))
-                .user(UserVo.from(bo.getUser(), idConverter))
-                .role(RoleVo.fromBo(bo.getRole(), idConverter))
-                .build();
     }
 }
