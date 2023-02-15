@@ -93,7 +93,6 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
         //
         view.updated = false
         view.version = 0
-
         //
         const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
 

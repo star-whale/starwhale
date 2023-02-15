@@ -98,18 +98,20 @@ const InnerTableElement = React.forwardRef<
                     })
                 )}
             >
-                <div
-                    className='table-columns-pinned'
-                    // @ts-ignore
-                    style={{
-                        ...props.style,
-                        width: pinnedWidth,
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}
-                >
-                    {viewState === RENDERING && $children}
-                </div>
+                {$children.length > 0 && (
+                    <div
+                        className='table-columns-pinned'
+                        // @ts-ignore
+                        style={{
+                            ...props.style,
+                            width: pinnedWidth,
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {viewState === RENDERING && $children}
+                    </div>
+                )}
             </div>
 
             <div

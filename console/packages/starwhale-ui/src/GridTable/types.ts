@@ -22,6 +22,7 @@ export interface ITableProps {
     id?: string
     data: any[]
     columns: any[]
+    storeRef?: React.MutableRefObject<ITableState | undefined>
 }
 
 export interface IPaginationProps {

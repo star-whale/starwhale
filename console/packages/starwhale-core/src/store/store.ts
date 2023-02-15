@@ -8,6 +8,12 @@ import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
 import { WidgetConfig, WidgetStoreState } from '../types'
 
+function arrayOverride(objValue: any, srcValue: any) {
+    if (_.isArray(objValue)) {
+        return srcValue
+    }
+}
+
 export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
     console.log('store init')
     const name = 'widgets'
@@ -34,8 +40,8 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                     onConfigChange: (paths: any, config: any) =>
                         set(
                             produce((state) => {
-                                const rawConfig = _.get(get(), paths) ?? {}
-                                _.set(state, paths, _.merge({}, rawConfig, config))
+                                const rawConfig = _.merge({}, _.get(get(), paths))
+                                _.set(state, paths, _.mergeWith(rawConfig, config, arrayOverride))
                                 // console.log('onConfigChange', state, paths, rawConfig, config)
                             })
                         ),
@@ -61,7 +67,8 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                     if (!state.defaults[type]) state.defaults[type] = defaults
                                 }
 
-                                state.widgets[id] = _.merge({}, state.widgets?.[id], widgets)
+                                const rawConfig = _.merge({}, state.widgets?.[id])
+                                state.widgets[id] = _.mergeWith(rawConfig, widgets, arrayOverride)
                             })
                         ),
                     onWidgetDelete: (id: string) =>
