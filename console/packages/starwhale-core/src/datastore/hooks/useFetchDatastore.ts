@@ -5,7 +5,6 @@ import { IListQuerySchema } from '../../server/schemas/list'
 import { scanTable, queryTable, listTables, exportTable } from '../services/datastore'
 import { QueryTableRequest } from '../schemas/datastore'
 import { ColumnFilterModel } from '../filter'
-import { useRendersCount } from 'react-use'
 
 export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
