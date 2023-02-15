@@ -81,7 +81,6 @@ from starwhale.api._impl.dataset.builder import (
     _header_struct,
     create_generic_cls,
 )
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .test_base import BaseTestCase
 
@@ -523,45 +522,6 @@ class TestDatasetCopy(BaseTestCase):
         assert isinstance(bbox, BoundingBox)
         assert bbox.x == 2 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
-
-    @patch("os.environ", {})
-    @Mocker()
-    def test_get_remote_project(self, rm: Mocker) -> None:
-        instance_uri = "http://1.1.1.1:8182"
-        project = "1"
-        rm.request(
-            HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{project}",
-            json={"data": {"id": 1, "name": "starwhale"}},
-        )
-        remote_uri = f"{instance_uri}/project/1/dataset/ds_test/version/v1"
-
-        origin_conf = config.load_swcli_config().copy()
-        # patch config to pass instance alias check
-        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
-            origin_conf.update(
-                {
-                    "current_instance": "local",
-                    "instances": {
-                        "foo": {"uri": "http://1.1.1.1:8182"},
-                        "local": {"uri": "local"},
-                    },
-                }
-            )
-            mock_conf.return_value = origin_conf
-            dc = DatasetCopy(
-                src_uri=remote_uri,
-                dest_uri="",
-                dest_local_project_uri="self",
-                typ=URIType.DATASET,
-            )
-            remote_resource = Resource(remote_uri, typ=ResourceType[URIType.DATASET])
-            assert (
-                dc._get_remote_project_name(
-                    instance=remote_resource.project.instance.to_uri(), project="1"
-                )
-                == "starwhale"
-            )
 
 
 class MockBinWriter:

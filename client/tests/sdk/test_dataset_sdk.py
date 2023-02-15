@@ -627,6 +627,12 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
         )
 
+        project_req = rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self",
+            json={"data": {"id": 1, "name": "self"}},
+        )
+
         manifest_req = rm.request(
             HTTPMethod.GET,
             "http://1.1.1.1/api/v1/project/self/dataset/mnist",
@@ -674,6 +680,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.commit()
         assert not tmp_dir.exists()
         assert not snapshot_workdir.exists()
+        assert project_req.called
         assert upload_file_req.called
         assert update_table_req.called
 

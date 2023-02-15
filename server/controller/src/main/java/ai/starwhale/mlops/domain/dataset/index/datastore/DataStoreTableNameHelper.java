@@ -32,8 +32,8 @@ public class DataStoreTableNameHelper {
 
     public static final String FORMATTER_TABLE_NAME_EVAL_SUMMARY = "project/%s/eval/summary";
 
-    public String tableNameOfDataset(String project, String name, String version) {
-        return String.format(FORMATTER_TABLE_NAME_DATASET, project, name, version.substring(0, VERSION_PREFIX_CNT),
+    public String tableNameOfDataset(Long projectId, String name, String version) {
+        return String.format(FORMATTER_TABLE_NAME_DATASET, projectId, name, version.substring(0, VERSION_PREFIX_CNT),
                 version);
     }
 

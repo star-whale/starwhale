@@ -75,28 +75,28 @@ public class StoragePathCoordinator {
     /**
      * @return consistency of path is guaranteed among multiple method calls
      */
-    public String allocateDatasetPath(String projectName, String datasetName, String datasetVersion) {
+    public String allocateDatasetPath(Long projectId, String datasetName, String datasetVersion) {
         checkKeyWord(datasetVersion, ValidSubject.DATASET);
-        return allocateBundlePath(projectName, BUNDLE_DATASET, datasetName, datasetVersion);
+        return allocateBundlePath(projectId, BUNDLE_DATASET, datasetName, datasetVersion);
     }
 
     /**
      * @return consistency of path is guaranteed among multiple method calls
      */
-    public String allocateModelPath(String projectName, String modelName, String modelVersion) {
+    public String allocateModelPath(Long projectId, String modelName, String modelVersion) {
         checkKeyWord(modelVersion, ValidSubject.MODEL);
-        return allocateBundlePath(projectName, BUNDLE_MODEL, modelName, modelVersion);
+        return allocateBundlePath(projectId, BUNDLE_MODEL, modelName, modelVersion);
     }
 
-    public String allocateCommonModelPoolPath(String projectName, String signature) {
+    public String allocateCommonModelPoolPath(Long projectId, String signature) {
         return String.format(STORAGE_PATH_FORMATTER_MODEL_POOL,
-                prefix, projectName, BUNDLE_MODEL, signature);
+                prefix, projectId, signature);
     }
 
-    public String allocateRuntimePath(String projectName, String runtimeName,
+    public String allocateRuntimePath(Long projectId, String runtimeName,
             String runtimeVersion) {
         checkKeyWord(runtimeVersion, ValidSubject.RUNTIME);
-        return allocateBundlePath(projectName, BUNDLE_RUNTIME, runtimeName, runtimeVersion);
+        return allocateBundlePath(projectId, BUNDLE_RUNTIME, runtimeName, runtimeVersion);
     }
 
     static final String BUNDLE_DATASET = "dataset";
@@ -106,11 +106,11 @@ public class StoragePathCoordinator {
      * {prefix}/project/{projectName}/{bundleType}/{bundleName}/version/{bundleVersion}
      */
     static final String STORAGE_PATH_FORMATTER_BUNDLE = "%s/project/%s/%s/%s/version/%s";
-    static final String STORAGE_PATH_FORMATTER_MODEL_POOL = "%s/project/%s/%s/%s";
+    static final String STORAGE_PATH_FORMATTER_MODEL_POOL = "%s/project/%s/common-model/%s";
 
-    public String allocateBundlePath(String projectName, String bundleName,
-            String bundleVersion, String bundleType) {
-        return String.format(STORAGE_PATH_FORMATTER_BUNDLE, prefix, projectName, bundleType, bundleName,
+    public String allocateBundlePath(Long projectId, String bundleType, String bundleName,
+            String bundleVersion) {
+        return String.format(STORAGE_PATH_FORMATTER_BUNDLE, prefix, projectId, bundleType, bundleName,
                 bundleVersion);
     }
 

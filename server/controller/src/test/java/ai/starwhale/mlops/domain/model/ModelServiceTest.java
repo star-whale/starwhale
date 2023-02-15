@@ -552,21 +552,21 @@ public class ModelServiceTest {
 
         // case 4: pull model file
         var modelPath = "sw/controller/project/foo/model/iiiiii";
-        given(projectManager.getProject("1")).willReturn(ProjectEntity.builder().projectName("foo").build());
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("foo"), eq("iiiiii"))).willReturn(modelPath);
+        given(projectManager.getProject("foo")).willReturn(ProjectEntity.builder().id(1L).projectName("foo").build());
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("iiiiii"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willThrow(IOException.class);
         var responseForModel = new MockHttpServletResponse();
         assertThrows(SwProcessException.class,
                 () -> service.pull(
-                    FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "1", "m1", "v3",
+                    FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "foo", "m1", "v3",
                     responseForModel));
 
         modelPath = "sw/controller/project/foo/model/uuuuuuuuuu";
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq("foo"), eq("uuuuuuuuuu"))).willReturn(modelPath);
+        given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("uuuuuuuuuu"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willReturn(
                 new LengthAbleInputStream(new ByteArrayInputStream(new byte[100]), 100));
         service.pull(
-                    null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "1", "m1", "v1",
+                    null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "foo", "m1", "v1",
                     responseForModel
         );
         assertThat("upload model to response", Objects.equals(responseForModel.getHeader("Content-Length"), "100"));
@@ -577,7 +577,7 @@ public class ModelServiceTest {
             given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/a.py", "path1/src/b.py"));
 
             service.pull(
-                    FileDesc.SRC_TAR, "src.tar", "", "", "1", "m1", "v1",
+                    FileDesc.SRC_TAR, "src.tar", "", "", "foo", "m1", "v1",
                     responseForNormal);
 
             tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));

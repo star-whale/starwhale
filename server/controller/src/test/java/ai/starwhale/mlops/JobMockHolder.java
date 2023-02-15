@@ -42,7 +42,7 @@ public class JobMockHolder {
 
         String jobuuid = UUID.randomUUID().toString();
         String jobDir = storagePathCoordinator.allocateResultMetricsPath(jobuuid);
-        String datasetPath = storagePathCoordinator.allocateDatasetPath("projectname1", "swds1", "versionswds1");
+        String datasetPath = storagePathCoordinator.allocateDatasetPath(1L, "swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
                 .id(atomicLong.incrementAndGet())
@@ -51,7 +51,7 @@ public class JobMockHolder {
                         JobRuntime.builder().name("runtime1").version("version1").storagePath(jobDir)
                                 .build())
                 .model(Model.builder().id(1L).name("swmp1").version("versionsmp1")
-                        .path(storagePathCoordinator.allocateModelPath("project1", "swmp1", "versionsmp1")).build())
+                        .path(storagePathCoordinator.allocateModelPath(1L, "swmp1", "versionsmp1")).build())
                 .dataSets(List.of(DataSet.builder().id(1L).name("swds1").version("versionswds1").path(
                         datasetPath).size(1024L).build()))
                 .status(JobStatus.RUNNING)
