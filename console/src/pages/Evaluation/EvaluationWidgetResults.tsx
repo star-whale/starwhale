@@ -5,23 +5,99 @@ import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/uti
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
 import Table from '@/components/Table'
-import { Panel } from 'baseui/accordion'
-import Accordion from '@starwhale/ui/Accordion'
+import { Panel, StatelessAccordion } from 'baseui/accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router-dom'
+import { Button, IconFont } from '@starwhale/ui'
 
 const PAGE_TABLE_SIZE = 100
 
 function Summary({ fetch }: any) {
     const record: Record<string, string> = fetch?.data?.records?.[0] ?? {}
+    const [expanded, setExpanded] = React.useState<boolean>(false)
 
     return (
         <div className='mb-20'>
-            <Accordion accordion>
-                <Panel title='Summary'>
+            <StatelessAccordion
+                accordion
+                expanded={['summary']}
+                overrides={{
+                    PanelContainer: {
+                        style: {
+                            borderTop: '1px solid #CFD7E6',
+                            borderLeft: '1px solid #CFD7E6',
+                            borderRight: '1px solid #CFD7E6',
+                            borderRadius: '3px',
+                            borderBottomColor: '#CFD7E6',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        },
+                    },
+                    Header: {
+                        style: {
+                            backgroundColor: '#F7F8FA',
+                            paddingTop: '0px',
+                            paddingBottom: '0px',
+                            fontSize: '14px',
+                        },
+                    },
+                    Content: {
+                        style: {
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            paddingTop: '20px',
+                            paddingBottom: '20px',
+                            paddingLeft: '20px',
+                            paddingRight: '20px',
+                        },
+                    },
+                    Root: {
+                        style: {
+                            flex: 1,
+                            display: 'flex',
+                            fontSize: '14px',
+                        },
+                    },
+                    ToggleIcon: {
+                        component: () => <span />,
+                    },
+                }}
+            >
+                <Panel
+                    title={
+                        <Button
+                            onClick={() => setExpanded(!expanded)}
+                            as='transparent'
+                            overrides={{
+                                BaseButton: {
+                                    style: {
+                                        flex: 1,
+                                        justifyContent: 'flex-start',
+                                    },
+                                },
+                            }}
+                            isFull
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontWeight: 'bold',
+                                    color: 'rgba(2,16,43,0.60)',
+                                }}
+                            >
+                                Summary
+                                <IconFont type={!expanded ? 'arrow_down' : 'arrow_top'} />
+                            </div>
+                        </Button>
+                    }
+                    key='summary'
+                >
                     {fetch?.data?.records.length === 0 && (
-                        <BusyPlaceholder type='notfound' style={{ minHeight: '300px' }} />
+                        <BusyPlaceholder type='notfound' style={{ height: '300px' }} />
                     )}
                     <div
                         style={{
@@ -29,6 +105,8 @@ function Summary({ fetch }: any) {
                             fontSize: '14px',
                             gridTemplateColumns: 'minmax(160px, max-content) 1fr',
                             display: 'grid',
+                            maxHeight: expanded ? undefined : '248px',
+                            overflow: 'auto',
                         }}
                     >
                         {Object.keys(record)
@@ -61,7 +139,7 @@ function Summary({ fetch }: any) {
                             })}
                     </div>
                 </Panel>
-            </Accordion>
+            </StatelessAccordion>
         </div>
     )
 }
@@ -119,10 +197,10 @@ function EvaluationWidgetResults() {
 
     const tables = React.useMemo(() => {
         const names = []
-        if (project?.name) names.push(tableNameOfSummary(project?.name as string))
+        if (project?.name) names.push(tableNameOfSummary(project?.name))
 
         return [...names]
-    }, [project])
+    }, [project?.name])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
@@ -141,10 +219,10 @@ function EvaluationWidgetResults() {
                             operator: 'EQUAL',
                             operands: [
                                 {
-                                    stringValue: jobId,
+                                    intValue: jobId,
                                 },
                                 {
-                                    columnName: 'id',
+                                    columnName: 'sys/id',
                                 },
                             ],
                         }

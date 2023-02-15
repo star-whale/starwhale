@@ -44,7 +44,7 @@ const useStyles = createUseStyles({
         '& .table-columns-pinned': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
-        '& .table-headers-pinned > div:last-child': {
+        '& .table-headers-pinned > div:last-child .header-cell': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
     },
@@ -66,6 +66,7 @@ function GridTable({
     queryinline = false,
     onSave,
     onChange = () => {},
+    storeRef,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const api = useTableContext()
@@ -93,7 +94,11 @@ function GridTable({
         return unsub
     }, [api, onChange])
 
-    // console.log('store', store)
+    React.useEffect(() => {
+        if (!storeRef) return
+        // eslint-disable-next-line no-param-reassign
+        storeRef.current = store
+    }, [storeRef, store])
 
     return (
         <>

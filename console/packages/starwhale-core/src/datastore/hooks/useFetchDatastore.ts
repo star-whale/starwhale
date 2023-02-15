@@ -44,7 +44,7 @@ export function useQueryDatasetList(
         filter?: any[]
         query?: QueryTableRequest
     },
-    rawResult = false
+    enabled = true
 ) {
     const { start, limit, query } = React.useMemo(() => {
         const { pageNum = 1, pageSize = 10 } = options || {}
@@ -56,13 +56,16 @@ export function useQueryDatasetList(
         }
     }, [options])
 
-    const columnInfo = useQueryDatastore({
-        tableName,
-        start: 0,
-        limit: 0,
-        rawResult,
-        ignoreNonExistingTable: true,
-    })
+    const columnInfo = useQueryDatastore(
+        {
+            tableName,
+            start: 0,
+            limit: 0,
+            rawResult: true,
+            ignoreNonExistingTable: true,
+        },
+        enabled
+    )
 
     const recordQuery = useMemo(() => {
         const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
@@ -72,29 +75,30 @@ export function useQueryDatasetList(
             tableName,
             start,
             limit,
-            rawResult,
+            rawResult: true,
             ignoreNonExistingTable: true,
         }
         return filter ? { ...raw, filter } : raw
-    }, [options?.filter, columnInfo.data?.columnTypes, limit, rawResult, start, tableName, query])
+    }, [options?.filter, columnInfo.data?.columnTypes, limit, start, tableName, query])
 
     const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 
     React.useEffect(() => {
-        if (tableName) {
+        if (tableName && enabled) {
             columnInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tableName, start, limit])
+    }, [tableName, enabled])
 
     React.useEffect(() => {
-        if (recordQuery.tableName) {
+        if (recordQuery.tableName && columnInfo.isSuccess) {
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recordQuery.tableName])
 
     return {
+        recordQuery,
         columnInfo,
         recordInfo,
     }

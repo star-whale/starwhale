@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
-import useSelector, { getWidget } from '../store/hooks/useSelector'
+import { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType } from '../types'
-import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
+import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
+import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -23,7 +24,10 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const { id, path } = props
         const { store, eventBus } = useEditorContext()
         const api = store()
-        const overrides = useSelector(getWidget(id)) ?? {}
+        const widgetIdSelector = React.useMemo(() => getWidget(id) ?? {}, [id])
+        const overrides = store(widgetIdSelector)
+        const [loaded, setLoaded] = useState(false)
+        const myRef = useRef<HTMLElement>()
 
         const handleLayoutOrderChange = useCallback(
             (newList) => {
@@ -50,27 +54,38 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
 
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
-        const tableName = overrides?.fieldConfig?.data?.tableName
+        const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
+        const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView ?? {}, [overrides])
+        const tableOptions = React.useMemo(() => {
+            const sorts = tableConfig.sortBy
+                ? [
+                      {
+                          columnName: tableConfig.sortBy,
+                          descending: tableConfig.sortDirection === 'DESC',
+                      },
+                  ]
+                : []
 
-        const query = React.useMemo(
-            () => ({
-                tableName,
-                start: 0,
-                limit: 1000,
-                rawResult: true,
-                ignoreNonExistingTable: true,
-            }),
-            [tableName]
-        )
+            sorts.push({
+                columnName: 'id',
+                descending: true,
+            })
 
-        const myRef = useRef<HTMLElement>()
+            return {
+                pageNum: 1,
+                pageSize: 1000,
+                query: {
+                    orderBy: sorts,
+                },
+                filter: tableConfig.queries,
+            }
+        }, [tableConfig])
         const inViewport = useIsInViewport(myRef as any)
-        const info = useQueryDatastore(query, false)
-        const [loaded, setLoaded] = useState(false)
+        const { columnInfo, recordInfo: info, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
 
         useEffect(() => {
             if (tableName && inViewport && !loaded) {
-                info.refetch()
+                columnInfo.refetch()
                 setLoaded(true)
             }
             // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,6 +114,17 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             )
             return () => subscription.unsubscribe()
         }, [eventBus, id, info, query])
+
+        if (tableName && !info.isSuccess)
+            return (
+                <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
+                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
+                </div>
+            )
+
+        // if (!inViewport) return <div ref={myRef as any} style={{ width: '100%', height: '100%' }} />
+
+        // if (tableName) console.log(id, tableName, columnInfo.isSuccess, info.isSuccess)
 
         return (
             <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>

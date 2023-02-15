@@ -17,6 +17,7 @@ import { useConfigQuery } from './config-query'
 import Button from '../../Button'
 import classNames from 'classnames'
 import { themedUseStyletron } from '../../theme/styletron'
+import useCurrentView from './view/useCurrentView'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -74,24 +75,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const { useStore } = props
     const store = useStore()
-
-    const { columns } = props
-    // used by when view = all runs, panel table without config to show all columns
-    const isFullyLoaded = store.isInit
-    const { pinnedIds = [], ids = [] }: ConfigT = store.currentView || {}
-
-    const $columns = useMemo(() => {
-        const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
-        const columnIds = isFullyLoaded ? ids : Array.from(new Set([...pinnedIds, ...columns.map((c) => c.key)]))
-        return columnIds
-            .filter((id: any) => id in columnsMap)
-            .map((id: any) => {
-                return {
-                    ...columnsMap[id],
-                    pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
-                }
-            }) as ColumnT[]
-    }, [columns, columnable, pinnedIds, ids, isFullyLoaded])
+    const { columns: $columns, currentView, isAllRuns } = useCurrentView(useStore, { columns: props.columns })
+    const { renderConfigQuery } = useConfigQuery(useStore, { columns: props.columns, queryable })
 
     const $filters = React.useMemo(() => {
         return (
@@ -148,8 +133,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         const sortIndex = $columns.findIndex((c) => c.key === sortBy)
         return [sortIndex, sortDirection]
     }, [store, $columns])
-
-    const { renderConfigQuery } = useConfigQuery(useStore, { columns, queryable })
 
     return (
         <StatefulContainer
@@ -215,7 +198,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                                 {viewable && changed && !$rowSelectedIds.size && (
                                     <div>
-                                        {store.currentView?.id !== 'all' && (
+                                        {!isAllRuns && (
                                             <>
                                                 <Button onClick={() => handleSave(store.currentView)}>Save</Button>
                                                 &nbsp;&nbsp;
@@ -242,7 +225,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 {columnable && !$rowSelectedIds.size && (
                                     <div className='table-config-column flex-row-center'>
                                         <ConfigManageColumns
-                                            view={store.currentView}
+                                            view={currentView}
                                             columns={props.columns}
                                             onApply={handleApply}
                                         />
