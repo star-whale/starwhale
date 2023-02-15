@@ -11,12 +11,10 @@ function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
     }, [columns])
 
     const $ids = React.useMemo(() => {
-        const { pinnedIds = [], ids = [], version = 0 }: ConfigT = view
+        const { pinnedIds = [], ids = [] }: ConfigT = view
 
         // NOTICE: used full columns when
-        //  view was not exist
-        //  view is all and no version update
-        if (!view.id || (view.id === 'all', version <= 0)) {
+        if (!view.id || (view.id === 'all' && ids.length === 0)) {
             return Array.from(new Set([...pinnedIds, ...columnIds]))
         }
         return ids
