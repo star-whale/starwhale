@@ -4,6 +4,8 @@ title: Standalone 快速上手
 
 ![Core Workflow](../img/standalone-core-workflow.gif)
 
+**本教程也提供Jupyter Notebook版本，可以在[Colab Notebook](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb)中在线体验。**
+
 ## 1. 安装Starwhale CLI
 
 Starwhale 有三种类型的Instances：Standalone-单机、On-Premises-私有化集群、Cloud Hosted-SaaS托管服务。Standalone是最简单的模式，可以从Standalone开启你的Starwhale MLOps之旅。Starwhale Standalone 是用Python3编写的，可以通过pip命令安装：
