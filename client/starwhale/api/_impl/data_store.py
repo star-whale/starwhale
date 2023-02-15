@@ -1425,6 +1425,7 @@ def gen_table_name(project: Union[str, int], table: str, instance_uri: str = "")
         )
 
 
+@http_retry
 def _get_remote_project_id(instance_uri: str, project: Union[str, int]) -> Any:
     resp = requests.get(
         urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
