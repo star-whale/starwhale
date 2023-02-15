@@ -1090,6 +1090,9 @@ class TestDatasetType(TestCase):
         content = link.to_bytes()
         assert content == raw_content
 
+        b = Binary(link=link)
+        assert b.to_bytes() == raw_content
+
     @Mocker()
     def test_link_cloud(self, rm: Mocker) -> None:
         link = Link(

@@ -249,7 +249,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self.__cache_bytes:
             return self.__cache_bytes
-        if isinstance(self.fp, bytes):
+        if self.fp and isinstance(self.fp, bytes):
             self.__cache_bytes = self.fp
             return self.__cache_bytes
         elif self.fp and isinstance(self.fp, (str, Path)):
@@ -261,10 +261,12 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
             self.fp.seek(_pos)
             self.__cache_bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
             return self.__cache_bytes
-        elif self.owner and self.link:
+        elif self.link:
             self.link.owner = self.owner
             self.__cache_bytes = self.link.to_bytes()
             return self.__cache_bytes
+        elif not self.fp and isinstance(self.fp, bytes):
+            return self.fp
         else:
             raise NoSupportError(f"read raw for type:{type(self.fp)}")
 
