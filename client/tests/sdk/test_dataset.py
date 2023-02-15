@@ -15,6 +15,7 @@ from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import numpy
+import numpy as np
 import torch
 import pytest
 from requests_mock import Mocker
@@ -53,6 +54,7 @@ from starwhale.core.dataset.type import (
     MIMEType,
     ClassLabel,
     BoundingBox,
+    NumpyBinary,
     ArtifactType,
     BoundingBox3D,
     GrayscaleImage,
@@ -858,6 +860,13 @@ class TestDatasetType(TestCase):
             "encoding": "",
             "display_name": "",
         }
+
+    def test_numpy_binary(self) -> None:
+        np_array = np.array([[1.008, 6.94, 22.990], [39.098, 85.468, 132.91]])
+        b = NumpyBinary(np_array.tobytes(), np_array.dtype, np_array.shape)
+        assert b.to_bytes() == np_array.tobytes()
+        np.testing.assert_array_equal(b.to_numpy(), np_array)
+        assert torch.equal(torch.from_numpy(np_array), b.to_tensor())
 
     def test_image(self) -> None:
         fp = io.StringIO("test")
