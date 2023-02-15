@@ -7,6 +7,7 @@ import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
+import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -114,9 +115,16 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             return () => subscription.unsubscribe()
         }, [eventBus, id, info, query])
 
-        if (tableName && !info.isSuccess) return <div ref={myRef as any} style={{ width: '100%', height: '100%' }} />
+        if (tableName && !info.isSuccess)
+            return (
+                <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
+                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
+                </div>
+            )
 
-        // if (tableName) console.log(id, tableConfig, query)
+        // if (!inViewport) return <div ref={myRef as any} style={{ width: '100%', height: '100%' }} />
+
+        // if (tableName) console.log(id, tableName, columnInfo.isSuccess, info.isSuccess)
 
         return (
             <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>

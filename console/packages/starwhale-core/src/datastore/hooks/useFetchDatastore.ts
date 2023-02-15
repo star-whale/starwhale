@@ -91,7 +91,7 @@ export function useQueryDatasetList(
     }, [tableName, enabled])
 
     React.useEffect(() => {
-        if (recordQuery.tableName) {
+        if (recordQuery.tableName && columnInfo.isSuccess) {
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
