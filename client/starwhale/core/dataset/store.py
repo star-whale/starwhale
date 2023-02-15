@@ -638,7 +638,7 @@ class HttpBufferedFileLike(BaseBufferedFileLike):
             return b""
         elif size < 0:
             # urllib3 resp read does not support to read -1
-            return self.resp.raw.read()  # type: ignore
+            return self.resp.content  # type: ignore
         else:
             return self.resp.raw.read(size)  # type: ignore
 
