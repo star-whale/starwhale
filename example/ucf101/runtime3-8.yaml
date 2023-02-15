@@ -1,9 +1,0 @@
-api_version: '1.1'
-dependencies:
-- requirements-sw-lock.txt
-environment:
-  python: 3.8
-  arch: noarch
-  os: ubuntu:20.04
-mode: venv
-name: ucf101
