@@ -92,6 +92,8 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
     onViewUpdate: (view) => {
         //
         view.updated = false
+        view.version = 0
+
         //
         const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
 
@@ -139,20 +141,32 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
     getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
 })
 
+const rawCurrentView = {
+    filters: [],
+    ids: [],
+    pinnedIds: [],
+    selectedIds: [],
+    sortBy: '',
+    version: 0,
+    updated: false,
+    id: 'all',
+}
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
     const update = (updateAttrs: Partial<ConfigT>) => {
         const curr = get().currentView
+        const version = _.isNumber(curr.version) ? curr.version + 1 : 1
         set({
             currentView: {
                 ...curr,
                 ...updateAttrs,
                 updated: true,
+                version,
             },
         })
     }
 
     return {
-        currentView: {},
+        currentView: rawCurrentView,
         onCurrentViewSaved: () => update({ updated: false }),
         onCurrentViewFiltersChange: (filters) => update({ filters }),
         onCurrentViewQueriesChange: (queries) => update({ queries }),
@@ -196,7 +210,8 @@ const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, g
 const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get, store) => ({
     isInit: false,
     key: 'table',
-    initStore: (obj: Record<string, any>) =>
+    initStore: (obj?: Record<string, any>) =>
+        !get().isInit &&
         set({
             ..._.pick(obj, Object.keys(rawInitialState)),
             isInit: true,
@@ -314,5 +329,6 @@ export const useEvaluationCompareStore = createCustomStore('compare', {
 
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []
+const currentViewSelector = (state: ITableState) => state.currentView ?? {}
 
-export { stateSelector, currentQueriesSelector }
+export { stateSelector, currentQueriesSelector, currentViewSelector }

@@ -131,8 +131,8 @@ export default function EvaluationListCard() {
         return evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
     }, [store.rowSelectedIds, evaluationsInfo.data?.records])
     const $ready = React.useMemo(() => {
-        return columnInfo.isSuccess && evaluationViewConfig.isSuccess && store.isInit
-    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess, store.isInit])
+        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
+    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
 
     const doSave = async () => {
         await setEvaluationViewConfig(projectId, {
@@ -163,13 +163,11 @@ export default function EvaluationListCard() {
         let $rawConfig
         try {
             $rawConfig = JSON.parse(evaluationViewConfig.data?.content, undefined) ?? {}
-            // console.log('upcoming state', $rawConfig)
-            store.initStore($rawConfig)
         } catch (e) {
             // console.log(e)
         }
-
         store.initStore($rawConfig)
+
         // store should not be used as a deps, it's will trigger cycle render
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [store.isInit, evaluationViewConfig.isSuccess])
