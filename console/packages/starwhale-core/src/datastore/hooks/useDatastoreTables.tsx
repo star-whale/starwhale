@@ -29,13 +29,13 @@ export function useDatastoreTablesByPrefix(prefix: string) {
     }
 }
 
-export default function useDatastoreTables(projectName: string, jobUuid: string) {
+export default function useDatastoreTables(projectId: string, jobUuid: string) {
     const queryAllTables = useMemo(() => {
-        if (!projectName || !jobUuid) return undefined
+        if (!projectId || !jobUuid) return undefined
         return {
-            prefix: tablesOfEvaluation(projectName, jobUuid),
+            prefix: tablesOfEvaluation(projectId, jobUuid),
         }
-    }, [projectName, jobUuid])
+    }, [projectId, jobUuid])
 
     return useDatastoreTablesByPrefix(queryAllTables?.prefix as string)
 }

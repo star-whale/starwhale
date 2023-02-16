@@ -78,7 +78,7 @@ export function SegmentOverlay({ masks = [] }: { masks: IArtifactImage[] }) {
     }, [masks])
 
     useEffect(() => {
-        if (canvasRef.current && masks[0]) {
+        if (canvasRef.current && masks[0] && imgDatas.length > 0) {
             const [height, width] = masks[0].shape
             const canvas = canvasRef.current
             canvas.width = width
