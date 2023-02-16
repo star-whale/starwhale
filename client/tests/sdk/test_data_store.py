@@ -2382,25 +2382,6 @@ class TestRemoteDataStore(unittest.TestCase):
             timeout=60,
         )
 
-    @patch("starwhale.api._impl.data_store.requests.get")
-    def test_gen_table_name(self, mock_get: Mock) -> None:
-        table_name = data_store.gen_table_name(project="starwhale", table="test")
-        assert table_name == "project/starwhale/test"
-
-        instance_uri = "http://1.1.1.1:8182"
-        data_store.gen_table_name(
-            project="starwhale", table="test", instance_uri=instance_uri
-        )
-
-        mock_get.assert_called_with(
-            f"{instance_uri}/api/v1/project/starwhale",
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "",
-            },
-            timeout=60,
-        )
-
 
 class TestTableWriter(BaseTestCase):
     def setUp(self) -> None:

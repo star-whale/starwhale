@@ -1,14 +1,21 @@
+import os
 import re
+import urllib
 import threading
 from enum import Enum, unique
-from typing import Any, Dict, List, Union, Iterator, Optional
+from typing import Any, Dict, List, Union, Callable, Iterator, Optional
+from functools import lru_cache
 
 import dill
+import requests
 from loguru import logger
 
-from starwhale.consts import VERSION_PREFIX_CNT
+from starwhale.consts import VERSION_PREFIX_CNT, STANDALONE_INSTANCE
 
 from . import data_store
+from ...consts.env import SWEnv
+from ...utils.retry import http_retry
+from ...utils.config import SWCliConfigMixed
 
 
 class Logger:
@@ -71,6 +78,45 @@ def _deserialize(data: bytes) -> Any:
     return dill.loads(data)
 
 
+table_name_formatter: Callable[
+    [Union[str, int], str], str
+] = lambda project, table: f"project/{project}/{table}"
+
+
+def _gen_storage_table_name(
+    project: Union[str, int], table: str, instance_uri: str = ""
+) -> str:
+    _instance_uri = instance_uri or os.getenv(SWEnv.instance_uri)
+    if (
+        _instance_uri is None
+        or _instance_uri == STANDALONE_INSTANCE
+        or isinstance(project, int)
+    ):
+        return table_name_formatter(project, table)
+    else:
+        return table_name_formatter(
+            _get_remote_project_id(_instance_uri, project), table
+        )
+
+
+@lru_cache(maxsize=None)
+@http_retry
+def _get_remote_project_id(instance_uri: str, project: str) -> Any:
+    resp = requests.get(
+        urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": (
+                SWCliConfigMixed().get_sw_token(instance=instance_uri)
+                or os.getenv(SWEnv.instance_token, "")
+            ),
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.json().get("data", {})["id"]
+
+
 class Evaluation(Logger):
     def __init__(self, eval_id: str, project: str, instance: str = ""):
         if not eval_id:
@@ -85,19 +131,40 @@ class Evaluation(Logger):
         self.eval_id = eval_id
         self.project = project
         self.instance = instance
-        self._results_table_name = self._get_datastore_table_name("results")
-        self._summary_table_name = data_store.gen_table_name(
-            project=self.project, table="eval/summary", instance_uri=self.instance
+        self._tables: Dict[str, str] = {}
+        self._eval_table_name: Callable[
+            [str], str
+        ] = (
+            lambda name: f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}"
         )
+        self._eval_summary_table_name = "eval/summary"
         self._data_store = data_store.get_data_store(instance_uri=instance)
-        self._init_writers([self._results_table_name, self._summary_table_name])
+        self._init_writers([])
 
-    def _get_datastore_table_name(self, name: str) -> str:
-        return data_store.gen_table_name(
-            project=self.project,
-            table=f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}",
-            instance_uri=self.instance,
+    def _get_storage_table_name(self, table: str) -> str:
+        with self._lock:
+            _table_name = self._tables.get(table)
+            if _table_name is None:
+                _table_name = _gen_storage_table_name(
+                    project=self.project,
+                    table=table,
+                    instance_uri=self.instance,
+                )
+                self._tables[table] = _table_name
+        return _table_name
+
+    def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+        _storage_table_name = self._get_storage_table_name(table_name)
+        super()._log(_storage_table_name, record)
+
+    def _get(self, table_name: str) -> Iterator[Dict[str, Any]]:
+        return self._data_store.scan_tables(
+            [data_store.TableDesc(self._get_storage_table_name(table=table_name))]
         )
+
+    def _flush(self, table_name: str) -> None:
+        _storage_table_name = self._get_storage_table_name(table_name)
+        super()._flush(_storage_table_name)
 
     def log_result(
         self,
@@ -109,7 +176,8 @@ class Evaluation(Logger):
         record = {"id": data_id, "result": _serialize(result) if serialize else result}
         for k, v in kwargs.items():
             record[k.lower()] = _serialize(v) if serialize else v
-        self._log(self._results_table_name, record)
+
+        self._log(self._eval_table_name("results"), record)
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
@@ -124,18 +192,17 @@ class Evaluation(Logger):
         else:
             for k, v in kwargs.items():
                 record[k.lower()] = v
-        self._log(self._summary_table_name, record)
+
+        self._log(self._eval_summary_table_name, record)
 
     def log(self, table_name: str, **kwargs: Any) -> None:
         record = {}
         for k, v in kwargs.items():
             record[k.lower()] = v
-        self._log(self._get_datastore_table_name(table_name), record)
+        self._log(self._eval_table_name(table_name), record)
 
     def get_results(self, deserialize: bool = False) -> Iterator[Dict[str, Any]]:
-        for data in self._data_store.scan_tables(
-            [data_store.TableDesc(self._results_table_name)]
-        ):
+        for data in self._get(self._eval_table_name("results")):
             if deserialize:
                 for _k, _v in data.items():
                     if _k == "id":
@@ -144,27 +211,23 @@ class Evaluation(Logger):
             yield data
 
     def get_metrics(self) -> Dict[str, Any]:
-        for metrics in self._data_store.scan_tables(
-            [data_store.TableDesc(self._summary_table_name)]
-        ):
+        for metrics in self._get(self._eval_summary_table_name):
             if metrics["id"] == self.eval_id:
                 return metrics
 
         return {}
 
     def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
-        return self._data_store.scan_tables(
-            [data_store.TableDesc(self._get_datastore_table_name(table_name))]
-        )
+        return self._get(self._eval_table_name(table_name))
 
     def flush_result(self) -> None:
-        self._flush(self._results_table_name)
+        self._flush(self._eval_table_name("results"))
 
     def flush_metrics(self) -> None:
-        self._flush(self._summary_table_name)
+        self._flush(self._eval_summary_table_name)
 
     def flush(self, table_name: str) -> None:
-        self._flush(table_name)
+        self._flush(self._eval_table_name(table_name))
 
 
 @unique
@@ -191,7 +254,7 @@ class Dataset(Logger):
         self.dataset_id = dataset_id
         self.project = project
         self._kind = kind
-        self._table_name = data_store.gen_table_name(
+        self._table_name = _gen_storage_table_name(
             project=project,
             table=f"dataset/{self.dataset_id}/{kind.value}",
             instance_uri=instance_name,

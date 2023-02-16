@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 
 from requests_mock import Mocker
 
@@ -9,6 +10,7 @@ from starwhale.consts.env import SWEnv
 from .test_base import BaseTestCase
 
 
+@patch.dict(os.environ, {"SW_TOKEN": "sw_token"})
 class TestEvaluation(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -17,6 +19,34 @@ class TestEvaluation(BaseTestCase):
         super().tearDown()
         os.environ.pop(SWEnv.instance_uri, None)
         os.environ.pop(SWEnv.instance_token, None)
+
+    @Mocker()
+    def test_gen_table_name(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.GET,
+            "http://localhost:80/api/v1/project/project-test",
+            json={"data": {"id": 1, "name": "project-test"}},
+        )
+
+        eval = wrapper.Evaluation("123456", "project-test", instance="local")
+
+        result_table_name = eval._eval_table_name("results")
+        assert result_table_name == "eval/12/123456/results"
+
+        table_name_1 = eval._get_storage_table_name("table-1")
+        assert table_name_1 == "project/project-test/table-1"
+
+        eval = wrapper.Evaluation(
+            "123456", "project-test", instance="http://localhost:80"
+        )
+
+        result_table = eval._eval_table_name("results")
+        result_table_name = eval._get_storage_table_name(result_table)
+        assert result_table == "eval/12/123456/results"
+        assert result_table_name == "project/1/eval/12/123456/results"
+
+        table_name_1 = eval._get_storage_table_name("table-1")
+        assert table_name_1 == "project/1/table-1"
 
     def test_log_results_and_scan(self) -> None:
         eval = wrapper.Evaluation("tt", "test")
