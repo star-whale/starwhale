@@ -1,0 +1,38 @@
+# "docker-registry.starwhale.cn" is the Starwhale official docker registry for the China mainland users that syncs all docker images from https://github.com/orgs/star-whale/packages.
+image:
+  registry: docker-registry.starwhale.cn
+  org: star-whale
+
+mysql:
+  enabled: true
+  initImage: docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6
+  image: docker-registry.starwhale.cn/bitnami/mysql:8.0.29-debian-10-r2
+
+minio:
+  enabled: true
+  initImage: docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6
+  image: docker-registry.starwhale.cn/bitnami/minio:2022.6.20-debian-11-r0
+  ingress:
+    enabled: false
+
+controller:
+  taskSplitSize: 1
+  containerPort: 8082
+  ingress:
+    enabled: false
+
+minikube:
+  enabled: true
+
+mirror:
+  pypi:
+    enabled: true
+    indexUrl: "https://mirrors.aliyun.com/pypi/simple/"
+    extraIndexUrl: "https://pypi.doubanio.com/simple/"
+    trustedHost: "mirrors.aliyun.com pypi.doubanio.com"
+# If you use the Aliyun ECS, the ECS internal pypi mirror is a better choice. Examples are shown below:
+# mirror:
+#   pypi:
+#     enabled: true
+#     indexUrl: "https://mirrors.cloud.aliyuncs.com/pypi/simple/"
+#     trustedHost: "mirrors.cloud.aliyuncs.com"

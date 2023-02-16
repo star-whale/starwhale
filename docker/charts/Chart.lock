@@ -2,14 +2,5 @@ dependencies:
 - name: common
   repository: https://charts.bitnami.com/bitnami
   version: 1.16.0
-- name: mysql
-  repository: https://charts.bitnami.com/bitnami
-  version: 8.9.6
-- name: minio
-  repository: https://charts.bitnami.com/bitnami
-  version: 11.7.6
-- name: nexus-repository-manager
-  repository: https://sonatype.github.io/helm3-charts/
-  version: 39.0.0
-digest: sha256:882b4bd412bf6cd30cce2236144b1e0ad8edf7585ac46d0d6d39479fc26e530c
-generated: "2022-06-21T19:23:38.63261854+08:00"
+digest: sha256:cd0a73bdd9d5146e1392f5aa4c552822bed8c80f6fb962e56444d342f918e546
+generated: "2023-02-13T17:11:47.46212364+08:00"

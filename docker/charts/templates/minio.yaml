@@ -1,0 +1,131 @@
+{{- if .Values.minio.enabled }}
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "chart.minio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "chart.minio.labels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: {{- include "chart.minio.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: volume-permissions
+          image: "{{ .Values.minio.initImage }}"
+          command:
+            - /bin/bash
+            - -ec
+            - chown -R 1001:1001 /data
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: minio
+          image: "{{ .Values.minio.image }}"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: MINIO_SCHEME
+              value: http
+            - name: MINIO_FORCE_NEW_KEYS
+              value: "no"
+            - name: MINIO_DEFAULT_BUCKETS
+              value: {{ .Values.minio.defaultBuckets }}
+            - name: MINIO_ROOT_USER
+              value: {{ .Values.minio.auth.rootUser }}
+            - name: MINIO_ROOT_PASSWORD
+              value: {{ .Values.minio.auth.rootPassword }}
+            - name: MINIO_BROWSER
+              value: "on"
+            - name: MINIO_CONSOLE_PORT_NUMBER
+              value: {{ .Values.minio.ports.console | quote}}
+          ports:
+            - name: minio-api
+              containerPort: {{ .Values.minio.ports.api }}
+              protocol: TCP
+            - name: minio-console
+              containerPort: {{ .Values.minio.ports.console }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: minio-api
+              scheme: "HTTP"
+          readinessProbe:
+            tcpSocket:
+              port: minio-api
+          {{- if .Values.minio.resources }}
+          resources: {{- toYaml .Values.minio.resources | nindent 12 }}
+          {{- end }}
+      securityContext:
+        fsGroup: 1001
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.minio.labels" . | nindent 4 }}
+spec:
+  type: "ClusterIP"
+  ports:
+    - name: minio-api
+      port: {{ .Values.minio.ports.api }}
+      targetPort: minio-api
+    - name: minio-console
+      port: {{ .Values.minio.ports.console }}
+      targetPort: minio-console
+  selector: {{ include "chart.minio.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.minio.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ include "common.names.fullname" . }}-minio
+  volumeMode: Filesystem
+  volumeName: {{ include "common.names.fullname" . }}-pv-minio
+  resources:
+    requests:
+      storage: {{ .Values.minio.persistence.size | quote }}
+---
+{{- if .Values.minio.ingress.enabled }}
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "chart.minio.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.minio.ingress.ingressClassName | quote }}
+  rules:
+    - host: {{ .Values.minio.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: minio
+                port:
+                  name: minio-console
+            path: /
+            pathType: ImplementationSpecific
+{{- end}}
+{{- end }}

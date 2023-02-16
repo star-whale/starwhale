@@ -35,29 +35,29 @@ Common labels
 */}}
 {{- define "chart.labels" -}}
 helm.sh/chart: {{ include "chart.chart" . }}
-{{ include "chart.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{/*
-controller label
-*/}}
 {{- define "chart.controller.labels" -}}
 starwhale.ai/role: controller
 app.kubernetes.io/name: {{ include "common.names.fullname" . }}
-app.kubernetes.io/instance: {{ include "common.names.fullname" . }}-controller
+app.kubernetes.io/instance: controller
 {{- end}}
 
-{{/*
-Selector labels
-*/}}
-{{- define "chart.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "chart.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- define "chart.mysql.labels" -}}
+starwhale.ai/role: mysql
+app.kubernetes.io/name: {{ include "common.names.fullname" . }}
+app.kubernetes.io/instance: mysql
+{{- end}}
+
+{{- define "chart.minio.labels" -}}
+starwhale.ai/role: minio
+app.kubernetes.io/name: {{ include "common.names.fullname" . }}
+app.kubernetes.io/instance: minio
+{{- end}}
 
 {{/*
 Create the name of the service account to use
@@ -92,7 +92,7 @@ Create PV for dev mode
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Release.Name }}-pv-{{ .backend }}
+  name: {{ include "common.names.fullname" . }}-pv-{{ .backend }}
   namespace: {{ .Release.Namespace }}
 spec:
   capacity:
@@ -101,14 +101,14 @@ spec:
   accessModes:
   - ReadWriteOnce
   hostPath:
-    path: {{ .rootPath }}/{{ .backend }}
+    path: {{ .rootPath }}/{{ include "common.names.fullname" . }}/{{ .backend }}
     type: DirectoryOrCreate
-  storageClassName: {{ .Release.Name }}-{{ .backend }}
+  storageClassName: {{ include "common.names.fullname" . }}-{{ .backend }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}-{{ .backend }}
+  name: {{ include "common.names.fullname" . }}-{{ .backend }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 {{- end}}

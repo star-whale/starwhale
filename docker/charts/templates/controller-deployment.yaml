@@ -1,22 +1,16 @@
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
-  name: {{ include "common.names.fullname" . }}-controller
-  labels: {{ include "common.labels.standard" . | nindent 4 }}
-  {{- if .Values.commonLabels }}
-  {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
-  {{- end }}
-    starwhale.ai/role: controller
+  name: controller
+  labels: {{ include "chart.controller.labels" . | nindent 4 }}
 
 spec:
   replicas: 1
   selector:
-    matchLabels:
-      {{ include "chart.controller.labels" . | nindent 6}}
+    matchLabels: {{ include "chart.controller.labels" . | nindent 6}}
   template:
     metadata:
-      labels:
-        {{ include "chart.controller.labels" . | nindent 8}}
+      labels: {{ include "chart.controller.labels" . | nindent 8}}
     spec:
       volumes:
         - name: controller-storage
@@ -85,6 +79,8 @@ spec:
               value: "{{ .Release.Name }}"
             - name: SW_RUNTIME_IMAGE_DEFAULT
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            - name: SW_DOCKER_REGISTRY_URL
+              value: "{{ .Values.image.registry }}"
             - name: SW_TASK_SPLIT_SIZE
               value: "{{ .Values.controller.taskSplitSize }}"
             - name: SW_HOST_IP
@@ -96,10 +92,10 @@ spec:
             - name: SW_K8S_HOST_PATH_FOR_CACHE
               value: {{ .Values.storage.agentHostPathRoot }}/job
             - name: SW_INSTANCE_URI
-              value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}"
+              value: "http://controller:{{ .Values.controller.containerPort }}"
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
-              value: "http://{{ .Release.Name }}-minio:{{ .Values.minio.containerPorts.api }}"
+              value: "http://minio:{{ .Values.minio.ports.api }}"
             - name: SW_STORAGE_BUCKET
               value: "{{ .Values.minio.defaultBuckets }}"
             - name: SW_STORAGE_ACCESSKEY
@@ -110,23 +106,23 @@ spec:
               value: "local"
             {{- else }}
             - name: SW_STORAGE_ENDPOINT
-              value: "http://{{ .Values.externalS3OSS.host }}:{{ .Values.externalS3OSS.port }}"
+              value: "http://{{ .Values.externalOSS.host }}:{{ .Values.externalOSS.port }}"
             - name: SW_STORAGE_BUCKET
-              value: "{{ .Values.externalS3OSS.defaultBuckets }}"
+              value: "{{ .Values.externalOSS.defaultBuckets }}"
             - name: SW_STORAGE_ACCESSKEY
-              value: "{{ .Values.externalS3OSS.accessKey }}"
+              value: "{{ .Values.externalOSS.accessKey }}"
             - name: SW_STORAGE_SECRETKEY
-              value: "{{ .Values.externalS3OSS.secretKey }}"
+              value: "{{ .Values.externalOSS.secretKey }}"
             - name: SW_STORAGE_REGION
-              value: "{{ .Values.externalS3OSS.region }}"
+              value: "{{ .Values.externalOSS.region }}"
             - name: SW_STORAGE_TYPE
-              value: "{{ .Values.externalS3OSS.type }}"
+              value: "{{ .Values.externalOSS.type }}"
             {{- end }}
             {{- if .Values.mysql.enabled }}
             - name: SW_METADATA_STORAGE_IP
-              value: "{{ .Release.Name }}-mysql"
+              value: "mysql"
             - name: SW_METADATA_STORAGE_PORT
-              value: "{{ .Values.mysql.primary.service.port }}"
+              value: "{{ .Values.mysql.ports.api }}"
             - name: SW_METADATA_STORAGE_PASSWORD # todo whether use secret
               value: "{{ .Values.mysql.auth.password }}"
             - name: SW_METADATA_STORAGE_USER

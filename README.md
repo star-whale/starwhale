@@ -284,41 +284,61 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     minikube start
     ```
 
-    > For users in the mainland of China, please add these startup parameters：`--image-mirror-country=cn --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers`. If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
+    > For users in the mainland of China, please add the startup parameter：`--image-mirror-country=cn`.
+
+    ```bash
+    minikube start --image-mirror-country=cn
+    ```
+
+    If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
 
 - 🍵 **STEP3**: Installing Starwhale
 
     ```bash
     helm repo add starwhale https://star-whale.github.io/charts
     helm repo update
-    export SWNAME=starwhale SWNS=starwhale
-    helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio --set image.registry=docker-registry.starwhale.cn --set minio.global.imageRegistry=docker-registry.starwhale.cn --set mysql.global.imageRegistry=docker-registry.starwhale.cn
+    helm pull starwhale/starwhale --untar --untardir ./charts
+
+    helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.global.yaml
+    ```
+
+    > For users in the mainland of China, use `values.minikube.global.yaml`.
+
+    ```bash
+    helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.cn.yaml
     ```
 
     After the installation is successful, the following prompt message appears:
 
     ```bash
+    Release "starwhale" has been upgraded. Happy Helming!
     NAME: starwhale
-    LAST DEPLOYED: Thu Jun 23 14:48:02 2022
+    LAST DEPLOYED: Tue Feb 14 16:25:03 2023
     NAMESPACE: starwhale
     STATUS: deployed
-    REVISION: 1
+    REVISION: 14
     NOTES:
     ******************************************
     Chart Name: starwhale
-    Chart Version: 0.3.0
-    App Version: 0.3.0
-    ...
+    Chart Version: 0.1.0
+    App Version: latest
+    Starwhale Image:
+        - server: ghcr.io/star-whale/server:latest
+    Runtime default Image:
+    - runtime image: ghcr.io/star-whale/starwhale:latest
+
+    ******************************************
+    Web Visit:
 
     Port Forward Visit:
     - starwhale controller:
-        - run: kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082
+        - run: kubectl port-forward --namespace starwhale svc/controller 8082:8082
         - visit: http://localhost:8082
     - minio admin:
-        - run: kubectl port-forward --namespace starwhale svc/starwhale-minio 9001:9001
+        - run: kubectl port-forward --namespace starwhale svc/minio 9001:9001
         - visit: http://localhost:9001
     - mysql:
-        - run: kubectl port-forward --namespace starwhale svc/starwhale-mysql 3306:3306
+        - run: kubectl port-forward --namespace starwhale svc/mysql 3306:3306
         - visit: mysql -h 127.0.0.1 -P 3306 -ustarwhale -pstarwhale
 
     ******************************************
@@ -326,25 +346,25 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     - starwhale: u:starwhale, p:abcd1234
     - minio admin: u:minioadmin, p:minioadmin
 
-    *_* Enjoy using Starwhale. *_*
+    *_* Enjoy to use Starwhale Platform. *_*
     ```
 
-    Then keep checking the minikube service status until all pods are running.
+    Then keep checking the minikube service status until all deployments are running.
 
     ```bash
-    kubectl get pods -n starwhale
+    kubectl get deployments -n starwhale
     ```
 
-    | NAME | READY | STATUS | RESTARTS | AGE |
-    |:-----|-------|--------|----------|-----|
-    |starwhale-controller-7d864558bc-vxvb8|1/1|Running|0|1m
-    |starwhale-minio-7d45db75f6-7wq9b|1/1|Running|0|2m
-    |starwhale-mysql-0|1/1|Running|0|2m
+    | NAME | READY | UP-TO-DATE| AVAILABLE | AGE |
+    |------|-------|--------|----------|-----|
+    |controller|1/1|1|1|5m|
+    |minio|1/1|1|1|5m|
+    |mysql|1/1|1|1|5m|
 
     Make the Starwhale controller accessible locally with the following command:
 
     ```bash
-    kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082
+    kubectl port-forward --namespace starwhale svc/controller 8082:8082
     ```
 
 - ☕ **STEP4**: Upload the artifacts to the cloud instance

@@ -14,19 +14,7 @@ icon: https://github.com/star-whale/starwhale/raw/main/docs/static/img/logo_72x7
 dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
-    version: 1.x.x
-  - name: mysql
-    condition: mysql.enabled
-    repository: https://charts.bitnami.com/bitnami
-    version: 8.x.x
-  - name: minio
-    condition: minio.enabled
-    repository: https://charts.bitnami.com/bitnami
-    version: 11.x.x
-  - name: nexus-repository-manager
-    condition: nexus3.enabled
-    repository: https://sonatype.github.io/helm3-charts/
-    version: 39.x.x
+    version: 1.16.0
 
 version: "0.1.0"
 appVersion: "latest"
