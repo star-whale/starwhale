@@ -85,17 +85,27 @@ class Evaluation(Logger):
         self.eval_id = eval_id
         self.project = project
         self.instance = instance
-        self._results_table_name = None
-        self._summary_table_name = None
+        self._tables: Dict[str, str] = {}
+        self._eval_table_name = (
+            lambda name: f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}"
+        )
+        self._eval_summary_table_name = "eval/summary"
         self._data_store = data_store.get_data_store(instance_uri=instance)
         self._init_writers([])
 
-    def _get_datastore_table_name(self, name: str) -> str:
-        return data_store.gen_table_name(
-            project=self.project,
-            table=f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}",
-            instance_uri=self.instance,
-        )
+    def _fetch_table_name(self, table: str) -> str:
+        with self._lock:
+            if table not in self._tables:
+                self._tables.setdefault(table)
+            _table_name = self._tables.get(table)
+            if _table_name is None:
+                _table_name = data_store.gen_table_name(
+                    project=self.project,
+                    table=table,
+                    instance_uri=self.instance,
+                )
+                self._tables[table] = _table_name
+        return _table_name
 
     def log_result(
         self,
@@ -108,9 +118,9 @@ class Evaluation(Logger):
         for k, v in kwargs.items():
             record[k.lower()] = _serialize(v) if serialize else v
 
-        if not self._results_table_name:
-            self._results_table_name = self._get_datastore_table_name("results")
-        self._log(self._results_table_name, record)
+        self._log(
+            self._fetch_table_name(table=self._eval_table_name("results")), record
+        )
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
@@ -126,21 +136,23 @@ class Evaluation(Logger):
             for k, v in kwargs.items():
                 record[k.lower()] = v
 
-        if not self._summary_table_name:
-            self._summary_table_name = data_store.gen_table_name(
-                project=self.project, table="eval/summary", instance_uri=self.instance
-            )
-        self._log(self._summary_table_name, record)
+        self._log(self._fetch_table_name(table=self._eval_summary_table_name), record)
 
     def log(self, table_name: str, **kwargs: Any) -> None:
         record = {}
         for k, v in kwargs.items():
             record[k.lower()] = v
-        self._log(self._get_datastore_table_name(table_name), record)
+        self._log(
+            self._fetch_table_name(table=self._eval_table_name(table_name)), record
+        )
 
     def get_results(self, deserialize: bool = False) -> Iterator[Dict[str, Any]]:
         for data in self._data_store.scan_tables(
-            [data_store.TableDesc(self._results_table_name)]
+            [
+                data_store.TableDesc(
+                    self._fetch_table_name(table=self._eval_table_name("results"))
+                )
+            ]
         ):
             if deserialize:
                 for _k, _v in data.items():
@@ -151,7 +163,11 @@ class Evaluation(Logger):
 
     def get_metrics(self) -> Dict[str, Any]:
         for metrics in self._data_store.scan_tables(
-            [data_store.TableDesc(self._summary_table_name)]
+            [
+                data_store.TableDesc(
+                    self._fetch_table_name(table=self._eval_summary_table_name)
+                )
+            ]
         ):
             if metrics["id"] == self.eval_id:
                 return metrics
@@ -160,17 +176,21 @@ class Evaluation(Logger):
 
     def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [data_store.TableDesc(self._get_datastore_table_name(table_name))]
+            [
+                data_store.TableDesc(
+                    self._fetch_table_name(table=self._eval_table_name(table_name))
+                )
+            ]
         )
 
     def flush_result(self) -> None:
-        self._flush(self._results_table_name)
+        self._flush(self._fetch_table_name(table=self._eval_table_name("results")))
 
     def flush_metrics(self) -> None:
-        self._flush(self._summary_table_name)
+        self._flush(self._fetch_table_name(table=self._eval_summary_table_name))
 
     def flush(self, table_name: str) -> None:
-        self._flush(table_name)
+        self._flush(self._fetch_table_name(table=self._eval_table_name(table_name)))
 
 
 @unique
