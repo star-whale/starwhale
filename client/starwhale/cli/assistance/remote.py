@@ -79,9 +79,6 @@ class CommandRunner(TaskRunner):
                 while not self.stopped and stderr_writer.is_alive():
                     stderr_writer.join(0.5)
         finally:
-            if stdin_reader is not None:
-                stdin_reader.stop()
-                stdin_reader.join()
             if stdin_writer is not None:
                 stdin_writer.stop()
                 stdin_writer.join()
