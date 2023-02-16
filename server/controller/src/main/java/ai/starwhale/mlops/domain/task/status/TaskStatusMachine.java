@@ -24,6 +24,7 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.PAUSED;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.RETRYING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.TO_CANCEL;
@@ -43,7 +44,8 @@ public class TaskStatusMachine {
             new SimpleEntry<>(PAUSED, Set.of(PREPARING, ASSIGNING, RUNNING, READY, CANCELED, SUCCESS)),
             new SimpleEntry<>(ASSIGNING, Set.of(CREATED, PREPARING, RUNNING, SUCCESS, FAIL, TO_CANCEL)),
             new SimpleEntry<>(PREPARING, Set.of(RUNNING, SUCCESS, FAIL, TO_CANCEL)),
-            new SimpleEntry<>(RUNNING, Set.of(SUCCESS, FAIL, TO_CANCEL)),
+            new SimpleEntry<>(RUNNING, Set.of(RETRYING, SUCCESS, FAIL, TO_CANCEL)),
+            new SimpleEntry<>(RETRYING, Set.of(SUCCESS, FAIL, TO_CANCEL)),
             new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING, CANCELED, SUCCESS, FAIL)),
             new SimpleEntry<>(CANCELLING, Set.of(CANCELED, FAIL)),
             new SimpleEntry<>(CANCELED, Set.of()),

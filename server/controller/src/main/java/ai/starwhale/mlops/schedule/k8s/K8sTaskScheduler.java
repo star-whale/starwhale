@@ -299,7 +299,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     @EventListener
     public void handleContextReadyEvent(ApplicationReadyEvent ctxReadyEvt) {
         log.info("spring context ready now");
-        // k8sClient.watchJob(eventHandlerJob, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
+        k8sClient.watchJob(eventHandlerJob, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
         k8sClient.watchNode(eventHandlerNode);
         k8sClient.watchPod(eventHandlerPod, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
     }

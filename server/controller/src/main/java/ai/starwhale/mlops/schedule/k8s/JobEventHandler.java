@@ -27,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Deprecated
 @Component
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
@@ -69,10 +68,10 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (null != status.getFailed()) {
             taskStatus = TaskStatus.FAIL;
             log.debug("job status changed for {} is failed {}", jobName(newObj), status);
-        } else if (null != status.getActive()) {
+        } /*else if (null != status.getActive()) {
             taskStatus = TaskStatus.RUNNING;
             log.debug("job status changed for {} is running {}", jobName(newObj), status);
-        } else if (null != status.getSucceeded()) {
+        } */else if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
             log.debug("job status changed for {} is success  {}", jobName(newObj), status);
         } else {
