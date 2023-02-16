@@ -9,6 +9,7 @@ export interface IRuntimeVersionSchema extends IResourceSchema {
     owner?: IUserSchema
     alias: string
     image: string
+    runtimeId: string
 }
 
 export interface IRuntimeVersionListSchema extends IResourceSchema {
@@ -35,4 +36,8 @@ export interface ICreateRuntimeVersionSchema {
 export interface IRuntimeVersionListQuerySchema extends IListQuerySchema {
     vName?: string
     vTag?: string
+}
+
+export interface IRuntimeVersionSuggestionSchema {
+    runtimes: IRuntimeVersionSchema[]
 }

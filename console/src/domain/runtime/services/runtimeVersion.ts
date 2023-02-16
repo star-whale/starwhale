@@ -6,6 +6,7 @@ import {
     IUpdateRuntimeVersionSchema,
     IRuntimeVersionDetailSchema,
     IRuntimeVersionListQuerySchema,
+    IRuntimeVersionSuggestionSchema,
 } from '../schemas/runtimeVersion'
 
 export async function listRuntimeVersions(
@@ -69,4 +70,14 @@ export async function recoverRuntimeVersion(
         `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/recover`
     )
     return resp.data
+}
+
+export async function fetchRuntimeVersionSuggestion(
+    projectId: string,
+    modelVersionId: string
+): Promise<IRuntimeVersionSuggestionSchema> {
+    const { data } = await axios.get<IRuntimeVersionSuggestionSchema>('/api/v1/job/suggestion/runtime', {
+        params: { projectId, modelVersionId },
+    })
+    return data
 }
