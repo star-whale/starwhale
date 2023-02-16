@@ -1,7 +1,7 @@
 import re
 import threading
 from enum import Enum, unique
-from typing import Any, Dict, List, Union, Iterator, Optional
+from typing import Any, Dict, List, Union, Callable, Iterator, Optional
 
 import dill
 from loguru import logger
@@ -86,7 +86,9 @@ class Evaluation(Logger):
         self.project = project
         self.instance = instance
         self._tables: Dict[str, str] = {}
-        self._eval_table_name = (
+        self._eval_table_name: Callable[
+            [str], str
+        ] = (
             lambda name: f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}"
         )
         self._eval_summary_table_name = "eval/summary"
@@ -95,8 +97,6 @@ class Evaluation(Logger):
 
     def _fetch_table_name(self, table: str) -> str:
         with self._lock:
-            if table not in self._tables:
-                self._tables.setdefault(table)
             _table_name = self._tables.get(table)
             if _table_name is None:
                 _table_name = data_store.gen_table_name(
