@@ -4,7 +4,6 @@ import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
-import { useProject } from '@/domain/project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { tablesOfEvaluation } from '@starwhale/core'
 import { useParams } from 'react-router-dom'
@@ -26,10 +25,9 @@ export function withEditorRegister(EditorApp: React.FC) {
         // log.debug('WidgetFactory', WidgetFactory.widgetMap)
         // @FIXME
         const { projectId } = useParams<{ projectId: string }>()
-        const { project } = useProject()
         const { job } = useJob()
         // eslint-disable-next-line prefer-template
-        const prefix = project?.name && job?.uuid ? tablesOfEvaluation(project?.name, job?.uuid) + '/' : undefined
+        const prefix = projectId && job?.uuid ? tablesOfEvaluation(projectId, job?.uuid) + '/' : undefined
         const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : undefined
         if (!prefix || !storeKey || !projectId) {
             return <BusyPlaceholder type='spinner' />

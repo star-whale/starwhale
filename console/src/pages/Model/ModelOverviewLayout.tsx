@@ -8,11 +8,9 @@ import { fetchModel, removeModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import IconFont from '@starwhale/ui/IconFont'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
-import { Button } from '@starwhale/ui'
+import { Button, Toggle } from '@starwhale/ui'
 import { usePage } from '@/hooks/usePage'
 import qs from 'qs'
-import Checkbox from '@starwhale/ui/Checkbox'
-import { STYLE_TYPE } from 'baseui/checkbox'
 import { createUseStyles } from 'react-jss'
 import { useQueryArgs } from '@starwhale/core'
 import { ConfirmButton } from '@starwhale/ui/Modal'
@@ -165,18 +163,17 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                                <Checkbox
-                                    checked={isCompare}
-                                    onChange={(e) => {
-                                        setIsCompare(e.currentTarget.checked)
-                                        if (!e.currentTarget.checked)
+                                <Toggle
+                                    value={isCompare}
+                                    onChange={(checked) => {
+                                        setIsCompare(checked)
+                                        if (!checked)
                                             history.push(
                                                 `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/${activeItemId}?${qs.stringify(
                                                     { ...page, compare: undefined }
                                                 )}`
                                             )
                                     }}
-                                    checkmarkType={STYLE_TYPE.toggle_round}
                                 />
                                 {t('model.viewer.compare')}
                             </div>

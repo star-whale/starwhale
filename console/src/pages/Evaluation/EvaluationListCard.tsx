@@ -15,7 +15,6 @@ import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
-import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
@@ -28,11 +27,9 @@ export default function EvaluationListCard() {
     const [t] = useTranslation()
     const history = useHistory()
     const { projectId } = useParams<{ projectId: string }>()
-    const { project } = useProject()
     const summaryTableName = React.useMemo(() => {
-        if (!project?.name) return ''
-        return tableNameOfSummary(project?.name as string)
-    }, [project])
+        return tableNameOfSummary('starwhale')
+    }, [projectId])
     const store = useEvaluationStore()
 
     const options = React.useMemo(() => {
