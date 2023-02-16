@@ -79,6 +79,7 @@ class StandaloneModelTestCase(TestCase):
 
         svc = MagicMock(spec=Service)
         svc.get_spec.return_value = {}
+        svc.example_resources = []
         m_get_service.return_value = svc
 
         model_uri = URI(self.name, expected_type=URIType.MODEL)
@@ -454,8 +455,13 @@ def test_build_with_custom_config_file(
         "current_instance": "local",
     }
 
+    # generate a fake file as the example
+    example = tmp_path / "example.png"
+    ensure_file(example, "fake image content")
+
     svc = MagicMock(spec=Service)
     svc.get_spec.return_value = {}
+    svc.example_resources = [example]
     m_get_service.return_value = svc
 
     name = "foo"
@@ -486,3 +492,4 @@ def test_build_with_custom_config_file(
     assert bundle_path.exists()
     assert (bundle_path / "src").exists()
     assert (bundle_path / "src" / DefaultYAMLName.MODEL).exists()
+    assert (bundle_path / "src" / ".starwhale" / "examples" / "example.png").exists()

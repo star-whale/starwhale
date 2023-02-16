@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import os
 import typing as t
 import functools
 from dataclasses import dataclass
@@ -28,10 +31,25 @@ class Api:
         return func
 
 
+@dataclass
+class Hijack:
+    """
+    Hijack options for online evaluation, useless for local usage.
+    """
+
+    # if hijack the submit button js logic
+    submit: bool = False
+    # the resource path serving on the server side
+    # used for example resource render for console
+    resource_path: t.Optional[str] = None
+
+
 class Service:
-    def __init__(self) -> None:
+    def __init__(self, hijack: t.Optional[Hijack] = None) -> None:
         self.apis: t.Dict[str, Api] = {}
         self.api_instance: t.Any = None
+        self.example_resources: t.List[str] = []
+        self.hijack = hijack
 
     # TODO: support function as input and output
     def api(
@@ -70,19 +88,19 @@ class Service:
         # fast path
         if not self.apis:
             return {}
-        # hijack_submit set to True for generating config for console (On-Premises)
-        server = self._gen_gradio_server(hijack_submit=True)
+        server = self._gen_gradio_server()
         return server.get_config_file()
 
     def get_openapi_spec(self) -> t.Any:
-        server = self._gen_gradio_server(hijack_submit=True)
+        server = self._gen_gradio_server()
         return server.app.openapi()
 
-    def _render_api(self, _api: Api, hijack_submit: bool) -> None:
+    def _render_api(self, _api: Api) -> None:
         import gradio
+        from gradio.components import File, Image, Video, Changeable, IOComponent
 
         js_func: t.Optional[str] = None
-        if hijack_submit:
+        if self.hijack and self.hijack.submit:
             js_func = "async(...x) => { typeof wait === 'function' && await wait(); return x; }"
         with gradio.Row():
             with gradio.Column():
@@ -91,25 +109,39 @@ class Service:
                     comp = gradio.components.get_component_instance(
                         i, render=False
                     ).render()
-                    if isinstance(comp, gradio.components.Changeable):
+                    if isinstance(comp, Changeable):
                         comp.change(fn=fn, inputs=i, outputs=_api.output, _js=js_func)
-                if _api.examples:
-                    gradio.Examples(
+                # do not serve the useless examples in server instances
+                # the console will render them even the models are not serving
+                if _api.examples and not in_production():
+                    example = gradio.Examples(
                         examples=_api.examples,
-                        inputs=[
-                            i
-                            for i in _api.input
-                            if isinstance(i, gradio.components.IOComponent)
-                        ],
-                        fn=fn,
+                        inputs=[i for i in _api.input if isinstance(i, IOComponent)],
                     )
+                    if any(
+                        isinstance(i, (File, Image, Video))
+                        for i in example.dataset.components
+                    ):
+                        # examples should be a list of file path
+                        # use flatten list
+                        to_copy = [i for j in example.examples for i in j]
+                        self.example_resources.extend(to_copy)
+                        # change example resource path for online evaluation
+                        # e.g. /path/to/example.png -> /workdir/src/.starwhale/examples/example.png
+                        if self.hijack and self.hijack.resource_path:
+                            for i in range(len(example.dataset.samples)):
+                                for j in range(len(example.dataset.samples[i])):
+                                    origin = example.dataset.samples[i][j]
+                                    if origin in to_copy:
+                                        name = os.path.basename(origin)
+                                        example.dataset.samples[i][j] = os.path.join(
+                                            self.hijack.resource_path, name
+                                        )
             with gradio.Column():
                 for i in _api.output:
                     gradio.components.get_component_instance(i, render=False).render()
 
-    def _gen_gradio_server(
-        self, hijack_submit: bool, title: t.Optional[str] = None
-    ) -> "Blocks":
+    def _gen_gradio_server(self, title: t.Optional[str] = None) -> Blocks:
         import gradio
 
         apis = self.apis.values()
@@ -117,7 +149,7 @@ class Service:
             with gradio.Tabs():
                 for _api in apis:
                     with gradio.TabItem(label=_api.uri):
-                        self._render_api(_api, hijack_submit)
+                        self._render_api(_api)
         app.title = title or "starwhale"
         return app
 
@@ -129,7 +161,7 @@ class Service:
         :param title webpage title
         :return: None
         """
-        server = self._gen_gradio_server(hijack_submit=in_production(), title=title)
+        server = self._gen_gradio_server(title=title)
         server.launch(server_name=addr, server_port=port)
 
 
