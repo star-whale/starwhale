@@ -190,8 +190,8 @@ check_controller_service() {
               echo "controller is starting"
               kubectl -n $SWNS get svc
               kubectl -n $SWNS get pods
-              kubectl -n $SWNS describe deployments/controller
-              kubectl -n $SWNS logs --tail 10 deployments/controller
+              kubectl -n $SWNS describe deployments/controller || true
+              kubectl -n $SWNS logs --tail 10 deployments/controller || true
             fi
             sleep 15
     done
