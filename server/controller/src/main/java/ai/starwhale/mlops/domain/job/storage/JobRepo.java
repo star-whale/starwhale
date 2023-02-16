@@ -97,22 +97,22 @@ public class JobRepo {
     private List<String> tableNames() {
         var projects = projectMapper.list(null, null, null);
         return projects.stream()
-            .map(ProjectEntity::getProjectName)
+            .map(ProjectEntity::getId)
             .map(this::tableName)
             .collect(Collectors.toList());
     }
 
-    private String tableName(String projectName) {
+    private String tableName(Long projectId) {
         /*
          * such as project/starwhale/eval/summary
          */
         String tableNameFormat = "project/%s/eval/summary";
-        return String.format(tableNameFormat, projectName);
+        return String.format(tableNameFormat, projectId);
     }
 
     public int addJob(JobFlattenEntity jobEntity) {
         store.update(
-                this.tableName(jobEntity.getProject().getProjectName()),
+                this.tableName(jobEntity.getProject().getId()),
                 tableSchemaDesc,
                 List.of(convertToRecord(jobEntity))
         );
@@ -265,7 +265,7 @@ public class JobRepo {
     private List<JobFlattenEntity> getJobEntities(ProjectEntity project, TableQueryFilter filter) {
         var results = new ArrayList<JobFlattenEntity>();
 
-        var table = this.tableName(project.getProjectName());
+        var table = this.tableName(project.getId());
         var it = new Iterator<List<JobFlattenEntity>>() {
             boolean finished = false;
             final DataStoreQueryRequest request = DataStoreQueryRequest.builder()
@@ -314,7 +314,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return;
         }
-        this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), JobStatusColumn, STRING, jobStatus.name());
     }
 
@@ -323,7 +323,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return;
         }
-        this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), FinishTimeColumn, INT64,
                 (String) ColumnTypeScalar.INT64.encode(finishedTime.getTime(), false));
     }
@@ -333,7 +333,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), CommentColumn, STRING, comment);
     }
 
@@ -342,7 +342,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 uuid, CommentColumn, STRING, comment);
     }
 
@@ -351,7 +351,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), IsDeletedColumn, INT32, "1");
     }
 
@@ -360,7 +360,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 uuid, IsDeletedColumn, INT32, "1");
     }
 
@@ -369,7 +369,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), IsDeletedColumn, INT32, "0");
     }
 
@@ -378,7 +378,7 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getProjectName()),
+        return this.updateByUuid(this.tableName(job.getProject().getId()),
                 uuid, IsDeletedColumn, INT32, "0");
     }
 

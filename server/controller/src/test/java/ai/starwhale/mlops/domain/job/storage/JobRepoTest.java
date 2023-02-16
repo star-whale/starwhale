@@ -81,7 +81,7 @@ public class JobRepoTest {
     @Test
     public void testAddJob() {
         Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().projectName("test-project").build());
+                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .id(1L)
@@ -108,7 +108,7 @@ public class JobRepoTest {
         jobRepo.addJob(jobEntity);
 
         verify(dataStore, times(1))
-                .update(eq("project/test-project/eval/summary"), any(), anyList());
+                .update(eq("project/1/eval/summary"), any(), anyList());
 
         assertThat("convert",
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
@@ -119,7 +119,7 @@ public class JobRepoTest {
     @Test
     public void testListJobs() {
         Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().projectName("test-project").build());
+                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
         Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
                 .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
 
@@ -155,7 +155,7 @@ public class JobRepoTest {
     @Test
     public void testFindByStatusIn() {
         Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().projectName("test-project").build()));
+                .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
         Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
                 .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
 
@@ -198,12 +198,12 @@ public class JobRepoTest {
         Mockito.when(jobMapper.findJobById(jobId)).thenReturn(JobEntity.builder()
                 .id(jobId)
                 .jobUuid("1q2w3e4r5t6y")
-                .project(ProjectEntity.builder().projectName("test-project").build())
+                .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .build()
         );
 
         jobRepo.updateJobStatus(jobId, JobStatus.SUCCESS);
         verify(dataStore, times(1))
-                .update(eq("project/test-project/eval/summary"), any(), anyList());
+                .update(eq("project/1/eval/summary"), any(), anyList());
     }
 }
