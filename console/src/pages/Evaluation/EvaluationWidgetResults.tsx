@@ -3,7 +3,6 @@ import Card from '@/components/Card'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
-import { useProject } from '@/domain/project/hooks/useProject'
 import Table from '@/components/Table'
 import { Panel, StatelessAccordion } from 'baseui/accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
@@ -14,7 +13,7 @@ import { Button, IconFont } from '@starwhale/ui'
 const PAGE_TABLE_SIZE = 100
 
 function Summary({ fetch }: any) {
-    const record: Record<string, string> = fetch?.data?.records?.[0] ?? {}
+    const record: Record<string, string> = fetch?.data?.records?.[0]
     const [expanded, setExpanded] = React.useState<boolean>(false)
 
     return (
@@ -96,9 +95,7 @@ function Summary({ fetch }: any) {
                     }
                     key='summary'
                 >
-                    {fetch?.data?.records.length === 0 && (
-                        <BusyPlaceholder type='notfound' style={{ height: '300px' }} />
-                    )}
+                    {!record && <BusyPlaceholder type='notfound' style={{ height: '148px', minHeight: 'auto' }} />}
                     <div
                         style={{
                             lineHeight: '32px',
@@ -109,34 +106,35 @@ function Summary({ fetch }: any) {
                             overflow: 'auto',
                         }}
                     >
-                        {Object.keys(record)
-                            .sort((a, b) => {
-                                if (a === 'id') return -1
-                                return a > b ? 1 : -1
-                            })
-                            .filter((label) => typeof record[label] !== 'object')
-                            .map((label) => {
-                                return (
-                                    <React.Fragment key={label}>
-                                        <div
-                                            style={{
-                                                color: 'rgba(2,16,43,0.60)',
-                                                borderBottom: '1px solid #EEF1F6',
-                                            }}
-                                        >
-                                            {label}
-                                        </div>
-                                        <div
-                                            style={{
-                                                borderBottom: '1px solid #EEF1F6',
-                                                paddingLeft: '20px',
-                                            }}
-                                        >
-                                            {record[label]}
-                                        </div>
-                                    </React.Fragment>
-                                )
-                            })}
+                        {record &&
+                            Object.keys(record)
+                                .sort((a, b) => {
+                                    if (a === 'id') return -1
+                                    return a > b ? 1 : -1
+                                })
+                                .filter((label) => typeof record[label] !== 'object')
+                                .map((label) => {
+                                    return (
+                                        <React.Fragment key={label}>
+                                            <div
+                                                style={{
+                                                    color: 'rgba(2,16,43,0.60)',
+                                                    borderBottom: '1px solid #EEF1F6',
+                                                }}
+                                            >
+                                                {label}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    borderBottom: '1px solid #EEF1F6',
+                                                    paddingLeft: '20px',
+                                                }}
+                                            >
+                                                {record[label]}
+                                            </div>
+                                        </React.Fragment>
+                                    )
+                                })}
                     </div>
                 </Panel>
             </StatelessAccordion>
@@ -172,13 +170,9 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
         )
     }, [info.data, columns])
 
-    if (info.isFetching) {
-        return <BusyPlaceholder />
-    }
-
-    if (info.isError) {
-        return <BusyPlaceholder type='notfound' />
-    }
+    // if (info.isFetching) {
+    //     return <BusyPlaceholder />
+    // }
 
     if (table.includes('/summary')) return <Summary name={table} fetch={info} />
 
@@ -192,15 +186,14 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 }
 
 function EvaluationWidgetResults() {
-    const { jobId } = useParams<{ jobId: string; projectId: string }>()
-    const { project } = useProject()
+    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
 
     const tables = React.useMemo(() => {
         const names = []
-        if (project?.name) names.push(tableNameOfSummary(project?.name))
+        if (projectId) names.push(tableNameOfSummary(projectId))
 
         return [...names]
-    }, [project?.name])
+    }, [projectId])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>

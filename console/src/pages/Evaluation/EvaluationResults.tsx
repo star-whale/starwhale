@@ -6,10 +6,10 @@ import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { showTableName, tableNameOfSummary, tablesOfEvaluation } from '@starwhale/core/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { useListDatastoreTables, useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
-import { useProject } from '@/domain/project/hooks/useProject'
 import { useParseConfusionMatrix, useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import Table from '@/components/Table'
 import { QueryTableRequest } from '@starwhale/core/datastore/schemas/datastore'
+import { useParams } from 'react-router-dom'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -157,34 +157,34 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 }
 
 function EvaluationResults() {
-    const { project } = useProject()
     const { job } = useJob()
+    const { projectId } = useParams<{ jobId: string; projectId: string }>()
 
     const queryAllTables = React.useMemo(() => {
-        if (!project?.name || !job?.uuid) return ''
+        if (!projectId || !job?.uuid) return ''
         return {
-            prefix: tablesOfEvaluation(project?.name as string, job?.uuid),
+            prefix: tablesOfEvaluation(projectId, job?.uuid),
         }
-    }, [project, job])
+    }, [projectId, job])
     const allTables = useListDatastoreTables(queryAllTables)
 
     useEffect(() => {
-        if (job?.uuid && project?.name) {
+        if (job?.uuid && projectId) {
             allTables.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [project?.name, job?.uuid])
+    }, [projectId, job?.uuid])
 
     const tables = React.useMemo(() => {
         const names = []
-        if (project?.name) names.push(tableNameOfSummary(project?.name as string))
+        if (projectId) names.push(tableNameOfSummary(projectId))
 
         return [
             ...names,
             // TODO hard code remove results
             ...(allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)).filter((v) => !v.includes('results')) ?? []),
         ]
-    }, [allTables, project])
+    }, [allTables, projectId])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
