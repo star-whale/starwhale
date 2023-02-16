@@ -10,6 +10,7 @@ import binascii
 import importlib
 import threading
 from abc import ABCMeta, abstractmethod
+from functools import cache
 from http import HTTPStatus
 from typing import (
     Any,
@@ -1427,6 +1428,7 @@ def gen_table_name(project: Union[str, int], table: str, instance_uri: str = "")
         )
 
 
+@cache
 @http_retry
 def _get_remote_project_id(instance_uri: str, project: Union[str, int]) -> Any:
     resp = requests.get(
