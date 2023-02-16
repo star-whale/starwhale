@@ -48,7 +48,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setSucceeded(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.SUCCESS)));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setSucceeded(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.RUNNING)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.RUNNING)));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setFailed(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.FAIL)));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setSucceeded(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.SUCCESS)));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setActive(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.RUNNING)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.RUNNING)));
     }
 
     @Test
@@ -105,7 +105,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setSucceeded(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL)));
+        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.FAIL)));
     }
 
 }

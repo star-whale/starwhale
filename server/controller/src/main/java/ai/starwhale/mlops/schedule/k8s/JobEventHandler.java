@@ -57,26 +57,22 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (taskStatus == TaskStatus.UNKNOWN) {
             return;
         }
-        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));
+        taskStatusReceiver.receive(List.of(ReportedTask.of(taskIdOf(newObj), taskStatus)));
     }
 
     private TaskStatus statusOf(V1Job newObj) {
+        TaskStatus taskStatus = TaskStatus.UNKNOWN;
         V1JobStatus status = newObj.getStatus();
-
-        TaskStatus taskStatus;
-        //one task one k8s job
+        if (status == null) {
+            return taskStatus;
+        }
+        // one task one k8s job
         if (null != status.getFailed()) {
             taskStatus = TaskStatus.FAIL;
             log.debug("job status changed for {} is failed {}", jobName(newObj), status);
-        } /*else if (null != status.getActive()) {
-            taskStatus = TaskStatus.RUNNING;
-            log.debug("job status changed for {} is running {}", jobName(newObj), status);
-        } */else if (null != status.getSucceeded()) {
+        } else if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
             log.debug("job status changed for {} is success  {}", jobName(newObj), status);
-        } else {
-            taskStatus = TaskStatus.UNKNOWN;
-            log.warn("job status changed for {} is unknown {}", jobName(newObj), status);
         }
         return taskStatus;
     }

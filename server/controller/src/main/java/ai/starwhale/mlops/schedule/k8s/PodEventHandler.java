@@ -73,68 +73,45 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         return tid;
     }
 
-    private TaskStatus statusOf(String phase) {
-        TaskStatus taskStatus;
-        if (StringUtils.hasText(phase)) {
-            switch (phase) {
-                case "Pending":
-                    /*
-                    Pending The Pod has been accepted by the Kubernetes cluster,
-                    but one or more of the containers has not been set up and made ready to run.
-                    This includes time a Pod spends waiting to be scheduled
-                    as well as the time spent downloading container images over the network.
-                     */
-                    taskStatus = TaskStatus.PREPARING;
-                    break;
-                case "Running":
-                    /*
-                    Running The Pod has been bound to a node, and all of the containers have been created.
-                    At least one container is still running, or is in the process of starting or restarting.
-                     */
-                    taskStatus = TaskStatus.RUNNING;
-                    break;
-                case "Succeeded":
-                    /*
-                    Succeeded All containers in the Pod have terminated in success, and will not be restarted.
-                     */
-                    taskStatus = TaskStatus.SUCCESS;
-                    break;
-                case "Failed":
-                    /*
-                    Failed All containers in the Pod have terminated,
-                    and at least one container has terminated in failure.
-                    That is, the container either exited with non-zero status or was terminated by the system.
-                     */
-                    taskStatus = TaskStatus.FAIL;
-                    break;
-                default:
-                    /*
-                    Unknown For some reason the state of the Pod could not be obtained.
-                    This phase typically occurs due to an error in communicating with the node
-                    where the Pod should be running.
-                     */
-                    taskStatus = TaskStatus.UNKNOWN;
-
-            }
-        } else {
-            taskStatus = TaskStatus.UNKNOWN;
-        }
-
-        return taskStatus;
-    }
-
     private void syncTaskStatus(V1Pod pod) {
         if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
             return;
         }
         Long tid = getTaskId(pod);
         if (tid != null) {
-            TaskStatus taskStatus = statusOf(pod.getStatus().getPhase());
-            if (taskStatus == TaskStatus.UNKNOWN) {
+            TaskStatus taskStatus;
+            int restartCount = 0;
+            var phase = pod.getStatus().getPhase();
+            if (StringUtils.hasText(phase)) {
+                switch (phase) {
+                    /*
+                    Pending The Pod has been accepted by the Kubernetes cluster,
+                    but one or more of the containers has not been set up and made ready to run.
+                    This includes time a Pod spends waiting to be scheduled
+                    as well as the time spent downloading container images over the network.
+                     */
+                    case "Pending":
+                        taskStatus = TaskStatus.PREPARING;
+                        break;
+                    /*
+                    Running The Pod has been bound to a node, and all of the containers have been created.
+                    At least one container is still running, or is in the process of starting or restarting.
+                     */
+                    case "Running":
+                        if (!CollectionUtils.isEmpty(pod.getStatus().getContainerStatuses())) {
+                            restartCount = pod.getStatus().getContainerStatuses().get(0).getRestartCount();
+                        }
+                        taskStatus = TaskStatus.RUNNING;
+                        break;
+                    default:
+                        return;
+
+                }
+            } else {
                 return;
             }
             log.debug("task:{} status changed to {}.", tid, taskStatus);
-            taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus)));
+            taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus, restartCount)));
         }
     }
 
