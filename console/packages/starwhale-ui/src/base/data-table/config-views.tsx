@@ -11,6 +11,8 @@ import ViewList from './config-views-list'
 import ViewsEdit from './config-views-edit'
 import { ITableState, IStore } from './store'
 import Button from '../../Button'
+import { themedUseStyletron } from '../../theme/styletron'
+import classNames from 'classnames'
 
 type PropsT = {
     columns: ColumnT[]
@@ -219,7 +221,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
                 'textAlign': 'left',
                 'justifyContent': 'start',
                 ':hover': {
-                    backgroundColor: '#F0F4FF',
+                    backgroundColor: '#EBF1FF',
                 },
             },
         },
@@ -234,17 +236,23 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
         index: number
         style: React.CSSProperties
     }) => {
+        const [css] = themedUseStyletron()
         // eslint-disable-next-line
         const { item, overrides, ...restChildProps } = data[index].props
 
         return (
             <StyledDropdownListItem
-                className='text-ellipsis'
+                className={classNames(
+                    'text-ellipsis',
+                    css({
+                        'boxSizing': 'border-box',
+                        ':hover': {
+                            backgroundColor: '#EBF1FF',
+                        },
+                    })
+                )}
+                style={style}
                 title={item.label}
-                style={{
-                    boxSizing: 'border-box',
-                    ...style,
-                }}
                 // eslint-disable-next-line
                 {..._.omit(restChildProps, ['resetMenu', 'renderAll', 'renderHrefAsAnchor', 'getItemLabel'])}
                 key={item.id}

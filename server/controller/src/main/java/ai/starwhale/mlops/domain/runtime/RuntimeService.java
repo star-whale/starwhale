@@ -365,7 +365,7 @@ public class RuntimeService {
         log.debug("Runtime version checked time use {}", System.currentTimeMillis() - startTime);
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
-                : storagePathCoordinator.allocateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(),
+                : storagePathCoordinator.allocateRuntimePath(projectEntity.getId(), uploadRequest.name(),
                         uploadRequest.version());
 
         try (final InputStream inputStream = dsFile.getInputStream()) {

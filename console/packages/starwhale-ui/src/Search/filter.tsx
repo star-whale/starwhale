@@ -37,17 +37,19 @@ function PopoverContainer(props: {
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const styles = useStyles()
+    const ref = React.useRef<HTMLElement>(null)
 
     useEffect(() => {
         setIsOpen(props.isOpen)
     }, [props.isOpen])
 
-    const handleClose = () => setIsOpen(false)
+    const handleClose = () => ref.current && setIsOpen(false)
 
     return (
         <Popover
             placement={PLACEMENT.bottomLeft}
             isOpen={isOpen}
+            innerRef={ref}
             overrides={{
                 Body: {
                     style: {

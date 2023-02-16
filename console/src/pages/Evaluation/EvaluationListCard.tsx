@@ -21,7 +21,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
-import { Button, GridResizer } from '@starwhale/ui'
+import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -75,20 +75,21 @@ export default function EvaluationListCard() {
     const $columns = useDatastoreColumns(columnInfo?.data?.columnTypes)
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
-            if (column.key === 'id')
+            if (column.key === 'sys/id')
                 return CustomColumn({
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
-                    mapDataToValue: (item: any) => item.id,
+                    mapDataToValue: (item: any) => item['sys/id'],
                     // @ts-ignore
                     renderCell: (props: any) => {
                         const { data } = props ?? {}
                         if (!data) return <></>
+                        const id = data['sys/id']
 
                         return (
-                            <TextLink key={data.id} to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-                                {`${data.id}`}
+                            <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
+                                {id}
                             </TextLink>
                         )
                     },
@@ -129,16 +130,10 @@ export default function EvaluationListCard() {
     const $compareRows = React.useMemo(() => {
         return evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
     }, [store.rowSelectedIds, evaluationsInfo.data?.records])
+    const $ready = React.useMemo(() => {
+        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
+    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
 
-    React.useEffect(() => {
-        const unsub = useEvaluationCompareStore.subscribe(
-            (state: ITableState) => state.rowSelectedIds,
-            (state: any[]) => store.onSelectMany(state)
-        )
-        return unsub
-    }, [store])
-
-    // sync local to api
     const doSave = async () => {
         await setEvaluationViewConfig(projectId, {
             name: 'evaluation',
@@ -148,63 +143,44 @@ export default function EvaluationListCard() {
         return {}
     }
 
-    const $rawConfig = React.useMemo(() => {
+    const doChange = async (state: ITableState, prevState: ITableState) => {
+        if (!$ready) return
+
+        // console.log('save to api ?', store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))
+        if (!_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))) {
+            // console.log('saved', store.getRawConfigs().currentView)
+            await setEvaluationViewConfig(projectId, {
+                name: 'evaluation',
+                content: JSON.stringify(store.getRawConfigs(), null),
+            })
+        }
+    }
+
+    // NOTICE: use isinit to make sure view config is loading into store
+    React.useEffect(() => {
+        if (store.isInit || !evaluationViewConfig.isSuccess) return
+
+        let $rawConfig
         try {
-            return JSON.parse(evaluationViewConfig.data?.content, undefined)
+            $rawConfig = JSON.parse(evaluationViewConfig.data?.content, undefined) ?? {}
         } catch (e) {
-            return undefined
+            // console.log(e)
         }
-    }, [evaluationViewConfig.data?.content])
+        store.initStore($rawConfig)
 
-    React.useEffect(() => {
-        const unsub = useEvaluationStore.subscribe(
-            (state: ITableState) => state,
-            async (state: ITableState, prevState: ITableState) => {
-                // console.log(
-                //     'save to api ?',
-                //     store.getRawIfChangedConfigs(state),
-                //     store.getRawIfChangedConfigs(prevState)
-                // )
-
-                // wait for api config
-                if (!prevState.isInit && state.isInit) return
-
-                if (
-                    !_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState)) &&
-                    evaluationViewConfig.isSuccess &&
-                    evaluationViewConfig.isSuccess
-                ) {
-                    // console.log('saved', store.getRawConfigs().currentView)
-                    await setEvaluationViewConfig(projectId, {
-                        name: 'evaluation',
-                        content: JSON.stringify(store.getRawConfigs(), null),
-                    })
-                }
-            }
-        )
-        return unsub
-    }, [store, projectId, evaluationViewConfig])
-
-    // sync api to local
-    React.useEffect(() => {
-        if (evaluationViewConfig.isSuccess && $rawConfig) {
-            let apiState
-            try {
-                apiState = JSON.parse(evaluationViewConfig.data?.content, undefined)
-                if (!_.isEqual(apiState, store.getRawConfigs())) {
-                    // console.log('upcoming state', apiState, evaluationViewConfig.data)
-                    store.setRawConfigs({
-                        ...apiState,
-                        isInit: true,
-                    })
-                }
-            } catch (e) {
-                // console.log(e)
-            }
-        }
         // store should not be used as a deps, it's will trigger cycle render
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data])
+    }, [store.isInit, evaluationViewConfig.isSuccess])
+
+    React.useEffect(() => {
+        const unsub = useEvaluationCompareStore.subscribe(
+            (state: ITableState) => state.rowSelectedIds,
+            (state: any[]) => store.onSelectMany(state)
+        )
+        return unsub
+    }, [store])
+
+    if (!$ready) return <BusyPlaceholder />
 
     return (
         <Card
@@ -237,6 +213,7 @@ export default function EvaluationListCard() {
                             columns={$columnsWithSpecColumns}
                             data={evaluationsInfo.data?.records ?? []}
                             onSave={doSave as any}
+                            onChange={doChange}
                         />
                     )
                 }}

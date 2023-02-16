@@ -92,7 +92,7 @@ public class TableSchema {
     }
 
 
-    private TableSchema(@NonNull Wal.TableSchema schema) {
+    public TableSchema(@NonNull Wal.TableSchema schema) {
         this.keyColumn = schema.getKeyColumn();
         this.columnSchemaMap = schema.getColumnsList().stream()
                 .map(ColumnSchema::new)

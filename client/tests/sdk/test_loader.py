@@ -327,6 +327,10 @@ class TestDataLoader(TestCase):
         m_scan_id: MagicMock,
         m_summary: MagicMock,
     ) -> None:
+        rm.get(
+            "http://127.0.0.1:1234/api/v1/project/self",
+            json={"data": {"id": 1, "name": "project"}},
+        )
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,
             include_link=False,
@@ -636,6 +640,10 @@ class TestDataLoader(TestCase):
         rm.post(
             "http://localhost/api/v1/project/x/dataset/mnist/version/1122/sign-links",
             json={"data": _uri_dict},
+        )
+        rm.get(
+            "http://localhost/api/v1/project/x",
+            json={"data": {"id": 1, "name": "x"}},
         )
 
         loader = get_data_loader(

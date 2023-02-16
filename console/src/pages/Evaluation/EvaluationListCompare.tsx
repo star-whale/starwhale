@@ -22,12 +22,13 @@ const useStyles = createUseStyles({
     },
     headerBar: {
         gap: 20,
-        height: '32px',
+        height: '52px',
         lineHeight: '1',
         marginTop: '35px',
         fontWeight: 'bold',
         display: 'flex',
         alignItems: 'center',
+        paddingBottom: '20px',
     },
     cellCompare: {
         position: 'absolute',

@@ -25,7 +25,6 @@ function StringFilter(props: any) {
 }
 
 function StringCell(props: any) {
-    const [css] = useStyletron()
     return (
         <div title={props.value} className='string-cell'>
             {props.textQuery ? <HighlightCellText text={props.value} query={props.textQuery} /> : props.value}

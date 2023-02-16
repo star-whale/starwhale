@@ -18,50 +18,58 @@ Starwhale Cloud 有两种形态，一种是私有化到用户独立集群的On-P
 ### 1.2 启动Minikube
 
 ```bash
-minikube start
+minikube start --image-mirror-country=cn
 ```
 
-对于中国大陆的网络环境，可以在minikube start命令中增加 `--image-mirror-country=cn --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers` 参数来提升镜像下载速度。另外如果本机没有 `kubectl` 命令，可以使用 `minikube kubectl` 代替，也可以采用 `alias kubectl="minikube kubectl --"` 命令，在当前终端中提供 `kubectl` 命令的alias。
+对于非中国大陆网络环境，可以去掉 `--image-mirror-country=cn` 参数，直接使用 `minikube start` 即可。另外如果本机没有 `kubectl` 命令，可以使用 `minikube kubectl` 代替，也可以采用 `alias kubectl="minikube kubectl --"` 命令，在当前终端中提供 `kubectl` 命令的alias。
 
 ### 1.3 使用Helm安装Starwhale Cloud
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
 helm repo update
-export SWNAME=starwhale SWNS=starwhale
-helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio --set image.registry=docker-registry.starwhale.cn --set minio.global.imageRegistry=docker-registry.starwhale.cn --set mysql.global.imageRegistry=docker-registry.starwhale.cn
+helm pull starwhale/starwhale --untar --untardir ./charts
+
+helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.cn.yaml
+```
+
+对于非中国大陆网络环境，可以使用如下upgrade命令：
+
+```bash
+helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.global.yaml
 ```
 
 更详细的Helm Charts参数配置，请参考[使用Helm安装Cloud Instance](../guides/install/helm-charts.md)文档。当成功安装后，会有类似如下信息输出：
 
 ```bash
+Release "starwhale" has been upgraded. Happy Helming!
 NAME: starwhale
-LAST DEPLOYED: Thu Jun 23 14:48:02 2022
+LAST DEPLOYED: Tue Feb 14 16:25:03 2023
 NAMESPACE: starwhale
 STATUS: deployed
-REVISION: 1
+REVISION: 14
 NOTES:
 ******************************************
 Chart Name: starwhale
-Chart Version: 0.3.0
-App Version: 0.3.0
+Chart Version: 0.1.0
+App Version: latest
 Starwhale Image:
-  - server: docker-registry.starwhale.cn/star-whale/server:0.3.0
+    - server: docker-registry.starwhale.cn/star-whale/server:latest
+Runtime default Image:
+  - runtime image: docker-registry.starwhale.cn/star-whale/starwhale:latest
 
 ******************************************
 Web Visit:
-  - starwhale controller: http://console.minikube.local
-  - minio admin: http://minio.pre.intra.starwhale.ai
 
-Port Forward Visist:
+Port Forward Visit:
   - starwhale controller:
-    - run: kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082
+    - run: kubectl port-forward --namespace starwhale svc/controller 8082:8082
     - visit: http://localhost:8082
   - minio admin:
-    - run: kubectl port-forward --namespace starwhale svc/starwhale-minio 9001:9001
+    - run: kubectl port-forward --namespace starwhale svc/minio 9001:9001
     - visit: http://localhost:9001
   - mysql:
-    - run: kubectl port-forward --namespace starwhale svc/starwhale-mysql 3306:3306
+    - run: kubectl port-forward --namespace starwhale svc/mysql 3306:3306
     - visit: mysql -h 127.0.0.1 -P 3306 -ustarwhale -pstarwhale
 
 ******************************************
@@ -69,26 +77,28 @@ Login Info:
 - starwhale: u:starwhale, p:abcd1234
 - minio admin: u:minioadmin, p:minioadmin
 
-*_* Enjoy using Starwhale. *_*
+*_* Enjoy to use Starwhale Platform. *_*
 ```
 
-可以检查starwhale namespace下的Pod是否都运行起来，正常情况会产生类似如下的输出：
+可以检查starwhale namespace下的Deployments是否都运行起来，正常情况会产生类似如下的输出：
 
 ```bash
-kubectl get pods -n starwhale
+kubectl get deployments -n starwhale
 ```
 
-| NAME | READY | STATUS | RESTARTS | AGE |
-|:-----|-------|--------|----------|-----|
-|starwhale-controller-7d864558bc-vxvb8|1/1|Running|0|1m
-|starwhale-minio-7d45db75f6-7wq9b|1/1|Running|0|2m
-|starwhale-mysql-0|1/1|Running|0|2m
+| NAME | READY | UP-TO-DATE| AVAILABLE | AGE |
+|------|-------|--------|----------|-----|
+|controller|1/1|1|1|5m|
+|minio|1/1|1|1|5m|
+|mysql|1/1|1|1|5m|
 
 可以使用kubectl的port-forward命令，在宿主机浏览器直接通过8082端口访问Starwhale Controller Web：
 
 ```bash
-kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082
+kubectl port-forward --namespace starwhale svc/controller 8082:8082
 ```
+
+需要注意，当controller的pod重启时，需要重新执行port-forward命令做端口转发。
 
 ## 2. 发布Model/Runtime/Dataset到Cloud Instance上
 

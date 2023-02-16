@@ -106,7 +106,11 @@ public class ParquetReadWriteTest {
         parquetConfig.setRowGroupSize(1024 * 1024);
         parquetConfig.setPageSize(4096);
         parquetConfig.setPageRowCountLimit(1000);
-        var writer = new SwParquetWriterBuilder(this.storageAccessService, schema, "meta", "test",
+        var writer = new SwParquetWriterBuilder(this.storageAccessService,
+                schema.getColumnTypeMapping(),
+                schema.toJsonString(),
+                "meta",
+                "test",
                 parquetConfig).build();
         List<Map<String, Object>> records = List.of(
                 new HashMap<>() {
@@ -152,7 +156,6 @@ public class ParquetReadWriteTest {
         var conf = new Configuration();
         var reader = new SwParquetReaderBuilder(this.storageAccessService, "test").withConf(conf).build();
         assertThat(reader.read(), is(records.get(0)));
-        assertThat(conf.get(SwReadSupport.SCHEMA_KEY), is(schema.toJsonString()));
         assertThat(conf.get(SwReadSupport.META_DATA_KEY), is("meta"));
         assertThat(reader.read(), is(records.get(1)));
         assertThat(reader.read(), is(records.get(2)));

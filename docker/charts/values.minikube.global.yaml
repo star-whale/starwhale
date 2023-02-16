@@ -1,0 +1,28 @@
+image:
+  registry: "ghcr.io"
+  org: star-whale
+
+mysql:
+  enabled: true
+  image: docker.io/bitnami/mysql:8.0.29-debian-10-r2
+  initImage: docker.io/bitnami/bitnami-shell:11-debian-11-r6
+
+minio:
+  enabled: true
+  image: docker.io/bitnami/minio:2022.6.20-debian-11-r0
+  initImage: docker.io/bitnami/bitnami-shell:11-debian-11-r6
+  ingress:
+    enabled: false
+
+controller:
+  taskSplitSize: 1
+  containerPort: 8082
+  ingress:
+    enabled: false
+
+minikube:
+  enabled: true
+
+mirror:
+  pypi:
+    enabled: false

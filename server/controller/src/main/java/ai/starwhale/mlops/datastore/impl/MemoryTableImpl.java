@@ -22,6 +22,7 @@ import ai.starwhale.mlops.datastore.ColumnTypeScalar;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.ParquetConfig;
+import ai.starwhale.mlops.datastore.RecordResult;
 import ai.starwhale.mlops.datastore.TableMeta;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
@@ -62,6 +63,10 @@ import org.apache.hadoop.conf.Configuration;
 @Slf4j
 public class MemoryTableImpl implements MemoryTable {
 
+    private static final String TIMESTAMP_COLUMN_NAME = "^";
+
+    private static final String DELETED_FLAG_COLUMN_NAME = "-";
+
     private final String tableName;
 
     private final WalManager walManager;
@@ -80,7 +85,7 @@ public class MemoryTableImpl implements MemoryTable {
     @Getter
     private long lastUpdateTime = 0;
 
-    private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
+    private final TreeMap<Object, List<MemoryRecord>> recordMap = new TreeMap<>();
 
     private final Lock lock = new ReentrantLock();
 
@@ -108,9 +113,6 @@ public class MemoryTableImpl implements MemoryTable {
             try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
                 for (; ; ) {
                     var record = reader.read();
-                    if (record == null) {
-                        break;
-                    }
                     if (this.schema == null) {
                         this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
                         var metaBuilder = TableMeta.MetaData.newBuilder();
@@ -123,7 +125,18 @@ public class MemoryTableImpl implements MemoryTable {
                         this.lastWalLogId = metadata.getLastWalLogId();
                         this.lastUpdateTime = metadata.getLastUpdateTime();
                     }
-                    this.recordMap.put(record.get(this.schema.getKeyColumn()), record);
+                    if (record == null) {
+                        break;
+                    }
+                    var key = record.remove(this.schema.getKeyColumn());
+                    var timestamp = (Long) record.remove(TIMESTAMP_COLUMN_NAME);
+                    var deletedFlag = (Boolean) record.remove(DELETED_FLAG_COLUMN_NAME);
+                    this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
+                            .add(MemoryRecord.builder()
+                                    .timestamp(timestamp)
+                                    .deleted(deletedFlag)
+                                    .values(record)
+                                    .build());
                 }
             }
         } catch (IOException | RuntimeException e) {
@@ -142,15 +155,28 @@ public class MemoryTableImpl implements MemoryTable {
         } catch (InvalidProtocolBufferException e) {
             throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
         }
+        var columnSchema = this.schema.getColumnTypeMapping();
+        columnSchema.put(TIMESTAMP_COLUMN_NAME, ColumnTypeScalar.INT64);
+        columnSchema.put(DELETED_FLAG_COLUMN_NAME, ColumnTypeScalar.BOOL);
         try (var writer = new SwParquetWriterBuilder(
                 this.storageAccessService,
-                this.schema,
+                columnSchema,
+                this.schema.toJsonString(),
                 metadata,
                 this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
                 this.parquetConfig)
                 .build()) {
-            for (var record : this.recordMap.values()) {
-                writer.write(record);
+            for (var entry : this.recordMap.entrySet()) {
+                for (var record : entry.getValue()) {
+                    var recordMap = new HashMap<String, Object>();
+                    if (record.getValues() != null) {
+                        recordMap.putAll(record.getValues());
+                    }
+                    recordMap.put(this.schema.getKeyColumn(), entry.getKey());
+                    recordMap.put(TIMESTAMP_COLUMN_NAME, record.getTimestamp());
+                    recordMap.put(DELETED_FLAG_COLUMN_NAME, record.isDeleted());
+                    writer.write(recordMap);
+                }
             }
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.DATASTORE, "failed to save " + this.tableName, e);
@@ -187,7 +213,8 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var recordList = entry.getRecordsList();
         if (!recordList.isEmpty()) {
-            this.insertRecords(recordList.stream().map(this::parseRecord).collect(Collectors.toList()));
+            this.insertRecords(entry.getTimestamp(),
+                    recordList.stream().map(this::parseRecord).collect(Collectors.toList()));
         }
         if (this.firstWalLogId < 0) {
             this.firstWalLogId = entry.getId();
@@ -199,7 +226,7 @@ public class MemoryTableImpl implements MemoryTable {
         Map<String, Object> ret = new HashMap<>();
         for (var col : record.getColumnsList()) {
             if (col.getIndex() == -1) {
-                ret.put("-", true);
+                ret.put(DELETED_FLAG_COLUMN_NAME, true);
             } else {
                 var colSchema = this.schema.getColumnSchemaByIndex(col.getIndex());
                 ret.put(colSchema.getName(), colSchema.getType().fromWal(col));
@@ -210,9 +237,11 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Override
     public void update(TableSchemaDesc schema, List<Map<String, Object>> records) {
+        var timestamp = System.currentTimeMillis();
         var logEntryBuilder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
-                .setTableName(this.tableName);
+                .setTableName(this.tableName)
+                .setTimestamp(timestamp);
         TableSchema newSchema = this.schema;
         if (schema == null) {
             if (this.schema == null) {
@@ -244,10 +273,10 @@ public class MemoryTableImpl implements MemoryTable {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format("key column {0} is null", newSchema.getKeyColumn()));
                 }
-                if (record.get("-") != null) {
+                if (record.get(DELETED_FLAG_COLUMN_NAME) != null) {
                     decodedRecords.add(Map.of(newSchema.getKeyColumn(),
                             newSchema.getKeyColumnType().decode(key),
-                            "-",
+                            DELETED_FLAG_COLUMN_NAME,
                             true));
                 } else {
                     decodedRecords.add(MemoryTableImpl.decodeRecord(newSchema, record));
@@ -264,19 +293,45 @@ public class MemoryTableImpl implements MemoryTable {
         this.lastUpdateTime = System.currentTimeMillis();
         this.schema = newSchema;
         if (decodedRecords != null) {
-            this.insertRecords(decodedRecords);
+            this.insertRecords(timestamp, decodedRecords);
         }
     }
 
-    private void insertRecords(List<Map<String, Object>> records) {
+    private void insertRecords(long timestamp, List<Map<String, Object>> records) {
+        var typeMap = this.schema.getColumnTypeMapping();
         for (var record : records) {
-            var key = record.get(this.schema.getKeyColumn());
-            if (record.get("-") != null) {
-                this.recordMap.remove(key);
+            var newRecord = new HashMap<>(record);
+            var key = newRecord.remove(this.schema.getKeyColumn());
+            var deletedFlag = (Boolean) newRecord.remove(DELETED_FLAG_COLUMN_NAME);
+            if (deletedFlag == null) {
+                deletedFlag = false;
+            }
+            var versions = this.recordMap.computeIfAbsent(key, k -> new ArrayList<>());
+            if (deletedFlag) {
+                if (versions.isEmpty() || !versions.get(versions.size() - 1).isDeleted()) {
+                    versions.add(MemoryRecord.builder()
+                            .timestamp(timestamp)
+                            .deleted(true)
+                            .build());
+                }
             } else {
-                var old = this.recordMap.putIfAbsent(key, record);
-                if (old != null) {
-                    old.putAll(record);
+                var old = this.getRecordMap(key, versions, timestamp);
+                for (var it = newRecord.entrySet().iterator(); it.hasNext(); ) {
+                    var entry = it.next();
+                    if (old.containsKey(entry.getKey())) {
+                        var oldValue = old.get(entry.getKey());
+                        var type = typeMap.get(entry.getKey());
+                        if (ColumnType.compare(type, oldValue, type, entry.getValue()) == 0) {
+                            it.remove();
+                        }
+                    }
+                }
+                if (versions.isEmpty() || !newRecord.isEmpty()) {
+                    versions.add(MemoryRecord.builder()
+                            .timestamp(timestamp)
+                            .deleted(deletedFlag)
+                            .values(newRecord)
+                            .build());
                 }
             }
         }
@@ -285,7 +340,7 @@ public class MemoryTableImpl implements MemoryTable {
     private static Wal.Record.Builder writeRecord(TableSchema schema, Map<String, Object> record) {
         var ret = Wal.Record.newBuilder();
         for (var entry : record.entrySet()) {
-            if (Objects.equals(entry.getKey(), "-")) {
+            if (Objects.equals(entry.getKey(), DELETED_FLAG_COLUMN_NAME)) {
                 ret.addColumns(ColumnTypeScalar.BOOL.toWal(-1, true));
             } else {
                 var columnSchema = schema.getColumnSchemaByName(entry.getKey());
@@ -298,8 +353,30 @@ public class MemoryTableImpl implements MemoryTable {
         return ret;
     }
 
+    private Map<String, Object> getRecordMap(Object key, List<MemoryRecord> versions, long timestamp) {
+        var ret = new HashMap<String, Object>();
+        boolean deleted = false;
+        for (var record : versions) {
+            if (record.getTimestamp() <= timestamp) {
+                if (record.isDeleted()) {
+                    deleted = true;
+                    ret.clear();
+                } else {
+                    deleted = false;
+                    ret.putAll(record.getValues());
+                }
+            }
+        }
+        if (deleted) {
+            ret.put(DELETED_FLAG_COLUMN_NAME, true);
+        }
+        ret.put(this.schema.getKeyColumn(), key);
+        return ret;
+    }
+
     @Override
     public Iterator<RecordResult> query(
+            long timestamp,
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
@@ -325,7 +402,8 @@ public class MemoryTableImpl implements MemoryTable {
         if (filter != null) {
             this.checkFilter(filter);
         }
-        var stream = this.recordMap.values().stream()
+        var stream = this.recordMap.entrySet().stream()
+                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
                 .filter(record -> filter == null || this.match(filter, record));
         if (orderBy != null) {
             stream = stream.sorted((a, b) -> {
@@ -352,6 +430,7 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Override
     public Iterator<RecordResult> scan(
+            long timestamp,
             @NonNull Map<String, String> columns,
             String start,
             boolean startInclusive,
@@ -379,8 +458,9 @@ public class MemoryTableImpl implements MemoryTable {
         if (((Comparable) startKey).compareTo(endKey) > 0) {
             return Collections.emptyIterator();
         }
-        var keyColumn = this.schema.getKeyColumn();
-        var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).values().iterator();
+        var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).entrySet().stream()
+                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
+                .iterator();
         return new Iterator<>() {
 
             @Override
@@ -390,19 +470,7 @@ public class MemoryTableImpl implements MemoryTable {
 
             @Override
             public RecordResult next() {
-                var record = iterator.next();
-                var values = new HashMap<String, Object>();
-                for (var entry : columns.entrySet()) {
-                    var columnName = entry.getKey();
-                    var alias = entry.getValue();
-                    if (record.containsKey(columnName)) {
-                        var value = record.get(columnName);
-                        if (keepNone || value != null) {
-                            values.put(alias, value);
-                        }
-                    }
-                }
-                return new RecordResult(record.get(keyColumn), values);
+                return toRecordResult(iterator.next(), columns, keepNone);
             }
         };
     }
@@ -519,17 +587,21 @@ public class MemoryTableImpl implements MemoryTable {
 
     private RecordResult toRecordResult(Map<String, Object> record, Map<String, String> columnMapping,
             boolean keepNone) {
+        var key = record.get(this.schema.getKeyColumn());
+        if (record.get(DELETED_FLAG_COLUMN_NAME) != null) {
+            return new RecordResult(key, true, null);
+        }
         var r = new HashMap<String, Object>();
         for (var entry : columnMapping.entrySet()) {
-            var key = entry.getKey();
-            if (record.containsKey(key)) {
-                var value = record.get(entry.getKey());
+            var column = entry.getKey();
+            if (record.containsKey(column)) {
+                var value = record.get(column);
                 if (keepNone || value != null) {
                     r.put(entry.getValue(), value);
                 }
             }
         }
-        return new RecordResult(record.get(this.schema.getKeyColumn()), r);
+        return new RecordResult(key, false, r);
     }
 
     private static Map<String, Object> decodeRecord(TableSchema schema, Map<String, Object> record) {

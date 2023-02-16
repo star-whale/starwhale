@@ -15,6 +15,7 @@ from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import numpy
+import numpy as np
 import torch
 import pytest
 from requests_mock import Mocker
@@ -53,7 +54,9 @@ from starwhale.core.dataset.type import (
     MIMEType,
     ClassLabel,
     BoundingBox,
+    NumpyBinary,
     ArtifactType,
+    BoundingBox3D,
     GrayscaleImage,
     COCOObjectAnnotation,
 )
@@ -80,7 +83,6 @@ from starwhale.api._impl.dataset.builder import (
     _header_struct,
     create_generic_cls,
 )
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .test_base import BaseTestCase
 
@@ -523,45 +525,6 @@ class TestDatasetCopy(BaseTestCase):
         assert bbox.x == 2 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
 
-    @patch("os.environ", {})
-    @Mocker()
-    def test_get_remote_project(self, rm: Mocker) -> None:
-        instance_uri = "http://1.1.1.1:8182"
-        project = "1"
-        rm.request(
-            HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{project}",
-            json={"data": {"id": 1, "name": "starwhale"}},
-        )
-        remote_uri = f"{instance_uri}/project/1/dataset/ds_test/version/v1"
-
-        origin_conf = config.load_swcli_config().copy()
-        # patch config to pass instance alias check
-        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
-            origin_conf.update(
-                {
-                    "current_instance": "local",
-                    "instances": {
-                        "foo": {"uri": "http://1.1.1.1:8182"},
-                        "local": {"uri": "local"},
-                    },
-                }
-            )
-            mock_conf.return_value = origin_conf
-            dc = DatasetCopy(
-                src_uri=remote_uri,
-                dest_uri="",
-                dest_local_project_uri="self",
-                typ=URIType.DATASET,
-            )
-            remote_resource = Resource(remote_uri, typ=ResourceType[URIType.DATASET])
-            assert (
-                dc._get_remote_project_name(
-                    instance=remote_resource.project.instance.to_uri(), project="1"
-                )
-                == "starwhale"
-            )
-
 
 class MockBinWriter:
     def __init__(self) -> None:
@@ -898,6 +861,13 @@ class TestDatasetType(TestCase):
             "display_name": "",
         }
 
+    def test_numpy_binary(self) -> None:
+        np_array = np.array([[1.008, 6.94, 22.990], [39.098, 85.468, 132.91]])
+        b = NumpyBinary(np_array.tobytes(), np_array.dtype, np_array.shape)
+        assert b.to_bytes() == np_array.tobytes()
+        np.testing.assert_array_equal(b.to_numpy(), np_array)
+        assert torch.equal(torch.from_numpy(np_array), b.to_tensor())
+
     def test_image(self) -> None:
         fp = io.StringIO("test")
         img = Image(fp, display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG)
@@ -973,12 +943,37 @@ class TestDatasetType(TestCase):
         _array = numpy.frombuffer(_bout, dtype=numpy.float64)
         assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
 
+    def test_bbox3d(self) -> None:
+        bbox_a = BoundingBox(1, 2, 3, 4)
+        bbox_b = BoundingBox(3, 4, 3, 4)
+        bbox = BoundingBox3D(bbox_a, bbox_b)
+        assert bbox.to_list() == [[1, 2, 3, 4], [3, 4, 3, 4]]
+        _asdict = json.loads(json.dumps(bbox.asdict()))
+        assert _asdict["_type"] == "bounding_box3D"
+        assert _asdict["bbox_a"]["x"] == 1
+        assert _asdict["bbox_a"]["y"] == 2
+        assert _asdict["bbox_a"]["width"] == 3
+        assert _asdict["bbox_a"]["height"] == 4
+        assert _asdict["bbox_b"]["x"] == 3
+        assert _asdict["bbox_b"]["y"] == 4
+        assert _asdict["bbox_b"]["width"] == 3
+        assert _asdict["bbox_b"]["height"] == 4
+        assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
+        _bout = bbox.to_bytes()
+        assert isinstance(_bout, bytes)
+        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(
+            BoundingBox3D.SHAPE
+        )
+        assert numpy.array_equal(
+            _array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64)
+        )
+
     def test_text(self) -> None:
         text = Text("test")
         _asdict = json.loads(json.dumps(text.asdict()))
         assert text.to_bytes() == b"test"
         assert "fp" not in _asdict
-        assert _asdict["content"] == "test"
+        assert _asdict["_content"] == "test"
         assert _asdict["_type"] == "text"
         assert _asdict["_mime_type"] == MIMEType.PLAIN.value
         assert text.to_str() == "test"
@@ -1063,6 +1058,9 @@ class TestDatasetType(TestCase):
 
         content = link.to_bytes()
         assert content == raw_content
+
+        b = Binary(link=link)
+        assert b.to_bytes() == raw_content
 
     @Mocker()
     def test_link_cloud(self, rm: Mocker) -> None:

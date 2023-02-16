@@ -88,7 +88,8 @@ swcli runtime build [OPTIONS] WORKDIR
 |`--runtime-yaml`|`-f`|❌|String|runtime.yaml|建议使用默认的runtime.yaml，无需修改。|
 |`--gen-all-bundles`|`-gab`|❌|Boolean|False|设置该参数后，会在本地的venv或conda中下载所有python依赖，进行整体打包，多数情况下产生的Runtime swrt文件会比较大。|
 |`--include-editable`|`-ie`|❌|Boolean|False|是否携带editable的python package|
-|`--disable-env-lock`|`-del`|❌|Boolean|False|设置该参数后，不会进行环境初始化、安装依赖和环境导出，直接进行swrt打包|
+|`--include-local-wheel`|`-ilw`|❌|Boolean|False|是否在requirements-sw-lock.txt文件中包含本地的wheel包地址，仅对venv模式有效。|
+|`--disable-env-lock`|`-del`|❌|Boolean|False|设置该参数后，不会进行环境初始化、安装依赖和环境导出，直接进行swrt打包。|
 |`--env-prefix-path`|`-ep`|❌|String||使用venv或conda目录prefix path作为Python隔离环境|
 |`--env-name`|`-en`|❌|String||使用conda环境的env name作为Python隔离环境|
 |`--env-use-shell`|`-es`|❌|Boolean|False|使用当前Shell中Python环境|
@@ -237,6 +238,7 @@ prefix: /path-to-conda-env-dir
 |`--env-use-shell`|`-s`|❌|Boolean|False|使用当前Shell中的Python环境|
 |`--stdout`|`-so`|❌|Boolean|False|将lock的内容只在shell终端中输出，而不会真正写入到 `requirements-sw-lock.txt` 文件中，一般用来做调试检查。|
 |`--include-editable`|`-ie`|❌|Boolean|False|lock时候是否包含editable的Python Package，某些editable的package可能使用本地目录，会在分发到其他环境后无法使用。目前该参数只针对venv场景，conda的无法导出editable package。|
+|`--include-local-wheel`|`-ilw`|❌|Boolean|False|lock时是否在requirements-sw-lock.txt文件中包含本地的wheel包地址，仅对venv模式有效。|
 |`--emit-pip-options`|`-epo`|❌|Boolean|False|是否忽略lock文件中pip config信息，一般包含index-url、extra-index-url和trusted-host等。|
 |`--no-cache`|`-nc`|❌|Boolean|False|对于自动生成的Python隔离依赖环境，锁定runtime时不使用已经安装过的Python Packages，相当于清除.starwhale/venv或.starwhale/conda目录后再安装依赖然后锁定环境|
 

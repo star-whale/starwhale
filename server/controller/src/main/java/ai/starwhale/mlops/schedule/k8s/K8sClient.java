@@ -24,6 +24,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -125,6 +127,10 @@ public class K8sClient {
         return coreV1Api.listNamespacedPod(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 
+    public CoreV1EventList getEventList(String labelSelector) throws ApiException {
+        return coreV1Api.listNamespacedEvent(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
+    }
+
     public void watchJob(ResourceEventHandler<V1Job> eventH, String selector) {
         SharedIndexInformer<V1Job> jobInformer = informerFactory.sharedIndexInformerFor(
                 (CallGeneratorParams params) -> batchV1Api.listNamespacedJobCall(ns, null, null, null, null,
@@ -150,12 +156,23 @@ public class K8sClient {
     }
 
     public void watchStatefulSet(ResourceEventHandler<V1StatefulSet> eventH, String selector) {
-        SharedIndexInformer<V1StatefulSet> jobInformer = informerFactory.sharedIndexInformerFor(
+        SharedIndexInformer<V1StatefulSet> informer = informerFactory.sharedIndexInformerFor(
                 (CallGeneratorParams params) -> appsV1Api.listNamespacedStatefulSetCall(ns, null, null, null, null,
                         selector, null, params.resourceVersion, null, params.timeoutSeconds, params.watch, null),
                 V1StatefulSet.class,
                 V1StatefulSetList.class);
-        jobInformer.addEventHandler(eventH);
+        informer.addEventHandler(eventH);
+        informerFactory.startAllRegisteredInformers();
+    }
+
+    public void watchEvent(ResourceEventHandler<CoreV1Event> eventH, String selector) {
+        SharedIndexInformer<CoreV1Event> informer = informerFactory.sharedIndexInformerFor(
+                (CallGeneratorParams params) -> coreV1Api.listNamespacedEventCall(ns, null, null, null, null,
+                        selector, null, params.resourceVersion, null, params.timeoutSeconds, params.watch, null),
+                CoreV1Event.class,
+                CoreV1EventList.class);
+
+        informer.addEventHandler(eventH);
         informerFactory.startAllRegisteredInformers();
     }
 
@@ -257,6 +274,4 @@ public class K8sClient {
     public static String toV1LabelSelector(Map<String, String> labels) {
         return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
     }
-
-
 }

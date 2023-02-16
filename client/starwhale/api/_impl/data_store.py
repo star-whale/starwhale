@@ -417,6 +417,8 @@ class SwObjectType(SwCompositeType):
         self.attrs = attrs
 
     def merge(self, type: SwType) -> SwType:
+        if type is UNKNOWN or self is type:
+            return self
         if isinstance(type, SwObjectType) and self.raw_type is type.raw_type:
             new_attrs: Dict[str, SwType] = {}
             for attr_name, attr_type in self.attrs.items():
@@ -1074,7 +1076,6 @@ class LocalDataStore:
     def get_instance() -> "LocalDataStore":
         with LocalDataStore._lock:
             if LocalDataStore._instance is None:
-
                 ds_path = SWCliConfigMixed().datastore_dir
                 ensure_dir(ds_path)
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
@@ -1406,6 +1407,41 @@ def get_data_store(instance_uri: str = "", token: str = "") -> DataStore:
             instance_uri=_instance_uri,
             token=token,
         )
+
+
+def table_name_generator(project: Union[str, int], table: str) -> str:
+    return f"project/{project}/{table}"
+
+
+def gen_table_name(project: Union[str, int], table: str, instance_uri: str = "") -> str:
+    _instance_uri = instance_uri or os.getenv(SWEnv.instance_uri)
+    if (
+        _instance_uri is None
+        or _instance_uri == STANDALONE_INSTANCE
+        or type(project) == int
+    ):
+        return table_name_generator(project, table)
+    else:
+        return table_name_generator(
+            _get_remote_project_id(_instance_uri, project), table
+        )
+
+
+@http_retry
+def _get_remote_project_id(instance_uri: str, project: Union[str, int]) -> Any:
+    resp = requests.get(
+        urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": (
+                SWCliConfigMixed().get_sw_token(instance=instance_uri)
+                or os.getenv(SWEnv.instance_token, "")
+            ),
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.json().get("data", {})["id"]
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:

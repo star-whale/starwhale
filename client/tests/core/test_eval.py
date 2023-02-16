@@ -258,6 +258,10 @@ class CloudJobTestCase(TestCase):
             "kind": "multi_classification",
             "accuracy": 0.9893989398939894,
         }
+        rm.get(
+            f"{self.instance_uri}/api/v1/project/self",
+            json={"data": {"id": 1, "name": "self"}},
+        )
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}",

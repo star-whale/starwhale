@@ -22,11 +22,22 @@ import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 
 public class StoragePathCoordinatorTest {
+
     @Test
-    public void testAllocatePluginPath() {
+    public void testAllocatePath() {
         var sysPath = "/foo";
-        var ins = new StoragePathCoordinator(sysPath);
-        var resp = ins.allocatePluginPath("name1", "version1");
-        assertThat(resp, is("/foo/controller/plugins/panel/name1/version1"));
+        StoragePathCoordinator ins = new StoragePathCoordinator(sysPath);
+        assertThat(ins.allocatePluginPath("name1", "version1"),
+                is("/foo/controller/plugins/panel/name1/version1"));
+        assertThat(ins.allocateBundlePath(1L, "dataset", "mnist", "v1"),
+                is("/foo/controller/project/1/dataset/mnist/version/v1"));
+        assertThat(ins.allocateDatasetPath(1L, "mnist", "v1"),
+                is("/foo/controller/project/1/dataset/mnist/version/v1"));
+        assertThat(ins.allocateModelPath(1L, "mnist", "v1"),
+                is("/foo/controller/project/1/model/mnist/version/v1"));
+        assertThat(ins.allocateRuntimePath(1L, "mnist", "v1"),
+                is("/foo/controller/project/1/runtime/mnist/version/v1"));
+        assertThat(ins.allocateCommonModelPoolPath(1L, "123456"),
+                is("/foo/controller/project/1/common-model/123456"));
     }
 }

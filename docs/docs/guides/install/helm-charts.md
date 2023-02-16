@@ -4,17 +4,17 @@ title: Helm Charts Installation
 
 ## 1. Helm Charts
 
-Helm Charts helps you quickly deploy the whole Starwhale instance in Kubernetes.
+Starwhale is an MLOps platform. Starwhale Helm Charts help you deploy the whole platform in Kubernetes easily.
 
-- To deploy, upgrade, and maintain the Starwhale `controller`.
-- To deploy third-party dependencies, such as minio, mysql, etc.
+- Easy to deploy, upgrade and maintain Starwhale controller and agent services.
+- Easy to deploy 3rd dependencies, such as minio and MySQL.
 
 ## 2. TL; DR
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
 helm repo update
-helm install starwhale starwhale/starwhale -n starwhale --create-namespace
+helm upgrade --install starwhale starwhale/starwhale -n starwhale --create-namespace
 ```
 
 ## 3. Prerequisites
@@ -28,8 +28,29 @@ To install the chart with the release name starwhale:
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
-helm install starwhale starwhale/starwhale
+helm repo update
+helm upgrade --install starwhale starwhale/starwhale -n starwhale --create-namespace
 ```
+
+We have offered a variety of installation modes in advance.
+
+- For minikube(all-in-one) and global network:
+
+    ```bash
+    helm pull starwhale/starwhale --untar --untardir ./charts
+    helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.global.yaml
+    ```
+
+- For minikube(all-in-one) and China's mainland network:
+
+    ```bash
+    helm pull starwhale/starwhale --untar --untardir ./charts
+    helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.cn.yaml
+    ```
+
+    `helm pull` command will pull and untar the chart package, you can modify the values files for the deep customize.
+
+If you want to install the specified version, you can use `--version` argument. By default, the latest release version will be installed.
 
 ## 5. Uninstalling the Chart
 
@@ -39,60 +60,70 @@ To remove the starwhale deployment:
 helm delete starwhale
 ```
 
-## 6. Parameters
+`helm delete` command will not delete the namespace, you can run `kubectl delete namespace starwhale` to cleanup the namespace.
 
-### 6.1 Common parameters
+## 6. Upgrading the Chart
 
-| Name             | Description                                                                                                                                                                                 | Default Value |
-|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `image.registry` | image registry, you can find Starwhale docker images in docker.io or ghcr.io or docker-registry.starwhale.cn. For users in the mainland of China, please use docker-registry.starwhale.cn registry. | `ghcr.io`|
-| `image.org`| image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io and docker-registry.starwhale.cn) or some custom org name in other registries | `star-whale`  |
-
-### 6.2 Starwhale parameters
-
-| Name                        | Description                                | Default Value                    |
-|-----------------------------|--------------------------------------------|----------------------------------|
-| `controller.taskSplitSize`  | task split size                            | `2`                              |
-| `controller.auth.username`  | admin user name                            | `starwhale`                      |
-| `controller.auth.password`  | admin user password                        | `abcd1234`                       |
-| `storage.agentHostPathRoot` | persistent host-path for cache data of job | `/mnt/data/starwhale`            |
-| `mirror.conda.enabled`      | conda mirror                               | `true`                           |
-| `mirror.pypi.enabled`       | pypi mirror                                | `true`                           |
-| `ingress.enabled`           | enable ingress for starwhale controller    | `true`                           |
-| `ingress.ingressClassName`  | ingress class name                         | `nginx`                          |
-| `ingress.host`              | starwhale controller domain                | `console.pre.intra.starwhale.ai` |
-
-### 6.3 Infra parameters
-
-| Name                             | Description                                                                                                            | Default Value         |
-|----------------------------------|------------------------------------------------------------------------------------------------------------------------|-----------------------|
-| `mysql.enabled`                  | Deploy a standalone mysql instance with starwhale chart. If set mysql.enabled=true, you should provide a pv for mysql. | `true`                |
-| `mysql.persistence.storageClass` | mysql pvc storageClass                                                                                                 | `local-storage-mysql` |
-| `externalMySQL.host`             | When mysql.enabled is false, chart will use external mysql.                                                            | `localhost`           |
-| `minio.enabled`                  | Deploy a standalone minio instance with starwhale chart. If set minio.enabled=true, you should provide a pv for minio. | `true`                |
-| `minio.persistence.storageClass` | minio pvc storageClass                                                                                                 | `local-storage-minio` |
-| `externalS3OSS.host`             | When minio.enabled is false, chart will use external s3 service.                                                       | `localhost`           |
-
-### 6.4 minikube parameters
-
-| Name               | Description                            | Default Value |
-|--------------------|----------------------------------------|---------------|
-| `minikube.enabled` | minikube mode for the all-in-one test. | `false`       |
-
-In minikube mode, you can easy to build an all-in-one starwhale. Run command example:
+To upgrade new chart version:
 
 ```bash
-helm upgrade --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --set minikube.enabled=true
+helm repo update starwhale
 ```
 
-For users in the mainland of China, please use the following command:
+The `update` command will update the information of available charts locally from the Starwhale chart repository. You can get more version information from [ArtifactHub](https://artifacthub.io/packages/helm/starwhale/starwhale).
 
-```bash
-export SWNAME=starwhale SWNS=starwhale
-helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio --set image.registry=docker-registry.starwhale.cn --set minio.global.imageRegistry=docker-registry.starwhale.cn --set mysql.global.imageRegistry=docker-registry.starwhale.cn
-```
+## 7. Parameters
 
-### 6.5 dev mode
+### 7.1 Common parameters
+
+| Name| Description | Default Value |
+|-----|-------------|---------------|
+| `image.registry` | image registry, you can find Starwhale docker images in docker.io, ghcr.io and docker-registry.starwhale.cn.|`ghcr.io`|
+| `image.org`      | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io and docker-registry.starwhale.cn) or some custom org name in other registry.| `star-whale`|
+
+### 7.2 Starwhale controller parameters
+
+| Name | Description | Default Value |
+|------|-------------|---------------|
+| `controller.taskSplitSize`| task split size| `2`|
+| `controller.auth.username`| login username for console web| `starwhale`|
+| `controller.auth.password`| login password for console web| `abcd1234`|
+| `controller.ingress.enabled`| enable ingress for Starwhale controller | `true` |
+| `controller.ingress.ingressClassName` | ingress class name | `nginx`|
+| `controller.ingress.host` | Starwhale controller domain | `console.pre.intra.starwhale.ai` |
+| `controller.containerPort`| Starwhale console web port | `8082` |
+
+### 7.3 Infra parameters
+
+Starwhale provides MySQL and minio infra charts, but the charts only support standalone mode for controller experiential, debugging and development, for example, minikube all-in-one scenario. In production, you should use external high available infra by the `externalMySQL` and `externalOSS` parameters.
+
+Standalone Infra for test scenario:
+
+| Name | Description | Default Value |
+|------|-------------|---------------|
+| `mysql.enabled` | Deploy a standalone mysql instance with starwhale charts. pv/storageClass will be created automatically. | `true` |
+| `minio.enabled` | Deploy a standalone minio instance with starwhale charts. pv/storageClass will be created automatically. | `true` |
+| `minio.ingress.enabled` | enable ingress for minio admin web. | `true` |
+| `minio.ingress.host` | minio admin web domain | `minio.pre.intra.starwhale.ai` |
+
+External Infra for production scenario:
+
+| Name | Description | Default Value |
+|------|-------------|---------------|
+| `externalMySQL.host` | When mysql.enabled is false, charts will use external mysql. | `localhost` |
+| `externalMySQL.port` | port for the external mysql | `3306` |
+| `externalMySQL.username` | username for the external mysql | `` |
+| `externalMySQL.password` | password for the external mysql | `` |
+| `externalMySQL.database` | The System Admin should create a database for Starwhale in the external mysql. | `starwhale` |
+| `externalOSS.host` | When minio.enabled is false, charts will use the external OSS service. | `localhost` |
+| `externalOSS.port` | port for the external OSS service | `9000` |
+| `externalOSS.accessKey` | access key for the external OSS service | `` |
+| `externalOSS.secretKey` | secret key for the external OSS service | `` |
+| `externalOSS.defaultBuckets` | The System Admin should create a bucket for Starwhale in the external OSS service. | `starwhale` |
+| `externalOSS.region` | bucket's region for the external OSS service | `local` |
+| `externalOSS.type` | Starwhale supports `s3`, `minio` and `aliyun` OSS types. | `s3` |
+
+### 7.4 dev mode
 
 | Name                        | Description                                              | Default Value    |
 |-----------------------------|----------------------------------------------------------|------------------|
@@ -105,19 +136,15 @@ Dev mode support creating local path PV automatically when devMode.createPV.enab
 e.g.
 
 ```bash
-export SWNAME=starwhale
-export SWNS=starwhale
-helm install $SWNAME . -n $SWNS --create-namespace \
+helm install starwhale . -n starwhale --create-namespace \
     --set devMode.createPV.enabled=true \
     --set devMode.createPV.host=pv-host \
-    --set devMode.createPV.rootPath=/path/to/pv-storage \
-    --set mysql.primary.persistence.storageClass=$SWNAME-mysql \
-    --set minio.persistence.storageClass=$SWNAME-minio
+    --set devMode.createPV.rootPath=/path/to/pv-storage
 ```
 
-### 6.6 ServiceAccount
+### 7.5 ServiceAccount
 
-Starwhale Controller can only works properly with ServiceAccount with sufficient permissions. The list of permissions required is as follows (take RBAC as an example):
+Starwhale Controller can only work properly with ServiceAccount with sufficient permissions. The list of permissions required is as follows (take RBAC as an example):
 
 | Resource | API Group | Get | List | Watch | Create | Delete |
 |----------|-----------|-----|------|-------|--------|--------|

@@ -76,7 +76,7 @@ export default function FilterRenderer({
     const $fieldOptions = React.useMemo(() => {
         return $columns
             .filter((tmp) => {
-                return tmp.label.match(value)
+                return tmp.label?.match(value)
             })
             .map((tmp) => {
                 return {

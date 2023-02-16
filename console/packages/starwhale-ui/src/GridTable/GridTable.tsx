@@ -9,6 +9,7 @@ import { StoreProvider, useTableContext } from './StoreContext'
 import Pagination from './Pagination'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
 import { StatefulDataTable } from '../base/data-table'
+import { stateSelector } from '../base/data-table/store'
 
 const useStyles = createUseStyles({
     table: {
@@ -29,6 +30,9 @@ const useStyles = createUseStyles({
         '& .table-row--hovering': {
             backgroundColor: '#EBF1FF',
         },
+        '& .table-row--hovering .table-cell': {
+            backgroundColor: '#EBF1FF !important',
+        },
         '& .table-row--hovering .column-cell > *': {
             backgroundColor: '#EBF1FF !important',
         },
@@ -37,10 +41,10 @@ const useStyles = createUseStyles({
         '& .table-cell--last': {},
     },
     tablePinnable: {
-        '& .table-columns-pinned .table-row .table-cell:last-child': {
-            borderRight: '1px solid rgb(207, 215, 230); ',
+        '& .table-columns-pinned': {
+            borderRight: '1px solid rgb(207, 215, 230)',
         },
-        '& .table-headers-pinned > div:last-child': {
+        '& .table-headers-pinned > div:last-child .header-cell': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
     },
@@ -59,7 +63,10 @@ function GridTable({
     compareable = false,
     selectable = false,
     viewable = false,
+    queryinline = false,
     onSave,
+    onChange = () => {},
+    storeRef,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const api = useTableContext()
@@ -82,6 +89,17 @@ function GridTable({
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
 
+    React.useEffect(() => {
+        const unsub = api.subscribe(stateSelector, onChange)
+        return unsub
+    }, [api, onChange])
+
+    React.useEffect(() => {
+        if (!storeRef) return
+        // eslint-disable-next-line no-param-reassign
+        storeRef.current = store
+    }, [storeRef, store])
+
     return (
         <>
             <div
@@ -94,6 +112,7 @@ function GridTable({
                     resizableColumnWidths
                     initialFilters={$filters}
                     searchable={searchable}
+                    queryinline={queryinline}
                     filterable={filterable}
                     queryable={queryable}
                     columnable={columnable}

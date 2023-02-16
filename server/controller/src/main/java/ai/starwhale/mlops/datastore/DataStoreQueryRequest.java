@@ -30,6 +30,7 @@ import lombok.NoArgsConstructor;
 public class DataStoreQueryRequest {
 
     private String tableName;
+    private long timestamp;
     private Map<String, String> columns;
     private List<OrderByDesc> orderBy;
     private boolean descending;

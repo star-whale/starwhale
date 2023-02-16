@@ -7,8 +7,78 @@ import type { ColumnT } from './types.js'
 import _ from 'lodash'
 import cn from 'classnames'
 import Checkbox from '../../Checkbox'
+import Button from '../../Button'
+import IconFont from '../../IconFont'
+import { themedUseStyletron } from '../../theme/styletron'
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
+    const RenderCell = React.forwardRef<
+        HTMLDivElement,
+        {
+            isQueryInline?: boolean
+            onSelect?: () => void
+            isSelected?: boolean
+        }
+    >((props, ref) => {
+        const [css, theme] = themedUseStyletron()
+        const ProvidedCell = options.renderCell
+
+        let cellBlockAlign = 'flex-start'
+        if (options.cellBlockAlign === 'center') {
+            cellBlockAlign = 'center'
+        } else if (options.cellBlockAlign === 'end') {
+            cellBlockAlign = 'flex-end'
+        }
+
+        return (
+            <div
+                // @ts-ignore
+                ref={ref}
+                className={cn(
+                    'column-cell',
+                    css({
+                        ...theme.typography.font200,
+                        boxSizing: 'border-box',
+                        color: theme.colors.contentPrimary,
+                        padding: '0',
+                        height: '100%',
+                        alignItems: 'center',
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: cellBlockAlign,
+                    })
+                )}
+            >
+                {Boolean(props.isQueryInline) && (
+                    <p
+                        className={css({
+                            flexBasis: '32px',
+                            flexShrink: 0,
+                        })}
+                    />
+                )}
+                {Boolean(props.onSelect) && (
+                    <span className={css({ paddingRight: theme.sizing.scale300 })}>
+                        {/* @ts-ignore */}
+                        <Checkbox
+                            //@ts-ignore
+                            onChange={props.onSelect}
+                            //@ts-ignore
+                            checked={props.isSelected}
+                            overrides={{
+                                Checkmark: { style: { marginTop: 0, marginBottom: 0 } },
+                            }}
+                        />
+                    </span>
+                )}
+                {/* @ts-ignore */}
+                <ProvidedCell {...props} />
+            </div>
+        )
+    })
+
+    RenderCell.displayName = 'Cell'
+
     return {
         kind: options.kind,
         buildFilter: options.buildFilter || ((params) => (data) => true),
@@ -19,69 +89,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         maxWidth: options.maxWidth,
         minWidth: options.minWidth,
         // @ts-ignore
-        renderCell: React.forwardRef((props, ref) => {
-            const [css, theme] = useStyletron()
-            const ProvidedCell = options.renderCell
-
-            let cellBlockAlign = 'flex-start'
-            if (options.cellBlockAlign === 'center') {
-                cellBlockAlign = 'center'
-            } else if (options.cellBlockAlign === 'end') {
-                cellBlockAlign = 'flex-end'
-            }
-
-            return (
-                <div
-                    // @ts-ignore
-                    ref={ref}
-                    className={cn(
-                        'column-cell',
-                        css({
-                            ...theme.typography.font200,
-                            boxSizing: 'border-box',
-                            color: theme.colors.contentPrimary,
-                            // @ts-ignore
-                            // display: props.isMeasured ? 'inline-block' : undefined,
-                            // @ts-ignore
-                            // width: props.isMeasured ? undefined : '100%',
-                            padding: '0',
-                            height: '100%',
-                            alignItems: 'center',
-                            display: 'flex',
-                            width: '100%',
-                        })
-                    )}
-                >
-                    {/* <div
-                        data-type='column-cell-1'
-                        className={css({
-                            flex: 1,
-                            alignItems: 'center',
-                            display: 'flex',
-                            height: '100%',
-                        })}
-                    > */}
-                    {/* @ts-ignore */}
-                    {Boolean(props.onSelect) && (
-                        <span className={css({ paddingRight: theme.sizing.scale300 })}>
-                            {/* @ts-ignore */}
-                            <Checkbox
-                                //@ts-ignore
-                                onChange={props.onSelect}
-                                //@ts-ignore
-                                checked={props.isSelected}
-                                overrides={{
-                                    Checkmark: { style: { marginTop: 0, marginBottom: 0 } },
-                                }}
-                            />
-                        </span>
-                    )}
-                    {/* @ts-ignore */}
-                    <ProvidedCell {...props} />
-                    {/* </div> */}
-                </div>
-            )
-        }),
+        renderCell: RenderCell,
         renderFilter: options.renderFilter || (() => null),
         sortable: Boolean(options.sortable) && Boolean(options.sortFn),
         sortFn: options.sortFn || (() => 0),

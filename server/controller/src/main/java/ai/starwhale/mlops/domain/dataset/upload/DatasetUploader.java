@@ -239,7 +239,7 @@ public class DatasetUploader {
                 .findByNameAndDatasetId(manifest.getVersion(), datasetEntity.getId(), true);
         if (null == datasetVersionEntity) {
             // create
-            datasetVersionEntity = from(projectEntity.getProjectName(), datasetEntity, manifest);
+            datasetVersionEntity = from(projectEntity.getId(), datasetEntity, manifest);
             datasetVersionMapper.insert(datasetVersionEntity);
             RevertManager.create(new BundleManager(
                     idConvertor,
@@ -287,15 +287,15 @@ public class DatasetUploader {
         return datasetVersionEntity.getId();
     }
 
-    private DatasetVersionEntity from(String projectName, DatasetEntity datasetEntity, Manifest manifest) {
+    private DatasetVersionEntity from(Long projectId, DatasetEntity datasetEntity, Manifest manifest) {
         return DatasetVersionEntity.builder().datasetId(datasetEntity.getId())
                 .ownerId(getOwner())
-                .storagePath(storagePathCoordinator.allocateDatasetPath(projectName, datasetEntity.getDatasetName(),
+                .storagePath(storagePathCoordinator.allocateDatasetPath(projectId, datasetEntity.getDatasetName(),
                         manifest.getVersion()))
                 .versionMeta(manifest.getRawYaml())
                 .versionName(manifest.getVersion())
                 .size(manifest.getDatasetSummary().getRows())
-                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName, datasetEntity.getDatasetName(),
+                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectId, datasetEntity.getDatasetName(),
                         manifest.getVersion()))
                 .filesUploaded(DatasetVersionWithMetaConverter.EMPTY_YAML)
                 .build();

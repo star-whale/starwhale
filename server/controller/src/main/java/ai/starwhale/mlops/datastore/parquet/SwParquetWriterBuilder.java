@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.ParquetConfig;
-import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -29,17 +29,20 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
 public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Object>, SwParquetWriterBuilder> {
 
-    private final TableSchema schema;
+    private final Map<String, ColumnType> schema;
+    private final String tableSchema;
     private final String metadata;
 
     public SwParquetWriterBuilder(
             StorageAccessService storageAccessService,
-            TableSchema schema,
+            Map<String, ColumnType> schema,
+            String tableSchema,
             String metadata,
             String path,
             ParquetConfig config) {
         super(new SwOutputFile(storageAccessService, path));
         this.schema = schema;
+        this.tableSchema = tableSchema;
         this.metadata = metadata;
         switch (config.getCompressionCodec()) {
             case SNAPPY:
@@ -76,6 +79,6 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
 
     @Override
     protected WriteSupport<Map<String, Object>> getWriteSupport(Configuration configuration) {
-        return new SwWriteSupport(this.schema, this.metadata);
+        return new SwWriteSupport(this.schema, this.tableSchema, this.metadata);
     }
 }
