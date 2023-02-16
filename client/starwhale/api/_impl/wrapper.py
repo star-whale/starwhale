@@ -172,7 +172,7 @@ class Evaluation(Logger):
         return {}
 
     def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
-        return self.get(self._eval_table_name(table_name))
+        return self._get(self._eval_table_name(table_name))
 
     def flush_result(self) -> None:
         self._flush(self._eval_table_name("results"))
