@@ -48,6 +48,7 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -193,21 +194,45 @@ public class JobRepoTest {
     }
 
     @Test
-    public void testUpdateStatus() {
+    public void testUpdateProperty() {
         var jobId = 123456L;
+        var uuid = "1q2w3e4r5t6y";
         Mockito.when(projectMapper.list(null, null, null))
                 .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
-        Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
-                .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
-        Mockito.when(jobMapper.findJobById(jobId)).thenReturn(JobEntity.builder()
+        var job = JobEntity.builder()
                 .id(jobId)
-                .jobUuid("1q2w3e4r5t6y")
+                .jobUuid(uuid)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
-                .build()
-        );
+                .build();
+        Mockito.when(jobMapper.findJobById(jobId)).thenReturn(job);
+        Mockito.when(jobMapper.findJobByUuid(uuid)).thenReturn(job);
 
         jobRepo.updateJobStatus(jobId, JobStatus.SUCCESS);
         verify(dataStore, times(1))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobFinishedTime(jobId, Date.from(Instant.now()));
+        verify(dataStore, times(2))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.removeJob(jobId);
+        verify(dataStore, times(3))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.recoverJobByUuid(uuid);
+        verify(dataStore, times(4))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.recoverJob(jobId);
+        verify(dataStore, times(5))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobComment(jobId, "test1");
+        verify(dataStore, times(6))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobCommentByUuid("1q2w3e4r5t6y", "test2");
+        verify(dataStore, times(7))
                 .update(eq("project/1/eval/summary"), any(), anyList());
     }
 }
