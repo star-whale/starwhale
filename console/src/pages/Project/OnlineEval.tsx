@@ -191,6 +191,7 @@ export default function OnlineEval() {
                         }
                     })
                     // gradio always generate the click dependencies with the `backend_fn` to true and `js` to null.
+                    // see: https://github.com/star-whale/gradio/blob/474b88af52367c76b4dc207e0628871234f0c8ef/gradio/examples.py#L242-L256
                     // this makes a http request to the model serving backend for fetching the example resource and
                     // call the backend directly without calling the `wait` function.
                     // so we need hijack the generated configs for gradio
