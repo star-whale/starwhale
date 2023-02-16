@@ -24,7 +24,7 @@ from typing import (
     Iterator,
     Optional,
 )
-from functools import cache
+from functools import lru_cache
 
 import dill
 import numpy as np
@@ -1428,7 +1428,7 @@ def gen_table_name(project: Union[str, int], table: str, instance_uri: str = "")
         )
 
 
-@cache
+@lru_cache(maxsize=None)
 @http_retry
 def _get_remote_project_id(instance_uri: str, project: Union[str, int]) -> Any:
     resp = requests.get(
