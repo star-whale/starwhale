@@ -28,7 +28,7 @@ export default function EvaluationListCard() {
     const history = useHistory()
     const { projectId } = useParams<{ projectId: string }>()
     const summaryTableName = React.useMemo(() => {
-        return tableNameOfSummary('starwhale')
+        return tableNameOfSummary(projectId)
     }, [projectId])
     const store = useEvaluationStore()
 
