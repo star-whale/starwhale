@@ -33,7 +33,7 @@ class TestEvaluation(BaseTestCase):
         result_table_name = eval._eval_table_name("results")
         assert result_table_name == "eval/12/123456/results"
 
-        table_name_1 = eval._fetch_table_name("table-1")
+        table_name_1 = eval._get_storage_table_name("table-1")
         assert table_name_1 == "project/project-test/table-1"
 
         eval = wrapper.Evaluation(
@@ -41,11 +41,11 @@ class TestEvaluation(BaseTestCase):
         )
 
         result_table = eval._eval_table_name("results")
-        result_table_name = eval._fetch_table_name(result_table)
+        result_table_name = eval._get_storage_table_name(result_table)
         assert result_table == "eval/12/123456/results"
         assert result_table_name == "project/1/eval/12/123456/results"
 
-        table_name_1 = eval._fetch_table_name("table-1")
+        table_name_1 = eval._get_storage_table_name("table-1")
         assert table_name_1 == "project/1/table-1"
 
     def test_log_results_and_scan(self) -> None:

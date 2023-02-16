@@ -27,12 +27,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.datastore.DataStore;
+import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -148,7 +150,8 @@ public class JobRepoTest {
 
         List<JobFlattenEntity> jobEntities = jobRepo.listJobs(1L, null);
         Assertions.assertEquals(2, jobEntities.size());
-        Mockito.verify(dataStore, times(2)).query(any());
+        Mockito.verify(dataStore, times(2)).query(
+                argThat((DataStoreQueryRequest request) -> request.getTableName().equals("project/1/eval/summary")));
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
     }
 
@@ -184,7 +187,8 @@ public class JobRepoTest {
 
         List<JobFlattenEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));
         Assertions.assertEquals(2, jobEntities.size());
-        Mockito.verify(dataStore, times(2)).query(any());
+        Mockito.verify(dataStore, times(2)).query(
+                argThat((DataStoreQueryRequest request) -> request.getTableName().equals("project/1/eval/summary")));
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
     }
 

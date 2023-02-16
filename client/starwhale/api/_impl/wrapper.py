@@ -95,7 +95,7 @@ class Evaluation(Logger):
         self._data_store = data_store.get_data_store(instance_uri=instance)
         self._init_writers([])
 
-    def _fetch_table_name(self, table: str) -> str:
+    def _get_storage_table_name(self, table: str) -> str:
         with self._lock:
             _table_name = self._tables.get(table)
             if _table_name is None:
@@ -106,6 +106,19 @@ class Evaluation(Logger):
                 )
                 self._tables[table] = _table_name
         return _table_name
+
+    def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+        _storage_table_name = self._get_storage_table_name(table_name)
+        super()._log(_storage_table_name, record)
+
+    def _get(self, table_name: str) -> Iterator[Dict[str, Any]]:
+        return self._data_store.scan_tables(
+            [data_store.TableDesc(self._get_storage_table_name(table=table_name))]
+        )
+
+    def _flush(self, table_name: str) -> None:
+        _storage_table_name = self._get_storage_table_name(table_name)
+        super()._flush(_storage_table_name)
 
     def log_result(
         self,
@@ -118,9 +131,7 @@ class Evaluation(Logger):
         for k, v in kwargs.items():
             record[k.lower()] = _serialize(v) if serialize else v
 
-        self._log(
-            self._fetch_table_name(table=self._eval_table_name("results")), record
-        )
+        self._log(self._eval_table_name("results"), record)
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
@@ -136,24 +147,16 @@ class Evaluation(Logger):
             for k, v in kwargs.items():
                 record[k.lower()] = v
 
-        self._log(self._fetch_table_name(table=self._eval_summary_table_name), record)
+        self._log(self._eval_summary_table_name, record)
 
     def log(self, table_name: str, **kwargs: Any) -> None:
         record = {}
         for k, v in kwargs.items():
             record[k.lower()] = v
-        self._log(
-            self._fetch_table_name(table=self._eval_table_name(table_name)), record
-        )
+        self._log(self._eval_table_name(table_name), record)
 
     def get_results(self, deserialize: bool = False) -> Iterator[Dict[str, Any]]:
-        for data in self._data_store.scan_tables(
-            [
-                data_store.TableDesc(
-                    self._fetch_table_name(table=self._eval_table_name("results"))
-                )
-            ]
-        ):
+        for data in self._get(self._eval_table_name("results")):
             if deserialize:
                 for _k, _v in data.items():
                     if _k == "id":
@@ -162,35 +165,23 @@ class Evaluation(Logger):
             yield data
 
     def get_metrics(self) -> Dict[str, Any]:
-        for metrics in self._data_store.scan_tables(
-            [
-                data_store.TableDesc(
-                    self._fetch_table_name(table=self._eval_summary_table_name)
-                )
-            ]
-        ):
+        for metrics in self._get(self._eval_summary_table_name):
             if metrics["id"] == self.eval_id:
                 return metrics
 
         return {}
 
     def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
-        return self._data_store.scan_tables(
-            [
-                data_store.TableDesc(
-                    self._fetch_table_name(table=self._eval_table_name(table_name))
-                )
-            ]
-        )
+        return self.get(self._eval_table_name(table_name))
 
     def flush_result(self) -> None:
-        self._flush(self._fetch_table_name(table=self._eval_table_name("results")))
+        self._flush(self._eval_table_name("results"))
 
     def flush_metrics(self) -> None:
-        self._flush(self._fetch_table_name(table=self._eval_summary_table_name))
+        self._flush(self._eval_summary_table_name)
 
     def flush(self, table_name: str) -> None:
-        self._flush(self._fetch_table_name(table=self._eval_table_name(table_name)))
+        self._flush(self._eval_table_name(table_name))
 
 
 @unique

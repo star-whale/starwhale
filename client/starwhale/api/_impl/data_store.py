@@ -10,7 +10,6 @@ import binascii
 import importlib
 import threading
 from abc import ABCMeta, abstractmethod
-from functools import cache
 from http import HTTPStatus
 from typing import (
     Any,
@@ -25,6 +24,7 @@ from typing import (
     Iterator,
     Optional,
 )
+from functools import cache
 
 import dill
 import numpy as np
