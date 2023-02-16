@@ -29,7 +29,7 @@ download-model:
 
 .POHNY: prepare
 prepare: download-model download-data
-[ -d data/UCF-101 ] || mv data/UCF-101-WEBM data/UCF-101
+	[ -d data/UCF-101 ] || mv data/UCF-101-WEBM data/UCF-101
 	python3 -m pip install -r requirements.txt
 
 .POHNY: show-labels

@@ -296,13 +296,6 @@ class TestCli:
 
     def test_all(self) -> None:
 
-        for name, rt in RUNTIMES.items():
-            if "yamls" not in rt:
-                self.build_runtime(str(rt["workdir"]))
-            else:
-                for yml in list(rt["yamls"]):
-                    self.build_runtime(str(rt["workdir"]), yml)
-
         for name, expl in EXAMPLES.items():
             logger.info(f"preparing data for {expl}")
             rc = subprocess.call(
@@ -318,6 +311,13 @@ class TestCli:
             for d_type in expl["datasets"]:
                 self.build_dataset(workdir_, d_type)
             self.build_model(workdir_)
+
+        for name, rt in RUNTIMES.items():
+            if "yamls" not in rt:
+                self.build_runtime(str(rt["workdir"]))
+            else:
+                for yml in list(rt["yamls"]):
+                    self.build_runtime(str(rt["workdir"]), yml)
 
         # run evals on server
         res = [
