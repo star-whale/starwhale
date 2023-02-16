@@ -78,7 +78,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
   - 🥑 **Task**: Operation entity. Tasks are in some specific steps.
 
 - **Scenarios**: Starwhale provides the best practice and out-of-the-box for different ML/DL scenarios.
-  - 🚝 **Model Training(TBD)**: Use Starwhale Python SDK to record experiment meta, metric, log, and artifact.
+  - 🚝 **Model Training(WIP)**: Use Starwhale Python SDK to record experiment meta, metric, log, and artifact.
   - 🛥️ **Model Evaluation**: `PipelineHandler` and some report decorators can give you complete, helpful, and user-friendly evaluation reports with only a few lines of codes.
   - 🛫 **Model Serving(TBD)**: Starwhale Model can be deployed as a web service or stream service in production with deployment capability, observability, and scalability. Data scientists do not need to write ML/DL irrelevant codes.
 
@@ -103,171 +103,170 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
     ```bash
     git clone https://github.com/star-whale/starwhale.git
-    ```
-
-    If [git-lfs](https://git-lfs.github.com/) has not been previously installed in the local environment(the command is `git lfs install`), you need to download the trained model file.
-
-    ```bash
-    wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
+    cd starwhale
     ```
 
 - ☕ **STEP3**: Building a runtime
 
+    > When you first build runtime, creating an isolated python environment and downloading python dependencies will take a lot of time. The command execution time is related to the network environment of the machine and the number of packages in the runtime.yaml. Using the befitting pypi mirror and cache config in the `~/.pip/pip.conf` file is a recommended practice.
+    >
+    > For users in the mainland of China, the following conf file is an option:
+    >
+    > ```conf
+    > [global]
+    > cache-dir = ~/.cache/pip
+    > index-url = https://mirrors.aliyun.com/pypi/simple/
+    > extra-index-url = https://pypi.doubanio.com/simple
+    > ```
+
     ```bash
-    cd example/runtime/pytorch
-    swcli runtime build .
+    swcli runtime build example/runtime/pytorch
     swcli runtime list
     swcli runtime info pytorch/version/latest
+    swcli runtime restore pytorch/version/latest
     ```
 
 - 🍞 **STEP4**: Building a model
 
-  - Enter `example/mnist` directory:
+  - Download pre-trained model file:
 
-   ```bash
-   cd ../../mnist
-   ```
+    ```bash
+    cd example/mnist
+    make download-model
+    # For users in the mainland of China, please add `CN=1` environment for make command:
+    # CN=1 make download-model
+    cd -
+    ```
 
-  - Write some code with Starwhale Python SDK. Complete code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/evaluator.py).
+  - [Code Example]Write some code with Starwhale Python SDK. Complete code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/evaluator.py).
 
-   ```python
-   import typing as t
-   import torch
-   from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
+    ```python
+    import typing as t
+    import torch
+    from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
 
-   class MNISTInference(PipelineHandler):
-        def __init__(self) -> None:
-            super().__init__()
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.model = self._load_model(self.device)
+    class MNISTInference(PipelineHandler):
+            def __init__(self) -> None:
+                super().__init__()
+                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                self.model = self._load_model(self.device)
 
-        def ppl(self, img: Image, **kw: t.Any) -> t.Tuple[t.List[int], t.List[float]]:
-            data_tensor = self._pre(img)
-            output = self.model(data_tensor)
-            return self._post(output)
+            def ppl(self, data: t.Dict[str, t.Any], **kw: t.Any) -> t.Tuple[float, t.List[float]]:
+                data_tensor = self._pre(data["img"])
+                output = self.model(data_tensor)
+                return self._post(output)
 
-        @multi_classification(
-            confusion_matrix_normalize="all",
-            show_hamming_loss=True,
-            show_cohen_kappa_score=True,
-            show_roc_auc=True,
-            all_labels=[i for i in range(0, 10)],
-        )
-        def cmp(
-            self, ppl_result: PPLResultIterator
-        ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
-            result, label, pr = [], [], []
-            for _data in ppl_result:
-                label.append(_data["annotations"]["label"])
-                result.extend(_data["result"][0])
-                pr.extend(_data["result"][1])
-            return label, result, pr
+            @multi_classification(
+                confusion_matrix_normalize="all",
+                show_hamming_loss=True,
+                show_cohen_kappa_score=True,
+                show_roc_auc=True,
+                all_labels=[i for i in range(0, 10)],
+            )
+            def cmp(
+                self, ppl_result: PPLResultIterator
+            ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
+                result, label, pr = [], [], []
+                for _data in ppl_result:
+                    label.append(_data["ds_data"]["label"])
+                    result.append(_data["result"][0])
+                    pr.append(_data["result"][1])
+                return label, result, pr
 
-       def _pre(self, input:bytes):
-           """write some mnist preprocessing code"""
+        def _pre(self, input:bytes):
+            """write some mnist preprocessing code"""
 
-       def _post(self, input:bytes):
-           """write some mnist post-processing code"""
+        def _post(self, input:bytes):
+            """write some mnist post-processing code"""
 
-       def _load_model():
-           """load your pre trained model"""
-   ```
+        def _load_model():
+            """load your pre trained model"""
+    ```
 
-  - Define `model.yaml`.
+  - [Code Example]Define `model.yaml`.
 
-  ```yaml
-  name: mnist
-  model:
-    - models/mnist_cnn.pt
-  config:
-    - config/hyperparam.json
-  run:
-    handler: mnist.evaluator:MNISTInference
-  ```
+    ```yaml
+    name: mnist
+    model:
+        - models/mnist_cnn.pt
+    config:
+        - config/hyperparam.json
+    run:
+        handler: mnist.evaluator:MNISTInference
+    ```
 
   - Run one command to build the model.
 
-   ```bash
-    swcli model build .
+    ```bash
+    swcli model build example/mnist --runtime pytorch/version/latest
+    swcli model list
     swcli model info mnist/version/latest
-   ```
+    ```
 
 - 🍺 **STEP5**: Building a dataset
 
   - Download MNIST RAW data files.
 
-   ```bash
-    mkdir -p data && cd data
-    wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
-    wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
-    gzip -d *.gz
-    cd ..
-    ls -lah data/*
-   ```
+    ```bash
+    cd example/mnist
+    make download-data
+    # For users in the mainland of China, please add `CN=1` environment for make command:
+    # CN=1 make download-data
+    cd -
+    ```
 
-  - Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/dataset.py).
+  - [Code Example]Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/dataset.py).
 
-   ```python
+    ```python
     import struct
-    import typing as t
     from pathlib import Path
-    from starwhale import BuildExecutor
+    from starwhale import GrayscaleImage
 
-    class DatasetProcessExecutor(SWDSBinBuildExecutor):
-        def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-            root_dir = Path(__file__).parent.parent / "data"
+    def iter_swds_bin_item():
+        root_dir = Path(__file__).parent.parent / "data"
 
-            with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
-                root_dir / "t10k-labels-idx1-ubyte"
-            ).open("rb") as label_file:
-                _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-                _, label_number = struct.unpack(">II", label_file.read(8))
-                print(
-                    f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
-                )
-                image_size = height * width
+        with (root_dir / "t10k-images-idx3-ubyte").open("rb") as data_file, (
+            root_dir / "t10k-labels-idx1-ubyte"
+        ).open("rb") as label_file:
+            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+            _, label_number = struct.unpack(">II", label_file.read(8))
+            print(
+                f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+            )
+            image_size = height * width
 
-                for i in range(0, min(data_number, label_number)):
-                    _data = data_file.read(image_size)
-                    _label = struct.unpack(">B", label_file.read(1))[0]
-                    yield GrayscaleImage(
+            for i in range(0, min(data_number, label_number)):
+                _data = data_file.read(image_size)
+                _label = struct.unpack(">B", label_file.read(1))[0]
+                yield {
+                    "img": GrayscaleImage(
                         _data,
                         display_name=f"{i}",
                         shape=(height, width, 1),
-                    ), {"label": _label}
-   ```
-
-  - Define `dataset.yaml`.
-
-   ```yaml
-    name: mnist
-    handler: mnist.dataset:DatasetProcessExecutor
-    attr:
-      alignment_size: 1k
-      volume_size: 4M
-      data_mime_type: "x/grayscale"
-   ```
+                    ),
+                    "label": _label,
+                }
+    ```
 
   - Run one command to build the dataset.
 
-   ```bash
-    swcli dataset build .
+    ```bash
+    swcli dataset build example/mnist --handler mnist.dataset:iter_swds_bin_item --runtime pytorch/version/latest
     swcli dataset info mnist/version/latest
-   ```
+    swcli dataset head mnist/version/latest
+    ```
 
   Starwhale also supports build dataset with pure python sdk. You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/dataset-sdk.ipynb).
 
 - 🍖 **STEP6**: Running an evaluation job
 
-   ```bash
-    swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
+    ```bash
+    swcli eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
     swcli eval list
-    swcli eval info ${version}
-   ```
+    swcli eval info $(swcli eval list | grep mnist | grep success | awk '{print $1}' | head -n 1)
+    ```
 
-👏 Now, you have completed the fundamental steps for Starwhale standalone.
-
-Let's go ahead and finish the tutorial on the on-premises instance.
+**👏 Now, you have completed the fundamental steps for Starwhale standalone. Let's go ahead and finish the tutorial on the on-premises instance.**
 
 ## MNIST Quick Tour for on-premises instance
 
@@ -284,11 +283,11 @@ Let's go ahead and finish the tutorial on the on-premises instance.
     minikube start
     ```
 
-    > For users in the mainland of China, please add the startup parameter：`--image-mirror-country=cn`.
-
-    ```bash
-    minikube start --image-mirror-country=cn
-    ```
+    > For users in the mainland of China, please add some external parameters. The following command was well tested; you may also try another kubernetes version.
+    >
+    > ```bash
+    > minikube start --image-mirror-country=cn --kubernetes-version=1.25.3
+    > ```
 
     If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
 
@@ -401,16 +400,16 @@ Let's go ahead and finish the tutorial on the on-premises instance.
         <details>
             <summary>Show the uploaded artifacts screenshots</summary>
 
-        ![console-artifacts.gif](../img/console-artifacts.gif)
+        ![Console Artifacts](docs/docs/img/console-artifacts.gif)
         </details>
     3. Create and view an evaluation job
         <details>
             <summary>Show create job screenshot</summary>
 
-        ![console-create-job.gif](../img/console-create-job.gif)
+        ![Console Create Job](docs/docs/img/console-create-job.gif)
         </details>
 
-**Congratulations! You have completed the evaluation process for a model.**
+**👏 Congratulations! You have completed the evaluation process for a model.**
 
 ## Documentation, Community, and Support
 
@@ -423,7 +422,7 @@ Let's go ahead and finish the tutorial on the on-premises instance.
 
   - Python Package on [Pypi](https://pypi.org/project/starwhale/).
   - Helm Charts on [Artifacthub](https://artifacthub.io/packages/helm/starwhale/starwhale).
-  - Docker Images on [Docker Hub](https://hub.docker.com/u/starwhaleai) and [ghcr.io](https://github.com/orgs/star-whale/packages).
+  - Docker Images on [Docker Hub](https://hub.docker.com/u/starwhaleai), [Github Packages](https://github.com/orgs/star-whale/packages) and [Starwhale Registry](https://docker-registry.starwhale.cn/).
 
 - Additionally, you can always find us at *developer@starwhale.ai*.
 

@@ -2,9 +2,9 @@
 title: Standalone Quickstart
 ---
 
-![Core Workflow](../img/standalone-core-workflow.gif)
-
 **This tutorial is also available as a [Colab Notebook](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb).**
+
+![Core Workflow](../img/standalone-core-workflow.gif)
 
 ## 1. Installing Starwhale
 
@@ -20,7 +20,7 @@ You can install the alpha version by the `--pre` argument.
 :::
 
 :::note
-Starwhale standalone requires Python 3.7~3.10. Currently, Starwhale only supports Linux and macOS. Windows is coming soon.
+Starwhale standalone requires Python 3.7~3.11. Currently, Starwhale only supports Linux and macOS. Windows is coming soon.
 :::
 
 At the installation stage, we strongly recommend you follow the [doc](../guides/install/standalone.md).
@@ -40,10 +40,24 @@ We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The f
 
 Runtime example code are in the `example/runtime/pytorch` directory.
 
-- Build the Starwhale Runtime bundle:
+- Build the Starwhale Runtime bundle:.
+
+  :::tip
+  When you first build runtime, creating an isolated python environment and downloading python dependencies will take a lot of time. The command execution time is related to the network environment of the machine and the number of packages in the runtime.yaml. Using the befitting pypi mirror and cache config in the `~/.pip/pip.conf` file is a recommended practice.
+
+  For users in the mainland of China, the following conf file is an option:
+
+    ```conf
+    [global]
+    cache-dir = ~/.cache/pip
+    index-url = https://mirrors.aliyun.com/pypi/simple/
+    extra-index-url = https://pypi.doubanio.com/simple
+    ```
+
+  :::
 
   ```bash
-  swcli runtime build .
+  swcli runtime build example/runtime/pytorch
   ```
 
 - Check your local Starwhale Runtime:
@@ -53,17 +67,33 @@ Runtime example code are in the `example/runtime/pytorch` directory.
   swcli runtime info pytorch/version/latest
   ```
 
+- Restore Starwhale Runtime(optional):
+
+  ```bash
+  swcli runtime restore pytorch/version/latest
+  ```
+
 ## 4. Building Model
 
 Model example code are in the `example/mnist` directory.
 
-- Build a Starwhale Model:
+- Download pre-trained model file:
 
   ```bash
-  swcli model build .
+  cd example/mnist
+  make download-model
+  # For users in the mainland of China, please add `CN=1` environment for make command:
+  # CN=1 make download-model
+  cd -
   ```
 
-- Check your local Starwhale Model.
+- Build a Starwhale Model with prebuilt Starwhale Runtime:
+
+  ```bash
+  swcli model build example/mnist --runtime pytorch/version/latest
+  ```
+
+- Check your local Starwhale Model:
 
   ```bash
   swcli model list
@@ -77,20 +107,17 @@ Dataset example code are in the `example/mnist` directory.
 - Download the MNIST raw data:
 
   ```bash
-  mkdir -p data && cd data
-  wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
-  wget http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
-  wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
-  wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
-  gzip -d *.gz
-  cd ..
-  ls -lah data/*
+  cd example/mnist
+  make download-data
+  # For users in the mainland of China, please add `CN=1` environment for make command:
+  # CN=1 make download-data
+  cd -
   ```
 
-- Build a Starwhale Dataset:
+- Build a Starwhale Dataset with prebuilt Starwhale Runtime:
 
   ```bash
-  swcli dataset build .
+  swcli dataset build example/mnist --runtime pytorch/version/latest
   ```
 
 - Check your local Starwhale Dataset:
@@ -100,23 +127,25 @@ Dataset example code are in the `example/mnist` directory.
   swcli dataset info mnist/version/latest
   ```
 
+- Head some records from the mnist dataset:
+
+  ```bash
+  swcli dataset head mnist/version/latest
+  ```
+
 ## 6. Running an Evaluation Job
 
-- Create an evaluation job:
+- Create an evaluation job
 
- ```bash
- swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
- ```
+  ```bash
+  swcli eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
+  ```
 
 - Check the evaluation result:
 
  ```bash
  swcli eval list
- swcli eval info ${version}
+ swcli eval info $(swcli eval list | grep mnist | grep success | awk '{print $1}' | head -n 1)
  ```
-
-:::tip
-When you first use Runtime in the eval run command which maybe use a lot of time to create isolated python environment, download python dependencies. Use the befitting pypi mirror in the `~/.pip/pip.conf` file is a recommend practice.
-:::
 
   👏 Now, you have completed the basic steps for Starwhale standalone.
