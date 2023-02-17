@@ -115,6 +115,11 @@ public class WatchableTask extends Task implements TaskWrapper {
         ).forEach(watcher -> watcher.onTaskStatusChange(originalTask, oldStatus));
     }
 
+    @Override
+    public void setRetryNum(Integer retryNum) {
+        originalTask.setRetryNum(retryNum);
+    }
+
     public void setResultRootPath(ResultPath resultRootPath) {
         originalTask.setResultRootPath(resultRootPath);
     }

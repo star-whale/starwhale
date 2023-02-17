@@ -53,28 +53,32 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     }
 
     private void updateToSw(V1Job newObj) {
-        TaskStatus taskStatus = statusOf(newObj);
-        if (taskStatus == TaskStatus.UNKNOWN) {
-            return;
-        }
-        taskStatusReceiver.receive(List.of(ReportedTask.of(taskIdOf(newObj), taskStatus)));
-    }
-
-    private TaskStatus statusOf(V1Job newObj) {
-        TaskStatus taskStatus = TaskStatus.UNKNOWN;
         V1JobStatus status = newObj.getStatus();
         if (status == null) {
-            return taskStatus;
+            return;
         }
+        TaskStatus taskStatus = TaskStatus.UNKNOWN;
+        Integer retryNum = null;
         // one task one k8s job
-        if (null != status.getFailed()) {
-            taskStatus = TaskStatus.FAIL;
-            log.debug("job status changed for {} is failed {}", jobName(newObj), status);
-        } else if (null != status.getSucceeded()) {
+        if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
             log.debug("job status changed for {} is success  {}", jobName(newObj), status);
+        } else {
+            if (null != status.getActive()) {
+                // running(failed == null) or restarting(failed != null)
+                // running contains two stages:pending and running, these state changes are judged by podEventHandler
+                if (null != status.getFailed()) {
+                    retryNum = status.getFailed();
+                    log.debug("job {} is restarting, retry num {}", jobName(newObj), status.getFailed());
+                }
+            } else {
+                if (null != status.getFailed()) {
+                    taskStatus = TaskStatus.FAIL;
+                    log.debug("job status changed for {} is failed {}", jobName(newObj), status);
+                }
+            }
         }
-        return taskStatus;
+        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus, retryNum)));
     }
 
     private long taskIdOf(V1Job newObj) {
