@@ -18,10 +18,10 @@ Starwhale Cloud 有两种形态，一种是私有化到用户独立集群的On-P
 ### 1.2 启动Minikube
 
 ```bash
-minikube start --image-mirror-country=cn
+minikube start --image-mirror-country=cn --kubernetes-version=1.25.3
 ```
 
-对于非中国大陆网络环境，可以去掉 `--image-mirror-country=cn` 参数，直接使用 `minikube start` 即可。另外如果本机没有 `kubectl` 命令，可以使用 `minikube kubectl` 代替，也可以采用 `alias kubectl="minikube kubectl --"` 命令，在当前终端中提供 `kubectl` 命令的alias。
+上面命令中使用 `--kubernetes-version=1.25.3` 参数来固定安装版本，该版本是经过测试确保cn mirror中已经存在的，用户也可以使用尝试其他版本。对于非中国大陆网络环境，可以去掉 `--image-mirror-country=cn --kubernetes-version=1.25.3` 参数，直接使用 `minikube start` 命令即可。另外如果本机没有 `kubectl` 命令，可以使用 `minikube kubectl` 代替，也可以采用 `alias kubectl="minikube kubectl --"` 命令，在当前终端中提供 `kubectl` 命令的alias。
 
 ### 1.3 使用Helm安装Starwhale Cloud
 

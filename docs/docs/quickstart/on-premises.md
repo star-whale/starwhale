@@ -31,7 +31,13 @@ In this tutorial, minikube is used instead of the standard Kubernetes cluster
 minikube start
 ```
 
-For users in the mainland of China, please add these startup parameters to speedup download rate：`--image-mirror-country=cn`. If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
+For users in the mainland of China, please add some external parameters. The following command was well tested; you may also try another kubernetes version.
+
+```bash
+minikube start --image-mirror-country=cn --kubernetes-version=1.25.3
+```
+
+If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
 
 ### 1.3 Installing Starwhale
 
