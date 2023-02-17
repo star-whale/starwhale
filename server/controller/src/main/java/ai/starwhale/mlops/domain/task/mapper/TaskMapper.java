@@ -30,9 +30,9 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface TaskMapper {
 
-    String COLUMNS = "id, task_uuid, step_id, agent_id, task_status, task_request,"
-            + " finished_time, started_time, created_time, modified_time, retry_num,"
-            + " output_path";
+    String COLUMNS = "task_info.id, task_uuid, step_id, agent_id, task_status, task_request,"
+            + " task_info.finished_time, task_info.started_time, task_info.created_time, task_info.modified_time,"
+            + " retry_num, output_path";
 
     @Select("select " + COLUMNS + " from task_info"
             + " left join step s on s.id = task_info.step_id where s.job_id = #{jobId} order by id desc")
