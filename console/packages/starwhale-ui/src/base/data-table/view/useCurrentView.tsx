@@ -35,8 +35,6 @@ function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
             }) as ColumnT[]
     }, [view, columns, $ids])
 
-    console.log($ids, $columns)
-
     const $view = React.useMemo(() => {
         return {
             ...view,
