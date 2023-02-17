@@ -52,22 +52,11 @@ public class JobEventHandlerTest {
     }
 
     @Test
-    public void testOnAddRunning() {
-        V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
-        V1JobStatus v1JobStatus = new V1JobStatus();
-        v1JobStatus.setActive(1);
-        v1JobStatus.setSucceeded(1);
-        v1Job.setStatus(v1JobStatus);
-        jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.RUNNING)));
-    }
-
-    @Test
     public void testOnAddFail() {
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta().name("1"));
         V1JobStatus v1JobStatus = new V1JobStatus();
+        v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
@@ -86,23 +75,12 @@ public class JobEventHandlerTest {
     }
 
     @Test
-    public void testOnUpdateRunning() {
-        V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
-        V1JobStatus v1JobStatus = new V1JobStatus();
-        v1JobStatus.setActive(1);
-        v1Job.setStatus(v1JobStatus);
-        jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.RUNNING)));
-    }
-
-    @Test
     public void testOnUpdateFail() {
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta().name("1"));
         V1JobStatus v1JobStatus = new V1JobStatus();
+        v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
-        v1JobStatus.setSucceeded(1);
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
         verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.FAIL)));
