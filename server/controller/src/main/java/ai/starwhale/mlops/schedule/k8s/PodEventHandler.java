@@ -80,7 +80,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         Long tid = getTaskId(pod);
         if (tid != null) {
             TaskStatus taskStatus;
-            int restartCount = 0;
             var phase = pod.getStatus().getPhase();
             if (StringUtils.hasText(phase)) {
                 switch (phase) {
@@ -98,9 +97,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                     At least one container is still running, or is in the process of starting or restarting.
                      */
                     case "Running":
-                        if (!CollectionUtils.isEmpty(pod.getStatus().getContainerStatuses())) {
-                            restartCount = pod.getStatus().getContainerStatuses().get(0).getRestartCount();
-                        }
                         taskStatus = TaskStatus.RUNNING;
                         break;
                     default:
@@ -111,7 +107,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 return;
             }
             log.debug("task:{} status changed to {}.", tid, taskStatus);
-            taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus, restartCount)));
+            taskStatusReceiver.receive(List.of(ReportedTask.of(tid, taskStatus)));
         }
     }
 
