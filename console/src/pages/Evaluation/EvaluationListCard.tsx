@@ -163,6 +163,7 @@ export default function EvaluationListCard() {
         } catch (e) {
             // console.log(e)
         }
+        // console.log('init')
         store.initStore($rawConfig)
 
         // store should not be used as a deps, it's will trigger cycle render

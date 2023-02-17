@@ -46,7 +46,8 @@ export default defineConfig({
     build: {
         outDir: 'build',
         manifest: true,
-        // minify: true,
+        // minify: false,
+        // sourcemap: true,
     },
     resolve: { alias },
     plugins: [

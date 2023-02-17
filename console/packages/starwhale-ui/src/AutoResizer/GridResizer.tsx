@@ -97,6 +97,7 @@ export function GridResizer({
                 gridTemplateColumns: isResizeable ? gridLayout[gridMode] : '1fr',
                 overflow: 'hidden',
                 width: '100%',
+                height: '100%',
                 flex: 1,
             }}
         >
