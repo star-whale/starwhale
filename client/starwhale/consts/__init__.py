@@ -25,6 +25,7 @@ DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_CONFIG_VERSION = "2.0"
 
 SW_AUTO_DIRNAME = ".starwhale"
+SW_EVALUATION_EXAMPLE_DIR = "examples"
 
 # used by the versions before 2.0
 # SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
