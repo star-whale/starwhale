@@ -1,5 +1,5 @@
 import React from 'react'
-import { IArtifactVideo } from '@/domain/dataset/sdk'
+import { IArtifactVideo } from '@starwhale/core/dataset'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
 import Plyr from 'plyr-react'

@@ -13,7 +13,7 @@ import 'plyr-react/plyr.css'
 // import videoUrl from './trailer.mp4'
 import { Page } from '@/components/Pages/Page'
 import test from './test.jpg'
-import Card from '../Card'
+import Card from '../../../../src/components/Card'
 import 'rvfc-polyfill'
 
 // import Select from '../Select'

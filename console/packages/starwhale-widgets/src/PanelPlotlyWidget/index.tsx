@@ -1,35 +1,26 @@
+import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import React from 'react'
-import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
+import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
-import PanelTable from './component/Table'
+
+const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
 export const CONFIG: WidgetConfig = {
-    type: 'ui:panel:table',
+    type: 'ui:panel:ploty',
     group: WidgetGroupType.PANEL,
-    name: 'table',
+    name: 'Ploty',
 }
 
-function PanelTableWidget(props: WidgetRendererProps) {
-    const { data } = props
-    const { columnTypes, records } = data
+function PanelPlotyWidget(props: WidgetRendererProps<any, any>) {
+    const { data = {} } = props
 
-    const columns = React.useMemo(() => {
-        return columnTypes?.map((column: any) => column.name)?.sort((a: string) => (a === 'id' ? -1 : 1)) ?? []
-    }, [columnTypes])
-
-    const panelData = React.useMemo(() => {
-        if (!records) return []
-
-        return (
-            records?.map((item: any) => {
-                return columns.map((k: any) => item?.[k])
-            }) ?? []
-        )
-    }, [records, columns])
-
-    return <PanelTable columns={columns} data={panelData} />
+    return (
+        <React.Suspense fallback={<BusyPlaceholder />}>
+            <PlotlyViewer data={data} />
+        </React.Suspense>
+    )
 }
 
-const widget = new WidgetPlugin(PanelTableWidget, CONFIG)
+const widget = new WidgetPlugin(PanelPlotyWidget, CONFIG)
 
 export default widget

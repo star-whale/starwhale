@@ -1,13 +1,13 @@
 import _ from 'lodash'
 import React from 'react'
 import Button from '@starwhale/ui/Button'
-import DatasetViewer from '@/components/Viewer/DatasetViewer'
+import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
 import { DatasetObject } from '../../domain/dataset/sdk'
-import { RAW_COLORS } from '../../components/Viewer/utils'
+import { RAW_COLORS } from '../../../packages/starwhale-ui/src/Viewer/utils'
 
 const useStyles = createUseStyles({
     cardImg: {
@@ -123,6 +123,8 @@ export default function DatasetVersionFilePreview({
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
+
+    console.log(previewData)
 
     const Panel = React.useMemo(() => {
         if (previewData && previewData?.cocos?.length > 0) {

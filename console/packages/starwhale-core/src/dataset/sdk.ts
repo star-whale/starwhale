@@ -1,117 +1,7 @@
 import { tableDataLink } from '@starwhale/core/datastore'
 import _ from 'lodash'
-
-export type IBBox = [x: number, y: number, width: number, height: number]
-export type IShape = [height: number, width: number, channels: number]
-export enum MIMES {
-    PNG = 'image/png',
-    GRAYSCALE = 'x/grayscale',
-    AUDIOWAV = 'audio/wav',
-    TEXTPLAIN = 'text/plain',
-    JPEG = 'image/jpeg',
-    SVG = 'image/svg+xml',
-    GIF = 'image/gif',
-    APNG = 'image/apng',
-    AVIF = 'image/avif',
-    MP4 = 'video/mp4',
-    AVI = 'video/avi',
-    WEBM = 'video/webm',
-    WAV = 'audio/wav',
-    MP3 = 'audio/mp3',
-    PLAIN = 'text/plain',
-    CSV = 'text/csv',
-    HTML = 'text/html',
-    UNDEFINED = 'x/undefined',
-}
-export enum ArtifactType {
-    Binary = 'binary',
-    Image = 'image',
-    Video = 'video',
-    Audio = 'audio',
-    Text = 'text',
-    Link = 'link',
-}
-export enum TYPES {
-    COCO = 'coco_object_annotation',
-    IMAGE = 'image',
-    AUDIO = 'audio',
-    TEXT = 'text',
-    LINK = 'link',
-    VIDEO = 'video',
-    BOUNDINGBOX = 'bounding_box',
-}
-
-// artifacts
-export type IArtifact = {
-    fp: string
-    display_name: string
-    shape: IShape
-    encoding: string
-    _mime_type: MIMES
-    _type: ArtifactType
-    _dtype_name: string
-    // extends
-    link: ITypeLink
-    src?: string
-    _path?: string
-}
-
-export interface IArtifactImage extends IArtifact {
-    _type: ArtifactType.Image
-    _mime_type: MIMES.PNG | MIMES.JPEG | MIMES.SVG | MIMES.GIF | MIMES.APNG
-    as_mask: boolean
-    mask_uri: string
-}
-export interface IArtifactVideo extends IArtifact {
-    _type: ArtifactType.Video
-    _mime_type: MIMES.MP4 | MIMES.AVI | MIMES.WEBM
-}
-export interface IArtifactAudio extends IArtifact {
-    _type: ArtifactType.Audio
-    _mime_type: MIMES.MP3 | MIMES.WAV
-}
-export interface IArtifactBinary extends IArtifact {
-    _type: ArtifactType.Binary
-    _mime_type: MIMES.UNDEFINED
-}
-export interface IArtifactText extends IArtifact {
-    _type: ArtifactType.Text
-    _mime_type: MIMES.PLAIN
-}
-
-// annotation types
-export type ITypeBase = {
-    _path?: string
-}
-export interface ITypeLink extends ITypeBase {
-    _type: TYPES.LINK
-    uri: string
-    offset: string
-    size: string
-    auth: string
-    scheme: string
-    with_local_fs_data: boolean
-}
-
-export interface ITypeCOCOObjectAnnotation extends ITypeBase {
-    _type: TYPES.COCO
-    id: number
-    image_id: number
-    category_id: number
-    bbox: IBBox
-    iscrowd: 0 | 1
-    area: number
-    _segmentation_rle_size: IShape
-    _segmentation_rle_counts: string
-}
-
-export interface ITypeBoundingBox extends ITypeBase {
-    _type: TYPES.BOUNDINGBOX
-    x: number
-    y: number
-    width: number
-    height: number
-}
+import { RecordListVO } from '@starwhale/core/datastore/schemas/datastore'
+import { ArtifactType, IArtifactImage, ITypeBoundingBox, ITypeCOCOObjectAnnotation, ITypeLink } from './types'
 
 export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
     return data.uri.startsWith('http') ? data.uri : curryParseLinkFn(data)
@@ -163,16 +53,26 @@ export const parseDataSrc = _.curry(
     }
 )
 
+// exclucdeProperties
+// - showPrivate
+// - showLink
+// findProperties
+
+function AnnotationMask(options) {
+    const { data } = options
+    return {
+        is: typeof data === 'object' && data?._type && data?._type === ArtifactType.Image && data?.as_mask !== 'true',
+        // render:
+    }
+}
+
 export class DatasetObject {
-    public size: string
+    public _data: RecordListVO
 
-    public id: string
-
-    public data: IArtifact
-
+    /**
+     * used for table list
+     */
     public summary: Record<string, any>
-
-    //
 
     public cocos: ITypeCOCOObjectAnnotation[] = []
 
@@ -182,12 +82,11 @@ export class DatasetObject {
 
     public bboxes: ITypeBoundingBox[] = []
 
-    constructor(data: any, curryParseLinkFn: any) {
-        this.size = data.data_size
-        this.id = data.id
-
-        this.data = {} as any
+    constructor(data: RecordListVO, curryParseLinkFn: any) {
+        this._data = data
         this.summary = {}
+
+        return
 
         // @ts-ignore
         Object.entries(data).forEach(([key, value]: [string, any]) => {

@@ -2,20 +2,30 @@ import React, { memo } from 'react'
 import Plot from 'react-plotly.js'
 import _ from 'lodash'
 
-import BusyLoaderWrapper from '@starwhale/ui/BusyLoaderWrapper/BusyLoaderWrapper'
+import { BusyLoaderWrapper } from '../BusyLoaderWrapper'
 
-import { IPlotlyVisualizerProps } from './types'
-
-import './PlotlyVisualizer.scss'
-
-function PlotlyVisualizer({ data, isLoading }: IPlotlyVisualizerProps) {
+function Plotly({ data, isLoading }: any) {
     return (
-        <BusyLoaderWrapper className='VisualizationLoader' isLoading={!!isLoading} height='100%'>
-            <div className='PlotlyVisualizer'>
+        <BusyLoaderWrapper className='PlotlyLoader' isLoading={!!isLoading} height='100%'>
+            <div
+                className='PlotlyWrapper'
+                style={{
+                    height: '100%',
+                    overflow: 'auto',
+                }}
+            >
                 {_.isEmpty(data?.data) ? (
                     <div>No Tracked Figures</div>
                 ) : (
-                    <div className='PlotlyVisualizer__chart'>
+                    <div
+                        className='PlotlyChart'
+                        style={{
+                            height: '100%',
+                            overflow: 'auto',
+                            display: 'flex',
+                            justifyContent: 'center',
+                        }}
+                    >
                         <Plot
                             style={{ width: '100%', height: '100%' }}
                             data={data?.data}
@@ -33,6 +43,6 @@ function PlotlyVisualizer({ data, isLoading }: IPlotlyVisualizerProps) {
     )
 }
 
-PlotlyVisualizer.displayName = 'PlotlyVisualizer'
+Plotly.displayName = 'Plotly'
 
-export default memo<IPlotlyVisualizerProps>(PlotlyVisualizer)
+export default memo(Plotly)

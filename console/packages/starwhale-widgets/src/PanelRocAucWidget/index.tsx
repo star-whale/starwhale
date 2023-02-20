@@ -1,14 +1,12 @@
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { getRocAucConfig } from '@/components/Indicator/utils'
 import { useParseRocAuc } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import React from 'react'
 import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { UI_DATA } from '@starwhale/core/form/schemas/fields'
+import { getRocAucConfig } from '@starwhale/ui/Plotly/utils'
 
-const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "PlotlyVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
-)
+const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:rocauc',
@@ -64,7 +62,7 @@ function PanelRocAucWidget(props: WidgetRendererProps<any, any>) {
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>
-            <PlotlyVisualizer data={vizData} />
+            <PlotlyViewer data={vizData} />
         </React.Suspense>
     )
 }

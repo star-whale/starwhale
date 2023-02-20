@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
 import { clearCanvas, drawBox, drawSegmentWithCOCOMask, IImageData, loadImage } from './utils'
 import ZoomWrapper from './ZoomWrapper'
-import { IArtifactImage, ITypeBoundingBox, ITypeCOCOObjectAnnotation } from '../../domain/dataset/sdk'
+import { IArtifactImage, ITypeBoundingBox, ITypeCOCOObjectAnnotation } from '@starwhale/core/dataset'
 
 const useStyles = createUseStyles({
     canvas: {

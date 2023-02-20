@@ -7,8 +7,8 @@ import {
     IArtifactVideo,
     MIMES,
     IArtifactText,
-} from '@/domain/dataset/sdk'
-import ImageViewer from '@/components/Viewer/ImageViewer'
+} from '@starwhale/core/dataset'
+import ImageViewer from '@starwhale/ui/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'

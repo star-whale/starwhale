@@ -8,11 +8,11 @@ import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
-import DatasetViewer from '@/components/Viewer/DatasetViewer'
+import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import { DatasetObject, parseDataSrc, TYPES } from '@/domain/dataset/sdk'
+import { DatasetObject, parseDataSrc, TYPES } from '@starwhale/core/dataset'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
@@ -90,7 +90,7 @@ const useCardStyles = createUseStyles({
 
 const PAGE_TABLE_SIZE = 10
 const PAGE_CARD_SIZE = 50
-
+const HAS_TABLE_CONTROL = false
 enum LAYOUT {
     GRID = '1',
     LIST = '0',
@@ -355,25 +355,30 @@ export default function DatasetVersionFiles() {
 
     return (
         <div className={styles.wrapper}>
-            <div className={styles.icon}>
-                <LayoutControl
-                    value={layoutKey}
-                    onChange={(key) => {
-                        const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
-                        setLayoutKey(key)
-                        history.push(
-                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
-                                {
-                                    ...$page,
-                                    pageNum: Math.max(Math.floor((page.pageSize * (page.pageNum - 1)) / newSize), 1),
-                                    pageSize: newSize,
-                                    layout: key,
-                                }
-                            )}`
-                        )
-                    }}
-                />
-            </div>
+            {HAS_TABLE_CONTROL && (
+                <div className={styles.icon}>
+                    <LayoutControl
+                        value={layoutKey}
+                        onChange={(key) => {
+                            const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
+                            setLayoutKey(key)
+                            history.push(
+                                `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
+                                    {
+                                        ...$page,
+                                        pageNum: Math.max(
+                                            Math.floor((page.pageSize * (page.pageNum - 1)) / newSize),
+                                            1
+                                        ),
+                                        pageSize: newSize,
+                                        layout: key,
+                                    }
+                                )}`
+                            )
+                        }}
+                    />
+                </div>
+            )}
             {Records}
             {paginationProps && (
                 <div

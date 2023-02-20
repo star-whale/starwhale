@@ -4,7 +4,7 @@ import WaveformData from 'waveform-data'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
 import { drawAudioWaveform } from './utils'
-import { IArtifactAudio } from '../../domain/dataset/sdk'
+import { IArtifactAudio } from '@starwhale/core/dataset'
 
 const useStyles = createUseStyles({
     wrapper: {

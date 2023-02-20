@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Color from 'color'
-import { IBBox } from '@/domain/dataset/sdk'
+import { IBBox } from '@starwhale/core/dataset'
 
 export const RAW_COLORS = [
     '#df672a',

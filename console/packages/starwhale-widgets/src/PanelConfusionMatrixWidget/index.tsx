@@ -1,13 +1,11 @@
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { useParseConfusionMatrix } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import React from 'react'
 import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
+import { getHeatmapConfig } from '@starwhale/ui/Plotly/utils'
 
-const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "PlotlyVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
-)
+const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:confusion_matrix',
@@ -25,7 +23,7 @@ function PanelConfusionMatrixWidget(props: WidgetRendererProps<any, any>) {
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>
-            <PlotlyVisualizer data={heatmapData} />
+            <PlotlyViewer data={heatmapData} />
         </React.Suspense>
     )
 }

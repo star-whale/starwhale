@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useIsInViewport } from '@starwhale/core'
 import ZoomWrapper from './ZoomWrapper'
 import { drawGrayscale } from './utils'
-import { IArtifactImage } from '../../domain/dataset/sdk'
+import { IArtifactImage } from '@starwhale/core/dataset'
 
 type IImageViewerProps = {
     isZoom?: boolean
