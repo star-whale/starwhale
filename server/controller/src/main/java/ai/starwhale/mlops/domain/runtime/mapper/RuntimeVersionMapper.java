@@ -136,13 +136,18 @@ public interface RuntimeVersionMapper {
         }
 
         public String findLatestByProjectIdSql(Long projectId, Integer limit) {
-            var ret = "select " + COLUMNS + " from runtime_version left join runtime_info on runtime_info.id ="
-                    + " runtime_version.runtime_id where runtime_info.project_id = #{projectId}"
-                    + " order by runtime_version.modified_time desc";
-            if (limit != null) {
-                ret += " limit " + limit;
-            }
-            return ret;
+            return new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("runtime_version");
+                    INNER_JOIN("runtime_info on runtime_info.id = runtime_version.runtime_id");
+                    WHERE("runtime_info.project_id = #{projectId}");
+                    ORDER_BY("runtime_version.modified_time desc");
+                    if (limit != null) {
+                        LIMIT(limit);
+                    }
+                }
+            }.toString();
         }
     }
 }
