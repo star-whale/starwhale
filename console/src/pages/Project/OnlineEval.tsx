@@ -18,11 +18,14 @@ import css from '@/assets/GradioWidget/es/style.css'
 // eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
 import qs from 'qs'
+import { IComponent, IDependency, IGradioConfig } from '@/domain/project/schemas/gradio'
 
 declare global {
     interface Window {
         // eslint-disable-next-line @typescript-eslint/ban-types
         wait: Function | null
+        // function for fetching the example resources used by gradio dataset component
+        fetchExample: ((url: string) => Promise<string>) | null
         gradio_config: any
     }
 }
@@ -96,7 +99,7 @@ export default function OnlineEval() {
                 if (!resp.data?.baseUri) return
 
                 // eslint-disable-next-line no-restricted-globals
-                window.gradio_config.root = `http://${location.host}${resp.data?.baseUri}/run/`
+                window.gradio_config.root = `${location.protocol}//${location.host}${resp.data?.baseUri}/run/`
 
                 await new Promise((resolve) => {
                     const check = () => {
@@ -122,6 +125,19 @@ export default function OnlineEval() {
     }, [formRef, projectId])
 
     useEffect(() => {
+        if (window.fetchExample) return undefined
+        window.fetchExample = async (url: string): Promise<string> => {
+            const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+            const base64 = btoa(new Uint8Array(data).reduce((i, byte) => i + String.fromCharCode(byte), ''))
+            return `data:;base64,${base64}`
+        }
+
+        return () => {
+            window.fetchExample = null
+        }
+    }, [formRef, projectId])
+
+    useEffect(() => {
         if (modelInfo.isSuccess || modelVersionInfo.isSuccess) {
             const versionName = modelVersionId ? modelVersionInfo?.data?.versionName : modelInfo?.data?.versionName
             const modelName = modelInfo?.data?.name
@@ -129,14 +145,72 @@ export default function OnlineEval() {
                 return
             }
 
+            const api = `/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file`
             fetch(
-                `/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file?${qs.stringify({
+                `${api}?${qs.stringify({
                     Authorization: getToken(),
                     partName: 'svc.json',
                     signature: '',
                 })}`
             )
                 .then((res) => res.json())
+                .then((conf) => {
+                    // patch examples params
+                    const gradioConfig = conf as IGradioConfig
+                    const datasets: IComponent[] = []
+                    gradioConfig.components.forEach((cp) => {
+                        const { props } = cp
+
+                        if (!props?.components) {
+                            return
+                        }
+                        // if the component is a dataset and the related input type is image, video or file
+                        // add the request params (file path and auth token) for the src
+                        // details of the api: https://github.com/star-whale/starwhale/blob/28a4741e6d6c4aa487b298567772458b1291c049/server/controller/src/main/java/ai/starwhale/mlops/api/ModelApi.java#L307-L325
+                        if (cp.type === 'dataset') {
+                            datasets.push(cp)
+                            let append = false
+                            for (let i = 0; i < props?.components?.length ?? 0; i++) {
+                                const tp = cp.props?.components?.[i]
+                                if (tp && ['image', 'video', 'file'].includes(tp)) {
+                                    append = true
+                                    break
+                                }
+                            }
+                            if (append && props && props.samples) {
+                                props.samples = props.samples?.map((parts: string[]) =>
+                                    parts.map(
+                                        (item) =>
+                                            `${api}?${qs.stringify({
+                                                Authorization: getToken(),
+                                                path: item,
+                                            })}`
+                                    )
+                                )
+                            }
+                        }
+                    })
+                    // gradio always generate the click dependencies with the `backend_fn` to true and `js` to null.
+                    // see: https://github.com/star-whale/gradio/blob/474b88af52367c76b4dc207e0628871234f0c8ef/gradio/examples.py#L242-L256
+                    // this makes a http request to the model serving backend for fetching the example resource and
+                    // call the backend directly without calling the `wait` function.
+                    // so we need hijack the generated configs for gradio
+                    datasets.forEach((ds) => {
+                        gradioConfig.dependencies.forEach((dep: IDependency, idx: number) => {
+                            if (!dep.targets.includes(ds.id)) {
+                                return
+                            }
+                            // do not request the builtin backend, the model service is not ready
+                            gradioConfig.dependencies[idx].backend_fn = false
+                            // call our fetch fn to get the resources
+                            gradioConfig.dependencies[idx].js = `async function (...x) {
+                                return window.fetchExample('${ds.props?.samples?.[0]?.[0]}')
+                            }`
+                        })
+                    })
+
+                    return conf
+                })
                 .then((data) => {
                     window.gradio_config = data
                     window.gradio_config.css = css

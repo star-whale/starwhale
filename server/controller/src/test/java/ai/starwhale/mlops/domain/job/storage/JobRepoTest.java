@@ -27,12 +27,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.datastore.DataStore;
+import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -46,6 +48,7 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +84,7 @@ public class JobRepoTest {
     @Test
     public void testAddJob() {
         Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().projectName("test-project").build());
+                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .id(1L)
@@ -108,7 +111,7 @@ public class JobRepoTest {
         jobRepo.addJob(jobEntity);
 
         verify(dataStore, times(1))
-                .update(eq("project/test-project/eval/summary"), any(), anyList());
+                .update(eq("project/1/eval/summary"), any(), anyList());
 
         assertThat("convert",
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
@@ -119,7 +122,7 @@ public class JobRepoTest {
     @Test
     public void testListJobs() {
         Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().projectName("test-project").build());
+                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
         Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
                 .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
 
@@ -148,14 +151,15 @@ public class JobRepoTest {
 
         List<JobFlattenEntity> jobEntities = jobRepo.listJobs(1L, null);
         Assertions.assertEquals(2, jobEntities.size());
-        Mockito.verify(dataStore, times(2)).query(any());
+        Mockito.verify(dataStore, times(2)).query(
+                argThat((DataStoreQueryRequest request) -> request.getTableName().equals("project/1/eval/summary")));
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
     }
 
     @Test
     public void testFindByStatusIn() {
         Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().projectName("test-project").build()));
+                .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
         Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
                 .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
 
@@ -184,26 +188,51 @@ public class JobRepoTest {
 
         List<JobFlattenEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));
         Assertions.assertEquals(2, jobEntities.size());
-        Mockito.verify(dataStore, times(2)).query(any());
+        Mockito.verify(dataStore, times(2)).query(
+                argThat((DataStoreQueryRequest request) -> request.getTableName().equals("project/1/eval/summary")));
         jobEntities.forEach(job -> Assertions.assertEquals(job.getJobStatus(), JobStatus.RUNNING));
     }
 
     @Test
-    public void testUpdateStatus() {
+    public void testUpdateProperty() {
         var jobId = 123456L;
+        var uuid = "1q2w3e4r5t6y";
         Mockito.when(projectMapper.list(null, null, null))
                 .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
-        Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
-                .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
-        Mockito.when(jobMapper.findJobById(jobId)).thenReturn(JobEntity.builder()
+        var job = JobEntity.builder()
                 .id(jobId)
-                .jobUuid("1q2w3e4r5t6y")
-                .project(ProjectEntity.builder().projectName("test-project").build())
-                .build()
-        );
+                .jobUuid(uuid)
+                .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
+                .build();
+        Mockito.when(jobMapper.findJobById(jobId)).thenReturn(job);
+        Mockito.when(jobMapper.findJobByUuid(uuid)).thenReturn(job);
 
         jobRepo.updateJobStatus(jobId, JobStatus.SUCCESS);
         verify(dataStore, times(1))
-                .update(eq("project/test-project/eval/summary"), any(), anyList());
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobFinishedTime(jobId, Date.from(Instant.now()));
+        verify(dataStore, times(2))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.removeJob(jobId);
+        verify(dataStore, times(3))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.recoverJobByUuid(uuid);
+        verify(dataStore, times(4))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.recoverJob(jobId);
+        verify(dataStore, times(5))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobComment(jobId, "test1");
+        verify(dataStore, times(6))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        jobRepo.updateJobCommentByUuid("1q2w3e4r5t6y", "test2");
+        verify(dataStore, times(7))
+                .update(eq("project/1/eval/summary"), any(), anyList());
     }
 }

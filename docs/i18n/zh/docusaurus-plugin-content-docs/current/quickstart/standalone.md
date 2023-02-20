@@ -2,6 +2,8 @@
 title: Standalone 快速上手
 ---
 
+**本教程也提供Jupyter Notebook版本，可以在[Colab Notebook](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb)中在线体验。**
+
 ![Core Workflow](../img/standalone-core-workflow.gif)
 
 ## 1. 安装Starwhale CLI
@@ -18,7 +20,7 @@ python3 -m pip install starwhale
 
 系统环境要求：
 
-- Python：3.7 ~ 3.10
+- Python：3.7 ~ 3.11
 - 操作系统：Linux或macOS
 
 推荐阅读[Standalone 安装建议](../guides/install/standalone.md)。
@@ -30,12 +32,6 @@ git clone https://github.com/star-whale/starwhale.git
 cd starwhale
 ```
 
-如果本机环境中之前没有安装过[git-lfs](https://git-lfs.github.com/)（命令为`git lfs install`），需要手工下载训练好的mnist.pt文件。
-
-```bash
-wget https://media.githubusercontent.com/media/star-whale/starwhale/main/example/mnist/models/mnist_cnn.pt -O example/mnist/models/mnist_cnn.pt
-```
-
 我们选用ML/DL领域的HelloWorld程序-MNIST来介绍如何从零开始构建数据集、模型包和运行环境，并最终完成模型评测。接下来的操作都在 `starwhale` 目录中进行。
 
 ## 3. 构建Starwhale Runtime运行环境
@@ -44,9 +40,23 @@ Runtime的示例程序在 `example/runtime/pytorch` 目录中。
 
 - 构建Starwhale Runtime：
 
+  :::tip
+
+  当首次构建Starwhale Runtime时，由于需要创建venv或conda隔离环境，并下载相关的Python依赖，命令执行需要花费一段时间。时间长短取决与所在机器的网络情况和runtime.yaml中Python依赖的数量。建议合理设置机器的 `~/.pip/pip.conf` 文件，填写缓存路径和适合当前网络环境的pypi mirror地址。
+
+  处于中国大陆网络环境中的用户，可以参考如下配置：
+
+    ```conf
+    [global]
+    cache-dir = ~/.cache/pip
+    index-url = https://mirrors.aliyun.com/pypi/simple/
+    extra-index-url = https://pypi.doubanio.com/simple
+    ```
+
+  :::
+
   ```bash
-  cd example/runtime/pytorch
-  swcli runtime build .
+  swcli runtime build example/runtime/pytorch
   ```
 
 - 检查构建好的Starwhale Runtime：
@@ -56,14 +66,30 @@ Runtime的示例程序在 `example/runtime/pytorch` 目录中。
   swcli runtime info pytorch/version/latest
   ```
 
+- 预先restore Starwhale Runtime(可选):
+
+  ```bash
+  swcli runtime restore pytorch/version/latest
+  ```
+
 ## 4. 构建Starwhale Model模型包
 
 Model的示例程序在 `example/mnist` 目录中。
 
-- 构建Starwhale Model：
+- 下载预先训练好的模型文件：
 
   ```bash
-  swcli model build .
+  cd example/mnist
+  CN=1 make download-model
+  # 对于非中国大陆网络环境用户，可以去掉make命令前的 `CN=1` 环境变量
+  # make download-model
+  cd -
+  ```
+
+- 使用Starwhale Runtime来构建Starwhale Model：
+
+  ```bash
+  swcli model build example/mnist --runtime pytorch/version/latest
   ```
 
 - 检查构建好的Starwhale Runtime：
@@ -80,18 +106,17 @@ Dataset的示例程序在 `example/mnist` 目录中。
 - 下载MNIST原始数据：
 
   ```bash
-  mkdir -p data && cd data
-  wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
-  wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
-  gzip -d *.gz
-  cd ..
-  ls -lah data/*
+  cd example/mnist
+  CN=1 make download-data
+  # 对于非中国大陆网络环境用户，可以去掉make命令前的 `CN=1` 环境变量
+  # make download-data
+  cd -
   ```
 
 - 构建Starwhale Dataset：
 
   ```bash
-  swcli dataset build .
+  swcli dataset build example/mnist --runtime pytorch/version/latest
   ```
 
 - 检查构建好的Starwhale Dataset：
@@ -101,23 +126,25 @@ Dataset的示例程序在 `example/mnist` 目录中。
   swcli dataset info mnist/version/latest
   ```
 
+- 查看数据集的前几条数据：
+
+  ```bash
+  swcli dataset head mnist/version/latest
+  ```
+
 ## 6. 运行模型评测任务
 
 - 运行模型评测任务：
 
  ```bash
- swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
+ swcli eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
  ```
 
 - 查看模型评测结果：
 
  ```bash
  swcli eval list
- swcli eval info ${version}
+ swcli eval info $(swcli eval list | grep mnist | grep success | awk '{print $1}' | head -n 1)
  ```
-
-:::tip
-Runtime首次使用的时候会创建隔离的python环境并安装依赖，可能会用时较长，同时建议合理设置 ~/.pip/pip.conf 文件，选用下载速度快的pypi mirror地址。
-:::
 
 👏 恭喜，目前已经完成了Starwhale Standalone的基本操作任务。
