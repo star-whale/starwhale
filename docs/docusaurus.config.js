@@ -52,6 +52,11 @@ module.exports = {
             },
             items: [
                 {
+                    type: "docsVersionDropdown",
+                    position: "right",
+                    dropdownActiveClassDisabled: true,
+                },
+                {
                     to: "https://github.com/star-whale/starwhale",
                     position: "right",
                     className: "header-ico header-ico--github",
@@ -93,6 +98,14 @@ module.exports = {
                 docs: {
                     sidebarPath: require.resolve("./sidebars.js"),
                     editUrl: "https://github.com/star-whale/starwhale/tree/main/docs",
+                    versions: {
+                        current: {
+                            label: "WIP",
+                            badge: true,
+                            banner: "unreleased",
+                            path: "/next",
+                        }
+                    }
                 },
                 theme: {
                     customCss: require.resolve("./src/css/custom.scss"),
