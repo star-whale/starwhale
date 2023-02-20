@@ -77,7 +77,7 @@ public class StorageAccessServiceFile implements StorageAccessService {
         var f = new File(this.rootDir, path);
         //noinspection ResultOfMethodCallIgnored
         f.getParentFile().mkdirs();
-        var temp = File.createTempFile("sw_tmp", null);
+        var temp = File.createTempFile("sw_tmp", null, rootDir);
         try (var out = new FileOutputStream(temp)) {
             inputStream.transferTo(out);
             out.close();

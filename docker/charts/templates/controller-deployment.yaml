@@ -14,9 +14,8 @@ spec:
     spec:
       volumes:
         - name: controller-storage
-          hostPath:
-            path: {{ .Values.storage.agentHostPathRoot }}/controller
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: controller
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
       {{- else }}
@@ -31,6 +30,9 @@ spec:
             - name: controller-storage
               mountPath: "/opt/starwhale.java/static"
               subPath: static
+            - name: controller-storage
+              mountPath: "{{ .Values.controller.fs.rootdir }}"
+              subPath: controller-fs
           {{- if not .Values.minikube.enabled }}
           resources:
             {{- toYaml .Values.resources.controller | nindent 12}}
@@ -67,7 +69,7 @@ spec:
               value: controller
               {{- if not .Values.minikube.enabled }}
             - name: JVM_XMX
-              value: {{ .Values.resources.controller.requests.memory }}
+              value: {{ .Values.resources.controller.limits.memory }}
               {{- end }}
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
@@ -77,6 +79,8 @@ spec:
               value: "{{ .Values.controller.upload.maxFileSize }}"
             - name: SW_STORAGE_PREFIX
               value: "{{ .Release.Name }}"
+            - name: SW_STORAGE_FS_ROOT_DIR
+              value: "{{ .Values.controller.fs.rootdir }}"
             - name: SW_RUNTIME_IMAGE_DEFAULT
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             - name: SW_DOCKER_REGISTRY_URL
@@ -141,3 +145,19 @@ spec:
             - name: SW_METADATA_STORAGE_DB
               value: "{{ .Values.externalMySQL.database }}"
             {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: controller
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.controller.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ include "common.names.fullname" . }}-controller
+  volumeMode: Filesystem
+  volumeName: {{ include "common.names.fullname" . }}-pv-controller
+  resources:
+    requests:
+      storage: {{ .Values.controller.persistence.size | quote }}

@@ -17,6 +17,8 @@
 
 {{ if .Values.minio.enabled }}
 {{ include "chart.createPV" (merge (dict "backend" "minio" "storage" .Values.minio.persistence.size) $params) }}
+{{ else }}
+{{ include "chart.createPV" (merge (dict "backend" "controller" "storage" .Values.controller.persistence.size) $params) }}
 {{ end }}
 
 {{ if .Values.mysql.enabled }}

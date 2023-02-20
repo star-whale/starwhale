@@ -21,9 +21,11 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -43,7 +45,10 @@ public class ObjectStoreController implements ObjectStoreApi {
     }
 
     @Override
-    public void getObjectContent(String path, String range, Long expTimeMillis, HttpServletResponse httpResponse) {
+    public void getObjectContent(String range, HttpServletRequest request, HttpServletResponse httpResponse) {
+        Tuple2<Long, String> info = extractInfoFromUri(request);
+        Long expTimeMillis = info._1();
+        String path = info._2();
         if (expTimeMillis < System.currentTimeMillis()) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
         }
@@ -72,8 +77,19 @@ public class ObjectStoreController implements ObjectStoreApi {
             outputStream.flush();
         } catch (IOException e) {
             log.error("download file from storage failed {}", path, e);
-            throw new SwProcessException(ErrorType.STORAGE);
+            throw new SwProcessException(ErrorType.STORAGE, "download file from storage failed", e);
         }
 
+    }
+
+    private Tuple2<Long, String> extractInfoFromUri(HttpServletRequest request) {
+        String subpath = request.getRequestURI()
+                .split(request.getContextPath() + "/" + ObjectStoreApi.URI_PREFIX + "/")[1];
+        if (!subpath.contains("/")) {
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
+        }
+        int slashLastIndex = subpath.lastIndexOf("/");
+        Long expmilis = Long.valueOf(subpath.substring(slashLastIndex + 1));
+        return new Tuple2<>(expmilis, subpath.substring(0, slashLastIndex));
     }
 }

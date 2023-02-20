@@ -74,6 +74,10 @@ controller:
     tokenExpireMinutes: 43200
   upload:
     maxFileSize: 20480MB
+  fs:
+    rootdir: /usr/local/starwhale
+  persistence:
+    size: 50Gi
   auth:
     username: starwhale
     password: abcd1234
