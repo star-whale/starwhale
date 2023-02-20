@@ -1,4 +1,3 @@
-
 dev-all:
 	yarn
 	yarn build
@@ -12,3 +11,7 @@ build-docs:
 
 lint-docs:
 	yarn lint-docs
+
+versioning-docs:
+	yarn docusaurus docs:version ${RELEASE_VERSION}
+	cd i18n/zh/docusaurus-plugin-content-docs/version-${RELEASE_VERSION}; rm img; ln -s ../../../../versioned_docs/version-${RELEASE_VERSION}/img img

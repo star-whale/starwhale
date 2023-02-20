@@ -70,6 +70,21 @@ jobs:
         if: steps.yarn-cache-docs.outputs.cache-hit != 'true' # Over here!
         run: make install-req
 
+      - name: Checkout gh-pages branch for archived versions docs
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy archived version files
+        run: |
+          [ ! -d gh-pages/.archived-versions ] && exit 0
+          cp gh-pages/.archived-versions/versions.json docs/
+          cp -R gh-pages/.archived-versions/versioned_sidebars docs/
+          cp -R gh-pages/.archived-versions/versioned_docs docs/
+          cp -R gh-pages/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/version-* docs/i18n/zh/docusaurus-plugin-content-docs/
+
       - name: Lint docs
         working-directory: ./docs
         run: make lint-docs
@@ -77,6 +92,15 @@ jobs:
       - name: Build docs
         working-directory: ./docs
         run: make build-docs
+
+      - name: Update archived version files
+        run: |
+          mkdir -p docs/build/.archived-versions
+          cp docs/versions.json docs/build/.archived-versions/
+          cp -R docs/versioned_sidebars docs/build/.archived-versions/
+          cp -R docs/versioned_docs docs/build/.archived-versions/
+          mkdir -p docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs
+          cp -R docs/i18n/zh/docusaurus-plugin-content-docs/version-* docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/
 
       - name: Publish to Github Pages
         if: ${{ github.ref == 'refs/heads/main'}}
