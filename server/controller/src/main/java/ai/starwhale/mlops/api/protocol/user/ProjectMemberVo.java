@@ -14,34 +14,30 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.runtime.bo;
+package ai.starwhale.mlops.api.protocol.user;
 
-import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
-import lombok.AllArgsConstructor;
+
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Runtime {
+@Schema(description = "Project Role object", title = "Role")
+@Validated
+public class ProjectMemberVo {
 
-    private Long id;
+    private String id;
 
-    private String name;
+    private UserVo user;
 
-    private Long ownerId;
+    private ProjectVo project;
 
-    private Long projectId;
+    private RoleVo role;
 
-    public static Runtime fromEntity(RuntimeEntity entity) {
-        return Runtime.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .ownerId(entity.getOwnerId())
-                .projectId(entity.getProjectId())
-                .build();
+    public static ProjectMemberVo empty() {
+        return new ProjectMemberVo("", UserVo.empty(), ProjectVo.empty(), RoleVo.empty());
     }
 }

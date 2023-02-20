@@ -54,11 +54,11 @@ import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
-import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.user.mapper.UserMapper;
+import ai.starwhale.mlops.domain.user.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -70,34 +70,36 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 @Service
 public class JobRepo {
+
     private final DataStore store;
-    private final ProjectMapper projectMapper;
-    private final ModelVersionMapper modelMapper;
-    private final UserMapper userMapper;
+    private final ProjectService projectService;
+    private final ModelService modelService;
+    private final UserService userService;
     private final JobMapper mainStore;
     private final ObjectMapper objectMapper;
 
     public JobRepo(DataStore store,
-                   ProjectMapper projectMapper,
-                   ModelVersionMapper modelMapper,
-                   UserMapper userMapper, JobMapper mainStore, ObjectMapper objectMapper) {
+            @Lazy ProjectService projectService,
+            @Lazy ModelService modelService,
+            @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
         this.store = store;
-        this.projectMapper = projectMapper;
-        this.modelMapper = modelMapper;
-        this.userMapper = userMapper;
+        this.projectService = projectService;
+        this.modelService = modelService;
+        this.userService = userService;
         this.mainStore = mainStore;
         this.objectMapper = objectMapper;
     }
 
     private List<String> tableNames() {
-        var projects = projectMapper.list(null, null, null);
+        var projects = projectService.listProjects(null, null, null);
         return projects.stream()
-            .map(ProjectEntity::getId)
+                .map(Project::getId)
             .map(this::tableName)
             .collect(Collectors.toList());
     }
@@ -201,7 +203,7 @@ public class JobRepo {
                 .operands(andConditions)
                 .build();
 
-        var project = projectMapper.find(projectId);
+        var project = projectService.findProject(projectId);
 
         return getJobEntities(project, filter);
     }
@@ -233,8 +235,8 @@ public class JobRepo {
 
         List<JobFlattenEntity> results = new ArrayList<>();
         // find all projects
-        var projects = projectMapper.list(null, null, null);
-        for (ProjectEntity project : projects) {
+        var projects = projectService.listProjects(null, null, null);
+        for (Project project : projects) {
             results.addAll(this.getJobEntities(project, filter));
         }
         return results;
@@ -249,7 +251,7 @@ public class JobRepo {
                     new TableQueryFilter.Constant(ColumnTypeScalar.INT32, 0)))
                 .build();
         for (Long projectId : projectIds) {
-            var project = projectMapper.find(projectId);
+            var project = projectService.findProject(projectId);
             if (project == null) {
                 continue;
             }
@@ -262,7 +264,7 @@ public class JobRepo {
     }
 
     @NotNull
-    private List<JobFlattenEntity> getJobEntities(ProjectEntity project, TableQueryFilter filter) {
+    private List<JobFlattenEntity> getJobEntities(Project project, TableQueryFilter filter) {
         var results = new ArrayList<JobFlattenEntity>();
 
         var table = this.tableName(project.getId());
@@ -275,6 +277,7 @@ public class JobRepo {
                     .orderBy(List.of(OrderByDesc.builder().columnName(CreatedTimeColumn).descending(true).build()))
                     .rawResult(true)
                     .build();
+
             @Override
             public boolean hasNext() {
                 return !finished;
@@ -295,8 +298,8 @@ public class JobRepo {
                 // populate bean
                 for (JobFlattenEntity job : entities) {
                     job.setProject(project);
-                    job.setModelVersion(modelMapper.findByNameAndModelId(job.getModelVersionValue(), null));
-                    job.setOwner(userMapper.find(job.getOwnerId()));
+                    job.setModelVersion(modelService.findModelVersion(job.getModelVersionId()));
+                    job.setOwner(userService.loadUserById(job.getOwnerId()));
                 }
                 return entities;
             }

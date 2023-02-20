@@ -32,7 +32,7 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -52,7 +52,7 @@ import org.springframework.stereotype.Service;
 public class EvaluationService {
 
     private final UserService userService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final JobDao jobDao;
     private final ViewConfigMapper viewConfigMapper;
     private final IdConverter idConvertor;
@@ -62,11 +62,11 @@ public class EvaluationService {
 
     private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
-    public EvaluationService(UserService userService, ProjectManager projectManager, JobDao jobDao,
+    public EvaluationService(UserService userService, ProjectService projectService, JobDao jobDao,
             ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
             JobConverter jobConvertor, JobStatusMachine jobStatusMachine) {
         this.userService = userService;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.jobDao = jobDao;
         this.viewConfigMapper = viewConfigMapper;
         this.idConvertor = idConvertor;
@@ -89,7 +89,7 @@ public class EvaluationService {
 
     public ConfigVo getViewConfig(ConfigQuery configQuery) {
         Long userId = userService.currentUserDetail().getId();
-        Long projectId = projectManager.getProjectId(configQuery.getProjectUrl());
+        Long projectId = projectService.getProjectId(configQuery.getProjectUrl());
 
         ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId, configQuery.getName());
         if (viewConfig == null) {
@@ -100,7 +100,7 @@ public class EvaluationService {
 
     public Boolean createViewConfig(String projectUrl, ConfigRequest configRequest) {
         Long userId = userService.currentUserDetail().getId();
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectService.getProjectId(projectUrl);
         ViewConfigEntity entity = ViewConfigEntity.builder()
                 .ownerId(userId)
                 .projectId(projectId)
@@ -114,7 +114,7 @@ public class EvaluationService {
     public PageInfo<SummaryVo> listEvaluationSummary(String projectUrl,
             SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectService.getProjectId(projectUrl);
         List<Job> jobs = jobDao.listJobs(projectId, null);
         return PageUtil.toPageInfo(jobs, this::toSummary);
     }

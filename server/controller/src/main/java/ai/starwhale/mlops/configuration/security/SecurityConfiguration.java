@@ -18,6 +18,7 @@ package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.configuration.ControllerProperties;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import java.util.List;
 import javax.annotation.Resource;
@@ -54,6 +55,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ProjectService projectService;
 
     @Resource
     private JwtTokenUtil jwtTokenUtil;
@@ -128,7 +132,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .formLogin()
                 .and()
                 .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new JwtTokenFilter(jwtTokenUtil, userService, jwtClaimValidators), JwtLoginFilter.class)
+                .addFilterAfter(new JwtTokenFilter(jwtTokenUtil, userService, projectService, jwtClaimValidators),
+                        JwtLoginFilter.class)
                 .addFilterBefore(projectDetectionFilter, JwtTokenFilter.class)
                 .addFilterBefore(contentCachingFilter, ProjectDetectionFilter.class)
         ;

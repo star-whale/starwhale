@@ -45,8 +45,7 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
@@ -85,7 +84,7 @@ public class DatasetService {
     private final DatasetVoConverter datasetVoConverter;
     private final DatasetVersionVoConverter versionConvertor;
     private final StorageService storageService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final DatasetDao datasetDao;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
@@ -96,12 +95,12 @@ public class DatasetService {
     @Setter
     private BundleManager bundleManager;
 
-    public DatasetService(ProjectManager projectManager, DatasetMapper datasetMapper,
+    public DatasetService(ProjectService projectService, DatasetMapper datasetMapper,
             DatasetVersionMapper datasetVersionMapper, DatasetVoConverter datasetVoConverter,
             DatasetVersionVoConverter versionConvertor, StorageService storageService, DatasetDao datasetDao,
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, UserService userService,
             DsFileGetter dsFileGetter, DataLoader dataLoader, TrashService trashService) {
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
         this.datasetVoConverter = datasetVoConverter;
@@ -117,7 +116,7 @@ public class DatasetService {
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
-                projectManager,
+                projectService,
                 datasetDao,
                 datasetDao
         );
@@ -126,7 +125,7 @@ public class DatasetService {
 
     public PageInfo<DatasetVo> listDataset(DatasetQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
         List<DatasetEntity> entities = datasetMapper.list(projectId,
                 query.getNamePrefix(), userId, null);
@@ -142,7 +141,7 @@ public class DatasetService {
     public Boolean deleteDataset(DatasetQuery query) {
         BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl());
         Trash trash = Trash.builder()
-                .projectId(projectManager.getProjectId(query.getProjectUrl()))
+                .projectId(projectService.getProjectId(query.getProjectUrl()))
                 .objectId(bundleManager.getBundleId(bundleUrl))
                 .type(Type.DATASET)
                 .build();
@@ -153,6 +152,10 @@ public class DatasetService {
 
     public Boolean recoverDataset(String projectUrl, String datasetUrl) {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
+    }
+
+    public DatasetVersion findDatasetVersion(String versionUrl) {
+        return datasetDao.getDatasetVersion(versionUrl);
     }
 
     public DatasetInfoVo getDatasetInfo(DatasetQuery query) {
@@ -253,16 +256,16 @@ public class DatasetService {
 
     public List<DatasetInfoVo> listDs(String project, String name) {
         if (StringUtils.hasText(name)) {
-            Long projectId = projectManager.getProjectId(project);
+            Long projectId = projectService.getProjectId(project);
             DatasetEntity ds = datasetMapper.findByName(name, projectId, false);
             if (null == ds) {
                 throw new SwNotFoundException(ResourceType.BUNDLE, "Unable to find the dataset with name " + name);
             }
             return swDatasetInfoOfDs(ds);
         }
-        ProjectEntity projectEntity = projectManager.getProject(project);
+        Long projectId = projectService.getProjectId(project);
 
-        List<DatasetEntity> swDatasetEntities = datasetMapper.list(projectEntity.getId(), null, null, null);
+        List<DatasetEntity> swDatasetEntities = datasetMapper.list(projectId, null, null, null);
         if (null == swDatasetEntities || swDatasetEntities.isEmpty()) {
             return List.of();
         }

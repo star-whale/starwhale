@@ -124,10 +124,6 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .collect(Collectors.toList());
     }
 
-    public Job findJobByUuid(String uuid) {
-        return jobBoConverter.fromEntity(jobMapper.findJobByUuid(uuid));
-    }
-
     public Job findJobById(Long jobId) {
         return jobBoConverter.fromEntity(jobMapper.findJobById(jobId));
     }
@@ -164,14 +160,6 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
 
     public boolean removeJobByUuid(String uuid) {
         return jobMapper.removeJobByUuid(uuid) > 0 && jobRepo.removeJobByUuid(uuid) > 0;
-    }
-
-    public boolean recoverJob(Long jobId) {
-        return jobMapper.recoverJob(jobId) > 0 && jobRepo.recoverJob(jobId) > 0;
-    }
-
-    public boolean recoverJobByUuid(String uuid) {
-        return jobMapper.recoverJobByUuid(uuid) > 0 && jobRepo.recoverJobByUuid(uuid) > 0;
     }
 
     public Job findJob(String jobUrl) {

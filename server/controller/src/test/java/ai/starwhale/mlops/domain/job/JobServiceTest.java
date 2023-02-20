@@ -36,7 +36,7 @@ import static org.mockito.Mockito.doAnswer;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -48,14 +48,14 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.model.ModelDao;
-import ai.starwhale.mlops.domain.model.po.ModelEntity;
-import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.runtime.RuntimeDao;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.model.Model;
+import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.model.bo.ModelVersion;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.domain.runtime.bo.Runtime;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -83,11 +83,11 @@ public class JobServiceTest {
     private ResultQuerier resultQuerier;
     private StoragePathCoordinator storagePathCoordinator;
     private UserService userService;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private JobDao jobDao;
-    private ModelDao modelDao;
-    private DatasetDao datasetDao;
-    private RuntimeDao runtimeDao;
+    private ModelService modelService;
+    private DatasetService datasetService;
+    private RuntimeService runtimeService;
     private TrashService trashService;
 
     @BeforeEach
@@ -102,8 +102,8 @@ public class JobServiceTest {
         resultQuerier = mock(ResultQuerier.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
         userService = mock(UserService.class);
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
@@ -112,15 +112,15 @@ public class JobServiceTest {
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
                 .willReturn(2L);
-        modelDao = mock(ModelDao.class);
-        datasetDao = mock(DatasetDao.class);
-        runtimeDao = mock(RuntimeDao.class);
+        modelService = mock(ModelService.class);
+        datasetService = mock(DatasetService.class);
+        runtimeService = mock(RuntimeService.class);
         trashService = mock(TrashService.class);
 
         service = new JobService(
-                taskMapper, jobConverter, jobBoConverter, runtimeDao, jobSpliterator,
-                hotJobHolder, projectManager, jobDao, jobLoader, modelDao,
-                resultQuerier, datasetDao, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
+                taskMapper, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
+                hotJobHolder, projectService, jobDao, jobLoader, modelService,
+                resultQuerier, datasetService, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
                 trashService);
     }
 
@@ -190,16 +190,16 @@ public class JobServiceTest {
     public void testCreateJob() {
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());
-        given(projectManager.getProject(anyString()))
-                .willReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
-        given(runtimeDao.getRuntimeVersion(same("2")))
-                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
-        given(runtimeDao.getRuntime(same(2L)))
-                .willReturn(RuntimeEntity.builder().id(2L).runtimeName("test-runtime").build());
-        given(modelDao.getModelVersion(same("3")))
-                .willReturn(ModelVersionEntity.builder().id(3L).modelId(3L).versionName("q1w2e3r4t5y6").build());
-        given(modelDao.getModel(same(3L)))
-                .willReturn(ModelEntity.builder().id(3L).modelName("test-model").build());
+        given(projectService.findProject(anyString()))
+                .willReturn(Project.builder().id(1L).name("test-project").build());
+        given(runtimeService.findRuntimeVersion(same("2")))
+                .willReturn(RuntimeVersion.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
+        given(runtimeService.findRuntime(same(2L)))
+                .willReturn(Runtime.builder().id(2L).name("test-runtime").build());
+        given(modelService.findModelVersion(same("3")))
+                .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").build());
+        given(modelService.findModel(same(3L)))
+                .willReturn(Model.builder().id(3L).name("test-model").build());
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
         given(jobDao.addJob(any(JobFlattenEntity.class)))
@@ -208,7 +208,7 @@ public class JobServiceTest {
                     entity.setId(1L);
                     return true;
                 });
-        given(datasetDao.getDatasetVersion(anyString()))
+        given(datasetService.findDatasetVersion(anyString()))
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         var res = service.createJob("1", "3", "1", "2",

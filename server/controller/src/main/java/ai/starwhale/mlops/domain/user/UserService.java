@@ -16,21 +16,17 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
-import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.SystemRoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.security.SwPasswordEncoder;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.member.MemberService;
+import ai.starwhale.mlops.domain.member.bo.ProjectMember;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
-import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
-import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.mapper.RoleMapper;
@@ -74,20 +70,16 @@ public class UserService implements UserDetailsService {
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
-    private final ProjectMapper projectMapper;
-    private final ProjectRoleMapper projectRoleMapper;
-    private final ProjectManager projectManager;
+    private final MemberService memberService;
     private final IdConverter idConvertor;
     private final SaltGenerator saltGenerator;
 
-    public UserService(UserMapper userMapper, RoleMapper roleMapper, ProjectMapper projectMapper,
-            ProjectRoleMapper projectRoleMapper, ProjectManager projectManager, IdConverter idConvertor,
-            SaltGenerator saltGenerator) {
+    public UserService(UserMapper userMapper, RoleMapper roleMapper,
+            MemberService memberService,
+            IdConverter idConvertor, SaltGenerator saltGenerator) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
-        this.projectMapper = projectMapper;
-        this.projectRoleMapper = projectRoleMapper;
-        this.projectManager = projectManager;
+        this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.saltGenerator = saltGenerator;
     }
@@ -110,23 +102,27 @@ public class UserService implements UserDetailsService {
         return new User().fromEntity(userEntity);
     }
 
-    public List<Role> getProjectRolesOfUser(User user, String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+    public Role findRole(Long id) {
+        RoleEntity roleEntity = roleMapper.find(id);
+        if (roleEntity == null) {
+            throw new SwNotFoundException(ResourceType.USER, String.format("Role %s is not found.", id));
+        }
+        return Role.builder()
+                .roleName(roleEntity.getRoleName())
+                .roleCode(roleEntity.getRoleCode())
+                .build();
+    }
 
-        ProjectRoleEntity projectRoleEntity = projectRoleMapper.findByUserAndProject(user.getId(), projectId);
-
+    public List<Role> getProjectRolesOfUser(User user, Project project) {
         List<Role> list = new ArrayList<>();
-        if (projectRoleEntity != null) {
-            RoleEntity roleEntity = roleMapper.find(projectRoleEntity.getRoleId());
-            list.add(Role.builder()
-                    .roleName(roleEntity.getRoleName())
-                    .roleCode(roleEntity.getRoleCode())
-                    .build());
+        ProjectMember member = memberService.getUserMemberInProject(project.getId(), user.getId());
+        if (member != null) {
+            Role role = findRole(member.getRoleId());
+            list.add(role);
         }
 
-        if (projectId != 0) {
-            ProjectEntity project = projectMapper.find(projectId);
-            if (project != null && project.getPrivacy() == Privacy.PUBLIC.getValue()) {
+        if (project.getId() != 0) {
+            if (project.getPrivacy() == Privacy.PUBLIC) {
                 list.add(Role.builder().roleName("Guest").roleCode("GUEST").build());
             }
         }
@@ -134,15 +130,13 @@ public class UserService implements UserDetailsService {
         return list;
     }
 
-    public Set<Role> getProjectsRolesOfUser(User user, Set<String> projects) {
+    public Set<Role> getProjectsRolesOfUser(User user, Set<Project> projects) {
         if (projects.isEmpty()) {
             return Set.of();
         }
-        String anyProject = projects.stream().findAny().get();
+        Project anyProject = projects.stream().findAny().get();
         Set<Role> projectRolesOfUser = new HashSet<>(this.getProjectRolesOfUser(user, anyProject));
-        projects.forEach(pj -> {
-            projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, pj));
-        });
+        projects.forEach(pj -> projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, pj)));
         return projectRolesOfUser;
     }
 
@@ -156,15 +150,15 @@ public class UserService implements UserDetailsService {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         UserVo userVo = UserVo.fromEntity(userEntity, idConvertor);
-        List<ProjectRoleEntity> roleEntities = projectRoleMapper.listByUser(userEntity.getId());
+        List<ProjectMember> members = memberService.listProjectMembersOfUser(userEntity.getId());
         Map<String, String> roles = new HashMap<>();
-        roleEntities.forEach(entity -> {
-            RoleEntity role = roleMapper.find(entity.getRoleId());
-            if (entity.getProjectId() == 0) {
+        members.forEach(member -> {
+            Role role = findRole(member.getRoleId());
+            if (member.getProjectId() == 0) {
                 userVo.setSystemRole(role.getRoleCode());
                 return;
             }
-            String key = idConvertor.convert(entity.getProjectId());
+            String key = idConvertor.convert(member.getProjectId());
             roles.put(key, role.getRoleCode());
         });
         userVo.setProjectRoles(roles);
@@ -216,7 +210,7 @@ public class UserService implements UserDetailsService {
                 .userEnabled(1)
                 .build();
         userMapper.insert(userEntity);
-        projectRoleMapper.insertByRoleName(userEntity.getId(), 0L, Role.NAME_MAINTAINER);
+        memberService.addProjectMember(0L, userEntity.getId(), Role.NAME_MAINTAINER);
 
         log.info("User has been created. ID={}, NAME={}", userEntity.getId(), userEntity.getUserName());
 
@@ -256,18 +250,6 @@ public class UserService implements UserDetailsService {
     }
 
 
-    public List<SystemRoleVo> listSystemRoles() {
-        List<ProjectRoleEntity> entities = projectRoleMapper.listByProject(0L);
-
-        return entities.stream()
-                .map(entity -> SystemRoleVo.builder()
-                        .id(idConvertor.convert(entity.getId()))
-                        .user(findUserById(entity.getUserId()))
-                        .role(findRoleById(entity.getRoleId()))
-                        .build())
-                .collect(Collectors.toList());
-    }
-
     public List<RoleVo> listRoles() {
         return roleMapper.list()
                 .stream()
@@ -279,35 +261,8 @@ public class UserService implements UserDetailsService {
         return RoleVo.fromEntity(roleMapper.find(roleId), idConvertor);
     }
 
-    public List<ProjectRoleVo> listCurrentUserRoles(String projectUrl) {
-        User user = currentUserDetail();
-        UserEntity userEntity = userMapper.findByName(user.getName());
-        if (userEntity == null) {
-            throw new StarwhaleApiException(
-                    new SwProcessException(ErrorType.DB,
-                            String.format("Unable to find user by name %s", user.getName())),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return listUserRoles(userEntity.getId(), projectUrl);
-    }
-
-    public List<ProjectRoleVo> listUserRoles(Long userId, String projectUrl) {
-        List<ProjectRoleEntity> list;
-        if (StrUtil.isEmpty(projectUrl)) {
-            list = projectRoleMapper.listByUser(userId);
-        } else {
-            Long projectId = projectManager.getProjectId(projectUrl);
-            list = List.of(projectRoleMapper.findByUserAndProject(userId, projectId));
-        }
-        UserVo user = findUserById(userId);
-
-        return list.stream().map(entity -> ProjectRoleVo.builder()
-                        .id(idConvertor.convert(entity.getId()))
-                        .role(findRoleById(entity.getRoleId()))
-                        .project(ProjectVo.fromEntity(projectManager
-                                .findById(entity.getProjectId()), idConvertor, user))
-                        .build())
-                .collect(Collectors.toList());
+    public List<ProjectMemberVo> listCurrentUserRoles() {
+        throw new UnsupportedOperationException("Please use currentUser() instead.");
     }
 
     public Long getUserId(String user) {

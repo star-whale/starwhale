@@ -37,16 +37,15 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
 import ai.starwhale.mlops.domain.trash.mapper.TrashMapper;
 import ai.starwhale.mlops.domain.trash.po.TrashPo;
+import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.mapper.UserMapper;
-import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.Date;
 import java.util.List;
@@ -56,10 +55,9 @@ import org.junit.jupiter.api.Test;
 public class TrashServiceTest {
 
     private TrashService service;
-
     private TrashMapper trashMapper;
-    private UserMapper userMapper;
-    private ProjectManager projectManager;
+    private UserService userService;
+    private ProjectService projectService;
     private ModelDao modelDao;
     private DatasetDao datasetDao;
     private RuntimeDao runtimeDao;
@@ -68,35 +66,35 @@ public class TrashServiceTest {
     @BeforeEach
     public void setUp() {
         trashMapper = mock(TrashMapper.class);
-        userMapper = mock(UserMapper.class);
-        projectManager = mock(ProjectManager.class);
+        userService = mock(UserService.class);
+        projectService = mock(ProjectService.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
         runtimeDao = mock(RuntimeDao.class);
         jobDao = mock(JobDao.class);
 
         service = new TrashService(trashMapper,
-                userMapper,
-                projectManager,
+                userService,
+                projectService,
                 modelDao,
                 datasetDao,
                 runtimeDao,
-            jobDao,
+                jobDao,
                 new IdConverter());
     }
 
 
     @Test
     public void testListTrash() {
-        UserEntity starwhale = UserEntity.builder().id(1L).userName("starwhale").build();
-        UserEntity test = UserEntity.builder().id(2L).userName("test").build();
-        given(projectManager.getProjectId(same("1")))
+        User starwhale = User.builder().id(1L).name("starwhale").build();
+        User test = User.builder().id(2L).name("test").build();
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(userMapper.findByName(same("starwhale")))
+        given(userService.getUserId(same("starwhale")))
+                .willReturn(1L);
+        given(userService.loadUserById(same(1L)))
                 .willReturn(starwhale);
-        given(userMapper.find(same(1L)))
-                .willReturn(starwhale);
-        given(userMapper.find(same(2L)))
+        given(userService.loadUserById(same(2L)))
                 .willReturn(test);
         given(trashMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(
@@ -184,9 +182,9 @@ public class TrashServiceTest {
 
     @Test
     public void testRecover() {
-        given(projectManager.getProjectId(same("1")))
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         given(trashMapper.find(same(1L)))
                 .willReturn(TrashPo.builder()
@@ -270,7 +268,7 @@ public class TrashServiceTest {
 
     @Test
     public void testDelete() {
-        given(projectManager.getProjectId(same("1")))
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
         given(trashMapper.find(same(1L)))
                 .willReturn(TrashPo.builder().projectId(1L).build());

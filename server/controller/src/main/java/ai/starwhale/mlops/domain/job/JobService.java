@@ -20,7 +20,7 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -32,9 +32,9 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.model.ModelDao;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -81,33 +81,33 @@ public class JobService {
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
-    private final ProjectManager projectManager;
+    private final ProjectService projectService;
     private final JobDao jobDao;
-    private final ModelDao modelDao;
-    private final DatasetDao datasetDao;
-    private final RuntimeDao runtimeDao;
+    private final ModelService modelService;
+    private final DatasetService datasetService;
+    private final RuntimeService runtimeService;
     private final JobUpdateHelper jobUpdateHelper;
 
     private final TrashService trashService;
 
     public JobService(TaskMapper taskMapper, JobConverter jobConvertor,
-                      JobBoConverter jobBoConverter, RuntimeDao runtimeDao,
-                      JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-                      ProjectManager projectManager, JobDao jobDao, JobLoader jobLoader, ModelDao modelDao,
-                      ResultQuerier resultQuerier, DatasetDao datasetDao, StoragePathCoordinator storagePathCoordinator,
-                      UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
+            JobBoConverter jobBoConverter, RuntimeService runtimeService,
+            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
+            ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
+            ResultQuerier resultQuerier, DatasetService datasetService, StoragePathCoordinator storagePathCoordinator,
+            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
-        this.runtimeDao = runtimeDao;
+        this.runtimeService = runtimeService;
         this.jobSpliterator = jobSpliterator;
         this.hotJobHolder = hotJobHolder;
-        this.projectManager = projectManager;
+        this.projectService = projectService;
         this.jobDao = jobDao;
         this.jobLoader = jobLoader;
-        this.modelDao = modelDao;
+        this.modelService = modelService;
         this.resultQuerier = resultQuerier;
-        this.datasetDao = datasetDao;
+        this.datasetService = datasetService;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
@@ -116,7 +116,7 @@ public class JobService {
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectService.getProjectId(projectUrl);
         List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
@@ -144,7 +144,7 @@ public class JobService {
     public Boolean removeJob(String projectUrl, String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
         Trash trash = Trash.builder()
-                .projectId(projectManager.getProjectId(projectUrl))
+                .projectId(projectService.getProjectId(projectUrl))
                 .objectId(jobId)
                 .type(Type.EVALUATION)
                 .build();
@@ -163,13 +163,13 @@ public class JobService {
             String stepSpecOverWrites) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
-        var project = projectManager.getProject(projectUrl);
-        var runtimeVersion = runtimeDao.getRuntimeVersion(runtimeVersionUrl);
-        var runtime = runtimeDao.getRuntime(runtimeVersion.getRuntimeId());
-        var modelVersion = modelDao.getModelVersion(modelVersionUrl);
-        var model = modelDao.getModel(modelVersion.getModelId());
+        var project = projectService.findProject(projectUrl);
+        var runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
+        var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
+        var modelVersion = modelService.findModelVersion(modelVersionUrl);
+        var model = modelService.findModel(modelVersion.getModelId());
         var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetDao::getDatasetVersion)
+                .map(datasetService::findDatasetVersion)
                 .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
@@ -177,12 +177,12 @@ public class JobService {
                 .ownerName(user.getName())
                 .runtimeVersionId(runtimeVersion.getId())
                 .runtimeVersionValue(runtimeVersion.getVersionName())
-                .runtimeName(runtime.getRuntimeName())
+                .runtimeName(runtime.getName())
                 .projectId(project.getId())
                 .project(project)
                 .modelVersionId(modelVersion.getId())
-                .modelVersionValue(modelVersion.getVersionName())
-                .modelName(model.getModelName())
+                .modelVersionValue(modelVersion.getName())
+                .modelName(model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))

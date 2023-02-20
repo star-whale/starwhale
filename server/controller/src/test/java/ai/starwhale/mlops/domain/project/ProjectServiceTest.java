@@ -16,11 +16,9 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import static ai.starwhale.mlops.domain.project.ProjectManager.PROJECT_SEPARATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,12 +33,11 @@ import static org.mockito.BDDMockito.mock;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
-import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -51,7 +48,6 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.stubbing.Answer;
 
 public class ProjectServiceTest {
 
@@ -59,7 +55,9 @@ public class ProjectServiceTest {
 
     private ProjectMapper projectMapper;
 
-    private ProjectRoleMapper projectRoleMapper;
+    private ProjectDao projectDao;
+
+    private MemberService memberService;
 
     @BeforeEach
     public void setUp() {
@@ -72,23 +70,32 @@ public class ProjectServiceTest {
                 .projectDescription("project2")
                 .build();
 
-        ProjectManager projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1"))).willReturn(1L);
-        given(projectManager.getProjectId(same("2"))).willReturn(2L);
-        given(projectManager.getProjectId(same("p1"))).willReturn(1L);
-        given(projectManager.getProjectId(same("p2"))).willReturn(2L);
-        given(projectManager.getProjectId(same("3"))).willReturn(3L);
-        given(projectManager.getProject(same("1"))).willReturn(project1);
-        given(projectManager.getProject(same("2"))).willReturn(project2);
-        given(projectManager.getProject(same("p1"))).willReturn(project1);
-        given(projectManager.getProject(same("p2"))).willReturn(project2);
-        given(projectManager.listProjects(anyString(), any(), any())).willReturn(List.of(project1, project2));
-        given(projectManager.existProject(same("exist_project"), any())).willReturn(true);
-        given(projectManager.splitProjectUrl(anyString()))
-                .willAnswer((Answer<String[]>) invocation -> {
-                    String s = invocation.getArgument(0);
-                    return s.split(PROJECT_SEPARATOR);
-                });
+        projectMapper = mock(ProjectMapper.class);
+        given(projectMapper.find(same(1L))).willReturn(project1);
+        given(projectMapper.find(same(2L))).willReturn(project2);
+        given(projectMapper.findByName(same("p1"))).willReturn(List.of(project1));
+        given(projectMapper.findByName(same("p2"))).willReturn(List.of(project2));
+        given(projectMapper.findByNameForUpdateAndOwner(same("p1"), any())).willReturn(project1);
+        given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any())).willReturn(project2);
+        given(projectMapper.findExistingByNameAndOwner(same("exist_project"), any()))
+                .willReturn(project1);
+        given(projectMapper.findExistingByNameAndOwnerName(same("exist_project"), any()))
+                .willReturn(project2);
+        given(projectMapper.list(anyString(), any(), any()))
+                .willReturn(List.of(project1, project2));
+        given(projectMapper.list(same("p1"), any(), any()))
+                .willReturn(List.of(project1));
+
+        projectDao = mock(ProjectDao.class);
+        given(projectDao.getProjectId(same("1"))).willReturn(1L);
+        given(projectDao.getProjectId(same("2"))).willReturn(2L);
+        given(projectDao.getProjectId(same("p1"))).willReturn(1L);
+        given(projectDao.getProjectId(same("p2"))).willReturn(2L);
+        given(projectDao.getProjectId(same("3"))).willReturn(3L);
+        given(projectDao.getProject(same("1"))).willReturn(project1);
+        given(projectDao.getProject(same("2"))).willReturn(project2);
+        given(projectDao.getProject(same("p1"))).willReturn(project1);
+        given(projectDao.getProject(same("p2"))).willReturn(project2);
 
         UserService userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder()
@@ -99,25 +106,19 @@ public class ProjectServiceTest {
                 .build());
         given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
 
-        projectRoleMapper = mock(ProjectRoleMapper.class);
-
-        projectMapper = mock(ProjectMapper.class);
-        given(projectMapper.find(same(1L)))
-                .willReturn(project1);
-        given(projectMapper.find(same(2L)))
-                .willReturn(project2);
+        memberService = mock(MemberService.class);
 
         IdConverter idConvertor = new IdConverter();
         service = new ProjectService(projectMapper,
-                projectManager,
-                projectRoleMapper,
+                projectDao,
+                memberService,
                 idConvertor,
                 userService);
     }
 
     @Test
     public void testFindProject() {
-        var p1 = service.findProject("1");
+        var p1 = service.getProjectVo("1");
         assertThat(p1, allOf(
                 notNullValue(),
                 hasProperty("name", is("p1")),
@@ -125,7 +126,7 @@ public class ProjectServiceTest {
                 hasProperty("privacy", is("PUBLIC")),
                 hasProperty("description", is("project1"))
         ));
-        var p2 = service.findProject("p2");
+        var p2 = service.getProjectVo("p2");
         assertThat(p2, allOf(
                 notNullValue(),
                 hasProperty("name", is("p2")),
@@ -133,8 +134,6 @@ public class ProjectServiceTest {
                 hasProperty("privacy", is("PRIVATE")),
                 hasProperty("description", is("project2"))
         ));
-
-        assertThrows(SwNotFoundException.class, () -> service.findProject("3"));
     }
 
     @Test
@@ -243,74 +242,6 @@ public class ProjectServiceTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.modifyProject("1", "p2", "", 1L, "PUBLIC"));
-    }
-
-    @Test
-    public void testListProjectRoles() {
-        given(projectRoleMapper.listByProject(same(1L)))
-                .willReturn(List.of(
-                        ProjectRoleEntity.builder()
-                                .id(1L)
-                                .projectId(1L)
-                                .userId(1L)
-                                .roleId(1L)
-                                .build(),
-                        ProjectRoleEntity.builder()
-                                .id(2L)
-                                .projectId(1L)
-                                .userId(2L)
-                                .roleId(2L)
-                                .build()));
-        given(projectRoleMapper.listByProject(same(2L)))
-                .willReturn(Collections.emptyList());
-
-        var res = service.listProjectRoles("1");
-        assertThat(res, allOf(
-                notNullValue(),
-                hasSize(2)
-        ));
-        res = service.listProjectRoles("p1");
-        assertThat(res, allOf(
-                notNullValue(),
-                hasSize(2)
-        ));
-        res = service.listProjectRoles("2");
-        assertThat(res, allOf(
-                notNullValue(),
-                hasSize(0)
-        ));
-    }
-
-    @Test
-    public void testAddProjectRole() {
-        given(projectRoleMapper.insert(any())).willReturn(1);
-        var res = service.addProjectRole("1", 1L, 1L);
-        assertThat(res, is(true));
-
-        res = service.addProjectRole("p1", 1L, 1L);
-        assertThat(res, is(true));
-
-    }
-
-    @Test
-    public void testModifyProjectRole() {
-        given(projectRoleMapper.updateRole(same(1L), any()))
-                .willReturn(1);
-        var res = service.modifyProjectRole("", 1L, 2L);
-        assertThat(res, is(true));
-
-        res = service.modifyProjectRole("", 2L, 2L);
-        assertThat(res, is(false));
-    }
-
-    @Test
-    public void testDeleteProjectRole() {
-        given(projectRoleMapper.delete(same(1L))).willReturn(1);
-        var res = service.deleteProjectRole("", 1L);
-        assertThat(res, is(true));
-
-        res = service.deleteProjectRole("", 2L);
-        assertThat(res, is(false));
     }
 
 }

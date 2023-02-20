@@ -27,7 +27,7 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectMemberEntity;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import cn.hutool.db.sql.Direction;
@@ -62,7 +62,7 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     private ModelMapper modelMapper;
 
     @Autowired
-    private ProjectRoleMapper projectRoleMapper;
+    private ProjectMemberMapper projectMemberMapper;
 
     UserEntity user;
     ProjectEntity project;
@@ -95,8 +95,8 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testListProjects() {
-        projectRoleMapper.insert(
-                ProjectRoleEntity.builder().projectId(project2.getId()).roleId(1L).userId(user.getId()).build());
+        projectMemberMapper.insert(
+                ProjectMemberEntity.builder().projectId(project2.getId()).roleId(1L).userId(user.getId()).build());
         List<ProjectEntity> projectEntities = projectMapper.list("p", user.getId(),
                 new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(2, projectEntities.size());

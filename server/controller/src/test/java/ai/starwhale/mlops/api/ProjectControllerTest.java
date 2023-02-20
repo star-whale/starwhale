@@ -37,10 +37,11 @@ import static org.mockito.BDDMockito.same;
 import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
-import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -59,10 +60,12 @@ public class ProjectControllerTest {
 
     private ProjectController controller;
     private ProjectService projectService;
+    private MemberService memberService;
 
     @BeforeEach
     public void setUp() {
         projectService = mock(ProjectService.class);
+        memberService = mock(MemberService.class);
         UserService userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder()
                 .name("starwhale")
@@ -71,7 +74,7 @@ public class ProjectControllerTest {
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
         IdConverter idConvertor = new IdConverter();
-        controller = new ProjectController(projectService, userService, idConvertor);
+        controller = new ProjectController(projectService, userService, memberService, idConvertor);
     }
 
     @Test
@@ -188,9 +191,9 @@ public class ProjectControllerTest {
     @Test
     public void testGetProject() {
         String name = "project1";
-        given(projectService.findProject(same(name)))
+        given(projectService.getProjectVo(same(name)))
                 .willReturn(ProjectVo.builder().name(name).build());
-        given(projectService.findProject(same("")))
+        given(projectService.getProjectVo(same("")))
                 .willThrow(StarwhaleApiException.class);
 
         var resp = controller.getProjectByUrl(name);
@@ -232,11 +235,11 @@ public class ProjectControllerTest {
 
     @Test
     public void testListProjectRole() {
-        given(projectService.listProjectRoles(same("p1")))
-                .willReturn(List.of(ProjectRoleVo.builder().id("1").build()));
-        given(projectService.listProjectRoles(same("p2")))
-                .willReturn(List.of(ProjectRoleVo.builder().id("2").build()));
-        given(projectService.listProjectRoles(isNull()))
+        given(projectService.listProjectMembersInProject(same("p1")))
+                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
+        given(projectService.listProjectMembersInProject(same("p2")))
+                .willReturn(List.of(ProjectMemberVo.builder().id("2").build()));
+        given(projectService.listProjectMembersInProject(isNull()))
                 .willThrow(StarwhaleApiException.class);
 
         var resp = controller.listProjectRole("p1");
@@ -260,10 +263,10 @@ public class ProjectControllerTest {
 
     @Test
     public void testAddProjectRole() {
-        given(projectService.addProjectRole(anyString(), anyLong(), anyLong()))
+        given(projectService.addProjectMember(anyString(), anyLong(), anyLong()))
                 .willReturn(true);
         String errUrl = "err_url";
-        given(projectService.addProjectRole(same(errUrl), anyLong(), anyLong()))
+        given(projectService.addProjectMember(same(errUrl), anyLong(), anyLong()))
                 .willThrow(StarwhaleApiException.class);
 
         var resp = controller.addProjectRole("p1", "1", "1");
@@ -275,31 +278,19 @@ public class ProjectControllerTest {
 
     @Test
     public void testDeleteProjectRole() {
-        given(projectService.deleteProjectRole(anyString(), anyLong()))
+        given(memberService.deleteProjectMember(anyLong()))
                 .willReturn(true);
-        String errUrl = "err_url";
-        given(projectService.deleteProjectRole(same(errUrl), anyLong()))
-                .willThrow(StarwhaleApiException.class);
 
         var resp = controller.deleteProjectRole("p1", "1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.deleteProjectRole(errUrl, "1"));
     }
 
     @Test
     public void testModifyProjectRole() {
-        given(projectService.modifyProjectRole(anyString(), anyLong(), anyLong()))
+        given(memberService.modifyProjectMember(anyLong(), anyLong()))
                 .willReturn(true);
-        String errUrl = "err_url";
-        given(projectService.modifyProjectRole(same(errUrl), anyLong(), anyLong()))
-                .willThrow(StarwhaleApiException.class);
 
         var resp = controller.modifyProjectRole("p1", "1", "2");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.modifyProjectRole(errUrl, "1", "2"));
     }
 }
