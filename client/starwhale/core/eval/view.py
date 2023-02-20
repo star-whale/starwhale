@@ -10,6 +10,7 @@ from rich.columns import Columns
 
 from starwhale.utils import Order, console, sort_obj_list
 from starwhale.consts import (
+    CREATED_AT_KEY,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -173,7 +174,7 @@ class JobTermView(BaseTermView):
                 _t["uuid"],
                 f"[{style}]{icon}{status}[/]",
                 "",
-                _t["created_at"],
+                _t[CREATED_AT_KEY],
                 "",
             )
 
@@ -393,7 +394,7 @@ class JobTermViewRich(JobTermView):
                 _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
                 f"{_m['device']}:{_m['deviceAmount']}" if "device" in _m else "--",
-                _m["created_at"],
+                _m[CREATED_AT_KEY],
                 _m["finished_at"],
             )
             # TODO: add duration

@@ -1,10 +1,13 @@
 import re
 from enum import Enum
 from glob import glob
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from pathlib import Path
 from dataclasses import dataclass
 
+import requests
+
+from starwhale.consts import SW_API_VERSION
 from starwhale.base.uri import URI
 from starwhale.utils.config import load_swcli_config
 from starwhale.base.uricomponents.project import Project
@@ -64,6 +67,7 @@ class Resource:
         :param project: project which the resource belongs to (optional)
         :return: Resource instance
         """
+        self._remote_info: Dict[str, Any] = {}
 
         # check if it is url from console
         m = url_regex.match(uri)
@@ -74,6 +78,7 @@ class Resource:
             self.typ = ResourceType(info["rc_type"][:-1])  # remove the last 's'
             self.name = info.get("rc_id")
             self.version = info.get("rc_version")
+            self.refine_remote_rc_info()
             return
 
         if project:
@@ -103,6 +108,9 @@ class Resource:
             self._parse_without_type(uri)
         if (typ is not None) and self.typ != typ:
             raise Exception(f"type mismatch: {self.typ} vs {typ}")
+
+        if not self.project.instance.is_local:
+            self.refine_remote_rc_info()
 
     def _parse_with_type(self, typ: ResourceType, uri: str) -> None:
         """
@@ -160,6 +168,29 @@ class Resource:
             # TODO use api to check if it is a name or version
             # assume is is name for now
             self.name = ver
+
+    def refine_remote_rc_info(self) -> None:
+        if self.project.instance.is_local:
+            raise Exception("only used for remote resources")
+        if not self.name or not self.version:
+            return
+        if not self.name.isnumeric() and not self.version.isnumeric():
+            # both are not numeric, assume it is already refined
+            return
+
+        base_path = f"{self.instance.url}/api/{SW_API_VERSION}/project/{self.project.name}/{self.typ.value}/{self.name}"
+        headers = {"Authorization": self.instance.token}
+        resp = requests.get(
+            base_path, timeout=60, params={"versionUrl": self.version}, headers=headers
+        )
+        resp.raise_for_status()
+        self._remote_info = resp.json().get("data", {})
+        self.name = self._remote_info.get("name", self.name)
+        self.version = self._remote_info.get("versionName", self.version)
+
+    def info(self) -> Dict[str, Any]:
+        # TODO: support local resource
+        return self._remote_info or {}
 
     @property
     def instance(self) -> Instance:

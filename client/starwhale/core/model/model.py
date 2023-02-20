@@ -23,6 +23,7 @@ from starwhale.consts import (
     FileDesc,
     FileFlag,
     FileNode,
+    CREATED_AT_KEY,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
     EvalHandlerType,
@@ -338,7 +339,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
-            "created_at": now_str(),
+            CREATED_AT_KEY: now_str(),
             "status": STATUS.START,
             "step": step_name,
             "task_index": task_index,
@@ -535,7 +536,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     version=_bf.version,
                     path=str(_bf.path.resolve()),
                     tags=_bf.tags,
-                    created_at=_manifest["created_at"],
+                    created_at=_manifest[CREATED_AT_KEY],
                     size=_bf.path.stat().st_size,
                 )
             )
@@ -591,7 +592,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "path": str(_bf.path.absolute()),
                     "size": _bf.path.stat().st_size,
                     "is_removed": _bf.is_removed,
-                    "created_at": _manifest["created_at"],
+                    CREATED_AT_KEY: _manifest[CREATED_AT_KEY],
                     "tags": _bf.tags,
                 }
             )

@@ -386,7 +386,7 @@ class TestDatasetCopy(BaseTestCase):
     def test_download(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
-        dataset_version = "123"
+        dataset_version = "dataset-version"
         cloud_project = "project"
 
         rm.request(

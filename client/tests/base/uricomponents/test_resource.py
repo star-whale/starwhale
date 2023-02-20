@@ -117,8 +117,9 @@ class TestResource(TestCase):
         with self.assertRaises(NoMatchException):
             Resource("mnist")
 
+    @patch("requests.get")
     @patch("starwhale.utils.config.load_swcli_config")
-    def test_parsing_browser_url(self, load_conf: MagicMock):
+    def test_parsing_browser_url(self, load_conf: MagicMock, get: MagicMock) -> None:
         @dataclass
         class Expect:
             instance: str
@@ -136,11 +137,12 @@ class TestResource(TestCase):
                     and other.version == self.version
                 )
 
+        token = "fake token"
         load_conf.return_value = {
             "instances": {
-                "foo": {"uri": "https://foo.com"},
-                "bar": {"uri": "https://bar.com"},
-                "dev": {"uri": "http://127.0.0.1:8082"},
+                "foo": {"uri": "https://foo.com", "sw_token": token},
+                "bar": {"uri": "https://bar.com", "sw_token": token},
+                "dev": {"uri": "http://127.0.0.1:8082", "sw_token": token},
             },
         }
         tests = {
@@ -164,7 +166,18 @@ class TestResource(TestCase):
                 "foo", "5", ResourceType.model, "1", "2"
             ),
         }
+        get.return_value.json.return_value = {}
         for url, expect in tests.items():
+            assert expect == Resource(url)
+
+        get.return_value.json.return_value = {
+            "data": {"name": "name in server", "versionName": "version in server"}
+        }
+        for url, expect in tests.items():
+            # only the resource with name and version will be parsed
+            if expect.name and expect.version:
+                expect.name = "name in server"
+                expect.version = "version in server"
             assert expect == Resource(url)
 
         with self.assertRaises(Exception):
