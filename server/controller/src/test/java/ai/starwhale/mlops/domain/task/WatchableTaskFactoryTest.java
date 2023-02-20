@@ -37,8 +37,9 @@ public class WatchableTaskFactoryTest {
     public void testWatchableTaskFactory() {
 
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(
-                List.of(new Watcher2(), new Watcher3(), new Watcher1()), mock(TaskStatusMachine.class));
+                List.of(new Watcher2(), new Watcher3(), new Watcher1()), new TaskStatusMachine());
         Task task = new Task();
+        task.updateStatus(TaskStatus.PREPARING);
         Task wrappedTask = watchableTaskFactory.wrapTask(task);
         wrappedTask.updateStatus(TaskStatus.RUNNING);
         Assertions.assertEquals(3, list.size());
