@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import static org.mockito.Mockito.mock;
-
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
