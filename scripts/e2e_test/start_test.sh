@@ -167,7 +167,6 @@ start_starwhale() {
   --set resources.controller.requests.cpu=700m \
   --set mysql.resources.requests.cpu=300m \
   --set minio.resources.requests.cpu=200m \
-  --set controller.taskSplitSize=1 \
   --set minikube.enabled=true \
   --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
   --set image.tag=$PYPI_RELEASE_VERSION \

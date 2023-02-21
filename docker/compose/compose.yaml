@@ -31,7 +31,6 @@ services:
     ports:
       - 8082:8082
     environment:
-      - SW_TASK_SPLIT_SIZE=2
       - JAR=controller
       - SW_HOST_IP=127.0.0.1
       - SW_JWT_TOKEN_EXPIRE_MINUTES=144000
