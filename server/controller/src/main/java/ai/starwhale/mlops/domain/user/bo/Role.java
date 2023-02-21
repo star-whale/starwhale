@@ -28,6 +28,8 @@ import org.springframework.security.core.GrantedAuthority;
 @NoArgsConstructor
 public class Role implements GrantedAuthority {
 
+    private Long id;
+
     private String roleName;
 
     private String roleCode;
