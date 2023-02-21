@@ -14,14 +14,14 @@ spec:
     spec:
       volumes:
         - name: controller-storage
-{{ if not .Values.minio.enabled }}
-          persistentVolumeClaim:
-            claimName: controller
-{{ else }}
+          {{- if .Values.minio.enabled }}
           hostPath:
             path: {{ .Values.storage.agentHostPathRoot }}/controller
             type: DirectoryOrCreate
-{{ end }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: controller
+          {{- end }}
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
       {{- else }}
