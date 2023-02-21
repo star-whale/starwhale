@@ -16,8 +16,8 @@ from starwhale.core.runtime.cli import runtime_cmd
 from starwhale.core.instance.cli import instance_cmd
 from starwhale.cli.assistance.cli import assistance_cmd
 
-from .cli import config_cmd
 from .mngt import add_mngt_command
+from .config import config_cmd
 from .completion import completion_cmd
 
 

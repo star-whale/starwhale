@@ -101,8 +101,10 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 - 🍵 **STEP2**: Downloading the MNIST example
 
+    > To save time in the example downloading, we skip git-lfs and other commits info.
+
     ```bash
-    git clone https://github.com/star-whale/starwhale.git
+    GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/star-whale/starwhale.git --depth 1
     cd starwhale
     ```
 
