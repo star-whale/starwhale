@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.project;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,6 +36,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
+import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -105,6 +108,16 @@ public class ProjectServiceTest {
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
         given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
+        given(userService.findRole(same(1L)))
+                .willReturn(Role.builder().id(1L)
+                        .roleName(Role.NAME_OWNER)
+                        .roleCode(Role.CODE_OWNER)
+                        .build());
+        given(userService.findRole(same(2L)))
+                .willReturn(Role.builder().id(2L)
+                        .roleName(Role.NAME_MAINTAINER)
+                        .roleCode(Role.CODE_MAINTAINER)
+                        .build());
 
         memberService = mock(MemberService.class);
 
@@ -244,4 +257,29 @@ public class ProjectServiceTest {
                 () -> service.modifyProject("1", "p2", "", 1L, "PUBLIC"));
     }
 
+    @Test
+    public void testListProjectMemberOfCurrentUser() {
+        given(memberService.getUserMemberInProject(same(1L), same(1L)))
+                .willReturn(ProjectMember.builder().id(1L).projectId(1L).userId(1L).roleId(1L).build());
+        given(memberService.listProjectMembersOfUser(same(1L)))
+                .willReturn(List.of(
+                        ProjectMember.builder().id(1L).projectId(1L).userId(1L).roleId(1L).build(),
+                        ProjectMember.builder().id(2L).projectId(2L).userId(1L).roleId(2L).build()
+                ));
+
+        var res = service.listProjectMemberOfCurrentUser("1");
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(1)),
+                hasItem(hasProperty("role", hasProperty("code", is(Role.CODE_OWNER))))
+        ));
+
+        res = service.listProjectMemberOfCurrentUser("");
+        assertThat(res, allOf(
+                notNullValue(),
+                is(iterableWithSize(2)),
+                hasItem(hasProperty("role", hasProperty("code", is(Role.CODE_OWNER)))),
+                hasItem(hasProperty("role", hasProperty("code", is(Role.CODE_MAINTAINER))))
+        ));
+    }
 }
