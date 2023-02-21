@@ -32,12 +32,16 @@ if ! test -d /starwhale; then
 fi
 git config --global --add safe.directory /starwhale
 git config --global user.email "renyanda@starwhale.ai"
+
+python3 -m pip install --upgrade pip
+python3 -m pip config set global.cache-dir /.cache/pip
+python3 -m pip config set global.default-timeout 300
 cd /starwhale/scripts/e2e_test
 if [[ -z "$PUBLISH" ]] ; then
   if bash start_test.sh ;then
-    send_feishu "e2e SUCCESS ns:$SWNS name:$SWNAME"
+    send_feishu "e2e SUCCESS: console path http://$SWNAME.pre.intra.starwhale.ai"
   else
-    send_feishu "e2e FAIL ns:$SWNS name:$SWNAME"
+    send_feishu "e2e FAIL: ns:$SWNS error log is: $LOG_STORAGE/log/log.$(date +'%Y%m%d')"
   fi
 else
   cd /starwhale/scripts/publish

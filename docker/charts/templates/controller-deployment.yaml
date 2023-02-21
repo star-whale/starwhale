@@ -67,7 +67,7 @@ spec:
               value: controller
               {{- if not .Values.minikube.enabled }}
             - name: JVM_XMX
-              value: {{ .Values.resources.controller.requests.memory }}
+              value: {{ .Values.resources.controller.limits.memory }}
               {{- end }}
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
