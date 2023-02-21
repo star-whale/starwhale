@@ -1,4 +1,4 @@
-starwhale>=0.4.0
+starwhale>=0.3.6
 # for pfp
 pycocotools
 # for ucf101

@@ -119,7 +119,7 @@ runtime.yaml 对于 `Starwhale Runtime` 至关重要，一切的构建都是从r
 name: helloworld
 ```
 
-helloworld的runtime中，只有一行配置，但却描述了如下信息：
+helloworld的runtime.yaml中只有一行关于name的配置，构建runtime时，就意味着使用如下的默认配置：
 
 - venv作为Python隔离环境。
 - python版本为执行 swcli runtime build 命令时，swcli所用的Python解释器的版本。
