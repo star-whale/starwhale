@@ -661,7 +661,6 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         env_prefix_path: str = "",
-        disable_auto_inject: bool = False,
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -674,7 +673,6 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             yaml_name,
             env_name,
             env_prefix_path,
-            disable_auto_inject,
             no_cache,
             stdout,
             include_editable,
@@ -778,7 +776,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 yaml_name=yaml_name,
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
-                disable_auto_inject=False,
                 no_cache=no_cache,
                 stdout=False,
                 include_editable=include_editable,
@@ -1270,7 +1267,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         env_prefix_path: str = "",
-        disable_auto_inject: bool = False,
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -1284,7 +1280,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         :param yaml_name: runtime config file name
         :param env_name: conda environment name (used by conda env)
         :param env_prefix_path: python env prefix path (used by both venv and conda)
-        :param disable_auto_inject: disable putting lock file info into configured runtime yaml file
         :param no_cache: invalid all pkgs installed
         :param stdout: just print the lock info into stdout without saving lock file
         :param include_editable: include the editable pkg (only for venv)
@@ -1377,26 +1372,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 if mode == PythonRunEnv.CONDA
                 else RuntimeLockFileType.VENV
             )
-            console.print(f":mouse: dump lock file: {dest_fname}")
-            shutil.move(temp_lock_path, Path(target_dir) / dest_fname)
-
-            if not disable_auto_inject and runtime_fpath.exists():
-                cls._update_runtime_dep_lock_field(runtime_fpath, dest_fname)
+            lock_dir = Path(target_dir) / SW_AUTO_DIRNAME / "lock"
+            ensure_dir(lock_dir)
+            dest_fpath = lock_dir / dest_fname
+            shutil.move(temp_lock_path, dest_fpath)
+            console.print(f":mouse: dump lock file: {dest_fpath}")
 
         return content
-
-    @staticmethod
-    def _update_runtime_dep_lock_field(runtime_fpath: Path, lock_fname: str) -> None:
-        content = load_yaml(runtime_fpath)
-        deps = content.get("dependencies", [])
-        if lock_fname in deps:
-            return
-
-        console.print(f":monkey_face: update {runtime_fpath} dependencies field")
-        deps.append(lock_fname)
-        content["dependencies"] = deps
-        # TODO: safe_dump will change user's other yaml content format at first time
-        ensure_file(runtime_fpath, yaml.safe_dump(content, default_flow_style=False))
 
     @staticmethod
     def render_runtime_yaml(

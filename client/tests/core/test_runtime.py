@@ -1248,7 +1248,9 @@ class StandaloneRuntimeTestCase(TestCase):
         target_dir = "/home/starwhale/workdir"
         ensure_dir(target_dir)
         runtime_fname = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
-        lock_fname = os.path.join(target_dir, RuntimeLockFileType.VENV)
+        lock_fname = os.path.join(
+            target_dir, ".starwhale", "lock", RuntimeLockFileType.VENV
+        )
         self.fs.create_file(os.path.join(target_dir, "dummy.whl"))
         self.fs.create_file(
             runtime_fname,
@@ -1323,7 +1325,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert os.path.exists(lock_fname)
         content = load_yaml(runtime_fname)
-        assert RuntimeLockFileType.VENV == content["dependencies"][-1]
+        assert RuntimeLockFileType.VENV not in content["dependencies"]
         del os.environ[ENV_VENV]
 
         StandaloneRuntime.lock(target_dir, env_prefix_path=venv_dir)
@@ -1359,15 +1361,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_venv.cli_run = _mock_cli_run
         StandaloneRuntime.lock(target_dir)
 
-        assert m_call.call_count == 5
-        assert m_call.call_args_list[3][0][0] == [
-            f"{sw_venv_dir}/bin/pip",
-            "install",
-            "--exists-action",
-            "w",
-            "-r",
-            f"{target_dir}/requirements-sw-lock.txt",
-        ]
+        assert m_call.call_count == 4
         assert m_output.call_count == 2
 
         assert os.path.exists(sw_venv_dir)
@@ -1481,9 +1475,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
         ]
 
-        assert os.path.exists(os.path.join(target_dir, RuntimeLockFileType.CONDA))
+        assert os.path.exists(
+            os.path.join(target_dir, ".starwhale", "lock", RuntimeLockFileType.CONDA)
+        )
         content = load_yaml(runtime_fname)
-        assert RuntimeLockFileType.CONDA == content["dependencies"][-1]
+        assert RuntimeLockFileType.CONDA not in content["dependencies"]
 
         StandaloneRuntime.lock(target_dir, env_name="conda-env-name")
 
@@ -1516,7 +1512,7 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(os.path.join(sw_conda_dir, "conda-meta"))
         StandaloneRuntime.lock(target_dir)
 
-        assert m_call.call_count == 4
+        assert m_call.call_count == 3
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "run",
@@ -1541,17 +1537,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "--override-channels",
             "'b'",
         ]
-        assert m_call.call_args_list[2][0][0] == [
-            "conda",
-            "env",
-            "update",
-            "--file",
-            f"{target_dir}/conda-sw-lock.yaml",
-            "--prefix",
-            sw_conda_dir,
-        ]
 
-        assert m_call.call_args_list[3][0][0][:6] == [
+        assert m_call.call_args_list[2][0][0][:6] == [
             "conda",
             "env",
             "export",
