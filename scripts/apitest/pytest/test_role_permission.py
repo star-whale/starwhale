@@ -69,8 +69,8 @@ class TestRolePermission:
 
         assert res.status_code == 200
         assert len(response['data']) > 0
-        assert response['data'][0]['project']['id'] == project_id
-        system_role_id = response['data'][0]['id']
+        assert response['data']['project']['id'] == project_id
+        system_role_id = response['data']['id']
 
         url = '{api}/role/{role}'
         res = requests.put(url=url.format(api=hu.url(host, port),
@@ -93,8 +93,8 @@ class TestRolePermission:
         response = res.json()
 
         assert res.status_code == 200
-        assert response['data'][0]['project']['id'] == project_id
-        assert response['data'][0]['role']['code'] == 'OWNER'
+        assert response['data']['project']['id'] == project_id
+        assert response['data']['role']['code'] == 'OWNER'
 
     def test_destroy(self, host, port):
         hu.tmp_user_destroy(host, port)
