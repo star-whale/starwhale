@@ -36,6 +36,7 @@ from typing_extensions import Protocol
 from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
+from starwhale.utils.dict import flatten as flatten_dict
 from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
@@ -1409,20 +1410,6 @@ def get_data_store(instance_uri: str = "", token: str = "") -> DataStore:
         )
 
 
-def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
-    def _new(key_prefix: str, src: Dict[str, Any], dest: Dict[str, Any]) -> None:
-        for k, v in src.items():
-            k = key_prefix + str(k)
-            if isinstance(v, dict):
-                _new(k + "/", v, dest)
-            else:
-                dest[k] = v
-
-    ret: Dict[str, Any] = {}
-    _new("", record, ret)
-    return ret
-
-
 class TableWriterException(Exception):
     pass
 
@@ -1473,7 +1460,7 @@ class TableWriter(threading.Thread):
             raise TableWriterException(f"{self} run raise {len(_es)} exceptions: {_es}")
 
     def insert(self, record: Dict[str, Any]) -> None:
-        record = _flatten(record)
+        record = flatten_dict(record)
         for k in record:
             for ch in k:
                 if (
