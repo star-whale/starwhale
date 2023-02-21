@@ -453,8 +453,8 @@ class BundleCopy(CloudRequestMixed):
     @staticmethod
     def _update_manifest(workdir: Path, patch: t.Dict[str, t.Any]) -> None:
         file = workdir / DEFAULT_MANIFEST_NAME
-        # downloaded runtime is a tar file
-        if not os.path.exists(file):
+        # downloaded runtime is a tarball
+        if not file.exists():
             return
         manifest = load_yaml(file)
         manifest.update(patch)
