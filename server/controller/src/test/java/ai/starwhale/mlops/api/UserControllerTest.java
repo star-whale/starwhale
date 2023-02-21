@@ -140,19 +140,6 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testGetCurrentUserRoles() {
-        given(userService.listCurrentUserRoles())
-                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
-
-        var resp = controller.getCurrentUserRoles();
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(iterableWithSize(1))
-        ));
-    }
-
-    @Test
     public void testGetUserById() {
         given(userService.findUserById(same(1L)))
                 .willReturn(UserVo.builder().id("1").build());

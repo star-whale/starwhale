@@ -262,6 +262,18 @@ public class ProjectControllerTest {
     }
 
     @Test
+    public void testGetProjectRoleOfCurrentUser() {
+        given(projectService.getProjectMemberOfCurrentUser(same("p1")))
+                .willReturn(ProjectMemberVo.builder().id("1").build());
+        var resp = controller.getProjectRoleOfCurrentUser("p1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
+                notNullValue(),
+                is(hasProperty("id", is("1")))
+        ));
+    }
+
+    @Test
     public void testAddProjectRole() {
         given(projectService.addProjectMember(anyString(), anyLong(), anyLong()))
                 .willReturn(true);

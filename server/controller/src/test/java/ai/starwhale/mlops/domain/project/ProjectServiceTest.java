@@ -34,6 +34,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
+import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -105,6 +106,16 @@ public class ProjectServiceTest {
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
         given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
+        given(userService.findRole(same(1L)))
+                .willReturn(Role.builder().id(1L)
+                        .roleName(Role.NAME_OWNER)
+                        .roleCode(Role.CODE_OWNER)
+                        .build());
+        given(userService.findRole(same(2L)))
+                .willReturn(Role.builder().id(2L)
+                        .roleName(Role.NAME_MAINTAINER)
+                        .roleCode(Role.CODE_MAINTAINER)
+                        .build());
 
         memberService = mock(MemberService.class);
 
@@ -242,6 +253,21 @@ public class ProjectServiceTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.modifyProject("1", "p2", "", 1L, "PUBLIC"));
+    }
+
+    @Test
+    public void testGetProjectMemberOfCurrentUser() {
+        given(memberService.getUserMemberInProject(same(1L), same(1L)))
+                .willReturn(ProjectMember.builder().id(1L).projectId(1L).userId(1L).roleId(1L).build());
+
+        var res = service.getProjectMemberOfCurrentUser("1");
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("id", is("1")),
+                hasProperty("project", is(hasProperty("name", is("p1")))),
+                hasProperty("user", is(hasProperty("name", is("starwhale")))),
+                hasProperty("role", is(hasProperty("code", is(Role.CODE_OWNER))))
+        ));
     }
 
 }

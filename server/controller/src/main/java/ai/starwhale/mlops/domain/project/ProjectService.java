@@ -386,6 +386,19 @@ public class ProjectService implements ProjectAccessor {
                 .build()).collect(Collectors.toList());
     }
 
+    public ProjectMemberVo getProjectMemberOfCurrentUser(String projectUrl) {
+        Project project = findProject(projectUrl);
+        User user = userService.currentUserDetail();
+        ProjectMember member = memberService.getUserMemberInProject(project.getId(), user.getId());
+        Role role = userService.findRole(member.getRoleId());
+        return ProjectMemberVo.builder()
+                .id(idConvertor.convert(member.getId()))
+                .project(ProjectVo.fromBo(project, idConvertor))
+                .user(UserVo.from(user, idConvertor))
+                .role(RoleVo.fromBo(role, idConvertor))
+                .build();
+    }
+
     public Boolean addProjectMember(String projectUrl, Long userId, Long roleId) {
         Long projectId = getProjectId(projectUrl);
         return memberService.addProjectMember(projectId, userId, roleId);

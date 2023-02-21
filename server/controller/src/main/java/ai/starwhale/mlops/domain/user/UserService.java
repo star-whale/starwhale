@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -108,6 +107,7 @@ public class UserService implements UserDetailsService {
             throw new SwNotFoundException(ResourceType.USER, String.format("Role %s is not found.", id));
         }
         return Role.builder()
+                .id(roleEntity.getId())
                 .roleName(roleEntity.getRoleName())
                 .roleCode(roleEntity.getRoleCode())
                 .build();
@@ -259,10 +259,6 @@ public class UserService implements UserDetailsService {
 
     public RoleVo findRoleById(Long roleId) {
         return RoleVo.fromEntity(roleMapper.find(roleId), idConvertor);
-    }
-
-    public List<ProjectMemberVo> listCurrentUserRoles() {
-        throw new UnsupportedOperationException("Please use currentUser() instead.");
     }
 
     public Long getUserId(String user) {

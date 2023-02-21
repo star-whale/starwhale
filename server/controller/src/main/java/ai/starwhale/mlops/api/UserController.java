@@ -98,12 +98,6 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> getCurrentUserRoles() {
-        List<ProjectMemberVo> vos = userService.listCurrentUserRoles();
-        return ResponseEntity.ok(Code.success.asResponse(vos));
-    }
-
-    @Override
     public ResponseEntity<ResponseMessage<UserVo>> getUserById(String userId) {
         UserVo userVo = userService.findUserById(idConvertor.revert(userId));
         return ResponseEntity.ok(Code.success.asResponse(userVo));

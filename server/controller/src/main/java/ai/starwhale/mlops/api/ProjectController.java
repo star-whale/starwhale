@@ -145,6 +145,12 @@ public class ProjectController implements ProjectApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<ProjectMemberVo>> getProjectRoleOfCurrentUser(String projectUrl) {
+        ProjectMemberVo vo = projectService.getProjectMemberOfCurrentUser(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(vo));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> addProjectRole(String projectUrl, String userId,
             String roleId) {
         Boolean res = projectService.addProjectMember(projectUrl, idConvertor.revert(userId),

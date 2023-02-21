@@ -59,6 +59,7 @@ public class RoleVo {
             return RoleVo.empty();
         }
         return RoleVo.builder()
+                .id(idConvertor.convert(role.getId()))
                 .name(role.getRoleName())
                 .code(role.getRoleCode())
                 .build();

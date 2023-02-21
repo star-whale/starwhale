@@ -118,6 +118,16 @@ public interface ProjectApi {
             @PathVariable("projectUrl") String projectUrl
     );
 
+    @Operation(summary = "Get the role of current user in project")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/role/current",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ProjectMemberVo>> getProjectRoleOfCurrentUser(
+            @PathVariable("projectUrl") String projectUrl
+    );
+
     @Operation(summary = "Grant project role to a user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(

@@ -91,14 +91,6 @@ public interface UserApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<UserVo>> getCurrentUser();
 
-    @Operation(summary = "Get the current user roles.")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/user/current/role",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> getCurrentUserRoles();
-
 
     @Operation(summary = "Check Current User password")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
