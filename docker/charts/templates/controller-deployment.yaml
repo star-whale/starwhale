@@ -81,8 +81,6 @@ spec:
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             - name: SW_DOCKER_REGISTRY_URL
               value: "{{ .Values.image.registry }}"
-            - name: SW_TASK_SPLIT_SIZE
-              value: "{{ .Values.controller.taskSplitSize }}"
             - name: SW_HOST_IP
               valueFrom:
                 fieldRef:
