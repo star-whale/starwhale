@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.cache;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
@@ -69,7 +70,11 @@ public class JobLoader {
         tasks.parallelStream().filter(t -> t.getStatus() == TaskStatus.PAUSED
                         || t.getStatus() == TaskStatus.FAIL
                         || t.getStatus() == TaskStatus.CANCELED)
-                .forEach(t -> t.updateStatus(TaskStatus.READY));
+                .forEach(t -> {
+                    // FAIL -> ready is forbidden by status machine, so make it to CREATED at first
+                    ((WatchableTask) t).unwrap().updateStatus(TaskStatus.CREATED);
+                    t.updateStatus(TaskStatus.READY);
+                });
     }
 
     /**
