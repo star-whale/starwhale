@@ -108,6 +108,7 @@ public class UserService implements UserDetailsService {
             throw new SwNotFoundException(ResourceType.USER, String.format("Role %s is not found.", id));
         }
         return Role.builder()
+                .id(roleEntity.getId())
                 .roleName(roleEntity.getRoleName())
                 .roleCode(roleEntity.getRoleCode())
                 .build();
