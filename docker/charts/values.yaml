@@ -82,9 +82,8 @@ controller:
     ingressClassName: nginx
     host: console.pre.intra.starwhale.ai
     path: /
-
-storage:
-  agentHostPathRoot: "/mnt/data/starwhale"
+  job:
+    cacheDirHostPath: /mnt/data/starwhale
 
 nodeSelector:
   controller: {}
@@ -130,4 +129,8 @@ devMode:
     # Node selector matchExpressions in kubernetes.io/hostname
     host: ""
     # Local path for test PV
+    rootPath: /var/starwhale
+  # For console debugging with hostPath volume
+  createConsoleHostPathVolume:
+    enabled: false
     rootPath: /var/starwhale
