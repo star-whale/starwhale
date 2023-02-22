@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.reporting.TaskStatusReceiver;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -41,6 +42,7 @@ public class PodEventHandlerTest {
     PodEventHandler podEventHandler;
 
     TaskLogK8sCollector taskLogK8sCollector;
+    TaskStatusReceiver taskStatusReceiver;
 
     HotJobHolder hotJobHolder;
 
@@ -50,7 +52,8 @@ public class PodEventHandlerTest {
     public void setup() {
         hotJobHolder = mock(HotJobHolder.class);
         taskLogK8sCollector = mock(TaskLogK8sCollector.class);
-        podEventHandler = new PodEventHandler(taskLogK8sCollector, hotJobHolder);
+        taskStatusReceiver = mock(TaskStatusReceiver.class);
+        podEventHandler = new PodEventHandler(taskLogK8sCollector, taskStatusReceiver, hotJobHolder);
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")))
                 .status(new V1PodStatus()
@@ -71,8 +74,10 @@ public class PodEventHandlerTest {
     @Test
     public void testRunning() {
         v1Pod.getStatus().getContainerStatuses().get(0).getState().terminated(null);
+        v1Pod.getStatus().phase("Pending");
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector, times(0)).collect(any());
+        verify(taskStatusReceiver, times(1)).receive(any());
     }
 
     @Test

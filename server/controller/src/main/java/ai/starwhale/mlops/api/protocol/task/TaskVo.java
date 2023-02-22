@@ -45,10 +45,13 @@ public class TaskVo implements Serializable {
     @JsonProperty("taskStatus")
     private TaskStatus taskStatus;
 
+    @JsonProperty("retryNum")
+    private Integer retryNum;
+
     @JsonProperty("resourcePool")
     private String resourcePool;
 
     public static TaskVo empty() {
-        return new TaskVo("", "", -1L, TaskStatus.CREATED, ResourcePool.DEFAULT_NAME);
+        return new TaskVo("", "", -1L, TaskStatus.CREATED, 0, ResourcePool.DEFAULT_NAME);
     }
 }

@@ -32,7 +32,7 @@ public interface TaskMapper {
 
     String COLUMNS = "task_info.id, task_uuid, step_id, agent_id, task_status, task_request,"
             + " task_info.finished_time, task_info.started_time, task_info.created_time, task_info.modified_time,"
-            + " output_path";
+            + " retry_num, output_path";
 
     @Select("select " + COLUMNS + " from task_info"
             + " left join step s on s.id = task_info.step_id where s.job_id = #{jobId} order by id desc")
@@ -63,6 +63,9 @@ public interface TaskMapper {
             + " </foreach>"
             + "</script>")
     void updateTaskStatus(@Param("ids") List<Long> taskIds, @Param("taskStatus") TaskStatus taskStatus);
+
+    @Update("update task_info set retry_num = #{retryNum} where id = #{id}")
+    void updateRetryNum(@Param("id") Long taskId, @Param("retryNum") Integer retryNum);
 
     @Select("select " + COLUMNS + " from task_info where task_status = #{taskStatus}")
     List<TaskEntity> findTaskByStatus(@Param("taskStatus") TaskStatus taskStatus);

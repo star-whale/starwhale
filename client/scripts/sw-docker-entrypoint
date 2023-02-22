@@ -16,19 +16,19 @@ TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
 
 _update_python_alter() {
-    echo "--> set python/python3 to $1 ..."
+    echo "-->[Preparing] set python/python3 to $1 ..."
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/$1 10
     update-alternatives --install /usr/bin/python python /usr/bin/$1 10
     python3 --version
 }
 
 pre_config() {
-    echo "--> debug config ..."
     if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
+        echo "-->[Preparing] debug config ..."
         VERBOSE="-v"
     fi
 
-    echo "--> config pypi and conda config ..."
+    echo "-->[Preparing] config pypi and conda config ..."
 
     if [ ${SW_PYPI_INDEX_URL} ] ; then
         echo -e "\t ** use SW_PYPI_* env to config ~/.pip/pip.conf"
@@ -76,6 +76,7 @@ set_py_and_sw() {
     if [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
         # ignore the editable dev version
         if [ "$DETECTED_SW_VER" != "0.0.0.dev0" ]; then
+          echo "-->[Preparing] start to install starwhale:${DETECTED_SW_VER}"
           # install starwhale for current python
           python3 -m pip install "starwhale==${DETECTED_SW_VER}" || exit 1
         fi
@@ -84,7 +85,7 @@ set_py_and_sw() {
 
 # TODO support run remote on standalone mode
 pull_model_and_runtime() {
-    echo '--> pulling model and runtime ...'
+    echo '-->[Preparing] start to pull model and runtime ...'
 
     swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
     swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
@@ -92,13 +93,13 @@ pull_model_and_runtime() {
 }
 
 run() {
-    echo "--> start to run evaluation: ${STEP}, use $(which swcli) cli ..."
+    echo "-->[Running] start to run evaluation: ${STEP}, use $(which swcli) cli ..."
 
     swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
 }
 
 serve() {
-    echo "--> start to serve, use $(which swcli) cli ..."
+    echo "-->[Serving] start to serve, use $(which swcli) cli ..."
     export
     swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
 }
@@ -121,7 +122,6 @@ welcome() {
 }
 
 eval_task_prepare(){
-    welcome $1
     pre_config
     if [ "${SW_INSTANCE_URI}" != "local" ]
     then
@@ -132,6 +132,7 @@ eval_task_prepare(){
     set_pip_cache
 }
 
+welcome $1
 case "$1" in
     pre_config)
         pre_config

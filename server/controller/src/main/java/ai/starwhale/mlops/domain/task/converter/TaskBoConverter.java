@@ -51,6 +51,7 @@ public class TaskBoConverter {
                 .id(entity.getId())
                 .step(step)
                 .status(entity.getTaskStatus())
+                .retryNum(entity.getRetryNum())
                 .uuid(entity.getTaskUuid())
                 .resultRootPath(new ResultPath(entity.getOutputPath()))
                 .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))

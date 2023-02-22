@@ -1,6 +1,8 @@
 from typing import Any
 from pathlib import Path
 
+from loguru import logger
+
 from starwhale import step, Context, pass_context, PipelineHandler
 from starwhale.utils import console
 from starwhale.consts import DefaultYAMLName
@@ -21,14 +23,17 @@ def _get_cls(src_dir: Path) -> Any:
 
 def _invoke(context: Context, func: str) -> None:
     _cls = _get_cls(context.workdir)
-    console.print(f":zap: start run {context.step}-{context.index}...")
+    console.print(f":zap: start to run {context.step}-{context.index}...")
+    logger.debug(f"-->[Running] start to run {context.step}-{context.index} .")
     with _cls() as _obj:
         _func = get_func_from_object(_obj, func)
         _func()
 
     console.print(
-        f":clap: finish run {context.step}-{context.index}, more details can see:{_obj}"
+        f":clap: finished run {context.step}-{context.index}, more details can see:{_obj}"
     )
+
+    logger.debug(f"-->[Finished] finished run {context.step}-{context.index} .")
 
 
 @step(task_num=2, concurrency=2)

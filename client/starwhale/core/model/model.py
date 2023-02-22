@@ -373,7 +373,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         _steps = _jobs[job_name]
 
-        console.print(f":hourglass_not_done: start to evaluation[{version}]...")
+        console.print(
+            f":hourglass_not_done: start to run evaluation[{job_name}:{version}]..."
+        )
+        logger.debug(f"-->[Running] start to run evaluation[{job_name}:{version}].")
         _scheduler = Scheduler(
             project=_project_uri.project,
             version=version,
@@ -397,7 +400,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     _scheduler.schedule_single_task(step_name, task_index, task_num)
                 ]
 
-            logger.debug(f"job execute info:{_step_results}")
             _status = STATUS.SUCCESS
 
             exceptions: t.List[Exception] = []
@@ -407,10 +409,15 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         exceptions.append(_tr.exception)
             if exceptions:
                 raise Exception(*exceptions)
+            logger.debug(
+                f"-->[Finished] evaluation[{job_name}:{version}] execute finished, results info:{_step_results}"
+            )
         except Exception as e:
-            logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
+            logger.error(
+                f"-->[Failed] evaluation[{job_name}:{version}] execute failed, error info:{e}"
+            )
             raise
         finally:
             _manifest.update(
