@@ -32,6 +32,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,7 +90,7 @@ public class TaskService {
         String logDir = resultPath.logDir();
         try (InputStream inputStream = storageAccessService.get(
                 logDir + PATH_SPLITERATOR + logFileName)) {
-            return new String(inputStream.readAllBytes());
+            return new String(inputStream.readAllBytes(), Charset.forName("UTF-8"));
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.DB,
                     MessageFormat.format("read log path from db failed {}", taskId),
