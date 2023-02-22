@@ -51,6 +51,7 @@ public class JobLoader {
     }
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
+        jobHolder.adopt(job);
         job.getSteps().forEach(step -> {
             List<Task> watchableTasks = watchableTaskFactory.wrapTasks(step.getTasks());
             step.setTasks(watchableTasks);
@@ -61,7 +62,6 @@ public class JobLoader {
                     .filter(t -> t.getStatus() == TaskStatus.READY)
                     .collect(Collectors.toSet()));
         });
-        jobHolder.adopt(job);
         return job;
 
     }
