@@ -27,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,12 +42,13 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
-import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.model.bo.ModelVersion;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.user.mapper.UserMapper;
+import ai.starwhale.mlops.domain.user.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Date;
@@ -63,28 +65,28 @@ public class JobRepoTest {
 
     private DataStore dataStore;
 
-    private ProjectMapper projectMapper;
+    private ProjectService projectService;
 
-    private ModelVersionMapper modelVersionMapper;
+    private ModelService modelService;
 
-    private UserMapper userMapper;
+    private UserService userService;
 
     private JobMapper jobMapper;
 
     @BeforeEach
     public void initData() {
-        this.projectMapper = mock(ProjectMapper.class);
-        this.modelVersionMapper = mock(ModelVersionMapper.class);
-        this.userMapper = mock(UserMapper.class);
+        this.projectService = mock(ProjectService.class);
+        this.modelService = mock(ModelService.class);
+        this.userService = mock(UserService.class);
         this.dataStore = mock(DataStore.class);
         this.jobMapper = mock(JobMapper.class);
-        jobRepo = new JobRepo(dataStore, projectMapper, modelVersionMapper, userMapper, jobMapper, new ObjectMapper());
+        jobRepo = new JobRepo(dataStore, projectService, modelService, userService, jobMapper, new ObjectMapper());
     }
 
     @Test
     public void testAddJob() {
-        Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
+        Mockito.when(projectService.findProject(1L))
+                .thenReturn(Project.builder().id(1L).name("test-project").build());
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .id(1L)
@@ -94,7 +96,7 @@ public class JobRepoTest {
                 .runtimeVersionValue("1a2s3d4f5g6h")
                 .runtimeName("test-rt")
                 .projectId(1L)
-                .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
+                .project(Project.builder().id(1L).name("test-project").build())
                 .modelVersionId(1L)
                 .modelVersionValue("1z2x3c4v5b6n")
                 .modelName("test-model")
@@ -121,10 +123,10 @@ public class JobRepoTest {
 
     @Test
     public void testListJobs() {
-        Mockito.when(projectMapper.find(1L))
-                .thenReturn(ProjectEntity.builder().id(1L).projectName("test-project").build());
-        Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
-                .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
+        Mockito.when(projectService.findProject(1L))
+                .thenReturn(Project.builder().id(1L).name("test-project").build());
+        Mockito.when(modelService.findModelVersion(anyLong()))
+                .thenReturn(ModelVersion.builder().id(1L).name("1z2x3c4v5b6n").build());
 
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(
@@ -158,10 +160,10 @@ public class JobRepoTest {
 
     @Test
     public void testFindByStatusIn() {
-        Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
-        Mockito.when(modelVersionMapper.findByNameAndModelId(any(), any()))
-                .thenReturn(ModelVersionEntity.builder().id(1L).versionName("1z2x3c4v5b6n").build());
+        Mockito.when(projectService.listProjects(null, null, null))
+                .thenReturn(List.of(Project.builder().id(1L).name("test-project").build()));
+        Mockito.when(modelService.findModelVersion(anyLong()))
+                .thenReturn(ModelVersion.builder().id(1L).name("1z2x3c4v5b6n").build());
 
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(
@@ -197,8 +199,8 @@ public class JobRepoTest {
     public void testUpdateProperty() {
         var jobId = 123456L;
         var uuid = "1q2w3e4r5t6y";
-        Mockito.when(projectMapper.list(null, null, null))
-                .thenReturn(List.of(ProjectEntity.builder().id(1L).projectName("test-project").build()));
+        Mockito.when(projectService.listProjects(null, null, null))
+                .thenReturn(List.of(Project.builder().id(1L).name("test-project").build()));
         var job = JobEntity.builder()
                 .id(jobId)
                 .jobUuid(uuid)

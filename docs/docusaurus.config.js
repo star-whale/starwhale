@@ -48,14 +48,9 @@ module.exports = {
             logo: {
                 alt: "Starwhale",
                 src: "img/starwhale-white.png",
+                href: "/docs/quickstart/standalone",
             },
             items: [
-                {
-                    to: "/docs/quickstart/standalone",
-                    label: "Documentation",
-                    position: "left",
-                },
-
                 {
                     to: "https://github.com/star-whale/starwhale",
                     position: "right",

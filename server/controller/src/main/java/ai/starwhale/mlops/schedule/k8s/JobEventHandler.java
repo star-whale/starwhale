@@ -62,7 +62,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         // one task one k8s job
         if (null != status.getSucceeded()) {
             taskStatus = TaskStatus.SUCCESS;
-            log.debug("job status changed for {} is success  {}", jobName(newObj), status);
+            log.info("job status changed for {} is success  {}", jobName(newObj), status);
         } else {
             if (null != status.getActive()) {
                 // running(failed == null) or restarting(failed != null)

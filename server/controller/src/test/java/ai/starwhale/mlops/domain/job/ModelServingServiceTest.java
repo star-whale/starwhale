@@ -36,7 +36,7 @@ import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
@@ -72,7 +72,7 @@ public class ModelServingServiceTest {
     private ModelServingService svc;
     private final ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
     private final RuntimeDao runtimeDao = mock(RuntimeDao.class);
-    private final ProjectManager projectManager = mock(ProjectManager.class);
+    private final ProjectService projectService = mock(ProjectService.class);
     private final ModelDao modelDao = mock(ModelDao.class);
     private final UserService userService = mock(UserService.class);
     private final K8sClient k8sClient = mock(K8sClient.class);
@@ -88,7 +88,7 @@ public class ModelServingServiceTest {
         svc = new ModelServingService(
                 modelServingMapper,
                 runtimeDao,
-                projectManager,
+                projectService,
                 modelDao,
                 userService,
                 k8sClient,
@@ -106,7 +106,7 @@ public class ModelServingServiceTest {
 
         var user = User.builder().id(1L).name("starwhale").build();
         when(userService.currentUserDetail()).thenReturn(user);
-        when(projectManager.getProjectId(anyString())).thenReturn(2L);
+        when(projectService.getProjectId(anyString())).thenReturn(2L);
 
         Mockito.doAnswer(inv -> {
             ModelServingEntity entity = inv.getArgument(0);

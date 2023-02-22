@@ -69,7 +69,6 @@ externalOSS:
   type: "s3" # supported type: s3, minio and aliyun
 
 controller:
-  taskSplitSize: 2
   jwt:
     tokenExpireMinutes: 43200
   upload:

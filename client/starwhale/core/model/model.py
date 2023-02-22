@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import copy
 import json
+import shutil
 import typing as t
 import tarfile
 from abc import ABCMeta
@@ -22,13 +23,16 @@ from starwhale.consts import (
     FileDesc,
     FileFlag,
     FileNode,
+    CREATED_AT_KEY,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
     EvalHandlerType,
+    SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
     DEFAULT_MANIFEST_NAME,
+    SW_EVALUATION_EXAMPLE_DIR,
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
@@ -57,6 +61,7 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
+from starwhale.api._impl.service import Hijack
 from starwhale.core.job.scheduler import Scheduler
 
 
@@ -230,19 +235,40 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, ignore_errors)
 
     def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
-        d = self.store.src_dir
-        svc = self._get_service(ppl, workdir)
-        _f = d / DEFAULT_EVALUATION_SVC_META_FNAME
-        ensure_file(_f, json.dumps(svc.get_spec(), indent=4))
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
-        _f = d / DEFAULT_EVALUATION_JOBS_FNAME
+        _f = self.store.src_dir / DEFAULT_EVALUATION_JOBS_FNAME
         logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
         Parser.generate_job_yaml(ppl, workdir, _f)
 
+    def _gen_model_serving(self, ppl: str, workdir: Path) -> None:
+        rc_dir = (
+            f"{self.store.src_dir_name}/{SW_AUTO_DIRNAME}/{SW_EVALUATION_EXAMPLE_DIR}"
+        )
+        # render spec
+        svc = self._get_service(ppl, workdir, hijack=Hijack(True, rc_dir))
+        file = self.store.src_dir / DEFAULT_EVALUATION_SVC_META_FNAME
+        ensure_file(file, json.dumps(svc.get_spec(), indent=4))
+
+        if len(svc.example_resources) == 0:
+            return
+
+        # check duplicate file names, do not support using examples with same name in different dir
+        names = set([os.path.basename(i) for i in svc.example_resources])
+        if len(names) != len(svc.example_resources):
+            raise NoSupportError("duplicate file names in examples")
+
+        # copy example resources for online evaluation in server instance
+        dst = self.store.src_dir / SW_AUTO_DIRNAME / SW_EVALUATION_EXAMPLE_DIR
+        ensure_dir(dst)
+        for f in svc.example_resources:
+            shutil.copy2(f, dst)
+
     @staticmethod
-    def _get_service(module: str, pkg: Path) -> Service:
+    def _get_service(
+        module: str, pkg: Path, hijack: t.Optional[Hijack] = None
+    ) -> Service:
         module, _, attr = module.partition(":")
         m = load_module(module, pkg)
         apis = dict()
@@ -284,6 +310,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         for api in apis.values():
             svc.add_api_instance(api)
         svc.api_instance = ins
+        svc.hijack = hijack
         return svc
 
     @classmethod
@@ -312,7 +339,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
-            "created_at": now_str(),
+            CREATED_AT_KEY: now_str(),
             "status": STATUS.START,
             "step": step_name,
             "task_index": task_index,
@@ -516,7 +543,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     version=_bf.version,
                     path=str(_bf.path.resolve()),
                     tags=_bf.tags,
-                    created_at=_manifest["created_at"],
+                    created_at=_manifest[CREATED_AT_KEY],
                     size=_bf.path.stat().st_size,
                 )
             )
@@ -572,7 +599,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "path": str(_bf.path.absolute()),
                     "size": _bf.path.stat().st_size,
                     "is_removed": _bf.is_removed,
-                    "created_at": _manifest["created_at"],
+                    CREATED_AT_KEY: _manifest[CREATED_AT_KEY],
                     "tags": _bf.tags,
                 }
             )
@@ -603,6 +630,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     ppl=_model_config.run.handler,
                     workdir=workdir,
                 ),
+            ),
+            (
+                self._gen_model_serving,
+                10,
+                "generate model serving",
+                dict(ppl=_model_config.run.handler, workdir=workdir),
             ),
             (
                 self._make_meta_tar,

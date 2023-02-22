@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project.bo;
 
 import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,8 +45,20 @@ public class Project {
 
     private boolean isDeleted;
 
+    private Date createdTime;
+
     public Integer getDeleteInt() {
         return isDeleted ? 1 : 0;
+    }
+
+    public static Project system() {
+        return Project.builder()
+                .id(0L)
+                .name("SYSTEM")
+                .privacy(Privacy.PUBLIC)
+                .isDeleted(false)
+                .isDefault(false)
+                .build();
     }
 
     public enum Privacy {

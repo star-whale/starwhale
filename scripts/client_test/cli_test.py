@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import typing as t
 import logging
 import subprocess
@@ -68,12 +69,15 @@ EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "datasets": [""],
     },
 }
-RUNTIMES: t.Dict[str, t.Dict[str, str]] = {
+RUNTIMES: t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]] = {
     "pytorch": {
         "workdir": f"{WORK_DIR}/example/runtime/pytorch-e2e",
-    },
-    "ucf101": {
-        "workdir": f"{WORK_DIR}/example/ucf101",
+        "yamls": [
+            "runtime-3-7.yaml",
+            "runtime-3-8.yaml",
+            "runtime-3-9.yaml",
+            "runtime-3-10.yaml",
+        ],
     },
 }
 
@@ -98,7 +102,7 @@ class TestCli:
         self.server_url = server_url
         self.server_project = server_project
         self.datasets: t.Dict[str, t.List[URI]] = {}
-        self.runtimes: t.Dict[str, URI] = {}
+        self.runtimes: t.Dict[str, t.List[URI]] = {}
         self.models: t.Dict[str, URI] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
@@ -156,16 +160,22 @@ class TestCli:
     def build_runtime(
         self,
         _workdir: str,
+        runtime_yaml: str = "runtime.yaml",
     ) -> t.Any:
         self.select_local_instance()
-        _uri = Runtime.build_with_api(workdir=_workdir)
+        runtime_cache_path = f"{_workdir}/.starwhale"
+        if os.path.exists(runtime_cache_path):
+            shutil.rmtree(runtime_cache_path)
+        _uri = Runtime.build_with_api(workdir=_workdir, runtime_yaml=runtime_yaml)
         if self.server_url:
             assert self.runtime_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
             )
-        self.runtimes.update({_uri.object.name: _uri})
+        rts = self.runtimes.get(_uri.object.name, [])
+        rts.append(_uri)
+        self.runtimes.update({_uri.object.name: rts})
         assert len(self.runtime_api.list())
         assert self.runtime_api.info(_uri.full_uri)
         return _uri
@@ -177,55 +187,70 @@ class TestCli:
     def eval(
         self,
         _model_uri: URI,
-        _rt_uri: URI,
+        _rt_uris: t.List[URI],
         _ds_uris: t.List[URI],
         step_spec_file: str,
         local_instance: bool = True,
-    ) -> Future:
-        if local_instance:
-            _jid = self.local_evl(_ds_uris, _model_uri, _rt_uri)
-            return executor.submit(lambda: (_jid, next(iter(STATUS_SUCCESS))))
-        if self.server_url and not local_instance:
-            return self.remote_eval(_ds_uris, _model_uri, _rt_uri, step_spec_file)
-        return executor.submit(lambda: ("", next(iter(STATUS_SUCCESS))))
+    ) -> t.List[Future]:
+        if not local_instance and self.server_url:
+            return self.remote_eval(_ds_uris, _model_uri, _rt_uris, step_spec_file)
+        else:
+            self.local_evl(_ds_uris, _model_uri, _rt_uris)
+            return []
 
     def local_evl(
-        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: t.Optional[URI] = None
+        self,
+        _ds_uris: t.List[URI],
+        _model_uri: URI,
+        _rt_uris: t.Optional[t.List[URI]] = None,
     ) -> t.Any:
         logger.info("running evaluation at local...")
         self.select_local_instance()
-        _job_id = self.evaluation_api.run(
-            model=_model_uri.full_uri,
-            datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
-            runtime=_rt_uri.full_uri if _rt_uri else "",
-        )
-        assert _job_id
-        assert len(self.evaluation_api.list())
-        eval_info = self.evaluation_api.info(_job_id)
-        assert eval_info
-        assert eval_info["manifest"]["status"] in STATUS_SUCCESS
-        logger.info("finish run evaluation at standalone.")
-        return _job_id
+        jids = []
+        if not _rt_uris:
+            _rt_uris = [URI("")]
+        for _rt_uri in _rt_uris:
+            _job_id = self.evaluation_api.run(
+                model=_model_uri.full_uri,
+                datasets=[_ds_uri.full_uri for _ds_uri in _ds_uris],
+                runtime=_rt_uri.full_uri if _rt_uri.raw else "",
+            )
+            assert _job_id
+            assert len(self.evaluation_api.list())
+            eval_info = self.evaluation_api.info(_job_id)
+            assert eval_info
+            assert eval_info["manifest"]["status"] in STATUS_SUCCESS
+            logger.info("finish run evaluation at standalone.")
+            jids.append(_job_id)
+        return jids
 
     def remote_eval(
-        self, _ds_uris: t.List[URI], _model_uri: URI, _rt_uri: URI, step_spec_file: str
-    ) -> Future:
+        self,
+        _ds_uris: t.List[URI],
+        _model_uri: URI,
+        _rt_uris: t.List[URI],
+        step_spec_file: str,
+    ) -> t.List[Future]:
         self.instance_api.select(instance="server")
         self.project_api.select(project=self.server_project)
         # 8.start an evaluation
-        logger.info("running evaluation at server...")
-        _remote_jid = self.evaluation_api.run(
-            model=_model_uri.object.version,
-            datasets=[_ds_uri.object.version for _ds_uri in _ds_uris],
-            runtime=_rt_uri.object.version,
-            project=f"{self.server_url}/project/{self.server_project}",
-            step_spec=step_spec_file,
-            resource_pool=os.environ.get("RESOURCE_POOL"),
-        )
-        assert _remote_jid
-        # 9.check job's status
-        _js = executor.submit(self.get_remote_job_status, _remote_jid)
-        return _js
+        job_status_checkers = []
+        for _rt_uri in _rt_uris:
+            logger.info("running evaluation at server...")
+            _remote_jid = self.evaluation_api.run(
+                model=_model_uri.object.version,
+                datasets=[_ds_uri.object.version for _ds_uri in _ds_uris],
+                runtime=_rt_uri.object.version,
+                project=f"{self.server_url}/project/{self.server_project}",
+                step_spec=step_spec_file,
+                resource_pool=os.environ.get("RESOURCE_POOL"),
+            )
+            assert _remote_jid
+            # 9.check job's status
+            job_status_checkers.append(
+                executor.submit(self.get_remote_job_status, _remote_jid)
+            )
+        return job_status_checkers
 
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
@@ -262,16 +287,14 @@ class TestCli:
 
         self.local_evl([_ds_uri], _model_uri)
         if self.server_url:
-            _js = self.remote_eval(
-                [_ds_uri], _model_uri, _rt_uri, step_spec_f("step_spec_cpu_mini.yaml")
+            _jss = self.remote_eval(
+                [_ds_uri], _model_uri, [_rt_uri], step_spec_f("step_spec_cpu_mini.yaml")
             )
-            _, status = _js.result()
-            assert status in STATUS_SUCCESS
+            for _js in _jss:
+                jid, status = _js.result()
+                assert status in STATUS_SUCCESS
 
     def test_all(self) -> None:
-
-        for name, rt in RUNTIMES.items():
-            self.build_runtime(rt["workdir"])
 
         for name, expl in EXAMPLES.items():
             logger.info(f"preparing data for {expl}")
@@ -289,12 +312,12 @@ class TestCli:
                 self.build_dataset(workdir_, d_type)
             self.build_model(workdir_)
 
-        # run evals on standalone
-        for name, expl in EXAMPLES.items():
-            expl.get("device", "cpu") == "cpu" and self.run_example(
-                name,
-                step_spec_f("step_spec_cpu_full.yaml"),
-            )
+        for name, rt in RUNTIMES.items():
+            if "yamls" not in rt:
+                self.build_runtime(str(rt["workdir"]))
+            else:
+                for yml in list(rt["yamls"]):
+                    self.build_runtime(str(rt["workdir"]), yml)
 
         # run evals on server
         res = [
@@ -305,7 +328,16 @@ class TestCli:
             )
             for name, expl in EXAMPLES.items()
         ]
-        for _js in res:
+        status_checkers: t.List[Future] = sum(res, [])
+
+        # run evals on standalone
+        for name, expl in EXAMPLES.items():
+            expl.get("device", "cpu") == "cpu" and self.run_example(
+                name,
+                step_spec_f("step_spec_cpu_full.yaml"),
+            )
+
+        for _js in status_checkers:
             jid, status = _js.result()
             if status not in STATUS_SUCCESS:
                 logger.error(f"job {jid} failed!")
@@ -315,19 +347,25 @@ class TestCli:
         rt_ = RUNTIMES.get(expl_name) or RUNTIMES.get("pytorch")
         if not rt_:
             raise RuntimeError(f"no runtime matching for {expl_name}")
-        self.build_runtime(str(rt_.get("workdir")))
+        for name, rt in RUNTIMES.items():
+            if "yamls" not in rt:
+                self.build_runtime(str(rt["workdir"]))
+            else:
+                for yml in list(rt["yamls"]):
+                    self.build_runtime(str(rt["workdir"]), yml)
 
         expl = EXAMPLES[expl_name]
         workdir_ = str(expl["workdir"])
 
-        p = subprocess.Popen(
-            ["make", "prepare"],
+        rc = subprocess.Popen(
+            ["make", "CN=1", "prepare"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=workdir_,
         )
-
-        p.wait()
+        if rc != 0:
+            logger.error(f"prepare data for {expl} failed")
+            raise
 
         #  download data
         for d_type in expl["datasets"]:
@@ -335,29 +373,25 @@ class TestCli:
         self.build_model(workdir_)
 
         # run_eval
-        _js = self.run_example(
+        self.run_example(
             expl_name,
             step_spec_f(f"step_spec_{expl.get('device', 'cpu')}_full.yaml"),
             expl.get("device", "cpu") == "cpu",
         )
-        jid, status = _js.result()
-        if status not in STATUS_SUCCESS:
-            logger.error(f"job {jid} failed!")
-            exit(1)
 
     def run_example(
         self, name: str, step_spec: str, local_instance: bool = True
-    ) -> Future:
+    ) -> t.List[Future]:
         datasets_ = self.datasets.get(name)
         if not datasets_:
             raise RuntimeError("datasets should not be empty")
         model_ = self.models.get(name)
         if not model_:
             raise RuntimeError("model should not be empty")
-        runtime_ = self.runtimes.get(name) or self.runtimes.get("pytorch")
-        if not runtime_:
-            raise RuntimeError("runtime should not be empty")
-        return self.eval(model_, runtime_, datasets_, step_spec, local_instance)
+        runtimes_ = self.runtimes.get(name) or self.runtimes.get("pytorch")
+        if not runtimes_:
+            raise RuntimeError("runtimes should not be empty")
+        return self.eval(model_, runtimes_, datasets_, step_spec, local_instance)
 
     def debug(self) -> None:
         for name, expl in EXAMPLES.items():

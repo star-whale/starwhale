@@ -1,0 +1,11 @@
+api_version: 1.1
+dependencies:
+  - pip:
+      - Pillow
+  - requirements.txt
+environment:
+  python: "3.10"
+  arch: noarch
+  os: ubuntu:20.04
+mode: venv
+name: pytorch

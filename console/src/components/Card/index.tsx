@@ -2,12 +2,12 @@
 import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import { Skeleton } from 'baseui/skeleton'
-import { createUseStyles } from 'react-jss'
 import Text from '@/components/Text'
 import type { IconType } from 'react-icons/lib'
 import { IThemedStyleProps } from '@starwhale/ui/theme'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import styles from './index.module.scss'
+import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles({
     card: (props: IThemedStyleProps) => {
@@ -22,11 +22,6 @@ const useStyles = createUseStyles({
             '& a:link': linkStyle,
             '& a:visited': linkStyle,
         }
-    },
-    cardBody: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
     },
 })
 
@@ -144,7 +139,12 @@ export default function Card({
                     </div>
                 </div>
             )}
-            <div className={classNames(dynamicStyles.cardBody, styles.cardBody, bodyClassName)} style={bodyStyle}>
+            <div
+                className={classNames(styles.cardBody, bodyClassName)}
+                style={{
+                    ...bodyStyle,
+                }}
+            >
                 {c}
             </div>
         </div>

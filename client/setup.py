@@ -32,6 +32,9 @@ install_requires = [
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1",
     "gradio~=3.15.0",
+    # for system monitor
+    "psutil>=5.5.0",
+    "GitPython>=3.1.24",
 ]
 
 extras_require = {
@@ -98,5 +101,7 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: System :: Logging",
+        "Topic :: System :: Monitoring",
     ],
 )

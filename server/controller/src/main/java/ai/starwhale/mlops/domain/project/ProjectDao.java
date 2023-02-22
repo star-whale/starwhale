@@ -17,44 +17,27 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
-import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ProjectManager implements ProjectAccessor {
+public class ProjectDao implements ProjectAccessor {
 
     public static final String PROJECT_SEPARATOR = ":";
-
     private final ProjectMapper projectMapper;
-
     private final IdConverter idConvertor;
 
-    private static final Map<String, String> SORT_MAP = Map.of(
-            "id", "project_id",
-            "name", "project_name",
-            "time", "project_created_time",
-            "createdTime", "project_created_time");
 
-    public ProjectManager(ProjectMapper projectMapper, IdConverter idConvertor) {
+    public ProjectDao(ProjectMapper projectMapper, IdConverter idConvertor) {
         this.projectMapper = projectMapper;
         this.idConvertor = idConvertor;
-    }
-
-    public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
-        return projectMapper.list(projectName, userId, orderParams.getOrderSql(SORT_MAP));
     }
 
     public ProjectEntity findById(Long projectId) {
@@ -64,56 +47,13 @@ public class ProjectManager implements ProjectAccessor {
                     .projectName("SYSTEM")
                     .projectDescription("System")
                     .privacy(1)
-                    .ownerId(0L)
+                    .isDefault(0)
+                    .isDeleted(0)
                     .build();
         }
         return projectMapper.find(projectId);
     }
 
-    public Boolean existProject(String projectName, Long userId) {
-        ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, userId);
-        return existProject != null;
-    }
-
-    public Map<Long, ProjectObjectCounts> getObjectCountsOfProjects(List<Long> projectIds) {
-        String ids = Joiner.on(",").join(projectIds);
-        Map<Long, ProjectObjectCounts> map = Maps.newHashMap();
-        for (Long projectId : projectIds) {
-            map.put(projectId, new ProjectObjectCounts());
-        }
-
-        List<ObjectCountEntity> modelCounts = projectMapper.countModel(ids);
-        setCounts(modelCounts, map, ProjectObjectCounts::setCountModel);
-
-        List<ObjectCountEntity> datasetCounts = projectMapper.countDataset(ids);
-        setCounts(datasetCounts, map, ProjectObjectCounts::setCountDataset);
-
-        List<ObjectCountEntity> runtimeCounts = projectMapper.countRuntime(ids);
-        setCounts(runtimeCounts, map, ProjectObjectCounts::setCountRuntime);
-
-        List<ObjectCountEntity> jobCounts = projectMapper.countJob(ids);
-        setCounts(jobCounts, map, ProjectObjectCounts::setCountJob);
-
-        List<ObjectCountEntity> memberCounts = projectMapper.countMember(ids);
-        setCounts(memberCounts, map, ProjectObjectCounts::setCountMember);
-
-        return map;
-    }
-
-    private void setCounts(List<ObjectCountEntity> list, Map<Long, ProjectObjectCounts> map, CountSetter setter) {
-        for (ObjectCountEntity entity : list) {
-            if (map.containsKey(entity.getProjectId())) {
-                setter.set(map.get(entity.getProjectId()), entity.getCount());
-            }
-        }
-    }
-
-    interface CountSetter {
-
-        void set(ProjectObjectCounts obj, Integer count);
-    }
-
-    @Override
     public ProjectEntity getProject(@NotNull String projectUrl) {
         ProjectEntity projectEntity = null;
         if (idConvertor.isId(projectUrl)) {
@@ -143,12 +83,11 @@ public class ProjectManager implements ProjectAccessor {
         return projectEntity;
     }
 
-    public String[] splitProjectUrl(String projectUrl) {
-        return projectUrl.split(PROJECT_SEPARATOR);
-    }
-
     public Long getProjectId(@NotNull String projectUrl) {
         return getProject(projectUrl).getId();
     }
 
+    static String[] splitProjectUrl(String projectUrl) {
+        return projectUrl.split(PROJECT_SEPARATOR);
+    }
 }

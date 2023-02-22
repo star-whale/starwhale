@@ -25,6 +25,7 @@ DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_CONFIG_VERSION = "2.0"
 
 SW_AUTO_DIRNAME = ".starwhale"
+SW_EVALUATION_EXAMPLE_DIR = "examples"
 
 # used by the versions before 2.0
 # SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
@@ -181,3 +182,5 @@ DEFAULT_CUDA_VERSION = "11.4.0"
 DEFAULT_CONDA_CHANNEL = "conda-forge"
 
 WHEEL_FILE_EXTENSION = ".whl"
+
+CREATED_AT_KEY = "created_at"

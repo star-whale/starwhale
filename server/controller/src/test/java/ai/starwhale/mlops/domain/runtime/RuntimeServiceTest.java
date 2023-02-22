@@ -18,10 +18,12 @@ package ai.starwhale.mlops.domain.runtime;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -49,8 +51,8 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
@@ -93,7 +95,7 @@ public class RuntimeServiceTest {
     private RuntimeMapper runtimeMapper;
     private RuntimeVersionMapper runtimeVersionMapper;
     private StorageService storageService;
-    private ProjectManager projectManager;
+    private ProjectService projectService;
     private RuntimeConverter runtimeConvertor;
     private RuntimeVersionConverter versionConvertor;
     private RuntimeDao runtimeDao;
@@ -140,10 +142,10 @@ public class RuntimeServiceTest {
         userService = mock(UserService.class);
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).idTableKey(1L).build());
-        projectManager = mock(ProjectManager.class);
-        given(projectManager.getProjectId(same("1")))
+        projectService = mock(ProjectService.class);
+        given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
-        given(projectManager.getProjectId(same("2")))
+        given(projectService.getProjectId(same("2")))
                 .willReturn(2L);
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
@@ -156,7 +158,7 @@ public class RuntimeServiceTest {
                 runtimeMapper,
                 runtimeVersionMapper,
                 storageService,
-                projectManager,
+                projectService,
                 yamlMapper,
                 runtimeConvertor,
                 versionConvertor,
@@ -220,6 +222,42 @@ public class RuntimeServiceTest {
     }
 
     @Test
+    public void testFindBo() {
+        RuntimeEntity r1 = RuntimeEntity.builder().id(1L).runtimeName("rt1").build();
+        RuntimeVersionEntity v1 = RuntimeVersionEntity.builder()
+                .id(2L)
+                .runtimeId(3L)
+                .versionName("rt1")
+                .ownerId(1L)
+                .versionMeta("test_meta")
+                .build();
+        given(runtimeDao.getRuntime(same(1L)))
+                .willReturn(r1);
+        given(runtimeDao.getRuntimeVersion(same("v1")))
+                .willReturn(v1);
+        given(runtimeDao.findVersionById(same(2L)))
+                .willReturn(v1);
+
+        var res = service.findRuntime(1L);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("id", is(1L)),
+                hasProperty("name", is("rt1"))
+        ));
+
+        var res1 = service.findRuntimeVersion(2L);
+        assertThat(res1, allOf(
+                notNullValue(),
+                hasProperty("id", is(v1.getId())),
+                hasProperty("runtimeId", is(v1.getRuntimeId())),
+                hasProperty("versionName", is(v1.getVersionName()))
+        ));
+
+        var res2 = service.findRuntimeVersion("v1");
+        assertThat(res2, equalTo(res1));
+    }
+
+    @Test
     public void testDeleteRuntime() {
         RemoveManager removeManager = mock(RemoveManager.class);
         given(removeManager.removeBundle(argThat(
@@ -270,8 +308,8 @@ public class RuntimeServiceTest {
                 hasProperty("versionAlias", is("v2"))
         )));
 
-        given(projectManager.getProject(same("1")))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.getProjectId(same("1")))
+                .willReturn(1L);
         given(runtimeMapper.list(same(1L), any(), any(), any()))
                 .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
@@ -379,8 +417,8 @@ public class RuntimeServiceTest {
 
     @Test
     public void testUpload() {
-        given(projectManager.getProject(anyString()))
-                .willReturn(ProjectEntity.builder().id(1L).build());
+        given(projectService.findProject(anyString()))
+                .willReturn(Project.builder().id(1L).build());
         given(runtimeMapper.findByName(anyString(), same(1L), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
         given(runtimeVersionMapper.findByNameAndRuntimeId(anyString(), same(1L)))

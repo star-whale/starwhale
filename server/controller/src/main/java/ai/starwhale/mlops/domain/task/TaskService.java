@@ -50,8 +50,6 @@ public class TaskService {
 
     private final JobDao jobDao;
 
-    private final SystemSettingService systemSettingService;
-
     public TaskService(TaskConverter taskConvertor, TaskMapper taskMapper,
             StorageAccessService storageAccessService, JobDao jobDao,
             SystemSettingService systemSettingService) {
@@ -59,7 +57,6 @@ public class TaskService {
         this.taskMapper = taskMapper;
         this.storageAccessService = storageAccessService;
         this.jobDao = jobDao;
-        this.systemSettingService = systemSettingService;
     }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
@@ -110,12 +107,6 @@ public class TaskService {
 
     String trimPath(String fullPath, String dir) {
         return fullPath.replace(dir, "").replace(PATH_SPLITERATOR, "");
-    }
-
-    public TaskVo findTask(Long taskId) {
-        TaskEntity entity = taskMapper.findTaskById(taskId);
-
-        return taskConvertor.convert(entity);
     }
 
 }

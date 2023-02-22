@@ -20,6 +20,8 @@ import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -48,14 +50,17 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
 
+    private final ProjectService projectService;
+
     private final List<JwtClaimValidator> jwtClaimValidators;
 
     private static final String AUTH_HEADER = "Authorization";
 
-    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService,
+    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService, ProjectService projectService,
             List<JwtClaimValidator> jwtClaimValidators) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
+        this.projectService = projectService;
         this.jwtClaimValidators = jwtClaimValidators;
     }
 
@@ -93,14 +98,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
         // Get the roles of System
-        List<Role> sysRoles = userService.getProjectRolesOfUser(user, "0");
+        List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
         Set<Role> roles = sysRoles.stream().filter(
                 role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
         // Get project roles
 
         try {
+            Set<String> projects = (Set<String>) httpServletRequest.getAttribute(
+                    ProjectDetectionFilter.ATTRIBUTE_PROJECT);
             Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user,
-                    (Set<String>) httpServletRequest.getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT));
+                    projects.stream().map(projectService::findProject).collect(Collectors.toSet()));
             roles.addAll(rolesOfUser);
         } catch (StarwhaleException e) {
             logger.error(e.getMessage());

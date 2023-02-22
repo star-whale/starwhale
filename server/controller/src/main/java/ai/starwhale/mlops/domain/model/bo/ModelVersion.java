@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.model.bo;
 
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +30,8 @@ public class ModelVersion {
 
     private Long id;
 
+    private Long modelId;
+
     private String name;
 
     private Long ownerId;
@@ -38,4 +41,16 @@ public class ModelVersion {
     private String meta;
 
     private String storagePath;
+
+    public static ModelVersion fromEntity(ModelVersionEntity entity) {
+        return ModelVersion.builder()
+                .id(entity.getId())
+                .modelId(entity.getModelId())
+                .name(entity.getName())
+                .ownerId(entity.getOwnerId())
+                .tag(entity.getVersionTag())
+                .meta(entity.getVersionMeta())
+                .storagePath(entity.getStoragePath())
+                .build();
+    }
 }

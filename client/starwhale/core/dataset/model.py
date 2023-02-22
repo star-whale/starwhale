@@ -16,6 +16,7 @@ from fs.copy import copy_fs
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
+    CREATED_AT_KEY,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -223,7 +224,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                     name=self.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
-                    created_at=_manifest["created_at"],
+                    created_at=_manifest[CREATED_AT_KEY],
                     tags=_bf.tags,
                     path=_bf.path,
                 )
@@ -283,7 +284,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                     name=_bf.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
-                    created_at=_manifest["created_at"],
+                    created_at=_manifest[CREATED_AT_KEY],
                     is_removed=_bf.is_removed,
                     path=_bf.path,
                     tags=_bf.tags,

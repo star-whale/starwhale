@@ -14,27 +14,34 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.project.po;
+package ai.starwhale.mlops.domain.member.bo;
 
-import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectMemberEntity;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode(callSuper = true)
+@Builder
 @Data
-@SuperBuilder
-@NoArgsConstructor
 @AllArgsConstructor
-public class ProjectRoleEntity extends BaseEntity {
+@NoArgsConstructor
+public class ProjectMember {
 
     private Long id;
+
+    private Long projectId;
 
     private Long userId;
 
     private Long roleId;
 
-    private Long projectId;
+    public static ProjectMember fromEntity(ProjectMemberEntity entity) {
+        return ProjectMember.builder()
+                .id(entity.getId())
+                .projectId(entity.getProjectId())
+                .userId(entity.getUserId())
+                .roleId(entity.getRoleId())
+                .build();
+    }
 }

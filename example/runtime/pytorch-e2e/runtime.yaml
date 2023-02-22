@@ -8,15 +8,7 @@ configs:
 dependencies:
   - pip:
       - Pillow
-      - numpy
-      - scikit-learn
-      - torchvision
-      - torch
-      - torchdata
-      - torchtext
-      - torchaudio
-      - pycocotools
-  - requirements-sw-lock.txt
+  - requirements.txt
 environment:
   arch: noarch
   os: ubuntu:20.04
