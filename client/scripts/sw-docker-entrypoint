@@ -14,7 +14,7 @@ VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
-RUNTIME_BUILT=${SW_RUNTIME_BUILT:-0}
+RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
 
 _update_python_alter() {
     echo "-->[Preparing] set python/python3 to $1 ..."
@@ -90,7 +90,7 @@ set_py_and_sw() {
 
 run() {
     echo "-->[Running] start to run evaluation: ${STEP}, use $(which swcli) cli ..."
-    if [ "${RUNTIME_BUILT}" != "1" ]; then
+    if [ "${RUNTIME_RESTORED}" != "1" ]; then
         swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
     else
         swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} || exit 1
@@ -101,7 +101,7 @@ run() {
 serve() {
     echo "-->[Serving] start to serve, use $(which swcli) cli ..."
     export
-    if [ "${RUNTIME_BUILT}" != "1" ]; then
+    if [ "${RUNTIME_RESTORED}" != "1" ]; then
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
     else
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --host 0.0.0.0 || exit 1
@@ -132,12 +132,12 @@ prepare(){
         echo '-->[Preparing] pulling model ...'
         swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
         swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
-        if [ "${RUNTIME_BUILT}" != "1" ]; then
+        if [ "${RUNTIME_RESTORED}" != "1" ]; then
             echo '-->[Preparing] pulling runtime ...'
             swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
         fi
     fi
-    if [ "${RUNTIME_BUILT}" != "1" ]; then
+    if [ "${RUNTIME_RESTORED}" != "1" ]; then
         set_py_and_sw
     fi
 }

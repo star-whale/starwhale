@@ -74,13 +74,13 @@ spec:
             - name: SW_TOKEN
               value: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY3NzAzMTk5NCwiZXhwIjoxNjc5NjIzOTk0fQ.q_DjarPDax-btE0RMH-lJP9Gf9qVOYwW9Yhmjb4BZeYDiR25tX8g6jObro9flvaAAp4gAdLeH9cKpk-Jz54JPw'
           args: [ "--dockerfile=Dockerfile",
-                  "--context=dir:///opt/starwhale.user/runtime",
+                  "--context=dir:///workspace",
                   "--destination=10.131.0.1:8083/test/build:1.1.0" ] # replace with your dockerhub account
           volumeMounts:
-            - name: kaniko-secret
+            - name: kaniko-secret # TODO use other way
               mountPath: /kaniko/.docker
             - name: data
-              mountPath: /opt/starwhale.user/runtime
+              mountPath: /workspace
       volumes:
         - name: kaniko-secret
           secret:
