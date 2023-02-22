@@ -51,12 +51,11 @@ public class JobLoader {
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
         job.getSteps().forEach(step -> {
-            List<Task> tasks = step.getTasks();
-            if (resumePausedOrFailTasks) {
-                resumeFrozenTasks(tasks);
-            }
-            List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
+            List<Task> watchableTasks = watchableTaskFactory.wrapTasks(step.getTasks());
             step.setTasks(watchableTasks);
+            if (resumePausedOrFailTasks) {
+                resumeFrozenTasks(watchableTasks);
+            }
             scheduleReadyTasks(watchableTasks.parallelStream()
                     .filter(t -> t.getStatus() == TaskStatus.READY)
                     .collect(Collectors.toSet()));
