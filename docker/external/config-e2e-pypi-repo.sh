@@ -10,6 +10,7 @@ if [ "$1" = "1" ] ; then
     echo "overwrite pip config..."
     mkdir /root/.pip
     echo "[global]
+timeout = 600
 index-url=http://$2:$3/repository/pypi-hosted/simple
 extra-index-url=$4
 
