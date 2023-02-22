@@ -1469,10 +1469,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         use_starwhale_builder: bool = False,
         reset_qemu_static: bool = False,
     ) -> None:
-        docker_dir = self.store.export_dir / "docker"
-        ensure_dir(docker_dir)
-        dockerfile_path = docker_dir / "Dockerfile"
-
         def _extract() -> None:
             if (
                 not self.store.snapshot_workdir.exists()
@@ -1531,6 +1527,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
         _extract()
+        docker_dir = self.store.export_dir / "docker"
+        ensure_dir(docker_dir)
+        dockerfile_path = docker_dir / "Dockerfile"
+
         _manifest = load_yaml(self.store.manifest_path)
         _render_dockerfile(_manifest)
         _render_dockerignore()
