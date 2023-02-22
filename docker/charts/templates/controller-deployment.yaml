@@ -14,13 +14,13 @@ spec:
     spec:
       volumes:
         - name: controller-storage
-          {{- if .Values.minio.enabled }}
+          {{- if eq .Values.controller.storageType "fs"}}
+          persistentVolumeClaim:
+            claimName: controller
+          {{- else }}
           hostPath:
             path: {{ .Values.storage.agentHostPathRoot }}/controller
             type: DirectoryOrCreate
-          {{- else }}
-          persistentVolumeClaim:
-            claimName: controller
           {{- end }}
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
@@ -126,7 +126,7 @@ spec:
             - name: SW_STORAGE_REGION
               value: "{{ .Values.externalOSS.region }}"
             - name: SW_STORAGE_TYPE
-              value: "{{ .Values.externalOSS.type }}"
+              value: "{{ .Values.controller.storageType }}"
             {{- end }}
             {{- if .Values.mysql.enabled }}
             - name: SW_METADATA_STORAGE_IP
@@ -152,7 +152,7 @@ spec:
               value: "{{ .Values.externalMySQL.database }}"
             {{- end }}
 ---
-{{ if not .Values.minio.enabled }}
+{{- if eq .Values.controller.storageType "fs"}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

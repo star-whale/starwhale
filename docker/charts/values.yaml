@@ -66,7 +66,6 @@ externalOSS:
   secretKey: ""
   defaultBuckets: starwhale
   region: "local"
-  type: "s3" # supported type: s3, minio and aliyun
 
 controller:
   taskSplitSize: 2
@@ -74,6 +73,7 @@ controller:
     tokenExpireMinutes: 43200
   upload:
     maxFileSize: 20480MB
+  storageType: "s3" # supported type: s3/minio/aliyun/fs
   fs:
     rootdir: /usr/local/starwhale
   persistence:
