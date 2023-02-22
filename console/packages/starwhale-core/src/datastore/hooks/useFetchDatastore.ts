@@ -101,5 +101,7 @@ export function useQueryDatasetList(
         recordQuery,
         columnInfo,
         recordInfo,
+        columnTypes: columnInfo.data?.columnTypes,
+        records: recordInfo.data?.records,
     }
 }

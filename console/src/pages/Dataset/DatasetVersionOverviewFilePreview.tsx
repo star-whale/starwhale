@@ -6,9 +6,32 @@ import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
-import { DatasetObject } from '../../domain/dataset/sdk'
-import { RAW_COLORS } from '../../../packages/starwhale-ui/src/Viewer/utils'
+import { RAW_COLORS } from '@starwhale/ui/Viewer/utils'
+import { LabelMedium } from 'baseui/typography'
+import Checkbox from '@starwhale/ui/Checkbox'
+import { JSONTree } from 'react-json-tree'
+import { useDatasetTableAnnotations } from '@starwhale/core/dataset/hooks/useDatasets'
 
+export const theme = {
+    scheme: 'bright',
+    author: 'chris kempson (http://chriskempson.com)',
+    base00: '#000000',
+    base01: '#303030',
+    base02: '#505050',
+    base03: '#b0b0b0',
+    base04: '#d0d0d0',
+    base05: '#e0e0e0',
+    base06: '#f5f5f5',
+    base07: '#ffffff',
+    base08: '#fb0120',
+    base09: '#fc6d24',
+    base0A: '#fda331',
+    base0B: '#a1c659',
+    base0C: '#76c7b7',
+    base0D: '#6fb3d2',
+    base0E: '#d381c3',
+    base0F: '#be643c',
+}
 const useStyles = createUseStyles({
     cardImg: {
         'position': 'relative',
@@ -75,14 +98,16 @@ const useStyles = createUseStyles({
         padding: '20px',
         borderRight: '1px solid #EEF1F6',
     },
-    summary: { display: 'flex', gap: '12px' },
-    summaryLabel: {
+    annotation: { display: 'flex', gap: '20px', flexDirection: 'column', marginBottom: '20px' },
+    annotationTypes: {
         lineHeight: '24px',
         borderRadius: '4px',
         color: 'rgba(2,16,43,0.60)',
+        display: 'flex',
+        gap: '20px',
     },
-    summaryValue: {},
-    cocoAnnotation: {
+    annotationList: { display: 'flex', gap: '20px', flexDirection: 'column' },
+    annotationItem: {
         height: '32px',
         lineHeight: '32px',
         color: 'rgba(2,16,43,0.40)',
@@ -92,58 +117,43 @@ const useStyles = createUseStyles({
         gap: '8px',
         alignItems: 'center',
     },
-    cocoAnnotationShow: {
+    annotationItemShow: {
         marginLeft: 'auto',
     },
-    cocoAnnotationColor: {
+    annotationItemColor: {
         width: '10px',
         height: '10px',
     },
 })
 
 export default function DatasetVersionFilePreview({
-    datasets,
     preview,
-    fileId,
+    previewKey,
     isFullscreen = false,
     setIsFullscreen = () => {},
 }: {
-    datasets: DatasetObject[]
     preview: any
-    fileId: string
+    previewKey: string
     isFullscreen?: boolean
     setIsFullscreen?: any
 }) {
-    const data: DatasetObject | undefined = React.useMemo(() => {
-        const row = datasets?.find((v) => v.id === fileId)
-        if (!row) return undefined
-        return row
-    }, [datasets, fileId])
-    const previewData = preview
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
-
-    console.log(previewData)
+    const { annotationTypes, annotations } = useDatasetTableAnnotations(preview)
+    console.log(annotationTypes, annotations)
 
     const Panel = React.useMemo(() => {
-        if (previewData && previewData?.cocos?.length > 0) {
-            return (
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                <TabControl
-                    value={activeKey}
-                    onChange={setActiveKey}
-                    data={previewData}
-                    hiddenLabels={hiddenLabels}
-                    setHiddenLabels={setHiddenLabels}
-                />
-            )
-        }
-        if (!data?.summary || Object.keys(data?.summary).length === 0) return undefined
-
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return <Summary data={data?.summary ?? {}} />
-    }, [previewData, data, activeKey, setHiddenLabels, hiddenLabels])
+        return (
+            <TabControl
+                value={activeKey}
+                onChange={setActiveKey}
+                data={preview}
+                hiddenLabels={hiddenLabels}
+                setHiddenLabels={setHiddenLabels}
+            />
+        )
+    }, [preview, activeKey, setHiddenLabels, hiddenLabels])
 
     if (!isFullscreen) return <></>
 
@@ -185,7 +195,7 @@ export default function DatasetVersionFilePreview({
                             </div>
                         )}
 
-                        <DatasetViewer dataset={previewData} isZoom hiddenLabels={hiddenLabels} />
+                        <DatasetViewer dataset={preview} showKey={previewKey} isZoom hiddenLabels={hiddenLabels} />
                     </div>
                 </div>
             </ModalBody>
@@ -203,136 +213,144 @@ function TabControl({
 }: {
     value: string
     onChange: (str: string) => void
-    hiddenLabels: Set<number>
-    setHiddenLabels: (ids: Set<number>) => void
-    data: DatasetObject
+    hiddenLabels: Set<any>
+    setHiddenLabels: (ids: Set<any>) => void
+    data: any
 }) {
+    const { summary, record } = data
+    const { annotationTypes, annotationTypeMap } = useDatasetTableAnnotations(data)
+    const [hiddenTypes, setHiddenTypes] = React.useState<Set<string>>(new Set())
     const styles = useStyles()
-    const allIds = React.useMemo(() => {
-        return new Set(data?.cocos?.map((coco) => coco.id) ?? [])
-    }, [data])
 
-    return (
-        <Tabs
-            overrides={{
-                TabBar: {
-                    style: {
-                        display: 'flex',
-                        gap: '0',
-                        paddingLeft: 0,
-                        paddingRight: 0,
-                        borderRadius: '4px',
-                    },
-                },
-                TabContent: {
-                    style: {
-                        paddingLeft: 0,
-                        paddingRight: 0,
-                        borderRadius: '4px',
-                    },
-                },
-                Tab: {
-                    style: ({ $active }) => ({
-                        flex: 1,
-                        textAlign: 'center',
-                        border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
-                        color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
-                        marginLeft: '0',
-                        marginRight: '0',
-                        paddingTop: '9px',
-                        paddingBottom: '9px',
-                        fontSize: '14px',
-                        lineHeight: '14px',
-                    }),
-                },
-            }}
-            onChange={({ activeKey }) => {
-                onChange?.(activeKey as string)
-            }}
-            activeKey={value}
-        >
-            <Tab title={`Annotation(${data?.cocos.length})`}>
-                <div>
-                    <div className={styles.cocoAnnotation} style={{ color: ' rgba(2,16,43,0.60)', marginTop: '20px' }}>
-                        MAPPEDBOX({data?.cocos?.length})
-                        <div className={styles.cocoAnnotationShow}>
+    const Anno = React.useMemo(() => {
+        return Array.from(annotationTypeMap).map(([type, list]) => {
+            const allIds = annotationTypeMap.get(type)
+            const hiddenIds = allIds.filter((id: number) => hiddenLabels.has(id))
+            const otherIds = allIds.filter((id: number) => !hiddenLabels.has(id))
+            const isAllHidden = hiddenIds.length === allIds.length
+
+            return (
+                <div key={type} className={styles.annotationList}>
+                    <div className={styles.annotationItem} style={{ color: ' rgba(2,16,43,0.60)', marginTop: '20px' }}>
+                        {type}({list.length})
+                        <div className={styles.annotationItemShow}>
                             <Button
                                 as='transparent'
-                                onClick={() =>
-                                    setHiddenLabels(hiddenLabels.size !== allIds.size ? new Set(allIds) : new Set())
-                                }
+                                onClick={() => setHiddenLabels(isAllHidden ? new Set(otherIds) : new Set(allIds))}
                             >
-                                {hiddenLabels.size === allIds.size ? (
-                                    <IconFont type='eye_off' />
-                                ) : (
-                                    <IconFont type='eye' />
-                                )}
+                                {isAllHidden ? <IconFont type='eye_off' /> : <IconFont type='eye' />}
                             </Button>
                         </div>
                     </div>
-                    {data?.cocos?.map((coco, index) => {
+                    {list.map((path: string, index: number) => {
                         return (
-                            <div className={styles.cocoAnnotation} key={index}>
+                            <div className={styles.annotationItem} key={index}>
                                 <div
-                                    className={styles.cocoAnnotationColor}
+                                    className={styles.annotationItemColor}
                                     style={{
-                                        backgroundColor: RAW_COLORS[coco.id % RAW_COLORS.length],
+                                        backgroundColor: RAW_COLORS[index % RAW_COLORS.length],
                                     }}
                                 />
-                                {coco.id}
-                                <div className={styles.cocoAnnotationShow}>
+                                {path}
+                                <div className={styles.annotationItemShow}>
                                     <Button
                                         as='transparent'
                                         onClick={() => {
-                                            if (hiddenLabels.has(coco.id)) {
-                                                hiddenLabels.delete(coco.id)
+                                            if (hiddenLabels.has(path)) {
+                                                hiddenLabels.delete(path)
                                             } else {
-                                                hiddenLabels.add(coco.id)
+                                                hiddenLabels.add(path)
                                             }
                                             setHiddenLabels(new Set(hiddenLabels))
                                         }}
                                     >
-                                        {hiddenLabels.has(coco.id) ? (
-                                            <IconFont type='eye_off' />
-                                        ) : (
-                                            <IconFont type='eye' />
-                                        )}
+                                        {hiddenLabels.has(path) ? <IconFont type='eye_off' /> : <IconFont type='eye' />}
                                     </Button>
                                 </div>
                             </div>
                         )
                     })}
                 </div>
-            </Tab>
-            <Tab title={`Categories(${data?.cocoCats.length})`}>
-                <div>
-                    {data?.cocoCats.map((v) => {
-                        return (
-                            <div key={v} className={styles.cocoAnnotation}>
-                                {v}
-                            </div>
-                        )
-                    })}
-                </div>
-            </Tab>
-        </Tabs>
-    )
-}
-function Summary({ data }: { data: Record<string, any> }) {
-    const styles = useStyles()
+            )
+        })
+    }, [hiddenLabels, setHiddenLabels, annotationTypeMap, styles])
 
     return (
         <div>
-            {Object.entries(data)
-                .filter(([, value]) => !_.isObject(value))
-                .map(([key, value]) => {
-                    return (
-                        <div className={styles.summary} key={key}>
-                            <span className={styles.summaryLabel}>{key}</span>
-                            <span className={styles.summaryValue}>{value}</span>
-                        </div>
-                    )
-                })}
+            <div className={styles.annotation}>
+                <LabelMedium>Annotation Type</LabelMedium>
+                <div className={styles.annotationTypes}>
+                    {Array.from(annotationTypes).map((type) => {
+                        return (
+                            <Checkbox
+                                key={type}
+                                checked={!hiddenTypes.has(type)}
+                                onChange={(e) => {
+                                    const checked = e.target.checked
+                                    if (!checked) {
+                                        setHiddenTypes((v) => new Set([...v, type]))
+                                    } else {
+                                        setHiddenTypes((v) => {
+                                            const newV = new Set(v)
+                                            newV.delete(type)
+                                            return newV
+                                        })
+                                    }
+                                }}
+                            >
+                                {type}
+                            </Checkbox>
+                        )
+                    })}
+                </div>
+            </div>
+            <Tabs
+                overrides={{
+                    TabBar: {
+                        style: {
+                            display: 'flex',
+                            gap: '0',
+                            paddingLeft: 0,
+                            paddingRight: 0,
+                            borderRadius: '4px',
+                        },
+                    },
+                    TabContent: {
+                        style: {
+                            paddingLeft: 0,
+                            paddingRight: 0,
+                            borderRadius: '4px',
+                        },
+                    },
+                    Tab: {
+                        style: ({ $active }) => ({
+                            flex: 1,
+                            textAlign: 'center',
+                            border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
+                            color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
+                            marginLeft: '0',
+                            marginRight: '0',
+                            paddingTop: '9px',
+                            paddingBottom: '9px',
+                            fontSize: '14px',
+                            lineHeight: '14px',
+                        }),
+                    },
+                }}
+                onChange={({ activeKey }) => {
+                    onChange?.(activeKey as string)
+                }}
+                activeKey={value}
+            >
+                <Tab title={`Annotation(${summary.size})`}>
+                    <div>{Anno}</div>
+                </Tab>
+                <Tab title='Object'>
+                    <div>
+                        <JSONTree data={record} theme={theme} hideRoot shouldExpandNode={() => false} />
+                    </div>
+                </Tab>
+            </Tabs>
         </div>
     )
 }

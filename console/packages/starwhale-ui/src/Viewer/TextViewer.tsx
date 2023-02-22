@@ -38,7 +38,7 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
             return
         }
         // @ts-ignore
-        fetch(data.src)
+        fetch(data._extendSrc)
             .then((response) => response.arrayBuffer())
             .then((buffer) => {
                 setText(utf8Decoder.decode(buffer))

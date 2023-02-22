@@ -14,10 +14,10 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
     const isInView = useIsInViewport(canvasRef as any)
 
     useEffect(() => {
-        if (canvasRef.current && data.src && isInView) {
+        if (canvasRef.current && data._extendSrc && isInView) {
             const scale = isZoom ? 500 / 28 : 2
             const canvas = canvasRef.current
-            drawGrayscale(canvas, data.src, 28, 28, scale)
+            drawGrayscale(canvas, data._extendSrc, 28, 28, scale)
         }
     }, [canvasRef, isZoom, data, isInView])
 

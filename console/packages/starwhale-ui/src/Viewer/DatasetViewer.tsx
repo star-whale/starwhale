@@ -7,17 +7,20 @@ import {
     IArtifactVideo,
     MIMES,
     IArtifactText,
+    AnnotationType,
 } from '@starwhale/core/dataset'
 import ImageViewer from '@starwhale/ui/Viewer/ImageViewer'
 import AudioViewer from './AudioViewer'
 import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
+import _ from 'lodash'
 
 export type IDatasetViewerProps = {
     dataset?: any
     isZoom?: boolean
     hiddenLabels?: Set<number>
+    showKey: string
 }
 
 export function Placeholder() {
@@ -39,15 +42,23 @@ export function Placeholder() {
     )
 }
 
-export default function DatasetViewer({ dataset, isZoom = false, hiddenLabels = new Set() }: IDatasetViewerProps) {
-    const data = dataset
+export default function DatasetViewer({
+    dataset,
+    isZoom = false,
+    hiddenLabels = new Set(),
+    showKey,
+}: IDatasetViewerProps) {
+    // @ts-ignore
+    const { summary } = dataset
+    const data = summary?.get(showKey)
 
     const Viewer = React.useMemo(() => {
-        if (!data) return <Placeholder />
-        if (typeof data === 'number' || typeof data === 'string' || typeof data === 'boolean') {
+        if (!data) return <></>
+        if (!_.isObject(data)) {
             return <TextViewer data={data} isZoom={isZoom} />
         }
 
+        // @ts-ignore
         const { _type, _mime_type: mimeType } = data
 
         switch (_type) {

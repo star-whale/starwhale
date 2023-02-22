@@ -39,13 +39,19 @@ export default function ImageViewer({
                 className='dataset-viewer image-overlay fullsize'
                 style={{
                     height: '100%',
-                    backgroundImage: `url(${data.src})`,
+                    backgroundImage: `url(${data._extendSrc})`,
                     backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                 }}
             >
-                <img src={data.src} width='auto' height='100%' alt='dataset view' style={{ visibility: 'hidden' }} />
+                <img
+                    src={data._extendSrc}
+                    width='auto'
+                    height='100%'
+                    alt='dataset view'
+                    style={{ visibility: 'hidden' }}
+                />
             </div>
         )
     }
@@ -53,7 +59,7 @@ export default function ImageViewer({
     return (
         <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
             <ZoomWrapper isTools={isZoom ? false : undefined}>
-                <img src={data.src} alt='dataset view' width={data.shape[1]} height={data.shape[0]} />
+                <img src={data._extendSrc} alt='dataset view' width={data.shape[1]} height={data.shape[0]} />
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 <SegmentOverlay masks={masks} />
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
@@ -72,7 +78,7 @@ export function SegmentOverlay({ masks = [] }: { masks: IArtifactImage[] }) {
     useEffect(() => {
         if (masks.length === 0) return
         const getImages = async () => {
-            return Promise.all(masks.filter((m) => m?.src).map((m, i) => loadImage(i, m?.src as string)))
+            return Promise.all(masks.filter((m) => m?._extendSrc).map((m, i) => loadImage(i, m?._extendSrc as string)))
         }
         getImages().then((d) => setImgDatas(d))
     }, [masks])

@@ -28,14 +28,10 @@ export enum ArtifactType {
     Text = 'text',
     Link = 'link',
 }
-export enum TYPES {
+export enum AnnotationType {
     COCO = 'coco_object_annotation',
-    IMAGE = 'image',
-    AUDIO = 'audio',
-    TEXT = 'text',
-    LINK = 'link',
-    VIDEO = 'video',
     BOUNDINGBOX = 'bounding_box',
+    MASK = 'mask',
 }
 
 // artifacts
@@ -49,8 +45,9 @@ export type IArtifact = {
     _dtype_name: string
     // extends
     link: ITypeLink
-    src?: string
-    _path?: string
+    _extendSrc?: string
+    _extendPath?: string
+    _extendType?: string
 }
 
 export interface IArtifactImage extends IArtifact {
@@ -81,7 +78,7 @@ export type ITypeBase = {
     _path?: string
 }
 export interface ITypeLink extends ITypeBase {
-    _type: TYPES.LINK
+    _type: ArtifactType.Link
     uri: string
     offset: string
     size: string
@@ -90,7 +87,7 @@ export interface ITypeLink extends ITypeBase {
     with_local_fs_data: boolean
 }
 export interface ITypeCOCOObjectAnnotation extends ITypeBase {
-    _type: TYPES.COCO
+    _type: AnnotationType.COCO
     id: number
     image_id: number
     category_id: number
@@ -101,7 +98,7 @@ export interface ITypeCOCOObjectAnnotation extends ITypeBase {
     _segmentation_rle_counts: string
 }
 export interface ITypeBoundingBox extends ITypeBase {
-    _type: TYPES.BOUNDINGBOX
+    _type: AnnotationType.BOUNDINGBOX
     x: number
     y: number
     width: number
