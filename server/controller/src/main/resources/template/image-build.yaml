@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: 'build-job'
+spec:
+  completions: 1
+  parallelism: 1
+  completionMode: Indexed
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: prepare-runtime
+          imagePullPolicy: IfNotPresent
+          image: ghcr.io/star-whale/starwhale:latest
+          volumeMounts:
+            - mountPath: /opt/starwhale.user/runtime
+              name: data
+          env:
+            - name: SW_INSTANCE_URI
+              value: 'http://e2e-20230219.pre.intra.starwhale.ai/'
+            - name: SW_PROJECT
+              value: 'starwhale'
+            - name: SW_RUNTIME_VERSION
+              value: 'pytorch/version/qtjlmtgiqcnepxlad7xofwsyyesiu5hcu6yk7bef'
+            - name: SW_EVALUATION_VERSION
+              value: '1234567'
+            - name: SW_PYPI_INDEX_URL
+              value: 'https://pypi.doubanio.com/simple/'
+            - name: SW_PYPI_EXTRA_INDEX_URL
+              value: 'https://mirrors.bfsu.edu.cn/pypi/web/simple'
+            - name: SW_PYPI_TRUSTED_HOST
+              value: 'pypi.doubanio.com'
+            - name: SW_MODEL_VERSION
+              value: 'mnist/version/hvftqqdem7igwe6l5sxrwhznyeibpmgdahnmwnfj'
+            - name: SW_DATASET_URI
+              value: 'http://e2e-20230219.pre.intra.starwhale.ai/project/starwhale/dataset/nmt/version/gaafrnyoapqktuxxqcunzrdcgy4syr5btjku4naf'
+            - name: SW_TOKEN
+              value: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY3NzAzMTk5NCwiZXhwIjoxNjc5NjIzOTk0fQ.q_DjarPDax-btE0RMH-lJP9Gf9qVOYwW9Yhmjb4BZeYDiR25tX8g6jObro9flvaAAp4gAdLeH9cKpk-Jz54JPw'
+          command:
+            - sh
+            - -c
+            - >-
+              set -x;
+              swcli instance login --token="$SW_TOKEN" --alias server $SW_INSTANCE_URI;
+              swcli runtime copy cloud://server/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION .;
+              swcli runtime extract  --target-dir /opt/starwhale.user/runtime $SW_RUNTIME_VERSION;
+              swcli runtime dockerize -t gxx-test --push --dry-run --use-starwhale-builder --reset-qemu-static $SW_RUNTIME_VERSION;
+              _SNAPSHOT_DIR=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".snapshot_workdir") || exit 1;
+              cp $_SNAPSHOT_DIR/export/docker/Dockerfile /opt/starwhale.user/runtime;
+      containers:
+        - name: 'kaniko'
+          image: 'gcr.io/kaniko-project/executor:latest'
+          env:
+            - name: SW_INSTANCE_URI
+              value: 'http://e2e-20230219.pre.intra.starwhale.ai/'
+            - name: SW_PROJECT
+              value: 'starwhale'
+            - name: SW_RUNTIME_VERSION
+              value: 'pytorch/version/qtjlmtgiqcnepxlad7xofwsyyesiu5hcu6yk7bef'
+            - name: SW_EVALUATION_VERSION
+              value: '1234567'
+            - name: SW_PYPI_INDEX_URL
+              value: 'https://pypi.doubanio.com/simple/'
+            - name: SW_PYPI_EXTRA_INDEX_URL
+              value: 'https://mirrors.bfsu.edu.cn/pypi/web/simple'
+            - name: SW_PYPI_TRUSTED_HOST
+              value: 'pypi.doubanio.com'
+            - name: SW_MODEL_VERSION
+              value: 'mnist/version/hvftqqdem7igwe6l5sxrwhznyeibpmgdahnmwnfj'
+            - name: SW_DATASET_URI
+              value: 'http://e2e-20230219.pre.intra.starwhale.ai/project/starwhale/dataset/nmt/version/gaafrnyoapqktuxxqcunzrdcgy4syr5btjku4naf'
+            - name: SW_TOKEN
+              value: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY3NzAzMTk5NCwiZXhwIjoxNjc5NjIzOTk0fQ.q_DjarPDax-btE0RMH-lJP9Gf9qVOYwW9Yhmjb4BZeYDiR25tX8g6jObro9flvaAAp4gAdLeH9cKpk-Jz54JPw'
+          args: [ "--dockerfile=Dockerfile",
+                  "--context=dir:///opt/starwhale.user/runtime",
+                  "--destination=10.131.0.1:8083/test/build:1.1.0" ] # replace with your dockerhub account
+          volumeMounts:
+            - name: kaniko-secret
+              mountPath: /kaniko/.docker
+            - name: data
+              mountPath: /opt/starwhale.user/runtime
+      volumes:
+        - name: kaniko-secret
+          secret:
+            secretName: regcred
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        - name: pip-cache
+          hostPath:
+            path: /data
+            type: DirectoryOrCreate
+        - name: data
+          emptyDir: { }
