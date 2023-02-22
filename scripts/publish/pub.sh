@@ -149,6 +149,7 @@ EOF
 
     cat >$HOME/.pip/pip.conf <<EOF
 [global]
+timeout = 600
 index-url=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
 extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
 
