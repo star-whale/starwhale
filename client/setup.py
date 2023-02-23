@@ -32,6 +32,9 @@ install_requires = [
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1",
     "gradio~=3.15.0",
+    # for system monitor
+    "psutil>=5.5.0",
+    "GitPython>=3.1.24",
 ]
 
 extras_require = {
@@ -68,6 +71,7 @@ setup(
     url="https://github.com/star-whale/starwhale",
     license="Apache License 2.0",
     packages=find_packages(exclude=["ez_setup", "tests*"]),
+    package_data={"": ["core/runtime/template/Dockerfile.tmpl"]},
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
@@ -98,5 +102,7 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: System :: Logging",
+        "Topic :: System :: Monitoring",
     ],
 )

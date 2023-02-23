@@ -124,7 +124,7 @@ public interface ModelApi {
     @DeleteMapping(
             value = "/project/{projectUrl}/model/{modelUrl}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteModel(
             @Parameter(
                     in = ParameterIn.PATH,

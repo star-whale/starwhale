@@ -372,7 +372,7 @@ class TestJsonDict(TestCase):
         _jd = JsonDict(self.JSON_DICT)
         self._do_assert(_jd)
 
-    def _do_assert(self, _jd):
+    def _do_assert(self, _jd: JsonDict) -> None:
         self.assertEqual(1, _jd.a)
         self.assertEqual([1, 2, 3], _jd.b)
         self.assertEqual(JsonDict, type(_jd.c))
@@ -396,6 +396,7 @@ class TestJsonDict(TestCase):
                             "owner": data_store.UNKNOWN,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
+                            "data_type": data_store.UNKNOWN,
                             "with_local_fs_data": data_store.BOOL,
                             "_local_fs_uri": data_store.STRING,
                             "_signed_uri": data_store.STRING,

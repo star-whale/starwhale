@@ -102,6 +102,7 @@ deploy() {
     --set minio.image=docker-registry.starwhale.cn/bitnami/minio:2022.6.20-debian-11-r0 \
     --set devMode.createPV.enabled=true \
     --set devMode.createPV.host=host005-bj01 \
+    --set resources.controller.limits.memory=16G \
     --set devMode.createPV.rootPath=/mnt/data/starwhale/$SWNS/$SWNAME \
     --set minio.ingress.host=${SWNAME//./-}-minio.pre.intra.starwhale.ai \
     --set controller.ingress.host=${SWNAME//./-}.pre.intra.starwhale.ai
@@ -148,6 +149,7 @@ EOF
 
     cat >$HOME/.pip/pip.conf <<EOF
 [global]
+timeout = 600
 index-url=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
 extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
 

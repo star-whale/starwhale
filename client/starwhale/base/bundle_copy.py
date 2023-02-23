@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from concurrent.futures import wait, ThreadPoolExecutor
 
+import yaml
 from rich.progress import (
     TaskID,
     Progress,
@@ -15,18 +16,19 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from starwhale.utils import console
+from starwhale.utils import console, now_str, load_yaml
 from starwhale.consts import (
     FileDesc,
     FileNode,
     HTTPMethod,
+    CREATED_AT_KEY,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, InstanceType, get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
@@ -254,6 +256,9 @@ class BundleCopy(CloudRequestMixed):
                     obj_ver=self.bundle_version,
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()
+                self._update_manifest(
+                    self._get_target_path(_dest_uri), {CREATED_AT_KEY: now_str()}
+                )
 
     def upload_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
@@ -444,3 +449,13 @@ class BundleCopy(CloudRequestMixed):
             raise
         else:
             self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=True)
+
+    @staticmethod
+    def _update_manifest(workdir: Path, patch: t.Dict[str, t.Any]) -> None:
+        file = workdir / DEFAULT_MANIFEST_NAME
+        # downloaded runtime is a tarball
+        if not file.exists():
+            return
+        manifest = load_yaml(file)
+        manifest.update(patch)
+        ensure_file(file, yaml.safe_dump(manifest, default_flow_style=False))

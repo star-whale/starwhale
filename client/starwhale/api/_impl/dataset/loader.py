@@ -108,23 +108,19 @@ class DataLoader:
             if self.session_consumption
             else DEFAULT_CONSUMPTION_BATCH_SIZE
         )
-        r = (
-            CloudRequestMixed()
-            .do_http_request(
-                f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
-                method=HTTPMethod.POST,
-                instance_uri=self.dataset_uri,
-                params={
-                    "expTimeMillis": int(
-                        os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
-                    )
-                    * _batch_size,
-                },
-                json=uris,
-                use_raise=True,
-            )
-            .json()
-        )
+        r = CloudRequestMixed.do_http_request(
+            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/sign-links",
+            method=HTTPMethod.POST,
+            instance_uri=self.dataset_uri,
+            params={
+                "expTimeMillis": int(
+                    os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
+                )
+                * _batch_size,
+            },
+            json=uris,
+            use_raise=True,
+        ).json()
         return r["data"]  # type: ignore
 
     def _iter_meta(self) -> t.Generator[TabularDatasetRow, None, None]:

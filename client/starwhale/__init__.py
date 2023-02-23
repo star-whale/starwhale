@@ -1,3 +1,4 @@
+from starwhale.api import track
 from starwhale.api.job import step, Context, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.base.uri import URI, URIType
@@ -72,4 +73,5 @@ __all__ = [
     "PPLResultStorage",
     "PPLResultIterator",
     "get_dataset_consumption",
+    "track",
 ]

@@ -90,7 +90,7 @@ public interface DatasetApi {
     @DeleteMapping(
             value = "/project/{projectUrl}/dataset/{datasetUrl}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteDataset(
             @Parameter(
                     in = ParameterIn.PATH,

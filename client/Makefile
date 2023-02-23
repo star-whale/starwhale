@@ -66,7 +66,7 @@ ut:
 .POHNY: fast-ut
 fast-ut:
 	echo "fast ut"
-	python -m pytest tests -vvrfEsxl --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing -n auto --dist=loadscope
+	python -m pytest tests -vvrfEsxl --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing -n 4 --dist=loadscope
 
 .POHNY: all-check
 all-check: ci-format-checker ci-lint ci-mypy ci-isort fast-ut

@@ -78,17 +78,15 @@ public class DsFileGetterTest {
         StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
         StorageAccessService storageAccessService = mock(
                 StorageAccessService.class);
-        when(storageAccessService.head("/bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
-        when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
-        when(storageAccessService.signedUrl(eq("bdc/bdcsd"), anyLong())).thenReturn("abc");
+        when(storageAccessService.signedUrl(eq("/bdc/bdcsd"), anyLong())).thenReturn("abc");
         when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
         DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
         when(versionMapper.find(anyLong())).thenReturn(
-                DatasetVersionEntity.builder().storagePath("bdc").build());
+                DatasetVersionEntity.builder().storagePath("/bdc").build());
         DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
         Assertions.assertEquals("abc", fileGetter.linkOf(1L, "/bdcsd", 1L));
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "bdc/bdcsd", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "s3://host:9080/bucket/bdc/bdcsd", 1L));
     }
 
 }

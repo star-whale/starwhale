@@ -8,7 +8,12 @@ from http import HTTPStatus
 from collections import defaultdict
 
 from starwhale.utils import load_yaml
-from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    HTTPMethod,
+    CREATED_AT_KEY,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.api._impl import wrapper
@@ -438,7 +443,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         jobs = []
         for j in r["data"]["list"]:
             j.pop("owner", None)
-            j["created_at"] = crm.fmt_timestamp(j["createdTime"])
+            j[CREATED_AT_KEY] = crm.fmt_timestamp(j["createdTime"])
             j["finished_at"] = crm.fmt_timestamp(j["stopTime"])
             j["duration_str"] = crm.fmt_duration(j["duration"])
             jobs.append({"manifest": j})
@@ -474,7 +479,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t["created_at"] = self.fmt_timestamp(_t["createdTime"])  # type: ignore
+            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["createdTime"])  # type: ignore
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)

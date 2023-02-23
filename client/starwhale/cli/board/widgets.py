@@ -18,7 +18,7 @@ from starwhale.utils import (
     sort_obj_list,
     snake_to_camel,
 )
-from starwhale.consts import DEFAULT_PROJECT, STANDALONE_INSTANCE
+from starwhale.consts import CREATED_AT_KEY, DEFAULT_PROJECT, STANDALONE_INSTANCE
 from starwhale.core.eval.view import JobTermView
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.dataset.view import DatasetTermView
@@ -42,7 +42,7 @@ class Column:
 class OrderBy:
     def __init__(self) -> None:
         self.orderby_keys: t.Dict[str, str] = {
-            "C": "created_at",
+            "C": CREATED_AT_KEY,
             "N": "name",
             "S": "size",
         }
@@ -189,7 +189,7 @@ class Models(TableWidget):
             Column("version"),
             Column("tags", render=lambda _, x: ",".join(x["tags"])),
             Column("size", render=lambda _, x: pretty_bytes(x["size"])),
-            Column("created_at", "Created At"),
+            Column(CREATED_AT_KEY, "Created At"),
         ]
         self.uri = uri
         self.reload()
@@ -208,7 +208,7 @@ class Datasets(TableWidget):
             Column("version"),
             Column("tags", render=lambda _, x: ",".join(x["tags"])),
             Column("size", render=lambda _, x: pretty_bytes(x["size"])),
-            Column("created_at", "Created At"),
+            Column(CREATED_AT_KEY, "Created At"),
         ]
         self.uri = uri
         self.reload()
@@ -227,7 +227,7 @@ class Runtimes(TableWidget):
             Column("version"),
             Column("tags", render=lambda _, x: ",".join(x["tags"])),
             Column("size", render=lambda _, x: pretty_bytes(x["size"])),
-            Column("created_at", "Created At"),
+            Column(CREATED_AT_KEY, "Created At"),
         ]
         self.uri = uri
         self.reload()
@@ -249,7 +249,7 @@ class Jobs(TableWidget):
                 "Datasets",
                 render=lambda _, x: console.Pretty(get_field(x, "manifest.datasets")),
             ),
-            Column("manifest.created_at", "Created At"),
+            Column(f"manifest.{CREATED_AT_KEY}", "Created At"),
             Column("manifest.finished_at", "Finished At"),
         ]
         self.uri = uri

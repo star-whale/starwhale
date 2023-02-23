@@ -76,7 +76,6 @@ helm repo update starwhale
 
 |字段|描述|默认值|
 |---|---|-----|
-| `controller.taskSplitSize`| task split size | `2`|
 | `controller.auth.username`| console web 用户名| `starwhale`|
 | `controller.auth.password`| console web 密码| `abcd1234`|
 | `controller.ingress.enabled`| 使用Ingress | `true` |

@@ -19,7 +19,12 @@ from starwhale.utils import (
     snake_to_camel,
     gen_uniq_version,
 )
-from starwhale.consts import UserRoleType, SHORT_VERSION_CNT, STANDALONE_INSTANCE
+from starwhale.consts import (
+    UserRoleType,
+    CREATED_AT_KEY,
+    SHORT_VERSION_CNT,
+    STANDALONE_INSTANCE,
+)
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.error import FieldTypeOrValueError
@@ -209,7 +214,7 @@ class BaseTermView(SWCliConfigMixed):
                     ",".join(_v.get("tags", [])),
                     pretty_bytes(_v["size"]),
                     _v.get("runtime", "--"),
-                    _v["created_at"],
+                    _v[CREATED_AT_KEY],
                 )
 
         console.print(table)
@@ -242,11 +247,11 @@ class BaseTermView(SWCliConfigMixed):
                         "version": _version,
                         "tags": _v.get("tags", []),
                         "size": _v.get("size", 0),
-                        "created_at": _v.get("created_at"),
+                        CREATED_AT_KEY: _v.get(CREATED_AT_KEY),
                     }
                 )
 
-        order_keys = [Order("name"), Order("created_at", True)]
+        order_keys = [Order("name"), Order(CREATED_AT_KEY, True)]
         return sort_obj_list(result, order_keys)
 
     @staticmethod
@@ -331,7 +336,7 @@ class BaseTermView(SWCliConfigMixed):
                     "tags": _h.get("tags", []),
                     "size": _h.get("size", 0),
                     "runtime": _h.get("runtime", ""),
-                    "created_at": _h.get("created_at"),
+                    CREATED_AT_KEY: _h.get(CREATED_AT_KEY),
                 }
             )
         return result

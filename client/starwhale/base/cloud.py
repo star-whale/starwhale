@@ -15,6 +15,7 @@ from requests_toolbelt.multipart.encoder import (  # type: ignore
 from starwhale.consts import (
     HTTPMethod,
     FMT_DATETIME,
+    CREATED_AT_KEY,
     SW_API_VERSION,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -122,14 +123,14 @@ class CloudRequestMixed:
 
         return status, message
 
+    @staticmethod
     @http_retry
     def do_http_request(
-        self,
         path: str,
         instance_uri: URI,
         method: str = HTTPMethod.GET,
         timeout: int = _DEFAULT_TIMEOUT_SECS,
-        headers: t.Dict[str, t.Any] = {},
+        headers: t.Optional[t.Dict[str, t.Any]] = None,
         disable_default_content_type: bool = False,
         **kw: t.Any,
     ) -> requests.Response:
@@ -140,7 +141,8 @@ class CloudRequestMixed:
         if not disable_default_content_type:
             _headers["Content-Type"] = "application/json"
 
-        _headers.update(headers)
+        if headers is not None:
+            _headers.update(headers)
 
         use_raise = kw.pop("use_raise", False)
         ignore_status_codes = kw.pop("ignore_status_codes", [])
@@ -181,7 +183,7 @@ class CloudRequestMixed:
             # TODO: add manifest info by controller api
             _manifest["version"] = uri.object.version
             _info = self._fetch_bundle_version_info(uri, typ)
-            _manifest["created_at"] = self.fmt_timestamp(_info["createdTime"])
+            _manifest[CREATED_AT_KEY] = self.fmt_timestamp(_info["createdTime"])
             _manifest["size"] = _info["files"][0]["size"]
         else:
             _manifest["history"] = self._fetch_bundle_history(
@@ -224,7 +226,7 @@ class CloudRequestMixed:
                     "name": name,
                     "version": _h["name"],
                     "size": self.get_bundle_size_from_resp(typ, _h),
-                    "created_at": self.fmt_timestamp(_h["createdTime"]),
+                    CREATED_AT_KEY: self.fmt_timestamp(_h["createdTime"]),
                     "is_removed": _h.get("is_removed", False),
                 }
             )

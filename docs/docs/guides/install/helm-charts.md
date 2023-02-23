@@ -85,7 +85,6 @@ The `update` command will update the information of available charts locally fro
 
 | Name | Description | Default Value |
 |------|-------------|---------------|
-| `controller.taskSplitSize`| task split size| `2`|
 | `controller.auth.username`| login username for console web| `starwhale`|
 | `controller.auth.password`| login password for console web| `abcd1234`|
 | `controller.ingress.enabled`| enable ingress for Starwhale controller | `true` |

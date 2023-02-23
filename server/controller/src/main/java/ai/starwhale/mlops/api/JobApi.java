@@ -210,7 +210,7 @@ public interface JobApi {
     @DeleteMapping(
             value = "/project/{projectUrl}/job/{jobUrl}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> removeJob(
             @Valid @PathVariable("projectUrl") String projectUrl,
             @Valid @PathVariable("jobUrl") String jobUrl);

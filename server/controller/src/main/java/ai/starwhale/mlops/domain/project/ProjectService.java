@@ -386,6 +386,24 @@ public class ProjectService implements ProjectAccessor {
                 .build()).collect(Collectors.toList());
     }
 
+    public List<ProjectMemberVo> listProjectMemberOfCurrentUser(String projectUrl) {
+        User user = userService.currentUserDetail();
+        List<ProjectMember> members;
+        if (StrUtil.isNotEmpty(projectUrl)) {
+            Long projectId = getProjectId(projectUrl);
+            ProjectMember member = memberService.getUserMemberInProject(projectId, user.getId());
+            members = (member == null ? List.of() : List.of(member));
+        } else {
+            members = memberService.listProjectMembersOfUser(user.getId());
+        }
+        return members.stream().map(member -> ProjectMemberVo.builder()
+                .id(idConvertor.convert(member.getId()))
+                .project(ProjectVo.builder().id(idConvertor.convert(member.getProjectId())).build())
+                .user(UserVo.from(user, idConvertor))
+                .role(RoleVo.fromBo(userService.findRole(member.getRoleId()), idConvertor))
+                .build()).collect(Collectors.toList());
+    }
+
     public Boolean addProjectMember(String projectUrl, Long userId, Long roleId) {
         Long projectId = getProjectId(projectUrl);
         return memberService.addProjectMember(projectId, userId, roleId);

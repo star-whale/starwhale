@@ -6,7 +6,12 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes
-from starwhale.consts import DEFAULT_PROJECT, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    CREATED_AT_KEY,
+    DEFAULT_PROJECT,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
@@ -51,7 +56,7 @@ class ProjectTermView(BaseTermView):
                     "name": _name,
                     "location": _p.get("location", ""),
                     "owner": _owner,
-                    "created_at": _p["created_at"],
+                    CREATED_AT_KEY: _p[CREATED_AT_KEY],
                 }
             )
 

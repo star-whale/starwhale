@@ -10,6 +10,7 @@ import yaml
 from starwhale.utils import validate_obj_name
 from starwhale.consts import (
     HTTPMethod,
+    CREATED_AT_KEY,
     DEFAULT_PROJECT,
     RECOVER_DIRNAME,
     DEFAULT_PAGE_IDX,
@@ -109,7 +110,7 @@ class StandaloneProject(Project):
         return {
             "name": self.name,
             "location": str(self.loc),
-            "created_at": get_path_created_time(self.loc),
+            CREATED_AT_KEY: get_path_created_time(self.loc),
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -148,7 +149,7 @@ class StandaloneProject(Project):
                 {
                     "name": pdir.name,
                     "location": str(pdir),
-                    "created_at": get_path_created_time(pdir),
+                    CREATED_AT_KEY: get_path_created_time(pdir),
                 }
             )
 
@@ -219,7 +220,7 @@ class CloudProject(Project, CloudRequestMixed):
         # TODO: add more project details
         return {
             "name": self.name,
-            "created_at": self.fmt_timestamp(r.json()["data"]["createdTime"]),
+            CREATED_AT_KEY: self.fmt_timestamp(r.json()["data"]["createdTime"]),
             "location": r.url,
             "models": self._fetch_project_objects(ProjectObjType.MODEL),
             "datasets": self._fetch_project_objects(ProjectObjType.DATASET),
@@ -244,7 +245,7 @@ class CloudProject(Project, CloudRequestMixed):
 
         ret = []
         for _m in r.json()["data"]["list"]:
-            _m["created_at"] = self.fmt_timestamp(_m.pop("createdTime"))
+            _m[CREATED_AT_KEY] = self.fmt_timestamp(_m.pop("createdTime"))
             _m.pop("owner", None)
 
             mvr = self.do_http_request(
@@ -255,7 +256,7 @@ class CloudProject(Project, CloudRequestMixed):
             versions = []
             for _v in mvr.json()["data"]["list"]:
                 _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
-                _v["created_at"] = self.fmt_timestamp(_v.pop("createdTime"))
+                _v[CREATED_AT_KEY] = self.fmt_timestamp(_v.pop("createdTime"))
                 _v.pop("owner", None)
                 if typ == ProjectObjType.DATASET:
                     _v["meta"] = yaml.safe_load(_v["meta"])

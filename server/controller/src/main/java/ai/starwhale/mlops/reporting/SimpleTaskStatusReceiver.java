@@ -19,6 +19,7 @@ package ai.starwhale.mlops.reporting;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -45,12 +46,23 @@ public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
 
         reportedTasks.forEach(reportedTask -> {
             Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
+
             if (null == optionalTasks || optionalTasks.isEmpty()) {
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
-                taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
+                if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
+                    taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
+                }
+                if (reportedTask.status != TaskStatus.UNKNOWN) {
+                    taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
+                }
                 return;
             }
-            optionalTasks.forEach(task -> task.updateStatus(reportedTask.getStatus()));
+            if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
+                optionalTasks.forEach(task -> task.setRetryNum(reportedTask.getRetryCount()));
+            }
+            if (reportedTask.status != TaskStatus.UNKNOWN) {
+                optionalTasks.forEach(task -> task.updateStatus(reportedTask.getStatus()));
+            }
         });
 
     }

@@ -74,7 +74,7 @@ public interface TrashApi {
     @DeleteMapping(
             value = "/project/{projectUrl}/trash/{trashId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteTrash(
             @PathVariable(value = "projectUrl") String projectUrl,
             @PathVariable(value = "trashId") Long trashId

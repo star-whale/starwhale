@@ -101,4 +101,4 @@ class StandaloneTagTestCase(TestCase):
         assert st._get_manifest()["fast_tag_seq"] == 8
         assert st._get_manifest()["tags"]["v8"] == version
 
-        assert st.list() == ["v0", "v1", "v2", "v3", "v4", "v5", "v8"]
+        assert st.list() == ["latest", "v0", "v1", "v2", "v3", "v4", "v5", "v8"]

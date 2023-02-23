@@ -19,23 +19,20 @@ package ai.starwhale.mlops.reporting;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * convert taskReport to
  */
+@Getter
+@RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ReportedTask {
 
     final Long id;
     final TaskStatus status;
-
-    public Long getId() {
-        return id;
-    }
-
-    public TaskStatus getStatus() {
-        return status;
-    }
+    Integer retryCount;
 
 }

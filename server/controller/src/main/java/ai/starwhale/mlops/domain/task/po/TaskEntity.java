@@ -39,6 +39,8 @@ public class TaskEntity extends BaseEntity {
 
     private Long stepId;
 
+    private Integer retryNum;
+
     private TaskStatus taskStatus;
 
     private String outputPath;

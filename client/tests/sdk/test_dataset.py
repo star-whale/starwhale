@@ -355,6 +355,7 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "scheme", "type": "STRING"},
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
+                                {"name": "data_type", "type": "UNKNOWN"},
                                 {"name": "with_local_fs_data", "type": "BOOL"},
                                 {"name": "_local_fs_uri", "type": "STRING"},
                                 {"name": "_signed_uri", "type": "STRING"},
@@ -386,7 +387,7 @@ class TestDatasetCopy(BaseTestCase):
     def test_download(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
-        dataset_version = "123"
+        dataset_version = "dataset-version"
         cloud_project = "project"
 
         rm.request(
@@ -772,13 +773,12 @@ class TestDatasetBuildExecutor(BaseTestCase):
         tdb = TabularDataset(name="mnist", version="112233", project="self")
         meta = list(tdb.scan(start=0, end=1))[0]
         assert meta.id == 0
-        assert meta.data["data"].link.offset == 32
         assert meta.data["data"].link.extra_info["bin_offset"] == 0
+        assert meta.data["data"].link.offset == 32
         assert meta.data["data"].link.extra_info["bin_size"] == 864
         assert meta.data["data"].link.uri in data_files_sign
         assert meta.data["data"].type == ArtifactType.Image
         assert meta.data["data"].mime_type == MIMEType.GRAYSCALE
-        assert meta.data["data"].shape == [28, 28, 1]
 
         assert list(tdb.info) == ["int", "dict", "list", "list_dict"]
         assert tdb.info["list_dict"] == [{"a": 1}, {"b": 2}]
@@ -854,9 +854,8 @@ class TestDatasetType(TestCase):
         b = Binary(b"test")
         assert b.to_bytes() == b"test"
         assert b.astype() == {
-            "type": ArtifactType.Binary,
-            "mime_type": MIMEType.UNDEFINED,
-            "shape": (),
+            "type": ArtifactType.Binary.value,
+            "mime_type": MIMEType.UNDEFINED.value,
             "encoding": "",
             "display_name": "",
         }
@@ -1038,11 +1037,14 @@ class TestDatasetType(TestCase):
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
             owner="mnist/version/latest",
+            data_type=Image(display_name="test"),
         )
         as_type = link.astype()
         assert as_type["type"] == "link"
-
+        assert as_type["data_type"]["type"] == ArtifactType.Image.value
+        assert as_type["data_type"]["display_name"] == "test"
         raw_content = b"123"
+
         m_boto3.return_value = MagicMock(
             **{
                 "Object.return_value": MagicMock(

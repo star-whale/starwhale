@@ -48,7 +48,8 @@ public class TaskMapperTest extends MySqlContainerHolder {
     @Test
     public void testAddAndGet() {
         String taskUuid = UUID.randomUUID().toString();
-        TaskEntity task = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(taskUuid).stepId(1L).build();
+        TaskEntity task = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED).retryNum(0).taskUuid(taskUuid).stepId(1L).build();
         taskMapper.addTask(task);
         TaskEntity db2Memory = taskMapper.findTaskById(task.getId());
         Assertions.assertEquals(task, db2Memory);
@@ -61,12 +62,24 @@ public class TaskMapperTest extends MySqlContainerHolder {
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();
         stepMapper.save(stp1);
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId()).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId()).build();
-        TaskEntity task3 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId() + 15365).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId())
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId())
+                .build();
+        TaskEntity task3 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId() + 15365)
+                .build();
         taskMapper.addAll(List.of(task1, task2, task3));
         List<TaskEntity> taskEntities = taskMapper.listTasks(jobId);
         Collections.sort(taskEntities, Comparator.comparing(TaskEntity::getId));
@@ -80,12 +93,24 @@ public class TaskMapperTest extends MySqlContainerHolder {
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();
         stepMapper.save(stp1);
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId()).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId()).build();
-        TaskEntity task3 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(stp1.getId() + 1324).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId())
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId())
+                .build();
+        TaskEntity task3 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(stp1.getId() + 1324)
+                .build();
         taskMapper.addAll(List.of(task1, task2, task3));
         List<TaskEntity> taskEntities = taskMapper.findByStepId(stp1.getId());
         Collections.sort(taskEntities, Comparator.comparing(TaskEntity::getId));
@@ -94,10 +119,18 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testUpdateTaskStatus() {
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
         taskMapper.addTask(task1);
         taskMapper.addTask(task2);
         taskMapper.updateTaskStatus(List.of(task1.getId(), task2.getId()), TaskStatus.RUNNING);
@@ -109,12 +142,24 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testFindTaskByStatus() {
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CANCELLING).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CANCELLING).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
-        TaskEntity task3 = TaskEntity.builder().taskStatus(TaskStatus.CANCELED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CANCELLING)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CANCELLING)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        TaskEntity task3 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CANCELED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
         taskMapper.addAll(List.of(task1, task2, task3));
         List<TaskEntity> taskByStatus = taskMapper.findTaskByStatus(TaskStatus.CANCELLING);
         Collections.sort(taskByStatus, Comparator.comparing(TaskEntity::getId));
@@ -127,10 +172,18 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testUpdateTime() {
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
         taskMapper.addTask(task1);
         taskMapper.addTask(task2);
         var now = new Date(System.currentTimeMillis());
@@ -145,10 +198,18 @@ public class TaskMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testUpdateRequest() {
-        TaskEntity task1 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
-        TaskEntity task2 = TaskEntity.builder().taskStatus(TaskStatus.CREATED).taskUuid(UUID.randomUUID().toString())
-                .stepId(1L).build();
+        TaskEntity task1 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        TaskEntity task2 = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
         taskMapper.addTask(task1);
         taskMapper.addTask(task2);
         String request = "request";

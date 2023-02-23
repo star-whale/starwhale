@@ -49,6 +49,8 @@ public class Task extends TimeConcern {
      */
     TaskStatus status;
 
+    Integer retryNum;
+
     /**
      * storage directory path of results
      */
@@ -63,6 +65,10 @@ public class Task extends TimeConcern {
 
     public void updateStatus(TaskStatus status) {
         this.status = status;
+    }
+
+    public void setRetryNum(Integer retryNum) {
+        this.retryNum = retryNum;
     }
 
     public void setResultRootPath(ResultPath resultRootPath) {

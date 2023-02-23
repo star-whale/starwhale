@@ -52,7 +52,7 @@ public class TaskStatusReceiverImpTest {
     @Test
     public void testFreezeTask() {
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Collections.emptySet());
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY)));
+        taskStatusReceiver.receive(List.of(ReportedTask.of(1L, TaskStatus.READY)));
         verify(taskMapper).updateTaskStatus(List.of(1L), TaskStatus.READY);
     }
 
@@ -60,7 +60,7 @@ public class TaskStatusReceiverImpTest {
     public void testHotTask() {
         Task task = new Task();
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Set.of(task));
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY)));
+        taskStatusReceiver.receive(List.of(ReportedTask.of(1L, TaskStatus.READY)));
         verify(taskMapper, times(0)).updateTaskStatus(List.of(1L), TaskStatus.READY);
         Assertions.assertEquals(TaskStatus.READY, task.getStatus());
 

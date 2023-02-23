@@ -133,6 +133,11 @@ jobs:
           make install-sw
           make install-dev-req
 
+      - name: Git Config
+        run: |
+          git config --global user.name "starwhale-ci"
+          git config --global user.email "starwhale-ci@starwhale.ai"
+
       - name: Run Unittest
         working-directory: ./client
         run: make ut

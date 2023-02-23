@@ -124,8 +124,11 @@ class SWCliConfigMixed:
 
     @property
     def sw_remote_addr(self) -> str:
-        addr = self._current_instance_obj.get("uri", "")
-        return fmt_http_server(addr)
+        addr: str = self._current_instance_obj.get("uri", "")
+        if addr == "local":
+            return addr
+        else:
+            return fmt_http_server(addr)
 
     @property
     def user_name(self) -> str:

@@ -42,6 +42,7 @@ public class TaskConverter implements Converter<TaskEntity, TaskVo> {
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
                 .taskStatus(entity.getTaskStatus())
+                .retryNum(entity.getRetryNum())
                 .createdTime(entity.getStartedTime().getTime())
                 .build();
     }
@@ -51,6 +52,7 @@ public class TaskConverter implements Converter<TaskEntity, TaskVo> {
         Objects.requireNonNull(vo, "TaskVo");
         return TaskEntity.builder()
                 .taskStatus(vo.getTaskStatus())
+                .retryNum(vo.getRetryNum())
                 .taskUuid(vo.getUuid())
                 .build();
     }

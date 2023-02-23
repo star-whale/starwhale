@@ -141,10 +141,10 @@ public class UserControllerTest {
 
     @Test
     public void testGetCurrentUserRoles() {
-        given(userService.listCurrentUserRoles())
+        given(projectService.listProjectMemberOfCurrentUser(same("1")))
                 .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
 
-        var resp = controller.getCurrentUserRoles();
+        var resp = controller.getCurrentUserRoles("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),

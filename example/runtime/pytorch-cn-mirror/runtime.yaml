@@ -14,14 +14,6 @@ configs:
 dependencies:
   - pip:
       - Pillow
-      - numpy
-      - scikit-learn
-      - torchvision
-      - torch
-      - torchdata
-      - torchtext
-      - torchaudio
-      - pycocotools
   - requirements.txt
 environment:
   arch: noarch

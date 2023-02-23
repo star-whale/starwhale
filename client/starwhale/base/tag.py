@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 
 from starwhale.utils import now_str, load_yaml, validate_obj_name
-from starwhale.consts import DEFAULT_MANIFEST_NAME
+from starwhale.consts import LATEST_TAG, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
@@ -69,7 +69,7 @@ class StandaloneTag:
                 break
 
         _manifest["fast_tag_seq"] = _tag
-        self.add(tags=[f"v{_tag}"], manifest=_manifest)
+        self.add(tags=[f"v{_tag}", LATEST_TAG], manifest=_manifest)
 
     def add(
         self,

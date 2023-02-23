@@ -44,7 +44,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -65,11 +64,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     private final JobDao jobDao;
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
-    /**
-     * when task amount exceeds 1000, batch insertion will emit an error
-     */
-    @Value("${sw.task.size}")
-    Integer amountOfTasks = 256;
 
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
             TaskMapper taskMapper,
@@ -83,7 +77,8 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     }
 
     /**
-     * split job into two steps transactional jobStatus->READY firstStepTaskStatus->READY
+     * split job into two steps transactional jobStatus->READY
+     * firstStepTaskStatus->READY
      * followerStepTaskStatus->CREATED
      */
     @Override
@@ -131,7 +126,8 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 // the current implementation is serial, so dependency only one
                 stepEntity.setLastStepId(nameMapping.get(dependency)._1().getId());
             }
-            // TODO: replace this implement with only send ds uri and task index to container
+            // TODO: replace this implement with only send ds uri and task index to
+            // container
             List<TaskEntity> taskEntities = new LinkedList<>();
             for (int i = 0; i < stepEntity.getTaskNum(); i++) {
                 final String taskUuid = UUID.randomUUID().toString();
@@ -140,14 +136,12 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                         .outputPath(
                                 storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
                         .taskRequest(JSONUtil.toJsonStr(
-                                        TaskRequest.builder()
-                                                .total(stepEntity.getTaskNum())
-                                                .index(i)
-                                                .runtimeResources(
-                                                        nameMapping.get(stepEntity.getName())._2.getResources())
-                                                .build()
-                                )
-                        )
+                                TaskRequest.builder()
+                                        .total(stepEntity.getTaskNum())
+                                        .index(i)
+                                        .runtimeResources(
+                                                nameMapping.get(stepEntity.getName())._2.getResources())
+                                        .build()))
                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
                         .taskUuid(taskUuid)
                         .build());

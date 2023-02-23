@@ -97,7 +97,9 @@ public interface UserApi {
             value = "/user/current/role",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> getCurrentUserRoles();
+    ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> getCurrentUserRoles(
+            @RequestParam("projectUrl") String projectUrl
+    );
 
 
     @Operation(summary = "Check Current User password")

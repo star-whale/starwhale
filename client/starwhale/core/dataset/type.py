@@ -17,10 +17,17 @@ from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
     LATEST_TAG,
     SHORT_VERSION_CNT,
+    VERSION_PREFIX_CNT,
     DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.uri import URI
-from starwhale.utils.fs import FilePosition
+from starwhale.utils.fs import (
+    ensure_dir,
+    ensure_file,
+    FilePosition,
+    blake2b_content,
+    BLAKE2B_SIGNATURE_ALGO,
+)
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
     NoSupportError,
@@ -189,6 +196,10 @@ class ArtifactType(Enum):
     Audio = "audio"
     Text = "text"
     Link = "link"
+    Unknown = "unknown"
+
+
+# TODO: support File, Model artifacts
 
 
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
@@ -285,11 +296,16 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         self._raw_base64_data = base64.b64encode(self.to_bytes()).decode()
         return self
 
+    def drop_data(self: _TBAType) -> _TBAType:
+        self.fp = b""
+        if hasattr(self, "_raw_base64_data"):
+            del self._raw_base64_data
+        return self
+
     def astype(self) -> t.Dict[str, t.Any]:
         return {
-            "type": self.type,
-            "mime_type": self.mime_type,
-            "shape": self.shape,
+            "type": self.type.value,
+            "mime_type": self.mime_type.value,
             "encoding": self.encoding,
             "display_name": self.display_name,
         }
@@ -811,7 +827,9 @@ class Link(ASDictMixin, SwObject):
         uri: t.Union[str, Path] = "",
         offset: int = FilePosition.START.value,
         size: int = -1,
+        data_type: t.Optional[t.Union[BaseArtifact, t.Dict]] = None,
         with_local_fs_data: bool = False,
+        use_plain_type: bool = False,
         owner: t.Optional[t.Union[str, URI]] = None,
         **kwargs: t.Any,
     ) -> None:
@@ -820,13 +838,28 @@ class Link(ASDictMixin, SwObject):
         self.uri = (str(uri)).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
+        if offset < 0:
+            raise FieldTypeOrValueError(f"offset({offset}) must be non-negative")
+
         self.offset = offset
         self.size = size
+
+        if data_type is not None and not isinstance(data_type, (BaseArtifact, dict)):
+            raise TypeError(
+                f"data_type({data_type}) is not None or BaseArtifact or dict type"
+            )
+
+        if isinstance(data_type, BaseArtifact):
+            data_type = data_type.drop_data()
+            if use_plain_type:
+                data_type = data_type.astype()
+
+        self.data_type = data_type
+
         self.with_local_fs_data = with_local_fs_data
         self._local_fs_uri = ""
         self._signed_uri = ""
 
-        self.do_validate()
         self.extra_info = kwargs
 
     @property
@@ -845,13 +878,17 @@ class Link(ASDictMixin, SwObject):
     def signed_uri(self, value: str) -> None:
         self._signed_uri = value
 
-    def do_validate(self) -> None:
-        if self.offset < 0:
-            raise FieldTypeOrValueError(f"offset({self.offset}) must be non-negative")
-
     def astype(self) -> t.Dict[str, t.Any]:
+        data_type: t.Dict
+        if isinstance(self.data_type, dict):
+            data_type = self.data_type
+        elif isinstance(self.data_type, BaseArtifact):
+            data_type = self.data_type.astype()
+        else:
+            data_type = {}
         return {
             "type": self._type,
+            "data_type": data_type,
         }
 
     def __str__(self) -> str:
@@ -875,6 +912,33 @@ class Link(ASDictMixin, SwObject):
             key_compose=key_compose, bucket=store.bucket
         ) as f:
             return f.read(self.size)  # type: ignore
+
+    @classmethod
+    def from_local_artifact(
+        cls, data: t.Union[BaseArtifact, Link], store_dir: Path
+    ) -> Link:
+        if isinstance(data, Link):
+            return data
+
+        raw_content = data.to_bytes()
+        sign_name = blake2b_content(raw_content)
+        fpath = (
+            store_dir
+            / BLAKE2B_SIGNATURE_ALGO
+            / sign_name[:VERSION_PREFIX_CNT]
+            / sign_name
+        )
+        ensure_dir(fpath.parent)
+        ensure_file(fpath, raw_content)
+
+        return Link(
+            uri=fpath,
+            offset=0,
+            size=len(raw_content),
+            data_type=data,
+            with_local_fs_data=True,
+            use_plain_type=True,
+        )
 
 
 class DatasetSummary(ASDictMixin):

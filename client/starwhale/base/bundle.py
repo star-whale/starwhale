@@ -13,8 +13,8 @@ from fs.tarfs import TarFS
 
 from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
-    LATEST_TAG,
     YAML_TYPES,
+    CREATED_AT_KEY,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -168,7 +168,7 @@ class LocalStorageBundleMixin:
             sw_version=STARWHALE_VERSION,
         )
         self._manifest["version"] = self._version  # type: ignore
-        self._manifest["created_at"] = now_str()
+        self._manifest[CREATED_AT_KEY] = now_str()
 
         # TODO: add signature for import files: model, config
         _fpath = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
@@ -185,7 +185,6 @@ class LocalStorageBundleMixin:
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 
     def _make_auto_tags(self) -> None:
-        self.tag.add([LATEST_TAG], ignore_errors=True)  # type: ignore
         self.tag.add_fast_tag()  # type: ignore
 
     def _make_tar(self, ftype: str = "") -> None:

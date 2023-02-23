@@ -31,6 +31,7 @@ from starwhale.consts import (
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
+    CREATED_AT_KEY,
     DEFAULT_PROJECT,
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
@@ -1061,7 +1062,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
-                    "created_at": get_path_created_time(_bf.path),
+                    CREATED_AT_KEY: get_path_created_time(_bf.path),
                     "size": _bf.path.stat().st_size,
                     "is_removed": _bf.is_removed,
                     "tags": _bf.tags,
@@ -1468,10 +1469,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         use_starwhale_builder: bool = False,
         reset_qemu_static: bool = False,
     ) -> None:
-        docker_dir = self.store.export_dir / "docker"
-        ensure_dir(docker_dir)
-        dockerfile_path = docker_dir / "Dockerfile"
-
         def _extract() -> None:
             if (
                 not self.store.snapshot_workdir.exists()
@@ -1530,6 +1527,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
         _extract()
+        docker_dir = self.store.export_dir / "docker"
+        ensure_dir(docker_dir)
+        dockerfile_path = docker_dir / "Dockerfile"
+
         _manifest = load_yaml(self.store.manifest_path)
         _render_dockerfile(_manifest)
         _render_dockerignore()

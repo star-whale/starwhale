@@ -30,11 +30,11 @@ At the installation stage, we strongly recommend you follow the [doc](../guides/
 Download Starwhale examples by cloning Starwhale via:
 
 ```bash
-git clone https://github.com/star-whale/starwhale.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/star-whale/starwhale.git --depth 1
 cd starwhale
 ```
 
-We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
+To save time in the example downloading, we skip git-lfs and other commits info. We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
 
 ## 3. Building Runtime
 

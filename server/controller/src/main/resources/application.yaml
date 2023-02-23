@@ -27,7 +27,6 @@ sw:
     load:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:
-    size: ${SW_TASK_SPLIT_SIZE:1}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
@@ -41,7 +40,7 @@ sw:
       event-holder-ttl-in-seconds: ${SW_K8S_EVENT_HOLDER_TTL_IN_SECS:43200} # 12h
       job:
         template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
-        restart-policy: ${SW_K8S_JOB_RESTART_POLICY:OnFailure}
+        restart-policy: ${SW_K8S_JOB_RESTART_POLICY:Never}
         backoff-limit: ${SW_K8S_JOB_BACKOFF_LIMIT:10}
   storage:
     type: ${SW_STORAGE_TYPE:minio}

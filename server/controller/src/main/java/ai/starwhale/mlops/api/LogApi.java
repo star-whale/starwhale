@@ -52,7 +52,7 @@ public interface LogApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
             value = "/log/offline/{taskId}/{fileName}",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+            produces = MediaType.TEXT_PLAIN_VALUE)
     ResponseEntity<String> logContent(
             @Parameter(
                     in = ParameterIn.PATH,

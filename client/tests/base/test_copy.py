@@ -192,12 +192,12 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": "mnist/v1",
-                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/foo",
                 "dest_runtime": "mnist-new-alias",
             },
             {
                 "src_uri": "mnist/v1",
-                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/123",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/foo",
                 "dest_runtime": "mnist-new-alias",
             },
         ]
@@ -411,12 +411,12 @@ class TestBundleCopy(TestCase):
             },
             {
                 "src_uri": "mnist/v1",
-                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/123",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/foo",
                 "dest_model": "mnist-new-alias",
             },
             {
                 "src_uri": "mnist/v1",
-                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/123",
+                "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/foo",
                 "dest_model": "mnist-new-alias",
             },
         ]
@@ -665,6 +665,11 @@ class TestBundleCopy(TestCase):
             "http://1.1.1.1:8182/api/v1/project/mnist",
             json={"data": {"id": 1, "name": "mnist"}},
         )
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-new-alias?versionUrl=123",
+            json={"data": {"id": 2, "name": "mnist-new-alias"}},
+        )
 
         for case in cases:
             head_request = rm.request(
@@ -734,15 +739,21 @@ class TestBundleCopy(TestCase):
     @Mocker()
     def test_download_bundle_file(self, rm: Mocker) -> None:
         version = "112233"
+        versionName = "runtime-version"
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist?versionUrl={version}",
+            json={"data": {"id": 1, "name": "mnist", "versionName": versionName}},
+        )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{versionName}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{versionName}/file",
             content=b"test",
         )
 
@@ -751,7 +762,7 @@ class TestBundleCopy(TestCase):
             / "self"
             / "runtime"
             / "mnist"
-            / f"{version[:VERSION_PREFIX_CNT]}"
+            / f"{versionName[:VERSION_PREFIX_CNT]}"
         )
         ensure_dir(dest_dir)
 
@@ -762,17 +773,17 @@ class TestBundleCopy(TestCase):
             typ=URIType.RUNTIME,
         )
         bc.do()
-        swrt_path = dest_dir / f"{version}.swrt"
+        swrt_path = dest_dir / f"{versionName}.swrt"
 
         assert swrt_path.exists()
         assert swrt_path.read_bytes() == b"test"
         st = StandaloneTag(
             URI(
-                f"mnist/version/{version}",
+                f"mnist/version/{versionName}",
                 expected_type=URIType.RUNTIME,
             )
         )
-        assert st.list() == ["v0"]
+        assert st.list() == ["latest", "v0"]
 
     @Mocker()
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")

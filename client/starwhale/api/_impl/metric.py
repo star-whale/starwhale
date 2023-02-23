@@ -14,8 +14,8 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
+from starwhale.utils.dict import flatten as flatten_dict
 from starwhale.api._impl.job import context_holder
-from starwhale.utils.flatten import do_flatten_dict
 from starwhale.api._impl.wrapper import Evaluation
 
 
@@ -61,7 +61,7 @@ def multi_classification(
             if show_cohen_kappa_score:
                 _r["summary"]["cohen_kappa_score"] = cohen_kappa_score(y_true, y_pred)
 
-            _record_summary = do_flatten_dict(_r["summary"])
+            _record_summary = flatten_dict(_r["summary"], extract_sequence=True)
             _record_summary["kind"] = _r["kind"]
             evaluation.log_metrics(_record_summary)
 
