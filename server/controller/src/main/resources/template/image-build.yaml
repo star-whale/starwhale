@@ -80,7 +80,7 @@ spec:
             - name: kaniko-secret # TODO use other way
               mountPath: /kaniko/.docker
             - name: data
-              mountPath: /workspace
+              mountPath: /workspace # should be workspace otherwise some layer would loos
       volumes:
         - name: kaniko-secret
           secret:
