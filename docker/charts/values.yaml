@@ -73,7 +73,7 @@ controller:
     tokenExpireMinutes: 43200
   upload:
     maxFileSize: 20480MB
-  storageType: "s3" # supported type: s3/minio/aliyun/fs
+  storageType: "minio" # supported type: s3/minio/aliyun/fs
   fs:
     rootdir: /usr/local/starwhale
   persistence:

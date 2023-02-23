@@ -18,6 +18,7 @@ minio:
 controller:
   taskSplitSize: 1
   containerPort: 8082
+  storageType: "minio"
   ingress:
     enabled: false
 
