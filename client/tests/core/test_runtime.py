@@ -8,6 +8,7 @@ import yaml
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
 from starwhale.utils import is_linux, load_yaml
 from starwhale.consts import (
@@ -51,6 +52,9 @@ from starwhale.core.runtime.model import (
 )
 from starwhale.core.runtime.store import RuntimeStorage
 from starwhale.core.runtime.process import Process
+
+_runtime_data_dir = f"{ROOT_DIR}/data/runtime"
+_swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
 
 
 class StandaloneRuntimeTestCase(TestCase):
@@ -1617,6 +1621,34 @@ class StandaloneRuntimeTestCase(TestCase):
             },
         }
 
+    def test_dockerize_with_extract(self) -> None:
+        self.fs.add_real_directory(_TEMPLATE_DIR)
+        name = "rttest"
+        version = "112233"
+        image = "docker.io/t1/t2"
+        uri = URI(f"{name}/version/{version}", expected_type=URIType.RUNTIME)
+        manifest = self.get_mock_manifest()
+        manifest["version"] = version
+        manifest["configs"]["docker"]["image"] = image
+
+        sr = StandaloneRuntime(uri)
+
+        ensure_dir(sr.store.runtime_dir / "11")
+        ensure_file(sr.store.runtime_dir / "11" / "112233.swrt", content=_swrt)
+        sr.dockerize(
+            tags=["t1", "t2"],
+            platforms=[SupportArch.AMD64],
+            push=True,
+            dry_run=True,
+            use_starwhale_builder=True,
+            reset_qemu_static=True,
+        )
+
+        dockerfile_path = sr.store.export_dir / "docker" / "Dockerfile"
+        dockerignore_path = sr.store.snapshot_workdir / ".dockerignore"
+        assert dockerfile_path.exists()
+        assert dockerignore_path.exists()
+
     @patch("starwhale.utils.docker.check_call")
     def test_dockerize(self, m_check: MagicMock) -> None:
         self.fs.add_real_directory(_TEMPLATE_DIR)
@@ -1629,6 +1661,7 @@ class StandaloneRuntimeTestCase(TestCase):
         manifest["configs"]["docker"]["image"] = image
 
         sr = StandaloneRuntime(uri)
+
         ensure_dir(sr.store.snapshot_workdir)
         ensure_file(sr.store.manifest_path, content=yaml.safe_dump(manifest))
         sr.dockerize(
