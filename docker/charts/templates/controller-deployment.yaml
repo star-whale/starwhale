@@ -73,10 +73,6 @@ spec:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: JAR
               value: controller
-              {{- if not .Values.minikube.enabled }}
-            - name: JVM_XMX
-              value: {{ .Values.resources.controller.limits.memory }}
-              {{- end }}
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
             - name: SW_JWT_TOKEN_EXPIRE_MINUTES
