@@ -21,7 +21,7 @@
 
 {{ if eq .Values.controller.storageType "fs"}}
 {{ include "chart.createPV" (merge (dict "backend" "controller" "storage" .Values.controller.persistence.size) $params) }}
-{{else}}
+{{ else }}
 {{ if .Values.minio.enabled }}
 {{ include "chart.createPV" (merge (dict "backend" "minio" "storage" .Values.minio.persistence.size) $params) }}
 {{ end }}

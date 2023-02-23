@@ -88,7 +88,7 @@ The `update` command will update the information of available charts locally fro
 | `controller.ingress.ingressClassName` | ingress class name | `nginx`|
 | `controller.ingress.host` | Starwhale controller domain | `console.pre.intra.starwhale.ai` |
 | `controller.containerPort`| Starwhale console web port | `8082` |
-| `controller.storageType` | Starwhale supports `s3`, `minio`, `aliyun` and `fs` as the main file storage. | `s3` |
+| `controller.storageType` | Starwhale supports `s3`, `minio`, `aliyun` and `fs` as the main file storage. | `minio`|
 
 ### 6.3 Infra parameters
 

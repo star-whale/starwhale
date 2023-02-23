@@ -83,7 +83,7 @@ helm repo update starwhale
 | `controller.ingress.ingressClassName` | ingress class name | `nginx`|
 | `controller.ingress.host` | Starwhale controller 访问域名 | `console.pre.intra.starwhale.ai` |
 | `controller.containerPort`| Starwhale console web port | `8082` |
-| `controller.storageType`| Controller文件存储的类型，目前支持s3、aliyun、minio、fs四种 | `s3` |
+| `controller.storageType`| Controller文件存储的类型，目前支持s3、aliyun、minio、fs四种 | `minio` |
 
 ### 7.3 基础设施参数
 
