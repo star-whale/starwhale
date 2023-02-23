@@ -34,7 +34,7 @@ import org.apache.ibatis.jdbc.SQL;
 public interface RuntimeVersionMapper {
 
     String COLUMNS = "id, version_order, runtime_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, image, created_time, modified_time";
+            + " storage_path, image, built_image, created_time, modified_time";
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
@@ -77,6 +77,9 @@ public interface RuntimeVersionMapper {
     @SelectProvider(value = RuntimeVersionProvider.class, method = "findByNameAndRuntimeIdSql")
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("versionName") String versionName,
             @Param("runtimeId") Long runtimeId);
+
+    @Update("update runtime_version set built_image = #{builtImage} where version_name = #{versionName}")
+    int updateBuiltImage(@Param("versionName") String versionNam, @Param("builtImage") String builtImage);
 
     @Select("select " + COLUMNS + " from runtime_version"
             + " where version_order = #{versionOrder}"

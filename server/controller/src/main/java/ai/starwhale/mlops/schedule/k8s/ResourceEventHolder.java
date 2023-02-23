@@ -47,13 +47,10 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
      * We will hold the events may be deleted in the k8s api server
      */
     public ResourceEventHolder(
-            K8sClient k8sClient,
             @Value("${sw.infra.k8s.event-holder-ttl-in-seconds}") long eventTtlSec
     ) {
         this.eventTtlSec = eventTtlSec;
-
         events = new ConcurrentHashMap<>();
-        k8sClient.watchEvent(this, null);
     }
 
     /**

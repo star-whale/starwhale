@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -52,6 +53,7 @@ public class K8sJobTemplate {
     public static final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
 
     public static final String JOB_IDENTITY_LABEL = "job-name";
+    public static final String JOB_TYPE_LABEL = "job-type";
 
     public static final String PIP_CACHE_VOLUME_NAME = "pip-cache";
 
@@ -60,45 +62,74 @@ public class K8sJobTemplate {
     public static final String DEVICE_LABEL_NAME_PREFIX = "device.starwhale.ai-";
     public static final String LABEL_APP = "app";
     public static final String LABEL_WORKLOAD_TYPE = "starwhale-workload-type";
+    public static final String WORKLOAD_TYPE_EVAL = "eval";
     public static final String WORKLOAD_TYPE_ONLINE_EVAL = "online-eval";
+    public static final String WORKLOAD_TYPE_IMAGE_BUILDER = "image-builder";
     public static final int ONLINE_EVAL_PORT_IN_POD = 8080;
 
     final String evalJobTemplate;
+    final String imageBuildJobTemplate;
     final String modelServingJobTemplate;
-    final V1Job v1Job;
 
     public K8sJobTemplate(
             @Value("${sw.infra.k8s.job.template-path}") String evalJobTemplatePath,
+            @Value("${sw.infra.k8s.image-build-job.template-path}") String imageBuildJobTemplatePath,
             @Value("${sw.infra.k8s.model-serving-template-path}") String msPath,
             @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
     )
             throws IOException {
         this.evalJobTemplate = getJobDefaultTemplate(evalJobTemplatePath, "template/job.yaml");
+        this.imageBuildJobTemplate = getJobDefaultTemplate(
+                imageBuildJobTemplatePath, "template/image-build.yaml");
         this.modelServingJobTemplate = getJobDefaultTemplate(msPath, "template/model-serving.yaml");
-        v1Job = Yaml.loadAs(evalJobTemplate, V1Job.class);
         this.pipCacheHostPath = pipCacheHostPath;
     }
 
-    public List<V1Container> getInitContainerTemplates() {
-        var containers = v1Job.getSpec().getTemplate().getSpec().getInitContainers();
+    public List<V1Container> getInitContainerTemplates(V1Job job) {
+        var containers = job.getSpec().getTemplate().getSpec().getInitContainers();
         return CollectionUtils.isEmpty(containers) ? List.of() : containers;
     }
 
-    public List<V1Container> getContainersTemplates() {
-        var containers = v1Job.getSpec().getTemplate().getSpec().getContainers();
+    public List<V1Container> getContainersTemplates(V1Job job) {
+        var containers = job.getSpec().getTemplate().getSpec().getContainers();
         return CollectionUtils.isEmpty(containers) ? List.of() : containers;
+    }
+
+    public List<String> getJobContainerNames(V1Job job) {
+        return Stream.concat(getInitContainerTemplates(job).stream(), getContainersTemplates(job).stream())
+                .map(V1Container::getName)
+                .collect(Collectors.toList());
+    }
+
+    public V1Job loadJob(String type) {
+        V1Job job;
+        switch (type) {
+            case WORKLOAD_TYPE_EVAL:
+                job = Yaml.loadAs(evalJobTemplate, V1Job.class);
+                break;
+            case WORKLOAD_TYPE_IMAGE_BUILDER:
+                job = Yaml.loadAs(imageBuildJobTemplate, V1Job.class);
+                break;
+            default:
+                throw new UnsupportedOperationException("load job error, unknown type:" + type);
+        }
+        var labels = job.getMetadata().getLabels();
+        labels = labels == null ? new HashMap<>() : labels;
+        labels.put(JOB_TYPE_LABEL, type);
+        return job;
     }
 
     public V1Job renderJob(
+            V1Job job,
             String jobName,
             String restartPolicy,
             int backoffLimit,
             Map<String, ContainerOverwriteSpec> containerSpecMap,
             Map<String, String> nodeSelectors
     ) {
-        V1Job job = Yaml.loadAs(evalJobTemplate, V1Job.class);
         job.getMetadata().name(jobName);
-        HashMap<String, String> labels = new HashMap<>();
+        var labels = job.getMetadata().getLabels();
+        labels = labels == null ? new HashMap<>() : labels;
         labels.putAll(starwhaleJobLabel);
         labels.put(JOB_IDENTITY_LABEL, jobName);
         job.getMetadata().labels(labels);
@@ -199,13 +230,13 @@ public class K8sJobTemplate {
                 c.resources(containerOverwriteSpec.resourceOverwriteSpec.getResourceSelector());
             }
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.cmds)) {
-                c.args(containerOverwriteSpec.cmds);
+                containerOverwriteSpec.cmds.forEach(c::addArgsItem);
             }
             if (StringUtils.hasText(containerOverwriteSpec.image)) {
                 c.image(containerOverwriteSpec.image);
             }
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.envs)) {
-                c.env(containerOverwriteSpec.envs);
+                containerOverwriteSpec.envs.forEach(c::addEnvItem);
             }
             if (containerOverwriteSpec.readinessProbe != null) {
                 c.readinessProbe(containerOverwriteSpec.readinessProbe);

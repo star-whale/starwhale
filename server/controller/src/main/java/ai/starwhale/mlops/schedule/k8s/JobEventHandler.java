@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -40,26 +42,71 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     @Override
     public void onAdd(V1Job obj) {
-        log.info("job added for {} with status {}", jobName(obj),
-                obj.getStatus());
-        updateToSw(obj);
+        log.debug("job added for {} with status {}", jobName(obj), obj.getStatus());
+        dispatch(obj);
+    }
+
+    @Override
+    public void onUpdate(V1Job oldObj, V1Job newObj) {
+        log.debug("job updated for {} with status {}", jobName(newObj), newObj.getStatus());
+        dispatch(newObj);
+    }
+
+    @Override
+    public void onDelete(V1Job obj, boolean deletedFinalStateUnknown) {
+        log.debug("job deleted for {} {}", jobName(obj), obj.getStatus());
     }
 
     private String jobName(V1Job obj) {
         return obj.getMetadata().getName();
     }
 
-    @Override
-    public void onUpdate(V1Job oldObj, V1Job newObj) {
-        updateToSw(newObj);
+    private void dispatch(V1Job job) {
+        var metaData = job.getMetadata();
+        if (metaData == null) {
+            return;
+        }
+        var labels = metaData.getLabels();
+        if (CollectionUtils.isEmpty(labels)) {
+            return;
+        }
+        var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
+        if (StringUtils.hasText(type)) {
+            switch (type) {
+                case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
+                    updateEvalTask(job);
+                    break;
+                case K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER:
+                    updateImageBuildTask(job);
+                    break;
+                default:
+            }
+        }
     }
 
-    private void updateToSw(V1Job newObj) {
-        V1JobStatus status = newObj.getStatus();
+    private void updateImageBuildTask(V1Job job) {
+
+    }
+
+    private void updateEvalTask(V1Job job) {
+        V1JobStatus status = job.getStatus();
         if (status == null) {
             return;
         }
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
+        Integer retryNum = null;
+        // one task one k8s job
+        if (null != status.getSucceeded()) {
+            taskStatus = TaskStatus.SUCCESS;
+            log.info("job status changed for {} is success  {}", jobName(job), status);
+        } else {
+            if (null != status.getActive()) {
+                // running(failed == null) or restarting(failed != null)
+                // running contains two stages:pending and running, these state changes are judged by podEventHandler
+                if (null != status.getFailed()) {
+                    retryNum = status.getFailed();
+                    log.debug("job {} is restarting, retry num {}", jobName(job), status.getFailed());
+                }
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
         //  When a Job fails, one of the conditions will have type "Failed" and status true.
@@ -81,6 +128,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 String type = collect.get(0).getType();
                 if ("Failed".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.FAIL;
+                    log.debug("job status changed for {} is failed {}", jobName(job), status);
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                 } else if ("Suspended".equalsIgnoreCase(type)) {
@@ -90,20 +138,10 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 }
             }
         }
+        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum)));
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
-        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus, retryNum)));
-    }
-
-    private long taskIdOf(V1Job newObj) {
-        return Long.parseLong(jobName(newObj));
-    }
-
-    @Override
-    public void onDelete(V1Job obj, boolean deletedFinalStateUnknown) {
-        log.info("job deleted for {} {}", jobName(obj),
-                obj.getStatus());
-        // taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(obj)),TaskStatus.CANCELED)));
+        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum)));
     }
 
     private String conditionsLogString(List<V1JobCondition> conditions) {

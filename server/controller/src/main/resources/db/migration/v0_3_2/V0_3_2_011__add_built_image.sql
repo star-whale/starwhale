@@ -14,27 +14,5 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
-
-import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.Collection;
-
-/**
- * schedule tasks of jobs
- */
-public interface SwTaskScheduler {
-
-
-    /**
-     * scheduler should maintain the tasks to be scheduled
-     *
-     * @param tasks       tasks to be scheduled
-     */
-    void schedule(Collection<Task> tasks);
-
-    /**
-     * @param taskIds tasks to be stop scheduled
-     */
-    void stopSchedule(Collection<Long> taskIds);
-
-}
+ALTER TABLE `runtime_version`
+    ADD built_image text NULL;

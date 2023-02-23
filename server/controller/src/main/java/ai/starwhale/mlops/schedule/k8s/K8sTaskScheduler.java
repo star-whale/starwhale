@@ -50,8 +50,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -66,9 +64,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final TaskTokenValidator taskTokenValidator;
 
     final K8sJobTemplate k8sJobTemplate;
-    final ResourceEventHandler<V1Job> eventHandlerJob;
-    final ResourceEventHandler<V1Node> eventHandlerNode;
-    final ResourceEventHandler<V1Pod> eventHandlerPod;
+
     final String instanceUri;
     final int datasetLoadBatchSize;
     final String restartPolicy;
@@ -90,9 +86,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
-        this.eventHandlerJob = eventHandlerJob;
-        this.eventHandlerNode = eventHandlerNode;
-        this.eventHandlerPod = eventHandlerPod;
         this.instanceUri = instanceUri;
         this.storageAccessService = storageAccessService;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
@@ -102,12 +95,12 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     @Override
     public void schedule(Collection<Task> tasks) {
-        tasks.stream().forEach(this::deployTaskToK8s);
+        tasks.forEach(this::deployTaskToK8s);
     }
 
     @Override
     public void stopSchedule(Collection<Long> taskIds) {
-        taskIds.stream().forEach(id -> {
+        taskIds.forEach(id -> {
             try {
                 k8sClient.deleteJob(id.toString());
             } catch (ApiException e) {
@@ -126,11 +119,35 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
         try {
-            Map<String, String> nodeSelector =
-                    null != task.getStep().getJob().getResourcePool() ? task.getStep().getJob().getResourcePool()
-                            .getNodeSelector() : Map.of();
-            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(),
-                    this.restartPolicy, this.backoffLimit, buildContainerSpecMap(task), nodeSelector);
+            V1Job k8sJob = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+
+            // TODO: use task's resource needs
+            Map<String, ContainerOverwriteSpec> containerSpecMap = new HashMap<>();
+            var initContainers = k8sJobTemplate.getInitContainerTemplates(k8sJob);
+            if (!CollectionUtils.isEmpty(initContainers)) {
+                initContainers.forEach(templateContainer -> {
+                    ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
+                            templateContainer.getName());
+                    containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
+                    containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
+                });
+            }
+
+            JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
+            k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
+                containerOverwriteSpec.setCmds(List.of("run"));
+                containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
+                containerOverwriteSpec.setImage(jobRuntime.getImage());
+                containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
+            });
+
+            Map<String, String> nodeSelector = null != task.getStep().getJob().getResourcePool()
+                    ? task.getStep().getJob().getResourcePool().getNodeSelector() : Map.of();
+
+            k8sJobTemplate.renderJob(k8sJob, task.getId().toString(),
+                    this.restartPolicy, this.backoffLimit, containerSpecMap, nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             try {
                 k8sClient.deleteJob(task.getId().toString());
@@ -146,30 +163,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             log.error(" schedule task failed ", e);
             taskFailed(task);
         }
-    }
-
-    private Map<String, ContainerOverwriteSpec> buildContainerSpecMap(Task task) {
-        // TODO: use task's resource needs
-        Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-        var initContainers = k8sJobTemplate.getInitContainerTemplates();
-        if (!CollectionUtils.isEmpty(initContainers)) {
-            initContainers.forEach(templateContainer -> {
-                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-                containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
-                ret.put(templateContainer.getName(), containerOverwriteSpec);
-            });
-        }
-
-        JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-        k8sJobTemplate.getContainersTemplates().forEach(templateContainer -> {
-            ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-            containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
-            containerOverwriteSpec.setCmds(List.of("run"));
-            containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
-            containerOverwriteSpec.setImage(jobRuntime.getImage());
-            ret.put(templateContainer.getName(), containerOverwriteSpec);
-        });
-        return ret;
     }
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
@@ -295,12 +288,4 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
-
-    @EventListener
-    public void handleContextReadyEvent(ApplicationReadyEvent ctxReadyEvt) {
-        log.info("spring context ready now");
-        k8sClient.watchJob(eventHandlerJob, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
-        k8sClient.watchNode(eventHandlerNode);
-        k8sClient.watchPod(eventHandlerPod, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
-    }
 }

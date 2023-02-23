@@ -101,8 +101,8 @@ public class K8sClient {
         return coreV1Api.createNamespacedService(ns, svc, null, null, null, null);
     }
 
-    public void deleteJob(String id) throws ApiException {
-        batchV1Api.deleteNamespacedJob(id, ns, null, null, 1, false, null, null);
+    public void deleteJob(String name) throws ApiException {
+        batchV1Api.deleteNamespacedJob(name, ns, null, null, 1, false, null, null);
     }
 
     public void deleteStatefulSet(String name) throws ApiException {

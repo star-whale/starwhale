@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-
-import static org.mockito.Mockito.mock;
-
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -30,12 +27,10 @@ import org.junit.jupiter.api.Test;
 class ResourceEventHolderTest {
     private ResourceEventHolder resourceEventHolder;
     private CoreV1Event event;
-    private K8sClient k8sClient;
 
     @BeforeEach
     void setUp() {
-        k8sClient = mock(K8sClient.class);
-        resourceEventHolder = new ResourceEventHolder(k8sClient, 3600);
+        resourceEventHolder = new ResourceEventHolder(3600);
         event = new CoreV1Event()
                 .metadata(new V1ObjectMeta().name("event-name"))
                 .eventTime(OffsetDateTime.now())
@@ -87,7 +82,7 @@ class ResourceEventHolderTest {
 
     @Test
     void gc() throws InterruptedException {
-        resourceEventHolder = new ResourceEventHolder(k8sClient, 1);
+        resourceEventHolder = new ResourceEventHolder(1);
         resourceEventHolder.onAdd(event);
         var events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(1, events.size());

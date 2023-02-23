@@ -103,7 +103,7 @@ public class K8sTaskSchedulerTest {
         var client = mock(K8sClient.class);
 
         var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
-        var k8sJobTemplate = new K8sJobTemplate("", "", "");
+        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
@@ -169,11 +169,11 @@ public class K8sTaskSchedulerTest {
     public static class K8sJobTemplateMock extends K8sJobTemplate {
 
         public K8sJobTemplateMock(String templatePath) throws IOException {
-            super("", "", "/path");
+            super("", "", "", "/path");
         }
 
         @Override
-        public V1Job renderJob(String jobName, String restartPolicy, int backoffLimit,
+        public V1Job renderJob(V1Job job, String jobName, String restartPolicy, int backoffLimit,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
                 Map<String, String> nodeSelectors) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");

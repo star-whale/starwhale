@@ -201,4 +201,9 @@ public class RuntimeController implements RuntimeApi {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @Override
+    public ResponseEntity<?> buildRuntimeImage(String projectUrl, String runtimeUrl, String versionUrl) {
+        return null;
+    }
 }
