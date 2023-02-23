@@ -33,28 +33,28 @@ export default function ImageViewer({
         return cocos.filter((coco) => !hiddenLabels.has(coco.id))
     }, [cocos, hiddenLabels])
 
-    if (!isZoom) {
-        return (
-            <div
-                className='dataset-viewer image-overlay fullsize'
-                style={{
-                    height: '100%',
-                    backgroundImage: `url(${data._extendSrc})`,
-                    backgroundSize: 'cover',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                }}
-            >
-                <img
-                    src={data._extendSrc}
-                    width='auto'
-                    height='100%'
-                    alt='dataset view'
-                    style={{ visibility: 'hidden' }}
-                />
-            </div>
-        )
-    }
+    // if (!isZoom) {
+    //     return (
+    //         <div
+    //             className='dataset-viewer image-overlay fullsize'
+    //             style={{
+    //                 height: '100%',
+    //                 backgroundImage: `url(${data._extendSrc})`,
+    //                 backgroundSize: 'cover',
+    //                 backgroundRepeat: 'no-repeat',
+    //                 backgroundPosition: 'center',
+    //             }}
+    //         >
+    //             <img
+    //                 src={data._extendSrc}
+    //                 width='auto'
+    //                 height='100%'
+    //                 alt='dataset view'
+    //                 style={{ visibility: 'hidden' }}
+    //             />
+    //         </div>
+    //     )
+    // }
 
     return (
         <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
@@ -151,7 +151,7 @@ export function COCOBBoxOverlay({ cocos = [] }: { cocos: IImageViewerProps['coco
         canvas.width = width
         canvas.height = height
 
-        cocos.map((c) => drawBox(canvas, c.bbox, c.id))
+        cocos.map((c, index) => drawBox(canvas, c.bbox, index))
     }, [canvasRef, cocos])
 
     if (cocos.length === 0) {

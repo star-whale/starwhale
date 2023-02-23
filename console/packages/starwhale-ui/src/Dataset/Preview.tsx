@@ -97,6 +97,7 @@ const useStyles = createUseStyles({
         flexBasis: '320px',
         padding: '20px',
         borderRight: '1px solid #EEF1F6',
+        overflow: 'auto',
     },
     annotation: { display: 'flex', gap: '20px', flexDirection: 'column', marginBottom: '20px' },
     annotationTypes: {
@@ -126,7 +127,7 @@ const useStyles = createUseStyles({
     },
 })
 
-export default function DatasetVersionFilePreview({
+export default function Preview({
     preview,
     previewKey,
     isFullscreen = false,
@@ -140,12 +141,13 @@ export default function DatasetVersionFilePreview({
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
-    const { annotationTypes, annotations } = useDatasetTableAnnotations(preview)
-    console.log(annotationTypes, annotations)
+    const isSimpleView = React.useMemo(() => !_.isObject(preview.summary.get(previewKey)), [preview, previewKey])
 
     const Panel = React.useMemo(() => {
         return (
+            // eslint-disable-next-line
             <TabControl
+                isSimpleView={isSimpleView}
                 value={activeKey}
                 onChange={setActiveKey}
                 data={preview}
@@ -153,7 +155,7 @@ export default function DatasetVersionFilePreview({
                 setHiddenLabels={setHiddenLabels}
             />
         )
-    }, [preview, activeKey, setHiddenLabels, hiddenLabels])
+    }, [preview, activeKey, setHiddenLabels, hiddenLabels, isSimpleView])
 
     if (!isFullscreen) return <></>
 
@@ -210,23 +212,34 @@ function TabControl({
     hiddenLabels,
     setHiddenLabels,
     data,
+    isSimpleView,
 }: {
     value: string
     onChange: (str: string) => void
     hiddenLabels: Set<any>
     setHiddenLabels: (ids: Set<any>) => void
     data: any
+    isSimpleView: boolean
 }) {
-    const { summary, record } = data
+    const { record } = data
     const { annotationTypes, annotationTypeMap } = useDatasetTableAnnotations(data)
     const [hiddenTypes, setHiddenTypes] = React.useState<Set<string>>(new Set())
     const styles = useStyles()
+    const count = React.useMemo(() => {
+        return Array.from(annotationTypeMap)
+            .map(([, list]) => list)
+            .reduce((acc, cur) => acc + cur.length, 0)
+    }, [annotationTypeMap])
+    const $isSimpleView = React.useMemo(() => isSimpleView || count === 0, [count, isSimpleView])
+    const $activeKey = React.useMemo(() => ($isSimpleView ? '1' : value), [$isSimpleView, value])
 
     const Anno = React.useMemo(() => {
         return Array.from(annotationTypeMap).map(([type, list]) => {
+            if (hiddenTypes.has(type)) return <span key={type} />
+
             const allIds = annotationTypeMap.get(type)
             const hiddenIds = allIds.filter((id: number) => hiddenLabels.has(id))
-            const otherIds = allIds.filter((id: number) => !hiddenLabels.has(id))
+            const otherIds = _.without([...hiddenLabels], ...allIds)
             const isAllHidden = hiddenIds.length === allIds.length
 
             return (
@@ -236,7 +249,9 @@ function TabControl({
                         <div className={styles.annotationItemShow}>
                             <Button
                                 as='transparent'
-                                onClick={() => setHiddenLabels(isAllHidden ? new Set(otherIds) : new Set(allIds))}
+                                onClick={() =>
+                                    setHiddenLabels(isAllHidden ? new Set(otherIds) : new Set([...allIds, ...otherIds]))
+                                }
                             >
                                 {isAllHidden ? <IconFont type='eye_off' /> : <IconFont type='eye' />}
                             </Button>
@@ -273,37 +288,39 @@ function TabControl({
                 </div>
             )
         })
-    }, [hiddenLabels, setHiddenLabels, annotationTypeMap, styles])
+    }, [hiddenLabels, setHiddenLabels, annotationTypeMap, styles, hiddenTypes])
 
     return (
         <div>
-            <div className={styles.annotation}>
-                <LabelMedium>Annotation Type</LabelMedium>
-                <div className={styles.annotationTypes}>
-                    {Array.from(annotationTypes).map((type) => {
-                        return (
-                            <Checkbox
-                                key={type}
-                                checked={!hiddenTypes.has(type)}
-                                onChange={(e) => {
-                                    const checked = e.target.checked
-                                    if (!checked) {
-                                        setHiddenTypes((v) => new Set([...v, type]))
-                                    } else {
-                                        setHiddenTypes((v) => {
-                                            const newV = new Set(v)
-                                            newV.delete(type)
-                                            return newV
-                                        })
-                                    }
-                                }}
-                            >
-                                {type}
-                            </Checkbox>
-                        )
-                    })}
+            {!$isSimpleView && (
+                <div className={styles.annotation}>
+                    <LabelMedium>Annotation Type</LabelMedium>
+                    <div className={styles.annotationTypes}>
+                        {Array.from(annotationTypes).map((type) => {
+                            return (
+                                <Checkbox
+                                    key={type}
+                                    checked={!hiddenTypes.has(type)}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked
+                                        if (!checked) {
+                                            setHiddenTypes((v) => new Set([...v, type]))
+                                        } else {
+                                            setHiddenTypes((v) => {
+                                                const newV = new Set(v)
+                                                newV.delete(type)
+                                                return newV
+                                            })
+                                        }
+                                    }}
+                                >
+                                    {type}
+                                </Checkbox>
+                            )
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
             <Tabs
                 overrides={{
                     TabBar: {
@@ -337,15 +354,15 @@ function TabControl({
                         }),
                     },
                 }}
-                onChange={({ activeKey }) => {
-                    onChange?.(activeKey as string)
-                }}
-                activeKey={value}
+                onChange={({ activeKey }) => onChange?.(activeKey as string)}
+                activeKey={$activeKey}
             >
-                <Tab title={`Annotation(${summary.size})`}>
-                    <div>{Anno}</div>
-                </Tab>
-                <Tab title='Object'>
+                {!$isSimpleView && (
+                    <Tab title={`Annotation(${count})`}>
+                        <div>{Anno}</div>
+                    </Tab>
+                )}
+                <Tab title='Meta'>
                     <div>
                         <JSONTree data={record} theme={theme} hideRoot shouldExpandNode={() => false} />
                     </div>

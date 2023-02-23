@@ -62,20 +62,39 @@ export default function DatasetViewer({
         const { _type, _mime_type: mimeType } = data
 
         switch (_type) {
-            case ArtifactType.Image:
+            case ArtifactType.Image: {
                 if (mimeType === MIMES.GRAYSCALE) {
                     return <ImageGrayscaleViewer data={data as IArtifactImage} isZoom={isZoom} />
                 }
+
+                const bboxes =
+                    Array.from(summary)
+                        .filter(
+                            ([key, value]) => !hiddenLabels.has(key) && value._extendType === AnnotationType.BOUNDINGBOX
+                        )
+                        .map(([, value]) => value) ?? []
+
+                const cocos =
+                    Array.from(summary)
+                        .filter(([key, value]) => !hiddenLabels.has(key) && value._extendType === AnnotationType.COCO)
+                        .map(([, value]) => value) ?? []
+
+                const masks =
+                    Array.from(summary)
+                        .filter(([key, value]) => !hiddenLabels.has(key) && value._extendType === AnnotationType.MASK)
+                        .map(([, value]) => value) ?? []
+
                 return (
                     <ImageViewer
                         data={data as IArtifactImage}
-                        bboxes={dataset.bboxes ?? []}
-                        cocos={dataset.cocos ?? []}
-                        masks={dataset.masks ?? []}
+                        bboxes={bboxes}
+                        cocos={cocos}
+                        masks={masks}
                         isZoom={isZoom}
                         hiddenLabels={hiddenLabels}
                     />
                 )
+            }
             case ArtifactType.Audio:
                 return <AudioViewer data={data as IArtifactAudio} isZoom={isZoom} />
             case ArtifactType.Video:
@@ -85,7 +104,7 @@ export default function DatasetViewer({
             default:
                 return <Placeholder />
         }
-    }, [data, hiddenLabels, isZoom, dataset])
+    }, [summary, data, hiddenLabels, isZoom])
 
     if (!data) return <Placeholder />
 

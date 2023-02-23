@@ -69,7 +69,7 @@ export function getSummary(record: RecordT, options: OptionsT) {
                 anno.forEach((item: any, index: number) => flatObjectWithPaths(item, [...path, index]))
             } else if (_.isPlainObject(anno)) {
                 // without link
-                // if (!options.showLink && anno._type === 'link') return
+                if (!options.showLink && anno._type === 'link') return
 
                 // add path & src
                 if (anno._type) {

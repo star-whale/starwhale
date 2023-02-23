@@ -15,12 +15,12 @@ import qs from 'qs'
 import { ArtifactType, parseDataSrc } from '@starwhale/core/dataset'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
-import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
 import { StyledTab } from 'baseui/tabs'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
+import Preview from '@starwhale/ui/Dataset/Preview'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -351,7 +351,6 @@ export default function DatasetVersionFiles() {
         )
     }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
 
-    console.log(datasets)
     return (
         <div className={styles.wrapper}>
             {HAS_TABLE_CONTROL && (
@@ -417,7 +416,7 @@ export default function DatasetVersionFiles() {
                 </div>
             )}
             {preview && (
-                <DatasetVersionFilePreview
+                <Preview
                     preview={preview}
                     previewKey={previewKey}
                     isFullscreen={isFullscreen}
