@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
+import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
 import { useParams, useLocation } from 'react-router-dom'
@@ -9,6 +9,7 @@ import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
 import qs from 'qs'
+import moment from 'moment'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -58,7 +59,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.stopTime && formatTimestampDateTime(task.stopTime),
                             task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
-                                ? durationToStr(task.stopTime - task.createdTime)
+                                ? moment.duration(task.stopTime - task.createdTime, 'milliseconds').humanize()
                                 : '-',
                             task.taskStatus,
                             <StyledLink
