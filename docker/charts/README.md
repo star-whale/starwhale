@@ -87,6 +87,7 @@ The `update` command will update the information of available charts locally fro
 | `controller.ingress.ingressClassName` | ingress class name | `nginx`|
 | `controller.ingress.host` | Starwhale controller domain | `console.pre.intra.starwhale.ai` |
 | `controller.containerPort`| Starwhale console web port | `8082` |
+| `controller.storageType` | Starwhale supports `s3`, `minio`, `aliyun` and `fs` as the main file storage. | `minio`|
 
 ### 6.3 Infra parameters
 
@@ -116,7 +117,6 @@ External Infra for production scenario:
 | `externalOSS.secretKey` | secret key for the external OSS service | `` |
 | `externalOSS.defaultBuckets` | The System Admin should create a bucket for Starwhale in the external OSS service. | `starwhale` |
 | `externalOSS.region` | bucket's region for the external OSS service | `local` |
-| `externalOSS.type` | Starwhale supports `s3`, `minio` and `aliyun` OSS types. | `s3` |
 
 ### 6.4 dev mode
 

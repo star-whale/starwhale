@@ -12,12 +12,19 @@ spec:
     metadata:
       labels: {{ include "chart.controller.labels" . | nindent 8}}
     spec:
-      {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
+      {{- if or .Values.devMode.createConsoleHostPathVolume.enabled (eq .Values.controller.storageType "fs") }}
       volumes:
+        {{- if eq .Values.controller.storageType "fs"}}
+        - name: controller-storage
+          persistentVolumeClaim:
+            claimName: controller
+        {{- end }}
+        {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
         - name: console-hostpath-volume
           hostPath:
             path: {{ .Values.devMode.createConsoleHostPathVolume.rootPath }}/controller/console
             type: DirectoryOrCreate
+        {{- end }}
       {{- end }}
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
@@ -29,10 +36,18 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.controller.containerPort }}
-          {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
+          {{- if or .Values.devMode.createConsoleHostPathVolume.enabled (eq .Values.controller.storageType "fs") }}
           volumeMounts:
+            {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
             - name: console-hostpath-volume
               mountPath: "/opt/starwhale.java/static"
+              subPath: static
+            {{- end }}
+            {{- if eq .Values.controller.storageType "fs"}}
+            - name: controller-storage
+              mountPath: "{{ .Values.controller.fs.rootdir }}"
+              subPath: controller-fs
+            {{- end }}
           {{- end }}
           {{- if not .Values.minikube.enabled }}
           resources:
@@ -68,10 +83,6 @@ spec:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: JAR
               value: controller
-              {{- if not .Values.minikube.enabled }}
-            - name: JVM_XMX
-              value: {{ .Values.resources.controller.limits.memory }}
-              {{- end }}
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
             - name: SW_JWT_TOKEN_EXPIRE_MINUTES
@@ -80,6 +91,8 @@ spec:
               value: "{{ .Values.controller.upload.maxFileSize }}"
             - name: SW_STORAGE_PREFIX
               value: "{{ .Release.Name }}"
+            - name: SW_STORAGE_FS_ROOT_DIR
+              value: "{{ .Values.controller.fs.rootdir }}"
             - name: SW_RUNTIME_IMAGE_DEFAULT
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             - name: SW_DOCKER_REGISTRY_URL
@@ -117,7 +130,7 @@ spec:
             - name: SW_STORAGE_REGION
               value: "{{ .Values.externalOSS.region }}"
             - name: SW_STORAGE_TYPE
-              value: "{{ .Values.externalOSS.type }}"
+              value: "{{ .Values.controller.storageType }}"
             {{- end }}
             {{- if .Values.mysql.enabled }}
             - name: SW_METADATA_STORAGE_IP
@@ -142,3 +155,21 @@ spec:
             - name: SW_METADATA_STORAGE_DB
               value: "{{ .Values.externalMySQL.database }}"
             {{- end }}
+---
+{{- if eq .Values.controller.storageType "fs"}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: controller
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "chart.controller.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ include "common.names.fullname" . }}-controller
+  volumeMode: Filesystem
+  volumeName: {{ include "common.names.fullname" . }}-pv-controller
+  resources:
+    requests:
+      storage: {{ .Values.controller.persistence.size | quote }}
+{{ end }}

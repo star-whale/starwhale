@@ -24,6 +24,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,56 +37,58 @@ public class ObjectStoreControllerTest {
 
     private StorageAccessService storageAccessService;
 
+    private HttpServletResponse rsp;
+    private HttpServletRequest req;
+    private DelegatingServletOutputStream outputStream;
+
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws IOException {
         storageAccessService = mock(StorageAccessService.class);
         objectStoreController = new ObjectStoreController(storageAccessService);
+        rsp = mock(HttpServletResponse.class);
+        outputStream = new DelegatingServletOutputStream(new ByteArrayOutputStream());
+        when(rsp.getOutputStream()).thenReturn(outputStream);
+        req = mock(HttpServletRequest.class);
+        when(req.getRequestURI()).thenReturn(
+                "/" + ObjectStoreApi.URI_PREFIX + "/p/" + System.currentTimeMillis() + 1000);
+        when(req.getContextPath()).thenReturn("");
     }
 
     @Test
     public void testWithRange() throws IOException {
-        var rsp = mock(HttpServletResponse.class);
-        DelegatingServletOutputStream outputStream = new DelegatingServletOutputStream(new ByteArrayOutputStream());
-        when(rsp.getOutputStream()).thenReturn(outputStream);
         var p = "p";
         var r = "bytes=0-100";
         String content = "content";
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p, 0L, 101L)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(p, r, System.currentTimeMillis() + 1000, rsp);
+        objectStoreController.getObjectContent(r, req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
     }
 
     @Test
     public void testWithOutRange() throws IOException {
-        var rsp = mock(HttpServletResponse.class);
-        DelegatingServletOutputStream outputStream = new DelegatingServletOutputStream(new ByteArrayOutputStream());
-        when(rsp.getOutputStream()).thenReturn(outputStream);
         var p = "p";
         String r = null;
         String content = "content";
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(p, r, System.currentTimeMillis() + 1000, rsp);
+        objectStoreController.getObjectContent(r, req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
     }
 
     @Test
     public void testWithOutRangeExcept() throws IOException {
-        var rsp = mock(HttpServletResponse.class);
-        DelegatingServletOutputStream outputStream = new DelegatingServletOutputStream(new ByteArrayOutputStream());
-        when(rsp.getOutputStream()).thenReturn(outputStream);
         var p = "p";
         var r = "asdfa";
         String content = "content";
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(p, r, System.currentTimeMillis() + 1000, rsp);
+        objectStoreController.getObjectContent(r, req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
     }

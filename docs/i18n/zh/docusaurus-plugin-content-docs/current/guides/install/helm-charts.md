@@ -82,6 +82,7 @@ helm repo update starwhale
 | `controller.ingress.ingressClassName` | ingress class name | `nginx`|
 | `controller.ingress.host` | Starwhale controller 访问域名 | `console.pre.intra.starwhale.ai` |
 | `controller.containerPort`| Starwhale console web port | `8082` |
+| `controller.storageType`| Controller文件存储的类型，目前支持s3、aliyun、minio、fs四种 | `minio` |
 
 ### 7.3 基础设施参数
 
@@ -111,7 +112,6 @@ Starwhale 提供MySQL和minio的Charts，由于是单例模式，故只能在开
 | `externalOSS.secretKey`| 外部对象存储的secret key | `` |
 | `externalOSS.region`| 外部对象存储的region | `local` |
 | `externalOSS.defaultBuckets` | 系统管理员创建一个给Starwhale独立使用的bucket | `starwhale` |
-| `externalOSS.type`| 外部对象存储的类型，目前支持s3、aliyun、minio三种OSS | `s3` |
 
 ### 7.4 开发模式
 

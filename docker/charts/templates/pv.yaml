@@ -1,7 +1,11 @@
 {{ if .Values.minikube.enabled}}
 
+{{ if eq .Values.controller.storageType "fs"}}
+{{ include "chart.minikubePV" (merge (dict "backend" "controller") . )}}
+{{ else }}
 {{ if .Values.minio.enabled }}
 {{ include "chart.minikubePV" (merge (dict "backend" "minio") . )}}
+{{ end }}
 {{ end }}
 
 {{ if .Values.mysql.enabled }}
@@ -15,8 +19,12 @@
 
 {{ $params := (merge (dict "rootPath" .Values.devMode.createPV.rootPath) . ) }}
 
+{{ if eq .Values.controller.storageType "fs"}}
+{{ include "chart.createPV" (merge (dict "backend" "controller" "storage" .Values.controller.persistence.size) $params) }}
+{{ else }}
 {{ if .Values.minio.enabled }}
 {{ include "chart.createPV" (merge (dict "backend" "minio" "storage" .Values.minio.persistence.size) $params) }}
+{{ end }}
 {{ end }}
 
 {{ if .Values.mysql.enabled }}

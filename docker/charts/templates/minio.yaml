@@ -1,4 +1,4 @@
-{{- if .Values.minio.enabled }}
+{{- if and .Values.minio.enabled (ne .Values.controller.storageType "fs")}}
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
