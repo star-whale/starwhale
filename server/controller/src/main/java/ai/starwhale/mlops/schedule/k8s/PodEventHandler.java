@@ -107,7 +107,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 return;
             }
             log.debug("task:{} status changed to {}.", tid, taskStatus);
-            taskStatusReceiver.receive(List.of(ReportedTask.of(tid, taskStatus)));
+            taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus, null)));
         }
     }
 

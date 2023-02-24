@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.reporting.TaskStatusReceiver;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import java.util.List;
@@ -46,9 +47,10 @@ public class JobEventHandlerTest {
         v1Job.setMetadata(new V1ObjectMeta().name("1"));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.SUCCESS)));
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0)));
     }
 
     @Test
@@ -58,9 +60,10 @@ public class JobEventHandlerTest {
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.FAIL)));
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1)));
     }
 
     @Test
@@ -69,9 +72,10 @@ public class JobEventHandlerTest {
         v1Job.setMetadata(new V1ObjectMeta().name("1"));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.SUCCESS)));
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0)));
     }
 
     @Test
@@ -81,9 +85,22 @@ public class JobEventHandlerTest {
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(ReportedTask.of(1L, TaskStatus.FAIL)));
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1)));
+    }
+
+    @Test
+    public void testOnUpdateUnknown() {
+        V1Job v1Job = new V1Job();
+        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        V1JobStatus v1JobStatus = new V1JobStatus();
+        v1JobStatus.setSucceeded(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
+        v1Job.setStatus(v1JobStatus);
+        jobEventHandler.onUpdate(null, v1Job);
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.UNKNOWN, 0)));
     }
 
 }

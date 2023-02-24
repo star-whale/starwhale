@@ -77,8 +77,8 @@ public enum TaskStatus {
     FAIL,
 
     /**
-     * UNKNOWN from an Integer
+     * UNKNOWN from an Integer, when merging to other statuses it means 'keep current'
      */
-    UNKNOWN();
+    UNKNOWN()
 
 }
