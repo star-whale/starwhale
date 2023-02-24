@@ -405,9 +405,6 @@ const locales0 = {
     'Status': {
         en: 'Status',
     },
-    'Retried': {
-        en: 'Retried',
-    },
     'Continue': {
         en: 'Continue',
     },
@@ -523,7 +520,13 @@ const locales0 = {
         en: 'show meta',
     },
     'View Log': {
-        en: 'View Log',
+        en: 'View Logs',
+    },
+    'Logs collected': {
+        en: 'Logs collected',
+    },
+    'Execution id': {
+        en: 'Execution id',
     },
     'Support': {
         en: 'Support',

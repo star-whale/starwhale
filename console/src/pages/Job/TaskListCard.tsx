@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
-import { formatTimestampDateTime } from '@/utils/datetime'
+import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
 import { useParams, useLocation } from 'react-router-dom'
@@ -47,7 +47,6 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     t('End Time'),
                     t('Duration'),
                     t('Status'),
-                    t('Retried'),
                     t('Action'),
                 ]}
                 data={
@@ -59,10 +58,9 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.stopTime && formatTimestampDateTime(task.stopTime),
                             task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
-                                ? `${(task.stopTime - task.createdTime) / 1000}s`
+                                ? durationToStr(task.stopTime - task.createdTime)
                                 : '-',
                             task.taskStatus,
-                            task.retryNum > 0 ? 'YES' : 'NO',
                             <StyledLink
                                 key={task.uuid}
                                 onClick={(e: any) => {

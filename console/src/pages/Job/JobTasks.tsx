@@ -10,6 +10,7 @@ import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
 import Accordion from '@starwhale/ui/Accordion'
 import TaskListCard from './TaskListCard'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { toaster } from 'baseui/toast'
 
 export interface IScrollProps {
     scrollTop: number
@@ -36,6 +37,8 @@ export default function JobTasks() {
                     ...files,
                 })
             })
+        } else {
+            toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
         }
         if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
             files[task?.uuid] = 'ws'
@@ -147,7 +150,7 @@ export default function JobTasks() {
             >
                 <TaskListCard header={null} onAction={onAction} />
 
-                <Card outTitle={t('View Log')} style={{ padding: 0 }}>
+                <Card outTitle={t('Logs collected')} style={{ padding: 0 }}>
                     {Object.entries(currentLogFiles).map(([fileName, content]) => (
                         <Accordion
                             key={fileName}
@@ -170,7 +173,7 @@ export default function JobTasks() {
                                 setExpanded(expanded.includes('0'))
                             }}
                         >
-                            <Panel key={fileName} title={`Log: ${fileName}`}>
+                            <Panel key={fileName} title={`${t('Execution id')}: ${fileName}`}>
                                 {!content.startsWith('ws') ? (
                                     <LazyLog
                                         enableSearch
