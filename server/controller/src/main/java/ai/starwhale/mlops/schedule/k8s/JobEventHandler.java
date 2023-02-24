@@ -88,12 +88,19 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     }
 
     private void updateImageBuildTask(V1Job job) {
+        V1JobStatus status = job.getStatus();
+        if (status == null) {
+            return;
+        }
         var version = jobName(job);
         var image = job.getMetadata().getLabels().get("image");
         if (!StringUtils.hasText(version) || !StringUtils.hasText(image)) {
             return;
         }
-        runtimeService.updateBuiltImage(version, image);
+        if (null != status.getSucceeded()) {
+            log.info("image:{} build success", image);
+            runtimeService.updateBuiltImage(version, image);
+        }
     }
 
     private void updateEvalTask(V1Job job) {
