@@ -61,13 +61,12 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
-        /** The latest available observations of an object's current state.
-         * When a Job fails, one of the conditions will have type "Failed" and status true.
-         * When a Job is suspended, one of the conditions will have type "Suspended" and status true;
-         * when the Job is resumed, the status of this condition will become false.
-         * When a Job is completed, one of the conditions will have type "Complete" and status true.
-         * More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/
-         **/
+        //  The latest available observations of an object's current state.
+        //  When a Job fails, one of the conditions will have type "Failed" and status true.
+        //  When a Job is suspended, one of the conditions will have type "Suspended" and status true;
+        //  when the Job is resumed, the status of this condition will become false.
+        //  When a Job is completed, one of the conditions will have type "Complete" and status true.
+        //  More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/
         List<V1JobCondition> conditions = status.getConditions();
         if (null != conditions) {
             List<V1JobCondition> collect = conditions.stream().filter(c -> "True".equalsIgnoreCase(c.getStatus()))
@@ -85,7 +84,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                 } else if ("Suspended".equalsIgnoreCase(type)) {
-                    taskStatus = TaskStatus.PAUSED;
+                    log.warn("unexpected task status detected {}", type);
                 } else {
                     log.warn("unknown task status detected {}", type);
                 }
