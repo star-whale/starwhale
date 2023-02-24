@@ -34,6 +34,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
@@ -42,12 +44,14 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
+import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -66,6 +70,8 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.system.SystemSetting;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -79,8 +85,17 @@ import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
@@ -109,6 +124,10 @@ public class RuntimeServiceTest {
     private HotJobHolder jobHolder;
     private ObjectMapper yamlMapper;
     private TrashService trashService;
+    private K8sClient k8sClient;
+    private K8sJobTemplate k8sJobTemplate;
+    private RuntimeTokenValidator runtimeTokenValidator;
+    private SystemSettingService systemSettingService;
     @Setter
     private BundleManager bundleManager;
 
@@ -157,6 +176,10 @@ public class RuntimeServiceTest {
         yamlMapper = new ObjectMapper(new YAMLFactory());
 
         trashService = mock(TrashService.class);
+        k8sClient = mock(K8sClient.class);
+        k8sJobTemplate = mock(K8sJobTemplate.class);
+        runtimeTokenValidator = mock(RuntimeTokenValidator.class);
+        systemSettingService = mock(SystemSettingService.class);
 
         service = new RuntimeService(
                 runtimeMapper,
@@ -174,11 +197,11 @@ public class RuntimeServiceTest {
                 new IdConverter(),
                 new VersionAliasConverter(),
                 trashService,
-                mock(K8sClient.class),
-                mock(K8sJobTemplate.class),
-                mock(RunTimeProperties.class),
-                mock(RuntimeTokenValidator.class),
-                "");
+                k8sClient,
+                k8sJobTemplate,
+                runtimeTokenValidator,
+                systemSettingService,
+                "http://mock-controller");
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -205,6 +228,34 @@ public class RuntimeServiceTest {
                             return 2L;
                         case "v3":
                             return 3L;
+                        default:
+                            throw new BundleException("");
+                    }
+                });
+        given(bundleManager.getBundleVersion(any(BundleVersionUrl.class)))
+                .willAnswer((Answer<BundleVersionEntity>) invocation -> {
+                    BundleVersionUrl url = invocation.getArgument(0);
+                    switch (url.getVersionUrl()) {
+                        case "v1":
+                            return RuntimeVersionEntity.builder()
+                                .id(1L)
+                                .versionName("n1")
+                                .storagePath("path1")
+                                .image("origin-image1")
+                                .build();
+                        case "v2":
+                            return RuntimeVersionEntity.builder()
+                                .id(2L)
+                                .versionName("n2")
+                                .storagePath("path2")
+                                .image("origin-image2")
+                                .build();
+                        case "v3":
+                            return RuntimeVersionEntity.builder()
+                                .id(3L)
+                                .versionName("n3")
+                                .storagePath("path3")
+                                .build();
                         default:
                             throw new BundleException("");
                     }
@@ -499,18 +550,50 @@ public class RuntimeServiceTest {
 
     @Test
     public void testQuery() {
-        given(runtimeVersionMapper.find(same(1L)))
-                .willReturn(RuntimeVersionEntity.builder().id(1L).versionName("").build());
-
         var res = service.query("1", "r1", "v1");
-        assertThat(res, is(""));
+        assertThat(res, is("n1"));
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.query("p1", "r2", "v2"));
+        res = service.query("p1", "r2", "v2");
+        assertThat(res, is("n2"));
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.query("p1", "r1", "v3"));
+        res = service.query("p1", "r1", "v3");
+        assertThat(res, is("n3"));
+    }
 
+    @Test
+    public void testBuildImage() throws ApiException {
+        given(projectService.findProject("project-1"))
+                .willReturn(Project.builder().id(1L).name("starwhale").build());
+        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
+
+        given(k8sClient.getSecret(anyString())).willReturn(null);
+
+        given(systemSettingService.getSystemSetting()).willReturn(null);
+
+        assertThrows(SwValidationException.class,
+                () -> service.buildImage("project-1", "r1", "v1"));
+
+
+        given(k8sClient.getSecret(anyString())).willReturn(new V1Secret());
+
+        var systemSetting = new SystemSetting();
+        systemSetting.setDockerSetting(new DockerSetting("localhost:8083", "admin", "admin123"));
+        systemSetting.setPypiSetting(new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io"));
+        given(systemSettingService.getSystemSetting()).willReturn(systemSetting);
+
+        var job = new V1Job()
+                .metadata(new V1ObjectMeta().name("n1").labels(
+                    Map.of(K8sJobTemplate.JOB_TYPE_LABEL, K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER)))
+                .spec(new V1JobSpec().template(new V1PodTemplateSpec().spec(new V1PodSpec()
+                        .initContainers(List.of(new V1Container().name("prepare-runtime")))
+                        .containers(List.of(new V1Container().name("image-builder"))))));
+        given(k8sJobTemplate.loadJob(anyString())).willReturn(job);
+        given(k8sClient.deployJob(any())).willReturn(job);
+
+        service.buildImage("project-1", "r1", "v1");
+
+        verify(k8sJobTemplate, times(1)).loadJob(any());
+        verify(k8sClient, times(1)).deployJob(any());
     }
 
 }

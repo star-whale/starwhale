@@ -28,9 +28,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class DockerSetting {
 
     String registry;
+    String userName;
+    String password;
 
     public static DockerSetting empty() {
-        return new DockerSetting("");
+        return new DockerSetting("", "", "");
     }
 
 }

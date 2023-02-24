@@ -52,7 +52,7 @@ public class RuntimeTokenValidator implements JwtClaimValidator {
         try {
             id = ((Number) val).longValue();
         } catch (ClassCastException e) {
-            throw new SwValidationException(ValidSubject.USER, "invalid id for model serving");
+            throw new SwValidationException(ValidSubject.USER, "invalid id for runtime");
         }
         var rt = runtimeDao.getRuntimeVersion(String.valueOf(id));
         if (rt == null) {

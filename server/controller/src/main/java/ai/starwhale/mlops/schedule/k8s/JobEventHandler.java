@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.reporting.TaskStatusReceiver;
@@ -35,9 +36,11 @@ import org.springframework.util.StringUtils;
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     private final TaskStatusReceiver taskStatusReceiver;
+    private final RuntimeService runtimeService;
 
-    public JobEventHandler(TaskStatusReceiver taskStatusReceiver) {
+    public JobEventHandler(TaskStatusReceiver taskStatusReceiver, RuntimeService runtimeService) {
         this.taskStatusReceiver = taskStatusReceiver;
+        this.runtimeService = runtimeService;
     }
 
     @Override
@@ -85,7 +88,12 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     }
 
     private void updateImageBuildTask(V1Job job) {
-
+        var version = jobName(job);
+        var image = job.getMetadata().getLabels().get("image");
+        if (!StringUtils.hasText(version) || !StringUtils.hasText(image)) {
+            return;
+        }
+        runtimeService.updateBuiltImage(version, image);
     }
 
     private void updateEvalTask(V1Job job) {

@@ -113,9 +113,7 @@ public class K8sJobTemplate {
             default:
                 throw new UnsupportedOperationException("load job error, unknown type:" + type);
         }
-        var labels = job.getMetadata().getLabels();
-        labels = labels == null ? new HashMap<>() : labels;
-        labels.put(JOB_TYPE_LABEL, type);
+        updateLabels(job, Map.of(JOB_TYPE_LABEL, type));
         return job;
     }
 
@@ -128,22 +126,25 @@ public class K8sJobTemplate {
             Map<String, String> nodeSelectors
     ) {
         job.getMetadata().name(jobName);
-        var labels = job.getMetadata().getLabels();
-        labels = labels == null ? new HashMap<>() : labels;
-        labels.putAll(starwhaleJobLabel);
-        labels.put(JOB_IDENTITY_LABEL, jobName);
-        job.getMetadata().labels(labels);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
         jobSpec.backoffLimit(backoffLimit);
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
-
+        updateLabels(job, starwhaleJobLabel);
+        updateLabels(job, Map.of(JOB_IDENTITY_LABEL, jobName));
         patchPodSpec(restartPolicy, containerSpecMap, nodeSelectors, podSpec);
         patchPipCacheVolume(job.getSpec().getTemplate().getSpec().getVolumes());
         addDeviceInfoLabel(jobSpec.getTemplate(), containerSpecMap);
 
         return job;
+    }
+
+    public void updateLabels(V1Job job, Map<String, String> labels) {
+        var originLabels = job.getMetadata().getLabels();
+        originLabels = originLabels == null ? new HashMap<>() : originLabels;
+        originLabels.putAll(labels);
+        job.getMetadata().labels(originLabels);
     }
 
     public V1StatefulSet renderModelServingOrch(
@@ -230,13 +231,13 @@ public class K8sJobTemplate {
                 c.resources(containerOverwriteSpec.resourceOverwriteSpec.getResourceSelector());
             }
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.cmds)) {
-                containerOverwriteSpec.cmds.forEach(c::addArgsItem);
+                c.args(containerOverwriteSpec.cmds);
             }
             if (StringUtils.hasText(containerOverwriteSpec.image)) {
                 c.image(containerOverwriteSpec.image);
             }
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.envs)) {
-                containerOverwriteSpec.envs.forEach(c::addEnvItem);
+                c.env(containerOverwriteSpec.envs);
             }
             if (containerOverwriteSpec.readinessProbe != null) {
                 c.readinessProbe(containerOverwriteSpec.readinessProbe);

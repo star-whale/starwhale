@@ -11,27 +11,12 @@ spec:
     spec:
       restartPolicy: OnFailure
       initContainers:
-        - name: prepare-runtime
+        - name: 'prepare-runtime'
           imagePullPolicy: IfNotPresent
-          image: ghcr.io/star-whale/starwhale:latest
+          image: 'ghcr.io/star-whale/starwhale:latest'
           volumeMounts:
             - mountPath: /opt/starwhale.user/runtime
               name: data
-          env:
-            - name: SW_INSTANCE_URI
-              value: 'http://e2e-20230219.pre.intra.starwhale.ai/'
-            - name: SW_PROJECT
-              value: 'starwhale'
-            - name: SW_RUNTIME_VERSION
-              value: 'pytorch/version/qtjlmtgiqcnepxlad7xofwsyyesiu5hcu6yk7bef'
-            - name: SW_PYPI_INDEX_URL
-              value: 'https://pypi.doubanio.com/simple/'
-            - name: SW_PYPI_EXTRA_INDEX_URL
-              value: 'https://mirrors.bfsu.edu.cn/pypi/web/simple'
-            - name: SW_PYPI_TRUSTED_HOST
-              value: 'pypi.doubanio.com'
-            - name: SW_TOKEN
-              value: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY3NzAzMTk5NCwiZXhwIjoxNjc5NjIzOTk0fQ.q_DjarPDax-btE0RMH-lJP9Gf9qVOYwW9Yhmjb4BZeYDiR25tX8g6jObro9flvaAAp4gAdLeH9cKpk-Jz54JPw'
           command:
             - sh
             - -c
@@ -44,27 +29,12 @@ spec:
               _SNAPSHOT_DIR=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".snapshot_workdir");
               cp $_SNAPSHOT_DIR/export/docker/Dockerfile /opt/starwhale.user/runtime || exit 1;
       containers:
-        - name: 'kaniko'
+        - name: 'image-builder'
           image: 'gcr.io/kaniko-project/executor:latest'
-          env:
-            - name: SW_INSTANCE_URI
-              value: 'http://e2e-20230219.pre.intra.starwhale.ai/'
-            - name: SW_PROJECT
-              value: 'starwhale'
-            - name: SW_RUNTIME_VERSION
-              value: 'pytorch/version/qtjlmtgiqcnepxlad7xofwsyyesiu5hcu6yk7bef'
-            - name: SW_PYPI_INDEX_URL
-              value: 'https://pypi.doubanio.com/simple/'
-            - name: SW_PYPI_EXTRA_INDEX_URL
-              value: 'https://mirrors.bfsu.edu.cn/pypi/web/simple'
-            - name: SW_PYPI_TRUSTED_HOST
-              value: 'pypi.doubanio.com'
-            - name: SW_TOKEN
-              value: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJ3aGFsZSIsImlhdCI6MTY3NzAzMTk5NCwiZXhwIjoxNjc5NjIzOTk0fQ.q_DjarPDax-btE0RMH-lJP9Gf9qVOYwW9Yhmjb4BZeYDiR25tX8g6jObro9flvaAAp4gAdLeH9cKpk-Jz54JPw'
           args: [ "--dockerfile=Dockerfile",
                   "--context=dir:///workspace"] # --destination=10.131.0.1:8083/test/build:1.1.0 replace with your dockerhub account
           volumeMounts:
-            - name: kaniko-secret # TODO invoked by api
+            - name: kaniko-secret
               mountPath: /kaniko/.docker
             - name: data
               mountPath: /workspace # should be workspace otherwise some layer would loos

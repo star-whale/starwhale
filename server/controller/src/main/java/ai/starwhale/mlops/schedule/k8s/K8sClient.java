@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
@@ -61,6 +62,7 @@ public class K8sClient {
     private final AppsV1Api appsV1Api;
 
     private final String ns;
+    private static final String DEFAULT_NAMESPACE = "default";
 
     private final SharedInformerFactory informerFactory;
 
@@ -99,6 +101,14 @@ public class K8sClient {
 
     public V1Service deployService(V1Service svc) throws ApiException {
         return coreV1Api.createNamespacedService(ns, svc, null, null, null, null);
+    }
+
+    public V1Secret createSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.createNamespacedSecret(DEFAULT_NAMESPACE, secret, null, null, null, null);
+    }
+
+    public V1Secret getSecret(String name) throws ApiException {
+        return coreV1Api.readNamespacedSecret(name, DEFAULT_NAMESPACE, null);
     }
 
     public void deleteJob(String name) throws ApiException {

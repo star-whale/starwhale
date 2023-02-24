@@ -16,9 +16,12 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
+import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_EVAL;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.reporting.TaskStatusReceiver;
@@ -27,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,13 +42,13 @@ public class JobEventHandlerTest {
     @BeforeEach
     public void setUp() {
         taskStatusReceiver = mock(TaskStatusReceiver.class);
-        jobEventHandler = new JobEventHandler(taskStatusReceiver);
+        jobEventHandler = new JobEventHandler(taskStatusReceiver, mock(RuntimeService.class));
     }
 
     @Test
     public void testOnAddSuccess() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
@@ -56,7 +60,7 @@ public class JobEventHandlerTest {
     @Test
     public void testOnAddFail() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
@@ -69,7 +73,7 @@ public class JobEventHandlerTest {
     @Test
     public void testOnUpdateSuccess() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
@@ -81,7 +85,7 @@ public class JobEventHandlerTest {
     @Test
     public void testOnUpdateFail() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
