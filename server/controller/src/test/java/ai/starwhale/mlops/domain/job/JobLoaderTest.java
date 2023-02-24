@@ -71,7 +71,7 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, false);
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
-        verify(swTaskScheduler, times(mockJob.getSteps().size())).schedule(Set.of(readyTask));
+        verify(swTaskScheduler).schedule(Set.of(readyTask));
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
     }
 
