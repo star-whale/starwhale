@@ -1,32 +1,29 @@
 {
-  "sidebar.mainSidebar.category.Quickstart": {
-    "message": "快速上手"
-  },
-  "sidebar.mainSidebar.category.Tutorials": {
-    "message": "使用示例"
-  },
-  "sidebar.mainSidebar.category.Fundamentals": {
-    "message": "核心设计"
-  },
-  "sidebar.mainSidebar.category.Reference": {
-    "message": "参考指南"
-  },
-  "sidebar.mainSidebar.category.Guides": {
-    "message": "高级教程"
-  },
-  "sidebar.mainSidebar.category.Command Line Interface": {
-    "message": "Starwhale命令行"
-  },
-  "sidebar.mainSidebar.category.Community": {
-    "message": "社区"
-  },
-  "sidebar.mainSidebar.category.Installation": {
-    "message": "安装说明"
-  },
-  "sidebar.mainSidebar.category.Configurations": {
-    "message": "配置文件"
-  },
-  "sidebar.mainSidebar.category.Heterogeneous-devices": {
-    "message": "异构设备"
-  }
+    "sidebar.mainSidebar.category.Reference": {
+        "message": "参考指南"
+    },
+    "sidebar.mainSidebar.category.Guides": {
+        "message": "用户指南"
+    },
+    "sidebar.mainSidebar.category.Command Line Interface": {
+        "message": "Starwhale命令行"
+    },
+    "sidebar.mainSidebar.category.Community": {
+        "message": "社区"
+    },
+    "sidebar.mainSidebar.category.Installation": {
+        "message": "安装说明"
+    },
+    "sidebar.mainSidebar.category.Configurations": {
+        "message": "配置文件"
+    },
+    "sidebar.mainSidebar.category.Heterogeneous-devices": {
+        "message": "异构设备"
+    },
+    "sidebar.mainSidebar.category.Overview": {
+        "message": "关于Starwhale"
+    },
+    "sidebar.mainSidebar.category.Examples": {
+        "message": "使用示例"
+    }
 }
