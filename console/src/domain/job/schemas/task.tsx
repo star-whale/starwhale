@@ -19,6 +19,8 @@ export interface ITaskSchema extends IResourceSchema {
     resourcePool: string
     agent: IAgentSchema
     taskStatus: TaskStatusType
+    stepName: string
+    retryNum: number
 }
 
 export type ITaskDetailSchema = ITaskSchema

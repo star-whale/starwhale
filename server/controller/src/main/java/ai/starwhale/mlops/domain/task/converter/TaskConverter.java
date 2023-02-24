@@ -17,43 +17,44 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
-import ai.starwhale.mlops.common.Converter;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.exception.ConvertException;
-import java.util.Objects;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TaskConverter implements Converter<TaskEntity, TaskVo> {
+public class TaskConverter {
 
     private final IdConverter idConvertor;
 
-    public TaskConverter(IdConverter idConvertor) {
+    private final StepMapper stepMapper;
+
+    public TaskConverter(IdConverter idConvertor, StepMapper stepMapper) {
         this.idConvertor = idConvertor;
+        this.stepMapper = stepMapper;
     }
 
-    @Override
-    public TaskVo convert(TaskEntity entity) throws ConvertException {
+    public TaskVo convert(TaskEntity entity) {
         if (entity == null) {
-            return TaskVo.empty();
+            return null;
+        }
+        StepEntity step = stepMapper.findById(entity.getStepId());
+        if (null == step) {
+            throw new SwProcessException(ErrorType.DB,
+                    String.format("bad task data: no step for task %s", entity.getId()));
         }
         return TaskVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
                 .taskStatus(entity.getTaskStatus())
                 .retryNum(entity.getRetryNum())
+                .endTime(entity.getFinishedTime().getTime())
+                .stepName(step.getName())
                 .createdTime(entity.getStartedTime().getTime())
                 .build();
     }
 
-    @Override
-    public TaskEntity revert(TaskVo vo) throws ConvertException {
-        Objects.requireNonNull(vo, "TaskVo");
-        return TaskEntity.builder()
-                .taskStatus(vo.getTaskStatus())
-                .retryNum(vo.getRetryNum())
-                .taskUuid(vo.getUuid())
-                .build();
-    }
 }

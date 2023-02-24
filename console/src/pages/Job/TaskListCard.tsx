@@ -39,14 +39,30 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
             {header}
             <Table
                 isLoading={tasksInfo.isLoading}
-                columns={[t('Task ID'), t('Resource Pool'), t('Started'), t('Status'), t('Action')]}
+                columns={[
+                    t('Task ID'),
+                    t('Step'),
+                    t('Resource Pool'),
+                    t('Started'),
+                    t('End Time'),
+                    t('Duration'),
+                    t('Status'),
+                    t('Retried'),
+                    t('Action'),
+                ]}
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
                             task.uuid,
+                            task.stepName,
                             task.resourcePool,
                             task.createdTime && formatTimestampDateTime(task.createdTime),
+                            task.stopTime && formatTimestampDateTime(task.stopTime),
+                            task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
+                                ? `${(task.stopTime - task.createdTime) / 1000}s`
+                                : '-',
                             task.taskStatus,
+                            task.retryNum > 0 ? 'YES' : 'NO',
                             <StyledLink
                                 key={task.uuid}
                                 onClick={(e: any) => {
