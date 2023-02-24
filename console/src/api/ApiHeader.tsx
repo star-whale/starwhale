@@ -64,7 +64,7 @@ export default function ApiHeader() {
                 }
 
                 // use user/current as default token auth, it will be triggered multi times, so silent here
-                const withSilentRoute = error.response.config.url.includes('/user/current')
+                const withSilentRoute = error.response?.config.url.includes('/user/current')
                 if (withSilentRoute) return Promise.reject(error)
 
                 const errMsg = getErrMsg(error)
