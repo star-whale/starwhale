@@ -97,7 +97,7 @@ class Service:
 
     def _render_api(self, _api: Api) -> None:
         import gradio
-        from gradio.components import File, Image, Video, Changeable, IOComponent
+        from gradio.components import File, Image, Video, IOComponent
 
         js_func: t.Optional[str] = None
         if self.hijack and self.hijack.submit:
@@ -106,11 +106,9 @@ class Service:
             with gradio.Column():
                 fn = _api.view_func(self.api_instance)
                 for i in _api.input:
-                    comp = gradio.components.get_component_instance(
-                        i, render=False
-                    ).render()
-                    if isinstance(comp, Changeable):
-                        comp.change(fn=fn, inputs=i, outputs=_api.output, _js=js_func)
+                    gradio.components.get_component_instance(i, render=False).render()
+                submit = gradio.Button("Submit")
+                submit.click(fn, inputs=_api.input, outputs=_api.output, _js=js_func)
                 # do not serve the useless examples in server instances
                 # the console will render them even the models are not serving
                 if _api.examples and not in_production():
