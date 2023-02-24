@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
@@ -50,18 +52,23 @@ public class JobLoader {
     }
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
+        //wrap task with watchers
         job.getSteps().forEach(step -> {
-            List<Task> tasks = step.getTasks();
-            if (resumePausedOrFailTasks) {
-                resumeFrozenTasks(tasks);
-            }
-            List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
+            List<Task> watchableTasks = watchableTaskFactory.wrapTasks(step.getTasks());
             step.setTasks(watchableTasks);
-            scheduleReadyTasks(watchableTasks.parallelStream()
-                    .filter(t -> t.getStatus() == TaskStatus.READY)
-                    .collect(Collectors.toSet()));
+            if (resumePausedOrFailTasks) {
+                resumeFrozenTasks(watchableTasks);
+            }
         });
+        //set job to memory after tasks are wrapped with watchers
         jobHolder.adopt(job);
+        //schedule ready task after job is set to memory
+        scheduleReadyTasks(
+                job.getSteps().stream()
+                        .map(Step::getTasks).flatMap(List::stream)
+                        .filter(t -> t.getStatus() == TaskStatus.READY)
+                        .collect(Collectors.toSet())
+        );
         return job;
 
     }
@@ -70,7 +77,11 @@ public class JobLoader {
         tasks.parallelStream().filter(t -> t.getStatus() == TaskStatus.PAUSED
                         || t.getStatus() == TaskStatus.FAIL
                         || t.getStatus() == TaskStatus.CANCELED)
-                .forEach(t -> t.updateStatus(TaskStatus.READY));
+                .forEach(t -> {
+                    // FAIL -> ready is forbidden by status machine, so make it to CREATED at first
+                    ((WatchableTask) t).unwrap().updateStatus(TaskStatus.CREATED);
+                    t.updateStatus(TaskStatus.READY);
+                });
     }
 
     /**

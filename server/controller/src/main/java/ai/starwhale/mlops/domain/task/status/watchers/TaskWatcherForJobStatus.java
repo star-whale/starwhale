@@ -84,7 +84,6 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
             if (!stepStatusMachine.couldTransfer(step.getStatus(), stepNewStatus)) {
                 log.warn("step status change unexpectedly from {} to {} of id {} forbidden", step.getStatus(),
                         stepNewStatus, step.getId());
-                return;
             }
             updateStepStatus(step, stepNewStatus);
             jobUpdateHelper.updateJob(job);

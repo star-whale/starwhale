@@ -28,6 +28,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.List;
@@ -70,17 +71,18 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, false);
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
-        verify(swTaskScheduler, times(mockJob.getSteps().size())).schedule(Set.of(readyTask));
+        verify(swTaskScheduler).schedule(Set.of(readyTask));
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
     }
 
     @Test
     public void testJobLoaderResume() {
-        Task mockTask = mock(Task.class);
-        when(mockTask.getStatus()).thenReturn(TaskStatus.FAIL);
-        mockJob.getSteps().get(0).getTasks().add(mockTask);
+        WatchableTask failedTask = mock(WatchableTask.class);
+        when(failedTask.getStatus()).thenReturn(TaskStatus.FAIL);
+        when(failedTask.unwrap()).thenReturn(new Task());
+        when(watchableTaskFactory.wrapTasks(anyCollection())).thenReturn(List.of(failedTask));
         jobLoader.load(mockJob, true);
-        verify(mockTask).updateStatus(TaskStatus.READY);
-        verify(jobHolder, times(1)).adopt(mockJob);
+        verify(failedTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
+        verify(jobHolder).adopt(mockJob);
     }
 }
