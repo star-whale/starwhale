@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
@@ -51,17 +52,23 @@ public class JobLoader {
     }
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
-        jobHolder.adopt(job);
+        //wrap task with watchers
         job.getSteps().forEach(step -> {
             List<Task> watchableTasks = watchableTaskFactory.wrapTasks(step.getTasks());
             step.setTasks(watchableTasks);
             if (resumePausedOrFailTasks) {
                 resumeFrozenTasks(watchableTasks);
             }
-            scheduleReadyTasks(watchableTasks.parallelStream()
-                    .filter(t -> t.getStatus() == TaskStatus.READY)
-                    .collect(Collectors.toSet()));
         });
+        //set job to memory after tasks are wrapped with watchers
+        jobHolder.adopt(job);
+        //schedule ready task after job is set to memory
+        scheduleReadyTasks(
+                job.getSteps().stream()
+                        .map(Step::getTasks).flatMap(List::stream)
+                        .filter(t -> t.getStatus() == TaskStatus.READY)
+                        .collect(Collectors.toSet())
+        );
         return job;
 
     }
