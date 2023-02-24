@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.task;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,7 +58,7 @@ public class TaskServiceTest {
     @BeforeEach
     public void setup() {
         stepMapper = mock(StepMapper.class);
-        when(stepMapper.findById(anyLong())).thenReturn(new StepEntity() {
+        when(stepMapper.findById(any())).thenReturn(new StepEntity() {
             {
                 setName("ppl");
             }

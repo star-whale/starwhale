@@ -77,6 +77,7 @@ public class TaskConverterTest {
         });
         TaskEntity taskEntity = TaskEntity.builder()
                 .id(1L)
+                .stepId(1L)
                 .startedTime(new Date(12345678L))
                 .finishedTime(new Date(12345679L))
                 .taskUuid("uuid")
