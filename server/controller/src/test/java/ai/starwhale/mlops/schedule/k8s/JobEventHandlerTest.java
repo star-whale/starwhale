@@ -91,4 +91,16 @@ public class JobEventHandlerTest {
         verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1)));
     }
 
+    @Test
+    public void testOnUpdateUnknown() {
+        V1Job v1Job = new V1Job();
+        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        V1JobStatus v1JobStatus = new V1JobStatus();
+        v1JobStatus.setSucceeded(1);
+        v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
+        v1Job.setStatus(v1JobStatus);
+        jobEventHandler.onUpdate(null, v1Job);
+        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.UNKNOWN, 0)));
+    }
+
 }
