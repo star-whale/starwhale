@@ -12,7 +12,7 @@ import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import { ArtifactType, parseDataSrc } from '@starwhale/core/dataset'
+import { ArtifactType, isAnnotationHiddenInTable, parseDataSrc } from '@starwhale/core/dataset'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
@@ -200,8 +200,10 @@ export default function DatasetVersionFiles() {
     const Records = React.useMemo(() => {
         if (!datasets?.[0]) return <></>
         const { summary } = datasets?.[0]
-        const rowAction = []
-        summary.forEach((value, key) =>
+        const rowAction: any[] = []
+        summary.forEach((value, key) => {
+            if (isAnnotationHiddenInTable(value)) return
+
             rowAction.push({
                 label: key,
                 overrides: {
@@ -273,7 +275,7 @@ export default function DatasetVersionFiles() {
                     )
                 },
             })
-        )
+        })
 
         // if (layoutKey === LAYOUT.GRID) {
         //     return (

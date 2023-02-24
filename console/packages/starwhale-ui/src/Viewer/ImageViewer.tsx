@@ -17,74 +17,78 @@ type IImageViewerProps = {
     isZoom?: boolean
     data: IArtifactImage
     masks: IArtifactImage[]
-    hiddenLabels: Set<number>
-    cocos: ITypeCOCOObjectAnnotation[]
-    bboxes: ITypeBoundingBox[]
+    cocos: (ITypeCOCOObjectAnnotation & { _show: boolean })[]
+    bboxes: (ITypeBoundingBox & { _show: boolean })[]
 }
-export default function ImageViewer({
-    isZoom = false,
-    data,
-    masks = [],
-    cocos = [],
-    bboxes = [],
-    hiddenLabels,
-}: IImageViewerProps) {
-    const $cocos = React.useMemo(() => {
-        return cocos.filter((coco) => !hiddenLabels.has(coco.id))
-    }, [cocos, hiddenLabels])
+export default function ImageViewer({ isZoom = false, data, masks = [], cocos = [], bboxes = [] }: IImageViewerProps) {
+    const img = React.useRef<HTMLImageElement>(null)
+    const [rect, setRect] = React.useState<{ width: number; height: number }>({ width: 0, height: 0 })
+    useEffect(() => {
+        if (data._extendSrc && isZoom) {
+            const tmp = new Image()
+            tmp.src = data._extendSrc
+            tmp.onload = () => {
+                setRect({ width: tmp.width, height: tmp.height })
+            }
+        }
+    }, [data._extendSrc, isZoom])
 
-    // if (!isZoom) {
-    //     return (
-    //         <div
-    //             className='dataset-viewer image-overlay fullsize'
-    //             style={{
-    //                 height: '100%',
-    //                 backgroundImage: `url(${data._extendSrc})`,
-    //                 backgroundSize: 'cover',
-    //                 backgroundRepeat: 'no-repeat',
-    //                 backgroundPosition: 'center',
-    //             }}
-    //         >
-    //             <img
-    //                 src={data._extendSrc}
-    //                 width='auto'
-    //                 height='100%'
-    //                 alt='dataset view'
-    //                 style={{ visibility: 'hidden' }}
-    //             />
-    //         </div>
-    //     )
-    // }
+    if (!isZoom) {
+        return (
+            <div
+                className='dataset-viewer image-overlay fullsize'
+                style={{
+                    height: '100%',
+                    backgroundImage: `url(${data._extendSrc})`,
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                }}
+            >
+                <img
+                    src={data._extendSrc}
+                    width='auto'
+                    height='100%'
+                    alt='dataset view'
+                    style={{ visibility: 'hidden' }}
+                />
+            </div>
+        )
+    }
+
+    const [height, width] = !rect.width ? data.shape : [rect.height, rect.width]
 
     return (
         <div className='dataset-viewer image-overlay fullsize' style={{ height: '100%' }}>
             <ZoomWrapper isTools={isZoom ? false : undefined}>
-                <img src={data._extendSrc} alt='dataset view' width={data.shape[1]} height={data.shape[0]} />
+                <img ref={img} src={data._extendSrc} alt='dataset view' width={width} height={height} />
+                {masks.map((mask, i) => (
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    <SegmentOverlay key={i} mask={mask} index={i} />
+                ))}
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
-                <SegmentOverlay masks={masks} />
+                <COCOBBoxOverlay cocos={cocos} />
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
-                <COCOBBoxOverlay cocos={$cocos} />
-                {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
-                <BBoxOverlay bboxes={bboxes} width={data.shape[1]} height={data.shape[0]} />
+                <BBoxOverlay bboxes={bboxes} width={width} height={height} />
             </ZoomWrapper>
         </div>
     )
 }
 
-export function SegmentOverlay({ masks = [] }: { masks: IArtifactImage[] }) {
+export function SegmentOverlay({ mask, index }: { mask: IArtifactImage; index: number }) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
     const [imgDatas, setImgDatas] = React.useState<IImageData[]>([])
     const styles = useStyles()
     useEffect(() => {
-        if (masks.length === 0) return
-        const getImages = async () => {
-            return Promise.all(masks.filter((m) => m?._extendSrc).map((m, i) => loadImage(i, m?._extendSrc as string)))
+        if (!mask) return
+        const getImage = async () => {
+            return loadImage(index, mask?._extendSrc as string)
         }
-        getImages().then((d) => setImgDatas(d))
-    }, [masks])
+        getImage().then((d) => setImgDatas([d]))
+    }, [mask, index])
 
     useEffect(() => {
-        if (canvasRef.current && masks[0] && imgDatas.length > 0) {
+        if (canvasRef.current && mask && imgDatas.length > 0) {
             const { height, width } = imgDatas[0].img
             if (!width || !height) return
             const canvas = canvasRef.current
@@ -92,19 +96,13 @@ export function SegmentOverlay({ masks = [] }: { masks: IArtifactImage[] }) {
             canvas.height = height
             drawSegmentWithCOCOMask(canvas, imgDatas)
         }
-    }, [canvasRef, imgDatas, masks])
+    }, [canvasRef, imgDatas, mask])
 
-    if (masks.length === 0) {
+    if (!mask) {
         return <></>
     }
 
-    return (
-        <canvas
-            ref={canvasRef}
-            className={styles.canvas}
-            style={{ position: 'absolute', left: 0, width: masks[0].shape[0], height: masks[0].shape[1] }}
-        />
-    )
+    return <canvas ref={canvasRef} className={styles.canvas} style={{ position: 'absolute', left: 0 }} />
 }
 
 export function BBoxOverlay({
@@ -112,7 +110,7 @@ export function BBoxOverlay({
     width: canvasWidth,
     height: canvasHeight,
 }: {
-    bboxes: IImageViewerProps['bboxes']
+    bboxes: (ITypeBoundingBox & { _show: boolean })[]
     width: number
     height: number
 }) {
@@ -127,7 +125,7 @@ export function BBoxOverlay({
         canvas.width = canvasWidth
         canvas.height = canvasHeight
 
-        bboxes.map(({ x, y, width, height }, index) => drawBox(canvas, [x, y, width, height], index))
+        bboxes.map(({ x, y, width, height, _show }, index) => _show && drawBox(canvas, [x, y, width, height], index))
     }, [canvasRef, bboxes, canvasWidth, canvasHeight])
 
     if (bboxes.length === 0) {

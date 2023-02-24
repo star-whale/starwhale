@@ -101,7 +101,7 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
                 />
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls>
-                    <source src={data._src} type={data._mime_type as string} />
+                    <source src={data._extendSrc} type={data._mime_type as string} />
                     Your browser does not support the audio element.
                 </audio>
                 <p className={styles.name}>{data.display_name ?? ''}</p>

@@ -67,17 +67,23 @@ export default function DatasetViewer({
                     return <ImageGrayscaleViewer data={data as IArtifactImage} isZoom={isZoom} />
                 }
 
-                const bboxes =
-                    Array.from(summary)
-                        .filter(
-                            ([key, value]) => !hiddenLabels.has(key) && value._extendType === AnnotationType.BOUNDINGBOX
-                        )
-                        .map(([, value]) => value) ?? []
+                const bboxes = Array.from(summary)
+                    .filter(([, value]) => value._extendType === AnnotationType.BOUNDINGBOX)
+                    .map(([key, value]) => {
+                        return {
+                            ...value,
+                            _show: !hiddenLabels.has(key),
+                        }
+                    })
 
-                const cocos =
-                    Array.from(summary)
-                        .filter(([key, value]) => !hiddenLabels.has(key) && value._extendType === AnnotationType.COCO)
-                        .map(([, value]) => value) ?? []
+                const cocos = Array.from(summary)
+                    .filter(([, value]) => value._extendType === AnnotationType.COCO)
+                    .map(([key, value]) => {
+                        return {
+                            ...value,
+                            _show: !hiddenLabels.has(key),
+                        }
+                    })
 
                 const masks =
                     Array.from(summary)
@@ -91,7 +97,6 @@ export default function DatasetViewer({
                         cocos={cocos}
                         masks={masks}
                         isZoom={isZoom}
-                        hiddenLabels={hiddenLabels}
                     />
                 )
             }

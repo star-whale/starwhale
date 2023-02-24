@@ -10,7 +10,7 @@ import { RAW_COLORS } from '@starwhale/ui/Viewer/utils'
 import { LabelMedium } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { JSONTree } from 'react-json-tree'
-import { useDatasetTableAnnotations } from '@starwhale/core/dataset/hooks/useDatasets'
+import { useDatasetTableAnnotations } from '@starwhale/core/dataset'
 
 export const theme = {
     scheme: 'bright',
@@ -302,7 +302,7 @@ function TabControl({
                                     key={type}
                                     checked={!hiddenTypes.has(type)}
                                     onChange={(e) => {
-                                        const checked = e.target.checked
+                                        const { checked } = e.target
                                         if (!checked) {
                                             setHiddenTypes((v) => new Set([...v, type]))
                                         } else {
@@ -321,6 +321,7 @@ function TabControl({
                     </div>
                 </div>
             )}
+            {/* @ts-ignore */}
             <Tabs
                 overrides={{
                     TabBar: {
@@ -357,6 +358,7 @@ function TabControl({
                 onChange={({ activeKey }) => onChange?.(activeKey as string)}
                 activeKey={$activeKey}
             >
+                {/* @ts-ignore */}
                 {!$isSimpleView && (
                     <Tab title={`Annotation(${count})`}>
                         <div>{Anno}</div>
