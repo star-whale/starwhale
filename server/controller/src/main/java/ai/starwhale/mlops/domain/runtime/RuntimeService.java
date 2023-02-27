@@ -588,7 +588,7 @@ public class RuntimeService {
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
-                            String.format("%s/version/%s", runtimeVersion.getName(), runtimeVersion.getVersionName())),
+                            String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
                     new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
                             systemSettingService.getSystemSetting().getPypiSetting().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
