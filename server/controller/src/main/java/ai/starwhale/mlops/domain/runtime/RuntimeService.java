@@ -520,8 +520,21 @@ public class RuntimeService {
                 // TODO check whether is building
                 var existJob = k8sClient.getJob(runtimeVersion.getVersionName());
                 if (null != existJob && existJob.getStatus() != null) {
-                    log.debug("runtime:{}-{}'s image:{} is building.", runtimeUrl, versionUrl, builtImage);
-                    return;
+                    var conditions = existJob.getStatus().getConditions();
+
+                    String type = conditions.get(0).getType();
+                    if ("Failed".equalsIgnoreCase(type)) {
+                        // TODO delete
+                    } else if ("Complete".equalsIgnoreCase(type)) {
+                        log.debug("runtime:{}-{}'s image:{} is build success.", runtimeUrl, versionUrl, builtImage);
+                        return;
+                    } else if ("Suspended".equalsIgnoreCase(type)) {
+                        log.debug("runtime:{}-{}'s image:{} is suspended.", runtimeUrl, versionUrl, builtImage);
+                        return;
+                    } else {
+                        log.debug("runtime:{}-{}'s image:{} is building.", runtimeUrl, versionUrl, builtImage);
+                        return;
+                    }
                 }
             } catch (ApiException k8sE) {
                 if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
