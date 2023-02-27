@@ -421,12 +421,6 @@ def _activate(uri: str, path: str) -> None:
     default=DefaultYAMLName.RUNTIME,
     help=f"Runtime YAML file name, default is {DefaultYAMLName.RUNTIME}",
 )
-@click.option(
-    "-dai",
-    "--disable-auto-inject",
-    is_flag=True,
-    help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
-)
 @optgroup.group(  # type: ignore
     "Python environment selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -470,7 +464,6 @@ def _activate(uri: str, path: str) -> None:
 def _lock(
     target_dir: str,
     yaml_name: str,
-    disable_auto_inject: bool,
     env_name: str,
     env_prefix_path: str,
     env_use_shell: bool,
@@ -491,7 +484,6 @@ def _lock(
         yaml_name,
         env_name,
         env_prefix_path,
-        disable_auto_inject,
         no_cache,
         stdout,
         include_editable,

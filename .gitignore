@@ -55,8 +55,7 @@ example/nmt/data/
 example/speech_command/data/
 example/speech_command/models/
 example/datasets/*/data
-/.starwhale/
-example/runtime/pytorch/requirements-sw-lock.txt
+.starwhale
 
 # UI
 node_modules

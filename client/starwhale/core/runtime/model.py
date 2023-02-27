@@ -105,6 +105,7 @@ from starwhale.utils.error import (
     ConfigFormatError,
     MissingFieldError,
     ExclusiveArgsError,
+    FieldTypeOrValueError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.progress import run_with_progress_bar
@@ -661,7 +662,6 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         env_prefix_path: str = "",
-        disable_auto_inject: bool = False,
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -674,7 +674,6 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             yaml_name,
             env_name,
             env_prefix_path,
-            disable_auto_inject,
             no_cache,
             stdout,
             include_editable,
@@ -768,7 +767,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_use_shell = kw.get("env_use_shell", False)
         include_editable = kw.get("include_editable", False)
         include_local_wheel = kw.get("include_local_wheel", False)
+        # TODO: tune for no runtime.yaml file
+        swrt_config = self._load_runtime_config(workdir / yaml_name)
 
+        lock_files = []
         if not disable_env_lock:
             console.print(
                 f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
@@ -778,7 +780,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 yaml_name=yaml_name,
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
-                disable_auto_inject=False,
                 no_cache=no_cache,
                 stdout=False,
                 include_editable=include_editable,
@@ -791,8 +792,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     self._detected_sw_version = line.split("==")[1].strip()
                     break
 
-        # TODO: tune for no runtime.yaml file
-        _swrt_config = self._load_runtime_config(workdir / yaml_name)
+            lock_fname = (
+                RuntimeLockFileType.CONDA
+                if swrt_config.mode == PythonRunEnv.CONDA
+                else RuntimeLockFileType.VENV
+            )
+            lock_files.append(f"{SW_AUTO_DIRNAME}/lock/{lock_fname}")
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -801,18 +806,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self._dump_context,
                 5,
                 "dump environment and configs",
-                dict(config=_swrt_config),
+                dict(config=swrt_config),
             ),
             (
                 self._lock_environment,
                 10,
                 "lock environment",
                 dict(
-                    swrt_config=_swrt_config,
-                    disable_env_lock=disable_env_lock,
+                    swrt_config=swrt_config,
                     env_prefix_path=env_prefix_path,
                     env_name=env_name,
                     env_use_shell=env_use_shell,
+                    lock_files=lock_files,
                 ),
             ),
             (
@@ -821,8 +826,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "dump python dependencies",
                 dict(
                     gen_all_bundles=kw.get("gen_all_bundles", False),
-                    deps=_swrt_config.dependencies,
-                    mode=_swrt_config.mode,
+                    deps=swrt_config.dependencies,
+                    mode=swrt_config.mode,
                     include_editable=include_editable,
                     env_prefix_path=env_prefix_path,
                     env_name=env_name,
@@ -832,13 +837,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self._dump_base_image,
                 5,
                 "dump base image",
-                dict(config=_swrt_config),
+                dict(config=swrt_config),
             ),
             (
                 self._copy_src,
                 20,
                 "dump src files:wheel, native files",
-                dict(config=_swrt_config, workdir=workdir, yaml_name=yaml_name),
+                dict(
+                    config=swrt_config,
+                    workdir=workdir,
+                    yaml_name=yaml_name,
+                    lock_files=lock_files,
+                ),
             ),
             (
                 self._render_manifest,
@@ -859,7 +869,22 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         config: RuntimeConfig,
         workdir: Path,
         yaml_name: str = DefaultYAMLName.RUNTIME,
+        lock_files: t.Optional[t.List[str]] = None,
     ) -> None:
+        lock_files = lock_files or []
+
+        conda_file_dups = set(config.dependencies._conda_files) & set(lock_files)
+        if conda_file_dups:
+            raise FieldTypeOrValueError(
+                f"conda files have used the auto-locked dependency files: {conda_file_dups}"
+            )
+
+        pip_file_dups = set(config.dependencies._pip_files) & set(lock_files)
+        if pip_file_dups:
+            raise FieldTypeOrValueError(
+                f"pip files have used the auto-locked dependency files:{pip_file_dups}"
+            )
+
         workdir_fs = open_fs(str(workdir.resolve()))
         snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
         copy_file(workdir_fs, yaml_name, snapshot_fs, yaml_name)
@@ -908,13 +933,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         logger.info("[step:copy-deps]start to copy pip/conda requirement files")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
-        for _fname in config.dependencies._conda_files + config.dependencies._pip_files:
+
+        for _fname in (
+            config.dependencies._conda_files
+            + config.dependencies._pip_files
+            + lock_files
+        ):
             _fpath = workdir / _fname
             if not _fpath.exists():
                 logger.warning(f"not found dependencies: {_fpath}")
                 continue
 
             _dest = f"{RuntimeArtifactType.DEPEND}/{_fname.lstrip('/')}"
+            ensure_dir((self.store.snapshot_workdir / _dest).parent)
             self._manifest["artifacts"][RuntimeArtifactType.DEPEND].append(_dest)
             copy_file(
                 workdir_fs,
@@ -951,14 +982,15 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _lock_environment(
         self,
         swrt_config: RuntimeConfig,
-        disable_env_lock: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
+        lock_files: t.Optional[t.List[str]] = None,
     ) -> None:
         console.print(":bee: dump environment info...")
         sh_py_env = guess_current_py_env()
         sh_py_ver = get_user_python_version(sh_py_env)
+        lock_files = lock_files or []
 
         self._manifest["environment"] = self._manifest.get("environment") or {}
 
@@ -976,8 +1008,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     "env_prefix_path": env_prefix_path,
                     "env_name": env_name,
                     "env_use_shell": env_use_shell,
+                    "files": lock_files,
                 },
-                "auto_lock_dependencies": not disable_env_lock,
+                "auto_lock_dependencies": bool(lock_files),
                 "python": swrt_config.environment.python,
                 "arch": swrt_config.environment.arch,
                 "mode": swrt_config.mode,
@@ -995,6 +1028,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     ) -> None:
         console.print("dump dependencies info...")
         deps = deps or Dependencies()
+
         self._manifest["dependencies"] = {
             "raw_deps": deps.flatten_raw_deps(),
             "local_packaged_env": False,
@@ -1270,7 +1304,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         env_prefix_path: str = "",
-        disable_auto_inject: bool = False,
         no_cache: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -1284,7 +1317,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         :param yaml_name: runtime config file name
         :param env_name: conda environment name (used by conda env)
         :param env_prefix_path: python env prefix path (used by both venv and conda)
-        :param disable_auto_inject: disable putting lock file info into configured runtime yaml file
         :param no_cache: invalid all pkgs installed
         :param stdout: just print the lock info into stdout without saving lock file
         :param include_editable: include the editable pkg (only for venv)
@@ -1377,26 +1409,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 if mode == PythonRunEnv.CONDA
                 else RuntimeLockFileType.VENV
             )
-            console.print(f":mouse: dump lock file: {dest_fname}")
-            shutil.move(temp_lock_path, Path(target_dir) / dest_fname)
-
-            if not disable_auto_inject and runtime_fpath.exists():
-                cls._update_runtime_dep_lock_field(runtime_fpath, dest_fname)
+            lock_dir = Path(target_dir) / SW_AUTO_DIRNAME / "lock"
+            ensure_dir(lock_dir)
+            dest_fpath = lock_dir / dest_fname
+            shutil.move(temp_lock_path, dest_fpath)
+            console.print(f":mouse: dump lock file: {dest_fpath}")
 
         return content
-
-    @staticmethod
-    def _update_runtime_dep_lock_field(runtime_fpath: Path, lock_fname: str) -> None:
-        content = load_yaml(runtime_fpath)
-        deps = content.get("dependencies", [])
-        if lock_fname in deps:
-            return
-
-        console.print(f":monkey_face: update {runtime_fpath} dependencies field")
-        deps.append(lock_fname)
-        content["dependencies"] = deps
-        # TODO: safe_dump will change user's other yaml content format at first time
-        ensure_file(runtime_fpath, yaml.safe_dump(content, default_flow_style=False))
 
     @staticmethod
     def render_runtime_yaml(
@@ -1603,6 +1622,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                             deps=_manifest["dependencies"],
                             configs=_manifest.get("configs", {}),
                             isolated_env_dir=isolated_env_dir,
+                            lock_files=_env.get("lock", {}).get("files", []),
                         ),
                     ),
                 ]
@@ -1674,12 +1694,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         deps: t.Dict,
         configs: t.Dict,
         isolated_env_dir: t.Optional[Path] = None,
+        lock_files: t.Optional[t.List[str]] = None,
     ) -> None:
         if "raw_deps" not in deps:
             raise NoSupportError(
                 f"not found raw_deps field, please rebuild runtime with the newer swcli({STARWHALE_VERSION}) version"
             )
 
+        lock_files = lock_files or []
         export_dir = workdir / "export"
         env_dir = isolated_env_dir or export_dir / mode
 
@@ -1689,7 +1711,28 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             DependencyType.PIP_REQ_FILE: RuntimeArtifactType.DEPEND,
         }
 
-        for dep in deps["raw_deps"]:
+        if lock_files:
+            # We assume the equation in the runtime auto-lock build mode:
+            #   the lock files = pip_pkg + pip_req_file + conda_pkg + conda_env_file
+            raw_deps = []
+            for dep in deps["raw_deps"]:
+                kind = DependencyType(dep["kind"])
+                if kind in (DependencyType.NATIVE_FILE, DependencyType.WHEEL):
+                    raw_deps.append(dep)
+
+            for lf in lock_files:
+                if lf.endswith(RuntimeLockFileType.CONDA):
+                    raw_deps.append({"deps": lf, "kind": DependencyType.CONDA_ENV_FILE})
+                elif lf.endswith(RuntimeLockFileType.VENV):
+                    raw_deps.append({"deps": lf, "kind": DependencyType.PIP_REQ_FILE})
+                else:
+                    raise NoSupportError(
+                        f"lock file({lf}) cannot be converted into raw_deps"
+                    )
+        else:
+            raw_deps = deps["raw_deps"]
+
+        for dep in raw_deps:
             kind = DependencyType(dep["kind"])
             if kind not in dependency_map:
                 raise NoSupportError(f"install dependency:{kind}")

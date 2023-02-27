@@ -32,6 +32,7 @@ from starwhale.utils.error import (
     NoSupportError,
     ConfigFormatError,
     ExclusiveArgsError,
+    FieldTypeOrValueError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
@@ -311,6 +312,95 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_venv_exceptions(
+        self,
+        m_output: MagicMock,
+        m_check_call: MagicMock,
+        m_py_bin: MagicMock,
+    ):
+        m_output.return_value = b"3.7"
+        name = "rttest"
+        venv_dir = "/home/starwhale/venv"
+        ensure_dir(venv_dir)
+        self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
+        venv_path = os.path.join(venv_dir, "bin/python3")
+        os.environ[ENV_VENV] = venv_dir
+        m_py_bin.return_value = venv_path
+
+        workdir = "/home/starwhale/myproject"
+        runtime_config = self.get_runtime_config()
+        runtime_config["dependencies"] = [
+            "req.txt",
+            ".starwhale/lock/requirements-sw-lock.txt",
+        ]
+        self.fs.create_file(
+            os.path.join(workdir, DefaultYAMLName.RUNTIME),
+            contents=yaml.safe_dump(runtime_config),
+        )
+        self.fs.create_file(
+            os.path.join(workdir, "req.txt"), contents="requests==2.0.0"
+        )
+        self.fs.create_file(
+            os.path.join(workdir, ".starwhale/lock/requirements-sw-lock.txt"),
+            contents="requests==2.0.0",
+        )
+
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        with self.assertRaisesRegex(
+            FieldTypeOrValueError,
+            "pip files have used the auto-locked dependency files",
+        ):
+            sr.build(workdir=Path(workdir), enable_lock=True, env_prefix_path=venv_dir)
+
+    @patch("os.environ", {})
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.is_venv")
+    @patch("starwhale.utils.venv.is_conda")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_conda_exceptions(
+        self,
+        m_call_output: MagicMock,
+        m_check_call: MagicMock,
+        m_conda: MagicMock,
+        m_venv: MagicMock,
+        m_py_bin: MagicMock,
+    ) -> None:
+        conda_prefix = "/home/starwhale/anaconda3/envs/starwhale"
+        ensure_dir(os.path.join(conda_prefix, "conda-meta"))
+        m_py_bin.return_value = os.path.join(conda_prefix, "bin/python3")
+        m_conda.return_value = True
+        m_venv.return_value = False
+        m_call_output.side_effect = [b"3.7.13", conda_prefix.encode(), b"False"]
+
+        os.environ[ENV_CONDA] = "1"
+        os.environ[ENV_CONDA_PREFIX] = conda_prefix
+
+        name = "rttest"
+        workdir = "/home/starwhale/myproject"
+
+        runtime_config = self.get_runtime_config()
+        runtime_config["mode"] = "conda"
+        runtime_config["dependencies"] = [".starwhale/lock/conda-sw-lock.yaml"]
+        self.fs.create_file(
+            os.path.join(workdir, DefaultYAMLName.RUNTIME),
+            contents=yaml.safe_dump(runtime_config),
+        )
+        self.fs.create_file(
+            os.path.join(workdir, ".starwhale/lock/conda-sw-lock.yaml"), contents=""
+        )
+        uri = URI(name, expected_type=URIType.RUNTIME)
+        sr = StandaloneRuntime(uri)
+        with self.assertRaisesRegex(
+            FieldTypeOrValueError,
+            "conda files have used the auto-locked dependency files",
+        ):
+            sr.build(workdir=Path(workdir), enable_lock=True, env_use_shell=True)
+
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_venv(
         self,
         m_output: MagicMock,
@@ -422,10 +512,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not _deps["local_packaged_env"]
         assert _deps["conda_files"] == ["conda-env.yaml"]
         assert _deps["conda_pkgs"] == ["pkg"]
-        assert _deps["pip_files"] == ["requirements.txt", "requirements-sw-lock.txt"]
+        assert _deps["pip_files"] == ["requirements.txt"]
         assert _deps["pip_pkgs"] == ["Pillow"]
         _raw_deps = _deps["raw_deps"]
-        assert len(_raw_deps) == 7
+        assert len(_raw_deps) == 6
         assert _raw_deps == [
             {"deps": "requirements.txt", "kind": "pip_req_file"},
             {"deps": ["dummy.whl"], "kind": "wheel"},
@@ -444,8 +534,17 @@ class StandaloneRuntimeTestCase(TestCase):
             },
             {"deps": "conda-env.yaml", "kind": "conda_env_file"},
             {"deps": ["pkg"], "kind": "conda_pkg"},
-            {"deps": "requirements-sw-lock.txt", "kind": "pip_req_file"},
         ]
+        assert _manifest["artifacts"]["dependencies"] == [
+            "dependencies/requirements.txt",
+            "dependencies/.starwhale/lock/requirements-sw-lock.txt",
+        ]
+        assert _manifest["environment"]["auto_lock_dependencies"]
+        assert _manifest["environment"]["lock"]["files"] == [
+            ".starwhale/lock/requirements-sw-lock.txt"
+        ]
+        for p in _manifest["artifacts"]["dependencies"]:
+            assert os.path.exists(os.path.join(runtime_workdir, p))
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -636,7 +735,7 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         _deps = _manifest["dependencies"]
-        assert _deps["conda_files"] == ["conda.yaml", "conda-sw-lock.yaml"]
+        assert _deps["conda_files"] == ["conda.yaml"]
         assert len(_deps["conda_pkgs"]) == 0
         assert _deps["pip_files"] == ["requirements.txt"]
         assert _deps["pip_pkgs"] == ["Pillow"]
@@ -645,8 +744,20 @@ class StandaloneRuntimeTestCase(TestCase):
             {"deps": ["dummy.whl"], "kind": "wheel"},
             {"deps": ["Pillow"], "kind": "pip_pkg"},
             {"deps": "conda.yaml", "kind": "conda_env_file"},
-            {"deps": "conda-sw-lock.yaml", "kind": "conda_env_file"},
         ]
+        assert _manifest["artifacts"]["dependencies"] == [
+            "dependencies/conda.yaml",
+            "dependencies/requirements.txt",
+            "dependencies/.starwhale/lock/conda-sw-lock.yaml",
+        ]
+        assert _manifest["environment"]["auto_lock_dependencies"]
+
+        assert _manifest["environment"]["lock"]["files"] == [
+            ".starwhale/lock/conda-sw-lock.yaml"
+        ]
+
+        for p in _manifest["artifacts"]["dependencies"]:
+            assert os.path.exists(os.path.join(runtime_workdir, p))
 
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
@@ -712,17 +823,10 @@ class StandaloneRuntimeTestCase(TestCase):
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        with self.assertRaises(ConfigFormatError):
+        with self.assertRaisesRegex(ConfigFormatError, "only support Python"):
             sr.build(workdir=Path(workdir), env_use_shell=True)
 
-        assert m_check_call.call_args[0][0][:6] == [
-            "conda",
-            "env",
-            "export",
-            "--prefix",
-            "/home/starwhale/anaconda3/envs/starwhale",
-            "--file",
-        ]
+        assert m_check_call.call_args is None
 
         m_check_call.reset_mock()
         m_call_output.reset_mock()
@@ -906,6 +1010,113 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
     @patch("starwhale.utils.venv.check_call")
+    def test_restore_venv_with_auto_lock(
+        self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
+    ):
+        workdir = "/home/starwhale/myproject"
+        export_dir = os.path.join(workdir, "export")
+        dep_dir = os.path.join(workdir, "dependencies")
+        scripts_dir = os.path.join(workdir, "files")
+        wheels_dir = os.path.join(workdir, "wheels")
+
+        ensure_dir(workdir)
+        ensure_dir(scripts_dir)
+        ensure_dir(wheels_dir)
+        wheel_fpath = os.path.join(wheels_dir, "dummy.whl")
+        self.fs.create_file(
+            os.path.join(scripts_dir, "scripts", "prepare.sh"), contents=""
+        )
+        self.fs.create_file(wheel_fpath, contents="")
+
+        self.fs.create_file(
+            os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+            contents=yaml.safe_dump(
+                {
+                    "environment": {
+                        "mode": "venv",
+                        "python": "3.7",
+                        "arch": [SupportArch.AMD64],
+                        "lock": {
+                            "files": [".starwhale/lock/requirements-sw-lock.txt"],
+                        },
+                    },
+                    "dependencies": {
+                        "local_packaged_env": False,
+                        "raw_deps": [
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-sw-lock.txt",
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["a", "b"],
+                            },
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-test.txt",
+                            },
+                            {
+                                "kind": "wheel",
+                                "deps": ["dummy.whl"],
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["c", "d"],
+                            },
+                            {
+                                "kind": "native_file",
+                                "deps": [
+                                    {
+                                        "dest": "bin/prepare.sh",
+                                        "name": "prepare",
+                                        "post": "bash bin/prepare.sh",
+                                        "pre": "ls bin/prepare.sh",
+                                        "src": "scripts/prepare.sh",
+                                    }
+                                ],
+                            },
+                        ],
+                        "pip_files": [
+                            "requirements-sw-lock.txt",
+                            "requirements-test.txt",
+                        ],
+                    },
+                    "artifacts": {
+                        "files": [
+                            {
+                                "dest": "bin/prepare.sh",
+                                "name": "prepare",
+                                "post": "bash bin/prepare.sh",
+                                "pre": "ls bin/prepare.sh",
+                                "src": "scripts/prepare.sh",
+                            }
+                        ],
+                        "wheels": ["wheels/dummy.whl"],
+                        "dependencies": [
+                            "dependencies/requirements-test.txt",
+                            "dependencies/requirements-sw-lock.txt",
+                        ],
+                    },
+                }
+            ),
+        )
+        ensure_dir(export_dir)
+
+        lock_dir = os.path.join(dep_dir, ".starwhale", "lock")
+        ensure_dir(lock_dir)
+        req_lock_fpath = os.path.join(lock_dir, "requirements-sw-lock.txt")
+        self.fs.create_file(req_lock_fpath, contents="test2==0.0.1")
+
+        m_exists.return_value = True
+        Runtime.restore(Path(workdir))
+
+        assert m_call.call_count == 2
+        pip_cmds = [mc[0][0][4:] for mc in m_call.call_args_list]
+        assert pip_cmds == [[wheel_fpath], ["-r", req_lock_fpath]]
+
+    @patch("starwhale.utils.venv.check_user_python_pkg_exists")
+    @patch("starwhale.utils.venv.virtualenv.cli_run")
+    @patch("starwhale.utils.venv.check_call")
     def test_restore_venv(
         self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
     ):
@@ -1045,6 +1256,115 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_count == 7
 
         RuntimeTermView.restore(workdir)
+
+    @patch("starwhale.core.runtime.model.platform.machine")
+    @patch("starwhale.utils.fs.tarfile.open")
+    @patch("starwhale.utils.venv.check_call")
+    def test_restore_conda_with_auto_lock(
+        self, m_call: MagicMock, m_tar: MagicMock, m_machine: MagicMock
+    ):
+        name = "rttest"
+        version = "1234"
+        sw = SWCliConfigMixed()
+        workdir = str(
+            sw.rootdir
+            / "self"
+            / "workdir"
+            / "runtime"
+            / name
+            / version[:VERSION_PREFIX_CNT]
+            / version
+        )
+        ensure_dir(workdir)
+
+        self.fs.create_file(
+            os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+            contents=yaml.safe_dump(
+                {
+                    "environment": {
+                        "python": "3.7",
+                        "mode": "conda",
+                        "arch": [SupportArch.ARM64],
+                        "lock": {"files": [".starwhale/lock/conda-sw-lock.yaml"]},
+                    },
+                    "dependencies": {
+                        "local_packaged_env": False,
+                        "raw_deps": [
+                            {
+                                "kind": "pip_req_file",
+                                "deps": "requirements-sw-lock.txt",
+                            },
+                            {
+                                "kind": "pip_pkg",
+                                "deps": ["a", "b"],
+                            },
+                            {
+                                "kind": "wheel",
+                                "deps": ["dummy.whl"],
+                            },
+                            {
+                                "kind": "conda_pkg",
+                                "deps": ["c", "d"],
+                            },
+                            {
+                                "kind": "conda_env_file",
+                                "deps": "conda-env.yaml",
+                            },
+                        ],
+                    },
+                }
+            ),
+        )
+
+        export_dir = os.path.join(workdir, "export")
+        ensure_dir(export_dir)
+        dep_dir = os.path.join(workdir, "dependencies")
+        lock_dir = os.path.join(dep_dir, ".starwhale", "lock")
+        ensure_dir(lock_dir)
+        req_lock_fpath = os.path.join(lock_dir, "conda-sw-lock.yaml")
+        wheels_dir = os.path.join(workdir, "wheels")
+        ensure_dir(wheels_dir)
+        wheel_fpath = os.path.join(wheels_dir, "dummy.whl")
+
+        self.fs.create_file(req_lock_fpath, contents="fake content")
+        self.fs.create_file(wheel_fpath, contents="")
+
+        m_machine.return_value = "arm64"
+        Runtime.restore(Path(workdir))
+
+        assert m_call.call_count == 4
+        conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
+        conda_prefix_dir = os.path.join(export_dir, "conda")
+        assert conda_cmds == [
+            ["conda", "create", "--yes", "--prefix", conda_prefix_dir, "python=3.7"],
+            [
+                "conda",
+                "run",
+                "--prefix",
+                conda_prefix_dir,
+                "python3",
+                "-m",
+                "pip",
+                "install",
+                "--exists-action",
+                "w",
+                wheel_fpath,
+            ],
+            [
+                "conda",
+                "env",
+                "update",
+                "--file",
+                req_lock_fpath,
+                "--prefix",
+                conda_prefix_dir,
+            ],
+            [
+                f"{conda_prefix_dir}/bin/python3",
+                "-c",
+                "import pkg_resources; pkg_resources.get_distribution('starwhale')",
+            ],
+        ]
 
     @patch("starwhale.core.runtime.model.platform.machine")
     @patch("starwhale.utils.fs.tarfile.open")
@@ -1215,14 +1535,6 @@ class StandaloneRuntimeTestCase(TestCase):
             ],
         ]
 
-        assert m_call.call_args_list[0][0][0] == [
-            "conda",
-            "create",
-            "--yes",
-            "--prefix",
-            os.path.join(export_dir, "conda"),
-            "python=3.7",
-        ]
         RuntimeTermView.restore(workdir)
 
         ensure_file(
@@ -1252,7 +1564,9 @@ class StandaloneRuntimeTestCase(TestCase):
         target_dir = "/home/starwhale/workdir"
         ensure_dir(target_dir)
         runtime_fname = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
-        lock_fname = os.path.join(target_dir, RuntimeLockFileType.VENV)
+        lock_fname = os.path.join(
+            target_dir, ".starwhale", "lock", RuntimeLockFileType.VENV
+        )
         self.fs.create_file(os.path.join(target_dir, "dummy.whl"))
         self.fs.create_file(
             runtime_fname,
@@ -1327,7 +1641,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert os.path.exists(lock_fname)
         content = load_yaml(runtime_fname)
-        assert RuntimeLockFileType.VENV == content["dependencies"][-1]
+        assert RuntimeLockFileType.VENV not in content["dependencies"]
         del os.environ[ENV_VENV]
 
         StandaloneRuntime.lock(target_dir, env_prefix_path=venv_dir)
@@ -1363,15 +1677,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_venv.cli_run = _mock_cli_run
         StandaloneRuntime.lock(target_dir)
 
-        assert m_call.call_count == 5
-        assert m_call.call_args_list[3][0][0] == [
-            f"{sw_venv_dir}/bin/pip",
-            "install",
-            "--exists-action",
-            "w",
-            "-r",
-            f"{target_dir}/requirements-sw-lock.txt",
-        ]
+        assert m_call.call_count == 4
         assert m_output.call_count == 2
 
         assert os.path.exists(sw_venv_dir)
@@ -1485,9 +1791,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
         ]
 
-        assert os.path.exists(os.path.join(target_dir, RuntimeLockFileType.CONDA))
+        assert os.path.exists(
+            os.path.join(target_dir, ".starwhale", "lock", RuntimeLockFileType.CONDA)
+        )
         content = load_yaml(runtime_fname)
-        assert RuntimeLockFileType.CONDA == content["dependencies"][-1]
+        assert RuntimeLockFileType.CONDA not in content["dependencies"]
 
         StandaloneRuntime.lock(target_dir, env_name="conda-env-name")
 
@@ -1520,7 +1828,7 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(os.path.join(sw_conda_dir, "conda-meta"))
         StandaloneRuntime.lock(target_dir)
 
-        assert m_call.call_count == 4
+        assert m_call.call_count == 3
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "run",
@@ -1545,17 +1853,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "--override-channels",
             "'b'",
         ]
-        assert m_call.call_args_list[2][0][0] == [
-            "conda",
-            "env",
-            "update",
-            "--file",
-            f"{target_dir}/conda-sw-lock.yaml",
-            "--prefix",
-            sw_conda_dir,
-        ]
 
-        assert m_call.call_args_list[3][0][0][:6] == [
+        assert m_call.call_args_list[2][0][0][:6] == [
             "conda",
             "env",
             "export",

@@ -23,7 +23,7 @@ title: Starwhale Runtime-运行环境
 ### 1.3 关键元素
 
 - `runtime.yaml` 配置文件：描述 `Starwhale Runtime` 是如何被定义的，是构建 `Starwhale Runtime` 的起点。runtime.yaml 可以是用户从头编写的，也可以是通过 `swcli runtime quickstart` 命令生成的。
-- `swrt` 包文件：`swcli runtime build` 命令执行后生成的runtime打包文件，目前为tar格式。`swrt` 包文件包含一个_manifest.yaml文件，一个 `runtime.yaml` 文件，一组 `requirements.txt`/`requirements-sw-lock.txt` 文件（包含零个或多个）和用户想打包到 `Starwhale Runtime` 的其他文件，包括 native libs, bin files, wheel files 或 python scripts等。`swrt` 在Standalone Instance环境生成后，可以通过 `swcli dataset copy` 命令进行分发。swrt 是Starwhale Runtime的简写。
+- `swrt` 包文件：`swcli runtime build` 命令执行后生成的runtime打包文件，目前为tar格式。`swrt` 包文件包含一个_manifest.yaml文件，一个 `runtime.yaml` 文件，一组 `requirements.txt`（包含零个或多个）和用户想打包到 `Starwhale Runtime` 的其他文件，包括 native libs, bin files, wheel files 或 python scripts等。`swrt` 在Standalone Instance环境生成后，可以通过 `swcli dataset copy` 命令进行分发。swrt 是Starwhale Runtime的简写。
 - `swcli runtime` 命令行：一组runtime相关的命令，包括构建、分发和管理等功能。具体命令行说明，请参考 [CLI Reference](../reference/cli/runtime.md)。
 
 ## 2. 最佳实践
@@ -117,17 +117,15 @@ runtime.yaml 对于 `Starwhale Runtime` 至关重要，一切的构建都是从r
 
 ```yaml
 name: helloworld
-dependencies:
-  - requirements-sw-lock.txt
 ```
 
-helloworld的runtime中，只有三行配置，但却描述了如下信息：
+helloworld的runtime.yaml中只有一行关于name的配置，构建runtime时，就意味着使用如下的默认配置：
 
 - venv作为Python隔离环境。
 - python版本为执行 swcli runtime build 命令时，swcli所用的Python解释器的版本。
 - arch会根据宿主机体系结构(aarch64或amd64)自动选择合适的基础镜像。
 - 选用ubuntu:20.04作为基础镜像的OS版本。
-- 使用 `swcli runtime lock`命令或 `swcli runtime build`时自动lock出来的 requirements-sw-lock.txt 中描述的依赖作为Python依赖。
+- 使用 `swcli runtime lock`命令或 `swcli runtime build`时自动lock出来的 requirements-sw-lock.txt（存放在.starwhale/lock目录中）中描述的依赖作为Python依赖。
 
 #### 3.2.2 Pytorch Runtime的示例
 
@@ -162,7 +160,6 @@ dependencies:
       - dest: bin/prepare.sh
         name: prepare
         src: scripts/prepare.sh
-  - requirements-sw-lock.txt
 environment:
   arch: noarch
   os: ubuntu:20.04
@@ -176,11 +173,11 @@ pytorch runtime例子描述了一个比较复杂的runtime.yaml编写方式，�
 
 #### 3.2.3 dependencies 示例
 
-仅使用 requirements.txt 格式描述依赖，一般通过 pip freeze 或 swcli runtime lock 命令产生该文件。 `requirements-sw-lock.txt` 是一个保留的文件名，通过 `swcli runtime lock` 命令或 `swcli runtime build --enable-lock` 命令产生。支持.txt或.in文件后缀。
+仅使用 requirements.txt 格式描述依赖，一般通过 pip freeze，手工编写或其他工具产生该文件。 支持.txt或.in文件后缀。
 
 ```yaml
 dependencies:
- - requirements-sw-lock.txt
+ - requirements.txt
 ```
 
 使用 conda.yaml 格式描述依赖，一般通过 conda export 命令导出某个conda环境的依赖。支持.yaml或.yml文件后缀。
