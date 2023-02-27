@@ -524,37 +524,54 @@ public class RuntimeService {
                     return;
                 }
             } catch (ApiException k8sE) {
-                if (k8sE.getCode() != 404) {
+                if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
                     log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
+                    return;
                 }
                 // go on
             }
 
             try {
-                // judge registry secret whether has been created TODO is ex 404?
-                if (k8sClient.getSecret(DOCKER_REGISTRY_SECRET) == null) {
-                    if (null != systemSettingService.getSystemSetting()
-                            && null != systemSettingService.getSystemSetting().getDockerSetting()
-                            && null != systemSettingService.getSystemSetting().getDockerSetting().getRegistry()
-                            && null != systemSettingService.getSystemSetting().getDockerSetting().getUserName()
-                            && null != systemSettingService.getSystemSetting().getDockerSetting().getPassword()) {
-                        k8sClient.createSecret(new V1Secret()
-                                .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
-                                .type("kubernetes.io/dockerconfigjson")
-                                .data(Map.of(
-                                    "docker-server",
-                                    systemSettingService.getSystemSetting().getDockerSetting().getRegistry().getBytes(),
-                                    "docker-username",
-                                    systemSettingService.getSystemSetting().getDockerSetting().getUserName().getBytes(),
-                                    "docker-password",
-                                    systemSettingService.getSystemSetting().getDockerSetting().getPassword().getBytes()
-                                ))
-                        );
+                // judge registry secret whether has been created
+                k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
+            } catch (ApiException k8sE) {
+                if (k8sE.getCode() == HttpServletResponse.SC_NOT_FOUND) {
+                    log.debug("secret is not found {}, now to build it", k8sE.getResponseBody(), k8sE);
+                    var sysSetting = systemSettingService.getSystemSetting();
+                    if (null != sysSetting
+                            && null != sysSetting.getDockerSetting()
+                            && null != sysSetting.getDockerSetting().getRegistry()
+                            && null != sysSetting.getDockerSetting().getUserName()
+                            && null != sysSetting.getDockerSetting().getPassword()) {
+                        try {
+                            k8sClient.createSecret(new V1Secret()
+                                    .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
+                                    .type("kubernetes.io/dockerconfigjson")
+                                    .data(Map.of(
+                                        "docker-server",
+                                        sysSetting.getDockerSetting().getRegistry().getBytes(),
+                                        "docker-username",
+                                        sysSetting.getDockerSetting().getUserName().getBytes(),
+                                        "docker-password",
+                                        sysSetting.getDockerSetting().getPassword().getBytes()
+                                    ))
+                            );
+                        } catch (Exception e) {
+                            log.error("create secret error {}", e.getMessage(), e);
+                            throw new SwValidationException(ValidSubject.RUNTIME,
+                                "create secret error when building image for runtime");
+                        }
+
                     } else {
                         throw new SwValidationException(ValidSubject.RUNTIME,
-                                "can't found docker registry info, please set it.");
+                            "can't found docker registry info, please set it.");
                     }
                 }
+                // go on
+            }
+
+            try {
+
                 var image = String.format("%s/%s:%s",
                         runtimeVersion.getName(), runtimeVersion.getVersionName(), System.currentTimeMillis());
                 image = new DockerImage(image).resolve(
