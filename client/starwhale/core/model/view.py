@@ -215,26 +215,27 @@ class ModelTermView(BaseTermView):
     @BaseTermView._only_standalone
     def build(
         cls,
-        workdir: str,
+        workdir: t.Union[str, Path],
         project: str,
-        yaml_name: str = DefaultYAMLName.MODEL,
+        yaml_path: t.Union[str, Path],
         runtime_uri: str = "",
     ) -> URI:
-        _config = load_yaml(Path(workdir) / yaml_name)
+        workdir = Path(workdir)
+        _config = load_yaml(yaml_path)
         _model_uri = cls.prepare_build_bundle(
             project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
-        kwargs = {"yaml_name": yaml_name}
+        kwargs = {"yaml_path": yaml_path}
         if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=_m.build,
-                args=(Path(workdir),),
+                args=(workdir,),
                 kwargs=kwargs,
             ).run()
         else:
-            _m.build(Path(workdir), **kwargs)
+            _m.build(workdir, **kwargs)
         return _model_uri
 
     @classmethod

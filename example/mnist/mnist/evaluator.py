@@ -10,7 +10,10 @@ from torchvision import transforms
 from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
 from starwhale.api.service import api
 
-from .model import Net
+try:
+    from .model import Net
+except ImportError:
+    from model import Net  # type: ignore
 
 ROOTDIR = Path(__file__).parent.parent
 

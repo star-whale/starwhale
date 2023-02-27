@@ -137,10 +137,11 @@ class Model(BaseArtifact):
     def build_with_api(
         workdir: str,
         project: str = "",
-        model_yaml: str = "model.yaml",
+        model_yaml: str = "",
         runtime_uri: str = "",
     ) -> t.Any:
-        return ModelTermView.build(workdir, project, model_yaml, runtime_uri)
+        yaml_path = model_yaml if model_yaml else Path(workdir) / "model.yaml"
+        return ModelTermView.build(workdir, project, yaml_path, runtime_uri)
 
     def build(
         self,
