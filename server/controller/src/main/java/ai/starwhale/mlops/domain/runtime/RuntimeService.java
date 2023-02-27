@@ -574,7 +574,7 @@ public class RuntimeService {
             try {
 
                 var image = String.format("%s/%s:%s",
-                        runtimeVersion.getName(), runtimeVersion.getVersionName(), System.currentTimeMillis());
+                        runtimeUrl, runtimeVersion.getVersionName(), System.currentTimeMillis());
                 image = new DockerImage(image).resolve(
                         systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
 
