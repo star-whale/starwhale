@@ -584,6 +584,7 @@ public class RuntimeService {
                     ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
                             templateContainer.getName());
                     containerOverwriteSpec.setEnvs(envVars);
+                    containerOverwriteSpec.setImage(runtimeVersion.getImage());
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
 
@@ -606,6 +607,8 @@ public class RuntimeService {
             } catch (ApiException k8sE) {
                 log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
 
+            } catch (Exception e) {
+                log.error("image build error {}", e.getMessage(), e);
             }
         }
     }
