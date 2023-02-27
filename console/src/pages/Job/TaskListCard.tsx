@@ -9,6 +9,7 @@ import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
 import qs from 'qs'
+import moment from 'moment'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -39,13 +40,27 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
             {header}
             <Table
                 isLoading={tasksInfo.isLoading}
-                columns={[t('Task ID'), t('Resource Pool'), t('Started'), t('Status'), t('Action')]}
+                columns={[
+                    t('Task ID'),
+                    t('Step'),
+                    t('Resource Pool'),
+                    t('Started'),
+                    t('End Time'),
+                    t('Duration'),
+                    t('Status'),
+                    t('Action'),
+                ]}
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
                             task.uuid,
+                            task.stepName,
                             task.resourcePool,
                             task.createdTime && formatTimestampDateTime(task.createdTime),
+                            task.stopTime && formatTimestampDateTime(task.stopTime),
+                            task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
+                                ? moment.duration(task.stopTime - task.createdTime, 'milliseconds').humanize()
+                                : '-',
                             task.taskStatus,
                             <StyledLink
                                 key={task.uuid}

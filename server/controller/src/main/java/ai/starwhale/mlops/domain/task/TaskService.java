@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -32,7 +31,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,8 +51,7 @@ public class TaskService {
     private final JobDao jobDao;
 
     public TaskService(TaskConverter taskConvertor, TaskMapper taskMapper,
-            StorageAccessService storageAccessService, JobDao jobDao,
-            SystemSettingService systemSettingService) {
+            StorageAccessService storageAccessService, JobDao jobDao) {
         this.taskConvertor = taskConvertor;
         this.taskMapper = taskMapper;
         this.storageAccessService = storageAccessService;
@@ -90,7 +88,7 @@ public class TaskService {
         String logDir = resultPath.logDir();
         try (InputStream inputStream = storageAccessService.get(
                 logDir + PATH_SPLITERATOR + logFileName)) {
-            return new String(inputStream.readAllBytes(), Charset.forName("UTF-8"));
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.DB,
                     MessageFormat.format("read log path from db failed {}", taskId),

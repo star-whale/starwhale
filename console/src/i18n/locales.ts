@@ -399,6 +399,9 @@ const locales0 = {
     'End Time': {
         en: 'End Time',
     },
+    'Duration': {
+        en: 'Duration',
+    },
     'Status': {
         en: 'Status',
     },
@@ -517,7 +520,13 @@ const locales0 = {
         en: 'show meta',
     },
     'View Log': {
-        en: 'View Log',
+        en: 'View Logs',
+    },
+    'Logs collected': {
+        en: 'Logs collected',
+    },
+    'Execution id': {
+        en: 'Execution id',
     },
     'Support': {
         en: 'Support',

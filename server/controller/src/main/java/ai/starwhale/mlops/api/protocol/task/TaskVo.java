@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.api.protocol.task;
 
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,25 +32,21 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class TaskVo implements Serializable {
 
-    @JsonProperty("id")
     private String id;
 
-    @JsonProperty("uuid")
     private String uuid;
 
-    @JsonProperty("createdTime")
     private Long createdTime;
 
-    @JsonProperty("taskStatus")
+    @JsonProperty("stopTime")
+    private Long endTime;
+
     private TaskStatus taskStatus;
 
-    @JsonProperty("retryNum")
     private Integer retryNum;
 
-    @JsonProperty("resourcePool")
     private String resourcePool;
 
-    public static TaskVo empty() {
-        return new TaskVo("", "", -1L, TaskStatus.CREATED, 0, ResourcePool.DEFAULT_NAME);
-    }
+    private String stepName;
+
 }

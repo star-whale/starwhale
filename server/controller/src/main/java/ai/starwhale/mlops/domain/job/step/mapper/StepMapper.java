@@ -42,6 +42,11 @@ public interface StepMapper {
             + " order by id")
     List<StepEntity> findByJobId(@Param("jobId") Long jobId);
 
+    @Select("select id, step_uuid as uuid, step_name as name, job_id, last_step_id, step_status as status,"
+            + " finished_time, started_time, created_time, modified_time, concurrency, task_num from step"
+            + " where id = #{id}")
+    StepEntity findById(@Param("id") Long id);
+
     @Update("update step set last_step_id = #{lastStepId} WHERE id = #{stepId}")
     void updateLastStep(@Param("stepId") Long stepId, @Param("lastStepId") Long lastStepId);
 
