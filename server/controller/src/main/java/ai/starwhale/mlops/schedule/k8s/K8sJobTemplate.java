@@ -146,6 +146,13 @@ public class K8sJobTemplate {
         job.getMetadata().labels(originLabels);
     }
 
+    public void updateAnnotations(V1Job job, Map<String, String> annotations) {
+        var origin = job.getMetadata().getAnnotations();
+        origin = origin == null ? new HashMap<>() : origin;
+        origin.putAll(annotations);
+        job.getMetadata().annotations(annotations);
+    }
+
     public V1StatefulSet renderModelServingOrch(
             String name,
             String image,

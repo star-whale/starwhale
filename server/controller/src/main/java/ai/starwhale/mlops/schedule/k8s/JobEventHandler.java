@@ -93,7 +93,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             return;
         }
         var version = jobName(job);
-        var image = job.getMetadata().getLabels().get("image");
+        var image = job.getMetadata().getAnnotations().get("image");
         if (!StringUtils.hasText(version) || !StringUtils.hasText(image)) {
             return;
         }

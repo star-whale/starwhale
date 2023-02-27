@@ -563,7 +563,7 @@ public class RuntimeService {
                 var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
                 // record image to labels
-                k8sJobTemplate.updateLabels(job, Map.of("image", image));
+                k8sJobTemplate.updateAnnotations(job, Map.of("image", image));
 
                 Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
                 List<V1EnvVar> envVars = List.of(
