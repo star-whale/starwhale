@@ -523,7 +523,15 @@ public class RuntimeService {
                     log.debug("runtime:{}-{}'s image:{} is building.", runtimeUrl, versionUrl, builtImage);
                     return;
                 }
-                // judge registry secret whether has been created
+            } catch (ApiException k8sE) {
+                if (k8sE.getCode() != 404) {
+                    log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
+                }
+                // go on
+            }
+
+            try {
+                // judge registry secret whether has been created TODO is ex 404?
                 if (k8sClient.getSecret(DOCKER_REGISTRY_SECRET) == null) {
                     if (null != systemSettingService.getSystemSetting()
                             && null != systemSettingService.getSystemSetting().getDockerSetting()
