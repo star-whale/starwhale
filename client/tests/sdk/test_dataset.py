@@ -84,7 +84,7 @@ from starwhale.api._impl.dataset.builder import (
     create_generic_cls,
 )
 
-from .test_base import BaseTestCase
+from .. import BaseTestCase
 
 _mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
 _mnist_data_path = _mnist_dir / "data"

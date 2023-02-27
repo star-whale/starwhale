@@ -1,9 +1,10 @@
 import os
 import random
+import typing as t
 
 import numpy
 
-from starwhale import Text, PipelineHandler, PPLResultIterator, multi_classification
+from starwhale import PipelineHandler, multi_classification
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -22,7 +23,7 @@ class SimplePipeline(PipelineHandler):
         show_roc_auc=True,
         all_labels=[f"label-{i}" for i in range(0, 100)],
     )
-    def cmp(self, ppl_result: PPLResultIterator):
+    def cmp(self, ppl_result: t.Iterator):
         result, label, pr = [], [], []
         for _data in ppl_result:
             label.append(_data["ds_data"]["label"])

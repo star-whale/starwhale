@@ -30,9 +30,17 @@ class StandaloneEvalExecutor(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+    @patch("starwhale.core.model.model.Step.get_steps_from_yaml")
+    @patch("starwhale.core.model.model.generate_jobs_yaml")
     @patch("starwhale.core.eval.executor.check_call")
-    @patch("starwhale.core.job.scheduler.Scheduler.schedule")
-    def test_run(self, m_scheduler: MagicMock, m_call: MagicMock) -> None:
+    @patch("starwhale.core.job.scheduler.Scheduler.run")
+    def test_run(
+        self,
+        m_scheduler: MagicMock,
+        m_call: MagicMock,
+        m_generate: MagicMock,
+        m_steps_yaml: MagicMock,
+    ) -> None:
         sw = SWCliConfigMixed()
         project_dir = sw.rootdir / "self"
 

@@ -20,7 +20,7 @@ from starwhale.api._impl.data_store import (
     TableWriterException,
 )
 
-from .test_base import BaseTestCase
+from .. import BaseTestCase
 
 
 class TestBasicFunctions(BaseTestCase):

@@ -21,17 +21,16 @@ from starwhale.consts import (
     FileDesc,
     FileFlag,
     FileNode,
+    RunStatus,
     CREATED_AT_KEY,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
-    EvalHandlerType,
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
-    DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_EVALUATION_SVC_META_FNAME,
@@ -55,12 +54,13 @@ from starwhale.utils.load import load_module
 from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.api._impl.job import Parser, Context, context_holder
-from starwhale.core.job.model import STATUS, Generator
+from starwhale.api._impl.job import generate_jobs_yaml
+from starwhale.core.job.step import Step
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.model.copy import ModelCopy
+from starwhale.core.job.context import Context
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
 from starwhale.core.job.scheduler import Scheduler
@@ -72,13 +72,11 @@ class ModelRunConfig(ASDictMixin):
     def __init__(
         self,
         handler: str,
-        type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
         envs: t.Union[t.List[str], None] = None,
         **kw: t.Any,
     ):
         self.handler = handler.strip()
-        self.typ = type
         self.runtime = runtime.strip()
         self.envs = envs or []
         self.kw = kw
@@ -218,14 +216,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
 
-    def _gen_steps(self, typ: str, ppl: str, workdir: Path) -> None:
-        if typ == EvalHandlerType.DEFAULT:
-            # use default
-            ppl = DEFAULT_EVALUATION_PIPELINE
-        _f = self.store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FNAME
-        logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
-        Parser.generate_job_yaml(ppl, workdir, _f)
-
     def _gen_model_serving(self, ppl: str, workdir: Path) -> None:
         rc_dir = str(
             self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
@@ -261,8 +251,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         svc: t.Optional[Service] = None
 
         # TODO: refine this ugly ad hoc
-        context_holder.context = Context(
-            pkg, version="-1", project="tmp-project-for-build"
+        Context.set_runtime_context(
+            Context(pkg, version="-1", project="tmp-project-for-build")
         )
 
         # TODO: check duplication
@@ -299,16 +289,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return svc
 
     @classmethod
-    def get_pipeline_handler(
-        cls,
-        workdir: Path,
-        yaml_name: str = DefaultYAMLName.MODEL,
-    ) -> str:
-        _mp = workdir / yaml_name
-        _model_config = cls.load_model_config(_mp, workdir)
-        return cls._get_module(_model_config)
-
-    @classmethod
     def eval_user_handler(
         cls,
         project: str,
@@ -318,20 +298,18 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = "default",
         step_name: str = "",
-        task_index: int = 0,
+        task_index: t.Optional[int] = None,
         task_num: int = 0,
         base_info: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> None:
         base_info = base_info or {}
-        # init manifest
         _manifest: t.Dict[str, t.Any] = {
             CREATED_AT_KEY: now_str(),
-            "status": STATUS.START,
+            "status": RunStatus.START,
             "step": step_name,
             "task_index": task_index,
             "task_num": task_num,
         }
-        # load model config by yaml
         _model_config = cls.load_model_config(workdir / model_yaml_name, workdir)
 
         if not version:
@@ -341,65 +319,49 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
         ensure_dir(_run_dir)
 
-        _module = cls._get_module(_model_config)
-        _yaml_path = str(workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME)
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
 
-        # generate if not exists
-        if not os.path.exists(_yaml_path):
-            _new_yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
-            Parser.generate_job_yaml(_module, workdir, _new_yaml_path)
-            _yaml_path = str(_new_yaml_path)
+        if not yaml_path.exists():
+            # do not auto generate eval_job.yaml in the user workdir
+            yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
+            generate_jobs_yaml(
+                run_handler=_model_config.run.handler,
+                workdir=workdir,
+                yaml_path=yaml_path,
+            )
 
-        # parse job steps from yaml
-        logger.debug(f"parse job from yaml:{_yaml_path}")
-        _jobs = Generator.generate_job_from_yaml(_yaml_path)
-
-        if job_name not in _jobs:
-            raise RuntimeError(f"job:{job_name} not found")
-
-        _steps = _jobs[job_name]
+        logger.debug(f"parse job from yaml:{yaml_path}")
 
         console.print(
             f":hourglass_not_done: start to run evaluation[{job_name}:{version}]..."
         )
-        logger.debug(f"-->[Running] start to run evaluation[{job_name}:{version}].")
         _scheduler = Scheduler(
             project=_project_uri.project,
             version=version,
-            module=_module,
             workdir=workdir,
             dataset_uris=dataset_uris,
-            steps=_steps,
+            steps=Step.get_steps_from_yaml(job_name, yaml_path),
         )
-        _status = STATUS.START
+        _status = RunStatus.START
         try:
-            if not step_name:
-                _step_results = _scheduler.schedule()
-            elif task_index < 0:
-                _step_results = [
-                    _scheduler.schedule_single_step(
-                        step_name=step_name, task_num=task_num
-                    )
-                ]
-            else:
-                _step_results = [
-                    _scheduler.schedule_single_task(step_name, task_index, task_num)
-                ]
-
-            _status = STATUS.SUCCESS
+            _results = _scheduler.run(
+                step_name=step_name, task_index=task_index, task_num=task_num
+            )
+            _status = RunStatus.SUCCESS
 
             exceptions: t.List[Exception] = []
-            for _sr in _step_results:
-                for _tr in _sr.task_results:
+            for _r in _results:
+                for _tr in _r.task_results:
                     if _tr.exception:
                         exceptions.append(_tr.exception)
             if exceptions:
                 raise Exception(*exceptions)
+
             logger.debug(
-                f"-->[Finished] evaluation[{job_name}:{version}] execute finished, results info:{_step_results}"
+                f"-->[Finished] evaluation[{job_name}:{version}] execute finished, results info:{_results}"
             )
         except Exception as e:
-            _status = STATUS.FAILED
+            _status = RunStatus.FAILED
             _manifest["error_message"] = str(e)
             logger.error(
                 f"-->[Failed] evaluation[{job_name}:{version}] execute failed, error info:{e}"
@@ -423,15 +385,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
             console.print(
-                f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
+                f":{100 if _status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
-
-    @classmethod
-    def _get_module(cls, _model_config: ModelConfig) -> str:
-        if _model_config.run.typ == EvalHandlerType.DEFAULT:
-            return DEFAULT_EVALUATION_PIPELINE
-        else:
-            return _model_config.run.handler
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         """
@@ -597,13 +552,15 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(workdir=workdir, yaml_path=yaml_path),
             ),
             (
-                self._gen_steps,
+                generate_jobs_yaml,
                 5,
-                "generate execute steps",
+                "generate jobs yaml",
                 dict(
-                    typ=_model_config.run.typ,
-                    ppl=_model_config.run.handler,
+                    run_handler=_model_config.run.handler,
                     workdir=workdir,
+                    yaml_path=self.store.src_dir
+                    / SW_AUTO_DIRNAME
+                    / DEFAULT_EVALUATION_JOBS_FNAME,
                 ),
             ),
             (

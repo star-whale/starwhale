@@ -4,7 +4,7 @@ import torch
 import gradio
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
-from starwhale import Text, PipelineHandler, PPLResultIterator
+from starwhale import Text, PipelineHandler
 from starwhale.api.service import api
 
 model_id = "stabilityai/stable-diffusion-2"
@@ -22,7 +22,7 @@ class StableDiffusion(PipelineHandler):
     def ppl(self, content: Text, **kw: t.Any) -> t.Any:
         return self.pipe(content).images[0]
 
-    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+    def cmp(self, ppl_result: t.Iterator) -> t.Any:
         return ppl_result
 
     @api(

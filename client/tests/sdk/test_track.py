@@ -36,7 +36,7 @@ from starwhale.api._impl.track.handler import HandlerThread
 from starwhale.api._impl.track.tracker import Tracker
 from starwhale.api._impl.track.collector import CollectorThread
 
-from .test_base import BaseTestCase
+from .. import BaseTestCase
 
 
 class TestTrackBase(BaseTestCase):

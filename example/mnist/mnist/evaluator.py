@@ -7,7 +7,7 @@ import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
+from starwhale import Image, PipelineHandler, multi_classification
 from starwhale.api.service import api
 
 try:
@@ -44,7 +44,7 @@ class MNISTInference(PipelineHandler):
         all_labels=[i for i in range(0, 10)],
     )
     def cmp(
-        self, ppl_result: PPLResultIterator
+        self, ppl_result: t.Iterator
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
         result, label, pr = [], [], []
         for _data in ppl_result:

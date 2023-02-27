@@ -2,7 +2,7 @@ import typing as t
 
 import gradio
 
-from starwhale import PipelineHandler, PPLResultIterator
+from starwhale import PipelineHandler
 from starwhale.api import service
 
 
@@ -19,5 +19,5 @@ class MyDefaultClass(PipelineHandler):
         return
 
     @service.api(gradio.Text(), gradio.Json())
-    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+    def cmp(self, ppl_result: t.Iterator) -> t.Any:
         pass

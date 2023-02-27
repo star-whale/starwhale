@@ -2,7 +2,6 @@ version: 1.0
 name: mnist
 
 run:
-  type: custom
   handler: mnist.custom_evaluator
 
 desc: mnist by pytorch

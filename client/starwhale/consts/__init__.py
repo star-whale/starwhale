@@ -20,7 +20,6 @@ DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_EVALUATION_JOB_NAME = "default"
 DEFAULT_EVALUATION_JOBS_FNAME = "eval_jobs.yaml"
 DEFAULT_EVALUATION_SVC_META_FNAME = "svc.json"
-DEFAULT_EVALUATION_PIPELINE = "starwhale.core.model.default_handler"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_CONFIG_VERSION = "2.0"
 DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL = 10 * 1024  # 10KB
@@ -101,11 +100,6 @@ class SWDSBackendType:
     Http = "http"
 
 
-class EvalHandlerType:
-    DEFAULT = "default"
-    CUSTOM = "custom"
-
-
 class DataLoaderKind:
     SWDS = "swds"
     JSONL = "jsonl"
@@ -131,11 +125,25 @@ class FileDesc(Enum):
     DATA = "DATA"
 
 
+class RunStatus:
+    INIT = "init"
+    START = "start"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
 class FileFlag:
     UNCHANGED = "unchanged"
     ADDED = "added"
     UPDATED = "updated"
     DELETED = "deleted"
+
+
+class DecoratorInjectAttr:
+    Step = "_starwhale_inject_step_decorator"
+    Predict = "_starwhale_inject_predict_decorator"
+    Evaluate = "_starwhale_inject_evaluate_decorator"
 
 
 @dataclass

@@ -7,7 +7,7 @@ from starwhale.utils.load import import_object
 from starwhale.api._impl.model import build
 from starwhale.core.model.model import ModelConfig
 
-from .test_base import BaseTestCase
+from .. import BaseTestCase
 
 
 class ModelBuildTestCase(BaseTestCase):

@@ -20,8 +20,6 @@ from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.model.model import StandaloneModel
 from starwhale.core.runtime.model import StandaloneRuntime
 
-_CNTR_WORKDIR = "/opt/starwhale"
-
 
 class EvalExecutor:
     def __init__(

@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import gradio
 
-from starwhale import Video, PipelineHandler, PPLResultIterator, multi_classification
+from starwhale import Video, PipelineHandler, multi_classification
 from starwhale.api.service import api
 
 from .model import MFNET_3D
@@ -224,7 +224,7 @@ class UCF101PipelineHandler(PipelineHandler):
         show_cohen_kappa_score=True,
         show_roc_auc=True,
     )
-    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+    def cmp(self, ppl_result: t.Iterator) -> t.Any:
         result, label, pr = [], [], []
         for _data in ppl_result:
             label.append(_data["ds_data"]["label"])

@@ -8,7 +8,7 @@ from starwhale.consts import HTTPMethod
 from starwhale.api._impl import wrapper, data_store
 from starwhale.consts.env import SWEnv
 
-from .test_base import BaseTestCase
+from .. import BaseTestCase
 
 
 @patch.dict(os.environ, {"SW_TOKEN": "sw_token"})

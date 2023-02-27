@@ -26,13 +26,11 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.api._impl.job import Context, context_holder
-from starwhale.core.job.model import Step
+from starwhale.core.job.step import Step
 from starwhale.core.model.cli import _list as list_cli
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel, resource_to_file_node
 from starwhale.core.instance.view import InstanceTermView
-from starwhale.api._impl.evaluation import PipelineHandler, PPLResultIterator
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -60,6 +58,7 @@ class StandaloneModelTestCase(TestCase):
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
 
     @patch("starwhale.base.blob.store.LocalFileStore.copy_dir")
+    @patch("starwhale.api._impl.job._preload_to_register_jobs")
     @patch("starwhale.core.model.model.file_stat")
     @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.Walker.files")
@@ -70,8 +69,13 @@ class StandaloneModelTestCase(TestCase):
         m_walker_files: MagicMock,
         m_get_service: MagicMock,
         m_stat: MagicMock,
+        m_preload: MagicMock,
         m_copy_dir: MagicMock,
     ) -> None:
+        from starwhale.api._impl.job import _jobs_global
+
+        _jobs_global["default"] = []
+
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
@@ -95,6 +99,7 @@ class StandaloneModelTestCase(TestCase):
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.MODEL}"
         )
+        assert m_preload.call_count == 1
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
@@ -171,6 +176,7 @@ class StandaloneModelTestCase(TestCase):
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list[self.name]) == 0
 
+        _jobs_global["default"] = []
         ModelTermView.build(self.workdir, "self", Path(self.workdir) / "model.yaml")
 
     def test_get_file_desc(self):
@@ -234,41 +240,39 @@ class StandaloneModelTestCase(TestCase):
         )
         assert diff_info["compare_version"]["src/model.yaml"].flag == FileFlag.UNCHANGED
 
-    @patch("starwhale.core.job.model.Generator.generate_job_from_yaml")
-    @patch("starwhale.api._impl.job.Parser.generate_job_yaml")
-    @patch("starwhale.core.job.scheduler.Scheduler.schedule_single_task")
-    @patch("starwhale.core.job.scheduler.Scheduler.schedule_single_step")
-    @patch("starwhale.core.job.scheduler.Scheduler.schedule")
+    @patch("starwhale.core.job.step.Step.get_steps_from_yaml")
+    @patch("starwhale.core.model.model.generate_jobs_yaml")
+    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_task")
+    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_step")
+    @patch("starwhale.core.job.scheduler.Scheduler._schedule_all")
     def test_eval(
         self,
-        schedule_mock: MagicMock,
+        schedule_all_mock: MagicMock,
         single_step_mock: MagicMock,
         single_task_mock: MagicMock,
         gen_yaml_mock: MagicMock,
         gen_job_mock: MagicMock,
     ):
-        gen_job_mock.return_value = {
-            "default": [
-                Step(
-                    job_name="default",
-                    step_name="ppl",
-                    cls_name="",
-                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                    concurrency=1,
-                    task_num=1,
-                    needs=[],
-                ),
-                Step(
-                    job_name="default",
-                    step_name="cmp",
-                    cls_name="",
-                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                    concurrency=1,
-                    task_num=1,
-                    needs=["ppl"],
-                ),
-            ]
-        }
+        gen_job_mock.return_value = [
+            Step(
+                job_name="default",
+                name="ppl",
+                cls_name="",
+                resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                concurrency=1,
+                task_num=1,
+                needs=[],
+            ),
+            Step(
+                job_name="default",
+                name="cmp",
+                cls_name="",
+                resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                concurrency=1,
+                task_num=1,
+                needs=["ppl"],
+            ),
+        ]
         StandaloneModel.eval_user_handler(
             project="test",
             version="qwertyuiop",
@@ -277,7 +281,7 @@ class StandaloneModelTestCase(TestCase):
             step_name="ppl",
             task_index=0,
         )
-        schedule_mock.assert_not_called()
+        schedule_all_mock.assert_not_called()
         single_step_mock.assert_not_called()
         single_task_mock.assert_called_once()
 
@@ -297,7 +301,7 @@ class StandaloneModelTestCase(TestCase):
             workdir=Path(self.workdir),
             dataset_uris=["mnist/version/latest"],
         )
-        schedule_mock.assert_called_once()
+        schedule_all_mock.assert_called_once()
 
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")
@@ -336,41 +340,6 @@ class StandaloneModelTestCase(TestCase):
         # list supports using instance/project uri which is not current_instance/current_project
         models, _ = ModelTermView.list("remote/whatever")
         assert len(models) == 2  # project foo and bar
-
-    def test_get_cls_from_model_yaml(self):
-        from starwhale.core.model import default_handler
-
-        with self.assertRaises(Exception):
-            default_handler._get_cls(Path(_model_data_dir))
-
-    @patch("starwhale.api._impl.data_store.atexit")
-    @patch("starwhale.core.model.default_handler.StandaloneModel")
-    @patch("starwhale.core.model.default_handler.import_object")
-    def test_default_handler(
-        self, m_import: MagicMock, m_model: MagicMock, m_atexit: MagicMock
-    ):
-        from starwhale.core.model import default_handler
-
-        class SimpleHandler(PipelineHandler):
-            def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
-                pass
-
-            def cmp(self, _iter: PPLResultIterator) -> t.Any:
-                pass
-
-            def some(self):
-                assert self.context.version == "rwerwe9"
-                return "success"
-
-        m_model.load_model_config().return_value = {"run": {"ppl": "test"}}
-        m_import.return_value = SimpleHandler
-        context = Context(
-            workdir=Path(_model_data_dir),
-            version="rwerwe9",
-            project="self",
-        )
-        context_holder.context = context
-        default_handler._invoke(context, "some")
 
     @patch("starwhale.utils.process.check_call")
     @patch("starwhale.utils.docker.gen_swcli_docker_cmd")
@@ -438,9 +407,10 @@ class CloudModelTest(TestCase):
         assert len(call_args[5]) == 0
 
 
+@patch("starwhale.core.model.model.generate_jobs_yaml")
 @patch("starwhale.core.model.model.StandaloneModel._get_service")
 def test_build_with_custom_config_file(
-    m_get_service: MagicMock, tmp_path: pathlib.Path
+    m_get_service: MagicMock, m_generate_yaml: MagicMock, tmp_path: pathlib.Path
 ):
     sw_config._config = {
         "storage": {

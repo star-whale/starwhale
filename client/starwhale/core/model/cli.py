@@ -222,7 +222,7 @@ def _recover(model: str, force: bool) -> None:
     help=f"Evaluation job version, env is {SWEnv.eval_version}",
 )
 @click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option("--task-index", default=None, help="Index of tasks in the current step")
 @click.option(
     "--override-task-num",
     default=0,

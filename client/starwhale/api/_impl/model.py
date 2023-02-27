@@ -17,10 +17,10 @@ _path_T = t.Union[str, Path]
 
 def build(
     evaluation_handler: t.Any,
-    name: t.Optional[str] = None,
     workdir: t.Optional[_path_T] = None,
-    desc: str = "",
+    name: t.Optional[str] = None,
     project_uri: str = "",
+    desc: str = "",
 ) -> None:
     """Build Starwhale Model Package.
 

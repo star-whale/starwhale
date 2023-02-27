@@ -35,8 +35,7 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
 
-from .. import ROOT_DIR
-from .test_base import BaseTestCase
+from .. import ROOT_DIR, BaseTestCase
 
 
 class _DatasetSDKTestBase(BaseTestCase):

@@ -55,14 +55,8 @@ def import_object(
 
 
 def load_module(module: str, path: Path) -> t.Any:
-    """
-    load module from path
-    :param module: module name
-    :param path: abs path
-    :return: module
-    """
     workdir_path = str(path.absolute())
-    # add module path to sys path
+
     external_paths = [workdir_path]
     for _path in external_paths[::-1]:
         if _path not in sys.path:
@@ -71,24 +65,3 @@ def load_module(module: str, path: Path) -> t.Any:
             pkg_resources.working_set.add_entry(_path)
 
     return importlib.import_module(module, package=workdir_path)
-
-
-def load_cls(module: str, cls_str: str) -> t.Any:
-    _cls = getattr(module, cls_str, None)
-    if not _cls:
-        raise ModuleNotFoundError(f"class:{cls_str} from module:{module}")
-    return _cls
-
-
-def get_func_from_object(obj: t.Any, func_str: str) -> t.Any:
-    _func = getattr(obj, func_str, None)
-    if not _func:
-        raise ModuleNotFoundError(f"function:{func_str} from object:{obj}")
-    return _func
-
-
-def get_func_from_module(module: str, func_str: str) -> t.Any:
-    _func = getattr(module, func_str, None)
-    if not _func:
-        raise ModuleNotFoundError(f"function:{func_str} from module:{module}")
-    return _func
