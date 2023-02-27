@@ -28,10 +28,10 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Context, context_holder
 from starwhale.core.job.model import Step
 from starwhale.core.model.cli import _list as list_cli
-from starwhale.api._impl.model import PipelineHandler, PPLResultIterator
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel, resource_to_file_node
 from starwhale.core.instance.view import InstanceTermView
+from starwhale.api._impl.evaluation import PipelineHandler, PPLResultIterator
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
