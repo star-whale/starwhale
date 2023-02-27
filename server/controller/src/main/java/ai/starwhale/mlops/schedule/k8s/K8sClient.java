@@ -62,7 +62,6 @@ public class K8sClient {
     private final AppsV1Api appsV1Api;
 
     private final String ns;
-    private static final String DEFAULT_NAMESPACE = "default";
 
     private final SharedInformerFactory informerFactory;
 
@@ -104,11 +103,11 @@ public class K8sClient {
     }
 
     public V1Secret createSecret(V1Secret secret) throws ApiException {
-        return coreV1Api.createNamespacedSecret(DEFAULT_NAMESPACE, secret, null, null, null, null);
+        return coreV1Api.createNamespacedSecret(ns, secret, null, null, null, null);
     }
 
     public V1Secret getSecret(String name) throws ApiException {
-        return coreV1Api.readNamespacedSecret(name, DEFAULT_NAMESPACE, null);
+        return coreV1Api.readNamespacedSecret(name, ns, null);
     }
 
     public void deleteJob(String name) throws ApiException {
