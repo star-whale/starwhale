@@ -13,7 +13,6 @@ from collections import defaultdict
 import yaml
 from fs import open_fs
 from loguru import logger
-from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs.tarfs import TarFS
 
@@ -30,13 +29,14 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    DEFAULT_COPY_WORKERS,
+    SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_EVALUATION_SVC_META_FNAME,
+    DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -58,6 +58,7 @@ from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.api._impl.job import Parser, Context, context_holder
 from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
@@ -105,22 +106,20 @@ class ModelConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
-        model: t.List[str],
         run: t.Dict[str, t.Any],
-        config: t.List[str] = [],
+        config: t.Optional[t.List[str]] = None,
         desc: str = "",
-        tag: t.List[str] = [],
+        tag: t.Optional[t.List[str]] = None,
         version: str = DEFAULT_STARWHALE_API_VERSION,
         **kw: t.Any,
     ):
         # TODO: format model name
         self.name = name
-        self.model = model or []
         self.config = config or []
         # TODO: support artifacts: local or remote
         self.run = ModelRunConfig(**run)
         self.desc = desc
-        self.tag = tag
+        self.tag = tag or []
         self.version = version
         self.kw = kw
 
@@ -128,11 +127,9 @@ class ModelConfig(ASDictMixin):
 
     def _do_validate(self) -> None:
         # TODO: use attr validator
-        if not self.model:
-            raise FileFormatError("need at least one model")
-
         # TODO: add more validation
         # TODO: add name check
+        ...
 
     @classmethod
     def create_by_yaml(cls, path: Path) -> ModelConfig:
@@ -143,7 +140,7 @@ class ModelConfig(ASDictMixin):
         return f"Model Config: {self.name}"
 
     def __repr__(self) -> str:
-        return f"Model Config: name -> {self.name}, model-> {self.model}"
+        return f"Model Config: name -> {self.name}"
 
 
 class Model(BaseBundle, metaclass=ABCMeta):
@@ -224,6 +221,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.sources: t.List[t.Dict[str, t.Any]] = []
         self.yaml_name = DefaultYAMLName.MODEL
         self._version = uri.object.version
+        self._object_store = LocalFileStore()
 
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
@@ -425,7 +423,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     **dict(
                         version=version,
                         project=_project_uri.project,
-                        model=_model_config.model[0],
                         model_dir=str(workdir),
                         datasets=list(dataset_uris),
                         status=_status,
@@ -619,7 +616,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._copy_src,
                 15,
                 "copy src",
-                dict(workdir=workdir, yaml_name=yaml_name, model_config=_model_config),
+                dict(workdir=workdir, yaml_name=yaml_name),
             ),
             (
                 self._gen_steps,
@@ -651,23 +648,29 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         ]
         run_with_progress_bar("model bundle building...", operations)
 
-    def _make_meta_tar(self) -> None:
-        w = Walker(exclude=[f["name"] for f in self.models])
+    def _make_meta_tar(
+        self, size_th_to_tar: int = DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL
+    ) -> None:
+        w = Walker()
         src_fs = open_fs(str(self.store.src_dir.resolve()))
         with tarfile.open(self.store.snapshot_workdir / SWMP_SRC_FNAME, "w:") as tar:
             for f in w.files(src_fs):
                 sub_path = f[1:]
-                tar.add(str(self.store.src_dir / sub_path), arcname=sub_path)
-                self.sources.append(
-                    {
-                        "name": os.path.basename(f),
-                        "path": f"{self.store.src_dir_name}/{sub_path}",
-                        "signature": blake2b_file(self.store.src_dir / sub_path),
-                        "duplicate_check": False,
-                        "desc": FileDesc.SRC.name,
-                        "size": file_stat(self.store.src_dir / sub_path).st_size,
-                    }
-                )
+                size = file_stat(self.store.src_dir / sub_path).st_size
+                separate = size > size_th_to_tar
+                file_info = {
+                    "name": os.path.basename(f),
+                    "path": f"{self.store.src_dir_name}/{sub_path}",
+                    "signature": blake2b_file(self.store.src_dir / sub_path),
+                    "duplicate_check": separate,
+                    "desc": FileDesc.SRC.name if not separate else FileDesc.MODEL.name,
+                    "size": size,
+                }
+                if separate:
+                    self.models.append(file_info)
+                else:
+                    tar.add(str(self.store.src_dir / sub_path), arcname=sub_path)
+                    self.sources.append(file_info)
 
     def _render_manifest(self) -> None:
         self._manifest["resources"] = self.models + self.sources
@@ -678,10 +681,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         cls._do_validate_yaml(yaml_path)
         _config = ModelConfig.create_by_yaml(yaml_path)
 
-        if not _config.model:
-            raise FileFormatError("model yaml no model")
-
-        for _fpath in _config.model + _config.config:
+        for _fpath in _config.config:
             if not (yaml_path.parent / _fpath).exists():
                 raise FileFormatError(
                     f"model - {yaml_path.parent / _fpath} is not existed"
@@ -706,48 +706,26 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             f":file_folder: workdir: [underline]{self.store.snapshot_workdir}[/]"
         )
 
-    def _copy_src(
-        self, workdir: Path, yaml_name: str, model_config: ModelConfig
-    ) -> None:
+    def _copy_src(self, workdir: Path, yaml_name: str) -> None:
         logger.info(
             f"[step:copy]start to copy src {workdir} -> {self.store.src_dir} ..."
         )
         console.print(":thumbs_up: try to copy source code files...")
-        _mc = model_config
 
-        workdir_fs = open_fs(str(workdir.resolve()))
-        snapshot_src_fs = open_fs(str(self.store.src_dir.resolve()))
-        copy_fs(
-            workdir_fs,
-            snapshot_src_fs,
-            walker=self._get_src_walker(
-                workdir, _mc.run.pkg_data, _mc.run.exclude_pkg_data
-            ),
-            workers=DEFAULT_COPY_WORKERS,
+        excludes = None
+        ignore = workdir / SW_IGNORE_FILE_NAME
+        if ignore.exists():
+            with open(ignore, "r") as f:
+                excludes = [line.strip() for line in f.readlines()]
+        self._object_store.copy_dir(
+            str(workdir.resolve()), str(self.store.src_dir.resolve()), excludes=excludes
         )
-
-        for _fname in _mc.config:
-            copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)
 
         # rename model config if not default to make sure model.yaml exists
         # prevent using the wrong config when running in the cloud
         if yaml_name != DefaultYAMLName.MODEL:
             d = self.store.src_dir
             os.rename(d / yaml_name, d / DefaultYAMLName.MODEL)
-
-        # TODO link models to unified storage
-        for _fname in _mc.model:
-            copy_file(workdir_fs, _fname, snapshot_src_fs, _fname)
-            self.models.append(
-                {
-                    "name": os.path.basename(_fname),
-                    "path": f"{self.store.src_dir_name}/{_fname}",
-                    "signature": blake2b_file(self.store.src_dir / _fname),
-                    "duplicate_check": True,
-                    "desc": FileDesc.MODEL.name,
-                    "size": file_stat(self.store.src_dir / _fname).st_size,
-                }
-            )
         logger.info("[step:copy]finish copy files")
 
     @classmethod

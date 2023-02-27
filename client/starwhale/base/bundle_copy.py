@@ -33,6 +33,7 @@ from starwhale.base.type import URIType, InstanceType, get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.store import RuntimeStorage
@@ -94,6 +95,7 @@ class BundleCopy(CloudRequestMixed):
 
         self._sw_config = SWCliConfigMixed()
         self._do_validate()
+        self._object_store = LocalFileStore()
 
     def _guess_bundle_version(self) -> str:
         if self.src_uri.instance_type == InstanceType.CLOUD:
@@ -280,6 +282,13 @@ class BundleCopy(CloudRequestMixed):
         _workdir = self._get_target_path(self.dest_uri)
 
         def _download(_tid: TaskID, fd: FileNode) -> None:
+            if fd.signature:
+                f = self._object_store.get(fd.signature)
+                if f is not None and f.exists():
+                    f.link(_workdir / fd.path / fd.name)
+                    progress.update(_tid, completed=fd.size)
+                    return
+
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
                 url_path=self._get_remote_bundle_api_url(),
@@ -293,6 +302,8 @@ class BundleCopy(CloudRequestMixed):
                 progress=progress,
                 task_id=_tid,
             )
+            # put the downloaded file to object store for cache usage
+            self._object_store.link(fd.path, fd.signature)
 
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
         _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")

@@ -58,20 +58,18 @@ class StandaloneModelTestCase(TestCase):
         ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
 
+    @patch("starwhale.base.blob.store.LocalFileStore.copy_dir")
     @patch("starwhale.core.model.model.file_stat")
     @patch("starwhale.core.model.model.StandaloneModel._get_service")
-    @patch("starwhale.core.model.model.copy_file")
-    @patch("starwhale.core.model.model.copy_fs")
     @patch("starwhale.core.model.model.Walker.files")
     @patch("starwhale.core.model.model.blake2b_file")
     def test_build_workflow(
         self,
         m_blake_file: MagicMock,
         m_walker_files: MagicMock,
-        m_copy_fs: MagicMock,
-        m_copy_file: MagicMock,
         m_get_service: MagicMock,
         m_stat: MagicMock,
+        m_copy_dir: MagicMock,
     ) -> None:
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
@@ -105,9 +103,9 @@ class StandaloneModelTestCase(TestCase):
         assert "name" not in _manifest
         assert _manifest["version"] == build_version
 
-        assert m_copy_file.call_count == 2
-        assert m_copy_file.call_args_list[0][0][1] == "config/hyperparam.json"
-        assert m_copy_file.call_args_list[1][0][1] == "models/mnist_cnn.pt"
+        assert m_copy_dir.call_count == 1
+        assert m_copy_dir.call_args_list[0][0][0] == "/home/starwhale/myproject"
+        assert m_copy_dir.call_args_list[0][0][1].endswith("/src")
 
         assert bundle_path.exists()
         assert "latest" in sm.tag.list()
