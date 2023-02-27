@@ -517,7 +517,13 @@ public class RuntimeService {
         } else {
             log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
             try {
-                // TODO judge registry secret whether has been created
+                // TODO check whether is building
+                var existJob = k8sClient.getJob(runtimeVersion.getVersionName());
+                if (null != existJob && existJob.getStatus() != null) {
+                    log.debug("runtime:{}-{}'s image:{} is building.", runtimeUrl, versionUrl, builtImage);
+                    return;
+                }
+                // judge registry secret whether has been created
                 if (k8sClient.getSecret(DOCKER_REGISTRY_SECRET) == null) {
                     if (null != systemSettingService.getSystemSetting()
                             && null != systemSettingService.getSystemSetting().getDockerSetting()
@@ -585,7 +591,7 @@ public class RuntimeService {
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
 
-                k8sJobTemplate.renderJob(job, versionUrl, "OnFailure", 2, ret, null);
+                k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
 
                 log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
                 k8sClient.deployJob(job);

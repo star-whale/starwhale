@@ -128,6 +128,10 @@ public class K8sClient {
         return batchV1Api.listNamespacedJob(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 
+    public V1Job getJob(String name) throws ApiException {
+        return batchV1Api.readNamespacedJob(name, ns, null);
+    }
+
     public V1StatefulSetList getStatefulSetList(String labelSelector) throws ApiException {
         return appsV1Api.listNamespacedStatefulSet(ns, null, null, null, null,
                 labelSelector, null, null, null, 30, null);

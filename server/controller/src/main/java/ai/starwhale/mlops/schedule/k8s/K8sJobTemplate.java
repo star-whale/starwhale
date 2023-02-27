@@ -79,8 +79,7 @@ public class K8sJobTemplate {
     )
             throws IOException {
         this.evalJobTemplate = getJobDefaultTemplate(evalJobTemplatePath, "template/job.yaml");
-        this.imageBuildJobTemplate = getJobDefaultTemplate(
-                imageBuildJobTemplatePath, "template/image-build.yaml");
+        this.imageBuildJobTemplate = getJobDefaultTemplate(imageBuildJobTemplatePath, "template/image-build.yaml");
         this.modelServingJobTemplate = getJobDefaultTemplate(msPath, "template/model-serving.yaml");
         this.pipCacheHostPath = pipCacheHostPath;
     }
