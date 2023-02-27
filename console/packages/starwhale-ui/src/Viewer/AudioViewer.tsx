@@ -4,7 +4,7 @@ import WaveformData from 'waveform-data'
 import { createUseStyles } from 'react-jss'
 import classnames from 'classnames'
 import { drawAudioWaveform } from './utils'
-import { IArtifactAudio } from '../../domain/dataset/sdk'
+import { IArtifactAudio } from '@starwhale/core/dataset'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -44,10 +44,10 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
 
     useEffect(() => {
         if (!canvasRef.current) return
-        if (!data.src) return
+        if (!data._extendSrc) return
         const canvas = canvasRef.current
         const audioContext = new AudioContext()
-        fetch(data.src)
+        fetch(data._extendSrc)
             .then((response) => response.arrayBuffer())
             .then((buffer) => {
                 const options = {
@@ -71,7 +71,7 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
                 // console.log(`Waveform has length ${waveform.length} points`)
                 drawAudioWaveform(canvas, waveform)
             })
-    }, [canvasRef, data.src])
+    }, [canvasRef, data._extendSrc])
 
     if (!isZoom) {
         return (
@@ -81,7 +81,7 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
             >
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls style={{ width: '100%' }}>
-                    <source src={data.src} type={data._mime_type as string} />
+                    <source src={data._extendSrc} type={data._mime_type as string} />
                     Your browser does not support the audio element.
                 </audio>
             </div>
@@ -101,7 +101,7 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
                 />
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls>
-                    <source src={data.src} type={data._mime_type as string} />
+                    <source src={data._extendSrc} type={data._mime_type as string} />
                     Your browser does not support the audio element.
                 </audio>
                 <p className={styles.name}>{data.display_name ?? ''}</p>

@@ -84,7 +84,7 @@ export function useQueryDatasetList(
     const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 
     React.useEffect(() => {
-        if (tableName && enabled) {
+        if (tableName && enabled && columnInfo.isError) {
             columnInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,5 +101,7 @@ export function useQueryDatasetList(
         recordQuery,
         columnInfo,
         recordInfo,
+        columnTypes: columnInfo.data?.columnTypes,
+        records: recordInfo.data?.records,
     }
 }

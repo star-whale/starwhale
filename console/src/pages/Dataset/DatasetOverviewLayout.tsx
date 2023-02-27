@@ -68,7 +68,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 path: `/projects/${projectId}/datasets`,
             },
             {
-                title: dataset?.versionName ?? '-',
+                title: dataset?.name ?? '-',
                 path: `/projects/${projectId}/datasets/${datasetId}`,
             },
         ]

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Color from 'color'
-import { IBBox } from '@/domain/dataset/sdk'
+import { IBBox } from '@starwhale/core/dataset'
 
 export const RAW_COLORS = [
     '#df672a',
@@ -91,6 +91,7 @@ export const drawSegment = (canvas: HTMLCanvasElement, imgDatas: IImageData[], r
 export const drawSegmentWithCOCOMask = (canvas: HTMLCanvasElement, imgDatas: IImageData[]) => {
     const ctx = canvas.getContext('2d')
     const newImageData = new ImageData(canvas.width, canvas.height)
+    const colorMap = new Map()
 
     for (let i = 0; i < newImageData.data.length; i += 4) {
         const rawIndex = imgDatas.findIndex((v) => v.img.data[i + 0] > 0)
@@ -100,14 +101,24 @@ export const drawSegmentWithCOCOMask = (canvas: HTMLCanvasElement, imgDatas: IIm
             newImageData.data[i + 2] = 0
             newImageData.data[i + 3] = 0
         } else {
-            const label = imgDatas[rawIndex].img.data[i + 0]
-            const [r, g, b] = COLORS[label % COLORS.length]
+            const label = [
+                imgDatas[rawIndex].img.data[i + 0],
+                imgDatas[rawIndex].img.data[i + 1],
+                imgDatas[rawIndex].img.data[i + 2],
+            ].join(',')
+
+            // [255,0,0]
+            // [1,1,1]
+            if (!colorMap.has(label)) colorMap.set(label, COLORS[colorMap.size % COLORS.length])
+
+            const [r, g, b] = colorMap.get(label)
             newImageData.data[i] = r
             newImageData.data[i + 1] = g
             newImageData.data[i + 2] = b
-            newImageData.data[i + 3] = 240
+            newImageData.data[i + 3] = 220
         }
     }
+
     ctx?.putImageData(newImageData, 0, 0)
     return newImageData
 }

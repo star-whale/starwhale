@@ -5,16 +5,14 @@ import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types'
 import _ from 'lodash'
-import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
+import { getHeatmapConfig, getRocAucConfig } from '@starwhale/ui/Plotly/utils'
 import { LabelSmall } from 'baseui/typography'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 
-const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
-)
+const PlotlyVisualizer = React.lazy(() => import(/* webpackChunkName: "PlotlyVisualizer" */ '@starwhale/ui/Plotly'))
 
 function JobResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()

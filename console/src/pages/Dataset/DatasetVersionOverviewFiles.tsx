@@ -8,18 +8,19 @@ import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
-import DatasetViewer from '@/components/Viewer/DatasetViewer'
+import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
-import { DatasetObject, parseDataSrc, TYPES } from '@/domain/dataset/sdk'
+import { ArtifactType, isAnnotationHiddenInTable, parseDataSrc } from '@starwhale/core/dataset'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
-import DatasetVersionFilePreview from './DatasetVersionOverviewFilePreview'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
 import { StyledTab } from 'baseui/tabs'
 import { StatefulTooltip } from 'baseui/tooltip'
+import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
+import Preview from '@starwhale/ui/Dataset/Preview'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -90,7 +91,7 @@ const useCardStyles = createUseStyles({
 
 const PAGE_TABLE_SIZE = 10
 const PAGE_CARD_SIZE = 50
-
+const HAS_TABLE_CONTROL = false
 enum LAYOUT {
     GRID = '1',
     LIST = '0',
@@ -148,7 +149,7 @@ export default function DatasetVersionFiles() {
     const { datasetVersion } = useDatasetVersion()
 
     const [preview, setPreview] = React.useState('')
-    const [fileId, setfileId] = React.useState('')
+    const [previewKey, setPreviewKey] = React.useState('')
     const { query } = useQueryArgs()
 
     const $page = React.useMemo(() => {
@@ -163,7 +164,7 @@ export default function DatasetVersionFiles() {
         setLayoutKey(layoutParam ?? '0')
     }, [layoutParam])
 
-    const { recordInfo: tables } = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
+    const { records, columnTypes } = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
 
     const rowCount = React.useMemo(() => {
         return getMetaRow(datasetVersion?.versionMeta as string)
@@ -181,123 +182,122 @@ export default function DatasetVersionFiles() {
 
     const [isFullscreen, setIsFullscreen] = React.useState(true)
 
-    const datasets = React.useMemo(
-        () =>
-            tables?.data?.records?.map((record) => {
-                const dObj = new DatasetObject(
-                    record,
-                    parseDataSrc(
-                        projectId,
-                        datasetVersion?.name as string,
-                        datasetVersion?.versionName as string,
-                        token as string
-                    )
-                )
-                return dObj ?? []
-            }) ?? [],
-        [tables?.data, projectId, datasetVersion, token]
+    const options = React.useMemo(
+        () => ({
+            parseLink: parseDataSrc(
+                projectId,
+                datasetVersion?.name as string,
+                datasetVersion?.versionName as string,
+                token as string
+            ),
+            showPrivate: false,
+            showLink: false,
+        }),
+        [projectId, datasetVersion, token]
     )
+    const { records: datasets } = useDatasets(records, columnTypes, options)
 
     const Records = React.useMemo(() => {
-        const { summary = {} } = datasets?.[0] ?? {}
+        if (!datasets?.[0]) return <></>
+        const { summary } = datasets?.[0]
+        const rowAction: any[] = []
+        summary.forEach((value, key) => {
+            if (isAnnotationHiddenInTable(value)) return
 
-        const rowAction = [
-            ...Object.entries(summary)
-                .filter(([key]) => !key.toString().startsWith('_'))
-                .map(([key]) => ({
-                    label: key,
-                    overrides: {
-                        TableHeadCell: {
-                            style: {
-                                backgroundColor: theme.brandTableHeaderBackground,
-                                borderBottomWidth: '0',
-                                fontWeight: 'bold',
-                                fontSize: '14px',
-                                lineHeight: '14px',
-                            },
-                        },
-                        TableBodyCell: {
-                            style: {
-                                verticalAlign: 'middle',
-                                paddingTop: '4px',
-                                paddingBottom: '4px',
-                                position: 'relative',
-                            },
+            rowAction.push({
+                label: key,
+                overrides: {
+                    TableHeadCell: {
+                        style: {
+                            backgroundColor: theme.brandTableHeaderBackground,
+                            borderBottomWidth: '0',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            lineHeight: '14px',
                         },
                     },
-                    renderItem: (row: any) => {
-                        let wrapperStyle = {}
-
-                        switch (row.data._type) {
-                            case TYPES.IMAGE:
-                                wrapperStyle = {
-                                    minWidth: '90px',
-                                    height: '90px',
-                                    textAlign: 'center',
-                                }
-                                break
-                            case TYPES.AUDIO:
-                                wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
-                                break
-                            case TYPES.VIDEO:
-                                wrapperStyle = { maxWidth: '300px' }
-                                break
-                            default:
-                            case TYPES.TEXT:
-                                wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
-                                break
-                        }
-
-                        return (
-                            <div className={styles.tableCell} style={wrapperStyle}>
-                                <DatasetViewer dataset={row?.summary?.[key]} />
-                                <div
-                                    className={styles.cardFullscreen}
-                                    role='button'
-                                    tabIndex={0}
-                                    onClick={() => {
-                                        setIsFullscreen(true)
-                                        setPreview(row?.summary?.[key])
-                                        setfileId(row?.id)
-                                        history.push(
-                                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
-                                                {
-                                                    ...$page,
-                                                    layout: layoutKey,
-                                                }
-                                            )}`
-                                        )
-                                    }}
-                                >
-                                    <IconFont type='fullscreen' />
-                                </div>
-                            </div>
-                        )
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                            paddingTop: '4px',
+                            paddingBottom: '4px',
+                            position: 'relative',
+                        },
                     },
-                })),
-        ]
+                },
+                renderItem: (row: any) => {
+                    let wrapperStyle = {}
 
-        if (layoutKey === LAYOUT.GRID) {
-            return (
-                <div
-                    style={{
-                        display: 'grid',
-                        gap: '9px',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
-                        placeItems: 'center',
-                    }}
-                >
-                    {datasets.map((row, index) => {
-                        return (
-                            <div className={styles.card} key={index}>
-                                <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
-                                <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
+                    switch (row?.summary?.get('_extendtype')) {
+                        case ArtifactType.Image:
+                            wrapperStyle = {
+                                minWidth: '90px',
+                                height: '90px',
+                                textAlign: 'center',
+                            }
+                            break
+                        case ArtifactType.Audio:
+                            wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
+                            break
+                        case ArtifactType.Video:
+                            wrapperStyle = { maxWidth: '300px' }
+                            break
+                        default:
+                        case ArtifactType.Text:
+                            wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
+                            break
+                    }
+
+                    return (
+                        <div className={styles.tableCell} style={wrapperStyle}>
+                            <DatasetViewer dataset={row} showKey={key} />
+                            <div
+                                className={styles.cardFullscreen}
+                                role='button'
+                                tabIndex={0}
+                                onClick={() => {
+                                    setIsFullscreen(true)
+                                    setPreview(row)
+                                    setPreviewKey(key)
+                                    history.push(
+                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
+                                            {
+                                                ...$page,
+                                                layout: layoutKey,
+                                            }
+                                        )}`
+                                    )
+                                }}
+                            >
+                                <IconFont type='fullscreen' />
                             </div>
-                        )
-                    })}
-                </div>
-            )
-        }
+                        </div>
+                    )
+                },
+            })
+        })
+
+        // if (layoutKey === LAYOUT.GRID) {
+        //     return (
+        //         <div
+        //             style={{
+        //                 display: 'grid',
+        //                 gap: '9px',
+        //                 gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
+        //                 placeItems: 'center',
+        //             }}
+        //         >
+        //             {datasets.map((row, index) => {
+        //                 return (
+        //                     <div className={styles.card} key={index}>
+        //                         <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
+        //                         <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
+        //                     </div>
+        //                 )
+        //             })}
+        //         </div>
+        //     )
+        // }
 
         return (
             <TableBuilder
@@ -355,25 +355,30 @@ export default function DatasetVersionFiles() {
 
     return (
         <div className={styles.wrapper}>
-            <div className={styles.icon}>
-                <LayoutControl
-                    value={layoutKey}
-                    onChange={(key) => {
-                        const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
-                        setLayoutKey(key)
-                        history.push(
-                            `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
-                                {
-                                    ...$page,
-                                    pageNum: Math.max(Math.floor((page.pageSize * (page.pageNum - 1)) / newSize), 1),
-                                    pageSize: newSize,
-                                    layout: key,
-                                }
-                            )}`
-                        )
-                    }}
-                />
-            </div>
+            {HAS_TABLE_CONTROL && (
+                <div className={styles.icon}>
+                    <LayoutControl
+                        value={layoutKey}
+                        onChange={(key) => {
+                            const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
+                            setLayoutKey(key)
+                            history.push(
+                                `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
+                                    {
+                                        ...$page,
+                                        pageNum: Math.max(
+                                            Math.floor((page.pageSize * (page.pageNum - 1)) / newSize),
+                                            1
+                                        ),
+                                        pageSize: newSize,
+                                        layout: key,
+                                    }
+                                )}`
+                            )
+                        }}
+                    />
+                </div>
+            )}
             {Records}
             {paginationProps && (
                 <div
@@ -413,10 +418,9 @@ export default function DatasetVersionFiles() {
                 </div>
             )}
             {preview && (
-                <DatasetVersionFilePreview
-                    datasets={datasets}
+                <Preview
                     preview={preview}
-                    fileId={fileId}
+                    previewKey={previewKey}
                     isFullscreen={isFullscreen}
                     setIsFullscreen={setIsFullscreen}
                 />

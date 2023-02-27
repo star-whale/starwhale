@@ -90,7 +90,7 @@ function Button(
                         },
                         ':focus': {
                             backgroundColor: 'transparent',
-                            color: theme.brandPrimaryHover,
+                            color: 'rgba(2,16,43,0.20)',
                         },
                     },
                 },
