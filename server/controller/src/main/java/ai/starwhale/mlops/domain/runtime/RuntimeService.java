@@ -537,6 +537,7 @@ public class RuntimeService {
             } catch (ApiException k8sE) {
                 if (k8sE.getCode() == HttpServletResponse.SC_NOT_FOUND) {
                     log.debug("secret is not found {}, now to build it", k8sE.getResponseBody(), k8sE);
+
                     var sysSetting = systemSettingService.getSystemSetting();
                     if (null != sysSetting
                             && null != sysSetting.getDockerSetting()
@@ -544,16 +545,16 @@ public class RuntimeService {
                             && null != sysSetting.getDockerSetting().getUserName()
                             && null != sysSetting.getDockerSetting().getPassword()) {
                         try {
+                            var dockerConfig = Map.of("auths", Map.of(
+                                    sysSetting.getDockerSetting().getRegistry(), Map.of(
+                                    "username", sysSetting.getDockerSetting().getUserName(),
+                                    "password", sysSetting.getDockerSetting().getPassword())
+                            ));
                             k8sClient.createSecret(new V1Secret()
                                     .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
                                     .type("kubernetes.io/dockerconfigjson")
-                                    .data(Map.of(
-                                        "docker-server",
-                                        sysSetting.getDockerSetting().getRegistry().getBytes(),
-                                        "docker-username",
-                                        sysSetting.getDockerSetting().getUserName().getBytes(),
-                                        "docker-password",
-                                        sysSetting.getDockerSetting().getPassword().getBytes()
+                                    .stringData(Map.of(
+                                        ".dockerconfigjson", JSONUtil.toJsonStr(dockerConfig)
                                     ))
                             );
                         } catch (Exception e) {
