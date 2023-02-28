@@ -526,7 +526,7 @@ public class RuntimeService {
             } catch (ApiException k8sE) {
                 if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
                     log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
-                    return;
+                    throw new SwProcessException(ErrorType.INFRA, "k8s api invoke error" + k8sE.getMessage());
                 }
                 // go on
             }
@@ -565,7 +565,7 @@ public class RuntimeService {
 
                     } else {
                         throw new SwValidationException(ValidSubject.RUNTIME,
-                            "can't found docker registry info, please set it.");
+                            "can't found docker registry info, please set it in system setting.");
                     }
                 }
                 // go on
@@ -622,9 +622,8 @@ public class RuntimeService {
                 k8sClient.deployJob(job);
             } catch (ApiException k8sE) {
                 log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
-
-            } catch (Exception e) {
-                log.error("image build error {}", e.getMessage(), e);
+                throw new SwProcessException(ErrorType.INFRA,
+                        "deploying job for image build error:" + k8sE.getMessage());
             }
         }
     }
