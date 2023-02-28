@@ -34,7 +34,7 @@ spec:
         - name: 'build-image'
           image: 'gcr.io/kaniko-project/executor:latest'
           args: [ "--dockerfile=Dockerfile",
-                  "--context=dir:///workspace"] # --destination=10.131.0.1:8083/test/build:1.1.0 replace with your dockerhub account
+                  "--context=dir:///workspace"] # --destination=${registry-host}/test:${tag} replace with your dockerhub account
           volumeMounts:
             - name: kaniko-secret
               mountPath: /kaniko/.docker

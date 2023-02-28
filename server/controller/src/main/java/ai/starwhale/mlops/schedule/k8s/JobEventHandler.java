@@ -45,14 +45,12 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     @Override
     public void onAdd(V1Job obj) {
-        log.debug("job added for {} with status {}", jobName(obj), obj.getStatus());
-        dispatch(obj);
+        dispatch(obj, "onAdd");
     }
 
     @Override
     public void onUpdate(V1Job oldObj, V1Job newObj) {
-        log.debug("job updated for {} with status {}", jobName(newObj), newObj.getStatus());
-        dispatch(newObj);
+        dispatch(newObj, "onUpdate");
     }
 
     @Override
@@ -64,7 +62,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         return obj.getMetadata().getName();
     }
 
-    private void dispatch(V1Job job) {
+    private void dispatch(V1Job job, String event) {
         var metaData = job.getMetadata();
         if (metaData == null) {
             return;
@@ -75,6 +73,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
         if (StringUtils.hasText(type)) {
+            log.debug("job({}) {} for {} with status {}", type, event, jobName(job), job.getStatus());
             switch (type) {
                 case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
                     updateEvalTask(job);
