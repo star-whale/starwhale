@@ -272,8 +272,8 @@ public class ModelServingService {
         var md = modelMapper.find(model.getModelId());
 
         var envs = Map.of(
-                "SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getId()),
-                "SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getId()),
+                "SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()),
+                "SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()),
                 "SW_INSTANCE_URI", instanceUri,
                 "SW_TOKEN", modelServingTokenValidator.getToken(owner, id),
                 "SW_PROJECT", project,
