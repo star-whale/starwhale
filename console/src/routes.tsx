@@ -50,6 +50,8 @@ import ProjectTrashes from '@/pages/Project/Trashes'
 import TrashLayout from '@/pages/Trash/TrashLayout'
 import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
+import _ from 'lodash'
+import { getUnauthedRoutes } from './routesUtils'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -61,14 +63,32 @@ const useStyles = createUseStyles({
         width: '100vw',
         position: 'relative',
         color: theme.colors.contentPrimary,
-        // ...Object.entries(theme.colors).reduce((p, [k, v]) => {
-        //     return {
-        //         ...p,
-        //         [`--color-${k}`]: v,
-        //     }
-        // }, {}),
     }),
 })
+
+const defaultRoutes = [
+    {
+        auth: false,
+        component: LoginLayout,
+        routes: [
+            {
+                path: '/reset',
+                component: ResetPassword,
+            },
+            {
+                path: '/login',
+                component: Login,
+            },
+            {
+                from: '/',
+                to: '/login',
+                component: Redirect,
+            },
+        ],
+    },
+]
+
+const unauthedRoutes = getUnauthedRoutes(defaultRoutes[0])
 
 const Routes = () => {
     const [, theme] = themedUseStyletron()
@@ -82,13 +102,7 @@ const Routes = () => {
                     <div className={styles.root}>
                         <Route>
                             <ApiHeader />
-                            <LoginLayout>
-                                <Switch>
-                                    <Route exact path='/reset' component={ResetPassword} />
-                                    <Route exact path='/login' component={Login} />
-                                    <Redirect path='/' to='/login' />
-                                </Switch>
-                            </LoginLayout>
+                            {unauthedRoutes}
                         </Route>
                     </div>
                 </BrowserRouter>
