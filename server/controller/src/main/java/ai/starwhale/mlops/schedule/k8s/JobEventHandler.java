@@ -109,19 +109,6 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             return;
         }
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
-        Integer retryNum = null;
-        // one task one k8s job
-        if (null != status.getSucceeded()) {
-            taskStatus = TaskStatus.SUCCESS;
-            log.info("job status changed for {} is success  {}", jobName(job), status);
-        } else {
-            if (null != status.getActive()) {
-                // running(failed == null) or restarting(failed != null)
-                // running contains two stages:pending and running, these state changes are judged by podEventHandler
-                if (null != status.getFailed()) {
-                    retryNum = status.getFailed();
-                    log.debug("job {} is restarting, retry num {}", jobName(job), status.getFailed());
-                }
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
         //  When a Job fails, one of the conditions will have type "Failed" and status true.
@@ -153,7 +140,6 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 }
             }
         }
-        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum)));
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
         taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum)));
