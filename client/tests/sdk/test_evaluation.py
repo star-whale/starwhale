@@ -95,7 +95,7 @@ class TestModelPipelineHandler(TestCase):
         assert isinstance(_loader, DataLoader)
         assert not ObjectStore._stores
 
-    @patch("starwhale.api._impl.model.PPLResultIterator")
+    @patch("starwhale.api._impl.evaluation.PPLResultIterator")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp(
