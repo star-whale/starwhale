@@ -165,4 +165,8 @@ public class DockerImageTest {
 
     }
 
+    @Test
+    public void resolveWithoutRegistry() {
+        Assertions.assertEquals("starwhale:latest", new DockerImage("starwhale:latest").resolve(""));
+    }
 }

@@ -73,6 +73,9 @@ public class DockerImage {
         if (!StringUtils.hasText(newRegistry)) {
             newRegistry = this.registry;
         }
+        if (!StringUtils.hasText(newRegistry)) {
+            return image;
+        }
         return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
     }
 
