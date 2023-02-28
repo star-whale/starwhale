@@ -10,6 +10,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      ttlSecondsAfterFinished: 10
       initContainers:
         - name: 'prepare-runtime'
           imagePullPolicy: IfNotPresent
@@ -30,7 +31,7 @@ spec:
               _SNAPSHOT_DIR=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".snapshot_workdir");
               cp $_SNAPSHOT_DIR/export/docker/Dockerfile /opt/starwhale.user/runtime || exit 1;
       containers:
-        - name: 'image-builder'
+        - name: 'build-image'
           image: 'gcr.io/kaniko-project/executor:latest'
           args: [ "--dockerfile=Dockerfile",
                   "--context=dir:///workspace"] # --destination=10.131.0.1:8083/test/build:1.1.0 replace with your dockerhub account
@@ -38,7 +39,7 @@ spec:
             - name: kaniko-secret
               mountPath: /kaniko/.docker
             - name: data
-              mountPath: /workspace # should be workspace otherwise some layer would loos
+              mountPath: /workspace # should be workspace otherwise some layer would lose
       volumes:
         - name: kaniko-secret
           secret:

@@ -3,7 +3,6 @@ FROM ${BASE_IMAGE}
 
 ARG TARGETARCH
 
-#ENTRYPOINT []
 WORKDIR /opt/starwhale.user/runtime
 
 LABEL starwhale_runtime_dockerize=1
@@ -26,7 +25,7 @@ ENV SW_PIP_CACHE_DIR=/root/.cache/pip
 RUN python3 -m pip config set global.cache-dir ${SW_PIP_CACHE_DIR}
 
 RUN swcli -vvv runtime restore /opt/starwhale.user/runtime \
-    && bash /opt/starwhale.user/runtime/activate.sw
+    && $(bash /opt/starwhale.user/runtime/activate.sw)
 
 ENV SW_USER_RUNTIME_NAME={{runtime_name}}
 ENV SW_USER_RUNTIME_VERSION={{runtime_version}}

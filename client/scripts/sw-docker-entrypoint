@@ -139,6 +139,8 @@ prepare(){
     fi
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
         set_py_and_sw
+    else
+        $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
     fi
 }
 
