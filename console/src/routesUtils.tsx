@@ -2,7 +2,7 @@ import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 import _ from 'lodash'
 // virtual routes created by plugin
-import routes from 'virtual:route-views'
+import extendRoutes from 'virtual:route-views'
 
 // @ts-ignore
 function mergeRoute(source, target) {
@@ -44,6 +44,6 @@ function mergeRoute(source, target) {
 }
 
 // @FIXME we only support one sample route for now
-const unauthedRoutes = routes?.find((route) => !route.auth) ?? []
+const unauthedRoutes = extendRoutes?.find((route) => !route.auth) ?? []
 
 export const getUnauthedRoutes = (source: any) => mergeRoute(source, unauthedRoutes)

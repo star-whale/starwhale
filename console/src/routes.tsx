@@ -1,6 +1,6 @@
+import React from 'react'
 import AdminLayout from '@/pages/Admin/AdminLayout'
 import UserManagement from '@/pages/Admin/UserManagement'
-import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
 import { createUseStyles } from 'react-jss'
@@ -50,7 +50,6 @@ import ProjectTrashes from '@/pages/Project/Trashes'
 import TrashLayout from '@/pages/Trash/TrashLayout'
 import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
-import _ from 'lodash'
 import { getUnauthedRoutes } from './routesUtils'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))

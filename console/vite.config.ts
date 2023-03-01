@@ -10,9 +10,9 @@ import router from './vite-plugin-react-routes'
 
 export const alias = {
     'baseui': path.resolve(__dirname, './node_modules/baseui'),
-    // 'react-use': path.resolve(__dirname, './node_modules/react-use'),
-    // 'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
-    // 'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
+    'react-use': path.resolve(__dirname, './node_modules/react-use'),
+    'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
+    'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),
@@ -60,10 +60,8 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
-        inspect(),
-        router({
-            dir: 'extra',
-        }),
+        process.env.EXTEND_ROUTES ? inspect() : undefined,
+        router({ dir: process.env.EXTEND_ROUTES || 'extend' }),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },

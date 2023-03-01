@@ -3,7 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { PluginOption, ResolvedConfig } from 'vite'
-import type { RouteObject } from 'react-router-dom'
+type RouteObject = any
 
 interface Options {
     dir?: string
@@ -197,9 +197,8 @@ function VitePluginReactRouter(opts: Options = {}): PluginOption {
                     syncRouteExportString += `...${value}_${num},\n`
                 })
 
-                return `import { lazy, Suspense } from 'react'
+                return `
 ${syncRouteString}
-
 
 export default [
     ${syncRouteExportString}
