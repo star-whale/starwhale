@@ -254,7 +254,7 @@ export default function OnlineEval() {
                     Dialog: {
                         style: {
                             width: 'auto',
-                            padding: '15px',
+                            padding: '30px',
                         },
                     },
                 }}
