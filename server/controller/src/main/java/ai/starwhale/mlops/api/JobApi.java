@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
@@ -239,4 +240,19 @@ public interface JobApi {
             @PathVariable("projectUrl")
                     String projectUrl,
             @Valid @RequestBody ModelServingRequest request);
+
+    @Operation(summary = "Get the events of the model serving job")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectId}/serving/{servingId}/status",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(
+            @Parameter(in = ParameterIn.PATH, description = "Project Id")
+            @PathVariable("projectId")
+            Long projectId,
+            @Parameter(in = ParameterIn.PATH, description = "Model Serving Id")
+            @PathVariable("servingId")
+            Long servingId
+    );
 }

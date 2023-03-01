@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -205,5 +206,10 @@ public class JobController implements JobApi {
         );
 
         return ResponseEntity.ok(Code.success.asResponse(resp));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(Long projectId, Long servingId) {
+        return ResponseEntity.ok(Code.success.asResponse(modelServingService.getStatus(servingId)));
     }
 }

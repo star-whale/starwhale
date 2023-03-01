@@ -120,7 +120,7 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
 
     @Builder
     @Data
-    static class Event {
+    public static class Event {
         // the name of the event, used for logging
         final String name;
         // the event time in milliseconds (uses the first event time when the event occurs multiple times)
