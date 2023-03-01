@@ -561,24 +561,29 @@ public class RuntimeServiceTest {
     }
 
     @Test
+    public void testBuildImageWithoutSecret() throws ApiException {
+        given(projectService.findProject("project-1"))
+                .willReturn(Project.builder().id(1L).name("starwhale").build());
+        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
+        given(k8sClient.getSecret(anyString())).willThrow(new ApiException(HttpServletResponse.SC_NOT_FOUND, ""));
+        given(systemSettingService.getSystemSetting()).willReturn(null);
+
+        // secret not found
+        assertThrows(SwValidationException.class, () -> service.buildImage("project-1", "r1", "v1"));
+    }
+
+    @Test
     public void testBuildImage() throws ApiException {
         given(projectService.findProject("project-1"))
                 .willReturn(Project.builder().id(1L).name("starwhale").build());
         given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
 
-        given(k8sClient.getSecret(anyString())).willReturn(null);
-
-        given(systemSettingService.getSystemSetting()).willReturn(null);
-
-        assertThrows(SwValidationException.class,
-                () -> service.buildImage("project-1", "r1", "v1"));
-
-
         given(k8sClient.getSecret(anyString())).willReturn(new V1Secret());
 
         var systemSetting = new SystemSetting();
         systemSetting.setDockerSetting(new DockerSetting("localhost:8083", "admin", "admin123"));
-        systemSetting.setPypiSetting(new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io"));
+        systemSetting.setPypiSetting(
+                new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io"));
         given(systemSettingService.getSystemSetting()).willReturn(systemSetting);
 
         var job = new V1Job()

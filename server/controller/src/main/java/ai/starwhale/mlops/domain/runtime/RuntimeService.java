@@ -53,6 +53,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
@@ -515,67 +516,16 @@ public class RuntimeService {
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
         } else {
-            log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
-            try {
-                // TODO check whether is building
-                var existJob = k8sClient.getJob(runtimeVersion.getVersionName());
-                if (null != existJob) {
-                    log.debug("image:{}-{} is building, please wait a monument", runtimeUrl, versionUrl);
-                    return;
-                }
-            } catch (ApiException k8sE) {
-                if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
-                    log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
-                    throw new SwProcessException(ErrorType.INFRA, "k8s api invoke error" + k8sE.getMessage());
-                }
-                // go on
+            if (isExist(runtimeUrl, versionUrl, runtimeVersion)) {
+                log.debug("image:{}-{} is building, please wait a monument", runtimeUrl, versionUrl);
+                return;
             }
-
+            checkDockerRegistry();
             try {
-                // judge registry secret whether has been created
-                k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
-            } catch (ApiException k8sE) {
-                if (k8sE.getCode() == HttpServletResponse.SC_NOT_FOUND) {
-                    log.debug("secret is not found {}, now to build it", k8sE.getResponseBody(), k8sE);
-
-                    var sysSetting = systemSettingService.getSystemSetting();
-                    if (null != sysSetting
-                            && null != sysSetting.getDockerSetting()
-                            && null != sysSetting.getDockerSetting().getRegistry()
-                            && null != sysSetting.getDockerSetting().getUserName()
-                            && null != sysSetting.getDockerSetting().getPassword()) {
-                        try {
-                            var dockerConfig = Map.of("auths", Map.of(
-                                    sysSetting.getDockerSetting().getRegistry(), Map.of(
-                                    "username", sysSetting.getDockerSetting().getUserName(),
-                                    "password", sysSetting.getDockerSetting().getPassword())
-                            ));
-                            k8sClient.createSecret(new V1Secret()
-                                    .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
-                                    .type("kubernetes.io/dockerconfigjson")
-                                    .stringData(Map.of(
-                                        ".dockerconfigjson", JSONUtil.toJsonStr(dockerConfig)
-                                    ))
-                            );
-                        } catch (Exception e) {
-                            log.error("create secret error {}", e.getMessage(), e);
-                            throw new SwValidationException(ValidSubject.RUNTIME,
-                                "create secret error when building image for runtime");
-                        }
-
-                    } else {
-                        throw new SwValidationException(ValidSubject.RUNTIME,
-                            "can't found docker registry info, please set it in system setting.");
-                    }
-                }
-                // go on
-            }
-
-            try {
-                var image = String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName());
-                image = new DockerImage(image).resolve(
-                        systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
-
+                log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
+                var sysSetting = systemSettingService.getSystemSetting();
+                var image = new DockerImage(String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()))
+                        .resolve(sysSetting.getDockerSetting().getRegistry());
                 var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
                 // record image to labels
@@ -588,11 +538,11 @@ public class RuntimeService {
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
                             String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
                     new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
-                            systemSettingService.getSystemSetting().getPypiSetting().getIndexUrl()),
+                            sysSetting.getPypiSetting().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
-                            systemSettingService.getSystemSetting().getPypiSetting().getExtraIndexUrl()),
+                            sysSetting.getPypiSetting().getExtraIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
-                            systemSettingService.getSystemSetting().getPypiSetting().getTrustedHost()),
+                            sysSetting.getPypiSetting().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
                             runtimeTokenValidator.getToken(user, runtimeVersion.getId()))
                 );
@@ -604,7 +554,6 @@ public class RuntimeService {
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
 
-                String finalImage = image;
                 k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
                     ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
                             templateContainer.getName());
@@ -612,7 +561,7 @@ public class RuntimeService {
                     containerOverwriteSpec.setCmds(List.of(
                             "--dockerfile=Dockerfile",
                             "--context=dir:///workspace",
-                            "--destination=" + finalImage));
+                            "--destination=" + image));
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
 
@@ -625,6 +574,61 @@ public class RuntimeService {
                 throw new SwProcessException(ErrorType.INFRA,
                         "deploying job for image build error:" + k8sE.getMessage());
             }
+        }
+    }
+
+    private boolean isExist(String runtimeUrl, String versionUrl, RuntimeVersionEntity runtimeVersion) {
+        try {
+            var existJob = k8sClient.getJob(runtimeVersion.getVersionName());
+            if (null != existJob) {
+                return true;
+            }
+        } catch (ApiException k8sE) {
+            if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
+                log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
+                throw new SwProcessException(ErrorType.INFRA, "k8s api invoke error" + k8sE.getMessage());
+            }
+            // go on
+        }
+        return false;
+    }
+
+    private void checkDockerRegistry() {
+        try {
+            // judge registry secret whether has been created
+            k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
+        } catch (ApiException k8sE) {
+            if (k8sE.getCode() == HttpServletResponse.SC_NOT_FOUND) {
+                log.debug("secret is not found {}, now to build it", k8sE.getResponseBody(), k8sE);
+                var sysSetting = systemSettingService.getSystemSetting();
+                if (null != sysSetting
+                        && null != sysSetting.getDockerSetting()
+                        && null != sysSetting.getDockerSetting().getRegistry()
+                        && null != sysSetting.getDockerSetting().getUserName()
+                        && null != sysSetting.getDockerSetting().getPassword()) {
+                    try {
+                        var dockerConfig = Map.of("auths", Map.of(
+                                sysSetting.getDockerSetting().getRegistry(), Map.of(
+                                "username", sysSetting.getDockerSetting().getUserName(),
+                                "password", sysSetting.getDockerSetting().getPassword())
+                        ));
+                        k8sClient.createSecret(new V1Secret()
+                                .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
+                                .type("kubernetes.io/dockerconfigjson")
+                                .stringData(Map.of(".dockerconfigjson", JSONUtil.toJsonStr(dockerConfig)))
+                        );
+                    } catch (Exception e) {
+                        log.error("create secret error {}", e.getMessage(), e);
+                        throw new SwValidationException(ValidSubject.RUNTIME,
+                            "create secret error when building image for runtime");
+                    }
+
+                } else {
+                    throw new SwValidationException(ValidSubject.RUNTIME,
+                        "can't found docker registry info, please set it in system setting.");
+                }
+            }
+            // go on
         }
     }
 
