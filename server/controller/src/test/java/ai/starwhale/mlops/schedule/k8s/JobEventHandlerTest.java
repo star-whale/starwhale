@@ -98,7 +98,7 @@ public class JobEventHandlerTest {
     @Test
     public void testOnUpdateUnknown() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
