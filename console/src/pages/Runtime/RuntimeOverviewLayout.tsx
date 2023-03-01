@@ -6,9 +6,6 @@ import { useHistory, useParams, useLocation } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime, removeRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { formatTimestampDateTime } from '@/utils/datetime'
-import Accordion from '@starwhale/ui/Accordion'
-import { Panel } from 'baseui/accordion'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
 import qs from 'qs'
@@ -77,60 +74,6 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         return items
     }, [projectId, runtimeId, t, runtime])
 
-    const header = React.useMemo(() => {
-        const items = [
-            {
-                label: t('Runtime Name'),
-                value: runtime?.name ?? '',
-            },
-            {
-                label: t('Version Name'),
-                value: runtime?.versionName ?? '',
-            },
-            {
-                label: t('Version Tag'),
-                value: runtime?.versionTag ?? '',
-            },
-            {
-                label: t('Created'),
-                value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
-            },
-        ]
-
-        const info = (
-            <div
-                style={{
-                    fontSize: '14px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-                    gap: '12px',
-                }}
-            >
-                {items.map((v) => (
-                    <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
-                        <div
-                            style={{
-                                lineHeight: '24px',
-                                borderRadius: '4px',
-                                color: 'rgba(2,16,43,0.60)',
-                            }}
-                        >
-                            {v?.label}:
-                        </div>
-                        <div> {v?.value}</div>
-                    </div>
-                ))}
-            </div>
-        )
-        return (
-            <div className='mb-20'>
-                <Accordion accordion>
-                    <Panel title={`${t('Runtime ID')}: ${runtime?.id ?? ''}`}>{info}</Panel>
-                </Accordion>
-            </div>
-        )
-    }, [runtime, t])
-
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
@@ -179,58 +122,40 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
     }, [projectId, runtimeId, history, t])
 
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header} extra={extra}>
-            <Accordion
-                accordion
-                overrides={{
-                    ToggleIcon: () => <></>,
-                    ContentAnimationContainer: {
-                        style: {
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                        },
-                    },
-                }}
-            >
-                <Panel title={t('Version and Files')} expanded>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        {runtimeVersionId && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <div style={{ width: '280px' }}>
-                                    <RuntimeVersionSelector
-                                        projectId={projectId}
-                                        runtimeId={runtimeId}
-                                        value={runtimeVersionId}
-                                        onChange={(v: string) =>
-                                            history.push(
-                                                `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
-                                                    page
-                                                )}`
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <Button
-                                    icon='runtime'
-                                    kind='secondary'
-                                    onClick={() =>
-                                        history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)
-                                    }
-                                >
-                                    {t('History')}
-                                </Button>
-                            </div>
-                        )}
-                        {runtimeVersionId && (
-                            <div style={{ marginBottom: '10px' }}>
-                                <BaseNavTabs navItems={navItems} />{' '}
-                            </div>
-                        )}
-                        <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {runtimeVersionId && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                        <div style={{ width: '280px' }}>
+                            <RuntimeVersionSelector
+                                projectId={projectId}
+                                runtimeId={runtimeId}
+                                value={runtimeVersionId}
+                                onChange={(v: string) =>
+                                    history.push(
+                                        `/projects/${projectId}/runtimes/${runtimeId}/versions/${v}/${activeItemId}?${qs.stringify(
+                                            page
+                                        )}`
+                                    )
+                                }
+                            />
+                        </div>
+                        <Button
+                            icon='runtime'
+                            kind='secondary'
+                            onClick={() => history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)}
+                        >
+                            {t('History')}
+                        </Button>
                     </div>
-                </Panel>
-            </Accordion>
+                )}
+                {runtimeVersionId && (
+                    <div style={{ marginBottom: '10px' }}>
+                        <BaseNavTabs navItems={navItems} />{' '}
+                    </div>
+                )}
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+            </div>
         </BaseSubLayout>
     )
 }
