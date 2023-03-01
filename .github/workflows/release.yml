@@ -5,6 +5,93 @@ on:
     types: [published]
 
 jobs:
+  doc-release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "yarn"
+          cache-dependency-path: "./docs/yarn.lock"
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-docs-dir-path
+        run: |
+          echo "::set-output name=dir::"
+          yarn cache dir
+
+      - uses: actions/cache@v3
+        id: yarn-cache-docs
+        with:
+          path: |
+            ${{ steps.yarn-cache-docs-dir-path.outputs.dir }}
+            **/node_modules
+          key: ${{ runner.os }}-yarn-docs-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-docs-
+
+      - name: Install docs dependencies
+        working-directory: ./docs
+        if: steps.yarn-cache-docs.outputs.cache-hit != 'true' # Over here!
+        run: make install-req
+
+      - name: Checkout gh-pages branch for archived versions docs
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy archived version files
+        run: |
+          [ ! -d gh-pages/.archived-versions ] && exit 0
+          cp gh-pages/.archived-versions/versions.json docs/
+          cp -R gh-pages/.archived-versions/versioned_sidebars docs/
+          cp -R gh-pages/.archived-versions/versioned_docs docs/
+          cp -R gh-pages/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/version-* docs/i18n/zh/docusaurus-plugin-content-docs/
+
+      - name: Generate new release version
+        working-directory: ./docs
+        env:
+          RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
+        run: make versioning-docs
+
+      - name: Lint docs
+        working-directory: ./docs
+        run: make lint-docs
+
+      - name: Build docs
+        working-directory: ./docs
+        run: make build-docs
+
+      - name: Update archived version files
+        run: |
+          mkdir -p docs/build/.archived-versions
+          cp docs/versions.json docs/build/.archived-versions/
+          cp -R docs/versioned_sidebars docs/build/.archived-versions/
+          cp -R docs/versioned_docs docs/build/.archived-versions/
+          mkdir -p docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs
+          cp -R docs/i18n/zh/docusaurus-plugin-content-docs/i18n/zh/docusaurus-plugin-content-docs/version-* docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/
+
+      - name: Publish to Github Pages
+        if: ${{ github.ref == 'refs/heads/main'}}
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build
+          user_name: github-actions[bot]
+          cname: doc.starwhale.ai
+          user_email: "github-actions[bot]@users.noreply.github.com"
+
   pypi-release:
     runs-on: ubuntu-latest
     defaults:
@@ -65,7 +152,19 @@ jobs:
 
     strategy:
       matrix:
-        cuda_version: ["", "11.3", "11.3-cudnn8", "11.4", "11.4-cudnn8", "11.5", "11.5-cudnn8", "11.6", "11.6-cudnn8", "11.7"]
+        cuda_version:
+          [
+            "",
+            "11.3",
+            "11.3-cudnn8",
+            "11.4",
+            "11.4-cudnn8",
+            "11.5",
+            "11.5-cudnn8",
+            "11.6",
+            "11.6-cudnn8",
+            "11.7",
+          ]
 
     steps:
       - uses: actions/checkout@v3

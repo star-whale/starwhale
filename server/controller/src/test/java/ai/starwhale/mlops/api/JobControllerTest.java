@@ -34,6 +34,7 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -43,6 +44,7 @@ import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import com.github.pagehelper.Page;
 import java.util.List;
 import java.util.Objects;
@@ -232,6 +234,16 @@ public class JobControllerTest {
         req.setRuntimeVersionUrl("baz");
         req.setResourcePool("default");
         var resp = controller.createModelServing("foo", req);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData(), is(vo));
+    }
+
+    @Test
+    public void testGetModelServingStatus() {
+        var event = ResourceEventHolder.Event.builder().name("foo").build();
+        var vo = ModelServingStatusVo.builder().progress(100).events(List.of(event)).build();
+        given(modelServingService.getStatus(2L)).willReturn(vo);
+        var resp = controller.getModelServingStatus(1L, 2L);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody().getData(), is(vo));
     }

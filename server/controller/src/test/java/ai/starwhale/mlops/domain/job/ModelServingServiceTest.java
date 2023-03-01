@@ -48,6 +48,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
@@ -82,6 +83,7 @@ public class ModelServingServiceTest {
     private final SystemSettingService systemSettingService = mock(SystemSettingService.class);
     private final RunTimeProperties runTimeProperties = mock(RunTimeProperties.class);
     private final ModelServingTokenValidator modelServingTokenValidator = mock(ModelServingTokenValidator.class);
+    private final ResourceEventHolder resourceEventHolder = mock(ResourceEventHolder.class);
 
     @BeforeEach
     public void setUp() {
@@ -97,9 +99,10 @@ public class ModelServingServiceTest {
                 modelMapper,
                 systemSettingService,
                 runTimeProperties,
-                "inst",
                 modelServingTokenValidator,
                 new IdConverter(),
+                resourceEventHolder,
+                "inst",
                 3600,
                 1
         );
@@ -280,5 +283,16 @@ public class ModelServingServiceTest {
         when(k8sClient.getPodList(any())).thenReturn(new V1PodList().items(List.of(pendingPod, readyPod1, readyPod2)));
         svc.gc();
         verify(k8sClient, times(0)).deleteStatefulSet(any());
+    }
+
+    @Test
+    public void testGetStatus() {
+        var events = List.of(ResourceEventHolder.Event.builder().name("foo").build());
+        when(resourceEventHolder.getPodEvents("model-serving-7-0")).thenReturn(events);
+        var status = svc.getStatus(7L);
+        Assertions.assertEquals(events, status.getEvents());
+
+        status = svc.getStatus(8L);
+        Assertions.assertEquals(0, status.getEvents().size());
     }
 }

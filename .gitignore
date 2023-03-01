@@ -102,6 +102,10 @@ pip-delete-this-directory.txt
 docs/node_modules
 docs/build
 docs/.docusaurus
+docs/versions.json
+docs/versioned_sidebars
+docs/versioned_docs
+docs/i18n/zh/docusaurus-plugin-content-docs/version-*/
 
 # Helm Charts
 docker/charts/index.yaml
