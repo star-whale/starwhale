@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +42,14 @@ public class ModelVersionVoConverter {
         this.jobSpecParser = jobSpecParser;
     }
 
-    public ModelVersionVo convert(ModelVersionEntity entity)
+    public ModelVersionVo convert(ModelVersionEntity entity, ModelVersionEntity latest)
             throws ConvertException {
         try {
-            return ModelVersionVo.builder()
+            if (entity == null) {
+                return null;
+            }
+
+            ModelVersionVo vo = ModelVersionVo.builder()
                     .id(idConvertor.convert(entity.getId()))
                     .name(entity.getVersionName())
                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
@@ -54,6 +59,10 @@ public class ModelVersionVoConverter {
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getEvalJobs()))
                     .build();
+            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+                vo.setAlias(VersionAliasConverter.LATEST);
+            }
+            return vo;
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);
             throw new ConvertException(e.getMessage());

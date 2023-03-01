@@ -43,14 +43,23 @@ public class RuntimeVersionConverterTest {
 
     @Test
     public void testConvert() {
-        var res = runtimeVersionConvertor.convert(RuntimeVersionEntity.builder()
+        RuntimeVersionEntity entity1 = RuntimeVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
                 .versionOrder(2L)
                 .versionTag("tag1")
                 .versionMeta("meta1")
                 .image("image1")
-                .build());
+                .build();
+        RuntimeVersionEntity entity2 = RuntimeVersionEntity.builder()
+                .id(2L)
+                .versionName("name2")
+                .versionOrder(3L)
+                .versionTag("tag2")
+                .versionMeta("meta2")
+                .image("image2")
+                .build();
+        var res = runtimeVersionConvertor.convert(entity1, null);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
@@ -58,6 +67,26 @@ public class RuntimeVersionConverterTest {
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is("meta1")),
                 hasProperty("image", is("image1"))
+        ));
+
+        res = runtimeVersionConvertor.convert(entity1, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name1")),
+                hasProperty("alias", is("v2")),
+                hasProperty("tag", is("tag1")),
+                hasProperty("meta", is("meta1")),
+                hasProperty("image", is("image1"))
+        ));
+
+        res = runtimeVersionConvertor.convert(entity2, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name2")),
+                hasProperty("alias", is("latest")),
+                hasProperty("tag", is("tag2")),
+                hasProperty("meta", is("meta2")),
+                hasProperty("image", is("image2"))
         ));
     }
 

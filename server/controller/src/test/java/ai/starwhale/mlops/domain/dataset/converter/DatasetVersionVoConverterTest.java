@@ -42,19 +42,45 @@ public class DatasetVersionVoConverterTest {
 
     @Test
     public void testConvert() {
-        var res = datasetVersionVoConverter.convert(DatasetVersionEntity.builder()
+        DatasetVersionEntity entity1 = DatasetVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
                 .versionOrder(2L)
                 .versionTag("tag1")
                 .versionMeta("meta1")
-                .build());
+                .build();
+        DatasetVersionEntity entity2 = DatasetVersionEntity.builder()
+                .id(2L)
+                .versionName("name2")
+                .versionOrder(3L)
+                .versionTag("tag2")
+                .versionMeta("meta2")
+                .build();
+        var res = datasetVersionVoConverter.convert(entity1, null);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is("meta1"))
+        ));
+
+        res = datasetVersionVoConverter.convert(entity1, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name1")),
+                hasProperty("alias", is("v2")),
+                hasProperty("tag", is("tag1")),
+                hasProperty("meta", is("meta1"))
+        ));
+
+        res = datasetVersionVoConverter.convert(entity2, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name2")),
+                hasProperty("alias", is("latest")),
+                hasProperty("tag", is("tag2")),
+                hasProperty("meta", is("meta2"))
         ));
     }
 }

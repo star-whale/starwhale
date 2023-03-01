@@ -133,7 +133,7 @@ public class DatasetService {
         return PageUtil.toPageInfo(entities, ds -> {
             DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
             DatasetVo vo = datasetVoConverter.convert(ds);
-            vo.setVersion(versionConvertor.convert(version));
+            vo.setVersion(versionConvertor.convert(version, version));
             return vo;
         });
     }
@@ -234,13 +234,7 @@ public class DatasetService {
         List<DatasetVersionEntity> entities = datasetVersionMapper.list(
                 datasetId, query.getVersionName(), query.getVersionTag());
         DatasetVersionEntity latest = datasetVersionMapper.findByLatest(datasetId);
-        return PageUtil.toPageInfo(entities, entity -> {
-            DatasetVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
-            return vo;
-        });
+        return PageUtil.toPageInfo(entities, entity -> versionConvertor.convert(entity, latest));
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
@@ -248,8 +242,11 @@ public class DatasetService {
 
         return versions.stream().map(version -> {
             DatasetEntity ds = datasetMapper.find(version.getDatasetId());
+            DatasetVersionEntity latest = datasetVersionMapper.findByLatest(version.getDatasetId());
             DatasetVo vo = datasetVoConverter.convert(ds);
-            vo.setVersion(versionConvertor.convert(version));
+            DatasetVersionVo versionVo = versionConvertor.convert(version, latest);
+            vo.setVersion(versionVo);
+            vo.setOwner(userService.findUserById(ds.getOwnerId()));
             return vo;
         }).collect(Collectors.toList());
     }

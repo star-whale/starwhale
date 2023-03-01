@@ -182,7 +182,7 @@ public class RuntimeService {
             RuntimeVo vo = runtimeConvertor.convert(rt);
             RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
             if (version != null) {
-                RuntimeVersionVo versionVo = versionConvertor.convert(version);
+                RuntimeVersionVo versionVo = versionConvertor.convert(version, version);
                 versionVo.setOwner(userService.findUserById(version.getOwnerId()));
                 vo.setVersion(versionVo);
             }
@@ -307,10 +307,7 @@ public class RuntimeService {
                 runtimeId, query.getVersionName(), query.getVersionTag());
         RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(runtimeId);
         return PageUtil.toPageInfo(entities, entity -> {
-            RuntimeVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
+            RuntimeVersionVo vo = versionConvertor.convert(entity, latest);
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });
@@ -319,12 +316,12 @@ public class RuntimeService {
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
         List<RuntimeVersionEntity> versions = runtimeVersionMapper.findByIds(
                 Joiner.on(",").join(versionIds));
-
         return versions.stream().map(version -> {
             RuntimeEntity rt = runtimeMapper.find(version.getRuntimeId());
             RuntimeVo vo = runtimeConvertor.convert(rt);
-            vo.setVersion(versionConvertor.convert(version));
-            vo.setOwner(userService.findUserById(version.getOwnerId()));
+            RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(version.getRuntimeId());
+            vo.setVersion(versionConvertor.convert(version, latest));
+            vo.setOwner(userService.findUserById(rt.getOwnerId()));
             return vo;
         }).collect(Collectors.toList());
     }

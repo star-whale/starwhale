@@ -21,6 +21,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,12 +36,12 @@ public class DatasetVersionVoConverter {
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public DatasetVersionVo convert(DatasetVersionEntity entity)
+    public DatasetVersionVo convert(DatasetVersionEntity entity, DatasetVersionEntity latest)
             throws ConvertException {
         if (entity == null) {
             return null;
         }
-        return DatasetVersionVo.builder()
+        DatasetVersionVo vo = DatasetVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                 .name(entity.getVersionName())
@@ -48,6 +49,10 @@ public class DatasetVersionVoConverter {
                 .meta(entity.getVersionMeta())
                 .createdTime(entity.getCreatedTime().getTime())
                 .build();
+        if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+            vo.setAlias(VersionAliasConverter.LATEST);
+        }
+        return vo;
     }
 
 }

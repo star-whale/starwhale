@@ -42,8 +42,11 @@ public class ModelVo implements Serializable {
     @JsonProperty("owner")
     private UserVo owner;
 
+    @JsonProperty("version")
+    private ModelVersionVo version;
+
     public static ModelVo empty() {
-        return new ModelVo("", "", -1L, UserVo.empty());
+        return new ModelVo("", "", -1L, UserVo.empty(), ModelVersionVo.empty());
     }
 
 }

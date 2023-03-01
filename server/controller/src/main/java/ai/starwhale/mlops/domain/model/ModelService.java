@@ -350,32 +350,24 @@ public class ModelService {
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
+            ModelVersionVo vo = versionConvertor.convert(entity, latest);
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
         });
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
-
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
-        List<Long> ids = versions.stream()
-                .map(ModelVersionEntity::getModelId)
-                .collect(Collectors.toList());
-
-        List<ModelEntity> models = modelMapper.findByIds(Joiner.on(",").join(ids));
-
-        return models.stream()
-                .map(model -> {
-                    ModelVo vo = modelVoConverter.convert(model);
-                    vo.setOwner(userService.findUserById(model.getOwnerId()));
-                    return vo;
-                }).collect(Collectors.toList());
+        return versions.stream().map(version -> {
+            ModelEntity model = modelMapper.find(version.getModelId());
+            ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
+            ModelVo vo = modelVoConverter.convert(model);
+            ModelVersionVo versionVo = versionConvertor.convert(version, latest);
+            vo.setOwner(userService.findUserById(model.getOwnerId()));
+            vo.setVersion(versionVo);
+            return vo;
+        }).collect(Collectors.toList());
     }
 
 

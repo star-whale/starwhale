@@ -83,7 +83,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
@@ -129,7 +128,7 @@ public class ModelServiceTest {
                             .build();
                 });
         versionConvertor = mock(ModelVersionVoConverter.class);
-        given(versionConvertor.convert(any(ModelVersionEntity.class)))
+        given(versionConvertor.convert(any(ModelVersionEntity.class), any()))
                 .willAnswer(invocation -> {
                     ModelVersionEntity entity = invocation.getArgument(0);
                     return ModelVersionVo.builder()
@@ -414,13 +413,11 @@ public class ModelServiceTest {
                         ModelVersionEntity.builder().modelId(2L).build()
                 ));
 
-        given(modelMapper.findByIds(anyString()))
-                .willAnswer(invocation -> {
-                    String ids = invocation.getArgument(0);
-                    return Stream.of(ids.split(","))
-                            .map(id -> ModelEntity.builder().id(Long.valueOf(id)).build())
-                            .collect(Collectors.toList());
-                });
+        given(modelMapper.find(same(1L)))
+                .willReturn(ModelEntity.builder().id(1L).build());
+
+        given(modelMapper.find(same(2L)))
+                .willReturn(ModelEntity.builder().id(2L).build());
 
         var res = service.findModelByVersionId(List.of());
         assertThat(res, allOf(

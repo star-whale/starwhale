@@ -47,7 +47,7 @@ public class ModelVersionConverterTest {
 
     @Test
     public void testConvert() {
-        var res = modelVersionVoConverter.convert(ModelVersionEntity.builder()
+        ModelVersionEntity entity1 = ModelVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
                 .versionOrder(2L)
@@ -55,7 +55,17 @@ public class ModelVersionConverterTest {
                 .versionMeta("meta1")
                 .manifest("manifest1")
                 .evalJobs("default:\n- concurrency: 2")
-                .build());
+                .build();
+        ModelVersionEntity entity2 = ModelVersionEntity.builder()
+                .id(2L)
+                .versionName("name2")
+                .versionOrder(3L)
+                .versionTag("tag2")
+                .versionMeta("meta2")
+                .manifest("manifest2")
+                .evalJobs("default:\n- concurrency: 2")
+                .build();
+        var res = modelVersionVoConverter.convert(entity1, null);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
@@ -63,6 +73,30 @@ public class ModelVersionConverterTest {
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is("meta1")),
                 hasProperty("manifest", is("manifest1")),
+                hasProperty("stepSpecs",
+                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
+        ));
+
+        res = modelVersionVoConverter.convert(entity1, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name1")),
+                hasProperty("alias", is("v2")),
+                hasProperty("tag", is("tag1")),
+                hasProperty("meta", is("meta1")),
+                hasProperty("manifest", is("manifest1")),
+                hasProperty("stepSpecs",
+                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
+        ));
+
+        res = modelVersionVoConverter.convert(entity2, entity2);
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name2")),
+                hasProperty("alias", is("latest")),
+                hasProperty("tag", is("tag2")),
+                hasProperty("meta", is("meta2")),
+                hasProperty("manifest", is("manifest2")),
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
         ));

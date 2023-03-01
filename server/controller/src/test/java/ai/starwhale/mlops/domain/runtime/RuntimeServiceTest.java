@@ -142,7 +142,7 @@ public class RuntimeServiceTest {
                             .build();
                 });
         versionConvertor = mock(RuntimeVersionConverter.class);
-        given(versionConvertor.convert(any(RuntimeVersionEntity.class)))
+        given(versionConvertor.convert(any(RuntimeVersionEntity.class), any()))
                 .willAnswer(invocation -> {
                     RuntimeVersionEntity entity = invocation.getArgument(0);
                     return RuntimeVersionVo.builder()

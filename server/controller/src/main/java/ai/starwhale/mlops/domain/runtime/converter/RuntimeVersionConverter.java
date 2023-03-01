@@ -21,6 +21,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,9 +36,12 @@ public class RuntimeVersionConverter {
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public RuntimeVersionVo convert(RuntimeVersionEntity entity)
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest)
             throws ConvertException {
-        return RuntimeVersionVo.builder()
+        if (entity == null) {
+            return null;
+        }
+        RuntimeVersionVo vo = RuntimeVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getVersionName())
                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
@@ -47,6 +51,10 @@ public class RuntimeVersionConverter {
                 .createdTime(entity.getCreatedTime().getTime())
                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                 .build();
+        if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+            vo.setAlias(VersionAliasConverter.LATEST);
+        }
+        return vo;
     }
 
 }

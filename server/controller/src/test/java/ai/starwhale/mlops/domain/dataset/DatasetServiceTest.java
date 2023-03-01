@@ -108,7 +108,7 @@ public class DatasetServiceTest {
                             .build();
                 });
         versionConvertor = mock(DatasetVersionVoConverter.class);
-        given(versionConvertor.convert(any(DatasetVersionEntity.class)))
+        given(versionConvertor.convert(any(DatasetVersionEntity.class), any()))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
                     return DatasetVersionVo.builder()
