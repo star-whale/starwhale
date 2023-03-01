@@ -76,6 +76,22 @@ sw:
 ---
 #Development
 spring:
+  boot:
+    admin:
+      context-path: admin
+      instance-auth:
+        default-user-name: ${spring.security.user.name}
+        default-password: ${spring.security.user.password}
+      client:
+        url: ${sw.instance-uri}/admin
+        username: ${spring.security.user.name}
+        password: ${spring.security.user.password}
+        instance:
+          metadata:
+            user:
+              name: ${spring.security.user.name}
+              password: ${spring.security.user.password}
+          name: StarWhale-Server
   config:
     activate:
       on-profile: dev
@@ -90,6 +106,11 @@ spring:
     locations: "classpath:db/migration"
     ignore-missing-migrations: true
     out-of-order: true
+  security:
+    user:
+      name: admin
+      password: admin
+      roles: USER
   mvc:
     view:
       suffix: .html
@@ -107,3 +128,9 @@ logging:
     root: info
     ai.starwhale.mlops: debug
     org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:DEBUG}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: *
