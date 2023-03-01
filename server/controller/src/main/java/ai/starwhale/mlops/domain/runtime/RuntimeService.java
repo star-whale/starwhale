@@ -560,6 +560,9 @@ public class RuntimeService {
                     containerOverwriteSpec.setCmds(List.of(
                             "--dockerfile=Dockerfile",
                             "--context=dir:///workspace",
+                            "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
+                            "--cache-repo=" + new DockerImage("cache")
+                                    .resolve(sysSetting.getDockerSetting().getRegistry()),
                             "--destination=" + image));
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
