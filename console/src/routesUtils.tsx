@@ -19,7 +19,6 @@ function mergeRoute(source, target) {
         if ('to' in b) return -1
         return 0
     })
-    console.log(routes)
 
     return (
         <source.component>

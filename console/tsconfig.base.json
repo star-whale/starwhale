@@ -31,7 +31,6 @@
   },
   "include": [
     "src",
-    "starwhale/console/src",
     "types",
     "packages"
   ],
