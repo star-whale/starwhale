@@ -71,7 +71,6 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.system.SystemSetting;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -127,7 +126,6 @@ public class RuntimeServiceTest {
     private K8sClient k8sClient;
     private K8sJobTemplate k8sJobTemplate;
     private RuntimeTokenValidator runtimeTokenValidator;
-    private SystemSettingService systemSettingService;
     @Setter
     private BundleManager bundleManager;
 
@@ -179,7 +177,6 @@ public class RuntimeServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         runtimeTokenValidator = mock(RuntimeTokenValidator.class);
-        systemSettingService = mock(SystemSettingService.class);
 
         service = new RuntimeService(
                 runtimeMapper,
@@ -200,7 +197,9 @@ public class RuntimeServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeTokenValidator,
-                systemSettingService,
+                new DockerSetting("localhost:8083", "admin", "admin123"),
+                new RunTimeProperties("",
+                        new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
@@ -591,12 +590,6 @@ public class RuntimeServiceTest {
         given(projectService.findProject("project-1"))
                 .willReturn(Project.builder().id(1L).name("starwhale").build());
         given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
-
-        var systemSetting = new SystemSetting();
-        systemSetting.setDockerSetting(new DockerSetting("localhost:8083", "admin", "admin123"));
-        systemSetting.setPypiSetting(
-                new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io"));
-        given(systemSettingService.getSystemSetting()).willReturn(systemSetting);
 
         var job = new V1Job()
                 .metadata(new V1ObjectMeta().name("n1").labels(

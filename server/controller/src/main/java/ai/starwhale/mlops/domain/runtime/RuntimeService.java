@@ -29,6 +29,7 @@ import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -56,7 +57,6 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingListener;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -133,7 +133,8 @@ public class RuntimeService implements SystemSettingListener {
     private final K8sClient k8sClient;
     private final K8sJobTemplate k8sJobTemplate;
     private final RuntimeTokenValidator runtimeTokenValidator;
-    private final SystemSettingService systemSettingService;
+    private final DockerSetting dockerSetting;
+    private final RunTimeProperties runTimeProperties;
     private final String instanceUri;
 
     public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
@@ -144,8 +145,8 @@ public class RuntimeService implements SystemSettingListener {
                           HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
                           VersionAliasConverter versionAliasConvertor, TrashService trashService,
                           K8sClient k8sClient, K8sJobTemplate k8sJobTemplate,
-                          RuntimeTokenValidator runtimeTokenValidator, SystemSettingService systemSettingService,
-                          @Value("${sw.instance-uri}") String instanceUri) {
+                          RuntimeTokenValidator runtimeTokenValidator, DockerSetting dockerSetting,
+                          RunTimeProperties runTimeProperties, @Value("${sw.instance-uri}") String instanceUri) {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
@@ -164,7 +165,8 @@ public class RuntimeService implements SystemSettingListener {
         this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
         this.runtimeTokenValidator = runtimeTokenValidator;
-        this.systemSettingService = systemSettingService;
+        this.dockerSetting = dockerSetting;
+        this.runTimeProperties = runTimeProperties;
         this.instanceUri = instanceUri;
         this.bundleManager = new BundleManager(
                 idConvertor,
@@ -519,8 +521,7 @@ public class RuntimeService implements SystemSettingListener {
             return;
         }
 
-        var sysSetting = systemSettingService.getSystemSetting();
-        if (!validateDockerSetting(sysSetting.getDockerSetting())) {
+        if (!validateDockerSetting(dockerSetting)) {
             throw new SwValidationException(ValidSubject.RUNTIME,
                     "can't found docker registry info, please set it in system setting.");
         }
@@ -530,7 +531,7 @@ public class RuntimeService implements SystemSettingListener {
             var project = projectService.findProject(projectUrl);
             var user = userService.currentUserDetail();
             var image = new DockerImage(
-                    sysSetting.getDockerSetting().getRegistry(),
+                    dockerSetting.getRegistry(),
                     String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
@@ -544,11 +545,11 @@ public class RuntimeService implements SystemSettingListener {
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
                         String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
                     new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
-                        sysSetting.getPypiSetting().getIndexUrl()),
+                        runTimeProperties.getPypi().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
-                        sysSetting.getPypiSetting().getExtraIndexUrl()),
+                        runTimeProperties.getPypi().getExtraIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
-                        sysSetting.getPypiSetting().getTrustedHost()),
+                        runTimeProperties.getPypi().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
                         runtimeTokenValidator.getToken(user, runtimeVersion.getId()))
             );
@@ -566,7 +567,7 @@ public class RuntimeService implements SystemSettingListener {
                         "--dockerfile=Dockerfile",
                         "--context=dir:///workspace",
                         "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                        "--cache-repo=" + new DockerImage(sysSetting.getDockerSetting().getRegistry(), "cache"),
+                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
                         "--destination=" + image));
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
