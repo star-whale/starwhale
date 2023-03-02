@@ -28,6 +28,7 @@ import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -53,6 +54,8 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.system.SystemSetting;
+import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
@@ -106,7 +109,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
-public class RuntimeService {
+public class RuntimeService implements SystemSettingListener {
 
     private static final String DOCKER_REGISTRY_SECRET = "regcred";
     private final RuntimeMapper runtimeMapper;
@@ -509,108 +512,121 @@ public class RuntimeService {
         if (null == runtimeVersion) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Not found.");
         }
-        var project = projectService.findProject(projectUrl);
-        var user = userService.currentUserDetail();
+
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
-        } else {
-            checkDockerRegistry();
-            try {
-                log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
-                var sysSetting = systemSettingService.getSystemSetting();
-                var image = new DockerImage(
-                        sysSetting.getDockerSetting().getRegistry(),
-                        String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
-                var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
+            return;
+        }
 
-                // record image to labels
-                k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
+        var sysSetting = systemSettingService.getSystemSetting();
+        if (!validateDockerSetting(sysSetting.getDockerSetting())) {
+            throw new SwValidationException(ValidSubject.RUNTIME,
+                    "can't found docker registry info, please set it in system setting.");
+        }
 
-                Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-                List<V1EnvVar> envVars = List.of(
+        try {
+            log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
+            var project = projectService.findProject(projectUrl);
+            var user = userService.currentUserDetail();
+            var image = new DockerImage(
+                    sysSetting.getDockerSetting().getRegistry(),
+                    String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
+            var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
+
+            // record image to labels
+            k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
+
+            Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
+            List<V1EnvVar> envVars = List.of(
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
-                            String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
+                        String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
                     new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
-                            sysSetting.getPypiSetting().getIndexUrl()),
+                        sysSetting.getPypiSetting().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
-                            sysSetting.getPypiSetting().getExtraIndexUrl()),
+                        sysSetting.getPypiSetting().getExtraIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
-                            sysSetting.getPypiSetting().getTrustedHost()),
+                        sysSetting.getPypiSetting().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
-                            runtimeTokenValidator.getToken(user, runtimeVersion.getId()))
-                );
-                k8sJobTemplate.getInitContainerTemplates(job).forEach(templateContainer -> {
-                    ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
-                            templateContainer.getName());
-                    containerOverwriteSpec.setEnvs(envVars);
-                    containerOverwriteSpec.setImage(runtimeVersion.getImage());
-                    ret.put(templateContainer.getName(), containerOverwriteSpec);
-                });
+                        runtimeTokenValidator.getToken(user, runtimeVersion.getId()))
+            );
+            k8sJobTemplate.getInitContainerTemplates(job).forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(envVars);
+                containerOverwriteSpec.setImage(runtimeVersion.getImage());
+                ret.put(templateContainer.getName(), containerOverwriteSpec);
+            });
 
-                k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
-                    ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
-                            templateContainer.getName());
-                    containerOverwriteSpec.setEnvs(envVars);
-                    containerOverwriteSpec.setCmds(List.of(
-                            "--dockerfile=Dockerfile",
-                            "--context=dir:///workspace",
-                            "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                            "--cache-repo=" + new DockerImage(sysSetting.getDockerSetting().getRegistry(), "cache"),
-                            "--destination=" + image));
-                    ret.put(templateContainer.getName(), containerOverwriteSpec);
-                });
+            k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(envVars);
+                containerOverwriteSpec.setCmds(List.of(
+                        "--dockerfile=Dockerfile",
+                        "--context=dir:///workspace",
+                        "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
+                        "--cache-repo=" + new DockerImage(sysSetting.getDockerSetting().getRegistry(), "cache"),
+                        "--destination=" + image));
+                ret.put(templateContainer.getName(), containerOverwriteSpec);
+            });
 
-                k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
+            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
 
-                log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
-                k8sClient.deployJob(job);
-            } catch (ApiException k8sE) {
-                log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
-                throw new SwProcessException(ErrorType.INFRA,
-                        "deploying job for image build error:" + k8sE.getMessage());
-            }
+            log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
+            k8sClient.deployJob(job);
+        } catch (ApiException k8sE) {
+            log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
+            throw new SwProcessException(ErrorType.INFRA, "deploying job for image build error:" + k8sE.getMessage());
         }
     }
 
-    private void checkDockerRegistry() {
-        try {
-            // judge registry secret whether has been created
-            k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
-        } catch (ApiException k8sE) {
-            if (k8sE.getCode() == HttpServletResponse.SC_NOT_FOUND) {
-                log.debug("secret is not found {}, now to build it", k8sE.getResponseBody(), k8sE);
-                var sysSetting = systemSettingService.getSystemSetting();
-                if (null != sysSetting
-                        && null != sysSetting.getDockerSetting()
-                        && null != sysSetting.getDockerSetting().getRegistry()
-                        && null != sysSetting.getDockerSetting().getUserName()
-                        && null != sysSetting.getDockerSetting().getPassword()) {
+    private boolean validateDockerSetting(DockerSetting setting) {
+        return null != setting
+            && null != setting.getRegistry()
+            && null != setting.getUserName()
+            && null != setting.getPassword();
+    }
+
+    @Override
+    public void onUpdate(SystemSetting systemSetting) {
+        if (null != systemSetting && validateDockerSetting(systemSetting.getDockerSetting())) {
+            var dockerConfigJson = JSONUtil.toJsonStr(
+                    Map.of("auths", Map.of(systemSetting.getDockerSetting().getRegistry(), Map.of(
+                                "username", systemSetting.getDockerSetting().getUserName(),
+                                "password", systemSetting.getDockerSetting().getPassword()))));
+            try {
+                var secret = k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
+                if (secret != null) {
+                    // update
+                    secret.stringData(Map.of(".dockerconfigjson", dockerConfigJson));
+                    k8sClient.replaceSecret(DOCKER_REGISTRY_SECRET, secret);
+                }
+            } catch (ApiException e) {
+                if (e.getCode() == HttpServletResponse.SC_NOT_FOUND) {
+                    // create
                     try {
-                        var dockerConfig = Map.of("auths", Map.of(
-                                sysSetting.getDockerSetting().getRegistry(), Map.of(
-                                "username", sysSetting.getDockerSetting().getUserName(),
-                                "password", sysSetting.getDockerSetting().getPassword())
-                        ));
                         k8sClient.createSecret(new V1Secret()
                                 .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
                                 .type("kubernetes.io/dockerconfigjson")
-                                .stringData(Map.of(".dockerconfigjson", JSONUtil.toJsonStr(dockerConfig)))
+                                .immutable(false)
+                                .stringData(Map.of(".dockerconfigjson", dockerConfigJson))
                         );
-                    } catch (Exception e) {
-                        log.error("create secret error {}", e.getMessage(), e);
-                        throw new SwValidationException(ValidSubject.RUNTIME,
-                            "create secret error when building image for runtime");
+                    } catch (ApiException ex) {
+                        log.error("create secret error: {}", e.getResponseBody(), e);
                     }
-
                 } else {
-                    throw new SwValidationException(ValidSubject.RUNTIME,
-                        "can't found docker registry info, please set it in system setting.");
+                    log.error("operate secret error: {}", e.getResponseBody(), e);
                 }
             }
-            // go on
+        } else {
+            // delete docker config
+            try {
+                var status = k8sClient.deleteSecret(DOCKER_REGISTRY_SECRET);
+                log.info("secret:{} delete success, info:{}", DOCKER_REGISTRY_SECRET, status);
+            } catch (ApiException e) {
+                log.error("secret:{} delete error:{}", DOCKER_REGISTRY_SECRET, e.getResponseBody(), e);
+            }
         }
     }
 

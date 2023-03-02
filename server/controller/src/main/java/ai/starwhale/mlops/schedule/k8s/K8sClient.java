@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
@@ -104,6 +105,14 @@ public class K8sClient {
 
     public V1Secret createSecret(V1Secret secret) throws ApiException {
         return coreV1Api.createNamespacedSecret(ns, secret, null, null, null, null);
+    }
+
+    public V1Secret replaceSecret(String name, V1Secret secret) throws ApiException {
+        return coreV1Api.replaceNamespacedSecret(name, ns, secret, null, null, null, null);
+    }
+
+    public V1Status deleteSecret(String name) throws ApiException {
+        return coreV1Api.deleteNamespacedSecret(name, ns, null, null, null, null, null, null);
     }
 
     public V1Secret getSecret(String name) throws ApiException {

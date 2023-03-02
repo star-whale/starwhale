@@ -561,15 +561,29 @@ public class RuntimeServiceTest {
     }
 
     @Test
-    public void testBuildImageWithoutSecret() throws ApiException {
-        given(projectService.findProject("project-1"))
-                .willReturn(Project.builder().id(1L).name("starwhale").build());
-        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
-        given(k8sClient.getSecret(anyString())).willThrow(new ApiException(HttpServletResponse.SC_NOT_FOUND, ""));
-        given(systemSettingService.getSystemSetting()).willReturn(null);
+    public void testUpdateDockerSettingWithNone() throws ApiException {
+        service.onUpdate(new SystemSetting());
+        verify(k8sClient, times(1)).deleteSecret(anyString());
+    }
 
-        // secret not found
-        assertThrows(SwValidationException.class, () -> service.buildImage("project-1", "r1", "v1"));
+    @Test
+    public void testUpdateDockerSettingWithValueAndExistedSecret() throws ApiException {
+        given(k8sClient.getSecret(anyString())).willReturn(new V1Secret());
+        var setting = new SystemSetting();
+        setting.setDockerSetting(new DockerSetting("mockRegistry", "admin", "admin"));
+        service.onUpdate(setting);
+
+        verify(k8sClient, times(1)).replaceSecret(anyString(), any());
+    }
+
+    @Test
+    public void testUpdateDockerSettingWithValueAndNonExistedSecret() throws ApiException {
+        given(k8sClient.getSecret(anyString())).willThrow(new ApiException(HttpServletResponse.SC_NOT_FOUND, ""));
+        var setting = new SystemSetting();
+        setting.setDockerSetting(new DockerSetting("mockRegistry", "admin", "admin"));
+        service.onUpdate(setting);
+
+        verify(k8sClient, times(1)).createSecret(any());
     }
 
     @Test
@@ -577,8 +591,6 @@ public class RuntimeServiceTest {
         given(projectService.findProject("project-1"))
                 .willReturn(Project.builder().id(1L).name("starwhale").build());
         given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
-
-        given(k8sClient.getSecret(anyString())).willReturn(new V1Secret());
 
         var systemSetting = new SystemSetting();
         systemSetting.setDockerSetting(new DockerSetting("localhost:8083", "admin", "admin123"));
