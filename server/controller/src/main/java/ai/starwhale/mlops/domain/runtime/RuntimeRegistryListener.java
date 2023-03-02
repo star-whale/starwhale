@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -43,9 +44,9 @@ public class RuntimeRegistryListener implements SystemSettingListener {
 
     private boolean validateDockerSetting(DockerSetting setting) {
         return null != setting
-            && null != setting.getRegistry()
-            && null != setting.getUserName()
-            && null != setting.getPassword();
+            && StringUtils.hasText(setting.getRegistry())
+            && StringUtils.hasText(setting.getUserName())
+            && StringUtils.hasText(setting.getPassword());
     }
 
     @Override

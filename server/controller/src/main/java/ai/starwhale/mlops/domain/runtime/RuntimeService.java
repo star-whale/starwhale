@@ -579,9 +579,9 @@ public class RuntimeService {
 
     private boolean validateDockerSetting(DockerSetting setting) {
         return null != setting
-            && null != setting.getRegistry()
-            && null != setting.getUserName()
-            && null != setting.getPassword();
+            && StringUtils.hasText(setting.getRegistry())
+            && StringUtils.hasText(setting.getUserName())
+            && StringUtils.hasText(setting.getPassword());
     }
 
     public boolean updateBuiltImage(String version, String image) {
