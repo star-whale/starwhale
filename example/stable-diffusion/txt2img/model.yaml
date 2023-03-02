@@ -1,0 +1,7 @@
+version: 1.0
+name: stable-diffusion-v2
+
+run:
+  pkg_data:
+  - '*'
+  handler: run:StableDiffusion

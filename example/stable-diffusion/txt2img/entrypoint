@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+python3 -m starwhale instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
+python3 -m starwhale model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+python3 -m starwhale runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
+
+case "$1" in
+	run)
+		echo "not support for now" && exit 1
+		;;
+	serve)
+		python3 -m starwhale model serve --model "${SW_MODEL_VERSION}" --host 0.0.0.0
+		;;
+esac
