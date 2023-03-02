@@ -515,20 +515,17 @@ public class RuntimeService {
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
         } else {
-            if (isExist(runtimeUrl, versionUrl, runtimeVersion)) {
-                log.debug("image:{}-{} is building, please wait a monument", runtimeUrl, versionUrl);
-                return;
-            }
             checkDockerRegistry();
             try {
                 log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
                 var sysSetting = systemSettingService.getSystemSetting();
-                var image = new DockerImage(String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()))
-                        .resolve(sysSetting.getDockerSetting().getRegistry());
+                var image = new DockerImage(
+                        sysSetting.getDockerSetting().getRegistry(),
+                        String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
                 var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
                 // record image to labels
-                k8sJobTemplate.updateAnnotations(job, Map.of("image", image));
+                k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
 
                 Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
                 List<V1EnvVar> envVars = List.of(
@@ -561,8 +558,7 @@ public class RuntimeService {
                             "--dockerfile=Dockerfile",
                             "--context=dir:///workspace",
                             "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                            "--cache-repo=" + new DockerImage("cache")
-                                    .resolve(sysSetting.getDockerSetting().getRegistry()),
+                            "--cache-repo=" + new DockerImage(sysSetting.getDockerSetting().getRegistry(), "cache"),
                             "--destination=" + image));
                     ret.put(templateContainer.getName(), containerOverwriteSpec);
                 });
@@ -577,22 +573,6 @@ public class RuntimeService {
                         "deploying job for image build error:" + k8sE.getMessage());
             }
         }
-    }
-
-    private boolean isExist(String runtimeUrl, String versionUrl, RuntimeVersionEntity runtimeVersion) {
-        try {
-            var existJob = k8sClient.getJob(runtimeVersion.getVersionName());
-            if (null != existJob) {
-                return true;
-            }
-        } catch (ApiException k8sE) {
-            if (k8sE.getCode() != HttpServletResponse.SC_NOT_FOUND) {
-                log.error("k8s api invoke error {}", k8sE.getResponseBody(), k8sE);
-                throw new SwProcessException(ErrorType.INFRA, "k8s api invoke error" + k8sE.getMessage());
-            }
-            // go on
-        }
-        return false;
     }
 
     private void checkDockerRegistry() {

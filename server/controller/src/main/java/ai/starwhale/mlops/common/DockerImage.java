@@ -16,64 +16,29 @@
 
 package ai.starwhale.mlops.common;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.springframework.util.StringUtils;
 
 @Getter
-@ToString
 @EqualsAndHashCode
-@AllArgsConstructor
-@NoArgsConstructor
 public class DockerImage {
-
     String registry;
     String image;
 
     /**
-     * please refer to https://github.com/distribution/distribution/blob/v2.7.1/reference/reference.go
+     * @param registry such as ghcr.io
+     * @param image such as starwhale-ai/starwhale:0.3.5-rc123.dev12432344
      */
-    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.+?)\\/(.+)$");
-
-    /**
-     * @param imageNameFull such as ghcr.io/starwhale-ai/starwhale:0.3.5-rc123.dev12432344
-     */
-    public DockerImage(String imageNameFull) {
-        Matcher matcher = PATTERN_IMAGE_FULL.matcher(imageNameFull);
-        if (!matcher.matches()) {
-            this.registry = "";
-            this.image = imageNameFull;
-        } else {
-            String candidateRegistry = matcher.group(1);
-            if (isDomain(candidateRegistry)) {
-                this.registry = candidateRegistry;
-                image = matcher.group(2);
-            } else {
-                this.registry = "";
-                this.image = imageNameFull;
-            }
-
-        }
-    }
-
-    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST = Pattern.compile("localhost(:\\d+)?");
-
-    private static boolean isDomain(String candidate) {
-        return candidate.contains(".") || PATTERN_DOMAIN_LOCAL_HOST.matcher(candidate).matches();
+    public DockerImage(String registry, String image) {
+        this.registry = registry;
+        this.image = image;
     }
 
     private static final String SLASH = "/";
 
-    public String resolve(String newRegistry) {
-        if (!StringUtils.hasText(newRegistry)) {
-            newRegistry = this.registry;
-        }
-        return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
+    public String toString() {
+        return StringUtils.trimTrailingCharacter(registry, '/') + SLASH + image;
     }
 
 }
