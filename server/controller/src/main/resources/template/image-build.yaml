@@ -7,10 +7,10 @@ spec:
   parallelism: 1
   completionMode: Indexed
   backoffLimit: 2
+  ttlSecondsAfterFinished: 10
   template:
     spec:
       restartPolicy: OnFailure
-      ttlSecondsAfterFinished: 10
       initContainers:
         - name: 'prepare-runtime'
           imagePullPolicy: IfNotPresent
