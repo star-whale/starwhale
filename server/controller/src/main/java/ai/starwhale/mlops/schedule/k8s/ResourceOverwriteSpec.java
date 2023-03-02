@@ -44,7 +44,7 @@ public class ResourceOverwriteSpec {
 
     static final String RESOURCE_GPU = "nvidia.com/gpu";
 
-    public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, RESOURCE_GPU);
+    public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, RESOURCE_GPU, RESOURCE_MEMORY);
 
     private Float normalizeNonK8sResources(Float amount) {
         return (float) Math.ceil(amount);
@@ -52,12 +52,14 @@ public class ResourceOverwriteSpec {
 
     public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
         Map<String, Quantity> resourceRequestMap = runtimeResources.stream()
+                .filter(runtimeResource -> runtimeResource.getRequest() != null)
                 .collect(Collectors.toMap(
                     RuntimeResource::getType,
                     runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getRequest())
                 ));
         this.resourceSelector = new V1ResourceRequirements().requests(resourceRequestMap);
         Map<String, Quantity> resourceLimitMap = runtimeResources.stream()
+                .filter(runtimeResource -> runtimeResource.getLimit() != null)
                 .collect(Collectors.toMap(
                     RuntimeResource::getType,
                     runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getLimit())

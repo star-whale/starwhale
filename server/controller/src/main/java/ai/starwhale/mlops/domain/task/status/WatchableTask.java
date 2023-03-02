@@ -25,7 +25,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * make task status change watchalbe
+ * make task status change watchable
  */
 @Slf4j
 public class WatchableTask extends Task implements TaskWrapper {

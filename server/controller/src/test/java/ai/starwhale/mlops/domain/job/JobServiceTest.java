@@ -44,6 +44,7 @@ import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
@@ -57,6 +58,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -89,6 +91,8 @@ public class JobServiceTest {
     private DatasetService datasetService;
     private RuntimeService runtimeService;
     private TrashService trashService;
+    private SystemSettingService systemSettingService;
+    private JobSpecParser jobSpecParser;
 
     @BeforeEach
     public void setUp() {
@@ -116,12 +120,14 @@ public class JobServiceTest {
         datasetService = mock(DatasetService.class);
         runtimeService = mock(RuntimeService.class);
         trashService = mock(TrashService.class);
+        systemSettingService = mock(SystemSettingService.class);
+        jobSpecParser = mock(JobSpecParser.class);
 
         service = new JobService(
                 taskMapper, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
                 hotJobHolder, projectService, jobDao, jobLoader, modelService,
                 resultQuerier, datasetService, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
-                trashService);
+                trashService, systemSettingService, jobSpecParser);
     }
 
     @Test

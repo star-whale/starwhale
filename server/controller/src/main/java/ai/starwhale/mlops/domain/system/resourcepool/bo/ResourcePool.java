@@ -16,17 +16,22 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 /**
  * bo represent agent
  */
+@Slf4j
 @Data
 @Builder
 @AllArgsConstructor
@@ -50,4 +55,70 @@ public class ResourcePool {
                 .build();
     }
 
+    public void validateResource(RuntimeResource resource) {
+        if (resources == null || resources.isEmpty()) {
+            return;
+        }
+        var type = resource.getType();
+        if (!StringUtils.hasText(type)) {
+            throw new IllegalArgumentException("resource type is empty");
+        }
+        if (!ResourceOverwriteSpec.SUPPORTED_DEVICES.contains(type)) {
+            throw new IllegalArgumentException("unsupported resource type: " + type);
+        }
+        var rc = resources.stream().filter(r -> r.getName().equals(type)).findFirst().orElse(null);
+        // no rules for the resource
+        if (rc == null) {
+            return;
+        }
+        rc.validate(resource);
+    }
+
+    public void validateResources(List<RuntimeResource> runtimeResources) {
+        if (runtimeResources == null) {
+            return;
+        }
+        for (var r : runtimeResources) {
+            validateResource(r);
+        }
+    }
+
+    /**
+     * patchResource will patch the resource with default value and add resource if not exist
+     *
+     * @param runtimeResources runtime resource
+     * @return patched resource
+     */
+    public List<RuntimeResource> patchResources(List<RuntimeResource> runtimeResources) {
+        if (resources == null || resources.isEmpty()) {
+            return runtimeResources;
+        }
+        var ret = new ArrayList<RuntimeResource>();
+        for (var rc : resources) {
+            RuntimeResource rr = null;
+            if (runtimeResources != null) {
+                rr = runtimeResources.stream().filter(i -> i.getType().equals(rc.getName())).findFirst().orElse(null);
+            }
+            if (rr == null) {
+                rr = new RuntimeResource();
+                rr.setType(rc.getName());
+            } else {
+                // clone
+                rr = rr.toBuilder().build();
+            }
+            rc.patch(rr);
+            // no request update, ignore
+            if (rr.getRequest() == null) {
+                log.warn("no request update for {}", rr.getType());
+                continue;
+            }
+            ret.add(rr);
+        }
+        return ret;
+    }
+
+    public List<RuntimeResource> validateAndPatchResource(List<RuntimeResource> runtimeResources) {
+        validateResources(runtimeResources);
+        return patchResources(runtimeResources);
+    }
 }

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,5 +33,30 @@ public class Resource {
 
     public Resource(String name) {
         this.name = name;
+    }
+
+    public void validate(RuntimeResource runtimeResource) {
+        if (runtimeResource == null) {
+            return;
+        }
+        var req = runtimeResource.getRequest();
+        if (req == null) {
+            return;
+        }
+        if (max != null && req > max) {
+            throw new IllegalArgumentException(String.format("request value is too large, max is %.1f", max));
+        }
+        if (min != null && req < min) {
+            throw new IllegalArgumentException(String.format("value is too small, min is %.1f", min));
+        }
+    }
+
+    public void patch(RuntimeResource runtimeResource) {
+        if (runtimeResource == null) {
+            return;
+        }
+        if (runtimeResource.getRequest() == null) {
+            runtimeResource.setRequest(defaults);
+        }
     }
 }

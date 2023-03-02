@@ -153,7 +153,7 @@ public class ModelServingServiceTest {
 
         var spec = "---\n"
                 + "resources:\n"
-                + "- type: \"foo\"\n"
+                + "- type: \"cpu\"\n"
                 + "  request: 7.0\n"
                 + "  limit: 8.0\n";
 
@@ -162,7 +162,7 @@ public class ModelServingServiceTest {
         when(k8sClient.deployStatefulSet(any())).thenReturn(ss);
         svc.create("2", "9", "8", resourcePool, spec);
 
-        var rc = RuntimeResource.builder().type("foo").request(7f).limit(8f).build();
+        var rc = RuntimeResource.builder().type("cpu").request(7f).limit(8f).build();
         var expectedResource = new ResourceOverwriteSpec(List.of(rc));
         var expectedEnvs = Map.of(
                 "SW_PYPI_TRUSTED_HOST", "trusted-host",
