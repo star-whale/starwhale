@@ -14,42 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.trash.po;
+package ai.starwhale.mlops.domain.upgrade.bo;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.util.Date;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-@SuperBuilder
-@NoArgsConstructor
 @AllArgsConstructor
-public class TrashPo extends BaseEntity {
+public class Upgrade {
 
-    private Long id;
+    private final String progressId;
 
-    private Long projectId;
+    private final String version;
 
-    private Long objectId;
+    private final String image;
 
-    private Long operatorId;
+    private final String currentVersion;
 
-    private String trashName;
+    private final String currentImage;
 
-    private String trashType;
+    private STATUS status;
 
-    private Long size;
-
-    @Builder.Default
-    private Date retention = defaultDate;
-
-    @Builder.Default
-    private Date updatedTime = defaultDate;
-
+    public enum STATUS {
+        UPGRADING, COMPLETE, CANCELLING, CANCELED
+    }
 }

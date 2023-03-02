@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.domain.upgrade.step;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@SuperBuilder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+public interface UpgradeStep {
 
-    private Long id;
+    void run(Upgrade upgrade, int totalNum, int current);
 
-    private String userName;
+    boolean isStarted();
 
-    private String userPwd;
+    boolean isComplete();
 
-    private String userPwdSalt;
-
-    private Integer userEnabled;
-
+    void complete();
 }

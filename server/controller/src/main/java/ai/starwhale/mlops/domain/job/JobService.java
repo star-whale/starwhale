@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelService;
@@ -273,6 +274,10 @@ public class JobService {
                 .collect(Collectors.toList());
         batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
         updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELED);
+    }
+
+    public List<Job> listHotJobs() {
+        return jobDao.findJobByStatusIn(new ArrayList<>(JobStatusMachine.HOT_JOB_STATUS));
     }
 
     private Stream<Task> tasksOfJob(Job job) {

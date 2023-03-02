@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -26,6 +27,8 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -33,17 +36,21 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.CallGeneratorParams;
+import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -127,6 +134,24 @@ public class K8sClient {
         appsV1Api.deleteNamespacedStatefulSet(name, ns, null, null, 1, false, null, null);
     }
 
+    public V1Deployment patchDeployment(String deploymentName, V1Patch patch, String patchFormat) throws ApiException {
+        return PatchUtils.patch(
+                V1Deployment.class,
+                () -> appsV1Api.patchNamespacedDeploymentCall(
+                        deploymentName,
+                        ns,
+                        patch,
+                        null, null, null, null, null, null),
+                patchFormat,
+                client);
+    }
+
+    public V1DeploymentList listDeployment(String labelSelector) throws ApiException {
+        return appsV1Api.listNamespacedDeployment(ns, null, null, null, null,
+                labelSelector, null, null, null, null, null);
+    }
+
+
     /**
      * get all jobs with in this.ns
      *
@@ -147,6 +172,24 @@ public class K8sClient {
 
     public V1PodList getPodList(String labelSelector) throws ApiException {
         return coreV1Api.listNamespacedPod(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
+    }
+
+    public List<V1Pod> getNotReadyPods(String labelSelector) throws ApiException {
+        V1PodList podList = getPodList(labelSelector);
+        return podList.getItems()
+                .stream()
+                .filter(pod -> !isPodReady(pod))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isPodReady(V1Pod pod) {
+        V1PodStatus podStatus = Objects.requireNonNull(pod.getStatus());
+        //All conditions statuses are "True"
+        return Objects.requireNonNull(podStatus.getConditions())
+                .stream()
+                .dropWhile(condition -> "True".equalsIgnoreCase(condition.getStatus()))
+                .findAny()
+                .isEmpty();
     }
 
     public CoreV1EventList getEventList(String labelSelector) throws ApiException {

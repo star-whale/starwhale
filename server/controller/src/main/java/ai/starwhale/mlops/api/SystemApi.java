@@ -18,22 +18,20 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
-import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
+import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -48,19 +46,15 @@ public interface SystemApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools();
 
-    @Operation(summary = "Upgrade system version or cancel upgrade")
+    @Operation(summary = "Upgrade system version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-            value = "/system/version/{action}",
+            value = "/system/version/upgrade",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ResponseMessage<String>> systemVersionAction(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Action: upgrade or cancel",
-                    required = true,
-                    schema = @Schema(allowableValues = {"upgrade", "cancel"}))
-            @PathVariable("action")
-                    String action);
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> upgradeVersion(
+            @Valid @RequestBody UpgradeRequest upgradeRequest
+    );
 
     @Operation(summary = "Get current version of the system")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -84,7 +78,8 @@ public interface SystemApi {
     @GetMapping(
             value = "/system/version/progress",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ResponseMessage<UpgradeProgressVo>> getUpgradeProgress();
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<List<UpgradeLog>>> getUpgradeProgress();
 
     @Operation(
             summary = "Update system settings",

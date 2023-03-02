@@ -73,12 +73,6 @@ public class SystemControllerTest {
     }
 
     @Test
-    public void testSystemVersionAction() {
-        var resp = controller.systemVersionAction("");
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-    }
-
-    @Test
     public void testGetCurrentVersion() {
         given(systemService.controllerVersion())
                 .willReturn("version1");
