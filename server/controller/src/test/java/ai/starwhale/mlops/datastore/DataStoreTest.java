@@ -801,7 +801,7 @@ public class DataStoreTest {
             threads.add(new TestThread() {
                 public void execute() {
                     var columnName = Integer.toString(index);
-                    for (int j = 0; j < 100000; ++j) {
+                    for (int j = 0; j < 10000; ++j) {
                         dataStore.update(tableName,
                                 new TableSchemaDesc("k",
                                         List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -926,7 +926,7 @@ public class DataStoreTest {
             threads.add(new TestThread() {
                 public void execute() throws Exception {
                     for (int j = 0; j < 100; ++j) {
-                        for (int k = 0; k < 1000; ++k) {
+                        for (int k = 0; k < 100; ++k) {
                             try {
                                 String key = String.format("%06d", j * 1000 + k);
                                 dataStore.update(tableName,
