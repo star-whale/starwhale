@@ -55,8 +55,6 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.system.SystemSetting;
-import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -82,8 +80,6 @@ import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -109,9 +105,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
-public class RuntimeService implements SystemSettingListener {
+public class RuntimeService {
 
-    private static final String DOCKER_REGISTRY_SECRET = "regcred";
     private final RuntimeMapper runtimeMapper;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
@@ -587,48 +582,6 @@ public class RuntimeService implements SystemSettingListener {
             && null != setting.getRegistry()
             && null != setting.getUserName()
             && null != setting.getPassword();
-    }
-
-    @Override
-    public void onUpdate(SystemSetting systemSetting) {
-        if (null != systemSetting && validateDockerSetting(systemSetting.getDockerSetting())) {
-            var dockerConfigJson = JSONUtil.toJsonStr(
-                    Map.of("auths", Map.of(systemSetting.getDockerSetting().getRegistry(), Map.of(
-                                "username", systemSetting.getDockerSetting().getUserName(),
-                                "password", systemSetting.getDockerSetting().getPassword()))));
-            try {
-                var secret = k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
-                if (secret != null) {
-                    // update
-                    secret.stringData(Map.of(".dockerconfigjson", dockerConfigJson));
-                    k8sClient.replaceSecret(DOCKER_REGISTRY_SECRET, secret);
-                }
-            } catch (ApiException e) {
-                if (e.getCode() == HttpServletResponse.SC_NOT_FOUND) {
-                    // create
-                    try {
-                        k8sClient.createSecret(new V1Secret()
-                                .metadata(new V1ObjectMeta().name(DOCKER_REGISTRY_SECRET))
-                                .type("kubernetes.io/dockerconfigjson")
-                                .immutable(false)
-                                .stringData(Map.of(".dockerconfigjson", dockerConfigJson))
-                        );
-                    } catch (ApiException ex) {
-                        log.error("create secret error: {}", e.getResponseBody(), e);
-                    }
-                } else {
-                    log.error("operate secret error: {}", e.getResponseBody(), e);
-                }
-            }
-        } else {
-            // delete docker config
-            try {
-                var status = k8sClient.deleteSecret(DOCKER_REGISTRY_SECRET);
-                log.info("secret:{} delete success, info:{}", DOCKER_REGISTRY_SECRET, status);
-            } catch (ApiException e) {
-                log.error("secret:{} delete error:{}", DOCKER_REGISTRY_SECRET, e.getResponseBody(), e);
-            }
-        }
     }
 
     public boolean updateBuiltImage(String version, String image) {
