@@ -44,7 +44,7 @@
         <hadoop.version>2.10.1</hadoop.version>
         <protobuf-util.version>3.21.9</protobuf-util.version>
         <spring-boot.version>2.7.7</spring-boot.version>
-        <spring-boot-admin.version>2.7.10</spring-boot-admin.version>
+        <spring-boot-admin.version>2.7.7</spring-boot-admin.version>
     </properties>
 
     <dependencyManagement>
