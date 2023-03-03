@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.ApiException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import okhttp3.Call;
 import okhttp3.Response;
 
@@ -36,7 +37,7 @@ public class CancellableTaskLogK8sCollector implements CancellableTaskLogCollect
         this.k8sClient = k8sClient;
         call = k8sClient.readLog(getPodName(taskId), WORKER_CONTAINER);
         resp = call.execute();
-        bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream()));
+        bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
     }
 
     private String getPodName(Long taskId) throws ApiException {
