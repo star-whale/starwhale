@@ -83,7 +83,7 @@ spring:
         default-user-name: ${spring.security.user.name}
         default-password: ${spring.security.user.password}
       client:
-        url: ${sw.instance-uri}/admin
+        url: http://localhost:8082/admin
         username: ${spring.security.user.name}
         password: ${spring.security.user.password}
         instance:
