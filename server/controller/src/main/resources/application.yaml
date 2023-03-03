@@ -108,9 +108,9 @@ spring:
     out-of-order: true
   security:
     user:
-      name: admin
-      password: admin
-      roles: USER
+      name: starwhale
+      password: abcd1234
+      roles: OWNER
   mvc:
     view:
       suffix: .html
