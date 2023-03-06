@@ -63,6 +63,14 @@ export default function ApiHeader() {
                     }
                 }
 
+                // ignore `bad gateway` error in online eval
+                // `gateway/*` is for online eval, see:
+                // - https://github.com/star-whale/starwhale/blob/main/server/controller/src/main/java/ai/starwhale/mlops/configuration/ProxyServletConfiguration.java#L28
+                // - https://github.com/star-whale/starwhale/blob/main/server/controller/src/main/java/ai/starwhale/mlops/domain/job/ModelServingService.java#L95-L96
+                if (error.response?.status === 502 && winLocation.pathname.includes('online_eval')) {
+                    return Promise.reject(error)
+                }
+
                 // use user/current as default token auth, it will be triggered multi times, so silent here
                 const withSilentRoute = error.response?.config.url.includes('/user/current')
                 if (withSilentRoute) return Promise.reject(error)

@@ -34,15 +34,20 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
+import ai.starwhale.mlops.api.protocol.job.RuntimeSuggestionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
+import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import com.github.pagehelper.Page;
 import java.util.List;
 import java.util.Objects;
@@ -62,16 +67,20 @@ public class JobControllerTest {
 
     private DagQuerier dagQuerier;
 
+    private RuntimeSuggestionService runtimeSuggestionService;
+
     @BeforeEach
     public void setUp() {
         jobService = mock(JobService.class);
         taskService = mock(TaskService.class);
         modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
+        runtimeSuggestionService = mock(RuntimeSuggestionService.class);
         controller = new JobController(
                 jobService,
                 taskService,
                 modelServingService,
+                runtimeSuggestionService,
                 new IdConverter(),
                 dagQuerier
         );
@@ -233,6 +242,25 @@ public class JobControllerTest {
         req.setResourcePool("default");
         var resp = controller.createModelServing("foo", req);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData(), is(vo));
+    }
+
+    @Test
+    public void testGetModelServingStatus() {
+        var event = ResourceEventHolder.Event.builder().name("foo").build();
+        var vo = ModelServingStatusVo.builder().progress(100).events(List.of(event)).build();
+        given(modelServingService.getStatus(2L)).willReturn(vo);
+        var resp = controller.getModelServingStatus(1L, 2L);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData(), is(vo));
+    }
+
+    @Test
+    public void testRuntimeSuggestion() {
+        var rt = RuntimeVersionVo.builder().id("1").image("foo").build();
+        var vo = RuntimeSuggestionVo.builder().runtimes(List.of(rt)).build();
+        given(runtimeSuggestionService.getSuggestions(2L, null)).willReturn(List.of(rt));
+        var resp = controller.getRuntimeSuggestion(2L, null);
         assertThat(resp.getBody().getData(), is(vo));
     }
 }

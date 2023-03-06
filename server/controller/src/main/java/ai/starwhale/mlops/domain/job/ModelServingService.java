@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job;
 
 import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ONLINE_EVAL;
 
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
@@ -41,6 +42,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kubernetes.client.custom.IntOrString;
@@ -86,6 +88,7 @@ public class ModelServingService {
     private final RunTimeProperties runTimeProperties;
     private final ModelServingTokenValidator modelServingTokenValidator;
     private final IdConverter idConverter;
+    private final ResourceEventHolder resourceEventHolder;
 
     private final long maxTtlSec;
     private final long minTtlSec;
@@ -106,9 +109,10 @@ public class ModelServingService {
             ModelMapper modelMapper,
             SystemSettingService systemSettingService,
             RunTimeProperties runTimeProperties,
-            @Value("${sw.instance-uri}") String instanceUri,
             ModelServingTokenValidator modelServingTokenValidator,
             IdConverter idConverter,
+            ResourceEventHolder resourceEventHolder,
+            @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.online-eval.max-time-to-live-in-seconds}") long maxTtlSec,
             @Value("${sw.online-eval.min-time-to-live-in-seconds}") long minTtlSec
     ) {
@@ -123,9 +127,10 @@ public class ModelServingService {
         this.modelMapper = modelMapper;
         this.systemSettingService = systemSettingService;
         this.runTimeProperties = runTimeProperties;
-        this.instanceUri = instanceUri;
         this.modelServingTokenValidator = modelServingTokenValidator;
         this.idConverter = idConverter;
+        this.resourceEventHolder = resourceEventHolder;
+        this.instanceUri = instanceUri;
         this.maxTtlSec = maxTtlSec;
         this.minTtlSec = minTtlSec;
 
@@ -484,5 +489,13 @@ public class ModelServingService {
             }
             log.error("delete stateful set {} failed, reason {}", name, e.getResponseBody(), e);
         }
+    }
+
+    public ModelServingStatusVo getStatus(Long id) {
+        var statefulSetName = getServiceName(id);
+        // we are now using stateful set with 1 replica
+        var podName = statefulSetName + "-0";
+        var events = resourceEventHolder.getPodEvents(podName);
+        return ModelServingStatusVo.builder().events(events).build();
     }
 }

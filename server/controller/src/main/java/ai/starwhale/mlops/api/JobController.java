@@ -22,7 +22,9 @@ import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
+import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
+import ai.starwhale.mlops.api.protocol.job.RuntimeSuggestionVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
@@ -31,6 +33,7 @@ import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
+import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -52,6 +55,7 @@ public class JobController implements JobApi {
     private final JobService jobService;
     private final TaskService taskService;
     private final ModelServingService modelServingService;
+    private final RuntimeSuggestionService runtimeSuggestionService;
     private final IdConverter idConvertor;
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
@@ -60,12 +64,14 @@ public class JobController implements JobApi {
             JobService jobService,
             TaskService taskService,
             ModelServingService modelServingService,
+            RuntimeSuggestionService runtimeSuggestionService,
             IdConverter idConvertor,
             DagQuerier dagQuerier
     ) {
         this.jobService = jobService;
         this.taskService = taskService;
         this.modelServingService = modelServingService;
+        this.runtimeSuggestionService = runtimeSuggestionService;
         this.idConvertor = idConvertor;
         this.dagQuerier = dagQuerier;
         this.jobActions = InvokerManager.<String, String>create()
@@ -205,5 +211,22 @@ public class JobController implements JobApi {
         );
 
         return ResponseEntity.ok(Code.success.asResponse(resp));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(Long projectId, Long servingId) {
+        return ResponseEntity.ok(Code.success.asResponse(modelServingService.getStatus(servingId)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<RuntimeSuggestionVo>> getRuntimeSuggestion(
+            Long projectId,
+            Long modelVersionId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                RuntimeSuggestionVo.builder()
+                        .runtimes(runtimeSuggestionService.getSuggestions(projectId, modelVersionId))
+                        .build())
+        );
     }
 }

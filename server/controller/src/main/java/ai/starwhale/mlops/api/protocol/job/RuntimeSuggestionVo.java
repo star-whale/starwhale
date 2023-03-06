@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.runtime;
+package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -27,33 +28,8 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Builder
 @Validated
-@Schema(description = "Runtime version object", title = "RuntimeVersion")
-public class RuntimeVersionVo implements Serializable {
-
-    @JsonProperty("id")
-    private String id;
-
-    @JsonProperty("runtimeId")
-    private String runtimeId;
-
-    @JsonProperty("name")
-    private String name;
-
-    @JsonProperty("tag")
-    private String tag;
-
-    @JsonProperty("alias")
-    private String alias;
-
-    @JsonProperty("meta")
-    private Object meta;
-
-    @JsonProperty("image")
-    private String image;
-
-    @JsonProperty("createdTime")
-    private Long createdTime;
-
-    @JsonProperty("owner")
-    private UserVo owner;
+@Schema(description = "Model Serving object", title = "Model Serving")
+public class RuntimeSuggestionVo implements Serializable {
+    @JsonProperty("runtimes")
+    private List<RuntimeVersionVo> runtimes;
 }

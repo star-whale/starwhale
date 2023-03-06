@@ -60,9 +60,6 @@ class PPLResultStorage:
     def flush(self) -> None:
         self.evaluation.flush_result()
 
-    def __exit__(self) -> None:
-        self.evaluation.close()
-
 
 class PPLResultIterator:
     def __init__(self, context: Context) -> None:
@@ -73,9 +70,6 @@ class PPLResultIterator:
     def __iter__(self) -> t.Iterator[t.Dict[str, t.Any]]:
         # TODO: use class to refactor data
         return self.evaluation.get_results(deserialize=True)
-
-    def __exit__(self) -> None:
-        self.evaluation.close()
 
 
 class PipelineHandler(metaclass=ABCMeta):

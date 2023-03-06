@@ -11,14 +11,15 @@ import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import axios from 'axios'
 import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
-// eslint-disable-next-line baseui/deprecated-component-api
-import { Spinner } from 'baseui/spinner'
 import yaml from 'js-yaml'
 import css from '@/assets/GradioWidget/es/style.css'
 // eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
 import qs from 'qs'
 import { IComponent, IDependency, IGradioConfig } from '@/domain/project/schemas/gradio'
+import { getOnlineEvalStatus } from '@project/services/OnlineEval'
+import { IOnlineEvalStatusSchema } from '@project/schemas/OnlineEval'
+import OnlineEvalLoading from '@project/components/OnlineEvalLoading'
 
 declare global {
     interface Window {
@@ -62,6 +63,7 @@ export default function OnlineEval() {
     const modelVersionInfo = useFetchModelVersion(projectId, modelId, modelVersionId)
     const formRef = React.useRef<any>()
     const [isLoading, setIsLoading] = React.useState(false)
+    const [status, setStatus] = React.useState<IOnlineEvalStatusSchema>()
 
     useEffect(() => {
         if (window.wait) return undefined
@@ -103,6 +105,7 @@ export default function OnlineEval() {
 
                 await new Promise((resolve) => {
                     const check = () => {
+                        getOnlineEvalStatus(projectId, resp.data?.id).then(setStatus)
                         axios
                             .get(resp.data?.baseUri)
                             .then(() => {
@@ -251,11 +254,12 @@ export default function OnlineEval() {
                     Dialog: {
                         style: {
                             width: 'auto',
+                            padding: '30px',
                         },
                     },
                 }}
             >
-                <Spinner />
+                <OnlineEvalLoading progress={status?.progress} events={status?.events} />
             </Modal>
         </>
     )

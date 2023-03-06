@@ -1,13 +1,18 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
-import eslint from 'vite-plugin-eslint'
+import inspect from 'vite-plugin-inspect'
+import router from './vite-plugin-react-routes'
 
+// import eslint from 'vite-plugin-eslint'
 // import mpa from '../../vite-plugin-mpa'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export const alias = {
-    'baseui': path.resolve(__dirname, 'node_modules/baseui'),
+    'baseui': path.resolve(__dirname, './node_modules/baseui'),
+    'react-use': path.resolve(__dirname, './node_modules/react-use'),
+    'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
+    'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),
@@ -55,6 +60,8 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
+        process.env.EXTEND_ROUTES ? inspect() : undefined,
+        router({ dir: process.env.EXTEND_ROUTES || 'extend' }),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
