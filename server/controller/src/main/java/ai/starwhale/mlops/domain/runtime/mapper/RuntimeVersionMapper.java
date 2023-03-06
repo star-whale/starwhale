@@ -33,8 +33,9 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface RuntimeVersionMapper {
 
-    String COLUMNS = "id, version_order, runtime_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, image, created_time, modified_time";
+    String COLUMNS = "runtime_version.id, version_order, runtime_id, runtime_version.owner_id,"
+            + " version_name, version_tag, version_meta,"
+            + " storage_path, image, runtime_version.created_time, runtime_version.modified_time";
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
@@ -84,6 +85,9 @@ public interface RuntimeVersionMapper {
     RuntimeVersionEntity findByVersionOrder(@Param("versionOrder") Long versionOrder,
             @Param("runtimeId") Long runtimeId);
 
+    @SelectProvider(value = RuntimeVersionProvider.class, method = "findLatestByProjectIdSql")
+    List<RuntimeVersionEntity> findLatestByProjectId(@Param("projectId") Long projectId, @Param("limit") Integer limit);
+
     class RuntimeVersionProvider {
 
         public String listSql(@Param("runtimeId") Long runtimeId,
@@ -127,6 +131,21 @@ public interface RuntimeVersionMapper {
                         SET("version_tag = #{versionTag}");
                     }
                     WHERE("where id = #{id}");
+                }
+            }.toString();
+        }
+
+        public String findLatestByProjectIdSql(Long projectId, Integer limit) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("runtime_version");
+                    INNER_JOIN("runtime_info on runtime_info.id = runtime_version.runtime_id");
+                    WHERE("runtime_info.project_id = #{projectId}");
+                    ORDER_BY("runtime_version.modified_time desc");
+                    if (limit != null) {
+                        LIMIT(limit);
+                    }
                 }
             }.toString();
         }
