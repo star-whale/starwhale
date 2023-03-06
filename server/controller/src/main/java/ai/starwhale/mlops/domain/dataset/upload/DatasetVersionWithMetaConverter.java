@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
@@ -23,7 +24,6 @@ import ai.starwhale.mlops.domain.dataset.upload.bo.VersionMeta;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -39,19 +39,13 @@ public class DatasetVersionWithMetaConverter {
 
     public static final String EMPTY_YAML = "--- {}";
 
-    final YAMLMapper objectMapper;
-
-    public DatasetVersionWithMetaConverter(YAMLMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
     public DatasetVersionWithMeta from(DatasetVersion entity) {
         VersionMeta versionMeta;
         try {
-            Manifest manifest = objectMapper.readValue(entity.getVersionMeta(),
+            Manifest manifest = Constants.yamlMapper.readValue(entity.getVersionMeta(),
                     Manifest.class);
             String filesUploadedStr = entity.getFilesUploaded();
-            Map filesUploaded = objectMapper.readValue(
+            Map filesUploaded = Constants.yamlMapper.readValue(
                     StringUtils.hasText(filesUploadedStr) ? filesUploadedStr : EMPTY_YAML, Map.class);
             versionMeta = new VersionMeta(manifest, filesUploaded);
         } catch (JsonProcessingException e) {

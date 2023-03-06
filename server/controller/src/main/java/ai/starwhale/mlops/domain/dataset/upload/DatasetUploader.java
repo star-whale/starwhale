@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.upload;
 
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
@@ -49,7 +50,6 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -86,7 +86,6 @@ public class DatasetUploader {
     final StoragePathCoordinator storagePathCoordinator;
     final StorageAccessService storageAccessService;
     final UserService userService;
-    final YAMLMapper yamlMapper;
     final HotJobHolder jobHolder;
     final ProjectService projectService;
     final DataStoreTableNameHelper dataStoreTableNameHelper;
@@ -98,7 +97,6 @@ public class DatasetUploader {
     public DatasetUploader(HotDatasetHolder hotDatasetHolder, DatasetMapper datasetMapper,
             DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator,
             StorageAccessService storageAccessService, UserService userService,
-            YAMLMapper yamlMapper,
             HotJobHolder jobHolder,
             ProjectService projectService, DataStoreTableNameHelper dataStoreTableNameHelper,
             IndexWriter indexWriter,
@@ -109,7 +107,6 @@ public class DatasetUploader {
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.userService = userService;
-        this.yamlMapper = yamlMapper;
         this.jobHolder = jobHolder;
         this.projectService = projectService;
         this.dataStoreTableNameHelper = dataStoreTableNameHelper;
@@ -215,7 +212,7 @@ public class DatasetUploader {
     public Long create(String yamlContent, String fileName, DatasetUploadRequest uploadRequest) {
         Manifest manifest;
         try {
-            manifest = yamlMapper.readValue(yamlContent, Manifest.class);
+            manifest = Constants.yamlMapper.readValue(yamlContent, Manifest.class);
             manifest.setRawYaml(yamlContent);
         } catch (JsonProcessingException e) {
             throw new StarwhaleApiException(

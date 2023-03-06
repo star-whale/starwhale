@@ -52,8 +52,8 @@ sw:
       service-provider: ${SW_INSTANCE_URI}/obj-store
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
-      access-key: ${SW_STORAGE_ACCESSKEY:starwhale}
-      secret-key: ${SW_STORAGE_SECRETKEY:starwhale}
+      access-key: ${SW_STORAGE_ACCESSKEY:minioadmin}
+      secret-key: ${SW_STORAGE_SECRETKEY:minioadmin}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
       huge-file-threshold: 10485760 # 10MB
@@ -83,7 +83,7 @@ spring:
         default-user-name: ${spring.security.user.name}
         default-password: ${spring.security.user.password}
       client:
-        url: http://localhost:8082/admin
+        url: http://localhost:8083/admin
         username: ${spring.security.user.name}
         password: ${spring.security.user.password}
         instance:
@@ -99,7 +99,7 @@ spring:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
     # timezone setting: https://jira.mariadb.org/browse/CONJ-433
-    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
+    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3307}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
     username: ${SW_METADATA_STORAGE_USER:starwhale}
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
   flyway:
@@ -121,7 +121,7 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 server:
-  port: ${SW_CONTROLLER_PORT:8082}
+  port: ${SW_CONTROLLER_PORT:8083}
   shutdown: graceful
 logging:
   level:

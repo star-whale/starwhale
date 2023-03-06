@@ -16,14 +16,13 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetVersionWithMetaConverter;
 import ai.starwhale.mlops.domain.dataset.upload.HotDatasetHolder;
 import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import ai.starwhale.mlops.domain.dataset.upload.bo.VersionMeta;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -104,9 +103,7 @@ public class HotDatasetHolderTest {
 
     @Test
     public void testHotSwdsHolder() throws JsonProcessingException {
-        YAMLMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
-        DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter(
-                yamlMapper);
+        DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter();
         HotDatasetHolder hotDatasetHolder = new HotDatasetHolder(datasetVersionWithMetaConverter);
 
         String versionName = "testversion";
@@ -115,7 +112,7 @@ public class HotDatasetHolderTest {
                 .datasetId(1L)
                 .datasetName("test")
                 .versionName(versionName)
-                .filesUploaded(yamlMapper.writeValueAsString(null))
+                .filesUploaded(Constants.yamlMapper.writeValueAsString(null))
                 .versionMeta(MANIFEST)
                 .storagePath(STORAGE_PATH)
                 .build();

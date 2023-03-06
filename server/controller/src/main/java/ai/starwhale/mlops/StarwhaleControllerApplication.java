@@ -34,6 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class StarwhaleControllerApplication {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder(StarwhaleControllerApplication.class).run(args);
+        var run = new SpringApplicationBuilder(StarwhaleControllerApplication.class).run(args);
+        System.out.println(run);
     }
 }

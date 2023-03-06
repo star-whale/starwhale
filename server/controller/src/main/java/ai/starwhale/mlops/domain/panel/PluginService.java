@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.panel;
 
 import ai.starwhale.mlops.api.protocol.panel.PanelPluginVo;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -28,7 +29,6 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageInfo;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
@@ -40,7 +40,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
@@ -61,14 +60,11 @@ public class PluginService implements CommandLineRunner {
 
     private final IdConverter idConvertor;
 
-    private final ObjectMapper yamlMapper;
-
     private final String cachePath;
 
     PluginService(
             StorageAccessService storageAccessService,
             StoragePathCoordinator storagePathCoordinator,
-            @Qualifier("yamlMapper") ObjectMapper yamlMapper,
             PanelPluginMapper panelPluginMapper,
             PanelPluginConverter panelPluginConvertor,
             IdConverter idConvertor,
@@ -76,7 +72,6 @@ public class PluginService implements CommandLineRunner {
     ) {
         this.storageAccessService = storageAccessService;
         this.storagePathCoordinator = storagePathCoordinator;
-        this.yamlMapper = yamlMapper;
         this.panelPluginMapper = panelPluginMapper;
         this.panelPluginConvertor = panelPluginConvertor;
         this.idConvertor = idConvertor;
@@ -97,7 +92,7 @@ public class PluginService implements CommandLineRunner {
             if (content == null) {
                 throw new SwValidationException(ValidSubject.PLUGIN, "manifest is empty");
             }
-            manifest = yamlMapper.readValue(content, PanelPlugin.PluginManifest.class);
+            manifest = Constants.yamlMapper.readValue(content, PanelPlugin.PluginManifest.class);
 
             // check if exists
             var plugin = panelPluginMapper.getByNameAndVersion(manifest.name, manifest.version);

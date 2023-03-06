@@ -26,7 +26,6 @@ import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +59,6 @@ public class SystemSettingServiceTest {
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
         listener = mock(SystemSettingListener.class);
         systemSettingService = new SystemSettingService(
-                new YAMLMapper(),
                 systemSettingMapper,
                 List.of(listener),
                 new RunTimeProperties("", new Pypi("url1", "url2", "host1")),
@@ -123,7 +121,6 @@ public class SystemSettingServiceTest {
     public void testStartWithoutData() throws Exception {
         SystemSettingService systemSettingService =
                 new SystemSettingService(
-                        new YAMLMapper(),
                         mock(SystemSettingMapper.class),
                         List.of(listener),
                         new RunTimeProperties("", new Pypi("", "", "")),

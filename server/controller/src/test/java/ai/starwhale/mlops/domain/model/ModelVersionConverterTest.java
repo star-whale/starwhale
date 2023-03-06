@@ -28,7 +28,6 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,7 @@ public class ModelVersionConverterTest {
         modelVersionVoConverter = new ModelVersionVoConverter(
                 new IdConverter(),
                 new VersionAliasConverter(),
-                new JobSpecParser(new YAMLMapper()));
+                new JobSpecParser());
     }
 
     @Test

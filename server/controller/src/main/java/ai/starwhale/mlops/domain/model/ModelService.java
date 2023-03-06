@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -68,7 +69,6 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
@@ -120,7 +120,6 @@ public class ModelService {
 
     private final TrashService trashService;
 
-    private final YAMLMapper yamlMapper;
     @Setter
     private BundleManager bundleManager;
 
@@ -129,7 +128,7 @@ public class ModelService {
             ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
             ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
             UserService userService, ProjectService projectService, HotJobHolder jobHolder,
-            TrashService trashService, YAMLMapper yamlMapper) {
+            TrashService trashService) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -151,7 +150,6 @@ public class ModelService {
                 modelDao,
                 modelDao
         );
-        this.yamlMapper = yamlMapper;
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
@@ -305,7 +303,7 @@ public class ModelService {
 
     private List<FileNode> parseManifestFiles(String manifest) throws JsonProcessingException {
         if (StringUtils.hasText(manifest)) {
-            var meta = yamlMapper.readValue(manifest, MetaInfo.class);
+            var meta = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
             return FileNode.makeTree(meta.getResources());
         } else {
             return List.of();
@@ -445,7 +443,7 @@ public class ModelService {
             manifestContent = IOUtils.toString(multipartFile.getInputStream(), StandardCharsets.UTF_8);
 
             // parse model file's signature, valid if existed
-            var metaInfo = yamlMapper.readValue(manifestContent, MetaInfo.class);
+            var metaInfo = Constants.yamlMapper.readValue(manifestContent, MetaInfo.class);
 
             for (MetaInfo.Resource file : metaInfo.getResources()) {
                 if (!file.isDuplicateCheck()) {
@@ -588,7 +586,7 @@ public class ModelService {
         String manifest = getManifest(modelVersionEntity);
         // read from manifest
         try {
-            var metaInfo = yamlMapper.readValue(manifest, MetaInfo.class);
+            var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
             // get file type by path
             for (MetaInfo.Resource file : metaInfo.getResources()) {
                 if (file.getPath().equals(path) || file.getName().equals(name)) {

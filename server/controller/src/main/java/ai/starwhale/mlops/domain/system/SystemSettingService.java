@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.system;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
@@ -27,7 +28,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,6 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class SystemSettingService implements CommandLineRunner {
 
-    private final YAMLMapper yamlMapper;
     private final SystemSettingMapper systemSettingMapper;
     private final List<SystemSettingListener> listeners;
     private final RunTimeProperties runTimeProperties;
@@ -49,10 +48,8 @@ public class SystemSettingService implements CommandLineRunner {
     @Getter
     protected SystemSetting systemSetting;
 
-    public SystemSettingService(YAMLMapper yamlMapper,
-            SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners,
-            RunTimeProperties runTimeProperties, DockerSetting dockerSetting) {
-        this.yamlMapper = yamlMapper;
+    public SystemSettingService(SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners,
+                                RunTimeProperties runTimeProperties, DockerSetting dockerSetting) {
         this.systemSettingMapper = systemSettingMapper;
         this.listeners = listeners;
         this.runTimeProperties = runTimeProperties;
@@ -61,7 +58,7 @@ public class SystemSettingService implements CommandLineRunner {
 
     public String querySetting() {
         try {
-            return yamlMapper.writeValueAsString(systemSetting);
+            return Constants.yamlMapper.writeValueAsString(systemSetting);
         } catch (JsonProcessingException e) {
             log.error("write systemSetting setting to yaml failed", e);
             throw new SwProcessException(ErrorType.SYSTEM);
@@ -70,14 +67,14 @@ public class SystemSettingService implements CommandLineRunner {
 
     public String updateSetting(String setting) {
         try {
-            systemSetting = yamlMapper.readValue(setting, SystemSetting.class);
+            systemSetting = Constants.yamlMapper.readValue(setting, SystemSetting.class);
             if (null == systemSetting.getPypiSetting()) {
                 systemSetting.setPypiSetting(Pypi.empty());
             }
             if (null == systemSetting.getDockerSetting()) {
                 systemSetting.setDockerSetting(DockerSetting.empty());
             }
-            setting = yamlMapper.writeValueAsString(systemSetting);
+            setting = Constants.yamlMapper.writeValueAsString(systemSetting);
         } catch (JsonProcessingException e) {
             log.error("invalid setting yaml {}", setting, e);
             throw new SwValidationException(ValidSubject.SETTING);
@@ -104,7 +101,7 @@ public class SystemSettingService implements CommandLineRunner {
         SystemSettingEntity setting = systemSettingMapper.get();
         if (null != setting) {
             try {
-                systemSetting = yamlMapper.readValue(setting.getContent(), SystemSetting.class);
+                systemSetting = Constants.yamlMapper.readValue(setting.getContent(), SystemSetting.class);
                 if (null == systemSetting.getPypiSetting()) {
                     systemSetting.setPypiSetting(runTimeProperties.getPypi());
                 }

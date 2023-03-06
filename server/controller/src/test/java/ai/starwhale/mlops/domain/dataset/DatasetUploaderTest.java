@@ -30,7 +30,6 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
-import ai.starwhale.mlops.configuration.json.ObjectMapperConfig;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
@@ -53,7 +52,6 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,9 +75,7 @@ public class DatasetUploaderTest {
 
     @Test
     public void testDatasetUploader() throws IOException {
-        YAMLMapper yamlMapper = new ObjectMapperConfig().yamlMapper();
-        DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter(
-                yamlMapper);
+        DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter();
         HotDatasetHolder hotDatasetHolder = new HotDatasetHolder(datasetVersionWithMetaConverter);
         DatasetMapper datasetMapper = mock(DatasetMapper.class);
         DatasetVersionMapper datasetVersionMapper = mock(DatasetVersionMapper.class);
@@ -106,7 +102,7 @@ public class DatasetUploaderTest {
         VersionAliasConverter versionAliasConvertor = new VersionAliasConverter();
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
-                storagePathCoordinator, storageAccessService, userService, yamlMapper,
+                storagePathCoordinator, storageAccessService, userService,
                 hotJobHolder, projectService, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
                 versionAliasConvertor);
 
