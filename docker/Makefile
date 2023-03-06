@@ -35,53 +35,24 @@ ifndef PYPI_RELEASE_VERSION
 	PYPI_RELEASE_VERSION = 0.1.0.dev15
 endif
 
-MVN_IMG=maven:3.8.5-openjdk-11
-MVN_VOLUME=maven-repo
-YARN_VOLUME=yarn-cache
 
+# build multi-arch images
+# args:
+# 	base image, like starwhale:base, leave empty if no base image
+#	Dockerfile for -f option
+#	tag list split by space, e.g. starwhale:foo starwhale:bar
 define build-image
-	docker pull ${GHCR_IO_REPO}/$(1):latest || true
-	docker build \
-	    --network=host \
-		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
-		--build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) \
+	docker buildx build --platform linux/arm64,linux/amd64 \
+		--network=host \
+		--build-arg BASE_IMAGE=$(1) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
 		--build-arg SW_SERVER_VERSION=$(RELEASE_VERSION) \
 		--build-arg GIT_INFO=$(GIT_INFO) \
-		-t ${DOCKER_HUB_REPO}/$(1):$(2) \
-		-t ${DOCKER_HUB_REPO}/$(1):latest \
-		-t ${GHCR_IO_REPO}/$(1):$(2) \
-		-t ${GHCR_IO_REPO}/$(1):latest \
-		-f Dockerfile.$(1) .
+		$(if $(HTTP_PROXY), $(foreach p, HTTP_PROXY HTTPS_PROXY http_proxy https_proxy, --build-arg $(p)=$(HTTP_PROXY))) \
+		$(foreach repo, ${DOCKER_HUB_REPO} ${GHCR_IO_REPO}, $(foreach tag, $(3), -t $(repo)/$(tag)) ) \
+		-f $(2) \
+		--push .
 endef
-
-define push-image
-	docker push ${DOCKER_HUB_REPO}/$(1):$(2)
-	docker push ${DOCKER_HUB_REPO}/$(1):latest
-	docker push ${GHCR_IO_REPO}/$(1):latest
-	docker push ${GHCR_IO_REPO}/$(1):$(2)
-endef
-
-define build-starwhale
-	docker buildx build --platform linux/arm64,linux/amd64 \
-		--build-arg BASE_IMAGE=$(1) \
-		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
-		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
-		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-		--network=host \
-		-t $(DOCKER_HUB_REPO)/starwhale:$(RELEASE_VERSION)$(2) \
-		-t $(DOCKER_HUB_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION)$(2) \
-		-t $(DOCKER_HUB_REPO)/starwhale:latest$(2) \
-		-t $(GHCR_IO_REPO)/starwhale:$(RELEASE_VERSION)$(2) \
-		-t $(GHCR_IO_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION)$(2) \
-		-t $(GHCR_IO_REPO)/starwhale:latest$(2) \
-		--push -f Dockerfile.starwhale .
-endef
-
-define build-starwhale-cuda
-	$(call build-starwhale,${GHCR_IO_REPO}/cuda:$(1)-base${FIXED_VERSION_BASE_IMAGE},-cuda$(1))
-endef
-
 
 prepare-buildx:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -91,60 +62,36 @@ prepare-buildx:
 		--use --bootstrap --driver-opt network=host
 
 build-release-base:
+	# build if not exist
 	docker manifest inspect $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) || \
-	docker buildx build --platform linux/arm64,linux/amd64 \
-		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
-		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-		--network=host \
-		-t $(DOCKER_HUB_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
-		-t $(DOCKER_HUB_REPO)/base:latest \
-		-t $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
-		-t $(GHCR_IO_REPO)/base:latest \
-		--push -f Dockerfile.base .
+	$(call build-image,,Dockerfile.base,base:${FIXED_VERSION_BASE_IMAGE} base:latest)
 
+STARWHALE_TAGS:=starwhale:${RELEASE_VERSION} starwhale:${PYPI_FMT_RELEASE_VERSION} starwhale:latest
 build-release-starwhale:
-	$(call build-starwhale,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},)
+	$(call build-image,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_TAGS})
 
+# the $(version) is provided by the caller which in the github workflow `release.yaml`
+STARWHALE_CUDA_TAGS:=$(foreach tag,${STARWHALE_TAGS},$(tag)-cuda$(version))
 build-release-starwhale-cuda:
-	$(call build-starwhale-cuda,$(version))
+	$(call build-image,${GHCR_IO_REPO}/cuda:$(version)-base${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_CUDA_TAGS})
 
 build-cuda:
 	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)
 	bash cuda/.dfs/docker-build.sh
 
 build-base-server:
-	$(call build-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
-
-release-base-server:
 	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
 
-build-release-base-server:
-	docker manifest inspect $(GHCR_IO_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) || \
-	docker buildx build \
-		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
-		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-		--network=host \
-		-t $(DOCKER_HUB_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) \
-		-t $(DOCKER_HUB_REPO)/base_server:latest \
-		-t $(GHCR_IO_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) \
-		-t $(GHCR_IO_REPO)/base_server:latest \
-		--push -f Dockerfile.base_server .
-
 build-server:
-	$(call build-image,server,${RELEASE_VERSION})
+	$(call build-image,$(GHCR_IO_REPO)/base_server:latest,Dockerfile.server,server:${RELEASE_VERSION} server:latest)
 
 build-server-all: build-console build-jar
 	$(call build-image,server,${RELEASE_VERSION})
 
-release-server:
-	$(call push-image,server,${RELEASE_VERSION})
-
 build-nodejs:
 	$(call build-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
 
-release-nodejs:
-	$(call push-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
-
+YARN_VOLUME=yarn-cache
 build-console: build-gradio-ui
 	docker volume create --name ${YARN_VOLUME} && \
 	docker run --rm -v ${YARN_VOLUME}:/app ${DH_NODEJS_IMAGE} /bin/sh -c "cp -r /root/.npmrc /app/ && chown $(shell id -u):$(shell id -g) -R /app" && \
@@ -157,6 +104,8 @@ build-console: build-gradio-ui
 		-w /app ${DH_NODEJS_IMAGE} \
 		/bin/sh -c "npm config set registry ${YARN_REGISTRY} && yarn config set registry ${YARN_REGISTRY} && yarn config set network-timeout 600000 -g && yarn && yarn build"
 
+MVN_IMG=maven:3.8.5-openjdk-11
+MVN_VOLUME=maven-repo
 build-jar:
 	docker volume create --name ${MVN_VOLUME} && \
 	docker run --rm -v ${MVN_VOLUME}:/app ${MVN_IMG} /bin/sh -c "chown $(shell id -u):$(shell id -g) -R /app" && \

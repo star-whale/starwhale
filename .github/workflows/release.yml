@@ -297,7 +297,6 @@ jobs:
           PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
           make build-server
-          make release-server
 
   helm-charts-release:
     runs-on: ubuntu-latest
