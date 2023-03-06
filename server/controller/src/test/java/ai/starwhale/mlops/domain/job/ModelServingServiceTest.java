@@ -144,9 +144,9 @@ public class ModelServingServiceTest {
                 .resourcePool(resourcePool)
                 .build();
         when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
-        var runtimeVer = RuntimeVersionEntity.builder().id(8L).image("img").build();
+        var runtimeVer = RuntimeVersionEntity.builder().id(8L).versionName("rt-8").image("img").build();
         when(runtimeDao.getRuntimeVersion("8")).thenReturn(runtimeVer);
-        var modelVer = ModelVersionEntity.builder().id(9L).build();
+        var modelVer = ModelVersionEntity.builder().id(9L).versionName("mp-9").build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
         when(systemSettingService.queryResourcePool("default")).thenReturn(
                 ResourcePool.builder().nodeSelector(Map.of("foo", "bar")).build());
@@ -171,8 +171,8 @@ public class ModelServingServiceTest {
                 "SW_PROJECT", "2",
                 "SW_TOKEN", "token",
                 "SW_INSTANCE_URI", "inst",
-                "SW_MODEL_VERSION", "md/version/9",
-                "SW_RUNTIME_VERSION", "rt/version/8",
+                "SW_MODEL_VERSION", "md/version/mp-9",
+                "SW_RUNTIME_VERSION", "rt/version/rt-8",
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
         );
