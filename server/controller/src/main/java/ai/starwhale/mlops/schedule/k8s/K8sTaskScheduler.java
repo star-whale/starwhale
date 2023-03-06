@@ -174,6 +174,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
+        var pool = task.getStep().getJob().getResourcePool();
+        if (pool != null) {
+            runtimeResources = pool.patchResources(runtimeResources);
+        }
         if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }

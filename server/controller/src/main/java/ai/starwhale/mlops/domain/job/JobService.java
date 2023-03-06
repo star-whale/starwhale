@@ -28,6 +28,8 @@ import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
@@ -36,6 +38,7 @@ import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -51,6 +54,7 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.util.IdUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
@@ -89,13 +93,16 @@ public class JobService {
     private final JobUpdateHelper jobUpdateHelper;
 
     private final TrashService trashService;
+    private final SystemSettingService systemSettingService;
+    private final JobSpecParser jobSpecParser;
 
     public JobService(TaskMapper taskMapper, JobConverter jobConvertor,
             JobBoConverter jobBoConverter, RuntimeService runtimeService,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
             ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
             ResultQuerier resultQuerier, DatasetService datasetService, StoragePathCoordinator storagePathCoordinator,
-            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService) {
+            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
+            SystemSettingService systemSettingService, JobSpecParser jobSpecParser) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
@@ -112,6 +119,8 @@ public class JobService {
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
         this.trashService = trashService;
+        this.systemSettingService = systemSettingService;
+        this.jobSpecParser = jobSpecParser;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -172,6 +181,22 @@ public class JobService {
         var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))
                 .map(datasetService::findDatasetVersion)
                 .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+
+        var pool = systemSettingService.queryResourcePool(resourcePool);
+        if (pool != null) {
+            List<StepSpec> steps = null;
+            try {
+                steps = jobSpecParser.parseStepFromYaml(stepSpecOverWrites);
+            } catch (JsonProcessingException e) {
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.JOB, "failed to parse job step", e),
+                        HttpStatus.BAD_REQUEST);
+            }
+            for (var step : steps) {
+                pool.validateResources(step.getResources());
+            }
+        }
+
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
                 .ownerId(user.getId())

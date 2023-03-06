@@ -33,9 +33,11 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -196,6 +198,10 @@ public class ModelServingService {
             }
         }
 
+        if (StringUtils.isEmpty(resourcePool)) {
+            resourcePool = ResourcePool.DEFAULT_NAME;
+        }
+
         long id;
         synchronized (this) {
             ModelServingEntity targetService = null;
@@ -290,12 +296,17 @@ public class ModelServingService {
                 "SW_PRODUCTION", "1"
         );
 
-        ResourceOverwriteSpec resourceOverwriteSpec = null;
+        List<RuntimeResource> resources = null;
+        // get the resources from user input
         if (modelServingSpec != null && modelServingSpec.getResources() != null) {
-            resourceOverwriteSpec = new ResourceOverwriteSpec(modelServingSpec.getResources());
+            resources = modelServingSpec.getResources();
         }
+        var pool = systemSettingService.queryResourcePool(resourcePool);
+        resources = pool.validateAndPatchResource(resources);
+        log.info("using resource pool {}, patched resources {}", pool, resources);
+        var resourceOverwriteSpec = new ResourceOverwriteSpec(resources);
 
-        var nodeSelectors = systemSettingService.queryResourcePool(resourcePool).getNodeSelector();
+        var nodeSelectors = pool.getNodeSelector();
         var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec, nodeSelectors);
         try {
             ss = k8sClient.deployStatefulSet(ss);
