@@ -20,10 +20,10 @@ from starwhale.base.uricomponents.exceptions import (
 url_regex = re.compile(
     r"(?P<scheme>https*)://"
     r"(?P<host>.*)/projects/"
-    r"(?P<project>\d+)/"
+    r"(?P<project>.+)/"
     r"(?P<rc_type>models|datasets|runtimes|evaluations)"
-    r"(/(?P<rc_id>\d+)/versions)?"  # optional
-    r"(/(?P<rc_version>\d+)/.*)?",  # optional
+    r"(/(?P<rc_id>.+)/versions)?"  # optional
+    r"(/(?P<rc_version>.+)/.*)?",  # optional
     re.UNICODE,
 )
 
