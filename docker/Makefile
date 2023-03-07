@@ -79,17 +79,17 @@ build-cuda:
 	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)
 	bash cuda/.dfs/docker-build.sh
 
-build-base-server:
-	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
+build-release-base-server:
+	docker manifest inspect $(GHCR_IO_REPO)/base_server:$(FIXED_VERSION_BASE_SERVER_IMAGE) || \
+	$(call build-image,,Dockerfile.base_server,base_server:${FIXED_VERSION_BASE_SERVER_IMAGE} base_server:latest)
 
 build-server:
 	$(call build-image,$(GHCR_IO_REPO)/base_server:latest,Dockerfile.server,server:${RELEASE_VERSION} server:latest)
 
-build-server-all: build-console build-jar
-	$(call build-image,server,${RELEASE_VERSION})
+build-server-all: build-console build-jar build-server
 
 build-nodejs:
-	$(call build-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
+	$(call build-image,$(GHCR_BASE_IMAGE),Dockerfile.nodejs,nodejs:${FIXED_VERSION_NODEJS_IMAGE} nodejs:latest)
 
 YARN_VOLUME=yarn-cache
 build-console: build-gradio-ui
