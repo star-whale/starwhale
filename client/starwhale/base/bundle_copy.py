@@ -121,7 +121,7 @@ class BundleCopy(CloudRequestMixed):
         # TODO: add more params for project
         # TODO: tune controller api, use unified params name
         ok, _ = self.do_http_request_simple_ret(
-            path=self._get_remote_instance_rc_url(for_head=True),
+            path=self._get_remote_bundle_api_url(for_head=True),
             method=HTTPMethod.HEAD,
             instance_uri=instance_uri,
             ignore_status_codes=[HTTPStatus.NOT_FOUND],
@@ -148,7 +148,17 @@ class BundleCopy(CloudRequestMixed):
         else:
             return self._get_target_path(uri).exists()
 
-    def _get_remote_instance_rc_url(self, for_head: bool = False) -> str:
+    def _get_remote_bundle_console_url(self) -> str:
+        version = self.src_uri.object.version
+        if self.src_uri.instance_type == InstanceType.CLOUD:
+            remote = self.src_uri
+            resource_name = self.src_uri.object.name
+        else:
+            remote = self.dest_uri
+            resource_name = self.dest_uri.object.name or self.src_uri.object.name
+        return f"{remote.instance}/projects/{remote.project}/{self.typ}s/{resource_name}/versions/{version}/overview"
+
+    def _get_remote_bundle_api_url(self, for_head: bool = False) -> str:
         version = self.src_uri.object.version
         if not version:
             raise FieldTypeOrValueError(
@@ -182,7 +192,7 @@ class BundleCopy(CloudRequestMixed):
         )
 
         self.do_multipart_upload_file(
-            url_path=self._get_remote_instance_rc_url(),
+            url_path=self._get_remote_bundle_api_url(),
             file_path=file_path,
             instance_uri=self.dest_uri,
             fields={
@@ -201,7 +211,7 @@ class BundleCopy(CloudRequestMixed):
         task_id = progress.add_task(f":bowling: download to {file_path}...")
 
         self.do_download_file(
-            url_path=self._get_remote_instance_rc_url(),
+            url_path=self._get_remote_bundle_api_url(),
             dest_path=file_path,
             instance_uri=self.src_uri,
             params={
@@ -213,10 +223,9 @@ class BundleCopy(CloudRequestMixed):
         )
 
     def do(self) -> None:
+        remote_url = self._get_remote_bundle_console_url()
         if self._is_existed(self.dest_uri) and not self.force:
-            console.print(
-                f":tea: {self.dest_uri}-{self.bundle_name}-{self.bundle_version} was already existed, skip copy"
-            )
+            console.print(f":tea: {remote_url} was already existed, skip copy")
             return
 
         if not self._is_existed(self.src_uri):
@@ -259,6 +268,7 @@ class BundleCopy(CloudRequestMixed):
                 self._update_manifest(
                     self._get_target_path(_dest_uri), {CREATED_AT_KEY: now_str()}
                 )
+        console.print(f":tea: console url of the remote bundle: {remote_url}")
 
     def upload_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
@@ -272,7 +282,7 @@ class BundleCopy(CloudRequestMixed):
         def _download(_tid: TaskID, fd: FileNode) -> None:
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
-                url_path=self._get_remote_instance_rc_url(),
+                url_path=self._get_remote_bundle_api_url(),
                 dest_path=fd.path,
                 instance_uri=self.src_uri,
                 params={
@@ -421,7 +431,7 @@ class BundleCopy(CloudRequestMixed):
         workdir: t.Optional[Path] = None,
     ) -> None:
         workdir = workdir or self._get_target_path(self.src_uri)
-        url_path = self._get_remote_instance_rc_url()
+        url_path = self._get_remote_bundle_api_url()
 
         res_data = self._do_ubd_bundle_prepare(
             progress=progress,

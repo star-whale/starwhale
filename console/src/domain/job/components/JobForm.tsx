@@ -26,6 +26,10 @@ import { ISystemResourcePool } from '@/domain/setting/schemas/system'
 
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 import { Toggle } from '@starwhale/ui/Select'
+import { usePage } from '@/hooks/usePage'
+import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
+import MultiTags from '@/components/Tag/MultiTags'
+import { formatTimestampDateTime } from '@/utils/datetime'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -66,8 +70,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [t] = useTranslation()
     const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
 
-    // const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
-    // const [page] = usePage()
+    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
+    const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -146,8 +150,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'rawType',
                         'stepSpecOverWrites',
                     ]),
-                    // datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
-                    datasetVersionUrls: values_.datasetVersionId,
+                    datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
+                    // datasetVersionUrls: values_.datasetVersionId,
                     stepSpecOverWrites: values_.rawType
                         ? stepSpecOverWrites
                         : yaml.dump(_.merge([], stepSource, values_?.stepSpecOverWrites)),
@@ -186,26 +190,34 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites])
 
-    // const handleAddDataset = useCallback(() => {
-    //     const datasetVersionId = form.getFieldValue('datasetVersionId') as string
-    //     if (!datasetVersionId) return
-    //     const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
-    //     const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
-    //     form.setFieldsValue({
-    //         datasetVersionIdsArr: Array.from(ids),
-    //     })
-    //     setDatasetVersionIds(Array.from(ids).join(','))
-    // }, [form])
+    const handleAddDataset = useCallback(() => {
+        const datasetVersionId = form.getFieldValue('datasetVersionId') as string
+        if (!datasetVersionId) return
+        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
+        const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
+        form.setFieldsValue({
+            datasetVersionIdsArr: Array.from(ids),
+        })
+        setDatasetVersionIds(Array.from(ids).join(','))
+    }, [form])
 
-    // const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+    const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
-    // const getValueLabel = useCallback(
-    //     (args) => {
-    //         const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
-    //         return [dataset?.version?.id, dataset?.version?.name].join('-')
-    //     },
-    //     [datasetsInfo]
-    // )
+    const getValueLabel = useCallback(
+        (args) => {
+            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
+            // return [dataset?.version?.id, dataset?.version?.name].join('-')
+            const item = dataset?.version
+            if (!item) return ''
+
+            return [
+                item.alias ?? '',
+                item.name ? item.name.substring(0, 8) : '',
+                item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
+            ].join(' : ')
+        },
+        [datasetsInfo]
+    )
 
     const stepSpecOverWritesList: StepSpec[] = React.useMemo(() => {
         if (!modelVersionApi) return []
@@ -375,12 +387,22 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <DatasetVersionSelector projectId={projectId} datasetId={datasetId} autoSelected />
                     </FormItem>
                 )}
+                <div className='fac'>
+                    <Button
+                        size='compact'
+                        type='button'
+                        onClick={handleAddDataset}
+                        startEnhancer={<IconFont type='add' kind='white' />}
+                    >
+                        Add
+                    </Button>
+                </div>
             </div>
-            {/* <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
+            <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
-            </div> */}
+            </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className={styles.row3}>
                 <FormItem label={t('Runtime')} name='runtimeId' required>
