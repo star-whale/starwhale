@@ -349,6 +349,11 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                             marginRight: '24px',
                         }}
                     >
+                        <LabelLarge $style={{ display: 'flex', gap: '5px' }}>
+                            {t('project.remove.confirm.start')}
+                            <strong>{project?.name ?? ''}</strong>
+                            {t('project.remove.confirm.end')}
+                        </LabelLarge>
                         <div
                             style={{
                                 display: 'flex',
@@ -358,12 +363,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                 alignItems: 'center',
                             }}
                         >
-                            <LabelLarge $style={{ flexShrink: 0 }}>{t('Project Name')}&nbsp;*&nbsp;</LabelLarge>
-                            <Input
-                                error={name !== project?.name}
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
+                            <Input value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
                         <LabelMedium $style={{ color: ' rgba(2,16,43,0.60)' }}>
                             <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={14} />
@@ -390,22 +390,20 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                 setIsRemoveProjectOpen(false)
                             }}
                         >
-                            No
+                            {t('Cancel')}
                         </Button>
                         <Button
                             size='default'
                             isFull
+                            disabled={name !== project?.name}
                             onClick={async () => {
-                                if (name !== project?.name) {
-                                    return
-                                }
                                 setIsRemoveProjectOpen(false)
                                 await removeProject(project?.id)
                                 toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
                                 await query.refetch()
                             }}
                         >
-                            Yes
+                            {t('Confirm')}
                         </Button>
                     </div>
                 </ModalFooter>

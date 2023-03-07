@@ -114,6 +114,12 @@ const project = {
     'project.remove.title': {
         en: 'Type the Project Name to delete',
     },
+    'project.remove.confirm.start': {
+        en: 'Please type',
+    },
+    'project.remove.confirm.end': {
+        en: 'to confirm',
+    },
 }
 
 const locales0 = {
@@ -416,6 +422,9 @@ const locales0 = {
     },
     'Cancel': {
         en: 'Cancel',
+    },
+    'Confirm': {
+        en: 'Confirm',
     },
     'Suspend': {
         en: 'Suspend',
