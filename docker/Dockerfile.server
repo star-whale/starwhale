@@ -1,5 +1,5 @@
-ARG BASE_SERVER_IMAGE=starwhaleai/base_server:latest
-FROM ${BASE_SERVER_IMAGE}
+ARG BASE_IMAGE=starwhaleai/base_server:latest
+FROM ${BASE_IMAGE}
 ARG SW_SERVER_VERSION=server_version_not_set
 ARG GIT_INFO=git_not_set
 
