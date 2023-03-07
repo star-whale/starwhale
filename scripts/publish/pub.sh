@@ -74,7 +74,7 @@ build() {
         popd
     fi
     pushd ../../docker
-    make build-server
+    make build-server-for-local-usage
     if ! docker tag starwhaleai/server:latest $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
     if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
     popd
