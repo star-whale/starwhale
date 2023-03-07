@@ -503,6 +503,7 @@ public class RuntimeService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
+    // TODO add return value
     public void buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
         RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
                 BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
@@ -572,8 +573,13 @@ public class RuntimeService {
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);
         } catch (ApiException k8sE) {
-            log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
-            throw new SwProcessException(ErrorType.INFRA, "deploying job for image build error:" + k8sE.getMessage());
+            if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
+                log.debug("runtime:{}-{}'s image is building, please wait a moment.", runtimeUrl, versionUrl);
+            } else {
+                log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
+                throw new SwProcessException(ErrorType.INFRA,
+                        "deploying job for image build error:" + k8sE.getMessage());
+            }
         }
     }
 
