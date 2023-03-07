@@ -341,7 +341,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                 animate
                 autoFocus
             >
-                <ModalHeader>Type the Project Name to delete</ModalHeader>
+                <ModalHeader>{t('project.remove.title')}</ModalHeader>
                 <ModalBody>
                     <div
                         style={{

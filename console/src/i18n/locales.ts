@@ -110,6 +110,12 @@ const trash = {
     },
 }
 
+const project = {
+    'project.remove.title': {
+        en: 'Type the Project Name to delete',
+    },
+}
+
 const locales0 = {
     'create sth': {
         en: 'Create {{0}}',
@@ -775,9 +781,6 @@ const locales0 = {
     'Remove Project Success': {
         en: 'Remove Project Success',
     },
-    'Confirm Remove Project?': {
-        en: 'Confirm Remove Project? ',
-    },
     'All the evaluations, datasets, models, and runtimes belong to the project will be removed.': {
         en: 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.',
     },
@@ -816,6 +819,7 @@ const locales0 = {
     ...model,
     ...runtime,
     ...trash,
+    ...project,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
