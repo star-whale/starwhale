@@ -341,19 +341,13 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                 animate
                 autoFocus
             >
-                <ModalHeader>{t('project.remove.title')}</ModalHeader>
+                <ModalHeader $style={{ display: 'flex', gap: '5px', fontWeight: 'normal' }}>
+                    {t('project.remove.confirm.start')}
+                    <strong>{project?.name ?? ''}</strong>
+                    {t('project.remove.confirm.end')}
+                </ModalHeader>
                 <ModalBody>
-                    <div
-                        style={{
-                            marginLeft: '24px',
-                            marginRight: '24px',
-                        }}
-                    >
-                        <LabelLarge $style={{ display: 'flex', gap: '5px' }}>
-                            {t('project.remove.confirm.start')}
-                            <strong>{project?.name ?? ''}</strong>
-                            {t('project.remove.confirm.end')}
-                        </LabelLarge>
+                    <div>
                         <div
                             style={{
                                 display: 'flex',
@@ -365,7 +359,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                         >
                             <Input value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
-                        <LabelMedium $style={{ color: ' rgba(2,16,43,0.60)' }}>
+                        <LabelMedium $style={{ color: ' rgba(2,16,43,0.60)', fontSize: '14px' }}>
                             <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={14} />
                             {t(
                                 'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
