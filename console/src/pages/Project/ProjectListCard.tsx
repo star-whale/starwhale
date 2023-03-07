@@ -21,7 +21,7 @@ import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
 import { toaster } from 'baseui/toast'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
-import { LabelLarge, LabelMedium } from 'baseui/typography'
+import { LabelMedium } from 'baseui/typography'
 import { Button } from '@starwhale/ui'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 
