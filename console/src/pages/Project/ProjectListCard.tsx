@@ -5,13 +5,13 @@ import { usePage } from '@/hooks/usePage'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import ProjectForm from '@project/components/ProjectForm'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
+import { SIZE as ButtonSize } from 'baseui/button'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
 import { useFetchProjects } from '@project/hooks/useFetchProjects'
 import IconFont from '@starwhale/ui/IconFont'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useStyletron } from 'baseui'
-import { QueryInput } from '@starwhale/ui/Input'
+import Input, { QueryInput } from '@starwhale/ui/Input'
 import cn from 'classnames'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { StatefulTooltip } from 'baseui/tooltip'
@@ -19,9 +19,11 @@ import { createUseStyles } from 'react-jss'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
-import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { LabelMedium } from 'baseui/typography'
+import { Button } from '@starwhale/ui'
+import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -143,6 +145,8 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
     const [t] = useTranslation()
     const styles = useCardStyles()
     const { role } = useFetchProjectRole(project?.id)
+    const [name, setName] = useState('')
+    const [isRemoveProjectOpen, setIsRemoveProjectOpen] = useState(false)
 
     return (
         <div className={styles.projectCard}>
@@ -300,13 +304,8 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                     <WithAuth role={role} id='project.delete'>
                         <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
                             <div className={styles.delete}>
-                                <ConfirmButton
-                                    as='negative'
-                                    key={project?.id}
-                                    title={t('Confirm Remove Project?')}
-                                    content={t(
-                                        'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
-                                    )}
+                                <Button
+                                    icon='delete'
                                     overrides={{
                                         BaseButton: {
                                             style: {
@@ -317,8 +316,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                                 'height': '20px',
                                                 'textDecoration': 'none',
                                                 'color': 'gray !important',
-                                                'paddingLeft': '8px',
-                                                'paddingRight': '10px',
+                                                'marginRight': '0',
                                                 ':hover span': {
                                                     color: ' #5181E0  !important',
                                                 },
@@ -328,19 +326,82 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                             },
                                         },
                                     }}
-                                    onClick={async () => {
-                                        await removeProject(project?.id)
-                                        toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
-                                        await query.refetch()
-                                    }}
-                                >
-                                    <IconFont type='delete' size={10} />
-                                </ConfirmButton>
+                                    onClick={() => setIsRemoveProjectOpen(true)}
+                                />
                             </div>
                         </StatefulTooltip>
                     </WithAuth>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isRemoveProjectOpen}
+                onClose={() => setIsRemoveProjectOpen(false)}
+                closeable
+                animate
+                autoFocus
+            >
+                <ModalHeader $style={{ display: 'flex', gap: '5px', fontWeight: 'normal' }}>
+                    {t('project.remove.confirm.start')}
+                    <strong>{project?.name ?? ''}</strong>
+                    {t('project.remove.confirm.end')}
+                </ModalHeader>
+                <ModalBody>
+                    <div>
+                        <div
+                            style={{
+                                display: 'flex',
+                                marginTop: '20px',
+                                marginBottom: '20px',
+                                gap: '12px',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Input value={name} onChange={(e) => setName(e.target.value)} />
+                        </div>
+                        <LabelMedium $style={{ color: ' rgba(2,16,43,0.60)', fontSize: '14px' }}>
+                            <IconFont type='info' style={{ color: ' #E67F17', marginRight: '8px' }} size={14} />
+                            {t(
+                                'All the evaluations, datasets, models, and runtimes belong to the project will be removed.'
+                            )}
+                        </LabelMedium>
+                    </div>
+                </ModalBody>
+                <ModalFooter
+                    $style={{
+                        ...expandMargin('30px', '30px', '30px', '30px'),
+                        ...expandPadding('0', '0', '0', '0'),
+                        fontSize: '16px',
+                    }}
+                >
+                    <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: '1fr 79px 79px' }}>
+                        <div style={{ flexGrow: 1 }} />
+                        <Button
+                            size='default'
+                            isFull
+                            kind='secondary'
+                            onClick={() => {
+                                setIsRemoveProjectOpen(false)
+                            }}
+                        >
+                            {t('Cancel')}
+                        </Button>
+                        <Button
+                            size='default'
+                            isFull
+                            disabled={name !== project?.name}
+                            onClick={async () => {
+                                setIsRemoveProjectOpen(false)
+                                await removeProject(project?.id)
+                                toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
+                                await query.refetch()
+                            }}
+                        >
+                            {t('Confirm')}
+                        </Button>
+                    </div>
+                </ModalFooter>
+            </Modal>
         </div>
     )
 }
