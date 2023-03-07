@@ -1,9 +1,6 @@
 version: 1.0
 name: mnist
 
-model:
-  - models/mnist_cnn.pt
-
 config:
   - config/hyperparam.json
 

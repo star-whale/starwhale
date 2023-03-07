@@ -1,7 +1,5 @@
 version: 1.0
 name: pfp
-model:
-  - models/mcrnn.pth
 run:
   handler: pfp.evaluator:MaskRCnn
 desc: mask rcnn resnet50 by pytorch

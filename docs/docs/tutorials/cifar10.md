@@ -260,9 +260,6 @@ Here is some descriptive information for Starwhale to build a Starwhale Model Pa
 version: 1.0
 name: cifar_net
 
-model:
-- models/cifar_net.pth
-
 config:
 - config/hyperparam.json
 

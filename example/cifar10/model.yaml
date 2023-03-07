@@ -1,8 +1,5 @@
 version: 1.0
 name: cifar10
-model:
-  - models/cifar_net.pth
-
 run:
   handler: cifar.evaluator:CIFAR10Inference
 

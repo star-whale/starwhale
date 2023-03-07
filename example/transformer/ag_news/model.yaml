@@ -1,14 +1,6 @@
 version: 1.0
 name: ag_news_hg
 
-model:
-  - models/config.json
-  - models/pytorch_model.bin
-  - models/special_tokens_map.json
-  - models/spiece.model
-  - models/tokenizer.json
-  - models/tokenizer_config.json
-
 run:
   handler: code.evaluator:TextClassificationHandler
 

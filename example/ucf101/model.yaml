@@ -1,9 +1,6 @@
 version: 1.0
 name: ucf101
 
-model:
-  - models/PyTorch-MFNet_ep-0000.pth
-
 run:
   handler: ucf101.evaluator:UCF101PipelineHandler
 

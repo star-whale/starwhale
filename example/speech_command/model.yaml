@@ -1,7 +1,5 @@
 version: 1.0
 name: speech_command
-model:
-  - models/m5.pth
 run:
   handler: sc.evaluator:M5Inference
 

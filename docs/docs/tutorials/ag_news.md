@@ -275,10 +275,6 @@ Here is some descriptive information for Starwhale to build a Starwhale Model Pa
 version: 1.0
 name: text_cls
 
-model:
-  - models/model.i
-  - models/vocab.i
-
 config:
   - config/hyperparam.json
 

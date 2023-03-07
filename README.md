@@ -189,8 +189,6 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
     ```yaml
     name: mnist
-    model:
-        - models/mnist_cnn.pt
     config:
         - config/hyperparam.json
     run:

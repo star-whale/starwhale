@@ -1,10 +1,6 @@
 version: 1.0
 name: ag_news
 
-model:
-  - models/model.i
-  - models/vocab.i
-
 run:
   handler: tcan.evaluator:TextClassificationHandler
 
