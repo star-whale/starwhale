@@ -296,8 +296,6 @@ Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自�
     ```yaml
     version: 1.0                          #可选，默认为1.0，表示yaml格式的版本号
     name: speech_commands_m5              #模型包的名称
-    model:                                #模型文件列表
-      - models/m5.pth
     run:
       handler: sc.evaluator:M5Inference   #模型评测的Handler
 
@@ -305,7 +303,6 @@ Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自�
     ```
 
   - `run.handler` 结构为 ${python module path}:${handler class}。入口点目前只能为Python Class。如果继承`starwhale.PipelineHandler`类，并实现ppl和cmp两个方法，可以非常容易的完成模型评测过程。用户也可以不继承`starwhale.PipelineHandler`类，而是使用 `starwhale.Step` 等工具函数实现完全自定义的模型评测过程。
-  - `model`字段为一个列表，表示相对于model.yaml路径的模型文件路径，可以写多个。这些模型文件会打包到swmp模型包中。
 
 - ppl过程
 
