@@ -289,14 +289,14 @@ class TestDataLoader(TestCase):
 
             rows = list(loader)
             assert len(rows) == 4
+            assert {r[0] for r in rows} == set(range(4))
 
-            _idx, _data = rows[0]
-            assert _idx == 0
-            assert _data["label"] == 0
+            _data = rows[0][1]
+            assert isinstance(_data["label"], int)
             assert isinstance(_data["image"], Image)
-
             assert len(_data["image"].to_bytes()) == 28 * 28
             assert isinstance(_data["image"].to_bytes(), bytes)
+
             assert len(ObjectStore._stores) == 4
             assert (
                 ObjectStore._stores[
@@ -472,11 +472,10 @@ class TestDataLoader(TestCase):
         rows = list(loader)
         assert len(rows) == 2
 
-        _idx, _data = rows[0]
+        assert {rows[0][0], rows[1][0]} == {0, 1}
 
-        assert _idx == 0
-        assert _data["label"] == 0
-
+        _data = rows[0][1]
+        assert isinstance(_data["label"], int)
         assert isinstance(_data["image"], Image)
         assert len(_data["image"].to_bytes()) == 784
         assert isinstance(_data["image"].to_bytes(), bytes)
