@@ -32,9 +32,9 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
             return
         }
         // @ts-ignore
-        if (data.content) {
+        if (data._content) {
             // @ts-ignore
-            setText(data.content)
+            setText(data._content)
             return
         }
         // @ts-ignore
