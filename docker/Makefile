@@ -91,7 +91,7 @@ build-server-all: build-console build-jar build-server
 build-server-for-local-usage:
 	docker build \
 		--network=host \
-		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
+		--build-arg BASE_IMAGE=$(DH_BASE_SERVER_IMAGE) \
 		--build-arg SW_SERVER_VERSION=$(RELEASE_VERSION) \
 		--build-arg GIT_INFO=$(GIT_INFO) \
 		-t starwhaleai/server:latest \
