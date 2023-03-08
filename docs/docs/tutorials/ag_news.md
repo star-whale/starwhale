@@ -275,9 +275,6 @@ Here is some descriptive information for Starwhale to build a Starwhale Model Pa
 version: 1.0
 name: text_cls
 
-config:
-  - config/hyperparam.json
-
 run:
   ppl: code.ppl:TextClassificationHandler
   pip_req: requirements.txt

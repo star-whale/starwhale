@@ -260,9 +260,6 @@ Here is some descriptive information for Starwhale to build a Starwhale Model Pa
 version: 1.0
 name: cifar_net
 
-config:
-- config/hyperparam.json
-
 run:
 ppl: code.ppl:CIFAR10Inference
 pip_req: requirements.txt

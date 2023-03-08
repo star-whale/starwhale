@@ -66,7 +66,6 @@ model.yaml 对于 `Starwhale Model` 至关重要，描述模型包中文件是�
 |name|Starwhale Model的名字|是|String||
 |version|model.yaml格式版本，目前仅支持填写 1.0|否|String|1.0|
 |desc|模型包描述信息|否|String|""|
-|config|配置文件相对路径列表，可以写零个或多个，路径是相对于model.yaml所在目录，会被打包到swmp中|否|List[String]||
 |run|模型包运行的配置|是|Dict||
 |run.handler|模型评测的入口点，格式为 {module 路径}:{类名} |是|String||
 |run.envs|模型包运行时注入的环境变量，格式为 {名称}={值}|否|List[String]||
