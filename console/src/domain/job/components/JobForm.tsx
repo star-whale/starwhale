@@ -30,6 +30,7 @@ import { usePage } from '@/hooks/usePage'
 import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
 import MultiTags from '@/components/Tag/MultiTags'
 import { formatTimestampDateTime } from '@/utils/datetime'
+import Tree from '@starwhale/ui/Tree/Tree'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -237,6 +238,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         return resource
     }
 
+    const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='top'>{t('Environment')}</Divider>
@@ -379,6 +382,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
             <Divider orientation='top'>{t('Datasets')}</Divider>
             <div className={styles.row3}>
+                <Tree selectedIds={selectedIds} onSelectedIdsChange={setSelectedIds} />
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
                     <DatasetSelector projectId={projectId} />
                 </FormItem>
