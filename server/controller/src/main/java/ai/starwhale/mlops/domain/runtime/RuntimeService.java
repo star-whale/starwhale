@@ -21,12 +21,16 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
+import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
+import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
@@ -62,18 +66,26 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.schedule.k8s.ContainerOverwriteSpec;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -83,6 +95,7 @@ import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -112,13 +125,23 @@ public class RuntimeService {
     @Setter
     private BundleManager bundleManager;
 
+    private final K8sClient k8sClient;
+    private final K8sJobTemplate k8sJobTemplate;
+    private final RuntimeTokenValidator runtimeTokenValidator;
+    private final DockerSetting dockerSetting;
+    private final RunTimeProperties runTimeProperties;
+    private final String instanceUri;
+
     public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
-            StorageService storageService, ProjectService projectService,
-            @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConverter runtimeConvertor,
-            RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
-            StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
-            HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
-            VersionAliasConverter versionAliasConvertor, TrashService trashService) {
+                          StorageService storageService, ProjectService projectService,
+                          @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConverter runtimeConvertor,
+                          RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
+                          StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
+                          HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
+                          VersionAliasConverter versionAliasConvertor, TrashService trashService,
+                          K8sClient k8sClient, K8sJobTemplate k8sJobTemplate,
+                          RuntimeTokenValidator runtimeTokenValidator, DockerSetting dockerSetting,
+                          RunTimeProperties runTimeProperties, @Value("${sw.instance-uri}") String instanceUri) {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
@@ -134,6 +157,12 @@ public class RuntimeService {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.trashService = trashService;
+        this.k8sClient = k8sClient;
+        this.k8sJobTemplate = k8sJobTemplate;
+        this.runtimeTokenValidator = runtimeTokenValidator;
+        this.dockerSetting = dockerSetting;
+        this.runTimeProperties = runTimeProperties;
+        this.instanceUri = instanceUri;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -430,8 +459,8 @@ public class RuntimeService {
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
+        RuntimeVersionEntity runtimeVersionEntity = (RuntimeVersionEntity) bundleManager.getBundleVersion(
+                BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
         if (null == runtimeVersionEntity) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Runtime version not found");
         }
@@ -462,15 +491,106 @@ public class RuntimeService {
     }
 
     public String query(String projectUrl, String runtimeUrl, String versionUrl) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(versionId);
-        if (null == runtimeVersionEntity) {
+        RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
+                BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
+        if (null == runtimeVersion) {
             throw new SwNotFoundException(ResourceType.BUNDLE, "Not found.");
         }
-        return runtimeVersionEntity.getName();
+        return runtimeVersion.getName();
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
+    }
+
+    // TODO add return value
+    public void buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
+        RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
+                BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
+        if (null == runtimeVersion) {
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Not found.");
+        }
+
+        var builtImage = runtimeVersion.getBuiltImage();
+        if (StringUtils.hasText(builtImage)) {
+            log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
+            return;
+        }
+
+        if (!validateDockerSetting(dockerSetting)) {
+            throw new SwValidationException(ValidSubject.RUNTIME,
+                    "can't found docker registry info, please set it in system setting.");
+        }
+
+        try {
+            log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
+            var project = projectService.findProject(projectUrl);
+            var user = userService.currentUserDetail();
+            var image = new DockerImage(
+                    dockerSetting.getRegistry(),
+                    String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
+            var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
+
+            // record image to labels
+            k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
+
+            Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
+            List<V1EnvVar> envVars = List.of(
+                    new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
+                    new V1EnvVar().name("SW_PROJECT").value(project.getName()),
+                    new V1EnvVar().name("SW_RUNTIME_VERSION").value(
+                        String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
+                    new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
+                        runTimeProperties.getPypi().getIndexUrl()),
+                    new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
+                        runTimeProperties.getPypi().getExtraIndexUrl()),
+                    new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
+                        runTimeProperties.getPypi().getTrustedHost()),
+                    new V1EnvVar().name("SW_TOKEN").value(
+                        runtimeTokenValidator.getToken(user, runtimeVersion.getId()))
+            );
+            k8sJobTemplate.getInitContainerTemplates(job).forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(envVars);
+                containerOverwriteSpec.setImage(runtimeVersion.getImage());
+                ret.put(templateContainer.getName(), containerOverwriteSpec);
+            });
+
+            k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
+                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setEnvs(envVars);
+                containerOverwriteSpec.setCmds(List.of(
+                        "--dockerfile=Dockerfile",
+                        "--context=dir:///workspace",
+                        "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
+                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
+                        "--destination=" + image));
+                ret.put(templateContainer.getName(), containerOverwriteSpec);
+            });
+
+            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
+
+            log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
+            k8sClient.deployJob(job);
+        } catch (ApiException k8sE) {
+            if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
+                log.debug("runtime:{}-{}'s image is building, please wait a moment.", runtimeUrl, versionUrl);
+            } else {
+                log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
+                throw new SwProcessException(ErrorType.INFRA,
+                        "deploying job for image build error:" + k8sE.getMessage());
+            }
+        }
+    }
+
+    private boolean validateDockerSetting(DockerSetting setting) {
+        return null != setting
+            && StringUtils.hasText(setting.getRegistry())
+            && StringUtils.hasText(setting.getUserName())
+            && StringUtils.hasText(setting.getPassword());
+    }
+
+    public boolean updateBuiltImage(String version, String image) {
+        return runtimeDao.updateVersionBuiltImage(version, image);
     }
 }

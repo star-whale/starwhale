@@ -29,7 +29,6 @@ public interface SwTaskScheduler {
      * scheduler should maintain the tasks to be scheduled
      *
      * @param tasks       tasks to be scheduled
-     * @param deviceClass the device type should be scheduled on
      */
     void schedule(Collection<Task> tasks);
 

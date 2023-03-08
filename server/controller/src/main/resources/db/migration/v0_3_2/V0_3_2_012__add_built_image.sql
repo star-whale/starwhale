@@ -14,17 +14,5 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-public class DockerImageTest {
-
-    @Test
-    public void testGhcrConstructor() {
-        String dockerImage = "ghcr.io/star-whale/starwhale:latest";
-        Assertions.assertEquals(new DockerImage("ghcr.io//", "star-whale/starwhale:latest").toString(), dockerImage);
-    }
-
-}
+ALTER TABLE `runtime_version`
+    ADD built_image text NULL;

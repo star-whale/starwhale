@@ -53,8 +53,12 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     @Override
     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
         // one task one k8s job
-        syncTaskStatus(newObj);
+        updateEvalTask(newObj);
         collectLog(newObj);
+    }
+
+    @Override
+    public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) {
     }
 
     private Long getTaskId(V1Pod pod) {
@@ -73,7 +77,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         return tid;
     }
 
-    private void syncTaskStatus(V1Pod pod) {
+    private void updateEvalTask(V1Pod pod) {
         if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
             return;
         }
@@ -132,7 +136,4 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         }
     }
 
-    @Override
-    public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) {
-    }
 }

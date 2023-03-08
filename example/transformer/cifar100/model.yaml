@@ -1,11 +1,6 @@
 version: 1.0
 name: cifar100_hg
 
-model:
-  - models/config.json
-  - models/pytorch_model.bin
-  - models/preprocessor_config.json
-
 run:
   handler: code.evaluator:CIFAR100Inference
 

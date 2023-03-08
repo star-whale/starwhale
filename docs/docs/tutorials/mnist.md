@@ -81,8 +81,6 @@ class MNISTInference(PipelineHandler):
 
 ```yaml
 name: mnist
-model:
-- models/mnist_cnn.pt
 config:
 - config/hyperparam.json
 run:

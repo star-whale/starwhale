@@ -33,9 +33,11 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
@@ -101,8 +103,24 @@ public class K8sClient {
         return coreV1Api.createNamespacedService(ns, svc, null, null, null, null);
     }
 
-    public void deleteJob(String id) throws ApiException {
-        batchV1Api.deleteNamespacedJob(id, ns, null, null, 1, false, null, null);
+    public V1Secret createSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.createNamespacedSecret(ns, secret, null, null, null, null);
+    }
+
+    public V1Secret replaceSecret(String name, V1Secret secret) throws ApiException {
+        return coreV1Api.replaceNamespacedSecret(name, ns, secret, null, null, null, null);
+    }
+
+    public V1Status deleteSecret(String name) throws ApiException {
+        return coreV1Api.deleteNamespacedSecret(name, ns, null, null, null, null, null, null);
+    }
+
+    public V1Secret getSecret(String name) throws ApiException {
+        return coreV1Api.readNamespacedSecret(name, ns, null);
+    }
+
+    public void deleteJob(String name) throws ApiException {
+        batchV1Api.deleteNamespacedJob(name, ns, null, null, 1, false, null, null);
     }
 
     public void deleteStatefulSet(String name) throws ApiException {
@@ -116,6 +134,10 @@ public class K8sClient {
      */
     public V1JobList getJobs(String labelSelector) throws ApiException {
         return batchV1Api.listNamespacedJob(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
+    }
+
+    public V1Job getJob(String name) throws ApiException {
+        return batchV1Api.readNamespacedJob(name, ns, null);
     }
 
     public V1StatefulSetList getStatefulSetList(String labelSelector) throws ApiException {

@@ -80,6 +80,10 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return entity;
     }
 
+    public boolean updateVersionBuiltImage(String version, String image) {
+        return runtimeVersionMapper.updateBuiltImage(version, image) > 0;
+    }
+
     @Override
     public BundleEntity findById(Long id) {
         return runtimeMapper.find(id);

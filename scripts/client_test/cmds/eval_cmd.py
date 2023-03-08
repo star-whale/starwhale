@@ -245,7 +245,6 @@ class Evaluation:
                             "mnist/version/latest"
                         ],
                         "finished_at": "2022-08-23 17:16:45 CST",
-                        "model": "models/mnist_cnn.pt",
                         "model_dir": ".",
                         "project": "self",
                         "status": "failed",

@@ -141,10 +141,6 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
   ```yaml
   version: 1.0
   name: nmt
-  model:
-    - models/encoder.pth
-    - models/decoder.pth
-    - models/vocab_eng-fra.bin
   config:
     - config/hyperparam.json
   run:

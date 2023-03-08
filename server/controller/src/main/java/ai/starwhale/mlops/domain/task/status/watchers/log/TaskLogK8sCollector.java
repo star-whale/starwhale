@@ -24,14 +24,12 @@ import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -45,13 +43,14 @@ public class TaskLogK8sCollector implements TaskLogCollector {
 
     final K8sClient k8sClient;
 
-    final K8sJobTemplate k8sJobTemplate;
+    final List<String> containers;
 
     public TaskLogK8sCollector(StorageAccessService storageService,
             K8sClient k8sClient, K8sJobTemplate k8sJobTemplate) {
         this.storageService = storageService;
         this.k8sClient = k8sClient;
-        this.k8sJobTemplate = k8sJobTemplate;
+        this.containers = k8sJobTemplate.getJobContainerNames(
+                k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL));
     }
 
     @Override
@@ -65,11 +64,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
                 return;
             }
             String logName = v1Pod.getMetadata().getName() + System.currentTimeMillis() / 1000;
-            String taskLog = k8sClient.logOfPod(v1Pod,
-                    Stream.concat(k8sJobTemplate.getInitContainerTemplates().stream(),
-                                    k8sJobTemplate.getContainersTemplates().stream())
-                            .map(V1Container::getName)
-                            .collect(Collectors.toList()));
+            String taskLog = k8sClient.logOfPod(v1Pod, containers);
             log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
             String logPath = resolveLogPath(task, logName);
