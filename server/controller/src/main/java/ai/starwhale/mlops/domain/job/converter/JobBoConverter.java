@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.converter;
 
-import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
@@ -52,6 +51,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * convert JobEntity to Job
@@ -116,14 +116,10 @@ public class JobBoConverter {
                 jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.find(
                 runtimeVersionEntity.getRuntimeId());
-        String image = runtimeVersionEntity.getImage();
-        if (null != systemSettingService.getSystemSetting() && null != systemSettingService.getSystemSetting()
-                .getDockerSetting() && null != systemSettingService.getSystemSetting().getDockerSetting()
-                .getRegistry()) {
-            image = new DockerImage(image).resolve(
-                    systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
-        }
-        Job job = null;
+        String builtImage = runtimeVersionEntity.getBuiltImage();
+        String image = StringUtils.hasText(builtImage) ? builtImage : runtimeVersionEntity.getImage();
+
+        Job job;
         try {
             job = Job.builder()
                     .id(jobEntity.getId())

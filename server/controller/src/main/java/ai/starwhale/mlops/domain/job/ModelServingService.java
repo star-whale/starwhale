@@ -20,7 +20,6 @@ import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ON
 
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
-import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
@@ -268,16 +267,8 @@ public class ModelServingService {
 
         var name = getServiceName(id);
 
-        // TODO: refactor image generation
-        var image = runtime.getImage();
-        if (systemSettingService.getSystemSetting() != null
-                && systemSettingService.getSystemSetting().getDockerSetting() != null
-                && systemSettingService.getSystemSetting().getDockerSetting().getRegistry() != null
-        ) {
-            image = new DockerImage(image)
-                    .resolve(systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
-        }
-
+        String builtImage = runtime.getBuiltImage();
+        String image = StringUtils.isNotEmpty(builtImage) ? builtImage : runtime.getImage();
 
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());

@@ -66,6 +66,7 @@ public interface RuntimeApi {
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project Url",
+                    required = true,
                     schema = @Schema())
             @PathVariable("projectUrl")
             String projectUrl,
@@ -98,6 +99,7 @@ public interface RuntimeApi {
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project Url",
+                    required = true,
                     schema = @Schema())
             @PathVariable("projectUrl")
             String projectUrl,
@@ -117,10 +119,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteRuntime(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl")
             String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
@@ -134,10 +133,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverRuntime(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl);
@@ -150,10 +146,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
@@ -166,10 +159,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyRuntime(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
@@ -184,10 +174,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageRuntimeTag(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
@@ -206,6 +193,7 @@ public interface RuntimeApi {
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Project Url",
+                    required = true,
                     schema = @Schema())
             @PathVariable("projectUrl")
             String projectUrl,
@@ -248,10 +236,7 @@ public interface RuntimeApi {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> upload(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Runtime name is invalid.")
@@ -270,10 +255,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
@@ -291,10 +273,22 @@ public interface RuntimeApi {
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headRuntime(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("runtimeUrl") String runtimeUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl") String versionUrl);
+
+    @Operation(summary = "build image for runtime", description = "build image for runtime")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/image/build",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.POST)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<?> buildRuntimeImage(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,

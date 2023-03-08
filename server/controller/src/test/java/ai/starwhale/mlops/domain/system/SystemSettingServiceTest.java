@@ -37,6 +37,8 @@ public class SystemSettingServiceTest {
     static String YAML = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd.com\"\n"
+            + "  userName: \"guest\"\n"
+            + "  password: \"guest123\"\n"
             + "pypiSetting:\n"
             + "  indexUrl: \"url1\"\n"
             + "  extraIndexUrl: \"url2\"\n"
@@ -45,6 +47,8 @@ public class SystemSettingServiceTest {
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd1.com\"\n"
+            + "  userName: \"admin\"\n"
+            + "  password: \"admin123\"\n"
             + "resourcePoolSetting: []";
     SystemSettingMapper systemSettingMapper;
     SystemSettingListener listener;
@@ -55,8 +59,12 @@ public class SystemSettingServiceTest {
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
         listener = mock(SystemSettingListener.class);
-        systemSettingService = new SystemSettingService(new YAMLMapper(), systemSettingMapper, List.of(listener),
-                new RunTimeProperties("", new Pypi("url1", "url2", "host1")), new DockerSetting("abcd.com"));
+        systemSettingService = new SystemSettingService(
+                new YAMLMapper(),
+                systemSettingMapper,
+                List.of(listener),
+                new RunTimeProperties("", new Pypi("url1", "url2", "host1")),
+                new DockerSetting("", "", ""));
         systemSettingService.run();
     }
 
@@ -73,6 +81,10 @@ public class SystemSettingServiceTest {
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+        Assertions.assertEquals("admin",
+                systemSettingService.getSystemSetting().getDockerSetting().getUserName());
+        Assertions.assertEquals("admin123",
+                systemSettingService.getSystemSetting().getDockerSetting().getPassword());
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
@@ -91,6 +103,8 @@ public class SystemSettingServiceTest {
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
                 + "  registry: \"\"\n"
+                + "  userName: \"\"\n"
+                + "  password: \"\"\n"
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
@@ -108,12 +122,18 @@ public class SystemSettingServiceTest {
     @Test
     public void testStartWithoutData() throws Exception {
         SystemSettingService systemSettingService =
-                new SystemSettingService(new YAMLMapper(), mock(SystemSettingMapper.class), List.of(listener),
-                        new RunTimeProperties("", new Pypi("", "", "")), new DockerSetting("abcd.com"));
+                new SystemSettingService(
+                        new YAMLMapper(),
+                        mock(SystemSettingMapper.class),
+                        List.of(listener),
+                        new RunTimeProperties("", new Pypi("", "", "")),
+                        new DockerSetting("abcd.com", "admin", "admin123"));
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
                 + "  registry: \"abcd.com\"\n"
+                + "  userName: \"admin\"\n"
+                + "  password: \"admin123\"\n"
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
