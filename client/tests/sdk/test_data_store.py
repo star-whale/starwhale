@@ -16,7 +16,6 @@ from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
     SwType,
-    TableSchema,
     TableEmptyException,
     TableWriterException,
 )
