@@ -38,6 +38,7 @@ export function SelectorItem({
     containerRef?: React.RefObject<HTMLDivElement>
 }) {
     const [values, setValues] = useState<ValueT>(rawValues)
+    const [selectedIds, setSelectedIds] = React.useState<string[]>(['2'])
     const [value, setValue] = useState<any>(rawValues?.value)
     const [editing, setEditing] = useState(false)
     const [removing, setRemoving] = useState(false)
@@ -119,11 +120,12 @@ export function SelectorItem({
     })
 
     // keep focus when editing
-    // useEffect(() => {
-    //     if (editing) {
-    //         inputRef.current?.focus()
-    //     }
-    // }, [editing])
+    useEffect(() => {
+        if (editing && value) {
+            setEditing(true)
+            inputRef.current?.focus()
+        }
+    }, [editing, value])
 
     // keep focus by parent component
     useEffect(() => {
@@ -150,15 +152,9 @@ export function SelectorItem({
         [editing, value]
     )
 
-    console.log(editing)
+    console.log(isFocus, editing)
 
-    const Item = React.useMemo(
-        () =>
-            items[0].getRender({
-                ...sharedProps,
-            }),
-        [items, sharedProps]
-    )
+    const CustomItem = React.useMemo(() => items[0].render, [items])
 
     return (
         <SelectItemContainer
@@ -183,7 +179,7 @@ export function SelectorItem({
                     inputRef={inputRef as any}
                 />
             )} */}
-            {Item}
+            <CustomItem {...sharedProps} value={selectedIds} onChange={setSelectedIds} />
             {!editing && isValueExist(value) && (
                 <LabelContainer title={value} className='label'>
                     {value}

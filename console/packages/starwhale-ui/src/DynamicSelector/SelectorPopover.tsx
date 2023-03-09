@@ -4,10 +4,10 @@ import React, { useEffect, useState } from 'react'
 import Tree from './Tree'
 import { TreePropsT } from './types'
 
-function TreePopover({
+function SelectorPopover({
     isOpen: $isOpen,
-    search = '',
     children,
+    content,
     ...rest
 }: TreePropsT & { isOpen: boolean; children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -27,6 +27,7 @@ function TreePopover({
             autoFocus={false}
             isOpen={isOpen}
             innerRef={ref}
+            onEsc={handleClose}
             overrides={{
                 Body: {
                     style: {
@@ -41,14 +42,10 @@ function TreePopover({
                     },
                 },
             }}
-            content={() => (
-                <div className='popover'>
-                    <Tree {...rest} search={search} />
-                </div>
-            )}
+            content={() => <div className='popover'>{content()}</div>}
         >
             <p>{children}</p>
         </Popover>
     )
 }
-export default TreePopover
+export default SelectorPopover

@@ -12,7 +12,8 @@ import {
     SelectorItemContainer,
     StartEnhancer,
 } from './StyledComponent'
-import TreePopover from '../Tree/TreePopover'
+import SelectorPopover from './SelectorPopover'
+import Tree from '../Tree/Tree'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
@@ -41,7 +42,12 @@ export function DynamicSelector({
             data: {},
             getDataToLabel: (data: any) => data?.label,
             getDataToValue: (data: any) => data?.id,
-            getRender: (shareProps) => <TreePopover {...shareProps} isOpen={shareProps.$isEditing} />,
+            render: ({ $isEditing, value, onChange, search }) => (
+                <SelectorPopover
+                    isOpen={$isEditing}
+                    content={() => <Tree selectedIds={value} search={search} onSelectedIdsChange={onChange} multiple />}
+                />
+            ),
         },
     ],
     ...props
@@ -61,10 +67,7 @@ export function DynamicSelector({
         if (containsNode(document.querySelector('.popover'), e.target)) return
         setIsEditing(false)
     })
-
-    const column = React.useMemo(() => {
-        return new ColumnFilterModel(props.fields)
-    }, [props.fields])
+    console.log('editingItem', values, editingItem)
 
     const count = React.useRef(100)
     const $values = React.useMemo(() => {
@@ -77,9 +80,8 @@ export function DynamicSelector({
                     items={items}
                     isEditing={isEditing}
                     isFocus={editingItem?.index === index}
-                    column={column}
                     onClick={() => {
-                        if (editingItem?.index !== index) setEditingItem({ index, value: item })
+                        if (editingItem?.index !== index) setEditingItem({ index, value })
                     }}
                     // @ts-ignore
                     containerRef={ref}
@@ -105,9 +107,9 @@ export function DynamicSelector({
                 value={{}}
                 isEditing={isEditing}
                 isFocus={editingItem ? editingItem.index === -1 : false}
-                column={column}
                 style={{ flex: 1 }}
                 onClick={() => {
+                    console.log('editingItem', -1)
                     if (editingItem?.index !== -1) setEditingItem({ index: -1, value: {} })
                 }}
                 // @ts-ignore
@@ -127,7 +129,7 @@ export function DynamicSelector({
             />
         )
         return tmps
-    }, [values, isEditing, editingItem, column, items, onChange])
+    }, [values, isEditing, editingItem, items, onChange])
 
     const shareProps = {
         $isEditing: isEditing,
