@@ -16,6 +16,7 @@ from starwhale.consts import (
     FileFlag,
     HTTPMethod,
     DefaultYAMLName,
+    SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_EVALUATION_JOBS_FNAME,
@@ -97,7 +98,9 @@ class StandaloneModelTestCase(TestCase):
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
-        assert (bundle_path / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
+        assert (
+            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
+        ).exists()
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
         assert "name" not in _manifest

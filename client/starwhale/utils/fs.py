@@ -25,8 +25,11 @@ def ensure_file(
     path: t.Union[str, Path],
     content: t.Union[str, bytes],
     mode: int = 0o644,
+    parents: bool = False,
 ) -> None:
     p = Path(path)
+    if parents:
+        p.parent.mkdir(parents=True, exist_ok=True)
     bin_mode = isinstance(content, bytes)
     try:
         with p.open("rb" if bin_mode else "r") as f:

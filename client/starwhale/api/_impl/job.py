@@ -200,7 +200,11 @@ class Parser:
         logger.debug("generate DAG")
         if Parser.check(_jobs):
             # dump to target
-            ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
+            ensure_file(
+                target_file,
+                yaml.safe_dump(_jobs, default_flow_style=False),
+                parents=True,
+            )
             logger.debug("generator DAG success!")
         else:
             logger.error("generator DAG error! reason: check is failed.")

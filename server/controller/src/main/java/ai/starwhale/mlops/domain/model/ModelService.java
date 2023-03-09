@@ -542,7 +542,7 @@ public class ModelService {
             jobContent = new String(
                     Objects.requireNonNull(
                             TarFileUtil.getContentFromTarFile(
-                                multipartFile.getInputStream(), "", "eval_jobs.yaml")
+                                multipartFile.getInputStream(), ".starwhale", "eval_jobs.yaml")
                     )
             );
             TarFileUtil.extract(inputStream, (name, size, in) ->
