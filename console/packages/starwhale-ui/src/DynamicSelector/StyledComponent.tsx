@@ -25,29 +25,27 @@ export const SelectorContainer = themedStyled('div', ({ $isEditing }) => ({
 
 export const SelectorItemContainer = themedStyled('div', () => ({
     display: 'flex',
+    flexGrow: '1',
     gap: '10px',
     height: '32px',
     lineHeight: '20px',
     alignItems: 'center',
-    flexGrow: '1',
+    // display: 'Grid',
+    // gridAutoColumns: '1fr 1fr',
 }))
 
 export const StartEnhancer = themedStyled('div', () => ({
-    width: 'auto',
-    maxWidth: '34px',
+    width: '34px',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
 }))
 
 export const Placeholder = themedStyled('div', () => ({
-    'position': 'relative',
-    'display': 'flex',
-    'width': 0,
-    'alignItems': 'center',
-    '& > div': {
-        width: '150px',
-    },
+    position: 'relative',
+    display: 'flex',
+    width: 0,
+    alignItems: 'center',
 }))
 
 export const SelectItemContainer = themedStyled('div', () => ({
@@ -101,8 +99,8 @@ export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }) => ({
     height: '100%',
 }))
 
-export const defaultStartEnhancer = (shareProps) => <IconFont type='filter' size={12} kind='gray' />
-export const defaultLabelRemoveIcon = (shareProps) => (
+export const defaultStartEnhancer = () => <IconFont type='filter' size={12} kind='gray' />
+export const defaultLabelRemoveIcon = () => (
     <IconFont
         type='close'
         style={{
@@ -117,5 +115,5 @@ export const defaultLabelRemoveIcon = (shareProps) => (
     />
 )
 export const defalutPlaceholder = (children) => (
-    <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute' }}>{children}</LabelSmall>
+    <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute', width: '150px' }}>{children}</LabelSmall>
 )
